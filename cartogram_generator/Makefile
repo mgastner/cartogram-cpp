@@ -1,4 +1,5 @@
-CXXFLAGS += -I include -std=c++14 -Wall -Wextra -Wshadow -Werror -O3 -fPIC
+#CXXFLAGS += -I include -std=c++14 -Wall -Wextra -Wshadow -Werror -O3 -fPIC
+CXXFLAGS += -I include -std=c++14 -Wall -Wextra -O3 -fPIC
 
 MASON ?= mason
 VARIANT = variant 1.1.4
@@ -27,4 +28,4 @@ build/libgeojson.a: build/geojson.o
 	$(AR) -rcs $@ $<
 
 cartogram: main.cpp build/libgeojson.a
-	$(CXX) $(CFLAGS) $(CXXFLAGS) $(DEPS) $(RAPIDJSON_DEP) $< -Lbuild -lgeojson -o $@
+	$(CXX) $(CFLAGS) $(CXXFLAGS) $(DEPS) $(RAPIDJSON_DEP) $< -Lbuild -lgeojson -lgmp -o $@
