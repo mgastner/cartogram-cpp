@@ -30,3 +30,6 @@
 *.exe
 *.out
 *.app
+
+# Added by MTG
+cartogram_generator/cartogram

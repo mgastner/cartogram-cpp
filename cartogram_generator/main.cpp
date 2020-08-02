@@ -33,7 +33,7 @@ int main() {
   const auto data = readGeoJSON("../sample_data/feature-collection.json",
                                 use_convert);
   //const auto &features = data.get<feature_collection>();
-  Point points[] = { Point(0,0), Point(5.1,0), Point(1,1), Point(0.5,6)};
+  Point points[] = { Point(0,0), Point(1,0), Point(0,1), Point(1,1)};
   Polygon_2 pgn(points, points+4);
   // check if the polygon is simple.
   cout << "The polygon is " <<
