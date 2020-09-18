@@ -26,7 +26,7 @@ int main(int argc, const char *argv[])
       "help,h", "Help screen"
       )(
       "geometry,g",
-      value<string>()->notifier(on_geometry),
+      value<string>()->required()->notifier(on_geometry),
       "GeoJSON file"
       )(
       "visual_variables,v",
