@@ -1,46 +1,45 @@
-#include <mapbox/geojson.hpp>
-#include <mapbox/geojson/rapidjson.hpp>
-#include <mapbox/geometry.hpp>
-#include <CGAL/Exact_predicates_inexact_constructions_kernel.h>
-#include <CGAL/Polygon_2.h>
-
+#include <boost/program_options.hpp>
 #include <iostream>
-#include <fstream>
-#include <sstream>
 
 using namespace std;
-using namespace mapbox::geojson;
 
-typedef CGAL::Exact_predicates_inexact_constructions_kernel K;
-typedef K::Point_2 Point;
-typedef CGAL::Polygon_2<K> Polygon_2;
-
-template <typename T = geojson>
-geojson readGeoJSON(const string &path, bool use_convert) {
-  ifstream t(path.c_str());
-  stringstream buffer;
-  buffer << t.rdbuf();
-  if (use_convert) {
-    rapidjson_document d;
-    d.Parse<0>(buffer.str().c_str());
-    return convert<T>(d);
-  } else {
-    return parse(buffer.str());
-  }
+void on_geometry(std::string geometry_file_name)
+{
+  cerr << "Using geometry from file " << geometry_file_name << endl;
+  return;
 }
-int main() {
-  bool use_convert = true;
-  const auto data = readGeoJSON("../sample_data/feature-collection.json",
-                                use_convert);
-  //const auto &features = data.get<feature_collection>();
-  Point points[] = { Point(0,0), Point(1,0), Point(0,1), Point(1,1)};
-  Polygon_2 pgn(points, points+4);
-  // check if the polygon is simple.
-  cout << "The polygon is " <<
-    (pgn.is_simple() ? "" : "not ") << "simple." << endl;
-  // check if the polygon is convex
-  cout << "The polygon is " <<
-    (pgn.is_convex() ? "" : "not ") << "convex." << endl;
+void on_visual_variables(std::string geometry_file_name)
+{
+  cerr << "Using visual variables from file " << geometry_file_name << endl;
+  return;
+}
 
+int main(int argc, const char *argv[])
+{
+  using namespace boost::program_options;
+
+  // Parse command line options. See
+  // https://theboostcpplibraries.com/boost.program_options
+  try {
+    options_description desc{"Options"};
+    desc.add_options()(
+      "help,h", "Help screen"
+      )(
+      "geometry,g",
+      value<string>()->notifier(on_geometry),
+      "GeoJSON file"
+      )(
+      "visual_variables,v",
+      value<string>()->notifier(on_visual_variables),
+      "CSV file with area and (optionally) colour");
+    variables_map vm;
+    store(parse_command_line(argc, argv, desc), vm);
+    notify(vm);  // Triggers notifier functions such as on_geometry().
+    if (vm.count("help")) {
+      std::cout << desc << '\n';
+    }
+  } catch (const error &ex) {
+    std::cerr << ex.what() << '\n';
+  }
   return 0;
 }
