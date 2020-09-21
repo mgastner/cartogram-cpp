@@ -10,10 +10,17 @@ void read_geojson(std::string geometry_file_name)
                             std::system_category(),
                             "failed to open " + geometry_file_name);
   }
-  nlohmann::json j;
 
-  // WHAT IF in_file isn't json???
-  in_file >> j;
+  using json = nlohmann::json;
+  json j;
+  try {
+    in_file >> j;
+  } catch (json::parse_error& e) {
+    std::cerr << "ERROR: " << e.what() << '\n'
+              << "exception id: " << e.id << '\n'
+              << "byte position of error: " << e.byte << std::endl;
+    _Exit(3);
+  }
 
   return;
 }

@@ -9,10 +9,9 @@ void on_geometry(std::string geometry_file_name)
 }
 void on_visual_variables(std::string geometry_file_name)
 {
-  std::cerr <<
-    "Using visual variables from file " <<
-    geometry_file_name <<
-    std::endl;
+  std::cerr << "Using visual variables from file "
+            << geometry_file_name
+            << std::endl;
   return;
 }
 
