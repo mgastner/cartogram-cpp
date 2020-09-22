@@ -1,9 +1,11 @@
 // TODO:
 // - IMPROVE ERROR HANDLING
 // - ADD SUPPORT FOR "geometry": "Polygon"
+// - CHECK WHETHER COORDINATES ARE EMPTY
 
 #include "geo_div.h"
 #include <nlohmann/json.hpp>
+#include <CGAL/Polygon_2.h>
 #include <iostream>
 #include <fstream>
 
@@ -62,8 +64,37 @@ void check_geojson_validity(json j)
   return;
 }
 
-GeoDiv JSONToCGAL(std::string id, json JSONCoords) {
+GeoDiv JSONToCGAL(std::string id, json json_coords) {
   GeoDiv gd(id);
+  for (json json_pgn_holes_container : json_coords) {
+    using namespace CGAL;
+    Polygon_2<K> cgal_pgn;
+    //std::vector<Polygon_2<K> > holesV;
+    // Add outer polygon
+    for (int j = 0; j < json_pgn_holes_container[0].size(); j++) {
+      cgal_pgn.push_back(K::Point_2(json_pgn_holes_container[0][j][0],
+                                    json_pgn_holes_container[0][j][1]));
+    }
+
+    set_pretty_mode(std::cout);
+    std::cout << cgal_pgn << std::endl;
+
+    //for (int i = 1; i < json_pgn_holes_container.size(); i++) {
+    //Polygon_2 hole;
+//     // Add hole(s)
+//     for (int j = 0; j < JSONPgnWHContainer[i].size(); j++) {
+//       hole.push_back(Point_2(JSONPgnWHContainer[i][j][0], JSONPgnWHContainer[i][j][1]));
+//     }
+//     holesV.push_back(hole);
+//   }
+// }
+// if (holesV.empty()) {
+//   PolygonWH pgnWH(CGALPgn);
+//   gD.addPolygon(pgnWH);
+// } else {
+//   PolygonWH pgnWH(CGALPgn, holesV.begin(), holesV.end());
+//   gD.addPolygon(pgnWH);
+  }
   return gd;
 }
 
@@ -97,7 +128,6 @@ void read_geojson(std::string geometry_file_name)
     } else if (geometry["type"] == "MultiPolygon") {
       JSONToCGAL("id", geometry["coordinates"]);
     }
-
   }
   return;
 }
