@@ -2,6 +2,7 @@
 // - IMPROVE ERROR HANDLING
 // - ADD SUPPORT FOR "geometry": "Polygon"
 
+#include "geo_div.h"
 #include <nlohmann/json.hpp>
 #include <iostream>
 #include <fstream>
@@ -61,6 +62,11 @@ void check_geojson_validity(json j)
   return;
 }
 
+GeoDiv JSONToCGAL(std::string id, json JSONCoords) {
+  GeoDiv gd(id);
+  return gd;
+}
+
 void read_geojson(std::string geometry_file_name)
 {
   // Open file.
@@ -82,14 +88,16 @@ void read_geojson(std::string geometry_file_name)
     _Exit(3);
   }
   check_geojson_validity(j);
-  json features = j["features"];
-  for (auto feature : features) {
+  for (auto feature : j["features"]) {
     json geometry = feature["geometry"];
     if (geometry["type"] == "Polygon") {
       std::cerr << "ERROR: Sorry, no support for Polygon geometry yet"
                 << std::endl;
       _Exit(13);
+    } else if (geometry["type"] == "MultiPolygon") {
+      JSONToCGAL("id", geometry["coordinates"]);
     }
+
   }
   return;
 }
