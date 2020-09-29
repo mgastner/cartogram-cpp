@@ -71,26 +71,58 @@ GeoDiv JSONToCGAL(std::string id, json json_coords) {
   for (json json_pgn_holes_container : json_coords) {
     using namespace CGAL;
 
-    // Store exterior ring in CGAL format.
+    // Store exterior ring in CGAL format
     Polygon_2<K> ext_ring;
-    for (int j = 0; j < json_pgn_holes_container[0].size(); j++) {
-      ext_ring.push_back(K::Point_2(json_pgn_holes_container[0][j][0],
-                                    json_pgn_holes_container[0][j][1]));
+    json jphc_ext = json_pgn_holes_container[0];
+    for (int j = 0; j < jphc_ext.size() - 1; j++) {
+      ext_ring.push_back(K::Point_2(jphc_ext[j][0], jphc_ext[j][1]));
     }
 
-    // Store holes.
-    std::vector<Polygon_2<K>> holesV;
-    for (int i = 1; i < json_pgn_holes_container.size(); i++) {
-      Polygon_2<K> hole;
-      for (int j = 0; j < json_pgn_holes_container[i].size(); j++) {
-        hole.push_back(K::Point_2(json_pgn_holes_container[i][j][0],
-                                  json_pgn_holes_container[i][j][1]));
-      }
-      holesV.push_back(hole);
+    // CGAL considers a polygon as simple only if first vertex and last vertex
+    // are different
+    if (jphc_ext[0][0] != jphc_ext[jphc_ext.size() - 1][0] ||
+        jphc_ext[0][1] != jphc_ext[jphc_ext.size() - 1][1]) {
+      ext_ring.push_back(K::Point_2(jphc_ext[jphc_ext.size() - 1][0],
+                                    jphc_ext[jphc_ext.size() - 1][1]));
     }
-    PolygonWH pgnWH(ext_ring, holesV.begin(), holesV.end());
-    set_pretty_mode(std::cout);
-    std::cout << pgnWH << std::endl;
+    if (!ext_ring.is_simple()) {
+      std::cerr << "ERROR: exterior ring not a simple polygon" << std::endl;
+      _Exit(13);
+    }
+
+    // We adopt the convention that exterior rings are counterclockwise
+    // oriented, interior rings clockwise oriented. If the orientation in the
+    // GeoJSON does not match our convention, we reverse the polygon.
+    if (ext_ring.is_clockwise_oriented()) {
+      std::cout << "Exterior ring is clockwise" << std::endl;
+      ext_ring.reverse_orientation();
+    }
+
+    // Store interior ring
+    std::vector<Polygon_2<K> > int_ring_v;
+    for (int i = 1; i < json_pgn_holes_container.size(); i++) {
+      Polygon_2<K> int_ring;
+      json jphc_int = json_pgn_holes_container[i];
+      for (int j = 0; j < jphc_int.size() - 1; j++) {
+        int_ring.push_back(K::Point_2(jphc_int[j][0], jphc_int[j][1]));
+      }
+      int_ring_v.push_back(int_ring);
+      if (jphc_int[0][0] != jphc_int[jphc_int.size() - 1][0] ||
+          jphc_int[0][1] != jphc_int[jphc_int.size() - 1][1]) {
+        int_ring.push_back(K::Point_2(jphc_int[jphc_int.size() - 1][0],
+                                      jphc_int[jphc_int.size() - 1][1]));
+      }
+      if (!int_ring.is_simple()) {
+        std::cerr << "ERROR: interior ring not a simple polygon" << std::endl;
+        _Exit(14);
+      }
+      if (int_ring.is_counterclockwise_oriented()) {
+        std::cout << "Interior ring is counterclockwise" << std::endl;
+        int_ring.reverse_orientation();
+      }
+    }
+    PolygonWH pgnWH(ext_ring, int_ring_v.begin(), int_ring_v.end());
+
     gd.push_back(pgnWH);
   }
 
