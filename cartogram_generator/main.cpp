@@ -2,6 +2,8 @@
 #include <boost/program_options.hpp>
 #include <iostream>
 
+// Functions that are called if the corresponding command-line options are
+// present.
 void on_geometry(std::string geometry_file_name)
 {
   std::cerr << "Using geometry from file " << geometry_file_name << std::endl;
@@ -19,9 +21,9 @@ int main(int argc, const char *argv[])
 {
   using namespace boost::program_options;
 
-  std::string geometry_file_name;
+  std::string geo_file_name;
 
-  // Parse command line options. See
+  // Parse command-line options. See
   // https://theboostcpplibraries.com/boost.program_options
   try {
     options_description desc{"Options"};
@@ -29,7 +31,7 @@ int main(int argc, const char *argv[])
       "help,h", "Help screen"
       )(
       "geometry,g",
-      value<std::string>(&geometry_file_name)->required()->notifier(on_geometry),
+      value<std::string>(&geo_file_name)->required()->notifier(on_geometry),
       "GeoJSON file"
       )(
       "visual_variables,v",
@@ -37,21 +39,23 @@ int main(int argc, const char *argv[])
       "CSV file with area and (optionally) colour");
     variables_map vm;
     store(parse_command_line(argc, argv, desc), vm);
-    notify(vm);  // Triggers notifier functions such as on_geometry().
-    if (vm.count("help")) {
+    if (vm.count("help") || vm.empty()) {
       std::cerr << desc << '\n';
+      return EXIT_SUCCESS;
+    } else {
+      notify(vm);  // Triggers notifier functions such as on_geometry().
     }
   } catch (const error &ex) {
     std::cerr << "ERROR: " << ex.what() << '\n';
-    return 1;
+    return EXIT_FAILURE;
   }
 
   // Read geometry.
   try {
-    read_geojson(geometry_file_name);
+    read_geojson(geo_file_name);
   } catch (const std::system_error& e) {
     std::cerr << "ERROR: " << e.what() << " (" << e.code() << ")" << std::endl;
-    return 2;
+    return EXIT_FAILURE;
   }
-  return 0;
+  return EXIT_SUCCESS;
 }
