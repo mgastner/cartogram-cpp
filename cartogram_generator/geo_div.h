@@ -16,6 +16,7 @@ class GeoDiv {
 
   public:
     GeoDiv(std::string i);
+    ~GeoDiv();
     void push_back(PolygonWH pgn_wh);
 };
 
