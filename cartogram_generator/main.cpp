@@ -1,9 +1,12 @@
+// TO DO: positional matching of argument flags
+
+#include "read_csv.h"
 #include "read_geojson.h"
 #include <boost/program_options.hpp>
 #include <iostream>
 
 // Functions that are called if the corresponding command-line options are
-// present.
+// present
 void on_geometry(std::string geometry_file_name)
 {
   std::cerr << "Using geometry from file " << geometry_file_name << std::endl;
@@ -43,14 +46,17 @@ int main(int argc, const char *argv[])
       std::cerr << desc << '\n';
       return EXIT_SUCCESS;
     } else {
-      notify(vm);  // Triggers notifier functions such as on_geometry().
+      notify(vm);  // Triggers notifier functions such as on_geometry()
     }
   } catch (const error &ex) {
     std::cerr << "ERROR: " << ex.what() << '\n';
     return EXIT_FAILURE;
   }
 
-  // Read geometry.
+  // Read visual variables (e.g. area) from CSV
+  read_csv("What's", "up", "doc?");
+
+  // Read geometry
   try {
     read_geojson(geo_file_name);
   } catch (const std::system_error& e) {
