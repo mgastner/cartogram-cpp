@@ -15,9 +15,9 @@ class GeoDiv {
     std::vector<PolygonWH> polygonsWH;
 
   public:
-    GeoDiv(std::string i);
+    GeoDiv(const std::string);
     ~GeoDiv();
-    void push_back(PolygonWH pgn_wh);
+    void push_back(const PolygonWH);
 };
 
 #endif

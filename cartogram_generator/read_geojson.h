@@ -2,6 +2,6 @@
 #define READ_GEOJSON_H_
 
 #include <string>
-void read_geojson(std::string geometry_file_name);
+void read_geojson(const std::string geometry_file_name);
 
 #endif

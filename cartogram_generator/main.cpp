@@ -7,12 +7,12 @@
 
 // Functions that are called if the corresponding command-line options are
 // present
-void on_geometry(std::string geometry_file_name)
+void on_geometry(const std::string geometry_file_name)
 {
   std::cerr << "Using geometry from file " << geometry_file_name << std::endl;
   return;
 }
-void on_visual_variables(std::string geometry_file_name)
+void on_visual_variables(const std::string geometry_file_name)
 {
   std::cerr << "Using visual variables from file "
             << geometry_file_name
@@ -20,7 +20,7 @@ void on_visual_variables(std::string geometry_file_name)
   return;
 }
 
-int main(int argc, const char *argv[])
+int main(const int argc, const char *argv[])
 {
   using namespace boost::program_options;
 
