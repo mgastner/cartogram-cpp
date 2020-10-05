@@ -1,5 +1,6 @@
 // TO DO: positional matching of argument flags
 
+#include "map_state.h"
 #include "read_csv.h"
 #include "read_geojson.h"
 #include "rescale_map.h"
@@ -25,6 +26,7 @@ int main(const int argc, const char *argv[])
 {
   using namespace boost::program_options;
 
+  MapState map_state;
   std::string geo_file_name;
 
   // Default number of grid cells along longer Cartesian coordinate axis.
