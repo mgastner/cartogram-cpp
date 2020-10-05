@@ -1,5 +1,6 @@
 // TO DO: positional matching of argument flags
 
+#include "constants.h"
 #include "map_state.h"
 #include "read_csv.h"
 #include "read_geojson.h"
@@ -30,7 +31,7 @@ int main(const int argc, const char *argv[])
   std::string geo_file_name;
 
   // Default number of grid cells along longer Cartesian coordinate axis.
-  int longer_lattice_length = 512;
+  int longer_lattice_length = default_longer_lattice_length;
 
   // World maps need special projections. By default, we assume that the
   // input map is not a world map.
