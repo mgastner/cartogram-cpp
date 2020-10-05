@@ -16,7 +16,6 @@ class GeoDiv {
 
   public:
     GeoDiv(const std::string);
-    ~GeoDiv();
     void push_back(const PolygonWH);
 };
 
