@@ -27,6 +27,13 @@ int main(const int argc, const char *argv[])
 
   std::string geo_file_name;
 
+  // Default number of grid cells along longer Cartesian coordinate axis.
+  int longer_lattice_length = 512;
+
+  // World maps need special projections. By default, we assume that the
+  // input map is not a world map.
+  bool world = false;
+
   // Parse command-line options. See
   // https://theboostcpplibraries.com/boost.program_options
   try {
@@ -40,7 +47,16 @@ int main(const int argc, const char *argv[])
       )(
       "visual_variables,v",
       value<std::string>()->notifier(on_visual_variables),
-      "CSV file with area and (optionally) colour");
+      "CSV file with area and (optionally) colour"
+      )(
+      "longer_lattice_length,l",
+      value<int>(&longer_lattice_length),
+      "Number of grid cells along longer Cartesian coordinate axis"
+      )(
+      "world,w",
+      value<bool>(&world),
+      "Boolean: is input a world map in longitude-latitude format?"
+      );
     variables_map vm;
     store(parse_command_line(argc, argv, desc), vm);
     if (vm.count("help") || vm.empty()) {
@@ -66,7 +82,7 @@ int main(const int argc, const char *argv[])
   }
 
   // Rescale map to fit into a rectangular box [0, lx] * [0, ly].
-  rescale_map(1024, false);
+  rescale_map(longer_lattice_length, world);
 
   return EXIT_SUCCESS;
 }
