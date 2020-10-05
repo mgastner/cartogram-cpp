@@ -2,6 +2,7 @@
 
 #include "read_csv.h"
 #include "read_geojson.h"
+#include "rescale_map.h"
 #include <boost/program_options.hpp>
 #include <iostream>
 
@@ -63,5 +64,9 @@ int main(const int argc, const char *argv[])
     std::cerr << "ERROR: " << e.what() << " (" << e.code() << ")" << std::endl;
     return EXIT_FAILURE;
   }
+
+  // Rescale map to fit into a rectangular box [0, lx] * [0, ly].
+  rescale_map(1024, false);
+
   return EXIT_SUCCESS;
 }
