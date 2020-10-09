@@ -16,9 +16,9 @@ int MapState::n_geo_divs(void)
   return geo_divs.size();
 }
 
-GeoDiv MapState::get_geo_div(const unsigned int i)
+std::vector<GeoDiv> MapState::get_geo_divs(void)
 {
-  return geo_divs[i];
+  return geo_divs;
 }
 
 bool MapState::is_world_map(void)

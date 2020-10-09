@@ -16,7 +16,7 @@ int GeoDiv::n_polygons_with_holes(void)
   return polygons_with_holes.size();
 }
 
-PolygonWH GeoDiv::get_polygon_with_hole(const unsigned int i)
+std::vector<PolygonWH> GeoDiv::get_polygons_with_holes(void)
 {
-  return polygons_with_holes[i];
+  return polygons_with_holes;
 }

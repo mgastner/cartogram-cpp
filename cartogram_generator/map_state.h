@@ -12,7 +12,7 @@ public:
   MapState(const bool);
   void push_back(const GeoDiv);
   int n_geo_divs(void);
-  GeoDiv get_geo_div(const unsigned int);
+  std::vector<GeoDiv> get_geo_divs(void);
   bool is_world_map(void);
 };
 
