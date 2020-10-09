@@ -12,10 +12,11 @@ typedef CGAL::Polygon_with_holes_2<K> PolygonWH;
 class GeoDiv {
   private:
     std::string id;
-    std::vector<PolygonWH> polygonsWH;
-
+    std::vector<PolygonWH> polygons_with_holes;
   public:
     GeoDiv(const std::string);
+    int n_polygons_with_holes(void);
+    PolygonWH get_polygon_with_hole(const unsigned int);
     void push_back(const PolygonWH);
 };
 
