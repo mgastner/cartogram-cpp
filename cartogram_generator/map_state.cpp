@@ -1,13 +1,24 @@
 #include "map_state.h"
 
-MapState::MapState(bool world_proj) : world(world_proj)
+MapState::MapState(const bool world_proj) : world(world_proj)
 {
   return;
 }
 
-int MapState::get_n_geo_divs(void)
+void MapState::push_back(const GeoDiv gd)
 {
-  return n_geo_divs;
+  geo_divs.push_back(gd);
+  return;
+}
+
+int MapState::n_geo_divs(void)
+{
+  return geo_divs.size();
+}
+
+GeoDiv MapState::get_geo_div(const unsigned int i)
+{
+  return geo_divs[i];
 }
 
 bool MapState::is_world_map(void)
