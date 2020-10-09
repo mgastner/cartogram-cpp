@@ -4,6 +4,7 @@
 // - CHECK WHETHER COORDINATES ARE EMPTY
 
 #include "geo_div.h"
+#include "map_state.h"
 #include <nlohmann/json.hpp>
 #include <CGAL/Polygon_2.h>
 #include <iostream>
@@ -60,7 +61,6 @@ void check_geojson_validity(const json j)
       _Exit(12);
     }
   }
-
   return;
 }
 
@@ -121,11 +121,10 @@ GeoDiv JSONToCGAL(const std::string id, const json json_coords) {
 
     gd.push_back(pgnWH);
   }
-
   return gd;
 }
 
-void read_geojson(const std::string geometry_file_name)
+void read_geojson(const std::string geometry_file_name, MapState *map_state)
 {
   // Open file.
   std::ifstream in_file(geometry_file_name);
@@ -153,7 +152,8 @@ void read_geojson(const std::string geometry_file_name)
                 << std::endl;
       _Exit(13);
     } else if (geometry["type"] == "MultiPolygon") {
-      JSONToCGAL("id", geometry["coordinates"]);
+      GeoDiv gd = JSONToCGAL("id", geometry["coordinates"]);
+      map_state->push_back(gd);
     }
   }
   return;
