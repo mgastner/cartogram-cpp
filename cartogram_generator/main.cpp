@@ -80,7 +80,7 @@ int main(const int argc, const char *argv[])
 
   // Read geometry
   try {
-    read_geojson(geo_file_name);
+    read_geojson(geo_file_name, &map_state);
   } catch (const std::system_error& e) {
     std::cerr << "ERROR: " << e.what() << " (" << e.code() << ")" << std::endl;
     return EXIT_FAILURE;
