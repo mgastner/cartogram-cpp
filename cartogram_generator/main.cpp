@@ -31,7 +31,7 @@ int main(const int argc, const char *argv[])
   std::string geo_file_name;
 
   // Default number of grid cells along longer Cartesian coordinate axis.
-  int longer_lattice_length = default_longer_lattice_length;
+  int long_lattice_side_length = default_long_lattice_side_length;
 
   // World maps need special projections. By default, we assume that the
   // input map is not a world map.
@@ -52,8 +52,8 @@ int main(const int argc, const char *argv[])
       value<std::string>()->notifier(on_visual_variables),
       "CSV file with area and (optionally) colour"
       )(
-      "longer_lattice_length,l",
-      value<int>(&longer_lattice_length),
+      "long_lattice_side_length,l",
+      value<int>(&long_lattice_side_length),
       "Number of grid cells along longer Cartesian coordinate axis"
       )(
       "world,w",
@@ -87,7 +87,7 @@ int main(const int argc, const char *argv[])
   }
 
   // Rescale map to fit into a rectangular box [0, lx] * [0, ly].
-  rescale_map(longer_lattice_length, &map_state);
+  rescale_map(long_lattice_side_length, &map_state);
 
   return EXIT_SUCCESS;
 }
