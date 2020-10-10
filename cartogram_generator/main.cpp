@@ -39,28 +39,35 @@ int main(const int argc, const char *argv[])
 
   // Parse command-line options. See
   // https://theboostcpplibraries.com/boost.program_options
+  variables_map vm; // to pass to read_csv()
+
   try {
     options_description desc{"Options"};
     desc.add_options()(
-      "help,h", "Help screen"
+        "help,h", "Help screen"
       )(
-      "geometry,g",
-      value<std::string>(&geo_file_name)->required()->notifier(on_geometry),
-      "GeoJSON file"
+        "geometry,g",
+        value<std::string>(&geo_file_name)->required()->notifier(on_geometry),
+        "GeoJSON file"
       )(
-      "visual_variables,v",
-      value<std::string>()->notifier(on_visual_variables),
-      "CSV file with area and (optionally) colour"
+        "visual_variables,v",
+        value<std::string>()->notifier(on_visual_variables),
+        "CSV file with area and (optionally) colour"
       )(
-      "long_lattice_side_length,l",
-      value<int>(&long_lattice_side_length),
-      "Number of grid cells along longer Cartesian coordinate axis"
+        "id, i", value<std::string>(), "Column name for GeoDiv identifiers (assumed col. 1 in csv)"
       )(
-      "world,w",
-      value<bool>(&world),
-      "Boolean: is input a world map in longitude-latitude format?"
+        "area, a", value<std::string>(), "Column name for target  areas (assumed col. 2 in csv)"
+      )(
+        "color, c", value<std::string>(), "Column name for colors (assumed col. 3 in csv, if columns > 2)"
+      )(
+        "long_lattice_side_length,l",
+        value<int>(&long_lattice_side_length),
+        "Number of grid cells along longer Cartesian coordinate axis"
+      )(
+        "world,w",
+        value<bool>(&world),
+        "Boolean: is input a world map in longitude-latitude format?"
       );
-    variables_map vm;
     store(parse_command_line(argc, argv, desc), vm);
     if (vm.count("help") || vm.empty()) {
       std::cerr << desc << '\n';
@@ -76,7 +83,7 @@ int main(const int argc, const char *argv[])
   MapState map_state(world);
 
   // Read visual variables (e.g. area) from CSV
-  read_csv("What's", "up", "doc?");
+  read_csv(vm);
 
   // Read geometry
   try {
