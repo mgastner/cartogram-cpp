@@ -8,12 +8,15 @@ class MapState {
 private:
   bool world;
   std::vector<GeoDiv> geo_divs;
+  int lx, ly;  // Lattice dimensions
 public:
   MapState(const bool);
+  int n_geo_divs(void) const;
+  std::vector<GeoDiv> get_geo_divs(void) const;
+  bool is_world_map(void) const;
+  void set_lx(const int i);
+  void set_ly(const int i);
   void push_back(const GeoDiv);
-  int n_geo_divs(void);
-  std::vector<GeoDiv> get_geo_divs(void);
-  bool is_world_map(void);
 };
 
 #endif

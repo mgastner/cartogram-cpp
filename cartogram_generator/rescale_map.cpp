@@ -24,8 +24,20 @@ void rescale_map(int longer_lattice_length, MapState *map_state)
       map_ymax = (bb.ymax() < map_ymax ? bb.ymax() : map_ymax);
     }
   }
-  std::cout << "Bbox of map: " << map_xmin << " " << map_ymin << " "
-            << map_xmax << " " << map_ymax << std::endl;
+  double new_xmin = 0.5 * ((1.0-padding)*map_xmax + (1.0+padding)*map_xmin);
+  double new_ymin = 0.5 * ((1.0-padding)*map_ymax + (1.0+padding)*map_ymin);
+  double new_xmax = 0.5 * ((1.0+padding)*map_xmax + (1.0-padding)*map_xmin);
+  double new_ymax = 0.5 * ((1.0+padding)*map_ymax + (1.0-padding)*map_ymin);
+  int lx, ly;
+  if (map_xmax-map_xmin > map_ymax-map_ymin) {
+    lx = longer_lattice_length;
+    double latt_const = (new_xmax-new_xmin) / longer_lattice_length;
+    ly = 1 << ((int) ceil(log2((new_ymax-new_ymin) / latt_const)));
+    new_ymax = 0.5*(map_ymax+map_ymin) + 0.5*ly*latt_const;
+    new_ymin = 0.5*(map_ymax+map_ymin) - 0.5*ly*latt_const;
+  }
 
+  map_state->set_lx(lx);
+  map_state->set_ly(ly);
   return;
 }
