@@ -2,6 +2,6 @@
 #define READ_GEOJSON_H_
 
 #include <string>
-void read_geojson(const std::string, MapState *map_state);
+void read_geojson(const std::string, MapState*);
 
 #endif
