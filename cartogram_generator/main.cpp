@@ -27,7 +27,6 @@ void on_visual_variables(const std::string geometry_file_name)
 int main(const int argc, const char *argv[])
 {
   using namespace boost::program_options;
-
   std::string geo_file_name;
 
   // Default number of grid cells along longer Cartesian coordinate axis.
@@ -72,7 +71,6 @@ int main(const int argc, const char *argv[])
     std::cerr << "ERROR: " << ex.what() << '\n';
     return EXIT_FAILURE;
   }
-
   MapState map_state(world);
 
   // Read visual variables (e.g. area) from CSV
@@ -88,6 +86,5 @@ int main(const int argc, const char *argv[])
 
   // Rescale map to fit into a rectangular box [0, lx] * [0, ly].
   rescale_map(long_lattice_side_length, &map_state);
-
   return EXIT_SUCCESS;
 }

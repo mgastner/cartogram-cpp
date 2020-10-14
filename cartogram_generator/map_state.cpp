@@ -23,11 +23,13 @@ bool MapState::is_world_map(void) const
 void MapState::set_lx(const int i)
 {
   lx = i;
+  return;
 }
 
 void MapState::set_ly(const int i)
 {
   ly = i;
+  return;
 }
 
 void MapState::push_back(const GeoDiv gd)

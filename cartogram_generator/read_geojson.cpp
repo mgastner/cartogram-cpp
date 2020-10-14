@@ -118,7 +118,6 @@ GeoDiv JSONToCGAL(const std::string id, const json json_coords) {
       }
     }
     const PolygonWH pgnWH(ext_ring, int_ring_v.begin(), int_ring_v.end());
-
     gd.push_back(pgnWH);
   }
   return gd;
