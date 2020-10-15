@@ -68,8 +68,15 @@ int main(const int argc, const char *argv[])
       notify(vm);  // Triggers notifier functions such as on_geometry()
     }
   } catch (const error &ex) {
-    std::cerr << "ERROR: " << ex.what() << '\n';
+    std::cerr << "ERROR: " << ex.what() << std::endl;
     return EXIT_FAILURE;
+  }
+  if ((long_lattice_side_length <= 0) ||
+      ((long_lattice_side_length &
+        (~long_lattice_side_length + 1)) != long_lattice_side_length)) {
+    std::cerr << "ERROR: long_lattice_side_length must be an integer"
+              << "power of 2." << std::endl;
+    _Exit(15);
   }
   MapState map_state(world);
 
