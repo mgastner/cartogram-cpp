@@ -1,6 +1,5 @@
 #include "constants.h"
 #include "map_state.h"
-#include <iostream>
 
 void rescale_map(int long_lattice_side_length, MapState *map_state)
 {
@@ -33,17 +32,18 @@ void rescale_map(int long_lattice_side_length, MapState *map_state)
   double new_ymin = 0.5 * ((1.0-padding)*map_ymax + (1.0+padding)*map_ymin);
   double new_ymax = 0.5 * ((1.0+padding)*map_ymax + (1.0-padding)*map_ymin);
 
-  // Endure that the lattice dimensions lx and ly are integer powers of 2.
+  // Ensure that the lattice dimensions lx and ly are integer powers of 2
   int lx, ly;
+  double latt_const;
   if (map_xmax-map_xmin > map_ymax-map_ymin) {
     lx = long_lattice_side_length;
-    double latt_const = (new_xmax-new_xmin) / lx;
+    latt_const = (new_xmax-new_xmin) / lx;
     ly = 1 << ((int) ceil(log2((new_ymax-new_ymin) / latt_const)));
     new_ymax = 0.5*(map_ymax+map_ymin) + 0.5*ly*latt_const;
     new_ymin = 0.5*(map_ymax+map_ymin) - 0.5*ly*latt_const;
   } else {
     ly = long_lattice_side_length;
-    double latt_const = (new_ymax-new_ymin) / ly;
+    latt_const = (new_ymax-new_ymin) / ly;
     lx = 1 << ((int) ceil(log2((new_xmax-new_xmin) / latt_const)));
     std::cout << "lx = " << lx << std::endl;
     new_xmax = 0.5*(map_xmax+map_xmin) + 0.5*lx*latt_const;
@@ -56,7 +56,21 @@ void rescale_map(int long_lattice_side_length, MapState *map_state)
             << new_xmax << ", " << new_ymax << ")"
             << std::endl;
 
+  // Set lattice dimensions in map_state
   map_state->set_lx(lx);
   map_state->set_ly(ly);
+
+  // Rescale all GeoDiv coordinates
+  typedef CGAL::Aff_transformation_2<K>  Transformation;
+  Transformation translate(CGAL::TRANSLATION,
+                           CGAL::Vector_2<K>(-new_xmin, -new_ymin));
+  Transformation scale(CGAL::SCALING, (1.0/latt_const));
+  for (auto &gd : *map_state->ref_to_geo_divs()) {
+    for (auto &pwh : *gd.ref_to_polygons_with_holes()) {
+      CGAL::Polygon_2<K> *p = &pwh.outer_boundary();
+      *p = transform(translate, *p);
+      *p = transform(scale, *p);
+    }
+  }
   return;
 }

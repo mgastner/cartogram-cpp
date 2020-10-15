@@ -15,6 +15,10 @@ std::vector<GeoDiv> MapState::get_geo_divs(void) const
   return geo_divs;
 }
 
+std::vector<GeoDiv> *MapState::ref_to_geo_divs(void) {
+  return &geo_divs;
+}
+
 bool MapState::is_world_map(void) const
 {
   return world;

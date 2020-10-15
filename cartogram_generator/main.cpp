@@ -93,5 +93,13 @@ int main(const int argc, const char *argv[])
 
   // Rescale map to fit into a rectangular box [0, lx] * [0, ly].
   rescale_map(long_lattice_side_length, &map_state);
+
+  for (auto gd : map_state.get_geo_divs()) {
+    for (auto pwh : gd.get_polygons_with_holes()) {
+      CGAL::Polygon_2<K> p = pwh.outer_boundary();
+      CGAL::set_pretty_mode(std::cout);
+      std::cout << p << std::endl;
+    }
+  }
   return EXIT_SUCCESS;
 }
