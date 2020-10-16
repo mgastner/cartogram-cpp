@@ -102,6 +102,6 @@ int main(const int argc, const char *argv[])
   //   }
   // }
 
-  print_to_eps(&map_state);
+  print_to_eps("test.eps", &map_state);
   return EXIT_SUCCESS;
 }
