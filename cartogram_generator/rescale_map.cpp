@@ -60,7 +60,7 @@ void rescale_map(int long_lattice_side_length, MapState *map_state)
   map_state->set_ly(ly);
 
   // Rescale all GeoDiv coordinates
-  typedef CGAL::Aff_transformation_2<K>  Transformation;
+  typedef CGAL::Aff_transformation_2<K> Transformation;
   Transformation translate(CGAL::TRANSLATION,
                            CGAL::Vector_2<K>(-new_xmin, -new_ymin));
   Transformation scale(CGAL::SCALING, (1.0/latt_const));
@@ -70,7 +70,7 @@ void rescale_map(int long_lattice_side_length, MapState *map_state)
       *ext_ring = transform(translate, *ext_ring);
       *ext_ring = transform(scale, *ext_ring);
       typedef typename CGAL::Polygon_with_holes_2<K>::Hole_iterator HI;
-      for (HI hi = pwh.holes_begin(); hi !=pwh.holes_end(); ++hi) {
+      for (HI hi = pwh.holes_begin(); hi != pwh.holes_end(); ++hi) {
         *hi = transform(translate, *hi);
         *hi = transform(scale, *hi);
       }
