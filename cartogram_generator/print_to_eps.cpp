@@ -38,18 +38,29 @@ void print_to_eps(std::string eps_name, MapState *map_state)
   // Print polygons
   for (auto gd : map_state->get_geo_divs()) {
     for (auto pwh : gd.get_polygons_with_holes()) {
-      CGAL::Polygon_2<K> pgn = pwh.outer_boundary();
+      CGAL::Polygon_2<K> ext_ring = pwh.outer_boundary();
 
       // Move to starting coordinates
-      eps_file << "n " << pgn[0][0] << " " << pgn[0][1] << " m\n";
+      eps_file << "n " << ext_ring[0][0] << " " << ext_ring[0][1] << " m\n";
 
       // Plot each point in exterior ring
-      for (int i = 1; i < pgn.size(); ++i) {
-        eps_file << pgn[i][0] << " " << pgn[i][1] << " l\n";
+      for (int i = 1; i < ext_ring.size(); ++i) {
+        eps_file << ext_ring[i][0] << " " << ext_ring[i][1] << " l\n";
       }
 
       // Close path
       eps_file << "c\n";
+
+      // Plot holes
+      typedef typename CGAL::Polygon_with_holes_2<K>::Hole_const_iterator HCI;
+      for (HCI hci = pwh.holes_begin(); hci != pwh.holes_end(); ++hci) {
+        CGAL::Polygon_2<K> hole = *hci;
+        eps_file << hole[0][0] << " " << hole[0][1] << " m\n";
+        for (int i = 1; i < hole.size(); ++i) {
+          eps_file << hole[i][0] << " " << hole[i][1] << " l\n";
+        }
+        eps_file << "c\n";
+      }
 
       // Save path before filling it
       eps_file << "gsave\n";
