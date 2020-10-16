@@ -36,6 +36,16 @@ void MapState::set_ly(const int i)
   return;
 }
 
+int MapState::get_lx(void)
+{
+  return lx;
+}
+
+int MapState::get_ly(void)
+{
+  return ly;
+}
+
 void MapState::push_back(const GeoDiv gd)
 {
   geo_divs.push_back(gd);

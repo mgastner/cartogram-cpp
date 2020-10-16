@@ -18,6 +18,8 @@ public:
   bool is_world_map(void) const;
   void set_lx(const int);
   void set_ly(const int);
+  int get_lx(void);
+  int get_ly(void);
   void push_back(const GeoDiv);
 };
 
