@@ -13,8 +13,9 @@ class GeoDiv {
   private:
     std::string id;
     std::vector<PolygonWH> polygons_with_holes;
+    GeoDiv();
   public:
-    GeoDiv(const std::string);
+    explicit GeoDiv(const std::string);
     int n_polygons_with_holes(void) const;
     std::vector<PolygonWH> get_polygons_with_holes(void) const;
     std::vector<PolygonWH> *ref_to_polygons_with_holes(void);

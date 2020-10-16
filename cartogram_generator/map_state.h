@@ -9,8 +9,9 @@ private:
   bool world;
   std::vector<GeoDiv> geo_divs;
   int lx, ly;  // Lattice dimensions
+  MapState();
 public:
-  MapState(const bool);
+  explicit MapState(const bool);
   int n_geo_divs(void) const;
   std::vector<GeoDiv> get_geo_divs(void) const;
   std::vector<GeoDiv> *ref_to_geo_divs(void);
