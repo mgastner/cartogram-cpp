@@ -66,25 +66,13 @@ void rescale_map(int long_lattice_side_length, MapState *map_state)
   Transformation scale(CGAL::SCALING, (1.0/latt_const));
   for (auto &gd : *map_state->ref_to_geo_divs()) {
     for (auto &pwh : *gd.ref_to_polygons_with_holes()) {
-      CGAL::Polygon_2<K> *p = &pwh.outer_boundary();
-      *p = transform(translate, *p);
-      *p = transform(scale, *p);
-
-      //std::vector<CGAL::Polygon_2<K>> holes(pwh.holes_begin(), pwh.holes_end());
-
-      // for(std::vector<CGAL::Polygon_2<K> >::iterator it = pwh.holes_begin(); it != pwh.holes_end(); ++it) {
-      //   CGAL::set_pretty_mode(std::cout);
-      //   std::cout << *it;
-      // }
-
-      // for (Polygon_2 hole : holes) {}
-
-
-      typedef typename CGAL::Polygon_with_holes_2<K>::Hole_const_iterator HCI;
-      for (HCI hci = pwh.holes_begin(); hci !=pwh.holes_end(); ++hci) {
-        CGAL::Polygon_2<K> p = *hci;
-        p = transform(translate, p);
-        p = transform(scale, p);
+      CGAL::Polygon_2<K> *ext_ring = &pwh.outer_boundary();
+      *ext_ring = transform(translate, *ext_ring);
+      *ext_ring = transform(scale, *ext_ring);
+      typedef typename CGAL::Polygon_with_holes_2<K>::Hole_iterator HI;
+      for (HI hi = pwh.holes_begin(); hi !=pwh.holes_end(); ++hi) {
+        *hi = transform(translate, *hi);
+        *hi = transform(scale, *hi);
       }
     }
   }
