@@ -45,7 +45,6 @@ void rescale_map(int long_lattice_side_length, MapState *map_state)
     ly = long_lattice_side_length;
     latt_const = (new_ymax-new_ymin) / ly;
     lx = 1 << ((int) ceil(log2((new_xmax-new_xmin) / latt_const)));
-    std::cout << "lx = " << lx << std::endl;
     new_xmax = 0.5*(map_xmax+map_xmin) + 0.5*lx*latt_const;
     new_xmin = 0.5*(map_xmax+map_xmin) - 0.5*lx*latt_const;
   }
@@ -70,6 +69,23 @@ void rescale_map(int long_lattice_side_length, MapState *map_state)
       CGAL::Polygon_2<K> *p = &pwh.outer_boundary();
       *p = transform(translate, *p);
       *p = transform(scale, *p);
+
+      //std::vector<CGAL::Polygon_2<K>> holes(pwh.holes_begin(), pwh.holes_end());
+
+      // for(std::vector<CGAL::Polygon_2<K> >::iterator it = pwh.holes_begin(); it != pwh.holes_end(); ++it) {
+      //   CGAL::set_pretty_mode(std::cout);
+      //   std::cout << *it;
+      // }
+
+      // for (Polygon_2 hole : holes) {}
+
+
+      typedef typename CGAL::Polygon_with_holes_2<K>::Hole_const_iterator HCI;
+      for (HCI hci = pwh.holes_begin(); hci !=pwh.holes_end(); ++hci) {
+        CGAL::Polygon_2<K> p = *hci;
+        p = transform(translate, p);
+        p = transform(scale, p);
+      }
     }
   }
   return;

@@ -96,9 +96,8 @@ int main(const int argc, const char *argv[])
 
   for (auto gd : map_state.get_geo_divs()) {
     for (auto pwh : gd.get_polygons_with_holes()) {
-      CGAL::Polygon_2<K> p = pwh.outer_boundary();
       CGAL::set_pretty_mode(std::cout);
-      std::cout << p << std::endl;
+      std::cout << pwh << std::endl;
     }
   }
   return EXIT_SUCCESS;
