@@ -5,10 +5,10 @@ void rescale_map(int long_lattice_side_length, MapState *map_state)
 {
   double padding = (map_state->is_world_map() ?  1.0 : padding_unless_world);
 
-  // Initialize bounding box of map with bounding box of 0-th PolygonWH in
-  // 0-th GeoDiv
+  // Initialize bounding box of map with bounding box of 0-th
+  // Polygon_with_holes in 0-th GeoDiv
   GeoDiv gd0 = map_state->get_geo_divs()[0];
-  std::vector<PolygonWH> pwhs = gd0.get_polygons_with_holes();
+  std::vector<Polygon_with_holes> pwhs = gd0.get_polygons_with_holes();
   CGAL::Bbox_2 bb0 = pwhs[0].bbox();
   double map_xmin = bb0.xmin();
   double map_xmax = bb0.xmax();
@@ -60,17 +60,15 @@ void rescale_map(int long_lattice_side_length, MapState *map_state)
   map_state->set_ly(ly);
 
   // Rescale all GeoDiv coordinates
-  typedef CGAL::Aff_transformation_2<K> Transformation;
   Transformation translate(CGAL::TRANSLATION,
-                           CGAL::Vector_2<K>(-new_xmin, -new_ymin));
+                           CGAL::Vector_2<Epick>(-new_xmin, -new_ymin));
   Transformation scale(CGAL::SCALING, (1.0/latt_const));
   for (auto &gd : *map_state->ref_to_geo_divs()) {
     for (auto &pwh : *gd.ref_to_polygons_with_holes()) {
-      CGAL::Polygon_2<K> *ext_ring = &pwh.outer_boundary();
+      Polygon *ext_ring = &pwh.outer_boundary();
       *ext_ring = transform(translate, *ext_ring);
       *ext_ring = transform(scale, *ext_ring);
-      typedef typename CGAL::Polygon_with_holes_2<K>::Hole_iterator HI;
-      for (HI hi = pwh.holes_begin(); hi != pwh.holes_end(); ++hi) {
+      for (auto hi = pwh.holes_begin(); hi != pwh.holes_end(); ++hi) {
         *hi = transform(translate, *hi);
         *hi = transform(scale, *hi);
       }
