@@ -2,10 +2,10 @@
 
 #include "constants.h"
 #include "map_state.h"
-#include "print_to_eps.h"
 #include "read_csv.h"
 #include "read_geojson.h"
 #include "rescale_map.h"
+#include "write_eps.h"
 #include <boost/program_options.hpp>
 #include <iostream>
 
@@ -102,6 +102,6 @@ int main(const int argc, const char *argv[])
   //   }
   // }
 
-  print_to_eps("test.eps", &map_state);
+  write_eps("test.eps", &map_state);
   return EXIT_SUCCESS;
 }

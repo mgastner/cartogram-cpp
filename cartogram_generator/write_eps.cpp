@@ -1,7 +1,7 @@
 #include "map_state.h"
 #include <fstream>
 
-void print_to_eps(std::string eps_name, MapState *map_state)
+void write_eps(std::string eps_name, MapState *map_state)
 {
   std::ofstream eps_file(eps_name);
 
