@@ -5,6 +5,7 @@
 #include "read_csv.h"
 #include "read_geojson.h"
 #include "rescale_map.h"
+#include "write_eps.h"
 #include <boost/program_options.hpp>
 #include <iostream>
 
@@ -27,7 +28,6 @@ void on_visual_variables(const std::string geometry_file_name)
 int main(const int argc, const char *argv[])
 {
   using namespace boost::program_options;
-
   std::string geo_file_name;
 
   // Default number of grid cells along longer Cartesian coordinate axis.
@@ -76,10 +76,16 @@ int main(const int argc, const char *argv[])
       notify(vm);  // Triggers notifier functions such as on_geometry()
     }
   } catch (const error &ex) {
-    std::cerr << "ERROR: " << ex.what() << '\n';
+    std::cerr << "ERROR: " << ex.what() << std::endl;
     return EXIT_FAILURE;
   }
-
+  if ((long_lattice_side_length <= 0) ||
+      ((long_lattice_side_length &
+        (~long_lattice_side_length + 1)) != long_lattice_side_length)) {
+    std::cerr << "ERROR: long_lattice_side_length must be an integer"
+              << "power of 2." << std::endl;
+    _Exit(15);
+  }
   MapState map_state(world);
 
   // Read visual variables (e.g. area) from CSV
@@ -96,5 +102,13 @@ int main(const int argc, const char *argv[])
   // Rescale map to fit into a rectangular box [0, lx] * [0, ly].
   rescale_map(long_lattice_side_length, &map_state);
 
+  // for (auto gd : map_state.get_geo_divs()) {
+  //   for (auto pwh : gd.get_polygons_with_holes()) {
+  //     CGAL::set_pretty_mode(std::cout);
+  //     std::cout << pwh << std::endl;
+  //   }
+  // }
+
+  write_eps("test.eps", &map_state);
   return EXIT_SUCCESS;
 }

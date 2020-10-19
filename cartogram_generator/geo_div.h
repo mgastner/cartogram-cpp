@@ -1,23 +1,21 @@
 #ifndef GEO_DIV_H_
 #define GEO_DIV_H_
 
-#include <CGAL/Exact_predicates_inexact_constructions_kernel.h>
-#include <CGAL/Polygon_with_holes_2.h>
+#include "cgal_typedef.h"
 #include <string>
 #include <vector>
-
-typedef CGAL::Exact_predicates_inexact_constructions_kernel K;
-typedef CGAL::Polygon_with_holes_2<K> PolygonWH;
 
 class GeoDiv {
   private:
     std::string id;
-    std::vector<PolygonWH> polygons_with_holes;
+    std::vector<Polygon_with_holes> polygons_with_holes;
+    GeoDiv();
   public:
-    GeoDiv(const std::string);
-    int n_polygons_with_holes(void);
-    std::vector<PolygonWH> get_polygons_with_holes(void);
-    void push_back(const PolygonWH);
+    explicit GeoDiv(const std::string);
+    int n_polygons_with_holes(void) const;
+    std::vector<Polygon_with_holes> get_polygons_with_holes(void) const;
+    std::vector<Polygon_with_holes> *ref_to_polygons_with_holes(void);
+    void push_back(const Polygon_with_holes);
 };
 
 #endif
