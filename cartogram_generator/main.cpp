@@ -39,6 +39,7 @@ int main(const int argc, const char *argv[])
 
   // Parse command-line options. See
   // https://theboostcpplibraries.com/boost.program_options
+  variables_map vm;
   try {
     options_description desc{"Options"};
     desc.add_options()(
@@ -60,7 +61,6 @@ int main(const int argc, const char *argv[])
       value<bool>(&world),
       "Boolean: is input a world map in longitude-latitude format?"
       );
-    variables_map vm;
     store(parse_command_line(argc, argv, desc), vm);
     if (vm.count("help") || vm.empty()) {
       std::cerr << desc << '\n';
@@ -82,7 +82,7 @@ int main(const int argc, const char *argv[])
   MapState map_state(world);
 
   // Read visual variables (e.g. area) from CSV
-  read_csv("What's", "up", "doc?");
+  read_csv(vm);
 
   // Read geometry
   try {

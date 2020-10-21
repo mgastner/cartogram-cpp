@@ -1,9 +1,7 @@
 #ifndef READ_CSV_H_
 #define READ_CSV_H_
 
-#include <string>
-void read_csv(const std::string,
-              const std::string,
-              const std::string);
+#include <boost/program_options.hpp>
+void read_csv(const boost::program_options::variables_map);
 
 #endif
