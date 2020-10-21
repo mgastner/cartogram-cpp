@@ -3,4 +3,4 @@ cartogram: main.cpp cgal_typedef.h constants.h geo_div.cpp geo_div.h\
 	read_geojson.h rescale_map.cpp rescale_map.h write_eps.cpp write_eps.h
 	g++ -O3 -o cartogram main.cpp geo_div.cpp map_state.cpp read_geojson.cpp\
 	  read_csv.cpp rescale_map.cpp write_eps.cpp -lboost_program_options -lgmp\
-		-std=c++17
+		-std=c++17 -pthread

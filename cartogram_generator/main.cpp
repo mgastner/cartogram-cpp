@@ -53,6 +53,9 @@ int main(const int argc, const char *argv[])
       value<std::string>()->notifier(on_visual_variable_file),
       "CSV file with area and (optionally) colour"
       )(
+      "id,i", value<std::string>(),
+      "Column name for GeoDiv IDs (if not specified, then 1st column in CSV)"
+      )(
       "long_lattice_side_length,l",
       value<int>(&long_lattice_side_length),
       "Number of grid cells along longer Cartesian coordinate axis"
