@@ -1,3 +1,4 @@
+#include "csv.hpp"
 #include <boost/program_options.hpp>
 #include <iostream>
 
@@ -11,6 +12,8 @@ void read_csv(const boost::program_options::variables_map vm)
     std::cerr << "ERROR: No CSV file given!" << std::endl;
     _Exit(16);
   }
+
+  csv::CSVReader reader(csv_name);
 
   return;
 }
