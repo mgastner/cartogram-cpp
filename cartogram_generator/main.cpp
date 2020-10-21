@@ -17,7 +17,7 @@ void on_geometry(const std::string geometry_file_name)
   return;
 }
 
-void on_visual_variables(const std::string geometry_file_name)
+void on_visual_variable_file(const std::string geometry_file_name)
 {
   std::cerr << "Using visual variables from file "
             << geometry_file_name
@@ -49,8 +49,8 @@ int main(const int argc, const char *argv[])
       value<std::string>(&geo_file_name)->required()->notifier(on_geometry),
       "GeoJSON file"
       )(
-      "visual_variables,v",
-      value<std::string>()->notifier(on_visual_variables),
+      "visual_variable_file,v",
+      value<std::string>()->notifier(on_visual_variable_file),
       "CSV file with area and (optionally) colour"
       )(
       "long_lattice_side_length,l",
