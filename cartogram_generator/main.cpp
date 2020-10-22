@@ -97,11 +97,11 @@ int main(const int argc, const char *argv[])
   // Read visual variables (e.g. area) from CSV
   read_csv(vm);
 
-  map_state.ref_to_rho()->Allocate(map_state.get_lx(),
-                                   map_state.get_ly(),
-                                   sizeof(double));
+  map_state.allocate_rho();
+  map_state.set_lx(8);
+  map_state.set_ly(8);
   fill_with_density(&map_state);
-  map_state.ref_to_rho()->Deallocate();
+  map_state.free_rho();
 
   return EXIT_SUCCESS;
 

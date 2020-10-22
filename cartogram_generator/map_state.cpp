@@ -1,4 +1,5 @@
 #include "map_state.h"
+#include <fftw3.h>
 
 MapState::MapState(const bool world_proj) : world(world_proj)
 {
@@ -46,9 +47,23 @@ int MapState::get_ly(void)
   return ly;
 }
 
-Array::array2<double> *MapState::ref_to_rho(void)
+void MapState::allocate_rho(void)
 {
-  return &rho;
+  rho_init = (double*) fftw_malloc(lx * ly * sizeof(double));
+  rho_ft = (double*) fftw_malloc(lx * ly * sizeof(double));
+  return;
+}
+
+double *MapState::get_rho_init(void)
+{
+  return rho_init;
+}
+
+void MapState::free_rho(void)
+{
+  fftw_free(rho_ft);
+  fftw_free(rho_init);
+  return;
 }
 
 void MapState::push_back(const GeoDiv gd)

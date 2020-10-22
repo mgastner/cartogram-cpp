@@ -4,4 +4,4 @@ cartogram: main.cpp cgal_typedef.h constants.h fill_with_density.cpp\
 	rescale_map.h write_eps.cpp write_eps.h
 	g++ -O3 -o cartogram main.cpp fill_with_density.cpp geo_div.cpp\
 	  map_state.cpp read_geojson.cpp read_csv.cpp rescale_map.cpp write_eps.cpp\
-		-lboost_program_options -lgmp -std=c++17 -pthread
+		-lboost_program_options -lgmp -lfftw3 -std=c++17 -pthread

@@ -2,7 +2,6 @@
 #define MAP_STATE_H_
 
 #include "geo_div.h"
-#include "Array.h"
 #include <vector>
 
 class MapState {
@@ -10,7 +9,8 @@ private:
   bool world;
   std::vector<GeoDiv> geo_divs;
   int lx, ly;  // Lattice dimensions
-  Array::array2<double> rho;  // Rasterized density
+  double *rho_init;  // Raterized density
+  double *rho_ft;  // Fourier transform
   MapState();
 public:
   explicit MapState(const bool);
@@ -22,7 +22,9 @@ public:
   void set_ly(const int);
   int get_lx(void);
   int get_ly(void);
-  Array::array2<double> *ref_to_rho(void);
+  void allocate_rho(void);
+  double *get_rho_init(void);
+  void free_rho(void);
   void push_back(const GeoDiv);
 };
 
