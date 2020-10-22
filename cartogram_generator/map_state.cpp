@@ -46,6 +46,11 @@ int MapState::get_ly(void)
   return ly;
 }
 
+Array::array2<double> *MapState::ref_to_rho(void)
+{
+  return &rho;
+}
+
 void MapState::push_back(const GeoDiv gd)
 {
   geo_divs.push_back(gd);

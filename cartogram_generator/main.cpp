@@ -2,6 +2,7 @@
 
 #include "constants.h"
 #include "map_state.h"
+#include "fill_with_density.h"
 #include "read_csv.h"
 #include "read_geojson.h"
 #include "rescale_map.h"
@@ -96,6 +97,12 @@ int main(const int argc, const char *argv[])
   // Read visual variables (e.g. area) from CSV
   read_csv(vm);
 
+  map_state.ref_to_rho()->Allocate(map_state.get_lx(),
+                                   map_state.get_ly(),
+                                   sizeof(double));
+  fill_with_density(&map_state);
+  map_state.ref_to_rho()->Deallocate();
+
   return EXIT_SUCCESS;
 
   // Read geometry
@@ -117,5 +124,6 @@ int main(const int argc, const char *argv[])
   // }
 
   write_eps("test.eps", &map_state);
+
   return EXIT_SUCCESS;
 }
