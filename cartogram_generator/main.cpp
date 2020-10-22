@@ -51,10 +51,19 @@ int main(const int argc, const char *argv[])
       )(
       "visual_variable_file,v",
       value<std::string>()->notifier(on_visual_variable_file),
-      "CSV file with area and (optionally) colour"
+      "CSV file with ID, area, and (optionally) colour"
       )(
-      "id,i", value<std::string>(),
-      "Column name for GeoDiv IDs (if not specified, then 1st column in CSV)"
+      "id,i",
+      value<std::string>(),
+      "Column name for IDs of geographic divisions (default: 1st CSV column)"
+      )(
+      "area,a",
+      value<std::string>(),
+      "Column name for target areas (default: 2nd CSV column)"
+      )(
+      "color,c",
+      value<std::string>(),
+      "Column name for colors (default: 3rd CSV column if it exists)"
       )(
       "long_lattice_side_length,l",
       value<int>(&long_lattice_side_length),
