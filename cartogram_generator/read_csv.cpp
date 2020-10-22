@@ -1,4 +1,5 @@
 #include "csv.hpp"
+#include "geo_div.h"
 #include <boost/program_options.hpp>
 #include <iostream>
 
@@ -14,6 +15,7 @@ void read_csv(const boost::program_options::variables_map vm)
   }
   csv::CSVReader reader(csv_name);
   for (auto &row : reader) {
+    GeoDiv gd;
     if (row.size() < 2) {
       std::cerr << "ERROR: CSV with >= 2 columns (IDs, target areas) required"
                 << std::endl;
@@ -23,8 +25,7 @@ void read_csv(const boost::program_options::variables_map vm)
     // Read ID of geographic division
     csv::CSVField id_field =
       vm.count("id") ? row[vm["id"].as<std::string>()] : row[0];
-    std::string id = id_field.get();
-    std::cout << "ID is " << id << std::endl;
+    gd.set_id(id_field.get());
 
     // Get target area
     csv::CSVField area_field =

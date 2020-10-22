@@ -1,7 +1,8 @@
 #include "geo_div.h"
 
-GeoDiv::GeoDiv(const std::string i): id(i)
+void GeoDiv::set_id(const std::string i)
 {
+  id = i;
   return;
 }
 

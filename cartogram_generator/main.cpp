@@ -96,6 +96,8 @@ int main(const int argc, const char *argv[])
   // Read visual variables (e.g. area) from CSV
   read_csv(vm);
 
+  return EXIT_SUCCESS;
+
   // Read geometry
   try {
     read_geojson(geo_file_name, &map_state);

@@ -64,7 +64,8 @@ void check_geojson_validity(const json j)
 }
 
 GeoDiv JSONToCGAL(const std::string id, const json json_coords) {
-  GeoDiv gd(id);
+  //GeoDiv gd(id);
+  GeoDiv gd;
   for (auto json_pgn_holes_container : json_coords) {
     using namespace CGAL;
 
@@ -150,8 +151,9 @@ void read_geojson(const std::string geometry_file_name, MapState *map_state)
                 << std::endl;
       _Exit(13);
     } else if (geometry["type"] == "MultiPolygon") {
-      GeoDiv gd = JSONToCGAL("id", geometry["coordinates"]);
-      map_state->push_back(gd);
+      ;
+      //GeoDiv gd = JSONToCGAL("id", geometry["coordinates"]);
+      //map_state->push_back(gd);
     }
   }
   return;
