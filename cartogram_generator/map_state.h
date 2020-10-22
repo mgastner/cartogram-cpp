@@ -2,6 +2,7 @@
 #define MAP_STATE_H_
 
 #include "geo_div.h"
+#include <fftw3.h>
 #include <vector>
 
 class MapState {
@@ -11,6 +12,7 @@ private:
   int lx, ly;  // Lattice dimensions
   double *rho_init;  // Raterized density
   double *rho_ft;  // Fourier transform
+  fftw_plan plan_fwd, plan_bwd;  // Plan the Fourier transform
   MapState();
 public:
   explicit MapState(const bool);

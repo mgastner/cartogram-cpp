@@ -51,6 +51,12 @@ void MapState::allocate_rho(void)
 {
   rho_init = (double*) fftw_malloc(lx * ly * sizeof(double));
   rho_ft = (double*) fftw_malloc(lx * ly * sizeof(double));
+  plan_fwd = fftw_plan_r2r_2d(lx, ly,
+                              rho_init, rho_ft,
+                              FFTW_REDFT10, FFTW_REDFT10, FFTW_ESTIMATE);
+  plan_bwd = fftw_plan_r2r_2d(lx, ly,
+                              rho_ft, rho_init,
+                              FFTW_REDFT01, FFTW_REDFT01, FFTW_ESTIMATE);
   return;
 }
 
@@ -63,6 +69,8 @@ void MapState::free_rho(void)
 {
   fftw_free(rho_ft);
   fftw_free(rho_init);
+  fftw_destroy_plan(plan_fwd);
+  fftw_destroy_plan(plan_bwd);
   return;
 }
 
