@@ -65,6 +65,16 @@ double *MapState::get_rho_init(void)
   return rho_init;
 }
 
+double *MapState::get_rho_ft(void)
+{
+  return rho_ft;
+}
+
+fftw_plan MapState::get_plan_fwd(void)
+{
+  return plan_fwd;
+}
+
 void MapState::free_rho(void)
 {
   fftw_free(rho_ft);

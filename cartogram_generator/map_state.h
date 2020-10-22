@@ -26,6 +26,8 @@ public:
   int get_ly(void);
   void allocate_rho(void);
   double *get_rho_init(void);
+  double *get_rho_ft(void);
+  fftw_plan get_plan_fwd(void);
   void free_rho(void);
   void push_back(const GeoDiv);
 };
