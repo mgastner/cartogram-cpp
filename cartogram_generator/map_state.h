@@ -10,21 +10,20 @@ private:
   bool world;
   std::vector<GeoDiv> geo_divs;
   int lx, ly;  // Lattice dimensions
-  double *rho_init;  // Raterized density
-  double *rho_ft;  // Fourier transform
+  double *rho_init = NULL;  // Raterized density
+  double *rho_ft = NULL;  // Fourier transform
   fftw_plan plan_fwd, plan_bwd;  // Plan the Fourier transform
   MapState();
 public:
   explicit MapState(const bool);
+  ~MapState();
   int n_geo_divs(void) const;
   std::vector<GeoDiv> get_geo_divs(void) const;
   std::vector<GeoDiv> *ref_to_geo_divs(void);
   bool is_world_map(void) const;
-  void set_lx(const int);
-  void set_ly(const int);
+  void make_grid(const unsigned int, const unsigned int);
   int get_lx(void);
   int get_ly(void);
-  void allocate_rho(void);
   double *get_rho_init(void);
   double *get_rho_ft(void);
   fftw_plan get_plan_fwd(void);

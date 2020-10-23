@@ -6,6 +6,16 @@ MapState::MapState(const bool world_proj) : world(world_proj)
   return;
 }
 
+MapState::~MapState()
+{
+  if (rho_init) {
+    fftw_free(rho_init);
+  }
+  if (rho_ft) {
+    fftw_free(rho_ft);
+  }
+}
+
 int MapState::n_geo_divs(void) const
 {
   return geo_divs.size();
@@ -25,15 +35,18 @@ bool MapState::is_world_map(void) const
   return world;
 }
 
-void MapState::set_lx(const int i)
+void MapState::make_grid(const unsigned int x, const unsigned int y)
 {
-  lx = i;
-  return;
-}
-
-void MapState::set_ly(const int i)
-{
-  ly = i;
+  lx = x;
+  ly = y;
+  rho_init = (double*) fftw_malloc(lx * ly * sizeof(double));
+  rho_ft = (double*) fftw_malloc(lx * ly * sizeof(double));
+  plan_fwd = fftw_plan_r2r_2d(lx, ly,
+                              rho_init, rho_ft,
+                              FFTW_REDFT10, FFTW_REDFT10, FFTW_ESTIMATE);
+  plan_bwd = fftw_plan_r2r_2d(lx, ly,
+                              rho_ft, rho_init,
+                              FFTW_REDFT01, FFTW_REDFT01, FFTW_ESTIMATE);
   return;
 }
 
@@ -45,19 +58,6 @@ int MapState::get_lx(void)
 int MapState::get_ly(void)
 {
   return ly;
-}
-
-void MapState::allocate_rho(void)
-{
-  rho_init = (double*) fftw_malloc(lx * ly * sizeof(double));
-  rho_ft = (double*) fftw_malloc(lx * ly * sizeof(double));
-  plan_fwd = fftw_plan_r2r_2d(lx, ly,
-                              rho_init, rho_ft,
-                              FFTW_REDFT10, FFTW_REDFT10, FFTW_ESTIMATE);
-  plan_bwd = fftw_plan_r2r_2d(lx, ly,
-                              rho_ft, rho_init,
-                              FFTW_REDFT01, FFTW_REDFT01, FFTW_ESTIMATE);
-  return;
 }
 
 double *MapState::get_rho_init(void)
