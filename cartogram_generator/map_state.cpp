@@ -6,82 +6,73 @@ MapState::MapState(const bool world_proj) : world(world_proj)
   return;
 }
 
-MapState::~MapState()
-{
-  if (rho_init) {
-    fftw_free(rho_init);
-  }
-  if (rho_ft) {
-    fftw_free(rho_ft);
-  }
-}
+// MapState::~MapState()
+// {
+//   if (rho_init) {
+//     fftw_free(rho_init);
+//   }
+//   if (rho_ft) {
+//     fftw_free(rho_ft);
+//   }
+// }
 
-int MapState::n_geo_divs(void) const
+int MapState::n_geo_divs() const
 {
   return geo_divs.size();
 }
 
-std::vector<GeoDiv> MapState::get_geo_divs(void) const
+std::vector<GeoDiv> MapState::get_geo_divs() const
 {
   return geo_divs;
 }
 
-std::vector<GeoDiv> *MapState::ref_to_geo_divs(void) {
+std::vector<GeoDiv> *MapState::ref_to_geo_divs() {
   return &geo_divs;
 }
 
-bool MapState::is_world_map(void) const
+bool MapState::is_world_map() const
 {
   return world;
 }
 
-void MapState::make_grid(const unsigned int x, const unsigned int y)
-{
-  lx = x;
-  ly = y;
-  rho_init = (double*) fftw_malloc(lx * ly * sizeof(double));
-  rho_ft = (double*) fftw_malloc(lx * ly * sizeof(double));
-  plan_fwd = fftw_plan_r2r_2d(lx, ly,
-                              rho_init, rho_ft,
-                              FFTW_REDFT10, FFTW_REDFT10, FFTW_ESTIMATE);
-  plan_bwd = fftw_plan_r2r_2d(lx, ly,
-                              rho_ft, rho_init,
-                              FFTW_REDFT01, FFTW_REDFT01, FFTW_ESTIMATE);
-  return;
-}
+// void MapState::make_grid(const unsigned int x, const unsigned int y)
+// {
+//   lx = x;
+//   ly = y;
+//   rho_init = (double*) fftw_malloc(lx * ly * sizeof(double));
+//   rho_ft = (double*) fftw_malloc(lx * ly * sizeof(double));
+//   plan_fwd = fftw_plan_r2r_2d(lx, ly,
+//                               rho_init, rho_ft,
+//                               FFTW_REDFT10, FFTW_REDFT10, FFTW_ESTIMATE);
+//   plan_bwd = fftw_plan_r2r_2d(lx, ly,
+//                               rho_ft, rho_init,
+//                               FFTW_REDFT01, FFTW_REDFT01, FFTW_ESTIMATE);
+//   return;
+// }
 
-int MapState::get_lx(void)
+int MapState::get_lx()
 {
   return lx;
 }
 
-int MapState::get_ly(void)
+int MapState::get_ly()
 {
   return ly;
 }
 
-double *MapState::get_rho_init(void)
-{
-  return rho_init;
-}
+// double *MapState::get_rho_init()
+// {
+//   return rho_init;
+// }
 
-double *MapState::get_rho_ft(void)
-{
-  return rho_ft;
-}
+// double *MapState::get_rho_ft()
+// {
+//   return rho_ft;
+// }
 
-fftw_plan MapState::get_plan_fwd(void)
+fftw_plan MapState::get_plan_fwd()
 {
   return plan_fwd;
-}
-
-void MapState::free_rho(void)
-{
-  fftw_free(rho_ft);
-  fftw_free(rho_init);
-  fftw_destroy_plan(plan_fwd);
-  fftw_destroy_plan(plan_bwd);
-  return;
 }
 
 void MapState::push_back(const GeoDiv gd)

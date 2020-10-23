@@ -5,17 +5,17 @@ GeoDiv::GeoDiv(const std::string i): id(i)
   return;
 }
 
-int GeoDiv::n_polygons_with_holes(void) const
+int GeoDiv::n_polygons_with_holes() const
 {
   return polygons_with_holes.size();
 }
 
-std::vector<Polygon_with_holes> GeoDiv::get_polygons_with_holes(void) const
+std::vector<Polygon_with_holes> GeoDiv::get_polygons_with_holes() const
 {
   return polygons_with_holes;
 }
 
-std::vector<Polygon_with_holes> *GeoDiv::ref_to_polygons_with_holes(void)
+std::vector<Polygon_with_holes> *GeoDiv::ref_to_polygons_with_holes()
 {
   return &polygons_with_holes;
 }

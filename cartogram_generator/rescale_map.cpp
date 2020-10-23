@@ -63,7 +63,7 @@ void rescale_map(int long_grid_side_length, MapState *map_state)
             << std::endl;
 
   // Set grid dimensions in map_state
-  map_state->make_grid(lx, ly);
+  //map_state->make_grid(lx, ly);
 
   // Rescale all GeoDiv coordinates
   Transformation translate(CGAL::TRANSLATION,

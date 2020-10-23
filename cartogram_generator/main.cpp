@@ -90,8 +90,8 @@ int main(const int argc, const char *argv[])
   // Read visual variables (e.g. area) from CSV
   read_csv(vm);
 
-  map_state.make_grid(8, 8);
-  fill_with_density(&map_state);
+  //map_state.make_grid(8, 8);
+  //fill_with_density(&map_state);
   return EXIT_SUCCESS;
 
   // Read geometry
