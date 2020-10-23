@@ -1,7 +1,7 @@
 #include "constants.h"
 #include "map_state.h"
 
-void rescale_map(int long_lattice_side_length, MapState *map_state)
+void rescale_map(int long_grid_side_length, MapState *map_state)
 {
   double padding = (map_state->is_world_map() ?  1.0 : padding_unless_world);
 
@@ -32,30 +32,37 @@ void rescale_map(int long_lattice_side_length, MapState *map_state)
   double new_ymin = 0.5 * ((1.0-padding)*map_ymax + (1.0+padding)*map_ymin);
   double new_ymax = 0.5 * ((1.0+padding)*map_ymax + (1.0-padding)*map_ymin);
 
-  // Ensure that the lattice dimensions lx and ly are integer powers of 2
+  // Ensure that the grid dimensions lx and ly are integer powers of 2
+  if ((long_grid_side_length <= 0) ||
+      ((long_grid_side_length &
+        (~long_grid_side_length + 1)) != long_grid_side_length)) {
+    std::cerr << "ERROR: long_grid_side_length must be an integer"
+              << "power of 2." << std::endl;
+    _Exit(15);
+  }
   int lx, ly;
   double latt_const;
   if (map_xmax-map_xmin > map_ymax-map_ymin) {
-    lx = long_lattice_side_length;
+    lx = long_grid_side_length;
     latt_const = (new_xmax-new_xmin) / lx;
     ly = 1 << ((int) ceil(log2((new_ymax-new_ymin) / latt_const)));
     new_ymax = 0.5*(map_ymax+map_ymin) + 0.5*ly*latt_const;
     new_ymin = 0.5*(map_ymax+map_ymin) - 0.5*ly*latt_const;
   } else {
-    ly = long_lattice_side_length;
+    ly = long_grid_side_length;
     latt_const = (new_ymax-new_ymin) / ly;
     lx = 1 << ((int) ceil(log2((new_xmax-new_xmin) / latt_const)));
     new_xmax = 0.5*(map_xmax+map_xmin) + 0.5*lx*latt_const;
     new_xmin = 0.5*(map_xmax+map_xmin) - 0.5*lx*latt_const;
   }
   std::cerr << "Using a " << lx << "-by-" << ly
-            << " lattice with bounding box" << std::endl;
+            << " grid with bounding box" << std::endl;
   std::cerr << "\t("
             << new_xmin << ", " << new_ymin << ", "
             << new_xmax << ", " << new_ymax << ")"
             << std::endl;
 
-  // Set lattice dimensions in map_state
+  // Set grid dimensions in map_state
   map_state->set_lx(lx);
   map_state->set_ly(ly);
 

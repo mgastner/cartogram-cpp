@@ -32,7 +32,7 @@ int main(const int argc, const char *argv[])
   std::string geo_file_name;
 
   // Default number of grid cells along longer Cartesian coordinate axis.
-  int long_lattice_side_length = default_long_lattice_side_length;
+  int long_grid_side_length = default_long_grid_side_length;
 
   // World maps need special projections. By default, we assume that the
   // input map is not a world map.
@@ -66,8 +66,8 @@ int main(const int argc, const char *argv[])
       value<std::string>(),
       "Column name for colors (default: 3rd CSV column if it exists)"
       )(
-      "long_lattice_side_length,l",
-      value<int>(&long_lattice_side_length),
+      "long_grid_side_length,l",
+      value<int>(&long_grid_side_length),
       "Number of grid cells along longer Cartesian coordinate axis"
       )(
       "world,w",
@@ -85,25 +85,18 @@ int main(const int argc, const char *argv[])
     std::cerr << "ERROR: " << ex.what() << std::endl;
     return EXIT_FAILURE;
   }
-  if ((long_lattice_side_length <= 0) ||
-      ((long_lattice_side_length &
-        (~long_lattice_side_length + 1)) != long_lattice_side_length)) {
-    std::cerr << "ERROR: long_lattice_side_length must be an integer"
-              << "power of 2." << std::endl;
-    _Exit(15);
-  }
   MapState map_state(world);
 
   // Read visual variables (e.g. area) from CSV
   read_csv(vm);
 
-  map_state.set_lx(8);
-  map_state.set_ly(8);
-  map_state.allocate_rho();
-  fill_with_density(&map_state);
-  map_state.free_rho();
-
-  return EXIT_SUCCESS;
+  // map_state.set_lx(8);
+  // map_state.set_ly(8);
+  // map_state.allocate_rho();
+  // fill_with_density(&map_state);
+  // map_state.free_rho();
+  //
+  // return EXIT_SUCCESS;
 
   // Read geometry
   try {
@@ -114,7 +107,7 @@ int main(const int argc, const char *argv[])
   }
 
   // Rescale map to fit into a rectangular box [0, lx] * [0, ly].
-  rescale_map(long_lattice_side_length, &map_state);
+  rescale_map(long_grid_side_length, &map_state);
 
   // for (auto gd : map_state.get_geo_divs()) {
   //   for (auto pwh : gd.get_polygons_with_holes()) {
