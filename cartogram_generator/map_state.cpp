@@ -16,7 +16,7 @@ MapState::MapState(const bool world_proj) : world(world_proj)
 //   }
 // }
 
-int MapState::n_geo_divs() const
+unsigned int MapState::n_geo_divs() const
 {
   return geo_divs.size();
 }
@@ -50,12 +50,12 @@ bool MapState::is_world_map() const
 //   return;
 // }
 
-int MapState::get_lx()
+unsigned int MapState::get_lx() const
 {
   return lx;
 }
 
-int MapState::get_ly()
+unsigned int MapState::get_ly() const
 {
   return ly;
 }

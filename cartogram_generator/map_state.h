@@ -10,7 +10,7 @@ class MapState {
 private:
   bool world;
   std::vector<GeoDiv> geo_divs;
-  int lx, ly;  // Lattice dimensions
+  unsigned int lx = 0, ly = 0;  // Lattice dimensions
   FTReal2dArray rho_init;  // Raterized density
   FTReal2dArray rho_ft;  // Fourier transform
   fftw_plan plan_fwd, plan_bwd;  // Plan the Fourier transform
@@ -18,13 +18,13 @@ private:
 public:
   explicit MapState(const bool);
   //~MapState();
-  int n_geo_divs() const;
+  unsigned int n_geo_divs() const;
   std::vector<GeoDiv> get_geo_divs() const;
   std::vector<GeoDiv> *ref_to_geo_divs();
   bool is_world_map() const;
   void make_grid(const unsigned int, const unsigned int);
-  int get_lx();
-  int get_ly();
+  unsigned int get_lx() const;
+  unsigned int get_ly() const;
   double *get_rho_init();
   double *get_rho_ft();
   fftw_plan get_plan_fwd();
