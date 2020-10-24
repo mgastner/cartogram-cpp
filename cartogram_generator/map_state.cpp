@@ -1,5 +1,4 @@
 #include "map_state.h"
-#include <fftw3.h>
 
 MapState::MapState(const bool world_proj) : world(world_proj)
 {
@@ -14,6 +13,7 @@ MapState::MapState(const bool world_proj) : world(world_proj)
 //   if (rho_ft) {
 //     fftw_free(rho_ft);
 //   }
+//   return;
 // }
 
 unsigned int MapState::n_geo_divs() const

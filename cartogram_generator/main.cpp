@@ -90,6 +90,22 @@ int main(const int argc, const char *argv[])
   // Read visual variables (e.g. area) from CSV
   read_csv(vm);
 
+  FTReal2dArray tmp;
+  unsigned int lx = 8;
+  unsigned int ly = 4;
+  tmp.set_array_size(lx, ly);
+  tmp.ft_alloc();
+  for (unsigned int i=0; i<lx; i++) {
+    for (unsigned int j=0; j<ly; j++) {
+      tmp(i, j) = i + j;
+    }
+  }
+  for (unsigned int i=0; i<lx; i++) {
+    for (unsigned int j=0; j<ly; j++) {
+      std::cout << tmp(i, j) << std::endl;
+    }
+  }
+  tmp.ft_free();
   //map_state.make_grid(8, 8);
   //fill_with_density(&map_state);
   return EXIT_SUCCESS;
