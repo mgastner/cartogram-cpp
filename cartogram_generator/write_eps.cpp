@@ -44,7 +44,7 @@ void write_eps(std::string eps_name, MapState *map_state)
       eps_file << "n " << ext_ring[0][0] << " " << ext_ring[0][1] << " m\n";
 
       // Plot each point in exterior ring
-      for (int i = 1; i < ext_ring.size(); ++i) {
+      for (unsigned int i = 1; i < ext_ring.size(); ++i) {
         eps_file << ext_ring[i][0] << " " << ext_ring[i][1] << " l\n";
       }
 
@@ -55,7 +55,7 @@ void write_eps(std::string eps_name, MapState *map_state)
       for (auto hci = pwh.holes_begin(); hci != pwh.holes_end(); ++hci) {
         Polygon hole = *hci;
         eps_file << hole[0][0] << " " << hole[0][1] << " m\n";
-        for (int i = 1; i < hole.size(); ++i) {
+        for (unsigned int i = 1; i < hole.size(); ++i) {
           eps_file << hole[i][0] << " " << hole[i][1] << " l\n";
         }
         eps_file << "c\n";

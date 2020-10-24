@@ -71,7 +71,7 @@ GeoDiv JSONToCGAL(const std::string id, const json json_coords) {
     // Store exterior ring in CGAL format
     Polygon_2<Epick> ext_ring;
     const json jphc_ext = json_pgn_holes_container[0];
-    for (int j = 0; j < jphc_ext.size() - 1; j++) {
+    for (unsigned int j = 0; j < jphc_ext.size() - 1; j++) {
       ext_ring.push_back(Epick::Point_2(jphc_ext[j][0], jphc_ext[j][1]));
     }
 
@@ -96,10 +96,10 @@ GeoDiv JSONToCGAL(const std::string id, const json json_coords) {
 
     // Store interior ring
     std::vector<Polygon_2<Epick> > int_ring_v;
-    for (int i = 1; i < json_pgn_holes_container.size(); i++) {
+    for (unsigned int i = 1; i < json_pgn_holes_container.size(); i++) {
       Polygon_2<Epick> int_ring;
       const json jphc_int = json_pgn_holes_container[i];
-      for (int j = 0; j < jphc_int.size() - 1; j++) {
+      for (unsigned int j = 0; j < jphc_int.size() - 1; j++) {
         int_ring.push_back(Epick::Point_2(jphc_int[j][0], jphc_int[j][1]));
       }
       int_ring_v.push_back(int_ring);
