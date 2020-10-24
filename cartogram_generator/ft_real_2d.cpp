@@ -1,15 +1,15 @@
-#include "ft_real_2d_array.h"
+#include "ft_real_2d.h"
 #include <fftw3.h>
 #include <iostream>
 
-void FTReal2dArray::set_array_size(const unsigned int i, const unsigned int j)
+void FTReal2d::set_array_size(const unsigned int i, const unsigned int j)
 {
   lx = i;
   ly = j;
   return;
 }
 
-void FTReal2dArray::ft_alloc()
+void FTReal2d::ft_alloc()
 {
   if (lx*ly <= 0) {
     std::cerr << "Invalid array dimensions in FTReal2dArray::ft_alloc()"
@@ -20,7 +20,7 @@ void FTReal2dArray::ft_alloc()
   return;
 }
 
-void FTReal2dArray::ft_free()
+void FTReal2d::ft_free()
 {
   if (array) {
     fftw_free(array);
@@ -28,18 +28,18 @@ void FTReal2dArray::ft_free()
   }
 }
 
-double *FTReal2dArray::get_array()
+double *FTReal2d::get_array()
 {
   return array;
 }
 
-double &FTReal2dArray::operator ()(const unsigned int i, const unsigned int j)
+double &FTReal2d::operator ()(const unsigned int i, const unsigned int j)
 {
   return array[i*ly + j];
 }
 
-double FTReal2dArray::operator ()(const unsigned int i,
-                                  const unsigned int j) const
+const double FTReal2d::operator ()(const unsigned int i,
+                                   const unsigned int j) const
 {
   return array[i*ly + j];
 }

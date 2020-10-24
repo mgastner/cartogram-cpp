@@ -1,7 +1,7 @@
 #ifndef MAP_STATE_H_
 #define MAP_STATE_H_
 
-#include "ft_real_2d_array.h"
+#include "ft_real_2d.h"
 #include "geo_div.h"
 #include <fftw3.h>
 #include <vector>
@@ -11,13 +11,13 @@ private:
   bool world;
   std::vector<GeoDiv> geo_divs;
   unsigned int lx = 0, ly = 0;  // Lattice dimensions
-  FTReal2dArray rho_init;  // Raterized density
-  FTReal2dArray rho_ft;  // Fourier transform
+  FTReal2d rho_init;  // Rasterized density
+  FTReal2d rho_ft;  // Fourier transform
   fftw_plan plan_fwd, plan_bwd;  // Plan the Fourier transform
   MapState();
 public:
   explicit MapState(const bool);
-  //~MapState();
+  ~MapState();
   unsigned int n_geo_divs() const;
   std::vector<GeoDiv> get_geo_divs() const;
   std::vector<GeoDiv> *ref_to_geo_divs();
@@ -25,9 +25,10 @@ public:
   void make_grid(const unsigned int, const unsigned int);
   unsigned int get_lx() const;
   unsigned int get_ly() const;
-  double *get_rho_init();
-  double *get_rho_ft();
+  FTReal2d *ref_to_rho_init();
+  FTReal2d *ref_to_rho_ft();
   fftw_plan get_plan_fwd();
+  fftw_plan get_plan_bwd();
   void free_rho();
   void push_back(const GeoDiv);
 };

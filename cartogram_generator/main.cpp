@@ -90,26 +90,6 @@ int main(const int argc, const char *argv[])
   // Read visual variables (e.g. area) from CSV
   read_csv(vm);
 
-  FTReal2dArray tmp;
-  unsigned int lx = 8;
-  unsigned int ly = 4;
-  tmp.set_array_size(lx, ly);
-  tmp.ft_alloc();
-  for (unsigned int i=0; i<lx; i++) {
-    for (unsigned int j=0; j<ly; j++) {
-      tmp(i, j) = i + j;
-    }
-  }
-  for (unsigned int i=0; i<lx; i++) {
-    for (unsigned int j=0; j<ly; j++) {
-      std::cout << tmp(i, j) << std::endl;
-    }
-  }
-  tmp.ft_free();
-  //map_state.make_grid(8, 8);
-  //fill_with_density(&map_state);
-  return EXIT_SUCCESS;
-
   // Read geometry
   try {
     read_geojson(geo_file_name, &map_state);
@@ -121,12 +101,16 @@ int main(const int argc, const char *argv[])
   // Rescale map to fit into a rectangular box [0, lx] * [0, ly].
   rescale_map(long_grid_side_length, &map_state);
 
-  // for (auto gd : map_state.get_geo_divs()) {
-  //   for (auto pwh : gd.get_polygons_with_holes()) {
-  //     CGAL::set_pretty_mode(std::cout);
-  //     std::cout << pwh << std::endl;
-  //   }
-  // }
+  fill_with_density(&map_state);
+
+  const FTReal2d &rho_init = *map_state.ref_to_rho_init();
+  std::cout << "\nIn main:" << std::endl;
+  for (unsigned int i=0; i<map_state.get_lx(); i++) {
+    for (unsigned int j=0; j<map_state.get_ly(); j++) {
+      std::cout << rho_init(i, j) << " ";
+    }
+    std::cout << std::endl;
+  }
 
   write_eps("test.eps", &map_state);
 

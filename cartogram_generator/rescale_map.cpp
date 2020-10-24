@@ -55,7 +55,7 @@ void rescale_map(int long_grid_side_length, MapState *map_state)
     new_xmax = 0.5*(map_xmax+map_xmin) + 0.5*lx*latt_const;
     new_xmin = 0.5*(map_xmax+map_xmin) - 0.5*lx*latt_const;
   }
-  std::cerr << "Using a " << lx << "-by-" << ly
+  std::cerr << "Rescaling to " << lx << "-by-" << ly
             << " grid with bounding box" << std::endl;
   std::cerr << "\t("
             << new_xmin << ", " << new_ymin << ", "
@@ -63,7 +63,7 @@ void rescale_map(int long_grid_side_length, MapState *map_state)
             << std::endl;
 
   // Set grid dimensions in map_state
-  //map_state->make_grid(lx, ly);
+  map_state->make_grid(lx, ly);
 
   // Rescale all GeoDiv coordinates
   Transformation translate(CGAL::TRANSLATION,

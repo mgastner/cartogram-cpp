@@ -24,13 +24,11 @@ void read_csv(const boost::program_options::variables_map vm)
     csv::CSVField id_field =
       vm.count("id") ? row[vm["id"].as<std::string>()] : row[0];
     std::string id = id_field.get();
-    std::cout << "ID is " << id << std::endl;
 
     // Get target area
     csv::CSVField area_field =
       vm.count("area") ? row[vm["area"].as<std::string>()] : row[1];
     double area = area_field.get<double>();
-    std::cout << "Target area is " << area << std::endl;
 
     // Read color
     std::string color = "";
@@ -39,7 +37,6 @@ void read_csv(const boost::program_options::variables_map vm)
     } else if (row.size() > 2) {
       color = row[2].get();
     }
-    std::cout << "Color is " << color << std::endl;
   }
   return;
 }

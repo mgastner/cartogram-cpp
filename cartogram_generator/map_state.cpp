@@ -5,16 +5,16 @@ MapState::MapState(const bool world_proj) : world(world_proj)
   return;
 }
 
-// MapState::~MapState()
-// {
-//   if (rho_init) {
-//     fftw_free(rho_init);
-//   }
-//   if (rho_ft) {
-//     fftw_free(rho_ft);
-//   }
-//   return;
-// }
+MapState::~MapState()
+{
+  if (rho_init.get_array()) {
+    rho_init.ft_free();
+  }
+  if (rho_ft.get_array()) {
+    rho_ft.ft_free();
+  }
+  return;
+}
 
 unsigned int MapState::n_geo_divs() const
 {
@@ -35,20 +35,22 @@ bool MapState::is_world_map() const
   return world;
 }
 
-// void MapState::make_grid(const unsigned int x, const unsigned int y)
-// {
-//   lx = x;
-//   ly = y;
-//   rho_init = (double*) fftw_malloc(lx * ly * sizeof(double));
-//   rho_ft = (double*) fftw_malloc(lx * ly * sizeof(double));
-//   plan_fwd = fftw_plan_r2r_2d(lx, ly,
-//                               rho_init, rho_ft,
-//                               FFTW_REDFT10, FFTW_REDFT10, FFTW_ESTIMATE);
-//   plan_bwd = fftw_plan_r2r_2d(lx, ly,
-//                               rho_ft, rho_init,
-//                               FFTW_REDFT01, FFTW_REDFT01, FFTW_ESTIMATE);
-//   return;
-// }
+void MapState::make_grid(const unsigned int x, const unsigned int y)
+{
+  lx = x;
+  ly = y;
+  rho_init.set_array_size(lx, ly);
+  rho_init.ft_alloc();
+  rho_ft.set_array_size(lx, ly);
+  rho_ft.ft_alloc();
+  plan_fwd = fftw_plan_r2r_2d(lx, ly,
+                              rho_init.get_array(), rho_ft.get_array(),
+                              FFTW_REDFT10, FFTW_REDFT10, FFTW_ESTIMATE);
+  plan_bwd = fftw_plan_r2r_2d(lx, ly,
+                              rho_ft.get_array(), rho_init.get_array(),
+                              FFTW_REDFT01, FFTW_REDFT01, FFTW_ESTIMATE);
+  return;
+}
 
 unsigned int MapState::get_lx() const
 {
@@ -60,19 +62,24 @@ unsigned int MapState::get_ly() const
   return ly;
 }
 
-// double *MapState::get_rho_init()
-// {
-//   return rho_init;
-// }
+FTReal2d *MapState::ref_to_rho_init()
+{
+  return &rho_init;
+}
 
-// double *MapState::get_rho_ft()
-// {
-//   return rho_ft;
-// }
+FTReal2d *MapState::ref_to_rho_ft()
+{
+  return &rho_ft;
+}
 
 fftw_plan MapState::get_plan_fwd()
 {
   return plan_fwd;
+}
+
+fftw_plan MapState::get_plan_bwd()
+{
+  return plan_bwd;
 }
 
 void MapState::push_back(const GeoDiv gd)
