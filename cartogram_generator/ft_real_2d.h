@@ -10,7 +10,7 @@ public:
   void set_array_size(const unsigned int, const unsigned int);
   void ft_alloc();
   void ft_free();
-  double *get_array();
+  double *get_array() const;
 
   // Setter for array elements
   double &operator() (const unsigned int, const unsigned int);

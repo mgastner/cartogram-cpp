@@ -28,7 +28,7 @@ void FTReal2d::ft_free()
   }
 }
 
-double *FTReal2d::get_array()
+double *FTReal2d::get_array() const
 {
   return array;
 }

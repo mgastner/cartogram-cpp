@@ -18,17 +18,17 @@ private:
 public:
   explicit MapState(const bool);
   ~MapState();
-  unsigned int n_geo_divs() const;
-  std::vector<GeoDiv> get_geo_divs() const;
+  const unsigned int n_geo_divs() const;
+  const std::vector<GeoDiv> get_geo_divs() const;
   std::vector<GeoDiv> *ref_to_geo_divs();
-  bool is_world_map() const;
+  const bool is_world_map() const;
   void make_grid(const unsigned int, const unsigned int);
-  unsigned int get_lx() const;
-  unsigned int get_ly() const;
+  const unsigned int get_lx() const;
+  const unsigned int get_ly() const;
   FTReal2d *ref_to_rho_init();
   FTReal2d *ref_to_rho_ft();
-  fftw_plan get_plan_fwd();
-  fftw_plan get_plan_bwd();
+  const fftw_plan get_plan_fwd() const;
+  const fftw_plan get_plan_bwd() const;
   void free_rho();
   void push_back(const GeoDiv);
 };

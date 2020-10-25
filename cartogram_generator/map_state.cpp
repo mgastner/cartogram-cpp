@@ -16,12 +16,12 @@ MapState::~MapState()
   return;
 }
 
-unsigned int MapState::n_geo_divs() const
+const unsigned int MapState::n_geo_divs() const
 {
   return geo_divs.size();
 }
 
-std::vector<GeoDiv> MapState::get_geo_divs() const
+const std::vector<GeoDiv> MapState::get_geo_divs() const
 {
   return geo_divs;
 }
@@ -30,7 +30,7 @@ std::vector<GeoDiv> *MapState::ref_to_geo_divs() {
   return &geo_divs;
 }
 
-bool MapState::is_world_map() const
+const bool MapState::is_world_map() const
 {
   return world;
 }
@@ -52,12 +52,12 @@ void MapState::make_grid(const unsigned int x, const unsigned int y)
   return;
 }
 
-unsigned int MapState::get_lx() const
+const unsigned int MapState::get_lx() const
 {
   return lx;
 }
 
-unsigned int MapState::get_ly() const
+const unsigned int MapState::get_ly() const
 {
   return ly;
 }
@@ -72,12 +72,12 @@ FTReal2d *MapState::ref_to_rho_ft()
   return &rho_ft;
 }
 
-fftw_plan MapState::get_plan_fwd()
+const fftw_plan MapState::get_plan_fwd() const
 {
   return plan_fwd;
 }
 
-fftw_plan MapState::get_plan_bwd()
+const fftw_plan MapState::get_plan_bwd() const
 {
   return plan_bwd;
 }

@@ -5,12 +5,12 @@ GeoDiv::GeoDiv(const std::string i): id(i)
   return;
 }
 
-int GeoDiv::n_polygons_with_holes() const
+const int GeoDiv::n_polygons_with_holes() const
 {
   return polygons_with_holes.size();
 }
 
-std::vector<Polygon_with_holes> GeoDiv::get_polygons_with_holes() const
+const std::vector<Polygon_with_holes> GeoDiv::get_polygons_with_holes() const
 {
   return polygons_with_holes;
 }
