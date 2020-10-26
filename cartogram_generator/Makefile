@@ -6,4 +6,4 @@ cartogram: main.cpp blur_density.cpp blur_density.h cgal_typedef.h\
 	g++ -O3 -o cartogram main.cpp blur_density.cpp fill_with_density.cpp\
 	  ft_real_2d.cpp geo_div.cpp map_state.cpp read_geojson.cpp read_csv.cpp\
 		rescale_map.cpp write_eps.cpp -lboost_program_options -lgmp -lfftw3\
-		-std=c++17 -pthread -Wall
+		-std=c++20 -pthread -Wall

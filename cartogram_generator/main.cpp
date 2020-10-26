@@ -104,7 +104,7 @@ int main(const int argc, const char *argv[])
 
   fill_with_density(&map_state);
 
-  blur_density(1.0, &map_state);
+  blur_density(0.2, &map_state);
 
   const FTReal2d &rho_init = *map_state.ref_to_rho_init();
   std::cout << "\nIn main:" << std::endl;
