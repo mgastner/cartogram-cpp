@@ -7,8 +7,8 @@ void rescale_map(int long_grid_side_length, MapState *map_state)
 
   // Initialize bounding box of map with bounding box of 0-th
   // Polygon_with_holes in 0-th GeoDiv
-  GeoDiv gd0 = map_state->get_geo_divs()[0];
-  std::vector<Polygon_with_holes> pwhs = gd0.get_polygons_with_holes();
+  GeoDiv gd0 = map_state->geo_divs()[0];
+  std::vector<Polygon_with_holes> pwhs = gd0.polygons_with_holes();
   CGAL::Bbox_2 bb0 = pwhs[0].bbox();
   double map_xmin = bb0.xmin();
   double map_xmax = bb0.xmax();
@@ -16,8 +16,8 @@ void rescale_map(int long_grid_side_length, MapState *map_state)
   double map_ymax = bb0.ymax();
 
   // Expand bounding box to enclose all GeoDivs
-  for (auto gd : map_state->get_geo_divs()) {
-    for (auto pwh : gd.get_polygons_with_holes()) {
+  for (auto gd : map_state->geo_divs()) {
+    for (auto pwh : gd.polygons_with_holes()) {
       CGAL::Bbox_2 bb = pwh.bbox();
       map_xmin = (bb.xmin() < map_xmin ? bb.xmin() : map_xmin);
       map_ymin = (bb.ymin() < map_ymin ? bb.ymin() : map_ymin);

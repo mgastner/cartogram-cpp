@@ -19,8 +19,8 @@ void write_eps(std::string eps_name, MapState *map_state)
   eps_file << "%%CreationDate: " << asctime(ti);
   eps_file << "%%Pages: 1\n";
   eps_file << "%%BoundingBox: 0 0 "
-           << map_state->get_lx() << " "
-           << map_state->get_ly() << "\n";
+           << map_state->lx() << " "
+           << map_state->ly() << "\n";
   eps_file << "%%Magnification: 1.0000\n";
   eps_file << "%%EndComments\n";
 
@@ -36,8 +36,8 @@ void write_eps(std::string eps_name, MapState *map_state)
   eps_file << "/srgb {setrgbcolor} def\n";
 
   // Print polygons
-  for (auto gd : map_state->get_geo_divs()) {
-    for (auto pwh : gd.get_polygons_with_holes()) {
+  for (auto gd : map_state->geo_divs()) {
+    for (auto pwh : gd.polygons_with_holes()) {
       Polygon ext_ring = pwh.outer_boundary();
 
       // Move to starting coordinates

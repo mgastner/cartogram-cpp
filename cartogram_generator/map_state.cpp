@@ -1,89 +1,89 @@
 #include "map_state.h"
 
-MapState::MapState(const bool world_proj) : world(world_proj)
+MapState::MapState(const bool w) : is_world_map_(w)
 {
   return;
 }
 
 MapState::~MapState()
 {
-  if (rho_init.get_array()) {
-    rho_init.ft_free();
+  if (rho_init_.is_allocated()) {
+    rho_init_.free_ft();
   }
-  if (rho_ft.get_array()) {
-    rho_ft.ft_free();
+  if (rho_ft_.is_allocated()) {
+    rho_ft_.free_ft();
   }
   return;
 }
 
 const unsigned int MapState::n_geo_divs() const
 {
-  return geo_divs.size();
+  return geo_divs_.size();
 }
 
-const std::vector<GeoDiv> MapState::get_geo_divs() const
+const std::vector<GeoDiv> MapState::geo_divs() const
 {
-  return geo_divs;
+  return geo_divs_;
 }
 
 std::vector<GeoDiv> *MapState::ref_to_geo_divs() {
-  return &geo_divs;
+  return &geo_divs_;
 }
 
 const bool MapState::is_world_map() const
 {
-  return world;
+  return is_world_map_;
 }
 
 void MapState::make_grid(const unsigned int x, const unsigned int y)
 {
-  lx = x;
-  ly = y;
-  rho_init.set_array_size(lx, ly);
-  rho_init.ft_alloc();
-  rho_ft.set_array_size(lx, ly);
-  rho_ft.ft_alloc();
-  plan_fwd = fftw_plan_r2r_2d(lx, ly,
-                              rho_init.get_array(), rho_ft.get_array(),
-                              FFTW_REDFT10, FFTW_REDFT10, FFTW_ESTIMATE);
-  plan_bwd = fftw_plan_r2r_2d(lx, ly,
-                              rho_ft.get_array(), rho_init.get_array(),
-                              FFTW_REDFT01, FFTW_REDFT01, FFTW_ESTIMATE);
+  lx_ = x;
+  ly_ = y;
+  rho_init_.set_array_size(lx_, ly_);
+  rho_init_.allocate_ft();
+  rho_ft_.set_array_size(lx_, ly_);
+  rho_ft_.allocate_ft();
+  fwd_plan_ = fftw_plan_r2r_2d(lx_, ly_,
+                               rho_init_.array(), rho_ft_.array(),
+                               FFTW_REDFT10, FFTW_REDFT10, FFTW_ESTIMATE);
+  bwd_plan_ = fftw_plan_r2r_2d(lx_, ly_,
+                               rho_ft_.array(), rho_init_.array(),
+                               FFTW_REDFT01, FFTW_REDFT01, FFTW_ESTIMATE);
   return;
 }
 
-const unsigned int MapState::get_lx() const
+const unsigned int MapState::lx() const
 {
-  return lx;
+  return lx_;
 }
 
-const unsigned int MapState::get_ly() const
+const unsigned int MapState::ly() const
 {
-  return ly;
+  return ly_;
 }
 
 FTReal2d *MapState::ref_to_rho_init()
 {
-  return &rho_init;
+  return &rho_init_;
 }
 
 FTReal2d *MapState::ref_to_rho_ft()
 {
-  return &rho_ft;
+  return &rho_ft_;
 }
 
-const fftw_plan MapState::get_plan_fwd() const
+const fftw_plan MapState::fwd_plan() const
 {
-  return plan_fwd;
+  return fwd_plan_;
 }
 
-const fftw_plan MapState::get_plan_bwd() const
+const fftw_plan MapState::bwd_plan() const
 {
-  return plan_bwd;
+  return bwd_plan_;
 }
 
 void MapState::push_back(const GeoDiv gd)
 {
-  geo_divs.push_back(gd);
+  geo_divs_.push_back(gd);
   return;
 }

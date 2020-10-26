@@ -4,42 +4,47 @@
 
 void FTReal2d::set_array_size(const unsigned int i, const unsigned int j)
 {
-  lx = i;
-  ly = j;
+  lx_ = i;
+  ly_ = j;
   return;
 }
 
-void FTReal2d::ft_alloc()
+void FTReal2d::allocate_ft()
 {
-  if (lx*ly <= 0) {
-    std::cerr << "Invalid array dimensions in FTReal2dArray::ft_alloc()"
+  if (lx_*ly_ <= 0) {
+    std::cerr << "Invalid array dimensions in FTReal2dArray::allocate_ft()"
               << std::endl;
     _Exit(98915);
   }
-  array = (double*) fftw_malloc(lx * ly * sizeof(double));
+  array_ = (double*) fftw_malloc(lx_ * ly_ * sizeof(double));
   return;
 }
 
-void FTReal2d::ft_free()
+void FTReal2d::free_ft()
 {
-  if (array) {
-    fftw_free(array);
+  if (array_) {
+    fftw_free(array_);
     return;
   }
 }
 
-double *FTReal2d::get_array() const
+const bool FTReal2d::is_allocated() const
 {
-  return array;
+  return !array_;
 }
 
-double &FTReal2d::operator ()(const unsigned int i, const unsigned int j)
+double *FTReal2d::array() const
 {
-  return array[i*ly + j];
+  return array_;
 }
 
-const double FTReal2d::operator ()(const unsigned int i,
+double &FTReal2d::operator() (const unsigned int i, const unsigned int j)
+{
+  return array_[i*ly_ + j];
+}
+
+const double FTReal2d::operator() (const unsigned int i,
                                    const unsigned int j) const
 {
-  return array[i*ly + j];
+  return array_[i*ly_ + j];
 }
