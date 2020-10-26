@@ -72,14 +72,16 @@ FTReal2d *MapState::ref_to_rho_ft()
   return &rho_ft_;
 }
 
-const fftw_plan MapState::fwd_plan() const
+void MapState::execute_fwd_plan() const
 {
-  return fwd_plan_;
+  fftw_execute(fwd_plan_);
+  return;
 }
 
-const fftw_plan MapState::bwd_plan() const
+void MapState::execute_bwd_plan() const
 {
-  return bwd_plan_;
+  fftw_execute(bwd_plan_);
+  return;
 }
 
 void MapState::push_back(const GeoDiv gd)

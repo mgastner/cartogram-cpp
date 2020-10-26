@@ -27,8 +27,8 @@ public:
   const unsigned int ly() const;
   FTReal2d *ref_to_rho_init();
   FTReal2d *ref_to_rho_ft();
-  const fftw_plan fwd_plan() const;
-  const fftw_plan bwd_plan() const;
+  void execute_fwd_plan() const;
+  void execute_bwd_plan() const;
   void free_rho();
   void push_back(const GeoDiv);
 };

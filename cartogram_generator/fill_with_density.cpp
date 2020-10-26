@@ -9,7 +9,7 @@ void fill_with_density(MapState *map_state)
       rho_init(i, j) = i + j;
     }
   }
-  fftw_execute(map_state->fwd_plan());
+  map_state->execute_fwd_plan();
 
   const FTReal2d &rho_ft = *map_state->ref_to_rho_ft();
   std::cout << "Fourier transform:" << std::endl;
@@ -19,7 +19,7 @@ void fill_with_density(MapState *map_state)
     }
     std::cout << std::endl;
   }
-  fftw_execute(map_state->bwd_plan());
+  map_state->execute_bwd_plan();
 
   return;
 }
