@@ -29,7 +29,6 @@ public:
   FTReal2d *ref_to_rho_ft();
   void execute_fwd_plan() const;
   void execute_bwd_plan() const;
-  void free_rho();
   void push_back(const GeoDiv);
 };
 

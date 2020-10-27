@@ -7,12 +7,6 @@ MapState::MapState(const bool w) : is_world_map_(w)
 
 MapState::~MapState()
 {
-  if (rho_init_.is_allocated()) {
-    rho_init_.free_ft();
-  }
-  if (rho_ft_.is_allocated()) {
-    rho_ft_.free_ft();
-  }
   fftw_destroy_plan(fwd_plan_);
   fftw_destroy_plan(bwd_plan_);
   return;

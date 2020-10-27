@@ -7,10 +7,11 @@ class FTReal2d {
   double *array_ = NULL;
   unsigned int lx_ = 0, ly_ = 0;    // Lattice dimensions
 public:
+  FTReal2d();
+  FTReal2d(const unsigned int, const unsigned int);
+  ~FTReal2d();
   void set_array_size(const unsigned int, const unsigned int);
   void allocate_ft();
-  void free_ft();
-  const bool is_allocated() const;
   double *array() const;
 
   // Setter for array elements

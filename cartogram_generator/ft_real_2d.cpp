@@ -2,6 +2,21 @@
 #include <fftw3.h>
 #include <iostream>
 
+FTReal2d::FTReal2d() {}
+
+FTReal2d::FTReal2d(const unsigned int i, const unsigned int j)
+{
+  set_array_size(i, j);
+  allocate_ft();
+}
+
+FTReal2d::~FTReal2d()
+{
+  if (array_) {
+    fftw_free(array_);
+  }
+}
+
 void FTReal2d::set_array_size(const unsigned int i, const unsigned int j)
 {
   lx_ = i;
@@ -18,19 +33,6 @@ void FTReal2d::allocate_ft()
   }
   array_ = (double*) fftw_malloc(lx_ * ly_ * sizeof(double));
   return;
-}
-
-void FTReal2d::free_ft()
-{
-  if (array_) {
-    fftw_free(array_);
-    return;
-  }
-}
-
-const bool FTReal2d::is_allocated() const
-{
-  return !array_;
 }
 
 double *FTReal2d::array() const
