@@ -2,8 +2,9 @@
 
 #include "constants.h"
 #include "map_state.h"
-#include "fill_with_density.h"
 #include "blur_density.h"
+#include "fill_with_density.h"
+#include "flatten_density.h"
 #include "read_csv.h"
 #include "read_geojson.h"
 #include "rescale_map.h"
@@ -105,6 +106,8 @@ int main(const int argc, const char *argv[])
   fill_with_density(&map_state);
 
   blur_density(0.2, &map_state);
+
+  flatten_density(&map_state);
 
   const FTReal2d &rho_init = *map_state.ref_to_rho_init();
   std::cout << "\nIn main:" << std::endl;
