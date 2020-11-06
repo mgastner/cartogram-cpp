@@ -1,8 +1,10 @@
+#include "map_state.h"
 #include "csv.hpp"
 #include <boost/program_options.hpp>
 #include <iostream>
 
-void read_csv(const boost::program_options::variables_map vm)
+void read_csv(const boost::program_options::variables_map vm,
+              MapState *map_state)
 {
   // Get name of CSV file from vm
   std::string csv_name;
@@ -30,12 +32,18 @@ void read_csv(const boost::program_options::variables_map vm)
       vm.count("area") ? row[vm["area"].as<std::string>()] : row[1];
     double area = area_field.get<double>();
 
+    map_state->target_areas_insert(id, area);
+
     // Read color
     std::string color = "";
     if (vm.count("color")) {
       color = row[vm["color"].as<std::string>()].get();
+      map_state->colors_insert(id, color);
+
     } else if (row.size() > 2) {
       color = row[2].get();
+      map_state->colors_insert(id, color);
+
     }
   }
   return;

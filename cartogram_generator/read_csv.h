@@ -2,6 +2,6 @@
 #define READ_CSV_H_
 
 #include <boost/program_options.hpp>
-void read_csv(const boost::program_options::variables_map);
+void read_csv(const boost::program_options::variables_map, MapState*);
 
 #endif

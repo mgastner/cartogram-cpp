@@ -10,6 +10,8 @@ class MapState {
 private:
   bool is_world_map_;
   std::vector<GeoDiv> geo_divs_;
+  std::map<std::string, double> target_areas;
+  std::map<std::string, std::string> colors;
   unsigned int lx_ = 0, ly_ = 0;  // Lattice dimensions
   FTReal2d rho_init_;  // Rasterized density
   FTReal2d rho_ft_;  // Fourier transform
@@ -21,6 +23,10 @@ public:
   const unsigned int n_geo_divs() const;
   const std::vector<GeoDiv> geo_divs() const;
   std::vector<GeoDiv> *ref_to_geo_divs();
+  void target_areas_insert(std::string, double);
+  void colors_insert(std::string, std::string);
+  const double target_areas_at(const std::string id);
+  const std::string colors_at(const std::string id);
   const bool is_world_map() const;
   void make_grid(const unsigned int, const unsigned int);
   const unsigned int lx() const;

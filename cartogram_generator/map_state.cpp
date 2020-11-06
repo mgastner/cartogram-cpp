@@ -22,8 +22,31 @@ const std::vector<GeoDiv> MapState::geo_divs() const
   return geo_divs_;
 }
 
-std::vector<GeoDiv> *MapState::ref_to_geo_divs() {
+std::vector<GeoDiv> *MapState::ref_to_geo_divs()
+{
   return &geo_divs_;
+}
+
+void MapState::target_areas_insert(const std::string id, const double area)
+{
+  target_areas.insert(std::pair<std::string, double>(id, area));
+  return;
+}
+
+void MapState::colors_insert(const std::string id, const std::string color)
+{
+  colors.insert(std::pair<std::string, std::string>(id, color));
+  return;
+}
+
+const double MapState::target_areas_at(const std::string id)
+{
+  return target_areas.at(id);
+}
+
+const std::string MapState::colors_at(const std::string id)
+{
+  return colors.at(id);
 }
 
 const bool MapState::is_world_map() const
