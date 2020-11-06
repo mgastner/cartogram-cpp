@@ -27,9 +27,9 @@ void fill_with_density(MapState *map_state)
 
           // Test if coordinates (k, l) is in j-th polygon (possibly with
           // holes) of geographic division gd. If yes, then set density.
-          //if (CGAL::oriented_side(Point(k, l), pwh) == 1) {
+          if (CGAL::oriented_side(Point(k, l), pwh) == 1) {
             rho_init((int) k,(int) l) = 1.0;//map_state->target_areas_at(gd.id());
-          //}
+          }
         }
       }
     }
