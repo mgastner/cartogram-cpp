@@ -19,6 +19,7 @@ endif()
 set(findFFTW_DIR ${CMAKE_CURRENT_BINARY_DIR}/findFFTW-src)
 
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${findFFTW_DIR}")
+set(CMAKE_BUILD_TYPE Release)
 
 # As per https://github.com/CGAL/cgal/wiki/How-to-use-CGAL-with-CMake-or-your-own-build-system
 
