@@ -18,12 +18,14 @@ void fill_with_density(MapState *map_state)
     std::cout << "Working on gd with ID " << gd.id() << std::endl;
 
     for (int j = 0; j < gd.n_polygons_with_holes(); j++) {
+      std::cout << "Polygon " << j << " in GeoDiv" << std::endl;
       Polygon_with_holes pwh = gd.polygons_with_holes()[j];
       CGAL::Bbox_2 bb = pwh.bbox();
       for (double k = (unsigned int) bb.xmin() + 0.5; k < bb.xmax(); k++) {
+        std::cout << "k = " << k << "\n";
         for (double l = (unsigned int) bb.ymin() + 0.5; l < bb.ymax(); l++) {
 
-          std::cout << "k = " << k << ", l = " << l << std::endl;
+          //std::cout << "k = " << k << ", l = " << l << std::endl;
 
           // Test if coordinates (k, l) is in j-th polygon (possibly with
           // holes) of geographic division gd. If yes, then set density.
