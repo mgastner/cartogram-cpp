@@ -8,7 +8,6 @@
 #include <nlohmann/json.hpp>
 #include <iostream>
 #include <fstream>
-#include <typeinfo>
 
 using json = nlohmann::json;
 
