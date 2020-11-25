@@ -8,6 +8,7 @@
 #include <nlohmann/json.hpp>
 #include <iostream>
 #include <fstream>
+#include <typeinfo>
 
 using json = nlohmann::json;
 
@@ -152,9 +153,28 @@ void read_geojson(const std::string geometry_file_name, MapState *map_state)
     if (geometry["type"] == "Polygon") {
       std::cerr << "ERROR: Sorry, no support for Polygon geometry yet"
                 << std::endl;
-      _Exit(13);
+      _Exit(15);
     } else if (geometry["type"] == "MultiPolygon") {
-      GeoDiv gd = JSONToCGAL("id", geometry["coordinates"]);
+
+      // Storing id from properties
+      json properties = feature["properties"];
+      if (!properties.contains(map_state->id_header())) {
+        std::cerr << "ERROR: In GeoJSON, there is no property "
+                  << map_state->id_header()
+                  << " in feature." << std::endl;
+        std::cerr << "Available properties are: "
+                  << properties
+                  << std::endl;
+        _Exit(16);
+      }
+
+      // Use dump() instead of get() so that we can handle string and numeric
+      // IDs in GeoJSON. Both types of IDs are converted to C++ strings.
+      std::string id = properties[map_state->id_header()].dump();
+      if (id.front() == '"' && id.back() == '"' && id.length() > 2) {
+        id = id.substr(1, id.length() - 2);
+      }
+      GeoDiv gd = JSONToCGAL(id, geometry["coordinates"]);
       map_state->push_back(gd);
     }
   }

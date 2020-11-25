@@ -103,6 +103,9 @@ int main(const int argc, const char *argv[])
   // Rescale map to fit into a rectangular box [0, lx] * [0, ly].
   rescale_map(long_grid_side_length, &map_state);
 
+  for (auto gd : map_state.geo_divs()) {
+    std::cout << "GeoDiv ID: " << gd.id() << std::endl;
+  }
   return EXIT_SUCCESS;
 
   fill_with_density(&map_state);
