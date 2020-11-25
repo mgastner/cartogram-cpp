@@ -31,6 +31,10 @@ void read_csv(const boost::program_options::variables_map vm,
     csv::CSVField area_field =
       vm.count("area") ? row[vm["area"].as<std::string>()] : row[1];
     double area = area_field.get<double>();
+    if (area < 0.0) {
+      std::cerr << "ERROR: negative area in CSV" << std::endl;
+      _Exit(101);
+    }
 
     map_state->target_areas_insert(id, area);
 
