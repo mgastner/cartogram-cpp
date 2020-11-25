@@ -30,12 +30,15 @@ void read_csv(const boost::program_options::variables_map vm,
     // Get target area
     csv::CSVField area_field =
       vm.count("area") ? row[vm["area"].as<std::string>()] : row[1];
+    if (!area_field.is_num()) {
+      std::cerr << "ERROR: non-numeric value as area in CSV" << std::endl;
+      _Exit(201);
+    }
     double area = area_field.get<double>();
     if (area < 0.0) {
       std::cerr << "ERROR: negative area in CSV" << std::endl;
       _Exit(101);
     }
-
     map_state->target_areas_insert(id, area);
 
     // Read color
