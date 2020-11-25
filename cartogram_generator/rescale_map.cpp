@@ -67,7 +67,7 @@ void rescale_map(int long_grid_side_length, MapState *map_state)
 
   // Rescale all GeoDiv coordinates
   Transformation translate(CGAL::TRANSLATION,
-                           CGAL::Vector_2<Epeck>(-new_xmin, -new_ymin));
+                           CGAL::Vector_2<Epick>(-new_xmin, -new_ymin));
   Transformation scale(CGAL::SCALING, (1.0/latt_const));
   for (auto &gd : *map_state->ref_to_geo_divs()) {
     for (auto &pwh : *gd.ref_to_polygons_with_holes()) {
