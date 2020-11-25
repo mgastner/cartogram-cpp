@@ -12,6 +12,7 @@ private:
   std::vector<GeoDiv> geo_divs_;
   std::map<std::string, double> target_areas;
   std::map<std::string, std::string> colors;
+  std::string id_header_;
   unsigned int lx_ = 0, ly_ = 0;  // Lattice dimensions
   FTReal2d rho_init_;  // Rasterized density
   FTReal2d rho_ft_;  // Fourier transform
@@ -27,6 +28,8 @@ public:
   void colors_insert(std::string, std::string);
   const double target_areas_at(const std::string id);
   const std::string colors_at(const std::string id);
+  void set_id_header(const std::string);
+  const std::string id_header() const;
   const bool is_world_map() const;
   void make_grid(const unsigned int, const unsigned int);
   const unsigned int lx() const;

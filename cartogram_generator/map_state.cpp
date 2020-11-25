@@ -49,6 +49,17 @@ const std::string MapState::colors_at(const std::string id)
   return colors.at(id);
 }
 
+void MapState::set_id_header(const std::string id)
+{
+  id_header_ = id;
+  return;
+}
+
+const std::string MapState::id_header() const
+{
+  return id_header_;
+}
+
 const bool MapState::is_world_map() const
 {
   return is_world_map_;

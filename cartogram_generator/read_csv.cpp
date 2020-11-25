@@ -43,8 +43,14 @@ void read_csv(const boost::program_options::variables_map vm,
     } else if (row.size() > 2) {
       color = row[2].get();
       map_state->colors_insert(id, color);
-
     }
+  }
+
+  // Store header name of identifiers to read GeoJSON
+  if (vm.count("id")) {
+    map_state->set_id_header(vm["id"].as<std::string>());
+  } else {
+    map_state->set_id_header(reader.get_col_names()[0]);
   }
   return;
 }
