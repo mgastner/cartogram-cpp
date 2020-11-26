@@ -30,3 +30,17 @@ void GeoDiv::push_back(const Polygon_with_holes pgn_wh)
   polygons_with_holes_.push_back(pgn_wh);
   return;
 }
+
+const double GeoDiv::area() const
+{
+  double a = 0.0;
+  for (auto pwh : polygons_with_holes()) {
+    Polygon ext_ring = pwh.outer_boundary();
+    a += ext_ring.area();
+    for (auto hci = pwh.holes_begin(); hci != pwh.holes_end(); ++hci) {
+      Polygon hole = *hci;
+      a -= hole.area();
+    }
+  }
+  return a;
+}
