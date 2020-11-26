@@ -186,5 +186,22 @@ void read_geojson(const std::string geometry_file_name, MapState *map_state)
       map_state->push_back(gd);
     }
   }
+
+  // Check whether all IDs in visual_variable_file appear in GeoJSON
+  std::set<std::string> ids_in_vv_file =
+    map_state->ids_in_visual_variables_file();
+  std::set<std::string> ids_not_in_geojson;
+  std::set_difference(ids_in_vv_file.begin(), ids_in_vv_file.end(),
+                      ids_in_geojson.begin(), ids_in_geojson.end(),
+                      std::inserter(ids_not_in_geojson,
+                                    ids_not_in_geojson.end()));
+  if (!ids_not_in_geojson.empty()) {
+    std::cerr << "ERROR: the following IDs do not appear in the GeoJSON:"
+              << std::endl;
+    for (auto id : ids_not_in_geojson) {
+      std::cerr << "  " << id << std::endl;
+    }
+    _Exit(18);
+  }
   return;
 }
