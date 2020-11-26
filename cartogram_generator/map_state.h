@@ -13,6 +13,7 @@ private:
   std::map<std::string, double> target_areas;
   std::map<std::string, std::string> colors;
   std::string id_header_;
+  std::string visual_variable_file_;
   std::set<std::string> ids_in_visual_variables_file_;
   unsigned int lx_ = 0, ly_ = 0;  // Lattice dimensions
   FTReal2d rho_init_;  // Rasterized density
@@ -20,7 +21,7 @@ private:
   fftw_plan fwd_plan_, bwd_plan_;  // Plan the Fourier transform
   MapState();
 public:
-  explicit MapState(const bool);
+  explicit MapState(const std::string, const bool);
   ~MapState();
   const unsigned int n_geo_divs() const;
   const std::vector<GeoDiv> geo_divs() const;
@@ -31,6 +32,7 @@ public:
   const std::string colors_at(const std::string);
   void set_id_header(const std::string);
   const std::string id_header() const;
+  const std::string visual_variable_file() const;
   void insert_id_in_visual_variables_file(const std::string);
   const std::set<std::string> ids_in_visual_variables_file() const;
   const bool is_world_map() const;

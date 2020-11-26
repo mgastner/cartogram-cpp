@@ -1,6 +1,8 @@
 #include "map_state.h"
 
-MapState::MapState(const bool w) : is_world_map_(w)
+MapState::MapState(std::string v, const bool w) :
+  visual_variable_file_(v),
+  is_world_map_(w)
 {
   return;
 }
@@ -58,6 +60,11 @@ void MapState::set_id_header(const std::string id)
 const std::string MapState::id_header() const
 {
   return id_header_;
+}
+
+const std::string MapState::visual_variable_file() const
+{
+  return visual_variable_file_;
 }
 
 void MapState::insert_id_in_visual_variables_file(const std::string id)

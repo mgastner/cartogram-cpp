@@ -87,7 +87,7 @@ int main(const int argc, const char *argv[])
     std::cerr << "ERROR: " << ex.what() << std::endl;
     return EXIT_FAILURE;
   }
-  MapState map_state(world);
+  MapState map_state(vm["visual_variable_file"].as<std::string>(), world);
 
   // Read visual variables (e.g. area) from CSV
   read_csv(vm, &map_state);

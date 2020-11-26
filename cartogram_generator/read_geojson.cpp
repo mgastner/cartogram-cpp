@@ -196,12 +196,37 @@ void read_geojson(const std::string geometry_file_name, MapState *map_state)
                       std::inserter(ids_not_in_geojson,
                                     ids_not_in_geojson.end()));
   if (!ids_not_in_geojson.empty()) {
-    std::cerr << "ERROR: the following IDs do not appear in the GeoJSON:"
+    std::cerr << "ERROR: Mismatch between GeoJSON and "
+              << map_state->visual_variable_file()
+              << "."
+              << std::endl;
+    std::cerr << "The following IDs do not appear in the GeoJSON:"
               << std::endl;
     for (auto id : ids_not_in_geojson) {
       std::cerr << "  " << id << std::endl;
     }
     _Exit(18);
+  }
+
+  // Check whether all IDs in GeoJSON appear in visual_variable_file.
+  std::set<std::string> ids_not_in_vv;
+  std::set_difference(ids_in_geojson.begin(), ids_in_geojson.end(),
+                      ids_in_vv_file.begin(), ids_in_vv_file.end(),
+                      std::inserter(ids_not_in_vv,
+                                    ids_not_in_vv.end()));
+  if (!ids_not_in_vv.empty()) {
+    std::cerr << "ERROR: Mismatch between GeoJSON and "
+              << map_state->visual_variable_file()
+              << "."
+              << std::endl;
+    std::cerr << "The following IDs do not appear in "
+              << map_state->visual_variable_file()
+              << ": "
+              << std::endl;
+    for (auto id : ids_not_in_vv) {
+      std::cerr << "  " << id << std::endl;
+    }
+    _Exit(19);
   }
   return;
 }
