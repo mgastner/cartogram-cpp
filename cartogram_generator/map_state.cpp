@@ -60,6 +60,16 @@ const std::string MapState::id_header() const
   return id_header_;
 }
 
+void MapState::insert_id_in_visual_variables_file(const std::string id)
+{
+  ids_in_visual_variables_file_.insert(id);
+}
+
+const std::set<std::string> MapState::ids_in_visual_variables_file() const
+{
+  return ids_in_visual_variables_file_;
+}
+
 const bool MapState::is_world_map() const
 {
   return is_world_map_;

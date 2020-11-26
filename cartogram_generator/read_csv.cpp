@@ -26,6 +26,14 @@ void read_csv(const boost::program_options::variables_map vm,
     csv::CSVField id_field =
       vm.count("id") ? row[vm["id"].as<std::string>()] : row[0];
     std::string id = id_field.get();
+    if (map_state->ids_in_visual_variables_file().contains(id)) {
+      std::cerr << "ERROR: ID "
+                << id
+                << " appears more than once in CSV"
+                << std::endl;
+      _Exit(301);
+    }
+    map_state->insert_id_in_visual_variables_file(id);
 
     // Get target area
     csv::CSVField area_field =
@@ -59,5 +67,10 @@ void read_csv(const boost::program_options::variables_map vm,
   } else {
     map_state->set_id_header(reader.get_col_names()[0]);
   }
+
+  for (auto id : map_state->ids_in_visual_variables_file()) {
+    std::cout << id << std::endl;
+  }
+
   return;
 }
