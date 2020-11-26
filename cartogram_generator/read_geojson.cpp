@@ -1,8 +1,3 @@
-// TODO:
-// - IMPROVE ERROR HANDLING
-// - ADD SUPPORT FOR "geometry": "Polygon"
-// - CHECK WHETHER COORDINATES ARE EMPTY
-
 #include "geo_div.h"
 #include "map_state.h"
 #include <nlohmann/json.hpp>
@@ -63,7 +58,7 @@ void check_geojson_validity(const json j)
   return;
 }
 
-GeoDiv JSONToCGAL(const std::string id, const json json_coords) {
+GeoDiv json_to_cgal(const std::string id, const json json_coords) {
   GeoDiv gd(id);
   for (auto json_pgn_holes_container : json_coords) {
     using namespace CGAL;
@@ -182,7 +177,7 @@ void read_geojson(const std::string geometry_file_name, MapState *map_state)
         _Exit(17);
       }
       ids_in_geojson.insert(id);
-      GeoDiv gd = JSONToCGAL(id, geometry["coordinates"]);
+      GeoDiv gd = json_to_cgal(id, geometry["coordinates"]);
       map_state->push_back(gd);
     }
   }
