@@ -67,10 +67,5 @@ void read_csv(const boost::program_options::variables_map vm,
   } else {
     map_state->set_id_header(reader.get_col_names()[0]);
   }
-
-  for (auto id : map_state->ids_in_visual_variables_file()) {
-    std::cout << id << std::endl;
-  }
-
   return;
 }
