@@ -147,6 +147,7 @@ void read_geojson(const std::string geometry_file_name, MapState *map_state)
     _Exit(3);
   }
   check_geojson_validity(j);
+  std::set<std::string> ids_in_geojson;
   for (auto feature : j["features"]) {
     json geometry = feature["geometry"];
     if (geometry["type"] == "Polygon") {
@@ -173,6 +174,14 @@ void read_geojson(const std::string geometry_file_name, MapState *map_state)
       if (id.front() == '"' && id.back() == '"' && id.length() > 2) {
         id = id.substr(1, id.length() - 2);
       }
+      if (ids_in_geojson.contains(id)) {
+        std::cerr << "ERROR: ID "
+                  << id
+                  << " appears more than once in GeoJSON"
+                  << std::endl;
+        _Exit(17);
+      }
+      ids_in_geojson.insert(id);
       GeoDiv gd = JSONToCGAL(id, geometry["coordinates"]);
       map_state->push_back(gd);
     }
