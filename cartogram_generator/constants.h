@@ -7,4 +7,7 @@ constexpr int default_long_grid_side_length = 512;
 constexpr double padding_unless_world = 1.5;
 constexpr double pi = std::numbers::pi;
 
+// Fraction of square side length by which squares on heatmap overlap
+constexpr double sq_overlap = 0.2;
+
 #endif

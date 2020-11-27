@@ -102,7 +102,14 @@ int main(const int argc, const char *argv[])
 
   // Rescale map to fit into a rectangular box [0, lx] * [0, ly].
   rescale_map(long_grid_side_length, &map_state);
+  write_map_to_eps("test_cartogram.eps", &map_state);
+
   fill_with_density(&map_state);
+
+  FTReal2d *ft = map_state.ref_to_rho_init();
+  double *rho_init = ft->array();
+  write_density_to_eps("test_density.eps", rho_init, &map_state);
+
   return EXIT_SUCCESS;
 
   blur_density(0.2, &map_state);
@@ -118,7 +125,6 @@ int main(const int argc, const char *argv[])
   //   std::cout << std::endl;
   // }
 
-  write_eps("test.eps", &map_state);
 
   return EXIT_SUCCESS;
 }
