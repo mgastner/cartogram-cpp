@@ -50,6 +50,38 @@ const std::string MapState::colors_at(const std::string id)
 {
   return colors.at(id);
 }
+const bool MapState::colors_empty() const
+{
+  return colors.empty();
+}
+
+const std::string MapState::HexToRGB(std::string hex)
+{
+
+  if (hex[0] == '#') {
+    hex.erase(0, 1);
+  }
+
+  int hex_int = stoi(hex, nullptr, 16);
+
+  double red = ((hex_int >> 16) & 0xFF) / 255.0; // Extract the RR byte
+  double green = ((hex_int >> 8) & 0xFF) / 255.0; // Extract the GG byte
+  double blue = ((hex_int) & 0xFF) / 255.0; // Extract the BB byte
+
+  // from https://gist.github.com/bert/998020
+
+  std::string rgb;
+
+  rgb.append(std::to_string(red));
+  rgb.append(" ");
+  rgb.append(std::to_string(green));
+  rgb.append(" ");
+  rgb.append(std::to_string(blue));
+  rgb.append(" ");
+
+  return rgb;
+
+}
 
 void MapState::set_id_header(const std::string id)
 {
