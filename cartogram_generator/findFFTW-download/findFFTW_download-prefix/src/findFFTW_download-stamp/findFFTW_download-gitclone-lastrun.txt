@@ -1,3 +1,0 @@
-repository='https://github.com/egpbos/findfftw.git'
-module=''
-tag='origin'
