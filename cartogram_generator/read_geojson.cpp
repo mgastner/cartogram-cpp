@@ -84,10 +84,10 @@ GeoDiv json_to_cgal(const std::string id, const json json_coords) {
       _Exit(13);
     }
 
-    // We adopt the convention that exterior rings are counterclockwise
-    // oriented, interior rings clockwise oriented. If the orientation in the
+    // We adopt the convention that exterior rings are clockwise oriented,
+    // interior rings counter-clockwise oriented. If the orientation in the
     // GeoJSON does not match our convention, we reverse the polygon.
-    if (ext_ring.is_clockwise_oriented()) {
+    if (ext_ring.is_counterclockwise_oriented()) {
       ext_ring.reverse_orientation();
     }
 
@@ -111,7 +111,7 @@ GeoDiv json_to_cgal(const std::string id, const json json_coords) {
         std::cerr << "ERROR: interior ring not a simple polygon" << std::endl;
         _Exit(14);
       }
-      if (int_ring.is_counterclockwise_oriented()) {
+      if (int_ring.is_clockwise_oriented()) {
         int_ring.reverse_orientation();
       }
     }

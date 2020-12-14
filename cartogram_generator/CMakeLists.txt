@@ -39,6 +39,7 @@ add_executable(cartogram main.cpp
     geo_div.cpp
 		map_state.cpp
 		read_csv.cpp
+    topological_checks.cpp
 		rescale_map.cpp
 		write_eps.cpp
 		read_geojson.cpp

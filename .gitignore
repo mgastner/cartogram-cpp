@@ -46,3 +46,28 @@ _deps
 
 # Added by MTG
 cartogram_generator/cartogram
+cartogram_generator/fill_with_density_grazing.cpp
+cartogram_generator/fill_with_density_working.cpp
+cartogram_generator/findFFTW-download/CMakeLists.txt
+cartogram_generator/findFFTW-download/findFFTW_download-prefix/src/findFFTW_download-stamp/findFFTW_download-build
+cartogram_generator/findFFTW-download/findFFTW_download-prefix/src/findFFTW_download-stamp/findFFTW_download-configure
+cartogram_generator/findFFTW-download/findFFTW_download-prefix/src/findFFTW_download-stamp/findFFTW_download-done
+cartogram_generator/findFFTW-download/findFFTW_download-prefix/src/findFFTW_download-stamp/findFFTW_download-download
+cartogram_generator/findFFTW-download/findFFTW_download-prefix/src/findFFTW_download-stamp/findFFTW_download-gitclone-lastrun.txt
+cartogram_generator/findFFTW-download/findFFTW_download-prefix/src/findFFTW_download-stamp/findFFTW_download-gitinfo.txt
+cartogram_generator/findFFTW-download/findFFTW_download-prefix/src/findFFTW_download-stamp/findFFTW_download-install
+cartogram_generator/findFFTW-download/findFFTW_download-prefix/src/findFFTW_download-stamp/findFFTW_download-mkdir
+cartogram_generator/findFFTW-download/findFFTW_download-prefix/src/findFFTW_download-stamp/findFFTW_download-patch
+cartogram_generator/findFFTW-download/findFFTW_download-prefix/src/findFFTW_download-stamp/findFFTW_download-test
+cartogram_generator/findFFTW-download/findFFTW_download-prefix/tmp/findFFTW_download-cfgcmd.txt
+cartogram_generator/findFFTW-download/findFFTW_download-prefix/tmp/findFFTW_download-cfgcmd.txt.in
+cartogram_generator/findFFTW-download/findFFTW_download-prefix/tmp/findFFTW_download-gitclone.cmake
+cartogram_generator/findFFTW-download/findFFTW_download-prefix/tmp/findFFTW_download-gitupdate.cmake
+cartogram_generator/findFFTW-src/
+*.eps
+*.pdf
+*.csv
+sample_data/ukraine_processedmap.json
+*.csv
+results/topological_checks.h
+results/topological_checks.cpp

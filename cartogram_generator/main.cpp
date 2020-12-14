@@ -8,6 +8,7 @@
 #include "read_csv.h"
 #include "read_geojson.h"
 #include "rescale_map.h"
+#include "topological_checks.h"
 #include "write_eps.h"
 #include <boost/program_options.hpp>
 #include <iostream>
@@ -100,6 +101,11 @@ int main(const int argc, const char *argv[])
     return EXIT_FAILURE;
   }
 
+  // Topological checks
+  if (holes_inside_polygons(&map_state)) {
+    std::cout << "All holes are inside polygons!" << '\n';
+  }
+
   // Rescale map to fit into a rectangular box [0, lx] * [0, ly].
   rescale_map(long_grid_side_length, &map_state);
   write_map_to_eps("test_cartogram.eps", &map_state);
@@ -115,16 +121,6 @@ int main(const int argc, const char *argv[])
   blur_density(0.2, &map_state);
 
   flatten_density(&map_state);
-
-  // const FTReal2d &rho_init = *map_state.ref_to_rho_init();
-  // std::cout << "\nIn main:" << std::endl;
-  // for (unsigned int i=0; i<map_state.lx(); i++) {
-  //   for (unsigned int j=0; j<map_state.ly(); j++) {
-  //     std::cout << rho_init(i, j) << " ";
-  //   }
-  //   std::cout << std::endl;
-  // }
-
 
   return EXIT_SUCCESS;
 }
