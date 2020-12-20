@@ -1,5 +1,4 @@
 # code for findFFTW
-
 configure_file(downloadFindFFTW.cmake.in findFFTW-download/CMakeLists.txt)
 execute_process(COMMAND ${CMAKE_COMMAND} -G "${CMAKE_GENERATOR}" .
         RESULT_VARIABLE result
@@ -19,33 +18,45 @@ endif()
 set(findFFTW_DIR ${CMAKE_CURRENT_BINARY_DIR}/findFFTW-src)
 
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${findFFTW_DIR}")
-set(CMAKE_BUILD_TYPE Release)
 
 # As per https://github.com/CGAL/cgal/wiki/How-to-use-CGAL-with-CMake-or-your-own-build-system
-
-# set(FFTW_INCLUDE_DIRS "/usr")
-
 cmake_minimum_required(VERSION 3.1)
 project(cartogram)
 
 # set(PLATFORM_SPECIFIC_LIBS "-lpthread")
-set(CMAKE_CXX_FLAGS "-std=c++20 -pthread")
+set(CMAKE_CXX_STANDARD 20)
+# add_compile_definitions(_GLIBCXX_USE_CXX11_ABI=0)
+set(THREADS_PREFER_PTHREAD_FLAG ON)
+set(CMAKE_BUILD_TYPE Release)
+set(CMAKE_CXX_COMPILER "g++-10")
+set(CMAKE_C_COMPILER "gcc-10")
 
 find_package(CGAL)
-find_package(Boost 1.40 COMPONENTS program_options REQUIRED)
+# include system to boost?
+find_package(Boost 1.70 COMPONENT program_options REQUIRED)
 find_package(FFTW)
+find_package(Threads REQUIRED)
+
+# include_directories(${Boost_INCLUDE_DIR})
+# link_directories(${Boost_LIBRARY_DIR})
 
 add_executable(cartogram main.cpp
-    geo_div.cpp
-		map_state.cpp
-		read_csv.cpp
-		rescale_map.cpp
-		write_eps.cpp
-		read_geojson.cpp
-		fill_with_density.cpp
-    blur_density.cpp
-    flatten_density.cpp
-		ft_real_2d.cpp)
+              geo_div.cpp
+          		map_state.cpp
+          		read_csv.cpp
+          		rescale_map.cpp
+          		write_eps.cpp
+          		read_geojson.cpp
+          		fill_with_density.cpp
+              blur_density.cpp
+              flatten_density.cpp
+          		ft_real_2d.cpp)
 
-
-target_link_libraries(cartogram CGAL::CGAL Boost::program_options fftw3)
+# Boost::program_options ${Boost_LIBRARIES}
+target_link_libraries(cartogram
+                      ${Boost_LIBRARIES}
+                      # ${Boost_SYSTEM_LIBRARY}
+                      # Boost::program_options
+                      CGAL::CGAL
+                      ${FFTW_LIBRARIES}
+                      ${CMAKE_THREAD_LIBS_INIT})
