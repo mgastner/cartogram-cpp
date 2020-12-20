@@ -77,10 +77,10 @@ void fill_with_density(MapState* map_state) {
           std::vector <intersection> intersections;
 
           /* The following algorithm works by iterating through "res" lines in
-          each cell. For each line, it iterates through every edge in a
-          polygon and stores any intersections. Finally, once all
-          intersections have been stored, we iterate between intersections,
-          and add the appropriate densities. */
+             each cell. For each line, it iterates through every edge in a
+             polygon and stores any intersections. Finally, once all
+             intersections have been stored, we iterate between intersections,
+             and add the appropriate densities. */
 
           // Running algorithm on exterior ring
           for (unsigned int l = 1; l <= ext_ring.size(); l++) {
@@ -95,10 +95,10 @@ void fill_with_density(MapState* map_state) {
                 continue; // Pre-condition to ignore grazing incident
               }
               // Adding an epsilon in case of intersection with point
-							/* The epsilon ensures that if there is any intersection,
-							it is only counted once. Further, it also correctly detects
-							when a line crosses through a point without entering or exiting
-							the polyogn */ 
+              /* The epsilon ensures that if there is any intersection,
+                 it is only counted once. Further, it also correctly detects
+                 when a line crosses through a point without entering or exiting
+                 the polyogn */
 
               else if (curr_point[1] == line_y) {
                 curr_point[1] += 0.00001 * (1/res);
