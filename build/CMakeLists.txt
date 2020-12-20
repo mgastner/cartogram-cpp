@@ -33,24 +33,24 @@ set(CMAKE_C_COMPILER "gcc-10")
 
 find_package(CGAL)
 # include system to boost?
-find_package(Boost 1.70 COMPONENT program_options REQUIRED)
+find_package(Boost 1.70 COMPONENTS program_options REQUIRED)
 find_package(FFTW)
 find_package(Threads REQUIRED)
 
 # include_directories(${Boost_INCLUDE_DIR})
 # link_directories(${Boost_LIBRARY_DIR})
 
-add_executable(cartogram main.cpp
-              geo_div.cpp
-          		map_state.cpp
-          		read_csv.cpp
-          		rescale_map.cpp
-          		write_eps.cpp
-          		read_geojson.cpp
-          		fill_with_density.cpp
-              blur_density.cpp
-              flatten_density.cpp
-          		ft_real_2d.cpp)
+add_executable(cartogram ../cartogram_generator/main.cpp
+              ../cartogram_generator/geo_div.cpp
+          		../cartogram_generator/map_state.cpp
+          		../cartogram_generator/read_csv.cpp
+          		../cartogram_generator/rescale_map.cpp
+          		../cartogram_generator/write_eps.cpp
+          		../cartogram_generator/read_geojson.cpp
+          		../cartogram_generator/fill_with_density.cpp
+              ../cartogram_generator/blur_density.cpp
+              ../cartogram_generator/flatten_density.cpp
+            ../cartogram_generator/ft_real_2d.cpp)
 
 # Boost::program_options ${Boost_LIBRARIES}
 target_link_libraries(cartogram
