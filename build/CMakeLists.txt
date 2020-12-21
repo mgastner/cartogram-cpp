@@ -21,7 +21,7 @@ set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${findFFTW_DIR}")
 
 # As per https://github.com/CGAL/cgal/wiki/How-to-use-CGAL-with-CMake-or-your-own-build-system
 cmake_minimum_required(VERSION 3.1)
-project(cartogram)
+project(cartogram LANGUAGES CXX)
 
 # set(PLATFORM_SPECIFIC_LIBS "-lpthread")
 set(CMAKE_CXX_STANDARD 20)
@@ -46,6 +46,7 @@ add_executable(cartogram ../cartogram_generator/main.cpp
           		../cartogram_generator/read_csv.cpp
           		../cartogram_generator/rescale_map.cpp
           		../cartogram_generator/write_eps.cpp
+              # ../cartogram_generator/topological_checks.cpp
           		../cartogram_generator/read_geojson.cpp
           		../cartogram_generator/fill_with_density.cpp
               ../cartogram_generator/blur_density.cpp
@@ -57,6 +58,7 @@ target_link_libraries(cartogram
                       ${Boost_LIBRARIES}
                       # ${Boost_SYSTEM_LIBRARY}
                       # Boost::program_options
+                      OpenMP::OpenMP_CXX
                       CGAL::CGAL
                       ${FFTW_LIBRARIES}
                       ${CMAKE_THREAD_LIBS_INIT})
