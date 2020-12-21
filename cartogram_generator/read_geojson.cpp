@@ -100,7 +100,6 @@ GeoDiv json_to_cgal(const std::string id, const json json_coords) {
         int_ring.push_back(Epick::Point_2((double)jphc_int[j][0],
                                           (double)jphc_int[j][1]));
       }
-      int_ring_v.push_back(int_ring);
       unsigned int last_index = jphc_int.size() - 1;
       if (jphc_int[0][0] != jphc_int[last_index][0] ||
           jphc_int[0][1] != jphc_int[last_index][1]) {
@@ -114,6 +113,7 @@ GeoDiv json_to_cgal(const std::string id, const json json_coords) {
       if (int_ring.is_counterclockwise_oriented()) {
         int_ring.reverse_orientation();
       }
+      int_ring_v.push_back(int_ring);
     }
     const Polygon_with_holes pwh(ext_ring, int_ring_v.begin(), int_ring_v.end());
     gd.push_back(pwh);
