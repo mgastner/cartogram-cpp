@@ -3,6 +3,7 @@
 
 #include <CGAL/Exact_predicates_inexact_constructions_kernel.h>
 #include <CGAL/Polygon_with_holes_2.h>
+#include <CGAL/Boolean_set_operations_2.h>
 
 typedef CGAL::Exact_predicates_inexact_constructions_kernel Epick;
 typedef CGAL::Polygon_2<Epick> Polygon;

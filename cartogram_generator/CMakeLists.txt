@@ -40,6 +40,7 @@ add_executable(cartogram main.cpp
 		map_state.cpp
 		read_csv.cpp
 		rescale_map.cpp
+    topological_checks.cpp
 		write_eps.cpp
 		read_geojson.cpp
 		fill_with_density.cpp
