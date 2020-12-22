@@ -65,8 +65,8 @@ void fill_with_density(MapState* map_state)
              line_y += (1.0/res)) {
           Polygon ext_ring = pwh.outer_boundary();
           double prev_point[2];
-          prev_point[0] = ext_ring[0][0];
-          prev_point[1] = ext_ring[0][1];
+          prev_point[0] = ext_ring[ext_ring.size()-1][0];
+          prev_point[1] = ext_ring[ext_ring.size()-1][1];
 
           // Temporary vector of intersections for this particular line
           std::vector<intersection> intersections;
@@ -85,10 +85,10 @@ void fill_with_density(MapState* map_state)
           double epsilon = 1e-6;
 
           // First we run the algorithm on the exterior ring.
-          for (unsigned int l = 1; l <= ext_ring.size(); l++) {
+          for (unsigned int l = 0; l < ext_ring.size(); l++) {
             double curr_point[2];
-            curr_point[0] = ext_ring[(l)%ext_ring.size()][0];
-            curr_point[1] = ext_ring[(l)%ext_ring.size()][1];
+            curr_point[0] = ext_ring[l][0];
+            curr_point[1] = ext_ring[l][1];
 
             // Check if intersection is present
             if (((curr_point[1] <= line_y && prev_point[1] >= line_y) ||
@@ -119,12 +119,12 @@ void fill_with_density(MapState* map_state)
           // Run algorithm on each hole
           for (auto hci = pwh.holes_begin(); hci != pwh.holes_end(); ++hci) {
             Polygon hole = *hci;
-            prev_point[0] = hole[0][0];
-            prev_point[1] = hole[0][1];
-            for (unsigned int l = 1; l <= hole.size(); l++) {
+            prev_point[0] = hole[hole.size()-1][0];
+            prev_point[1] = hole[hole.size()-1][1];
+            for (unsigned int l = 0; l < hole.size(); l++) {
               double curr_point[2];
-              curr_point[0] = hole[(l)%hole.size()][0];
-              curr_point[1] = hole[(l)%hole.size()][1];
+              curr_point[0] = hole[l][0];
+              curr_point[1] = hole[l][1];
               if (((curr_point[1] <= line_y && prev_point[1] >= line_y) ||
                    (curr_point[1] >= line_y && prev_point[1] <= line_y)) &&
                   (curr_point[1] != prev_point[1])) {
