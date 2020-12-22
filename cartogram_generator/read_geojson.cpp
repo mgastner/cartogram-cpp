@@ -183,7 +183,6 @@ void read_geojson(const std::string geometry_file_name, MapState *map_state)
     // Use dump() instead of get() so that we can handle string and numeric
     // IDs in GeoJSON. Both types of IDs are converted to C++ strings.
     std::string id = properties[map_state->id_header()].dump();
-    std::cout << id << "\n";
     if (id.front() == '"' && id.back() == '"' && id.length() > 2) {
       id = id.substr(1, id.length() - 2);
     }
