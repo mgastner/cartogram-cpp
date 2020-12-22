@@ -58,8 +58,17 @@ void check_geojson_validity(const json j)
   return;
 }
 
-GeoDiv json_to_cgal(const std::string id, const json json_coords) {
+GeoDiv json_to_cgal(const std::string id, const json json_coords_, bool is_polygon) {
   GeoDiv gd(id);
+  
+  json json_coords;
+  
+  if (is_polygon){
+    json_coords["0"] = json_coords_;
+  } else {
+    json_coords = json_coords_;
+  }
+  
   for (auto json_pgn_holes_container : json_coords) {
     using namespace CGAL;
 
@@ -123,6 +132,9 @@ GeoDiv json_to_cgal(const std::string id, const json json_coords) {
 
 void read_geojson(const std::string geometry_file_name, MapState *map_state)
 {
+  bool is_polygon;
+  bool polygon_warning = false;
+  
   // Open file.
   std::ifstream in_file(geometry_file_name);
   if (!in_file) {
@@ -146,40 +158,45 @@ void read_geojson(const std::string geometry_file_name, MapState *map_state)
   for (auto feature : j["features"]) {
     json geometry = feature["geometry"];
     if (geometry["type"] == "Polygon") {
-      std::cerr << "ERROR: Sorry, no support for Polygon geometry yet"
-                << std::endl;
-      _Exit(15);
-    } else if (geometry["type"] == "MultiPolygon") {
-
-      // Storing id from properties
-      json properties = feature["properties"];
-      if (!properties.contains(map_state->id_header())) {
-        std::cerr << "ERROR: In GeoJSON, there is no property "
-                  << map_state->id_header()
-                  << " in feature." << std::endl;
-        std::cerr << "Available properties are: "
-                  << properties
-                  << std::endl;
-        _Exit(16);
+      if (!polygon_warning){
+        std::cout << "Warning: support for Polygon geometry experimental, "
+                  << "for best results use MultiPolygon" << "\n";
+        polygon_warning = true;
       }
-
-      // Use dump() instead of get() so that we can handle string and numeric
-      // IDs in GeoJSON. Both types of IDs are converted to C++ strings.
-      std::string id = properties[map_state->id_header()].dump();
-      if (id.front() == '"' && id.back() == '"' && id.length() > 2) {
-        id = id.substr(1, id.length() - 2);
-      }
-      if (ids_in_geojson.contains(id)) {
-        std::cerr << "ERROR: ID "
-                  << id
-                  << " appears more than once in GeoJSON"
-                  << std::endl;
-        _Exit(17);
-      }
-      ids_in_geojson.insert(id);
-      GeoDiv gd = json_to_cgal(id, geometry["coordinates"]);
-      map_state->push_back(gd);
+      is_polygon = true;
     }
+    else if (geometry["type"] == "MultiPolygon") {
+      is_polygon = false;
+    }
+    // Storing id from properties
+    json properties = feature["properties"];
+    if (!properties.contains(map_state->id_header())) {
+      std::cerr << "ERROR: In GeoJSON, there is no property "
+                << map_state->id_header()
+                << " in feature." << std::endl;
+      std::cerr << "Available properties are: "
+                << properties
+                << std::endl;
+      _Exit(16);
+    }
+
+    // Use dump() instead of get() so that we can handle string and numeric
+    // IDs in GeoJSON. Both types of IDs are converted to C++ strings.
+    std::string id = properties[map_state->id_header()].dump();
+    std::cout << id << "\n";
+    if (id.front() == '"' && id.back() == '"' && id.length() > 2) {
+      id = id.substr(1, id.length() - 2);
+    }
+    if (ids_in_geojson.contains(id)) {
+      std::cerr << "ERROR: ID "
+                << id
+                << " appears more than once in GeoJSON"
+                << std::endl;
+      _Exit(17);
+    }
+    ids_in_geojson.insert(id);
+    GeoDiv gd = json_to_cgal(id, geometry["coordinates"], is_polygon);
+    map_state->push_back(gd);
   }
 
   // Check whether all IDs in visual_variable_file appear in GeoJSON
