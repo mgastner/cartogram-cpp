@@ -36,6 +36,7 @@ find_package(CGAL)
 find_package(Boost 1.70 COMPONENTS program_options REQUIRED)
 find_package(FFTW)
 find_package(Threads REQUIRED)
+find_package(OpenMP REQUIRED)
 
 # include_directories(${Boost_INCLUDE_DIR})
 # link_directories(${Boost_LIBRARY_DIR})
