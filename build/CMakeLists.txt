@@ -36,7 +36,6 @@ find_package(CGAL)
 find_package(Boost 1.70 COMPONENTS program_options REQUIRED)
 find_package(FFTW)
 find_package(Threads REQUIRED)
-find_package(OpenMP REQUIRED)
 
 # include_directories(${Boost_INCLUDE_DIR})
 # link_directories(${Boost_LIBRARY_DIR})
@@ -47,7 +46,8 @@ add_executable(cartogram ../cartogram_generator/main.cpp
           		../cartogram_generator/read_csv.cpp
           		../cartogram_generator/rescale_map.cpp
           		../cartogram_generator/write_eps.cpp
-              # ../cartogram_generator/topological_checks.cpp
+              ../cartogram_generator/topological_checks.cpp
+              ../cartogram_generator/helper_functions.cpp
           		../cartogram_generator/read_geojson.cpp
           		../cartogram_generator/fill_with_density.cpp
               ../cartogram_generator/blur_density.cpp
