@@ -182,7 +182,7 @@ void fill_with_density(MapState* map_state)
         map_intersections[(int) round(((line_y - (1.0/res)/2.0) * res))];
 
       // Sort vector in ascending order of intersection
-      sort(intersections.begin(), intersections.end());
+      std::sort(intersections.begin(), intersections.end());
 
       // Fill lines that have no intersections with mean_density
       if (intersections.size() == 0) {

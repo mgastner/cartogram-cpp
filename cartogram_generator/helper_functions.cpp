@@ -129,13 +129,13 @@ std::vector<Point> graticule_intersections(Point a, Point b)
     }
 
     // Sort in ascending order of x coordinates
-    sort(intersections_temp.begin(), intersections_temp.end());
-    intersections_temp.erase(unique(intersections_temp.begin(),
+    std::sort(intersections_temp.begin(), intersections_temp.end());
+    intersections_temp.erase(std::unique(intersections_temp.begin(),
     intersections_temp.end()), intersections_temp.end());
     if (a[0] > b[0]) {
 
       // Sort in descending order of x coordinates
-      reverse(intersections_temp.begin(), intersections_temp.end());
+      std::reverse(intersections_temp.begin(), intersections_temp.end());
     }
 
     // Converting to sorted vector of points
@@ -155,14 +155,14 @@ std::vector<Point> graticule_intersections(Point a, Point b)
     }
 
     // Sort in ascending order of y coordinates
-    sort(intersections_temp.begin(), intersections_temp.end());
-    intersections_temp.erase(unique(intersections_temp.begin(),
+    std::sort(intersections_temp.begin(), intersections_temp.end());
+    intersections_temp.erase(std::unique(intersections_temp.begin(),
     intersections_temp.end()), intersections_temp.end());
 
     if (a[1] > b[1]) {
 
       // Sort in descending order of y coordinates
-      reverse(intersections_temp.begin(), intersections_temp.end());
+      std::reverse(intersections_temp.begin(), intersections_temp.end());
     }
 
     // Converting to sorted vector of points
