@@ -58,15 +58,15 @@ void check_geojson_validity(const json j)
   return;
 }
 
-GeoDiv json_to_cgal(const std::string id, const json json_coords_, bool is_polygon) {
+GeoDiv json_to_cgal(const std::string id, const json json_coords_raw, bool is_polygon) {
   GeoDiv gd(id);
   
   json json_coords;
   
   if (is_polygon){
-    json_coords["0"] = json_coords_;
+    json_coords["0"] = json_coords_raw;
   } else {
-    json_coords = json_coords_;
+    json_coords = json_coords_raw;
   }
   
   for (auto json_pgn_holes_container : json_coords) {
