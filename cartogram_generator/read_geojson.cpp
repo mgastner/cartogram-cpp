@@ -58,16 +58,25 @@ void check_geojson_validity(const json j)
   return;
 }
 
-GeoDiv json_to_cgal(const std::string id, const json json_coords) {
+GeoDiv json_to_cgal(const std::string id, const json json_coords_raw, bool is_polygon) {
   GeoDiv gd(id);
+
+  json json_coords;
+
+  if (is_polygon){
+    json_coords["0"] = json_coords_raw;
+  } else {
+    json_coords = json_coords_raw;
+  }
+
   for (auto json_pgn_holes_container : json_coords) {
     using namespace CGAL;
 
     // Store exterior ring in CGAL format
-    Polygon_2<Epick> ext_ring;
+    Polygon ext_ring;
     const json jphc_ext = json_pgn_holes_container[0];
     for (unsigned int j = 0; j < jphc_ext.size() - 1; j++) {
-      ext_ring.push_back(Epick::Point_2((double)jphc_ext[j][0],
+      ext_ring.push_back(Point((double)jphc_ext[j][0],
                                         (double)jphc_ext[j][1]));
     }
 
@@ -76,7 +85,7 @@ GeoDiv json_to_cgal(const std::string id, const json json_coords) {
     unsigned int last_index = jphc_ext.size() - 1;
     if (jphc_ext[0][0] != jphc_ext[last_index][0] ||
         jphc_ext[0][1] != jphc_ext[last_index][1]) {
-      ext_ring.push_back(Epick::Point_2((double)jphc_ext[last_index][0],
+      ext_ring.push_back(Point((double)jphc_ext[last_index][0],
                                         (double)jphc_ext[last_index][1]));
     }
     if (!ext_ring.is_simple()) {
@@ -92,19 +101,19 @@ GeoDiv json_to_cgal(const std::string id, const json json_coords) {
     }
 
     // Store interior ring
-    std::vector<Polygon_2<Epick> > int_ring_v;
+    std::vector<Polygon> int_ring_v;
     for (unsigned int i = 1; i < json_pgn_holes_container.size(); i++) {
-      Polygon_2<Epick> int_ring;
+      Polygon int_ring;
       const json jphc_int = json_pgn_holes_container[i];
       for (unsigned int j = 0; j < jphc_int.size() - 1; j++) {
-        int_ring.push_back(Epick::Point_2((double)jphc_int[j][0],
+        int_ring.push_back(Point((double)jphc_int[j][0],
                                           (double)jphc_int[j][1]));
       }
       int_ring_v.push_back(int_ring);
       unsigned int last_index = jphc_int.size() - 1;
       if (jphc_int[0][0] != jphc_int[last_index][0] ||
           jphc_int[0][1] != jphc_int[last_index][1]) {
-        int_ring.push_back(Epick::Point_2((double)jphc_int[last_index][0],
+        int_ring.push_back(Point((double)jphc_int[last_index][0],
                                           (double)jphc_int[last_index][1]));
       }
       if (!int_ring.is_simple()) {
@@ -123,6 +132,9 @@ GeoDiv json_to_cgal(const std::string id, const json json_coords) {
 
 void read_geojson(const std::string geometry_file_name, MapState *map_state)
 {
+  bool is_polygon;
+  bool polygon_warning = false;
+
   // Open file.
   std::ifstream in_file(geometry_file_name);
   if (!in_file) {
@@ -146,40 +158,44 @@ void read_geojson(const std::string geometry_file_name, MapState *map_state)
   for (auto feature : j["features"]) {
     json geometry = feature["geometry"];
     if (geometry["type"] == "Polygon") {
-      std::cerr << "ERROR: Sorry, no support for Polygon geometry yet"
-                << std::endl;
-      _Exit(15);
-    } else if (geometry["type"] == "MultiPolygon") {
-
-      // Storing id from properties
-      json properties = feature["properties"];
-      if (!properties.contains(map_state->id_header())) {
-        std::cerr << "ERROR: In GeoJSON, there is no property "
-                  << map_state->id_header()
-                  << " in feature." << std::endl;
-        std::cerr << "Available properties are: "
-                  << properties
-                  << std::endl;
-        _Exit(16);
+      if (!polygon_warning){
+        std::cout << "Warning: support for Polygon geometry experimental, "
+                  << "for best results use MultiPolygon" << "\n";
+        polygon_warning = true;
       }
-
-      // Use dump() instead of get() so that we can handle string and numeric
-      // IDs in GeoJSON. Both types of IDs are converted to C++ strings.
-      std::string id = properties[map_state->id_header()].dump();
-      if (id.front() == '"' && id.back() == '"' && id.length() > 2) {
-        id = id.substr(1, id.length() - 2);
-      }
-      if (ids_in_geojson.contains(id)) {
-        std::cerr << "ERROR: ID "
-                  << id
-                  << " appears more than once in GeoJSON"
-                  << std::endl;
-        _Exit(17);
-      }
-      ids_in_geojson.insert(id);
-      GeoDiv gd = json_to_cgal(id, geometry["coordinates"]);
-      map_state->push_back(gd);
+      is_polygon = true;
     }
+    else if (geometry["type"] == "MultiPolygon") {
+      is_polygon = false;
+    }
+    // Storing id from properties
+    json properties = feature["properties"];
+    if (!properties.contains(map_state->id_header())) {
+      std::cerr << "ERROR: In GeoJSON, there is no property "
+                << map_state->id_header()
+                << " in feature." << std::endl;
+      std::cerr << "Available properties are: "
+                << properties
+                << std::endl;
+      _Exit(16);
+    }
+
+    // Use dump() instead of get() so that we can handle string and numeric
+    // IDs in GeoJSON. Both types of IDs are converted to C++ strings.
+    std::string id = properties[map_state->id_header()].dump();
+    if (id.front() == '"' && id.back() == '"' && id.length() > 2) {
+      id = id.substr(1, id.length() - 2);
+    }
+    if (ids_in_geojson.contains(id)) {
+      std::cerr << "ERROR: ID "
+                << id
+                << " appears more than once in GeoJSON"
+                << std::endl;
+      _Exit(17);
+    }
+    ids_in_geojson.insert(id);
+    GeoDiv gd = json_to_cgal(id, geometry["coordinates"], is_polygon);
+    map_state->push_back(gd);
   }
 
   // Check whether all IDs in visual_variable_file appear in GeoJSON
