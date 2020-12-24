@@ -58,17 +58,17 @@ void check_geojson_validity(const json j)
   return;
 }
 
-GeoDiv json_to_cgal(const std::string id, const json json_coords_raw, bool is_polygon) {
+GeoDiv json_to_cgal(const std::string id,
+                    const json json_coords_raw,
+                    bool is_polygon)
+{
   GeoDiv gd(id);
-
   json json_coords;
-
-  if (is_polygon){
+  if (is_polygon) {
     json_coords["0"] = json_coords_raw;
   } else {
     json_coords = json_coords_raw;
   }
-
   for (auto json_pgn_holes_container : json_coords) {
     using namespace CGAL;
 
@@ -77,7 +77,7 @@ GeoDiv json_to_cgal(const std::string id, const json json_coords_raw, bool is_po
     const json jphc_ext = json_pgn_holes_container[0];
     for (unsigned int j = 0; j < jphc_ext.size() - 1; j++) {
       ext_ring.push_back(Point((double)jphc_ext[j][0],
-                                        (double)jphc_ext[j][1]));
+                               (double)jphc_ext[j][1]));
     }
 
     // CGAL considers a polygon as simple only if first vertex and last vertex
@@ -86,7 +86,7 @@ GeoDiv json_to_cgal(const std::string id, const json json_coords_raw, bool is_po
     if (jphc_ext[0][0] != jphc_ext[last_index][0] ||
         jphc_ext[0][1] != jphc_ext[last_index][1]) {
       ext_ring.push_back(Point((double)jphc_ext[last_index][0],
-                                        (double)jphc_ext[last_index][1]));
+                               (double)jphc_ext[last_index][1]));
     }
     if (!ext_ring.is_simple()) {
       std::cerr << "ERROR: exterior ring not a simple polygon" << std::endl;
@@ -107,14 +107,14 @@ GeoDiv json_to_cgal(const std::string id, const json json_coords_raw, bool is_po
       const json jphc_int = json_pgn_holes_container[i];
       for (unsigned int j = 0; j < jphc_int.size() - 1; j++) {
         int_ring.push_back(Point((double)jphc_int[j][0],
-                                          (double)jphc_int[j][1]));
+                                 (double)jphc_int[j][1]));
       }
       int_ring_v.push_back(int_ring);
       unsigned int last_index = jphc_int.size() - 1;
       if (jphc_int[0][0] != jphc_int[last_index][0] ||
           jphc_int[0][1] != jphc_int[last_index][1]) {
         int_ring.push_back(Point((double)jphc_int[last_index][0],
-                                          (double)jphc_int[last_index][1]));
+                                 (double)jphc_int[last_index][1]));
       }
       if (!int_ring.is_simple()) {
         std::cerr << "ERROR: interior ring not a simple polygon" << std::endl;
@@ -124,7 +124,9 @@ GeoDiv json_to_cgal(const std::string id, const json json_coords_raw, bool is_po
         int_ring.reverse_orientation();
       }
     }
-    const Polygon_with_holes pwh(ext_ring, int_ring_v.begin(), int_ring_v.end());
+    const Polygon_with_holes pwh(ext_ring,
+                                 int_ring_v.begin(),
+                                 int_ring_v.end());
     gd.push_back(pwh);
   }
   return gd;
@@ -135,7 +137,7 @@ void read_geojson(const std::string geometry_file_name, MapState *map_state)
   bool is_polygon;
   bool polygon_warning = false;
 
-  // Open file.
+  // Open file
   std::ifstream in_file(geometry_file_name);
   if (!in_file) {
     throw std::system_error(errno,
@@ -143,7 +145,7 @@ void read_geojson(const std::string geometry_file_name, MapState *map_state)
                             "failed to open " + geometry_file_name);
   }
 
-  // Parse JSON.
+  // Parse JSON
   json j;
   try {
     in_file >> j;
@@ -158,7 +160,7 @@ void read_geojson(const std::string geometry_file_name, MapState *map_state)
   for (auto feature : j["features"]) {
     json geometry = feature["geometry"];
     if (geometry["type"] == "Polygon") {
-      if (!polygon_warning){
+      if (!polygon_warning) {
         std::cout << "Warning: support for Polygon geometry experimental, "
                   << "for best results use MultiPolygon" << "\n";
         polygon_warning = true;
@@ -168,6 +170,7 @@ void read_geojson(const std::string geometry_file_name, MapState *map_state)
     else if (geometry["type"] == "MultiPolygon") {
       is_polygon = false;
     }
+
     // Storing id from properties
     json properties = feature["properties"];
     if (!properties.contains(map_state->id_header())) {
