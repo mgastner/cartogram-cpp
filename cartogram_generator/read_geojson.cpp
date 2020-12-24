@@ -19,7 +19,7 @@ void check_geojson_validity(const nlohmann::json j)
     std::cerr << "ERROR: JSON does not contain a key 'features'" << std::endl;
     _Exit(6);
   }
-  nlohmann::json features = j["features"];
+  const nlohmann::json features = j["features"];
   for (auto feature : features) {
     if (!feature.contains(std::string{"type"})) {
       std::cerr << "ERROR: JSON contains a 'Features' element without key "
@@ -36,7 +36,7 @@ void check_geojson_validity(const nlohmann::json j)
                 << std::endl;
       _Exit(9);
     }
-    nlohmann::json geometry = feature["geometry"];
+    const nlohmann::json geometry = feature["geometry"];
     if (!geometry.contains(std::string("type"))) {
       std::cerr << "ERROR: JSON contains geometry without key 'type'"
                 << std::endl;
@@ -79,7 +79,7 @@ GeoDiv json_to_cgal(const std::string id,
 
     // CGAL considers a polygon as simple only if first vertex and last vertex
     // are different
-    unsigned int last_index = jphc_ext.size() - 1;
+    const unsigned int last_index = jphc_ext.size() - 1;
     if (jphc_ext[0][0] != jphc_ext[last_index][0] ||
         jphc_ext[0][1] != jphc_ext[last_index][1]) {
       ext_ring.push_back(Point((double)jphc_ext[last_index][0],
@@ -107,7 +107,7 @@ GeoDiv json_to_cgal(const std::string id,
                                  (double)jphc_int[j][1]));
       }
       int_ring_v.push_back(int_ring);
-      unsigned int last_index = jphc_int.size() - 1;
+      const unsigned int last_index = jphc_int.size() - 1;
       if (jphc_int[0][0] != jphc_int[last_index][0] ||
           jphc_int[0][1] != jphc_int[last_index][1]) {
         int_ring.push_back(Point((double)jphc_int[last_index][0],
@@ -132,7 +132,7 @@ GeoDiv json_to_cgal(const std::string id,
 void read_geojson(const std::string geometry_file_name, MapState *map_state)
 {
   bool is_polygon;
-  bool polygon_warning = false;
+  bool polygon_warning_has_been_issued = false;
 
   // Open file
   std::ifstream in_file(geometry_file_name);
@@ -155,21 +155,20 @@ void read_geojson(const std::string geometry_file_name, MapState *map_state)
   check_geojson_validity(j);
   std::set<std::string> ids_in_geojson;
   for (auto feature : j["features"]) {
-    nlohmann::json geometry = feature["geometry"];
+    const nlohmann::json geometry = feature["geometry"];
     if (geometry["type"] == "Polygon") {
-      if (!polygon_warning) {
+      if (!polygon_warning_has_been_issued) {
         std::cout << "Warning: support for Polygon geometry experimental, "
                   << "for best results use MultiPolygon" << "\n";
-        polygon_warning = true;
+        polygon_warning_has_been_issued = true;
       }
       is_polygon = true;
-    }
-    else if (geometry["type"] == "MultiPolygon") {
+    } else if (geometry["type"] == "MultiPolygon") {
       is_polygon = false;
     }
 
     // Storing id from properties
-    nlohmann::json properties = feature["properties"];
+    const nlohmann::json properties = feature["properties"];
     if (!properties.contains(map_state->id_header())) {
       std::cerr << "ERROR: In GeoJSON, there is no property "
                 << map_state->id_header()
@@ -194,12 +193,12 @@ void read_geojson(const std::string geometry_file_name, MapState *map_state)
       _Exit(17);
     }
     ids_in_geojson.insert(id);
-    GeoDiv gd = json_to_cgal(id, geometry["coordinates"], is_polygon);
+    const GeoDiv gd = json_to_cgal(id, geometry["coordinates"], is_polygon);
     map_state->push_back(gd);
   }
 
   // Check whether all IDs in visual_variable_file appear in GeoJSON
-  std::set<std::string> ids_in_vv_file =
+  const std::set<std::string> ids_in_vv_file =
     map_state->ids_in_visual_variables_file();
   std::set<std::string> ids_not_in_geojson;
   std::set_difference(ids_in_vv_file.begin(), ids_in_vv_file.end(),
