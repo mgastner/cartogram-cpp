@@ -1,3 +1,11 @@
+if (MSVC)
+    # warning level 4
+    add_compile_options(/W4)
+else()
+    # lots of warnings
+    add_compile_options(-Wall -Wextra -pedantic)
+endif()
+
 # code for findFFTW
 configure_file(downloadFindFFTW.cmake.in findFFTW-download/CMakeLists.txt)
 execute_process(COMMAND ${CMAKE_COMMAND} -G "${CMAKE_GENERATOR}" .
