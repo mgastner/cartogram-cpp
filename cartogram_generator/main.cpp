@@ -41,7 +41,8 @@ int main(const int argc, const char *argv[])
   bool world = false;
 
   // Other boolean values that are needed to parse the command line arguments
-  bool input_polygons_to_eps = false;
+  bool input_polygons_to_eps = false,
+       input_density_to_eps = false;
 
   // Parse command-line options. See
   // https://theboostcpplibraries.com/boost.program_options
@@ -82,6 +83,10 @@ int main(const int argc, const char *argv[])
       "input_polygons_to_eps",
       value<bool>(&input_polygons_to_eps),
       "Boolean: make EPS image input_polygons.eps?"
+      )(
+      "input_density_to_eps",
+      value<bool>(&input_density_to_eps),
+      "Boolean: make EPS image input_density.eps?"
       );
     store(parse_command_line(argc, argv, desc), vm);
     if (vm.count("help") || vm.empty()) {
@@ -119,9 +124,11 @@ int main(const int argc, const char *argv[])
     write_map_to_eps("input_polygons.eps", &map_state);
   }
   fill_with_density(&map_state);
-  FTReal2d *ft = map_state.ref_to_rho_init();
-  double *rho_init = ft->array();
-  write_density_to_eps("test_density.eps", rho_init, &map_state);
+  if (input_density_to_eps) {
+    FTReal2d *ft = map_state.ref_to_rho_init();
+    double *rho_init = ft->array();
+    write_density_to_eps("input_density.eps", rho_init, &map_state);
+  }
 
   return EXIT_SUCCESS;
 
