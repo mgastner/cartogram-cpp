@@ -77,15 +77,15 @@ int main(const int argc, const char *argv[])
       "Number of grid cells along longer Cartesian coordinate axis"
       )(
       "world,w",
-      value<bool>(&world),
+      value<bool>(&world)->implicit_value("false"),
       "Boolean: is input a world map in longitude-latitude format?"
       )(
       "input_polygons_to_eps",
-      value<bool>(&input_polygons_to_eps),
+      value<bool>(&input_polygons_to_eps)->implicit_value("true"),
       "Boolean: make EPS image input_polygons.eps?"
       )(
       "input_density_to_eps",
-      value<bool>(&input_density_to_eps),
+      value<bool>(&input_density_to_eps)->implicit_value("true"),
       "Boolean: make EPS image input_density.eps?"
       );
     store(parse_command_line(argc, argv, desc), vm);
