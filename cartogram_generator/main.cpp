@@ -40,6 +40,9 @@ int main(const int argc, const char *argv[])
   // input map is not a world map.
   bool world = false;
 
+  // Other boolean values that are needed to parse the command line arguments
+  bool input_polygons_to_eps = false;
+
   // Parse command-line options. See
   // https://theboostcpplibraries.com/boost.program_options
   variables_map vm;
@@ -75,6 +78,10 @@ int main(const int argc, const char *argv[])
       "world,w",
       value<bool>(&world),
       "Boolean: is input a world map in longitude-latitude format?"
+      )(
+      "input_polygons_to_eps",
+      value<bool>(&input_polygons_to_eps),
+      "Boolean: make EPS image input_polygons.eps?"
       );
     store(parse_command_line(argc, argv, desc), vm);
     if (vm.count("help") || vm.empty()) {
@@ -96,16 +103,22 @@ int main(const int argc, const char *argv[])
   try {
     read_geojson(geo_file_name, &map_state);
   } catch (const std::system_error& e) {
-    std::cerr << "ERROR: " << e.what() << " (" << e.code() << ")" << std::endl;
+    std::cerr << "ERROR: "
+              << e.what()
+              << " ("
+              << e.code()
+              << ")"
+              << std::endl;
     return EXIT_FAILURE;
   }
 
   // Rescale map to fit into a rectangular box [0, lx] * [0, ly].
   rescale_map(long_grid_side_length, &map_state);
-  write_map_to_eps("test_cartogram.eps", &map_state);
-
+  if (input_polygons_to_eps) {
+    std::cout << "Writing input_polygons.eps" << std::endl;
+    write_map_to_eps("input_polygons.eps", &map_state);
+  }
   fill_with_density(&map_state);
-
   FTReal2d *ft = map_state.ref_to_rho_init();
   double *rho_init = ft->array();
   write_density_to_eps("test_density.eps", rho_init, &map_state);
