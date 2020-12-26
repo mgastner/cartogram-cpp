@@ -38,11 +38,11 @@ int main(const int argc, const char *argv[])
 
   // World maps need special projections. By default, we assume that the
   // input map is not a world map.
-  bool world = false;
+  bool world;
 
   // Other boolean values that are needed to parse the command line arguments
-  bool input_polygons_to_eps = false,
-       input_density_to_eps = false;
+  bool input_polygons_to_eps,
+       input_density_to_eps;
 
   // Parse command-line options. See
   // https://theboostcpplibraries.com/boost.program_options
@@ -77,15 +77,19 @@ int main(const int argc, const char *argv[])
       "Number of grid cells along longer Cartesian coordinate axis"
       )(
       "world,w",
-      value<bool>(&world)->implicit_value("false"),
+      value<bool>(&world)->default_value(false)->implicit_value(false),
       "Boolean: is input a world map in longitude-latitude format?"
       )(
       "input_polygons_to_eps",
-      value<bool>(&input_polygons_to_eps)->implicit_value("true"),
+      value<bool>(&input_polygons_to_eps)
+      ->default_value(false)
+      ->implicit_value(true),
       "Boolean: make EPS image input_polygons.eps?"
       )(
       "input_density_to_eps",
-      value<bool>(&input_density_to_eps)->implicit_value("true"),
+      value<bool>(&input_density_to_eps)
+      ->default_value(false)
+      ->implicit_value(true),
       "Boolean: make EPS image input_density.eps?"
       );
     store(parse_command_line(argc, argv, desc), vm);
@@ -127,6 +131,7 @@ int main(const int argc, const char *argv[])
   if (input_density_to_eps) {
     FTReal2d *ft = map_state.ref_to_rho_init();
     double *rho_init = ft->array();
+    std::cout << "Writing input_density.eps" << std::endl;
     write_density_to_eps("input_density.eps", rho_init, &map_state);
   }
 
