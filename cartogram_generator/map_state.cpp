@@ -14,7 +14,7 @@ MapState::~MapState()
   return;
 }
 
-const unsigned int MapState::n_geo_divs() const
+unsigned int MapState::n_geo_divs() const
 {
   return geo_divs_.size();
 }
@@ -41,7 +41,7 @@ void MapState::colors_insert(const std::string id, const std::string color)
   return;
 }
 
-const double MapState::target_areas_at(const std::string id)
+double MapState::target_areas_at(const std::string id)
 {
   return target_areas.at(id);
 }
@@ -77,7 +77,7 @@ const std::set<std::string> MapState::ids_in_visual_variables_file() const
   return ids_in_visual_variables_file_;
 }
 
-const bool MapState::is_world_map() const
+bool MapState::is_world_map() const
 {
   return is_world_map_;
 }
@@ -99,12 +99,12 @@ void MapState::make_grid(const unsigned int x, const unsigned int y)
   return;
 }
 
-const unsigned int MapState::lx() const
+unsigned int MapState::lx() const
 {
   return lx_;
 }
 
-const unsigned int MapState::ly() const
+unsigned int MapState::ly() const
 {
   return ly_;
 }

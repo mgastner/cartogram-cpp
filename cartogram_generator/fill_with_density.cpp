@@ -8,7 +8,7 @@ struct intersection {
 
   // Overload "<" operator for this data type. Idea from
   // https://stackoverflow.com/questions/4892680/sorting-a-vector-of-structs
-  const bool operator < (const intersection &rhs) const
+  bool operator < (const intersection &rhs) const
   {
     return (x < rhs.x || (x == rhs.x && direction < rhs.direction));
   }
@@ -39,8 +39,9 @@ void fill_with_density(MapState* map_state)
   // graticule lines.
   unsigned int res = 16;
 
-  // An array (map_intersections) to store vectors of intersections
-  std::vector<intersection> map_intersections[(int) (map_state->ly() * res)];
+  // A vector (map_intersections) to store vectors of intersections
+  int n_lines = (int) (map_state->ly() * res);
+  std::vector<std::vector<intersection>> map_intersections(n_lines);
 
   // Iterate through GeoDivs in map_state
   for (auto gd : map_state->geo_divs()) {
@@ -160,7 +161,7 @@ void fill_with_density(MapState* map_state)
           }
           std::sort(intersections.begin(), intersections.end());
 
-          // Add sorted vector of intersections to array map_intersections
+          // Add sorted vector of intersections to vector map_intersections
           for (unsigned int l = 0; l < intersections.size(); l++) {
             intersections[l].direction = (l%2 == 0);
             int index = round(((line_y - (1.0/res)/2.0) * res));

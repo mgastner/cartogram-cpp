@@ -2,7 +2,8 @@
 #include <fftw3.h>
 #include <iostream>
 
-FTReal2d::FTReal2d() {}
+FTReal2d::FTReal2d() {
+}
 
 FTReal2d::FTReal2d(const unsigned int i, const unsigned int j)
 {
@@ -45,8 +46,8 @@ double &FTReal2d::operator() (const unsigned int i, const unsigned int j)
   return array_[i*ly_ + j];
 }
 
-const double FTReal2d::operator() (const unsigned int i,
-                                   const unsigned int j) const
+double FTReal2d::operator() (const unsigned int i,
+                             const unsigned int j) const
 {
   return array_[i*ly_ + j];
 }
