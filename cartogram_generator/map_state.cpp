@@ -5,6 +5,7 @@ MapState::MapState(std::string v, const bool w, const bool wd2eps) :
   is_world_map_(w),
   write_density_to_eps_(wd2eps)
 {
+  n_finished_integrations_ = 0;
   return;
 }
 
@@ -141,4 +142,9 @@ void MapState::push_back(const GeoDiv gd)
 {
   geo_divs_.push_back(gd);
   return;
+}
+
+unsigned int MapState::n_finished_integrations() const
+{
+  return n_finished_integrations_;
 }

@@ -42,7 +42,7 @@ void fill_with_density(MapState* map_state)
 
   // A vector (map_intersections) to store vectors of intersections
   int n_lines = (int) (map_state->ly() * res);
-  std::vector<std::vector<intersection>> map_intersections(n_lines);
+  std::vector<std::vector<intersection> > map_intersections(n_lines);
 
   // Iterate through GeoDivs in map_state
   for (auto gd : map_state->geo_divs()) {
@@ -272,8 +272,12 @@ void fill_with_density(MapState* map_state)
     }
   }
   if (map_state->trigger_write_density_to_eps()) {
-    std::cout << "Writing input_density.eps" << std::endl;
-    write_density_to_eps("input_density.eps", rho_init.array(), map_state);
+    std::string file_name =
+      std::string("unblurred_density_") +
+      std::to_string(map_state->n_finished_integrations()) +
+      ".eps";
+    std::cout << "Writing " << file_name << std::endl;
+    write_density_to_eps(file_name, rho_init.array(), map_state);
   }
 
   map_state->execute_fwd_plan();

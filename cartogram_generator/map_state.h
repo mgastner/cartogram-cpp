@@ -47,6 +47,7 @@ public:
   void execute_fwd_plan() const;
   void execute_bwd_plan() const;
   void push_back(const GeoDiv);
+  unsigned int n_finished_integrations() const;
 };
 
 #endif
