@@ -279,7 +279,6 @@ void fill_with_density(MapState* map_state)
     std::cout << "Writing " << file_name << std::endl;
     write_density_to_eps(file_name, rho_init.array(), map_state);
   }
-
   map_state->execute_fwd_plan();
   return;
 }

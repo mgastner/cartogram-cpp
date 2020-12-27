@@ -137,7 +137,7 @@ int main(const int argc, const char *argv[])
     fill_with_density(&map_state);
 
 
-    blur_density(0.2, &map_state);
+    blur_density(10.0, &map_state);
     return EXIT_SUCCESS;
 
     flatten_density(&map_state);
