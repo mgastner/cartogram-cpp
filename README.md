@@ -3,8 +3,6 @@ Cartogram generator in C++
 
 ## Note: This is still a work-in-progress and, hence, cartograms are not outputted at the moment.
 
----
-
 ## Installing Dependencies on Ubuntu
 
 #### Installing nlohmann's JSON parser
@@ -36,8 +34,6 @@ Cartogram generator in C++
 5. `./configure`
 6. `make`
 7. `sudo make install`
-
----
 
 ## Compiling and running on Ubuntu
 
