@@ -36,8 +36,8 @@ set(CMAKE_CXX_STANDARD 20)
 # add_compile_definitions(_GLIBCXX_USE_CXX11_ABI=0)
 set(THREADS_PREFER_PTHREAD_FLAG ON)
 set(CMAKE_BUILD_TYPE Release)
-set(CMAKE_CXX_COMPILER "g++-10")
-set(CMAKE_C_COMPILER "gcc-10")
+set(CMAKE_C_COMPILER "/usr/local/opt/llvm/bin/clang")
+set(CMAKE_CXX_COMPILER "/usr/local/opt/llvm/bin/clang++")
 
 find_package(CGAL)
 # include system to boost?
