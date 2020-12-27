@@ -50,25 +50,25 @@ find_package(OpenMP REQUIRED)
 # link_directories(${Boost_LIBRARY_DIR})
 
 add_executable(cartogram ../cartogram_generator/main.cpp
-              ../cartogram_generator/geo_div.cpp
-          		../cartogram_generator/map_state.cpp
-          		../cartogram_generator/read_csv.cpp
-          		../cartogram_generator/rescale_map.cpp
-          		../cartogram_generator/write_eps.cpp
-              # ../cartogram_generator/topological_checks.cpp
-              # ../cartogram_generator/helper_functions.cpp
-          		../cartogram_generator/read_geojson.cpp
-          		../cartogram_generator/fill_with_density.cpp
-              ../cartogram_generator/blur_density.cpp
-              ../cartogram_generator/flatten_density.cpp
-            ../cartogram_generator/ft_real_2d.cpp)
+  ../cartogram_generator/geo_div.cpp
+  ../cartogram_generator/map_state.cpp
+  ../cartogram_generator/read_csv.cpp
+  ../cartogram_generator/rescale_map.cpp
+  ../cartogram_generator/write_eps.cpp
+  # ../cartogram_generator/topological_checks.cpp
+  ../cartogram_generator/helper_functions.cpp
+  ../cartogram_generator/read_geojson.cpp
+  ../cartogram_generator/fill_with_density.cpp
+  ../cartogram_generator/blur_density.cpp
+  ../cartogram_generator/flatten_density.cpp
+  ../cartogram_generator/ft_real_2d.cpp)
 
 # Boost::program_options ${Boost_LIBRARIES}
 target_link_libraries(cartogram
-                      ${Boost_LIBRARIES}
-                      # ${Boost_SYSTEM_LIBRARY}
-                      # Boost::program_options
-                      OpenMP::OpenMP_CXX
-                      CGAL::CGAL
-                      ${FFTW_LIBRARIES}
-                      ${CMAKE_THREAD_LIBS_INIT})
+  ${Boost_LIBRARIES}
+  # ${Boost_SYSTEM_LIBRARY}
+  # Boost::program_options
+  OpenMP::OpenMP_CXX
+  CGAL::CGAL
+  ${FFTW_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT})
