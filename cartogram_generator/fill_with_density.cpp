@@ -211,7 +211,10 @@ void fill_with_density(MapState* map_state)
           // Pre-condition to ensure different intersecting points
           if (left_x != right_x) {
             for (unsigned int m = ceil(left_x); m <= ceil(right_x); m++) {
-              if (m == ceil(left_x)) {
+              if (ceil(left_x) == ceil(right_x)) {
+                rho_init(m - 1, k) +=
+                  intersections[l].target_density * (right_x - left_x);
+              } else if (m == ceil(left_x)) {
                 rho_init(m - 1, k) +=
                   ((mean_density/res) * (ceil(left_x) - left_x));
               } else if (m == ceil(right_x)) {
@@ -257,7 +260,10 @@ void fill_with_density(MapState* map_state)
 
         // Fill each cell between intersections
         for (unsigned int m = ceil(left_x); m <= ceil(right_x); m++) {
-          if (m == ceil(left_x)) {
+          if (ceil(left_x) == ceil(right_x)) {
+            rho_init(m - 1, k) +=
+              intersections[l].target_density * (right_x - left_x);
+          } else if (m == ceil(left_x)) {
             rho_init(m - 1, k) +=
               intersections[l].target_density * (ceil(left_x) - left_x);
           } else if (m == ceil(right_x)) {
