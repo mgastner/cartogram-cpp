@@ -1,8 +1,9 @@
 #include "map_state.h"
 
-MapState::MapState(std::string v, const bool w) :
+MapState::MapState(std::string v, const bool w, const bool wd2eps) :
   visual_variable_file_(v),
-  is_world_map_(w)
+  is_world_map_(w),
+  write_density_to_eps_(wd2eps)
 {
   return;
 }
@@ -80,6 +81,11 @@ const std::set<std::string> MapState::ids_in_visual_variables_file() const
 bool MapState::is_world_map() const
 {
   return is_world_map_;
+}
+
+bool MapState::trigger_write_density_to_eps() const
+{
+  return write_density_to_eps_;
 }
 
 void MapState::make_grid(const unsigned int x, const unsigned int y)

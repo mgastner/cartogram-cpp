@@ -15,13 +15,15 @@ private:
   std::string visual_variable_file_;
   std::set<std::string> ids_in_visual_variables_file_;
   bool is_world_map_;
-  unsigned int lx_ = 0, ly_ = 0;  // Lattice dimensions
+  bool write_density_to_eps_;
+  unsigned int lx_, ly_;  // Lattice dimensions
   FTReal2d rho_init_;  // Rasterized density
   FTReal2d rho_ft_;  // Fourier transform
   fftw_plan fwd_plan_, bwd_plan_;  // Plan the Fourier transform
+  unsigned int n_finished_integrations_;
   MapState();
 public:
-  explicit MapState(const std::string, const bool);
+  explicit MapState(const std::string, const bool, const bool);
   ~MapState();
   unsigned int n_geo_divs() const;
   const std::vector<GeoDiv> geo_divs() const;
@@ -36,6 +38,7 @@ public:
   void insert_id_in_visual_variables_file(const std::string);
   const std::set<std::string> ids_in_visual_variables_file() const;
   bool is_world_map() const;
+  bool trigger_write_density_to_eps() const;
   void make_grid(const unsigned int, const unsigned int);
   unsigned int lx() const;
   unsigned int ly() const;

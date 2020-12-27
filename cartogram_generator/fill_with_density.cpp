@@ -1,4 +1,5 @@
 #include "map_state.h"
+#include "write_eps.h"
 
 // Struct to store intersection data
 struct intersection {
@@ -270,6 +271,11 @@ void fill_with_density(MapState* map_state)
       }
     }
   }
+  if (map_state->trigger_write_density_to_eps()) {
+    std::cout << "Writing input_density.eps" << std::endl;
+    write_density_to_eps("input_density.eps", rho_init.array(), map_state);
+  }
+
   map_state->execute_fwd_plan();
   return;
 }

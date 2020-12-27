@@ -42,7 +42,7 @@ int main(const int argc, const char *argv[])
 
   // Other boolean values that are needed to parse the command line arguments
   bool input_polygons_to_eps,
-       input_density_to_eps;
+       density_to_eps;
 
   // Parse command-line options. See
   // https://theboostcpplibraries.com/boost.program_options
@@ -86,11 +86,11 @@ int main(const int argc, const char *argv[])
       ->implicit_value(true),
       "Boolean: make EPS image input_polygons.eps?"
       )(
-      "input_density_to_eps",
-      value<bool>(&input_density_to_eps)
+      "density_to_eps",
+      value<bool>(&density_to_eps)
       ->default_value(false)
       ->implicit_value(true),
-      "Boolean: make EPS image input_density.eps?"
+      "Boolean: make EPS images input_*.eps?"
       );
     store(parse_command_line(argc, argv, desc), vm);
     if (vm.count("help") || vm.empty()) {
@@ -103,9 +103,11 @@ int main(const int argc, const char *argv[])
     std::cerr << "ERROR: " << ex.what() << std::endl;
     return EXIT_FAILURE;
   }
-  MapState map_state(vm["visual_variable_file"].as<std::string>(), world);
+  MapState map_state(vm["visual_variable_file"].as<std::string>(),
+                     world,
+                     density_to_eps);
 
-  // Read visual variables (e.g. area) from CSV
+  // Read visual variables (e.g. area, color) from CSV
   read_csv(vm, &map_state);
 
   // Read geometry
@@ -127,28 +129,20 @@ int main(const int argc, const char *argv[])
     std::cout << "Writing input_polygons.eps" << std::endl;
     write_map_to_eps("input_polygons.eps", &map_state);
   }
-  fill_with_density(&map_state);
-  if (input_density_to_eps) {
-    FTReal2d *ft = map_state.ref_to_rho_init();
-    double *rho_init = ft->array();
-    std::cout << "Writing input_density.eps" << std::endl;
-    write_density_to_eps("input_density.eps", rho_init, &map_state);
-  }
 
-  return EXIT_SUCCESS;
+  // Calculate density-equalizing projection
+  // THE CONDITION FOR THE WHILE-LOOP WILL BECOME MORE COMPLEX. LEAVE IT
+  // UNTOUCHED FOR THE TIME BEING.
+  //while (1 == 0) {
+    fill_with_density(&map_state);
 
-  blur_density(0.2, &map_state);
 
-  flatten_density(&map_state);
+    blur_density(0.2, &map_state);
+    return EXIT_SUCCESS;
 
-  // const FTReal2d &rho_init = *map_state.ref_to_rho_init();
-  // std::cout << "\nIn main:" << std::endl;
-  // for (unsigned int i=0; i<map_state.lx(); i++) {
-  //   for (unsigned int j=0; j<map_state.ly(); j++) {
-  //     std::cout << rho_init(i, j) << " ";
-  //   }
-  //   std::cout << std::endl;
-  // }
+    flatten_density(&map_state);
+    //integration++;
+  //}
 
 
   return EXIT_SUCCESS;
