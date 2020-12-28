@@ -11,8 +11,8 @@ MapState::MapState(std::string v, const bool w, const bool wd2eps) :
 
 MapState::~MapState()
 {
-  fftw_destroy_plan(fwd_plan_);
-  fftw_destroy_plan(bwd_plan_);
+  fftw_destroy_plan(fwd_plan_for_rho_);
+  fftw_destroy_plan(bwd_plan_for_rho_);
   return;
 }
 
@@ -97,12 +97,14 @@ void MapState::make_grid(const unsigned int x, const unsigned int y)
   rho_init_.allocate_ft();
   rho_ft_.set_array_size(lx_, ly_);
   rho_ft_.allocate_ft();
-  fwd_plan_ = fftw_plan_r2r_2d(lx_, ly_,
-                               rho_init_.array(), rho_ft_.array(),
-                               FFTW_REDFT10, FFTW_REDFT10, FFTW_ESTIMATE);
-  bwd_plan_ = fftw_plan_r2r_2d(lx_, ly_,
-                               rho_ft_.array(), rho_init_.array(),
-                               FFTW_REDFT01, FFTW_REDFT01, FFTW_ESTIMATE);
+  fwd_plan_for_rho_ =
+    fftw_plan_r2r_2d(lx_, ly_,
+                     rho_init_.array(), rho_ft_.array(),
+                     FFTW_REDFT10, FFTW_REDFT10, FFTW_ESTIMATE);
+  bwd_plan_for_rho_ =
+    fftw_plan_r2r_2d(lx_, ly_,
+                     rho_ft_.array(), rho_init_.array(),
+                     FFTW_REDFT01, FFTW_REDFT01, FFTW_ESTIMATE);
   return;
 }
 
@@ -128,13 +130,13 @@ FTReal2d *MapState::ref_to_rho_ft()
 
 void MapState::execute_fwd_plan() const
 {
-  fftw_execute(fwd_plan_);
+  fftw_execute(fwd_plan_for_rho_);
   return;
 }
 
 void MapState::execute_bwd_plan() const
 {
-  fftw_execute(bwd_plan_);
+  fftw_execute(bwd_plan_for_rho_);
   return;
 }
 

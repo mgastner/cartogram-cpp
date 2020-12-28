@@ -19,7 +19,7 @@ private:
   unsigned int lx_, ly_;  // Lattice dimensions
   FTReal2d rho_init_;  // Rasterized density
   FTReal2d rho_ft_;  // Fourier transform
-  fftw_plan fwd_plan_, bwd_plan_;  // Plan the Fourier transform
+  fftw_plan fwd_plan_for_rho_, bwd_plan_for_rho_;
   unsigned int n_finished_integrations_;
   MapState();
 public:
