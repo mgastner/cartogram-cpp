@@ -156,15 +156,11 @@ void read_geojson(const std::string geometry_file_name, MapState *map_state)
   std::set<std::string> ids_in_geojson;
   for (auto feature : j["features"]) {
     const nlohmann::json geometry = feature["geometry"];
-    if (geometry["type"] == "Polygon") {
-      if (!polygon_warning_has_been_issued) {
-        std::cout << "Warning: support for Polygon geometry experimental, "
-                  << "for best results use MultiPolygon" << "\n";
-        polygon_warning_has_been_issued = true;
-      }
-      is_polygon = true;
-    } else if (geometry["type"] == "MultiPolygon") {
-      is_polygon = false;
+    is_polygon = (geometry["type"] == "Polygon");
+    if (is_polygon && !polygon_warning_has_been_issued) {
+      std::cout << "Warning: support for Polygon geometry experimental, "
+                << "for best results use MultiPolygon" << "\n";
+      polygon_warning_has_been_issued = true;
     }
 
     // Storing id from properties

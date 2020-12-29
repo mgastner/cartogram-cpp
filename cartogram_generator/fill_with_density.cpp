@@ -1,4 +1,5 @@
 #include "map_state.h"
+#include "write_eps.h"
 
 // Struct to store intersection data
 struct intersection {
@@ -8,7 +9,7 @@ struct intersection {
 
   // Overload "<" operator for this data type. Idea from
   // https://stackoverflow.com/questions/4892680/sorting-a-vector-of-structs
-  const bool operator < (const intersection &rhs) const
+  bool operator < (const intersection &rhs) const
   {
     return (x < rhs.x || (x == rhs.x && direction < rhs.direction));
   }
@@ -39,8 +40,9 @@ void fill_with_density(MapState* map_state)
   // graticule lines.
   unsigned int res = 16;
 
-  // An array (map_intersections) to store vectors of intersections
-  std::vector<intersection> map_intersections[(int) (map_state->ly() * res)];
+  // A vector (map_intersections) to store vectors of intersections
+  int n_lines = (int) (map_state->ly() * res);
+  std::vector<std::vector<intersection>> map_intersections(n_lines);
 
   // Iterate through GeoDivs in map_state
   for (auto gd : map_state->geo_divs()) {
@@ -77,14 +79,13 @@ void fill_with_density(MapState* map_state)
           // intersections have been stored, we iterate between intersections,
           // and add the appropriate densities.
           // We add a small value "epsilon" in case the line with equation
-          // y = line_y goes exactly through curr_point[1]. The addition
-          // ensures that, if there is any intersection, it is only
-          // counted once. It also correctly detect whether the line
-          // crosses through the point without entering or exiting the
-          // polygon.
+          // y = line_y goes exactly through curr_point. The addition ensures
+          // that, if there is any intersection, it is only counted once. It
+          // also correctly detects whether the line crosses through the point
+          // without entering or exiting the polygon.
           double epsilon = 1e-6;
 
-          // First we run the algorithm on the exterior ring.
+          // First we run the algorithm on the exterior ring
           for (unsigned int l = 0; l < ext_ring.size(); l++) {
             double curr_point[2];
             curr_point[0] = ext_ring[l][0];
@@ -160,7 +161,7 @@ void fill_with_density(MapState* map_state)
           }
           std::sort(intersections.begin(), intersections.end());
 
-          // Add sorted vector of intersections to array map_intersections
+          // Add sorted vector of intersections to vector map_intersections
           for (unsigned int l = 0; l < intersections.size(); l++) {
             intersections[l].direction = (l%2 == 0);
             int index = round(((line_y - (1.0/res)/2.0) * res));
@@ -210,7 +211,10 @@ void fill_with_density(MapState* map_state)
           // Pre-condition to ensure different intersecting points
           if (left_x != right_x) {
             for (unsigned int m = ceil(left_x); m <= ceil(right_x); m++) {
-              if (m == ceil(left_x)) {
+              if (ceil(left_x) == ceil(right_x)) {
+                rho_init(m - 1, k) +=
+                  intersections[l].target_density * (right_x - left_x);
+              } else if (m == ceil(left_x)) {
                 rho_init(m - 1, k) +=
                   ((mean_density/res) * (ceil(left_x) - left_x));
               } else if (m == ceil(right_x)) {
@@ -256,7 +260,10 @@ void fill_with_density(MapState* map_state)
 
         // Fill each cell between intersections
         for (unsigned int m = ceil(left_x); m <= ceil(right_x); m++) {
-          if (m == ceil(left_x)) {
+          if (ceil(left_x) == ceil(right_x)) {
+            rho_init(m - 1, k) +=
+              intersections[l].target_density * (right_x - left_x);
+          } else if (m == ceil(left_x)) {
             rho_init(m - 1, k) +=
               intersections[l].target_density * (ceil(left_x) - left_x);
           } else if (m == ceil(right_x)) {
@@ -268,6 +275,14 @@ void fill_with_density(MapState* map_state)
         }
       }
     }
+  }
+  if (map_state->trigger_write_density_to_eps()) {
+    std::string file_name =
+      std::string("unblurred_density_") +
+      std::to_string(map_state->n_finished_integrations()) +
+      ".eps";
+    std::cout << "Writing " << file_name << std::endl;
+    write_density_to_eps(file_name, rho_init.array(), map_state);
   }
   map_state->execute_fwd_plan();
   return;
