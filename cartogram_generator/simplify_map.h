@@ -8,6 +8,6 @@
 using namespace boost::program_options;
 #include <boost/graph/adjacency_list.hpp>
 
-void simplify_map(MapState map_state);
+void simplify_map(MapState *map_state);
 
 #endif

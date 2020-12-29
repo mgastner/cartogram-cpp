@@ -17,7 +17,7 @@
 // Inserts a polyline into the graph
 void insert(const std::vector<Point>& poly, Graph& graph, Point_vertex_map& pvmap) {
   vertex_descriptor u, v;
-  for (int i = 0; i < poly.size(); i++) {
+  for (int i = 0; i < (int) poly.size(); i++) {
     // check if the point is not yet in the graph
     if (pvmap.find(poly[i]) == pvmap.end()) {
       v = add_vertex(graph);
@@ -121,7 +121,7 @@ std::map<int, std::vector<PLL>> store_by_pos(CT &ct,
           // Edge case is the border of Missouri, Kentucky, Tennessee
           if (pll_dens_to_org[pos].size() == 2) {
             bool v1_vl_pll_on_outer = false;
-            for (int i = 0; i < outer.size() - 1; i++) {
+            for (int i = 0; i < (int) outer.size() - 1; i++) {
               // accounts for clockwise and counter-clockwise orientation of outer
               bool direction_1 = outer[i] == pll_outer.get_v1() && outer[i + 1] == pll_outer.get_vl();
               bool direction_2 = outer[i + 1] == pll_outer.get_v1() && outer[i] == pll_outer.get_vl();
@@ -204,7 +204,7 @@ void label_holes_correctly(std::vector<GeoDiv> container,
           for (Polygon_with_holes pgnwh3 : gd3.polygons_with_holes()) {
             std::vector<Polygon> holes_v(pgnwh3.holes_begin(), pgnwh3.holes_end());
             if (gd_num2 == gd_num && pgnwh_num2 == pgnwh_num && holes_v.empty()) {
-              for (int i = 0; i < pll_cntr_by_gd_pgnwh[gd_num][pgnwh_num].size(); i++)
+              for (int i = 0; i < (int) pll_cntr_by_gd_pgnwh[gd_num][pgnwh_num].size(); i++)
                 pll.set_bool_hole(false);
             } else {
               break;
@@ -370,7 +370,7 @@ std::list<Polyline> densify(std::list<Polyline> polyline_list) {
     Polyline polyl_dens;
 
     polyl_dens.push_back(polyl[0]); 
-    for (int i = 0; i < polyl.size() - 1; i++) {
+    for (int i = 0; i < (int) polyl.size() - 1; i++) {
       Point a = polyl[i];
       Point b = polyl[i + 1];
 
@@ -496,5 +496,5 @@ void simplify_map(MapState *map_state) {
   print_num_pts(container_simp);
 
   std::vector<GeoDiv> *container_org = map_state->ref_to_geo_divs();
-  container_org = &container_simp;
+  container_org = {}; // &container_simp;
 }

@@ -12,6 +12,12 @@
 #include <boost/program_options.hpp>
 #include <iostream>
 
+#include <nlohmann/json.hpp>
+using json = nlohmann::json;
+#include "simplify_map.h"
+#include "cgal_to_json.h"
+#include "write_to_json.h"
+
 // Functions that are called if the corresponding command-line options are
 // present
 void on_geometry(const std::string geometry_file_name)
@@ -123,7 +129,13 @@ int main(const int argc, const char *argv[])
     return EXIT_FAILURE;
   }
 
-  /*
+  simplify_map(&map_state);
+  std::ifstream i(geo_file_name);
+  json j;
+  i >> j;
+  json newJ = cgal_to_json(map_state.geo_divs());
+  write_to_json(j, newJ, geo_file_name);
+
   // Rescale map to fit into a rectangular box [0, lx] * [0, ly].
   rescale_map(long_grid_side_length, &map_state);
   if (input_polygons_to_eps) {
@@ -135,18 +147,13 @@ int main(const int argc, const char *argv[])
   // THE CONDITION FOR THE WHILE-LOOP WILL BECOME MORE COMPLEX. LEAVE IT
   // UNTOUCHED FOR THE TIME BEING.
   //while (1 == 0) {
-    fill_with_density(&map_state);
 
+  fill_with_density(&map_state);
+  blur_density(10.0, &map_state);
+  flatten_density(&map_state);
 
-    blur_density(10.0, &map_state);
-    return EXIT_SUCCESS;
-
-    flatten_density(&map_state);
-
-    simplify_map(&map_state)
-    //integration++;
+  //integration++;
   //}
-*/
 
   return EXIT_SUCCESS;
 }
