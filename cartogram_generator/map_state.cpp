@@ -26,6 +26,12 @@ const std::vector<GeoDiv> MapState::geo_divs() const
   return geo_divs_;
 }
 
+void MapState::set_geo_divs(std::vector<GeoDiv> geo_divs_new)
+{
+  geo_divs_.clear();
+  geo_divs_ = geo_divs_new;
+}
+
 std::vector<GeoDiv> *MapState::ref_to_geo_divs()
 {
   return &geo_divs_;

@@ -374,27 +374,9 @@ std::list<Polyline> densify(std::list<Polyline> polyline_list) {
       Point a = polyl[i];
       Point b = polyl[i + 1];
 
-      Point l, m, n, o, p, q, r;
-      o = CGAL::midpoint(a, b);
-      m = CGAL::midpoint(a, o);
-      l = CGAL::midpoint(a, m);
-      n = CGAL::midpoint(m, o);
-      q = CGAL::midpoint(o, b);
-      p = CGAL::midpoint(o, q);
-      r = CGAL::midpoint(q, b);
-      polyl_dens.push_back(l);
-      polyl_dens.push_back(m);
-      polyl_dens.push_back(n);
-      polyl_dens.push_back(o);
-      polyl_dens.push_back(p);
-      polyl_dens.push_back(q);
-      polyl_dens.push_back(r);
-
-      /*
       std::vector<Point> dens_pts = graticule_intersections(a, b);
       for (Point pt : dens_pts)
         polyl_dens.push_back(pt);
-        */
       polyl_dens.push_back(b);
     }
 
@@ -495,6 +477,5 @@ void simplify_map(MapState *map_state) {
   std::cout << "Number of vertices after simplifying: ";
   print_num_pts(container_simp);
 
-  std::vector<GeoDiv> *container_org = map_state->ref_to_geo_divs();
-  container_org = {}; // &container_simp;
+  map_state->set_geo_divs(container_simp);
 }
