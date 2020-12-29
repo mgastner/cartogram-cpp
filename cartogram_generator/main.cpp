@@ -9,7 +9,7 @@
 #include "read_geojson.h"
 #include "rescale_map.h"
 #include "write_eps.h"
-#include "topological_checks.h"
+#include "check_topology.h"
 #include <boost/program_options.hpp>
 #include <iostream>
 
@@ -125,7 +125,9 @@ int main(const int argc, const char *argv[])
   }
 
   try {
+    std::cout << "Started!" << '\n';
     holes_inside_polygons(&map_state);
+    std::cout << "Ended!" << '\n';
   } catch (const std::system_error& e) {
     std::cerr << "ERROR: " << e.what() << " (" << e.code() << ")" << std::endl;
     return EXIT_FAILURE;
