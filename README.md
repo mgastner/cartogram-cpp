@@ -48,9 +48,10 @@ Cartogram generator in C++
 1. `cd ./build`
 2. `./cartogram -g your-geojson-file.geojson -v your-csv-file.csv`
 
-
 - The `-g` flag accepts a GeoJSON or JSON file, in the standard GeoJSON format.
 - The `-v` flag accepts a .csv file with your target areas data.
+
+*Note: use the `-h` flag to display more options*
 
 The csv file should be in the following format:
 
@@ -62,4 +63,9 @@ The csv file should be in the following format:
 
 - `NAME_1` should be the same as the identifying property's name in the GeoJSON. The rows should also have the same data as is present in the identifying property.
 - `Data` contains the data you would like your cartogram to based on.
-- `Color` is the hex color code you would like the geographic region to be colored.
+- `Color` is the color you would like the geographic region to be.
+
+Colors may be represented in the following manner:
+1. `cornflowerblue`: html color codes supported by `CSS3`
+2. `rgb(255, 0, 120)` or `rgb(255 0 120)` or `255, 0, 120` or `255 0 120`: red, green and blue values out of 255
+3. `#e74c3c`: hex code of color, must start with `#`

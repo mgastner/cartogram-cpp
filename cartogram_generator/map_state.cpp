@@ -47,7 +47,7 @@ void MapState::colors_insert(const std::string id, std::string color)
   return;
 }
 
-double MapState::target_areas_at(const std::string id)
+const double MapState::target_areas_at(const std::string id)
 {
   return target_areas.at(id);
 }

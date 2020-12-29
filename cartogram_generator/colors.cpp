@@ -50,7 +50,13 @@ Color::Color(std::string color_as_string)
     // assumed rgb value
     std::stringstream css(color_as_string);
     css >> r;
+    if (css.peek() == ',') {
+      css.ignore(1, ',');
+    }
     css >> g;
+    if (css.peek() == ',') {
+      css.ignore(1, ',');
+    }
     css >> b;
   } else {
     // wrong format
