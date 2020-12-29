@@ -85,7 +85,7 @@ void fill_with_density(MapState* map_state)
           // without entering or exiting the polygon.
           double epsilon = 1e-6;
 
-          // First we run the algorithm on the exterior ring.
+          // First we run the algorithm on the exterior ring
           for (unsigned int l = 0; l < ext_ring.size(); l++) {
             double curr_point[2];
             curr_point[0] = ext_ring[l][0];
