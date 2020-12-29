@@ -17,9 +17,9 @@ void write_to_json(json oldJ, json container, std::string geo_file_name) {
   std::smatch match;
   std::string gjson_fn_new = "new_geojson_simplified.json";
   if (std::regex_search(s.begin(), s.end(), match, rgx_geojson))
-    gjson_fn_new = "../output/" + match.str(0) + "_simplified.geojson";
+    gjson_fn_new = "../output_geojsons/" + match.str(0) + "_simplified.geojson";
   else if (std::regex_search(s.begin(), s.end(), match, rgx_json))
-    gjson_fn_new = "../output/" + match.str(0) + "_simplified.json";
+    gjson_fn_new = "../output_geojsons/" + match.str(0) + "_simplified.json";
   else
     gjson_fn_new = "new_geojson_simplified.json";
 
