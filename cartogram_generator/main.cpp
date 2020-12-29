@@ -123,6 +123,7 @@ int main(const int argc, const char *argv[])
     return EXIT_FAILURE;
   }
 
+  /*
   // Rescale map to fit into a rectangular box [0, lx] * [0, ly].
   rescale_map(long_grid_side_length, &map_state);
   if (input_polygons_to_eps) {
@@ -141,9 +142,11 @@ int main(const int argc, const char *argv[])
     return EXIT_SUCCESS;
 
     flatten_density(&map_state);
+
+    simplify_map(&map_state)
     //integration++;
   //}
-
+*/
 
   return EXIT_SUCCESS;
 }
