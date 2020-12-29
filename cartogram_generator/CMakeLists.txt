@@ -45,6 +45,7 @@ add_executable(cartogram main.cpp
 		fill_with_density.cpp
     blur_density.cpp
     flatten_density.cpp
+    colors.cpp
 		ft_real_2d.cpp)
 
 

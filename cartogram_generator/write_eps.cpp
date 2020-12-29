@@ -84,16 +84,13 @@ void write_polygons_to_eps(std::ofstream &eps_file,
       if (colors) {
 
         // Getting color
-        std::string color = map_state->colors_at(gd.id());
-
-        // Converting color
-        color = map_state->HexToRGB(color);
+        Color col = map_state->colors_at(gd.id());
 
         // Save path before filling it
         eps_file << "gsave\n";
 
         // Fill path
-        eps_file << color << "srgb f\n";
+        eps_file << col.EPS() << "srgb f\n";
 
         // Restore path.
         eps_file << "grestore\n";
