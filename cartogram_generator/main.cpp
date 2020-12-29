@@ -39,7 +39,11 @@ int main(const int argc, const char *argv[])
 
   // World maps need special projections. By default, we assume that the
   // input map is not a world map.
-  bool world = false;
+  bool world;
+
+  // Other boolean values that are needed to parse the command line arguments
+  bool input_polygons_to_eps,
+       density_to_eps;
 
   // Parse command-line options. See
   // https://theboostcpplibraries.com/boost.program_options
@@ -74,8 +78,20 @@ int main(const int argc, const char *argv[])
       "Number of grid cells along longer Cartesian coordinate axis"
       )(
       "world,w",
-      value<bool>(&world),
+      value<bool>(&world)->default_value(false)->implicit_value(false),
       "Boolean: is input a world map in longitude-latitude format?"
+      )(
+      "input_polygons_to_eps",
+      value<bool>(&input_polygons_to_eps)
+      ->default_value(false)
+      ->implicit_value(true),
+      "Boolean: make EPS image input_polygons.eps?"
+      )(
+      "density_to_eps",
+      value<bool>(&density_to_eps)
+      ->default_value(false)
+      ->implicit_value(true),
+      "Boolean: make EPS images input_*.eps?"
       );
     store(parse_command_line(argc, argv, desc), vm);
     if (vm.count("help") || vm.empty()) {
@@ -88,16 +104,23 @@ int main(const int argc, const char *argv[])
     std::cerr << "ERROR: " << ex.what() << std::endl;
     return EXIT_FAILURE;
   }
-  MapState map_state(vm["visual_variable_file"].as<std::string>(), world);
+  MapState map_state(vm["visual_variable_file"].as<std::string>(),
+                     world,
+                     density_to_eps);
 
-  // Read visual variables (e.g. area) from CSV
+  // Read visual variables (e.g. area, color) from CSV
   read_csv(vm, &map_state);
 
   // Read geometry
   try {
     read_geojson(geo_file_name, &map_state);
   } catch (const std::system_error& e) {
-    std::cerr << "ERROR: " << e.what() << " (" << e.code() << ")" << std::endl;
+    std::cerr << "ERROR: "
+              << e.what()
+              << " ("
+              << e.code()
+              << ")"
+              << std::endl;
     return EXIT_FAILURE;
   }
 
@@ -110,28 +133,20 @@ int main(const int argc, const char *argv[])
 
   // Rescale map to fit into a rectangular box [0, lx] * [0, ly].
   rescale_map(long_grid_side_length, &map_state);
-  write_map_to_eps("test_cartogram.eps", &map_state);
+  if (input_polygons_to_eps) {
+    std::cout << "Writing input_polygons.eps" << std::endl;
+    write_map_to_eps("input_polygons.eps", &map_state);
+  }
 
-  fill_with_density(&map_state);
-
-  FTReal2d *ft = map_state.ref_to_rho_init();
-  double *rho_init = ft->array();
-  write_density_to_eps("test_density.eps", rho_init, &map_state);
-
-  return EXIT_SUCCESS;
-
-  blur_density(0.2, &map_state);
-
-  flatten_density(&map_state);
-
-  // const FTReal2d &rho_init = *map_state.ref_to_rho_init();
-  // std::cout << "\nIn main:" << std::endl;
-  // for (unsigned int i=0; i<map_state.lx(); i++) {
-  //   for (unsigned int j=0; j<map_state.ly(); j++) {
-  //     std::cout << rho_init(i, j) << " ";
-  //   }
-  //   std::cout << std::endl;
-  // }
+  // Calculate density-equalizing projection
+  // THE CONDITION FOR THE WHILE-LOOP WILL BECOME MORE COMPLEX. LEAVE IT
+  // UNTOUCHED FOR THE TIME BEING.
+  //while (1 == 0) {
+    fill_with_density(&map_state);
+    blur_density(10.0, &map_state);
+    flatten_density(&map_state);
+    //integration++;
+  //}
 
 
   return EXIT_SUCCESS;
