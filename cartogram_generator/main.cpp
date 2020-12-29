@@ -11,6 +11,7 @@
 #include "write_eps.h"
 #include <boost/program_options.hpp>
 #include <iostream>
+#include <fstream>
 
 #include <nlohmann/json.hpp>
 using json = nlohmann::json;
