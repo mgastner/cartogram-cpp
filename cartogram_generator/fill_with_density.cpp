@@ -42,7 +42,7 @@ void fill_with_density(MapState* map_state)
 
   // A vector (map_intersections) to store vectors of intersections
   int n_lines = (int) (map_state->ly() * res);
-  std::vector<std::vector<intersection> > map_intersections(n_lines);
+  std::vector<std::vector<intersection>> map_intersections(n_lines);
 
   // Iterate through GeoDivs in map_state
   for (auto gd : map_state->geo_divs()) {
@@ -79,11 +79,10 @@ void fill_with_density(MapState* map_state)
           // intersections have been stored, we iterate between intersections,
           // and add the appropriate densities.
           // We add a small value "epsilon" in case the line with equation
-          // y = line_y goes exactly through curr_point[1]. The addition
-          // ensures that, if there is any intersection, it is only
-          // counted once. It also correctly detect whether the line
-          // crosses through the point without entering or exiting the
-          // polygon.
+          // y = line_y goes exactly through curr_point. The addition ensures
+          // that, if there is any intersection, it is only counted once. It
+          // also correctly detects whether the line crosses through the point
+          // without entering or exiting the polygon.
           double epsilon = 1e-6;
 
           // First we run the algorithm on the exterior ring.
