@@ -285,7 +285,7 @@ void assemble_pll_to_pgn(std::map<int, std::map<int, std::vector<PLL>>> &pll_cnt
         Polygon outer; // This will only be for islands/holes anyway
         if (visited[gd_num][pgnwh_num][pll.get_pos()]) continue;
 
-        std::cout << pll.get_gd_v()[0] << " " << pll.get_pgnwh_v()[0] << " " << pll.get_pos() << " " << pll.get_bool_hole() << std::endl;
+        // std::cout << pll.get_gd_v()[0] << " " << pll.get_pgnwh_v()[0] << " " << pll.get_pos() << " " << pll.get_bool_hole() << std::endl;
 
         // if it is a single polyline (e.g. island)
         if (pll.get_v1() == pll.get_vl() && !visited[gd_num][pgnwh_num][pll.get_pos()]) {
@@ -342,10 +342,10 @@ void assemble_pll_to_pgn(std::map<int, std::map<int, std::vector<PLL>>> &pll_cnt
             }
             if (!found) break;
           }
-          std::cout << "Sequence of polylines for: " << gd_num << " " << pgnwh_num << std::endl;
+          // std::cout << "Sequence of polylines for: " << gd_num << " " << pgnwh_num << std::endl;
           Polygon outer_2;
           for (PLL pll_deq : deq) {
-            std::cout << pll_deq.get_v1() << " " << pll_deq.get_vl() << " " << pll_deq.get_pos() << std::endl;
+            // std::cout << pll_deq.get_v1() << " " << pll_deq.get_vl() << " " << pll_deq.get_pos() << std::endl;
             for (Point pt : pll_deq.get_pll())
               outer_2.push_back(pt);
           }
@@ -367,7 +367,7 @@ void assemble_pll_to_pgn(std::map<int, std::map<int, std::vector<PLL>>> &pll_cnt
             }
           }
 
-          std::cout << std::endl;
+          // std::cout << std::endl;
         }
 
       }
@@ -457,22 +457,21 @@ void simplify_map(MapState *map_state) {
 
   // 4. Store polylines from polyline_list in CT
   CT ct; 
-  for (Polyline polyline : polyline_list_dens) {
+  for (Polyline polyline : polyline_list_dens)
     ct.insert_constraint(polyline.begin(), polyline.end());
-    std::cout << "inserted polyline" << std::endl;
-  }
 
   // 5. Store ct polylines (densified) with their associated original polylines (non-densified)
   std::map<int, Polyline> pll_dens_to_org = store_polyline_dens_to_org(ct, polyline_list);
 
-  // 6. Store polylines by positions with their associated GeoDivs and Polygon_with_holess
-  std::cout << "Store polylines by positions with their associated GeoDivs and Polygon_with_holess" << std::endl;
+  // 6. Store polylines by positions with their associated GeoDivs and Polygon_with_holes
+  std::cout << "Store polylines by positions with their associated GeoDivs and Polygon_with_holes" << std::endl;
   std::map<int, std::vector<PLL>> pll_cntr_by_pos = store_by_pos(ct, container, pll_dens_to_org);
 
   // 7. Simplify polylines
   PS::simplify(ct, Cost(), Stop(0.2));
 
-  // 8. Store polylines by GeoDivs and Polygon_with_holess with their associated positions
+  std::cout << "Store polylines by GeoDivs and Polygon_with_holes with their associated positions" << std::endl;
+  // 8. Store polylines by GeoDivs and Polygon_with_holes with their associated positions
   std::map<int, std::map<int, std::vector<PLL>>> pll_cntr_by_gd_pgnwh = store_by_gd_pgnwh(container, ct, pll_cntr_by_pos);
 
   // No longer needed
@@ -482,7 +481,7 @@ void simplify_map(MapState *map_state) {
   std::unordered_map<int, std::unordered_map<int, std::unordered_map<int, bool>>> visited;
   set_visited_vals(visited, pll_cntr_by_gd_pgnwh);
 
-  std::cout << "Assemble polylines into polygons" << std::endl;
+  // std::cout << "Assemble polylines into polygons" << std::endl;
   // 10. Assemble polylines into polygons
   std::vector<GeoDiv> container_simp;
   assemble_pll_to_pgn(pll_cntr_by_gd_pgnwh, visited, container_simp);

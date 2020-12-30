@@ -18,7 +18,7 @@ std::list<Polyline> densify(std::list<Polyline> polyline_list) {
       polyl_dens.push_back(b);
     }*/
 
-    std::cout << polyl.size() << " " << polyl_dens.size() << std::endl;
+    // std::cout << polyl.size() << " " << polyl_dens.size() << std::endl;
     polyline_list_dens.push_back(polyl_dens);
   }
   return polyline_list_dens;
