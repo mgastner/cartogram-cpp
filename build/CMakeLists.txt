@@ -64,6 +64,7 @@ add_executable(cartogram ../cartogram_generator/main.cpp
   ../cartogram_generator/ft_real_2d.cpp
   ../cartogram_generator/pll.cpp
   ../cartogram_generator/simplify_map.cpp
+  ../cartogram_generator/densify.cpp
   ../cartogram_generator/cgal_to_json.cpp
   ../cartogram_generator/write_to_json.cpp)
 

@@ -12,7 +12,7 @@
 #include "map_state.h"
 #include "geo_div.h"
 #include "pll.h"
-#include "helper_functions.h"
+#include "densify.h"
 
 // Inserts a polyline into the graph
 void insert(const std::vector<Point>& poly, Graph& graph, Point_vertex_map& pvmap) {
@@ -86,6 +86,33 @@ void print_pll(PLL pll) {
   std::cout << " | " << pll.get_v1();
   std::cout << " | " << pll.get_vl();
   std::cout << " | " << pll.get_v2() << std::endl; 
+}
+
+std::map<int, Polyline> store_polyline_dens_to_org(CT ct, std::list<Polyline> polyline_list) {
+  std::map<int, Polyline> pll_dens_to_org; 
+  int pos = 0;
+  for (auto cit = ct.constraints_begin(); cit != ct.constraints_end(); cit++) {
+    bool polyline_match = false;
+    for (Polyline polyl : polyline_list) {
+      int same_v = 0;
+      for (Point pt : polyl) {
+        for (auto vit = ct.points_in_constraint_begin(*cit); vit != ct.points_in_constraint_end(*cit); vit++) {
+          if (pt == *vit) {
+            same_v++;
+            if (same_v >= 3 || (polyl.size() == 2 && same_v == 2)) { // or only 2 vertices in polyline
+              polyline_match = true;
+              pll_dens_to_org[pos] = polyl;
+            }
+            break;
+          }
+        }
+        if (polyline_match) break;
+      }
+      if (polyline_match) break;
+    }
+    pos++;
+  }
+  return pll_dens_to_org;
 }
 
 std::map<int, std::vector<PLL>> store_by_pos(CT &ct, 
@@ -364,56 +391,6 @@ void print_num_pts(std::vector<GeoDiv> container) {
   std::cout << num_pts << std::endl;
 }
 
-std::list<Polyline> densify(std::list<Polyline> polyline_list) {
-  std::list<Polyline> polyline_list_dens; 
-  for (Polyline polyl : polyline_list) {
-    Polyline polyl_dens;
-
-    polyl_dens.push_back(polyl[0]); 
-    for (int i = 0; i < (int) polyl.size() - 1; i++) {
-      Point a = polyl[i];
-      Point b = polyl[i + 1];
-
-      std::vector<Point> dens_pts = graticule_intersections(a, b);
-      for (Point pt : dens_pts)
-        polyl_dens.push_back(pt);
-      polyl_dens.push_back(b);
-    }
-
-    std::cout << polyl.size() << " " << polyl_dens.size() << std::endl;
-    polyline_list_dens.push_back(polyl_dens);
-  }
-  return polyline_list_dens;
-}
-
-std::map<int, Polyline> store_polyline_dens_to_org(CT ct, std::list<Polyline> polyline_list) {
-  std::map<int, Polyline> pll_dens_to_org; 
-  int pos = 0;
-  for (auto cit = ct.constraints_begin(); cit != ct.constraints_end(); cit++) {
-    bool polyline_match = false;
-    for (Polyline polyl : polyline_list) {
-      int same_v = 0;
-      for (Point pt : polyl) {
-        for (auto vit = ct.points_in_constraint_begin(*cit); vit != ct.points_in_constraint_end(*cit); vit++) {
-          if (pt == *vit) {
-            same_v++;
-            if (same_v >= 3 || (polyl.size() == 2 && same_v == 2)) { // or only 2 vertices in polyline
-              polyline_match = true;
-              pll_dens_to_org[pos] = polyl;
-            }
-            break;
-          }
-        }
-        if (polyline_match) break;
-      }
-      if (polyline_match) break;
-    }
-    pos++;
-  }
-  return pll_dens_to_org;
-}
-
-
 void simplify_map(MapState *map_state) {
   // Steps:
   // 1. Create graph and split graph into unique polylines
@@ -444,7 +421,7 @@ void simplify_map(MapState *map_state) {
     std::cout << "inserted polyline" << std::endl;
   }
 
-  // 4. Store ct polylines (densified) with their associated polylines (non-densified)
+  // 4. Store ct polylines (densified) with their associated original polylines (non-densified)
   std::map<int, Polyline> pll_dens_to_org = store_polyline_dens_to_org(ct, polyline_list);
 
   // 5. Store polylines by positions with their associated GeoDivs and Polygon_with_holess
