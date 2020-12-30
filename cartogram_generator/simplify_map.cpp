@@ -391,58 +391,99 @@ void print_num_pts(std::vector<GeoDiv> container) {
   std::cout << num_pts << std::endl;
 }
 
+void repeat_first_point_as_last_point(std::vector<GeoDiv> &container) {
+  for (GeoDiv &gd : container) {
+    for (Polygon_with_holes &pgn_wh : *gd.ref_to_polygons_with_holes()) {
+      Polygon_with_holes pgn_wh_new;
+
+      Polygon *outer = &pgn_wh.outer_boundary();
+      outer->push_back((*outer)[0]);
+
+      std::vector<Polygon> holes_v(pgn_wh.holes_begin(), pgn_wh.holes_end());
+      for (auto hole = pgn_wh.holes_begin(); hole != pgn_wh.holes_end(); hole++) {
+        hole->push_back((*hole)[0]); 
+      }
+    }
+  }
+}
+
+void remove_first_point_as_last_point(std::vector<GeoDiv> &container) {
+  for (GeoDiv &gd : container) {
+    for (Polygon_with_holes &pgn_wh : *gd.ref_to_polygons_with_holes()) {
+      Polygon_with_holes pgn_wh_new;
+
+      Polygon *outer = &pgn_wh.outer_boundary();
+      auto outer_it = outer->end();
+      outer_it--;
+      outer->erase(outer_it);
+
+      std::vector<Polygon> holes_v(pgn_wh.holes_begin(), pgn_wh.holes_end());
+      for (auto hole = pgn_wh.holes_begin(); hole != pgn_wh.holes_end(); hole++) {
+        auto hole_it = hole->end();
+        hole_it--;
+        hole->erase(hole_it);
+      }
+    }
+  }
+}
+
 void simplify_map(MapState *map_state) {
   // Steps:
-  // 1. Create graph and split graph into unique polylines
-  // 2. Densify
-  // 3. Store polylines from polyline_list in CT
-  // 4. Store ct polylines (densified) with their associated polylines (non-densified)
-  // 5. Store polylines by positions with their associated GeoDivs and Polygon_with_holess
-  // 6. Simplify polylines
-  // 7. Store polylines by GeoDivs and Polygon_with_holess with their associated positions
-  // 8. Set visited values
-  // 9. Assemble polylines into polygons
+  // 1. Repeat first point as last point by reference 
+  // 2. Create graph and split graph into unique polylines
+  // 3. Densify
+  // 4. Store polylines from polyline_list in CT
+  // 5. Store ct polylines (densified) with their associated polylines (non-densified)
+  // 6. Store polylines by positions with their associated GeoDivs and Polygon_with_holess
+  // 7. Simplify polylines
+  // 8. Store polylines by GeoDivs and Polygon_with_holess with their associated positions
+  // 9. Set visited values
+  // 10. Assemble polylines into polygons
+  // 11. Remove first point as last point by reference 
   
   std::vector<GeoDiv> container = map_state->geo_divs();
 
-  // 1. Create graph and split graph into unique polylines
+  // 1. Repeat first point as last point by reference 
+  repeat_first_point_as_last_point(container);
+
+  // 2. Create graph and split graph into unique polylines
   Graph graph = create_pll_graph(container);
   std::list<Polyline> polyline_list;
   Polyline_visitor<Graph> polyline_visitor(polyline_list, graph);
   CGAL::split_graph_into_polylines(graph, polyline_visitor);
 
-  // 2. Densify
+  // 3. Densify
   std::list<Polyline> polyline_list_dens = densify(polyline_list);
 
-  // 3. Store polylines from polyline_list in CT
+  // 4. Store polylines from polyline_list in CT
   CT ct; 
   for (Polyline polyline : polyline_list_dens) {
     ct.insert_constraint(polyline.begin(), polyline.end());
     std::cout << "inserted polyline" << std::endl;
   }
 
-  // 4. Store ct polylines (densified) with their associated original polylines (non-densified)
+  // 5. Store ct polylines (densified) with their associated original polylines (non-densified)
   std::map<int, Polyline> pll_dens_to_org = store_polyline_dens_to_org(ct, polyline_list);
 
-  // 5. Store polylines by positions with their associated GeoDivs and Polygon_with_holess
+  // 6. Store polylines by positions with their associated GeoDivs and Polygon_with_holess
   std::cout << "Store polylines by positions with their associated GeoDivs and Polygon_with_holess" << std::endl;
   std::map<int, std::vector<PLL>> pll_cntr_by_pos = store_by_pos(ct, container, pll_dens_to_org);
 
-  // 6. Simplify polylines
+  // 7. Simplify polylines
   PS::simplify(ct, Cost(), Stop(0.2));
 
-  // 7. Store polylines by GeoDivs and Polygon_with_holess with their associated positions
+  // 8. Store polylines by GeoDivs and Polygon_with_holess with their associated positions
   std::map<int, std::map<int, std::vector<PLL>>> pll_cntr_by_gd_pgnwh = store_by_gd_pgnwh(container, ct, pll_cntr_by_pos);
 
   // No longer needed
   // label_holes_correctly(container, pll_cntr_by_gd_pgnwh);
 
-  // 8. Set visited values
+  // 9. Set visited values
   std::unordered_map<int, std::unordered_map<int, std::unordered_map<int, bool>>> visited;
   set_visited_vals(visited, pll_cntr_by_gd_pgnwh);
 
   std::cout << "Assemble polylines into polygons" << std::endl;
-  // 9. Assemble polylines into polygons
+  // 10. Assemble polylines into polygons
   std::vector<GeoDiv> container_simp;
   assemble_pll_to_pgn(pll_cntr_by_gd_pgnwh, visited, container_simp);
 
@@ -453,6 +494,9 @@ void simplify_map(MapState *map_state) {
   // Print number of points after simplifying
   std::cout << "Number of vertices after simplifying: ";
   print_num_pts(container_simp);
+
+  // 11. Remove first point as last point by reference 
+  remove_first_point_as_last_point(container_simp);
 
   map_state->set_geo_divs(container_simp);
 }
