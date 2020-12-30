@@ -13,8 +13,6 @@
 #include <iostream>
 #include <fstream>
 
-#include <nlohmann/json.hpp>
-using json = nlohmann::json;
 #include "simplify_map.h"
 #include "cgal_to_json.h"
 #include "write_to_json.h"
@@ -147,11 +145,8 @@ int main(const int argc, const char *argv[])
   flatten_density(&map_state);
 
   simplify_map(&map_state);
-  std::ifstream i(geo_file_name);
-  json j;
-  i >> j;
-  json newJ = cgal_to_json(map_state.geo_divs());
-  write_to_json(j, newJ, geo_file_name);
+  json new_j = cgal_to_json(map_state.geo_divs());
+  write_to_json(new_j, geo_file_name);
 
   //integration++;
   //}

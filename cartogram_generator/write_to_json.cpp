@@ -3,12 +3,15 @@
 #include <regex>
 
 #include "cgal_typedef.h"
-
 #include "write_to_json.h"
 
-void write_to_json(json oldJ, json container, std::string geo_file_name) {
+void write_to_json(json container, std::string geo_file_name) {
   // TODO Add properties back to newJ
-  //
+
+  std::ifstream i(geo_file_name);
+  json old_j;
+  i >> old_j;
+
   const std::string s = geo_file_name;
   std::regex rgx_geojson("[\\w_]+(?=.geojson)");
   std::regex rgx_json("[\\w_]+(?=.json)");
@@ -24,8 +27,8 @@ void write_to_json(json oldJ, json container, std::string geo_file_name) {
   json newJ;
   // For each multipolygon in the container 
   for (int i = 0; i < (int) container.size(); i++){
-    newJ["features"][i]["properties"] = oldJ["features"][i]["properties"];
-    newJ["features"][i]["id"] = oldJ["features"][i]["id"];
+    newJ["features"][i]["properties"] = old_j["features"][i]["properties"];
+    newJ["features"][i]["id"] = old_j["features"][i]["id"];
 
     newJ["features"][i]["type"] = "Feature";
     newJ["features"][i]["geometry"]["type"] = "MultiPolygon";
@@ -37,8 +40,8 @@ void write_to_json(json oldJ, json container, std::string geo_file_name) {
       }
     }
   }
-  newJ.push_back({"aaatype", oldJ["type"]});
-  newJ.push_back({"bbox", oldJ["bbox"]});
+  newJ.push_back({"aaatype", old_j["type"]});
+  newJ.push_back({"bbox", old_j["bbox"]});
   
   std::ofstream o("temp.json");
   o << newJ << std::endl;
