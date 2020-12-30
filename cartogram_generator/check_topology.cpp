@@ -14,12 +14,11 @@ void holes_inside_polygons(MapState *map_state)
         for (unsigned int i = 0; i < hole.size(); ++i) {
           if (ext_ring.bounded_side(hole[i]) != CGAL::ON_BOUNDED_SIDE) {
             CGAL::set_pretty_mode(std::cout);
-            std::cout << "Hole detected outside polygon!" << std::endl;
-            std::cout << "Point: " << hole[i] << std::endl;
-            std::cout << "Hole: " << hole << std::endl;
-            std::cout << "Polygon: " << ext_ring << std::endl;
-            std::cout << "GeoDiv: " << gd.id() << std::endl;
-            return false;
+            std::cerr << "Hole detected outside polygon!" << std::endl;
+            std::cerr << "Hole: " << hole << std::endl;
+            std::cerr << "Polygon: " << ext_ring << std::endl;
+            std::cerr << "GeoDiv: " << gd.id() << std::endl;
+            _Exit(20);
           }
         }
 
