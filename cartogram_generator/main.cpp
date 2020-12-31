@@ -16,6 +16,7 @@
 #include "simplify_map.h"
 #include "cgal_to_json.h"
 #include "write_to_json.h"
+#include "rescale_map_rev.h"
 
 // Functions that are called if the corresponding command-line options are
 // present
@@ -143,10 +144,13 @@ int main(const int argc, const char *argv[])
   if (map_state.n_points() > 100000) {
     simplify_map(&map_state);
   }
+  
+  rescale_map_rev(512, &map_state);
+
   json new_j = cgal_to_json(map_state.geo_divs());
   write_to_json(new_j, geo_file_name);
 
-  fill_with_density(&map_state);
+  // fill_with_density(&map_state);
   blur_density(10.0, &map_state);
   flatten_density(&map_state);
 
