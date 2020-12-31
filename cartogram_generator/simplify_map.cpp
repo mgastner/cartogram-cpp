@@ -173,10 +173,10 @@ std::map<int, std::vector<PLL>> store_by_pos(CT &ct,
           for (Point pt_h : pll_outer.get_pll()) {
             bool v_on_outer_h = CGAL::bounded_side_2(hole.begin(), hole.end(), pt_h) == CGAL::ON_BOUNDARY;
             if (v_on_outer_h) num_v_on_outer_h++; 
-            if (num_v_on_outer_h >= 2) break;
+            if (num_v_on_outer_h >= 3) break;
           }
 
-          if (num_v_on_outer_h >= 2) {
+          if (num_v_on_outer_h >= 3) {
             print_pll(pll_hole);
             pll_cntr_by_pos[pos].push_back(pll_hole);
           }
@@ -256,10 +256,7 @@ void set_visited_vals(std::unordered_map<int, std::unordered_map<int, std::unord
       }
       // Sort each vector<PLL> so that all holes are in front
       auto cmp = [](PLL pll1, PLL pll2) {
-        if (pll1.get_bool_hole()) // if pll1 is hole, move to front
-          return 1;
-        else
-          return 0;
+        return pll1.get_bool_hole() > pll2.get_bool_hole();
       };
       std::sort(pll_cntr_by_gd_pgnwh[gd_num][pgnwh_num].begin(), pll_cntr_by_gd_pgnwh[gd_num][pgnwh_num].end(), cmp);
     }
@@ -295,9 +292,23 @@ void assemble_pll_to_pgn(std::map<int, std::map<int, std::vector<PLL>>> &pll_cnt
           for (Point pt : pll.get_pll())
             outer.push_back(pt);
 
-          if (!pll.get_bool_hole()) {
+          if (!pll.get_bool_hole() && holes_v.empty()) {
             Polygon_with_holes pgnwh(outer);
             gd_final.push_back(pgnwh);
+          } else if (!pll.get_bool_hole() && !holes_v.empty()) {
+            // Check if hole's middle vertex is inside boundary
+            // std::cout << holes_v.size() << std::endl;
+            bool holes_inside = true; 
+
+            for (Polygon hole : holes_v)
+              if (CGAL::bounded_side_2(outer.begin(), outer.end(), hole[hole.size() / 2]) != CGAL::ON_BOUNDED_SIDE)
+                holes_inside = false;
+
+            if (holes_inside) {
+              Polygon_with_holes pgnwh_final_2(outer, holes_v.begin(), holes_v.end());
+              gd_final.push_back(pgnwh_final_2);
+              holes_v.clear();
+            }
           } else {
             holes_v.push_back(outer);
           }
@@ -344,10 +355,16 @@ void assemble_pll_to_pgn(std::map<int, std::map<int, std::vector<PLL>>> &pll_cnt
           }
           // std::cout << "Sequence of polylines for: " << gd_num << " " << pgnwh_num << std::endl;
           Polygon outer_2;
+
           for (PLL pll_deq : deq) {
             // std::cout << pll_deq.get_v1() << " " << pll_deq.get_vl() << " " << pll_deq.get_pos() << std::endl;
             for (Point pt : pll_deq.get_pll())
               outer_2.push_back(pt);
+          }
+
+          if (pll.get_bool_hole()) {
+            holes_v.push_back(outer_2);
+            continue;
           }
 
           if (holes_v.empty()) {
@@ -366,7 +383,6 @@ void assemble_pll_to_pgn(std::map<int, std::map<int, std::vector<PLL>>> &pll_cnt
               holes_v.clear();
             }
           }
-
           // std::cout << std::endl;
         }
 
@@ -440,7 +456,7 @@ void simplify_map(MapState *map_state) {
   // 9. Set visited values
   // 10. Assemble polylines into polygons
   // 11. Remove first point as last point by reference 
-  
+
   std::vector<GeoDiv> container = map_state->geo_divs();
 
   // 1. Repeat first point as last point by reference 
