@@ -141,7 +141,7 @@ std::map<int, std::vector<PLL>> store_by_pos(CT &ct,
         }
 
         if (num_v_on_outer >= 3) {
-          print_pll(pll_outer);
+          // print_pll(pll_outer);
           pll_cntr_by_pos[pos].push_back(pll_outer);
         } else {
           // If the polyline originally only had 2 vertices, check if the pll is really on the outer
@@ -158,8 +158,8 @@ std::map<int, std::vector<PLL>> store_by_pos(CT &ct,
               }
             }
             if (v1_vl_pll_on_outer) {
-              //std::cout << pll_dens_to_org[pos].size() << " " << pll_outer.get_pll().size() << std::endl;
-              print_pll(pll_outer);
+              // std::cout << pll_dens_to_org[pos].size() << " " << pll_outer.get_pll().size() << std::endl;
+              // print_pll(pll_outer);
               pll_cntr_by_pos[pos].push_back(pll_outer);
             }
           }
@@ -177,7 +177,7 @@ std::map<int, std::vector<PLL>> store_by_pos(CT &ct,
           }
 
           if (num_v_on_outer_h >= 3) {
-            print_pll(pll_hole);
+            // print_pll(pll_hole);
             pll_cntr_by_pos[pos].push_back(pll_hole);
           }
         }
@@ -263,11 +263,13 @@ void set_visited_vals(std::unordered_map<int, std::unordered_map<int, std::unord
   }
 
   // Print out new sequence
+  /*
   for (auto [gd_num, m] : pll_cntr_by_gd_pgnwh)
     for (auto [pgnwh_num, pll_v] : m)
       for (PLL pll : pll_v)
         print_pll(pll);
   std::cout << std::endl;
+  */
 }
 
 void assemble_pll_to_pgn(std::map<int, std::map<int, std::vector<PLL>>> &pll_cntr_by_gd_pgnwh, 
@@ -297,7 +299,6 @@ void assemble_pll_to_pgn(std::map<int, std::map<int, std::vector<PLL>>> &pll_cnt
             gd_final.push_back(pgnwh);
           } else if (!pll.get_bool_hole() && !holes_v.empty()) { // if there is a hole within
             // Check if hole's middle vertex is inside boundary
-            // std::cout << holes_v.size() << std::endl;
             bool holes_inside = true; 
 
             for (Polygon hole : holes_v)
@@ -353,11 +354,9 @@ void assemble_pll_to_pgn(std::map<int, std::map<int, std::vector<PLL>>> &pll_cnt
             }
             if (!found) break;
           }
-          // std::cout << "Sequence of polylines for: " << gd_num << " " << pgnwh_num << std::endl;
           Polygon outer_2;
 
           for (PLL pll_deq : deq) {
-            // std::cout << pll_deq.get_v1() << " " << pll_deq.get_vl() << " " << pll_deq.get_pos() << std::endl;
             for (Point pt : pll_deq.get_pll())
               outer_2.push_back(pt);
           }
@@ -372,7 +371,6 @@ void assemble_pll_to_pgn(std::map<int, std::map<int, std::vector<PLL>>> &pll_cnt
             gd_final.push_back(pgnwh_final_2);
           } else {
             // Check if hole's middle vertex is inside boundary
-            // std::cout << holes_v.size() << std::endl;
             bool holes_inside = true; 
             for (Polygon hole : holes_v)
               if (CGAL::bounded_side_2(outer_2.begin(), outer_2.end(), hole[hole.size() / 2]) != CGAL::ON_BOUNDED_SIDE)
@@ -480,18 +478,15 @@ void simplify_map(MapState *map_state) {
   std::map<int, Polyline> pll_dens_to_org = store_polyline_dens_to_org(ct, polyline_list);
 
   // 6. Store polylines by positions with their associated GeoDivs and Polygon_with_holes
-  std::cout << "Store polylines by positions with their associated GeoDivs and Polygon_with_holes" << std::endl;
+  // std::cout << "Store polylines by positions with their associated GeoDivs and Polygon_with_holes" << std::endl;
   std::map<int, std::vector<PLL>> pll_cntr_by_pos = store_by_pos(ct, container, pll_dens_to_org);
 
   // 7. Simplify polylines
   PS::simplify(ct, Cost(), Stop(0.2));
 
-  std::cout << "Store polylines by GeoDivs and Polygon_with_holes with their associated positions" << std::endl;
+  // std::cout << "Store polylines by GeoDivs and Polygon_with_holes with their associated positions" << std::endl;
   // 8. Store polylines by GeoDivs and Polygon_with_holes with their associated positions
   std::map<int, std::map<int, std::vector<PLL>>> pll_cntr_by_gd_pgnwh = store_by_gd_pgnwh(container, ct, pll_cntr_by_pos);
-
-  // No longer needed
-  // label_holes_correctly(container, pll_cntr_by_gd_pgnwh);
 
   // 9. Set visited values
   std::unordered_map<int, std::unordered_map<int, std::unordered_map<int, bool>>> visited;
