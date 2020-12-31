@@ -295,7 +295,7 @@ void assemble_pll_to_pgn(std::map<int, std::map<int, std::vector<PLL>>> &pll_cnt
           if (!pll.get_bool_hole() && holes_v.empty()) {
             Polygon_with_holes pgnwh(outer);
             gd_final.push_back(pgnwh);
-          } else if (!pll.get_bool_hole() && !holes_v.empty()) {
+          } else if (!pll.get_bool_hole() && !holes_v.empty()) { // if there is a hole within
             // Check if hole's middle vertex is inside boundary
             // std::cout << holes_v.size() << std::endl;
             bool holes_inside = true; 
