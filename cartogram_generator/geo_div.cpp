@@ -31,6 +31,21 @@ void GeoDiv::push_back(const Polygon_with_holes pgn_wh)
   return;
 }
 
+int GeoDiv::n_points()
+{
+  int n_points = 0;
+  for (Polygon_with_holes pgn_wh : polygons_with_holes_) {
+    Polygon outer = pgn_wh.outer_boundary();
+    n_points += outer.size();
+
+    std::vector<Polygon> holes_v(pgn_wh.holes_begin(), pgn_wh.holes_end());
+    for (Polygon hole : holes_v) {
+      n_points += hole.size();
+    }
+  }
+  return n_points;
+}
+
 double GeoDiv::area() const
 {
   double a = 0.0;

@@ -139,14 +139,16 @@ int main(const int argc, const char *argv[])
   // THE CONDITION FOR THE WHILE-LOOP WILL BECOME MORE COMPLEX. LEAVE IT
   // UNTOUCHED FOR THE TIME BEING.
   //while (1 == 0) {
+  
+
+  simplify_map(&map_state);
+  json new_j = cgal_to_json(map_state.geo_divs());
+  write_to_json(new_j, geo_file_name);
 
   fill_with_density(&map_state);
   blur_density(10.0, &map_state);
   flatten_density(&map_state);
 
-  simplify_map(&map_state);
-  json new_j = cgal_to_json(map_state.geo_divs());
-  write_to_json(new_j, geo_file_name);
 
   //integration++;
   //}

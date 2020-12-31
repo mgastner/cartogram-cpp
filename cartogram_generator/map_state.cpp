@@ -37,6 +37,14 @@ std::vector<GeoDiv> *MapState::ref_to_geo_divs()
   return &geo_divs_;
 }
 
+int MapState::n_points()
+{
+  int n_points = 0;
+  for (GeoDiv gd : geo_divs_)
+    n_points += gd.n_points();
+  return n_points;
+}
+
 void MapState::target_areas_insert(const std::string id, const double area)
 {
   target_areas.insert(std::pair<std::string, double>(id, area));
