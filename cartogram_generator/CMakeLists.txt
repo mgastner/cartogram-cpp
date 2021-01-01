@@ -41,7 +41,7 @@ add_executable(cartogram main.cpp
 		read_csv.cpp
 		rescale_map.cpp
 		write_eps.cpp
-    helper_functions.cpp
+    find_graticule_intersections.cpp
 		read_geojson.cpp
 		fill_with_density.cpp
     blur_density.cpp
