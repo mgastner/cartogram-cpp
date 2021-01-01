@@ -68,7 +68,7 @@ std::vector<Point> graticule_intersections(Point a, Point b)
                    (b[1] - a[1]);
         Point temp(x, i);
         // Ensuring no corner points are pushed back
-        if (x != i || (x == i && a[1] == b[1])) {
+        if (x != i || (x == i && a[0] == b[0])) {
           intersections.push_back(temp);
         }
       }
