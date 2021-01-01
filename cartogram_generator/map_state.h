@@ -6,6 +6,11 @@
 #include <fftw3.h>
 #include <vector>
 
+struct XYPoint {
+  double x;
+  double y;
+};
+
 class MapState {
 private:
   std::vector<GeoDiv> geo_divs_;

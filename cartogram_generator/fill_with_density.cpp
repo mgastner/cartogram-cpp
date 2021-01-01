@@ -1,19 +1,33 @@
 #include "map_state.h"
 #include "write_eps.h"
+#include "fill_with_density.h"
 
-// Struct to store intersection data
-struct intersection {
-  double x;  // x-coordinate of intersection
-  double target_density;  // GeoDiv's target_density
-  bool direction;  // Does intersection enter or exit?
+bool line_y_intersects (XYPoint a, XYPoint b, double line_y, intersection *temp,
+                        double epsilon)
+{
 
-  // Overload "<" operator for this data type. Idea from
-  // https://stackoverflow.com/questions/4892680/sorting-a-vector-of-structs
-  bool operator < (const intersection &rhs) const
-  {
-    return (x < rhs.x || (x == rhs.x && direction < rhs.direction));
+  // Check if intersection is present
+  if (((a.y <= line_y && b.y >= line_y) ||
+       (a.y >= line_y && b.y <= line_y)) &&
+
+      // Pre-condition to ignore grazing incidence (i.e. a line
+      // segment along the polygon is exactly on the test line)
+      (a.y != b.y)) {
+    if (a.y == line_y) {
+      a.y += epsilon;
+    } else if (b.y == line_y) {
+      b.y += epsilon;
+    }
+
+    // Edit intersection passed by reference
+    temp->x = (a.x * (b.y - line_y) +
+               b.x * (line_y - a.y)) /
+              (b.y - a.y);
+    temp->direction = false; // Temporary value
+    return true;
   }
-};
+  return false;
+}
 
 void fill_with_density(MapState* map_state)
 {
@@ -42,7 +56,7 @@ void fill_with_density(MapState* map_state)
 
   // A vector (map_intersections) to store vectors of intersections
   int n_lines = (int) (map_state->ly() * res);
-  std::vector<std::vector<intersection>> map_intersections(n_lines);
+  std::vector<std::vector<intersection> > map_intersections(n_lines);
 
   // Iterate through GeoDivs in map_state
   for (auto gd : map_state->geo_divs()) {
@@ -66,9 +80,9 @@ void fill_with_density(MapState* map_state)
         for (double line_y = k + (1.0/res)/2; line_y < k + 1;
              line_y += (1.0/res)) {
           Polygon ext_ring = pwh.outer_boundary();
-          double prev_point[2];
-          prev_point[0] = ext_ring[ext_ring.size()-1][0];
-          prev_point[1] = ext_ring[ext_ring.size()-1][1];
+          XYPoint prev_point;
+          prev_point.x = ext_ring[ext_ring.size()-1][0];
+          prev_point.y = ext_ring[ext_ring.size()-1][1];
 
           // Temporary vector of intersections for this particular line
           std::vector<intersection> intersections;
@@ -83,67 +97,40 @@ void fill_with_density(MapState* map_state)
           // that, if there is any intersection, it is only counted once. It
           // also correctly detects whether the line crosses through the point
           // without entering or exiting the polygon.
-          double epsilon = 1e-6;
+          double epsilon = 1e-6 * (1.0/res);
 
           // First we run the algorithm on the exterior ring
           for (unsigned int l = 0; l < ext_ring.size(); l++) {
-            double curr_point[2];
-            curr_point[0] = ext_ring[l][0];
-            curr_point[1] = ext_ring[l][1];
-
-            // Check if intersection is present
-            if (((curr_point[1] <= line_y && prev_point[1] >= line_y) ||
-                 (curr_point[1] >= line_y && prev_point[1] <= line_y)) &&
-
-                // Pre-condition to ignore grazing incidence (i.e. a line
-                // segment along the polygon is exactly on the test line)
-                (curr_point[1] != prev_point[1])) {
-              if (curr_point[1] == line_y) {
-                curr_point[1] += epsilon * (1.0/res);
-              } else if (prev_point[1] == line_y) {
-                prev_point[1] += epsilon * (1.0/res);
-              }
-
-              // Create an intersection and store it in a vector
-              intersection temp;
-              temp.x = (curr_point[0] * (prev_point[1] - line_y) +
-                        prev_point[0] * (line_y - curr_point[1])) /
-                       (prev_point[1] - curr_point[1]);
+            XYPoint curr_point;
+            curr_point.x = ext_ring[l][0];
+            curr_point.y = ext_ring[l][1];
+            intersection temp;
+            if (line_y_intersects(curr_point, prev_point, line_y, &temp,
+                                  epsilon)) {
               temp.target_density = target_density;
-              temp.direction = false;   // Temporary value
               intersections.push_back(temp);
             }
-            prev_point[0] = curr_point[0];
-            prev_point[1] = curr_point[1];
+            prev_point.x = curr_point.x;
+            prev_point.y = curr_point.y;
           }
 
           // Run algorithm on each hole
           for (auto hci = pwh.holes_begin(); hci != pwh.holes_end(); ++hci) {
             Polygon hole = *hci;
-            prev_point[0] = hole[hole.size()-1][0];
-            prev_point[1] = hole[hole.size()-1][1];
+            prev_point.x = hole[hole.size()-1][0];
+            prev_point.y = hole[hole.size()-1][1];
             for (unsigned int l = 0; l < hole.size(); l++) {
-              double curr_point[2];
-              curr_point[0] = hole[l][0];
-              curr_point[1] = hole[l][1];
-              if (((curr_point[1] <= line_y && prev_point[1] >= line_y) ||
-                   (curr_point[1] >= line_y && prev_point[1] <= line_y)) &&
-                  (curr_point[1] != prev_point[1])) {
-                if (curr_point[1] == line_y) {
-                  curr_point[1] += epsilon * (1.0/res);
-                } else if (prev_point[1] == line_y) {
-                  prev_point[1] += epsilon * (1.0/res);
-                }
-                intersection temp;
-                temp.x = (curr_point[0] * (prev_point[1] - line_y) +
-                          prev_point[0] * (line_y - curr_point[1])) /
-                         (prev_point[1] - curr_point[1]);
+              XYPoint curr_point;
+              curr_point.x = hole[l][0];
+              curr_point.y = hole[l][1];
+              intersection temp;
+              if (line_y_intersects(curr_point, prev_point, line_y, &temp,
+                                    epsilon)) {
                 temp.target_density = target_density;
-                temp.direction = false;  // Temporary value
                 intersections.push_back(temp);
               }
-              prev_point[0] = curr_point[0];
-              prev_point[1] = curr_point[1];
+              prev_point.x = curr_point.x;
+              prev_point.y = curr_point.y;
             }
           }
 
