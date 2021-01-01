@@ -68,7 +68,7 @@ Color::Color(std::string color_as_string)
   return;
 }
 
-std::string Color::EPS()
+std::string Color::eps()
 {
   std::string temp;
   temp.append(std::to_string((double) r / 255.0));

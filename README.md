@@ -67,5 +67,5 @@ The csv file should be in the following format:
 
 Colors may be represented in the following manner:
 1. `cornflowerblue`: html color codes supported by `CSS3` (case-insensitive)
-2. `rgb(255, 0, 120)` or `rgb(255 0 120)` or `255, 0, 120` or `255 0 120`: red, green and blue values out of 255
+2. `"rgb(255, 0, 120)""` or `rgb(255 0 120)` or `"255, 0, 120"` or `255 0 120`: red, green and blue values out of 255
 3. `#e74c3c`: hex code of color, must start with `#`

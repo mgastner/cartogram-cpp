@@ -90,7 +90,7 @@ void write_polygons_to_eps(std::ofstream &eps_file,
         eps_file << "gsave\n";
 
         // Fill path
-        eps_file << col.EPS() << "srgb f\n";
+        eps_file << col.eps() << "srgb f\n";
 
         // Restore path.
         eps_file << "grestore\n";

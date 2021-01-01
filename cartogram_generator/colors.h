@@ -13,7 +13,7 @@ struct Color {
   int b;
   Color(int, int, int);
   Color(std::string);
-  std::string EPS();
+  std::string eps();
 };
 
 static std::unordered_map<std::string, std::string> html_colors =
