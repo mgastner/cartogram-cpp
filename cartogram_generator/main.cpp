@@ -141,9 +141,9 @@ int main(const int argc, const char *argv[])
   // UNTOUCHED FOR THE TIME BEING.
   //while (1 == 0) {
   
-  if (map_state.n_points() > 100000) {
+  //if (map_state.n_points() > 100000) {
     simplify_map(&map_state);
-  }
+  //}
   
   rescale_map_rev(512, &map_state);
 

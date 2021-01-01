@@ -5,14 +5,13 @@
 
 PLL::PLL(int pos_,
     Polyline pll_,
-    std::vector<int>
-    gd_v_,
-    std::vector<int> pgnwh_v_,
+    int gd_,
+    int pgnwh_,
     bool bool_hole_) {
   pos = pos_;
   pll = pll_;
-  gd_v = gd_v_;
-  pgnwh_v = pgnwh_v_;
+  gd = gd_;
+  pgnwh = pgnwh_;
 
   v1 = *pll_.begin();
   auto v2_it = pll_.begin();
@@ -50,12 +49,12 @@ Point PLL::get_v2l() {
   return v2l;
 }
 
-std::vector<int> PLL::get_gd_v() {
-  return gd_v;
+int PLL::get_gd() {
+  return gd;
 }
 
-std::vector<int> PLL::get_pgnwh_v() {
-  return pgnwh_v;
+int PLL::get_pgnwh() {
+  return pgnwh;
 }
 
 bool PLL::get_bool_hole() {
