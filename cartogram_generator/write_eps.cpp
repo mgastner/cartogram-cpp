@@ -109,7 +109,6 @@ void write_polygons_to_eps(std::ofstream &eps_file,
 
       // Stroke path
       eps_file << "0 sgry s\n";
-
     }
   }
   return;

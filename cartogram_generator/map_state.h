@@ -6,7 +6,6 @@
 #include "colors.h"
 #include <fftw3.h>
 #include <vector>
-#include <algorithm>
 
 class MapState {
 private:
