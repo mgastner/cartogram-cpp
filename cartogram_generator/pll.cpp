@@ -11,7 +11,6 @@ PLL::PLL(int pos_,
     bool bool_hole_) {
   pos = pos_;
   pll = pll_;
-  pll_org = pll_;
   gd_v = gd_v_;
   pgnwh_v = pgnwh_v_;
 
@@ -35,9 +34,6 @@ Polyline PLL::get_pll() {
   return pll;
 }
 
-Polyline PLL::get_pll_org() {
-  return pll_org;
-}
 Point PLL::get_v1() {
   return v1;
 }
@@ -66,9 +62,8 @@ bool PLL::get_bool_hole() {
   return bool_hole;
 }
 
-void PLL::set_pll(Polyline pll_, Polyline pll_org_) {
+void PLL::set_pll(Polyline pll_) {
   pll = pll_;
-  pll_org = pll_org_;
   v1 = *pll_.begin();
   auto v2_it = pll_.begin();
   v2_it++;

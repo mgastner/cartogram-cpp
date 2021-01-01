@@ -321,6 +321,7 @@ void assemble_pll_to_pgn(std::map<int, std::map<int, std::vector<PLL>>> &pll_cnt
           // Connect together all polylines belonging to a Polygon_with_holes
           while (1) {
             bool found = false;
+
             for (PLL pll2 : pll_cntr_by_gd_pgnwh[pll.get_gd_v()[0]][pll.get_pgnwh_v()[0]]) {
               if (visited[gd_num][pgnwh_num][pll2.get_pos()] == true) continue;
 
@@ -338,7 +339,7 @@ void assemble_pll_to_pgn(std::map<int, std::map<int, std::vector<PLL>>> &pll_cnt
                   deq.front().get_v1()[1] == pll2.get_v1()[1]) {
                 Polyline polyl_new = pll2.get_pll();
                 std::reverse(polyl_new.begin(), polyl_new.end());
-                pll2.set_pll(polyl_new, pll2.get_pll_org());
+                pll2.set_pll(polyl_new);
                 deq.push_front(pll2);
                 visited[gd_num][pgnwh_num][pll2.get_pos()] = true;
                 found = true;
@@ -346,7 +347,7 @@ void assemble_pll_to_pgn(std::map<int, std::map<int, std::vector<PLL>>> &pll_cnt
                   deq.back().get_vl()[1] == pll2.get_vl()[1]) {
                 Polyline polyl_new = pll2.get_pll();
                 std::reverse(polyl_new.begin(), polyl_new.end());
-                pll2.set_pll(polyl_new, pll2.get_pll_org());
+                pll2.set_pll(polyl_new);
                 deq.push_back(pll2);
                 visited[gd_num][pgnwh_num][pll2.get_pos()] = true;
                 found = true;

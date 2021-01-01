@@ -10,7 +10,6 @@ class PLL {
   private:
     int pos;
     Polyline pll;
-    Polyline pll_org;
     Point v1, v2, vl, v2l;
     std::vector<int> gd_v;
     std::vector<int> pgnwh_v;
@@ -26,7 +25,6 @@ class PLL {
 
     int get_pos();
     Polyline get_pll();
-    Polyline get_pll_org();
     Point get_v1();
     Point get_v2();
     Point get_vl();
@@ -34,7 +32,7 @@ class PLL {
     std::vector<int> get_gd_v();
     std::vector<int> get_pgnwh_v();
     bool get_bool_hole();
-    void set_pll(Polyline pll_, Polyline pll_org_);
+    void set_pll(Polyline pll_);
     void set_bool_hole(bool b);
 };
 
