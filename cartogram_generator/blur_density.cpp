@@ -1,10 +1,10 @@
 #include "constants.h"
 #include "map_state.h"
+#include "write_eps.h"
 #include <iostream>
 
 void blur_density(const double blur_width, MapState *map_state)
 {
-  std::cout << "In blur_density()" << std::endl;
   const unsigned int lx = map_state->lx();
   const unsigned int ly = map_state->ly();
   FTReal2d &rho_ft = *map_state->ref_to_rho_ft();
@@ -18,5 +18,14 @@ void blur_density(const double blur_width, MapState *map_state)
     }
   }
   map_state->execute_bwd_plan();
+  if (map_state->trigger_write_density_to_eps()) {
+    std::string file_name =
+      std::string("blurred_density_") +
+      std::to_string(map_state->n_finished_integrations()) +
+      ".eps";
+    std::cout << "Writing " << file_name << std::endl;
+    FTReal2d &rho_init = *map_state->ref_to_rho_init();
+    write_density_to_eps(file_name, rho_init.array(), map_state);
+  }
   return;
 }

@@ -1,20 +1,22 @@
 #include "map_state.h"
 
-MapState::MapState(std::string v, const bool w) :
+MapState::MapState(std::string v, const bool w, const bool wd2eps) :
   visual_variable_file_(v),
-  is_world_map_(w)
+  is_world_map_(w),
+  write_density_to_eps_(wd2eps)
 {
+  n_finished_integrations_ = 0;
   return;
 }
 
 MapState::~MapState()
 {
-  fftw_destroy_plan(fwd_plan_);
-  fftw_destroy_plan(bwd_plan_);
+  fftw_destroy_plan(fwd_plan_for_rho_);
+  fftw_destroy_plan(bwd_plan_for_rho_);
   return;
 }
 
-const unsigned int MapState::n_geo_divs() const
+unsigned int MapState::n_geo_divs() const
 {
   return geo_divs_.size();
 }
@@ -41,7 +43,7 @@ void MapState::colors_insert(const std::string id, const std::string color)
   return;
 }
 
-const double MapState::target_areas_at(const std::string id)
+double MapState::target_areas_at(const std::string id)
 {
   return target_areas.at(id);
 }
@@ -77,9 +79,14 @@ const std::set<std::string> MapState::ids_in_visual_variables_file() const
   return ids_in_visual_variables_file_;
 }
 
-const bool MapState::is_world_map() const
+bool MapState::is_world_map() const
 {
   return is_world_map_;
+}
+
+bool MapState::trigger_write_density_to_eps() const
+{
+  return write_density_to_eps_;
 }
 
 void MapState::make_grid(const unsigned int x, const unsigned int y)
@@ -90,21 +97,23 @@ void MapState::make_grid(const unsigned int x, const unsigned int y)
   rho_init_.allocate_ft();
   rho_ft_.set_array_size(lx_, ly_);
   rho_ft_.allocate_ft();
-  fwd_plan_ = fftw_plan_r2r_2d(lx_, ly_,
-                               rho_init_.array(), rho_ft_.array(),
-                               FFTW_REDFT10, FFTW_REDFT10, FFTW_ESTIMATE);
-  bwd_plan_ = fftw_plan_r2r_2d(lx_, ly_,
-                               rho_ft_.array(), rho_init_.array(),
-                               FFTW_REDFT01, FFTW_REDFT01, FFTW_ESTIMATE);
+  fwd_plan_for_rho_ =
+    fftw_plan_r2r_2d(lx_, ly_,
+                     rho_init_.array(), rho_ft_.array(),
+                     FFTW_REDFT10, FFTW_REDFT10, FFTW_ESTIMATE);
+  bwd_plan_for_rho_ =
+    fftw_plan_r2r_2d(lx_, ly_,
+                     rho_ft_.array(), rho_init_.array(),
+                     FFTW_REDFT01, FFTW_REDFT01, FFTW_ESTIMATE);
   return;
 }
 
-const unsigned int MapState::lx() const
+unsigned int MapState::lx() const
 {
   return lx_;
 }
 
-const unsigned int MapState::ly() const
+unsigned int MapState::ly() const
 {
   return ly_;
 }
@@ -121,13 +130,13 @@ FTReal2d *MapState::ref_to_rho_ft()
 
 void MapState::execute_fwd_plan() const
 {
-  fftw_execute(fwd_plan_);
+  fftw_execute(fwd_plan_for_rho_);
   return;
 }
 
 void MapState::execute_bwd_plan() const
 {
-  fftw_execute(bwd_plan_);
+  fftw_execute(bwd_plan_for_rho_);
   return;
 }
 
@@ -135,4 +144,9 @@ void MapState::push_back(const GeoDiv gd)
 {
   geo_divs_.push_back(gd);
   return;
+}
+
+unsigned int MapState::n_finished_integrations() const
+{
+  return n_finished_integrations_;
 }

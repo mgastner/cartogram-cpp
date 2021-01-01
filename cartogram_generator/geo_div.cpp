@@ -1,6 +1,6 @@
 #include "geo_div.h"
 
-GeoDiv::GeoDiv(const std::string i): id_(i)
+GeoDiv::GeoDiv(const std::string i) : id_(i)
 {
   return;
 }
@@ -10,7 +10,7 @@ const std::string GeoDiv::id() const
   return id_;
 }
 
-const int GeoDiv::n_polygons_with_holes() const
+int GeoDiv::n_polygons_with_holes() const
 {
   return polygons_with_holes_.size();
 }
@@ -31,7 +31,7 @@ void GeoDiv::push_back(const Polygon_with_holes pgn_wh)
   return;
 }
 
-const double GeoDiv::area() const
+double GeoDiv::area() const
 {
   double a = 0.0;
   for (auto pwh : polygons_with_holes()) {
