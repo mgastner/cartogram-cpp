@@ -15,7 +15,6 @@ struct intersection {
   }
 };
 
-bool line_y_intersects (XYPoint, XYPoint, double, intersection*, double);
 void fill_with_density(MapState*);
 
 #endif

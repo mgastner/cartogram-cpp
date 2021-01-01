@@ -3,7 +3,7 @@
 #include "fill_with_density.h"
 
 bool line_y_intersects (XYPoint a, XYPoint b, double line_y, intersection *temp,
-                        double epsilon)
+                        double target_density, double epsilon)
 {
 
   // Check if intersection is present
@@ -23,6 +23,7 @@ bool line_y_intersects (XYPoint a, XYPoint b, double line_y, intersection *temp,
     temp->x = (a.x * (b.y - line_y) +
                b.x * (line_y - a.y)) /
               (b.y - a.y);
+    temp->target_density = target_density;
     temp->direction = false; // Temporary value
     return true;
   }
@@ -106,8 +107,7 @@ void fill_with_density(MapState* map_state)
             curr_point.y = ext_ring[l][1];
             intersection temp;
             if (line_y_intersects(curr_point, prev_point, line_y, &temp,
-                                  epsilon)) {
-              temp.target_density = target_density;
+                                  target_density, epsilon)) {
               intersections.push_back(temp);
             }
             prev_point.x = curr_point.x;
@@ -125,8 +125,7 @@ void fill_with_density(MapState* map_state)
               curr_point.y = hole[l][1];
               intersection temp;
               if (line_y_intersects(curr_point, prev_point, line_y, &temp,
-                                    epsilon)) {
-                temp.target_density = target_density;
+                                    target_density, epsilon)) {
                 intersections.push_back(temp);
               }
               prev_point.x = curr_point.x;
