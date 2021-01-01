@@ -88,7 +88,8 @@ void print_pll(PLL pll) {
   std::cout << " | " << pll.get_v2() << std::endl; 
 }
 
-std::map<int, Polyline> store_polyline_dens_to_org(CT ct, std::list<Polyline> polyline_list) {
+std::map<int, Polyline> store_polyline_dens_to_org(CT ct, 
+                                                   std::list<Polyline> polyline_list) {
   std::map<int, Polyline> pll_dens_to_org; 
   int pos = 0;
   for (auto cit = ct.constraints_begin(); cit != ct.constraints_end(); cit++) {
@@ -115,9 +116,47 @@ std::map<int, Polyline> store_polyline_dens_to_org(CT ct, std::list<Polyline> po
   return pll_dens_to_org;
 }
 
+void check_if_pll_on_pgn_boundary(PLL pll,
+                                  Polygon pgn,
+                                  std::map<int, std::vector<PLL>> &pll_cntr_by_pos,
+                                  std::map<int, Polyline> pll_dens_to_org,
+                                  int pos,
+                                  bool is_hole) {
+  // need >=3 vertices in pll to be on pgn's boundary to count as part of pgn
+  int num_v_on_outer = 0;
+  for (Point pt : pll.get_pll()) {
+    bool v_on_outer = CGAL::bounded_side_2(pgn.begin(), pgn.end(), pt) == CGAL::ON_BOUNDARY;
+    if (v_on_outer) num_v_on_outer++; 
+    if (num_v_on_outer >= 3) break;
+  }
+
+  if (num_v_on_outer >= 3) {
+    // print_pll(pll);
+    pll_cntr_by_pos[pos].push_back(pll);
+  } else if (pll_dens_to_org[pos].size() == 2 && !is_hole) {
+    // If the polyline originally only had 2 vertices, check if the pll is really on the outer
+    // Edge case is the border of Missouri, Kentucky, Tennessee
+    bool v1_vl_pll_on_outer = false;
+    for (int i = 0; i < (int) pgn.size() - 1; i++) {
+      // accounts for clockwise and counter-clockwise orientation of outer
+      bool direction_1 = pgn[i] == pll.get_v1() && pgn[i + 1] == pll.get_vl();
+      bool direction_2 = pgn[i + 1] == pll.get_v1() && pgn[i] == pll.get_vl();
+      if (direction_1 || direction_2) {
+        v1_vl_pll_on_outer = true;
+        break;
+      }
+    }
+    if (v1_vl_pll_on_outer) {
+      // std::cout << pll_dens_to_org[pos].size() << " " << pll.get_pll().size() << std::endl;
+      // print_pll(pll);
+      pll_cntr_by_pos[pos].push_back(pll);
+    }
+  }
+}
+
 std::map<int, std::vector<PLL>> store_by_pos(CT &ct, 
-                                             std::vector<GeoDiv> container,
-                                             std::map<int, Polyline> pll_dens_to_org) {
+    std::vector<GeoDiv> container,
+    std::map<int, Polyline> pll_dens_to_org) {
   std::map<int, std::vector<PLL>> pll_cntr_by_pos; 
   int pos = 0;
   for (auto cit = ct.constraints_begin(); cit != ct.constraints_end(); cit++) {
@@ -132,54 +171,15 @@ std::map<int, std::vector<PLL>> store_by_pos(CT &ct,
         PLL pll_outer(pos, polyl, gd_num, pgnwh_num, false);
         Polygon outer = pgnwh.outer_boundary();
 
-        // need at least 3 vertices of the pll to be on outer boundary to count as part of polygon
-        int num_v_on_outer = 0;
-        for (Point pt : pll_outer.get_pll()) {
-          bool v_on_outer = CGAL::bounded_side_2(outer.begin(), outer.end(), pt) == CGAL::ON_BOUNDARY;
-          if (v_on_outer) num_v_on_outer++; 
-          if (num_v_on_outer >= 3) break;
-        }
-
-        if (num_v_on_outer >= 3) {
-          // print_pll(pll_outer);
-          pll_cntr_by_pos[pos].push_back(pll_outer);
-        } else {
-          // If the polyline originally only had 2 vertices, check if the pll is really on the outer
-          // Edge case is the border of Missouri, Kentucky, Tennessee
-          if (pll_dens_to_org[pos].size() == 2) {
-            bool v1_vl_pll_on_outer = false;
-            for (int i = 0; i < (int) outer.size() - 1; i++) {
-              // accounts for clockwise and counter-clockwise orientation of outer
-              bool direction_1 = outer[i] == pll_outer.get_v1() && outer[i + 1] == pll_outer.get_vl();
-              bool direction_2 = outer[i + 1] == pll_outer.get_v1() && outer[i] == pll_outer.get_vl();
-              if (direction_1 || direction_2) {
-                v1_vl_pll_on_outer = true;
-                break;
-              }
-            }
-            if (v1_vl_pll_on_outer) {
-              // std::cout << pll_dens_to_org[pos].size() << " " << pll_outer.get_pll().size() << std::endl;
-              // print_pll(pll_outer);
-              pll_cntr_by_pos[pos].push_back(pll_outer);
-            }
-          }
-        }
+        // Check outer polygon
+        check_if_pll_on_pgn_boundary(pll_outer, outer, pll_cntr_by_pos, pll_dens_to_org, pos, false);
 
         std::vector<Polygon> holes_v(pgnwh.holes_begin(), pgnwh.holes_end());
         for (Polygon hole : holes_v) {
           PLL pll_hole(pos, polyl, gd_num, pgnwh_num, true);
 
-          int num_v_on_outer_h = 0;
-          for (Point pt_h : pll_outer.get_pll()) {
-            bool v_on_outer_h = CGAL::bounded_side_2(hole.begin(), hole.end(), pt_h) == CGAL::ON_BOUNDARY;
-            if (v_on_outer_h) num_v_on_outer_h++; 
-            if (num_v_on_outer_h >= 3) break;
-          }
-
-          if (num_v_on_outer_h >= 3) {
-            // print_pll(pll_hole);
-            pll_cntr_by_pos[pos].push_back(pll_hole);
-          }
+          // Check holes
+          check_if_pll_on_pgn_boundary(pll_hole, hole, pll_cntr_by_pos, pll_dens_to_org, pos, true);
         }
         pgnwh_num++;
       }
@@ -264,12 +264,12 @@ void set_visited_vals(std::unordered_map<int, std::unordered_map<int, std::unord
 
   // Print out new sequence
   /*
-  for (auto [gd_num, m] : pll_cntr_by_gd_pgnwh)
-    for (auto [pgnwh_num, pll_v] : m)
-      for (PLL pll : pll_v)
-        print_pll(pll);
-  std::cout << std::endl;
-  */
+     for (auto [gd_num, m] : pll_cntr_by_gd_pgnwh)
+     for (auto [pgnwh_num, pll_v] : m)
+     for (PLL pll : pll_v)
+     print_pll(pll);
+     std::cout << std::endl;
+     */
 }
 
 void assemble_pll_to_pgn(std::map<int, std::map<int, std::vector<PLL>>> &pll_cntr_by_gd_pgnwh, 
