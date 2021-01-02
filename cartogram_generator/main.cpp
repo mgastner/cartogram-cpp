@@ -129,6 +129,10 @@ int main(const int argc, const char *argv[])
     return EXIT_FAILURE;
   }
 
+  simplify_map(&map_state);
+  json new_j = cgal_to_json(map_state.geo_divs());
+  write_to_json(new_j, geo_file_name);
+
   // Rescale map to fit into a rectangular box [0, lx] * [0, ly].
   rescale_map(long_grid_side_length, &map_state);
   if (input_polygons_to_eps) {
@@ -142,15 +146,11 @@ int main(const int argc, const char *argv[])
   //while (1 == 0) {
   
   //if (map_state.n_points() > 100000) {
-    simplify_map(&map_state);
   //}
   
-  rescale_map_rev(512, &map_state);
+  //rescale_map_rev(512, &map_state);
 
-  json new_j = cgal_to_json(map_state.geo_divs());
-  write_to_json(new_j, geo_file_name);
-
-  // fill_with_density(&map_state);
+  fill_with_density(&map_state);
   blur_density(10.0, &map_state);
   flatten_density(&map_state);
 

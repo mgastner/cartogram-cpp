@@ -79,6 +79,7 @@ std::vector<Point> graticule_intersections(Point a, Point b)
       Point temp(i, y);
       intersections.push_back(temp);
     }
+    std::cout << "hi" << std::endl;
   }
 
   // Horizontal intersections (y coordinate lines)
