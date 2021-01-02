@@ -3,6 +3,7 @@
 
 #include "ft_real_2d.h"
 #include "geo_div.h"
+#include "colors.h"
 #include <fftw3.h>
 #include <vector>
 
@@ -10,7 +11,7 @@ class MapState {
 private:
   std::vector<GeoDiv> geo_divs_;
   std::map<std::string, double> target_areas;
-  std::map<std::string, std::string> colors;
+  std::map<std::string, Color> colors;
   std::string id_header_;
   std::string visual_variable_file_;
   std::set<std::string> ids_in_visual_variables_file_;
@@ -31,7 +32,8 @@ public:
   void target_areas_insert(std::string, double);
   void colors_insert(std::string, std::string);
   double target_areas_at(const std::string);
-  const std::string colors_at(const std::string);
+  const Color colors_at(const std::string);
+  bool colors_empty() const;
   void set_id_header(const std::string);
   const std::string id_header() const;
   const std::string visual_variable_file() const;
