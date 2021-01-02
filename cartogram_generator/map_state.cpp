@@ -40,14 +40,15 @@ void MapState::target_areas_insert(const std::string id, const double area)
 void MapState::colors_insert(const std::string id, std::string color)
 {
 
-  // from https://stackoverflow.com/questions/313970/how-to-convert-stdstring-to-lower-case
+  // From https://stackoverflow.com/questions/313970/how-to-convert-stdstring-
+  // to-lower-case
   std::transform(color.begin(), color.end(), color.begin(), ::tolower);
   Color c(color);
   colors.insert(std::pair<std::string, Color>(id, c));
   return;
 }
 
-const double MapState::target_areas_at(const std::string id)
+double MapState::target_areas_at(const std::string id)
 {
   return target_areas.at(id);
 }
@@ -56,7 +57,8 @@ const Color MapState::colors_at(const std::string id)
 {
   return colors.at(id);
 }
-const bool MapState::colors_empty() const
+
+bool MapState::colors_empty() const
 {
   return colors.empty();
 }

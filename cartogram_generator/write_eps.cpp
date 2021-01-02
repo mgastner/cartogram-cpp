@@ -80,7 +80,6 @@ void write_polygons_to_eps(std::ofstream &eps_file,
         }
         eps_file << "c\n";
       }
-
       if (colors) {
 
         // Getting color
@@ -118,14 +117,17 @@ void write_map_to_eps(std::string eps_name, MapState *map_state)
 {
   std::ofstream eps_file(eps_name);
   write_eps_header_and_definitions(eps_file, eps_name, map_state);
-  write_polygons_to_eps(eps_file, true, !(map_state->colors_empty()), map_state);
+  write_polygons_to_eps(eps_file,
+                        true,
+                        !(map_state->colors_empty()),
+                        map_state);
   eps_file << "showpage\n";
   eps_file << "%%EOF\n";
   eps_file.close();
   return;
 }
 
-// Functions to show a scalar field called "density" as a heat map.
+// Functions to show a scalar field called "density" as a heat map
 double interpolate_for_heatmap(double x,
                                double xmin,
                                double xmax,

@@ -19,8 +19,8 @@ struct Color {
 static std::unordered_map<std::string, std::string> html_colors =
 {
 
-  // from https://en.wikipedia.org/wiki/Web_colors
-  // pink colors
+  // From https://en.wikipedia.org/wiki/Web_colors
+  // Shades of pink
   {"mediumvioletred", "#C71585"},
   {"deeppink", "#FF1493"},
   {"palevioletred", "#DB7093"},
@@ -28,7 +28,7 @@ static std::unordered_map<std::string, std::string> html_colors =
   {"lightpink", "#FFB6C1"},
   {"pink", "#FFC0CB"},
 
-  // red colors
+  // Shades of red
   {"darkred", "#8B0000"},
   {"red", "#FF0000"},
   {"firebrick", "#B22222"},
@@ -39,14 +39,14 @@ static std::unordered_map<std::string, std::string> html_colors =
   {"darksalmon", "#E9967A"},
   {"lightsalmon", "#FFA07A"},
 
-  // orange colors
+  // Shades of orange
   {"orangered", "#FF4500"},
   {"tomato", "#FF6347"},
   {"darkorange", "#FF8C00"},
   {"coral", "#FF7F50"},
   {"orange", "#FFA500"},
 
-  // yellow colors
+  // Shades of yellow
   {"darkkhaki", "#BDB76B"},
   {"gold", "#FFD700"},
   {"khaki", "#F0E68C"},
@@ -59,7 +59,7 @@ static std::unordered_map<std::string, std::string> html_colors =
   {"lemonchiffon", "#FFFACD"},
   {"lightyellow", "#FFFFE0"},
 
-  // brown colors
+  // Shades of brown
   {"maroon", "#800000"},
   {"brown", "#A52A2A"},
   {"saddlebrown", "#8B4513"},
@@ -78,7 +78,7 @@ static std::unordered_map<std::string, std::string> html_colors =
   {"blanchedalmond", "#FFEBCD"},
   {"cornsilk", "#FFF8DC"},
 
-  // green colors
+  // Shades of green
   {"darkgreen", "#006400"},
   {"green", "#008000"},
   {"darkolivegreen", "#556B2F"},
@@ -100,7 +100,7 @@ static std::unordered_map<std::string, std::string> html_colors =
   {"greenyellow", "#ADFF2F"},
   {"palegreen", "#98FB98"},
 
-  // cyan colors
+  // Shades of cyan
   {"teal", "#008080"},
   {"darkcyan", "#008B8B"},
   {"lightseagreen", "#20B2AA"},
@@ -114,7 +114,7 @@ static std::unordered_map<std::string, std::string> html_colors =
   {"paleturquoise", "#AFEEEE"},
   {"lightcyan", "#E0FFFF"},
 
-  // blue colors
+  // Shades of blue
   {"navy", "#000080"},
   {"darkblue", "#00008B"},
   {"mediumblue", "#0000CD"},
@@ -131,7 +131,7 @@ static std::unordered_map<std::string, std::string> html_colors =
   {"lightblue", "#ADD8E6"},
   {"powderblue", "#B0E0E6"},
 
-  // purple, violet, and magenta colors
+  // Shades of purple, violet, and magenta
   {"indigo", "#4B0082"},
   {"purple", "#800080"},
   {"darkmagenta", "#8B008B"},
@@ -151,7 +151,7 @@ static std::unordered_map<std::string, std::string> html_colors =
   {"thistle", "#D8BFD8"},
   {"lavender", "#E6E6FA"},
 
-  // white colors
+  // Shades of white
   {"mistyrose", "#FFE4E1"},
   {"antiquewhite", "#FAEBD7"},
   {"linen", "#FAF0E6"},
@@ -170,7 +170,7 @@ static std::unordered_map<std::string, std::string> html_colors =
   {"ivory", "#FFFFF0"},
   {"white", "#FFFFFF"},
 
-  // gray and black colors
+  // Shades of gray and black
   {"black", "#000000"},
   {"darkslategray", "#2F4F4F"},
   {"dimgray", "#696969"},
@@ -182,6 +182,5 @@ static std::unordered_map<std::string, std::string> html_colors =
   {"lightgray", "#D3D3D3"},
   {"gainsboro", "#DCDCDC"}
 };
-
 
 #endif

@@ -31,9 +31,9 @@ public:
   std::vector<GeoDiv> *ref_to_geo_divs();
   void target_areas_insert(std::string, double);
   void colors_insert(std::string, std::string);
-  const double target_areas_at(const std::string);
+  double target_areas_at(const std::string);
   const Color colors_at(const std::string);
-  const bool colors_empty() const;
+  bool colors_empty() const;
   void set_id_header(const std::string);
   const std::string id_header() const;
   const std::string visual_variable_file() const;

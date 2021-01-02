@@ -163,7 +163,7 @@ void read_geojson(const std::string geometry_file_name, MapState *map_state)
       polygon_warning_has_been_issued = true;
     }
 
-    // Storing id from properties
+    // Storing ID from properties
     const nlohmann::json properties = feature["properties"];
     if (!properties.contains(map_state->id_header())) {
       std::cerr << "ERROR: In GeoJSON, there is no property "
