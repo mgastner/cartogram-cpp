@@ -52,6 +52,7 @@ void write_eps_header_and_definitions(std::ofstream &eps_file,
 
 void write_polygons_to_eps(std::ofstream &eps_file,
                            bool fill_polygons,
+                           bool colors,
                            MapState *map_state)
 {
   eps_file << 0.001 * std::min(map_state->lx(), map_state->ly()) << " slw\n";
@@ -79,7 +80,22 @@ void write_polygons_to_eps(std::ofstream &eps_file,
         }
         eps_file << "c\n";
       }
-      if (fill_polygons) {
+
+      if (colors) {
+
+        // Getting color
+        Color col = map_state->colors_at(gd.id());
+
+        // Save path before filling it
+        eps_file << "gsave\n";
+
+        // Fill path
+        eps_file << col.eps() << "srgb f\n";
+
+        // Restore path.
+        eps_file << "grestore\n";
+      }
+      else if (fill_polygons) {
 
         // Save path before filling it
         eps_file << "gsave\n";
@@ -102,7 +118,7 @@ void write_map_to_eps(std::string eps_name, MapState *map_state)
 {
   std::ofstream eps_file(eps_name);
   write_eps_header_and_definitions(eps_file, eps_name, map_state);
-  write_polygons_to_eps(eps_file, true, map_state);
+  write_polygons_to_eps(eps_file, true, !(map_state->colors_empty()), map_state);
   eps_file << "showpage\n";
   eps_file << "%%EOF\n";
   eps_file.close();
@@ -205,7 +221,7 @@ void write_density_to_eps(std::string eps_name,
       eps_file << r << " " << g << " " << b << " srgb f\n";
     }
   }
-  write_polygons_to_eps(eps_file, false, map_state);
+  write_polygons_to_eps(eps_file, false, false, map_state);
   eps_file << "showpage\n";
   eps_file << "%%EOF\n";
   eps_file.close();
