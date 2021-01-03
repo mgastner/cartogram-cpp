@@ -6,6 +6,12 @@
 #include "colors.h"
 #include <fftw3.h>
 #include <vector>
+#include <boost/multi_array.hpp>
+
+struct XYPoint{ // For use in proj & proj2 arrays and flatten_density
+  double x;
+  double y;
+};
 
 class MapState {
 private:
@@ -22,6 +28,8 @@ private:
   FTReal2d rho_ft_;  // Fourier transform
   fftw_plan fwd_plan_for_rho_, bwd_plan_for_rho_;
   unsigned int n_finished_integrations_;
+  boost::multi_array<XYPoint, 2> proj_;
+  boost::multi_array<XYPoint, 2> proj2_;
   MapState();
 public:
   explicit MapState(const std::string, const bool, const bool);
@@ -50,6 +58,8 @@ public:
   void execute_bwd_plan() const;
   void push_back(const GeoDiv);
   unsigned int n_finished_integrations() const;
+  boost::multi_array<XYPoint, 2> *proj();
+  boost::multi_array<XYPoint, 2> *proj2();
 };
 
 #endif
