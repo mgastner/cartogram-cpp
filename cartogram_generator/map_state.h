@@ -13,11 +13,6 @@ struct XYPoint{ // For use in proj & proj2 arrays and flatten_density
   double y;
 };
 
-struct XYPoint {
-  double x;
-  double y;
-};
-
 class MapState {
 private:
   std::vector<GeoDiv> geo_divs_;
