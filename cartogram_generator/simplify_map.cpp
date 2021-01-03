@@ -292,9 +292,10 @@ void set_visited_vals(std::unordered_map<int, std::unordered_map<int, std::unord
 
 void assemble_pll_to_pgn(std::map<int, std::map<int, std::vector<PLL>>> &pll_cntr_by_gd_pgnwh, 
     std::unordered_map<int, std::unordered_map<int, std::unordered_map<int, bool>>> &visited, 
-    std::vector<GeoDiv> &container_final) {
+    std::vector<GeoDiv> &container_final,
+    std::vector<GeoDiv> container_org) {
   for (auto [gd_num, m] : pll_cntr_by_gd_pgnwh) {
-    GeoDiv gd_final("gd_final");
+    GeoDiv gd_final(container_org[gd_num].id());
     std::vector<Polygon> holes_v;
     for (auto [pgnwh_num, pll_v] : m) {
 
@@ -532,8 +533,9 @@ void simplify_map(MapState *map_state) {
 
   // std::cout << "Assemble polylines into polygons" << std::endl;
   // 10. Assemble polylines into polygons
+  // TODO retain original geo_div id so it doesn't get overwritten
   std::vector<GeoDiv> container_simp;
-  assemble_pll_to_pgn(pll_cntr_by_gd_pgnwh, visited, container_simp);
+  assemble_pll_to_pgn(pll_cntr_by_gd_pgnwh, visited, container_simp, container);
 
   // Print number of points after simplifying
   std::cout << "Number of vertices before simplifying: ";
