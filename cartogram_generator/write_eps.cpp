@@ -205,14 +205,14 @@ void write_density_to_eps(std::string eps_name,
   double dens_mean = 0.0;
   double dens_max = density[0];
   unsigned int n_grid_cells = map_state->lx() * map_state->ly();
-  for (unsigned int k = 0; k < n_grid_cells; k++) {
+  for (unsigned int k = 0; k < n_grid_cells; ++k) {
     dens_min = std::min(density[k], dens_min);
     dens_mean += density[k];
     dens_max = std::max(density[k], dens_max);
   }
   dens_mean /= n_grid_cells;
-  for (unsigned int i = 0; i < map_state->lx(); i++) {
-    for (unsigned int j = 0; j < map_state->ly(); j++) {
+  for (unsigned int i = 0; i < map_state->lx(); ++i) {
+    for (unsigned int j = 0; j < map_state->ly(); ++j) {
       double r, g, b;
       heatmap_color(density[i*map_state->ly() + j],
                     dens_min,
