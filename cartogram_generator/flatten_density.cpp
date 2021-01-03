@@ -11,7 +11,6 @@
 #define ABS_TOL (std::min(lx, ly) * 1e-6)
 
 void ffb_calcv (double t,
-                double delta_t,
                 FTReal2d grid_fluxx_init,
                 FTReal2d grid_fluxy_init,
                 FTReal2d rho_ft,
@@ -24,7 +23,7 @@ void ffb_calcv (double t,
 #pragma omp parallel for
   for (unsigned int i = 0; i < lx; ++i) {
     for (unsigned int j = 0; j < ly; ++j) {
-      double rho = rho_ft(0, 0) + (1.0 - (t)) * rho_init(i, j) - rho_ft(0,0);
+      double rho = rho_ft(0, 0) + (1.0 - t) * (rho_init(i, j) - rho_ft(0,0));
       grid_vx[i][j] = -grid_fluxx_init(i, j) / rho;
       grid_vy[i][j] = -grid_fluxy_init(i, j) / rho;
     }
@@ -215,7 +214,7 @@ void flatten_density(MapState *map_state)
 #pragma omp parallel for
     for (unsigned int i = 0; i < lx; i++) {
       for (unsigned int j = 0; j < ly; j++) {
-        double rho = rho_ft(0, 0) + (1.0 - t) * rho_init(i, j) - rho_ft(0,0);
+        double rho = rho_ft(0, 0) + (1.0 - t) * (rho_init(i, j) - rho_ft(0,0));
         grid_vx[i][j] = -grid_fluxx_init(i, j) / rho;
         grid_vy[i][j] = -grid_fluxy_init(i, j) / rho;
       }
@@ -249,6 +248,15 @@ void flatten_density(MapState *map_state)
       // and similarly for y.
 
       // ffb_calcv(t + 0.5*delta_t);
+      
+ #pragma omp parallel for
+      for (unsigned int i = 0; i < lx; ++i) {
+        for (unsigned int j = 0; j < ly; ++j) {
+          double rho = rho_ft(0, 0) + (1.0 - (t)) * (rho_init(i, j) - rho_ft(0,0));
+          grid_vx[i][j] = -grid_fluxx_init(i, j) / rho;
+          grid_vy[i][j] = -grid_fluxy_init(i, j) / rho;
+        }
+      }
 
       // Make sure we do not pass a point outside [0, lx] x [0, ly] to
       // interpol(). Otherwise decrease the time step below and try again.
