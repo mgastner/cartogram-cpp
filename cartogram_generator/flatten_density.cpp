@@ -374,8 +374,7 @@ void flatten_density(MapState *map_state)
   }
 
   // Replace old GeoDivs with new ones
-  std::vector<GeoDiv> &map_state_geo_divs = *map_state->ref_to_geo_divs();
-  map_state_geo_divs = new_geo_divs;
+  map_state->set_geo_divs(new_geo_divs);
 
 
   fftw_destroy_plan(plan_for_grid_fluxx_init);
