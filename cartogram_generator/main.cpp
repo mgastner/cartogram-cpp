@@ -150,7 +150,7 @@ int main(const int argc, const char *argv[])
   
   //rescale_map_rev(512, &map_state);
 
-  fill_with_density(&map_state);
+  //fill_with_density(&map_state);
   blur_density(10.0, &map_state);
   flatten_density(&map_state);
 

@@ -101,6 +101,12 @@ std::map<int, Polyline> store_polyline_dens_to_org(CT ct,
   int pos = 0;
   std::vector<bool> visited_polyl(polyline_list.size(), false);
   for (auto cit = ct.constraints_begin(); cit != ct.constraints_end(); cit++) {
+
+    auto vit3 = ct.points_in_constraint_begin(*cit);
+    std::cout << pos << " " << *vit3 << " ";
+    vit3++;
+    std::cout << *vit3 << std::endl;
+
     bool polyline_match = false;
     int polyl_num = 0;
     for (Polyline polyl : polyline_list) {
@@ -115,7 +121,11 @@ std::map<int, Polyline> store_polyline_dens_to_org(CT ct,
               polyline_match = true;
               pll_dens_to_org[pos] = polyl;
               visited_polyl[polyl_num] = true;
-              std::cout << pos << " " << polyl_num << " " << polyl[0] << " " << polyl[1] << std::endl;
+              auto vit2 = ct.points_in_constraint_begin(*cit);
+              std::cout << pos << " " << *vit2;
+              vit2++;
+              std::cout << " " << *vit2 << " ";
+              std::cout << polyl_num << " " << polyl[0] << " " << polyl[1] << std::endl;
             }
             break;
           }
@@ -141,8 +151,10 @@ void check_if_pll_on_pgn_boundary(PLL pll,
   for (Point pt : pll.get_pll()) {
     bool v_on_outer = CGAL::bounded_side_2(pgn.begin(), pgn.end(), pt) == CGAL::ON_BOUNDARY;
     if (v_on_outer) num_v_on_outer++; 
-    if (num_v_on_outer >= 3) break;
+    //if (num_v_on_outer >= 3) break;
   }
+
+  std::cout << pos << " " << num_v_on_outer << " " << pll_dens_to_org[pos].size() << std::endl;
 
   if (num_v_on_outer >= 3) {
     print_pll(pll);
@@ -174,6 +186,12 @@ std::map<int, std::vector<PLL>> store_by_pos(CT &ct,
   std::map<int, std::vector<PLL>> pll_cntr_by_pos; 
   int pos = 0;
   for (auto cit = ct.constraints_begin(); cit != ct.constraints_end(); cit++) {
+
+    auto vit3 = ct.points_in_constraint_begin(*cit);
+    std::cout << pos << " " << *vit3 << " ";
+    vit3++;
+    std::cout << *vit3 << std::endl;
+
     Polyline polyl;
     for (auto vit = ct.points_in_constraint_begin(*cit); vit != ct.points_in_constraint_end(*cit); vit++)
       polyl.push_back(*vit);
@@ -277,11 +295,13 @@ void set_visited_vals(std::unordered_map<int, std::unordered_map<int, std::unord
   }
 
   // Print out new sequence
+  /*
   for (auto [gd_num, m] : pll_cntr_by_gd_pgnwh)
     for (auto [pgnwh_num, pll_v] : m)
       for (PLL pll : pll_v)
         print_pll(pll);
   std::cout << std::endl;
+  */
 }
 
 void assemble_pll_to_pgn(std::map<int, std::map<int, std::vector<PLL>>> &pll_cntr_by_gd_pgnwh, 
@@ -488,7 +508,7 @@ void simplify_map(MapState *map_state) {
     ct.insert_constraint(polyline.begin(), polyline.end());
   }
 
-  // Sort polyline_list pushing polyls with more vertices in front
+  // Sort polyline_list: polyls with more vertices in front
   polyline_list.sort(
       [](Polyline polyl1, Polyline polyl2) {
       return polyl1.size() > polyl2.size();
@@ -505,7 +525,7 @@ void simplify_map(MapState *map_state) {
   PS::simplify(ct, Cost(), Stop(0.2));
 
   // 8. Store polylines by GeoDivs and Polygon_with_holes with their associated positions
-  std::cout << "Store polylines by GeoDivs and Polygon_with_holes with their associated positions" << std::endl;
+  // std::cout << "Store polylines by GeoDivs and Polygon_with_holes with their associated positions" << std::endl;
   std::map<int, std::map<int, std::vector<PLL>>> pll_cntr_by_gd_pgnwh = store_by_gd_pgnwh(container, ct, pll_cntr_by_pos);
 
   // 9. Set visited values
