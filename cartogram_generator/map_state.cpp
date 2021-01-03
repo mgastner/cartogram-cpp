@@ -160,3 +160,13 @@ unsigned int MapState::n_finished_integrations() const
 {
   return n_finished_integrations_;
 }
+
+boost::multi_array<XYPoint, 2> *MapState::proj()
+{
+  return &proj_;
+}
+
+boost::multi_array<XYPoint, 2> *MapState::proj2()
+{
+  return &proj2_;
+}

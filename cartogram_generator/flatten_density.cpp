@@ -1,7 +1,9 @@
 #include "map_state.h"
+#include "geo_div.h"
 #include <boost/multi_array.hpp>
 #include <iostream>
 #include <algorithm>
+#include <vector>
 
 #define PI 3.14159265358979323846264338327950288419716939937510
 #define INC_AFTER_ACC 1.1
@@ -112,8 +114,22 @@ void flatten_density(MapState *map_state)
   const unsigned int lx = map_state->lx();
   const unsigned int ly = map_state->ly();
 
-  // Placeholder proj multi array
-  boost::multi_array<XYPoint, 2> proj(boost::extents[lx][ly]);
+  // Define proj and proj2 multi arrays
+  boost::multi_array<XYPoint, 2> proj = *map_state->proj();
+  boost::multi_array<XYPoint, 2> proj2 = *map_state->proj2();
+
+  // Resize multi arrays if running for the first time
+  if (map_state->n_finished_integrations() == 0){
+    proj.resize(boost::extents[lx][ly]);
+    proj2.resize(boost::extents[lx][ly]);
+  }
+
+  for (unsigned int i = 0; i < lx; i++){
+    for (unsigned int j = 0; j < ly; j++) {
+      proj[i][j].x = i + 0.5;
+      proj[i][j].y = j + 0.5;
+    }
+  }
 
   FTReal2d &rho_ft = *map_state->ref_to_rho_ft();
   FTReal2d &rho_init = *map_state->ref_to_rho_init();
@@ -299,10 +315,61 @@ void flatten_density(MapState *map_state)
     proj = mid;
     mid = projtemp;
 
-    delta_t *= INC_AFTER_ACC; // trying a larger step next time
+    delta_t *= INC_AFTER_ACC; // Try a larger step next time.
+
   }
 
-  // Free memory.
+  // project() from cartogram.c
+
+  // Calculate displacement vector from proj array
+  boost::multi_array<double, 2> xdisp(boost::extents[lx][ly]);
+  boost::multi_array<double, 2> ydisp(boost::extents[lx][ly]);
+  for (unsigned int i = 0; i < lx; i++){
+    for (unsigned int j = 0; j < ly; j++) {
+      xdisp[i][j] = proj[i][j].x - i - 0.5;
+      ydisp[i][j] = proj[i][j].y - i - 0.5;
+    }
+  }
+
+  // Insert new positions in a new GeoDiv vector
+  std::vector<GeoDiv> new_geo_divs;
+  for (auto gd : map_state->geo_divs()){
+    GeoDiv new_gd(gd.id());
+    for (auto pwh : gd.polygons_with_holes()){
+
+      Polygon ext_ring_old = pwh.outer_boundary();
+      CGAL::Polygon_2<Epick> ext_ring;
+
+      for (unsigned int i = 0; i < ext_ring_old.size(); i++){
+        ext_ring.push_back(Epick::Point_2(
+          interpol(ext_ring_old[i][0], ext_ring_old[i][1], xdisp, 'x', lx, ly) + ext_ring_old[i][0],
+          interpol(ext_ring_old[i][0], ext_ring_old[i][1], ydisp, 'y', lx, ly) + ext_ring_old[i][1]
+        ));
+      }
+
+      std::vector<CGAL::Polygon_2<Epick>> int_ring_v;
+      for (auto hci = pwh.holes_begin(); hci != pwh.holes_end(); hci++){
+        Polygon old_hole = *hci;
+        CGAL::Polygon_2<Epick> int_ring;
+        for (unsigned int i = 0; i < old_hole.size(); i++){
+          int_ring.push_back(Epick::Point_2(
+            interpol(old_hole[i][0], old_hole[i][1], xdisp, 'x', lx, ly) + old_hole[i][0],
+            interpol(old_hole[i][0], old_hole[i][1], ydisp, 'y', lx, ly) + old_hole[i][1]
+          ));
+        }
+        int_ring_v.push_back(int_ring);
+      }
+      const Polygon_with_holes new_pwh(ext_ring, int_ring_v.begin(), int_ring_v.end());
+      new_gd.push_back(new_pwh);
+    }
+    new_geo_divs.push_back(new_gd);
+  }
+
+  // Replace old GeoDivs with new ones
+  std::vector<GeoDiv> &map_state_geo_divs = *map_state->ref_to_geo_divs();
+  map_state_geo_divs = new_geo_divs;
+
+
   fftw_destroy_plan(plan_for_grid_fluxx_init);
   fftw_destroy_plan(plan_for_grid_fluxy_init);
 
