@@ -2,13 +2,8 @@
 #include "helper_functions.h"
 
 std::list<Polyline> densify(std::list<Polyline> polyline_list) {
-  /*
   std::list<Polyline> polyline_list_dens; 
   for (Polyline polyl : polyline_list) {
-    if (polyl.size() == 2) {
-      polyline_list_dens.push_back(polyl);
-      continue;
-    }
 
     Polyline polyl_dens;
 
@@ -25,7 +20,7 @@ std::list<Polyline> densify(std::list<Polyline> polyline_list) {
 
     //std::cout << polyl.size() << " " << polyl_dens.size() << std::endl;
     polyline_list_dens.push_back(polyl_dens);
-  }*/
-  return polyline_list;
+  }
+  return polyline_list_dens;
 }
 

@@ -7,6 +7,7 @@
 #include <unordered_set>
 #include <unordered_map>
 #include <algorithm>
+#include <chrono>
 
 #include "cgal_typedef.h"
 #include "map_state.h"
@@ -102,11 +103,6 @@ std::map<int, Polyline> store_polyline_dens_to_org(CT ct,
   std::vector<bool> visited_polyl(polyline_list.size(), false);
   for (auto cit = ct.constraints_begin(); cit != ct.constraints_end(); cit++) {
 
-    auto vit3 = ct.points_in_constraint_begin(*cit);
-    std::cout << pos << " " << *vit3 << " ";
-    vit3++;
-    std::cout << *vit3 << std::endl;
-
     bool polyline_match = false;
     int polyl_num = 0;
     for (Polyline polyl : polyline_list) {
@@ -115,17 +111,10 @@ std::map<int, Polyline> store_polyline_dens_to_org(CT ct,
         for (auto vit = ct.points_in_constraint_begin(*cit); vit != ct.points_in_constraint_end(*cit); vit++) {
           if (pt == *vit) {
             same_v++;
-            // TODO
-            // solve usa.json, usa.csv 2-vertex polyline issue
             if ((same_v >= 3 || (polyl.size() == 2 && same_v == 2))) { // or only 2 vertices in polyline
               polyline_match = true;
               pll_dens_to_org[pos] = polyl;
               visited_polyl[polyl_num] = true;
-              auto vit2 = ct.points_in_constraint_begin(*cit);
-              std::cout << pos << " " << *vit2;
-              vit2++;
-              std::cout << " " << *vit2 << " ";
-              std::cout << polyl_num << " " << polyl[0] << " " << polyl[1] << std::endl;
             }
             break;
           }
@@ -136,6 +125,7 @@ std::map<int, Polyline> store_polyline_dens_to_org(CT ct,
       if (polyline_match) break;
     }
     pos++;
+    std::cout << pos << std::endl;
   }
   return pll_dens_to_org;
 }
@@ -151,13 +141,11 @@ void check_if_pll_on_pgn_boundary(PLL pll,
   for (Point pt : pll.get_pll()) {
     bool v_on_outer = CGAL::bounded_side_2(pgn.begin(), pgn.end(), pt) == CGAL::ON_BOUNDARY;
     if (v_on_outer) num_v_on_outer++; 
-    //if (num_v_on_outer >= 3) break;
+    if (num_v_on_outer >= 3) break;
   }
 
-  std::cout << pos << " " << num_v_on_outer << " " << pll_dens_to_org[pos].size() << std::endl;
-
   if (num_v_on_outer >= 3) {
-    print_pll(pll);
+    // print_pll(pll);
     pll_cntr_by_pos[pos].push_back(pll);
   } else if (pll_dens_to_org[pos].size() == 2 && !is_hole) {
     // If the polyline originally only had 2 vertices, check if the pll is really on the outer
@@ -174,7 +162,7 @@ void check_if_pll_on_pgn_boundary(PLL pll,
     }
     if (v1_vl_pll_on_outer) {
       // std::cout << pll_dens_to_org[pos].size() << " " << pll.get_pll().size() << std::endl;
-      print_pll(pll);
+      // print_pll(pll);
       pll_cntr_by_pos[pos].push_back(pll);
     }
   }
@@ -187,11 +175,8 @@ std::map<int, std::vector<PLL>> store_by_pos(CT &ct,
   int pos = 0;
   for (auto cit = ct.constraints_begin(); cit != ct.constraints_end(); cit++) {
 
-    auto vit3 = ct.points_in_constraint_begin(*cit);
-    std::cout << pos << " " << *vit3 << " ";
-    vit3++;
-    std::cout << *vit3 << std::endl;
-
+    // Bottle neck from here onwards
+    
     Polyline polyl;
     for (auto vit = ct.points_in_constraint_begin(*cit); vit != ct.points_in_constraint_end(*cit); vit++)
       polyl.push_back(*vit);
@@ -218,8 +203,9 @@ std::map<int, std::vector<PLL>> store_by_pos(CT &ct,
       gd_num++;
     }
     pos++;
+    std::cout << pos << std::endl;
   }
-  std::cout << std::endl;
+  // std::cout << std::endl;
   return pll_cntr_by_pos;
 }
 
@@ -487,6 +473,8 @@ void simplify_map(MapState *map_state) {
   // 9. Set visited values
   // 10. Assemble polylines into polygons
   // 11. Remove first point as last point by reference 
+  
+  const auto start = std::chrono::system_clock::now();
 
   std::vector<GeoDiv> container = map_state->geo_divs();
 
@@ -514,16 +502,21 @@ void simplify_map(MapState *map_state) {
       return polyl1.size() > polyl2.size();
       });
 
-  int hello = 0;
+  // While the resulting pll_cntr_by_pos.size() is incorrect, repeat steps 5 and 6.
+  // This accounts for a bug where the CT order changes between steps 5 and 6.
+  int repeat_count = 0;
   std::map<int, std::vector<PLL>> pll_cntr_by_pos;
   while (pll_cntr_by_pos.size() < polyline_list.size()) {
-    hello++;
+    repeat_count++;
     // 5. Store ct polylines (densified) with their associated original polylines (non-densified)
     std::map<int, Polyline> pll_dens_to_org = store_polyline_dens_to_org(ct, polyline_list);
 
     // 6. Store polylines by positions with their associated GeoDivs and Polygon_with_holes
-    std::cout << "Store polylines by positions with their associated GeoDivs and Polygon_with_holes" << std::endl;
+    // std::cout << "Store polylines by positions with their associated GeoDivs and Polygon_with_holes" << std::endl;
     pll_cntr_by_pos = store_by_pos(ct, container, pll_dens_to_org);
+  }
+  if (repeat_count > 1) {
+    std::cout << "Processed steps 5 and 6 an additional " << repeat_count - 1 << " time(s)" << std::endl;
   }
 
   // 7. Simplify polylines
@@ -555,5 +548,6 @@ void simplify_map(MapState *map_state) {
 
   map_state->set_geo_divs(container_simp);
 
-  if (hello > 1) std::cout << "HAD TO REPEAT!!!" << std::endl;
+  const std::chrono::duration<double, std::milli> duration = std::chrono::system_clock::now() - start;
+  std::cout << "simplify_map() time elapsed: " << duration.count() << "ms" << std::endl;
 }
