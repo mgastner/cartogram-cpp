@@ -8,23 +8,53 @@
 #define DEC_AFTER_NOT_ACC 0.75
 #define ABS_TOL (std::min(lx, ly) * 1e-6)
 
-struct XYPoint
+void ffb_calcv (double t,
+                double delta_t,
+                FTReal2d grid_fluxx_init,
+                FTReal2d grid_fluxy_init,
+                FTReal2d rho_ft,
+                FTReal2d rho_init,
+                boost::multi_array<double, 2> grid_vx,
+                boost::multi_array<double, 2> grid_vy,
+                const unsigned int lx,
+                const unsigned int ly)
 {
-  double x;
-  double y;
-};
+#pragma omp parallel for
+  for (unsigned int i = 0; i < lx; ++i) {
+    for (unsigned int j = 0; j < ly; ++j) {
+      double rho = rho_ft(0, 0) + (1.0 - (t + 0.5 * delta_t)) * rho_init(i, j) - rho_ft(0,0);
+      grid_vx[i][j] = -grid_fluxx_init(i, j) / rho;
+      grid_vy[i][j] = -grid_fluxy_init(i, j) / rho;
+    }
+  }
 
-double interpol(double x, double y, const boost::multi_array<double, 2> grid,
-                char zero, const int lx, const int ly)
+  return;
+}
+
+// Function to bilinearly interpolate a numerical array grid[0..lx*ly-1]
+// whose entries are numbers for the positions:
+// x = (0.5, 1.5, ..., lx-0.5), y = (0.5, 1.5, ..., ly-0.5).
+// The final argument "zero" can take two possible values: 'x' or 'y'. If
+// zero==x, the interpolated function is forced to return 0 if x=0 or x=lx.
+// This option is suitable fo interpolating from gridvx because there can be
+// no flow through the boundary. If zero==y, the interpolation returns 0 if
+// y=0 or y=ly, suitable for gridvy. The unconstrained boundary will be
+// determined by continuing the function value at 0.5 (or lx-0.5 or ly-0.5)
+// all the way to the edge (i.e. the slope is 0 consistent with a cosine
+// transform).
+double interpol(double x,
+                double y,
+                const boost::multi_array<double, 2> grid,
+                char zero,
+                const unsigned int lx,
+                const unsigned int ly)
 {
-  double fx0y0, fx0y1, fx1y0, fx1y1;
-
-  if (x < 0 || x > lx || y < 0 || y > ly){
+  if (x < 0 || x > lx || y < 0 || y > ly) {
     std::cout << "ERROR: coordinate outside bounding box in interpol()." << "\n";
     std::cout << "x=" << x << ", y=" << y << "\n";
     exit(1);
   }
-  if (zero != 'x' && zero != 'y'){
+  if (zero != 'x' && zero != 'y') {
     std::cout << "ERROR: unknown argument zero in interpol()." << "\n";
     exit(1);
   }
@@ -36,33 +66,34 @@ double interpol(double x, double y, const boost::multi_array<double, 2> grid,
   double delta_x = (x - x0) / (x1 - x0);
   double delta_y = (y - y0) / (y1 / y0);
 
-  if ((x<0.5 && y<0.5) || (x<0.5 && zero == 'x') || (y<0.5 && zero == 'y')){
+  double fx0y0, fx0y1, fx1y0, fx1y1;
+  if ((x<0.5 && y<0.5) || (x<0.5 && zero == 'x') || (y<0.5 && zero == 'y')) {
     fx0y0 = 0.0;
   } else {
     fx0y0 = grid[int(x0)][int(y0)];
   }
 
-  if ((x<0.5 && y>=ly-0.5) || (x<0.5 && zero == 'x') || (y>=ly-0.5 && zero == 'y')){
+  if ((x<0.5 && y>=ly-0.5) || (x<0.5 && zero == 'x') || (y>=ly-0.5 && zero == 'y')) {
     fx0y1 = 0.0;
-  } else if (x>=0.5 && y>=ly-0.5 && zero == 'x'){
+  } else if (x>=0.5 && y>=ly-0.5 && zero == 'x') {
     fx0y1 = grid[int(x0)][int(ly - 1)];
   } else {
     fx0y1 = grid[int(x0)][int(y1)];
   }
 
-  if ((x>=lx-0.5 && y<0.5) || (x>=lx-0.5 && zero == 'x') || (y<0.5 && zero == 'y')){
+  if ((x>=lx-0.5 && y<0.5) || (x>=lx-0.5 && zero == 'x') || (y<0.5 && zero == 'y')) {
     fx1y0 = 0.0;
-  } else if (x>=lx-0.5 && y>=0.5 && zero == 'y'){
+  } else if (x>=lx-0.5 && y>=0.5 && zero == 'y') {
     fx1y0 = grid[lx-1][int(y0)];
   } else {
     fx1y0 = grid[int(x1)][int(y0)];
   }
 
-  if ((x>=lx-0.5 && y>=ly-0.5) || (x>=lx-0.5 && zero == 'x') || (y>=ly-0.5 && zero == 'y')){
+  if ((x>=lx-0.5 && y>=ly-0.5) || (x>=lx-0.5 && zero == 'x') || (y>=ly-0.5 && zero == 'y')) {
     fx1y1 = 0.0;
-  } else if (x>=lx-0.5 && y<ly-0.5 && zero == 'y'){
+  } else if (x>=lx-0.5 && y<ly-0.5 && zero == 'y') {
     fx1y1 = grid[lx-1][int(y1)];
-  } else if (x<lx-0.5 && y>=ly-0.5 && zero == 'x'){
+  } else if (x<lx-0.5 && y>=ly-0.5 && zero == 'x') {
     fx1y1 = grid[int(x1)][ly - 1];
   } else {
     fx1y1 = grid[int(x1)][int(y1)];
@@ -80,9 +111,9 @@ void flatten_density(MapState *map_state)
   std::cout << "In flatten_density()" << std::endl;
   const unsigned int lx = map_state->lx();
   const unsigned int ly = map_state->ly();
-  
+
   // Placeholder proj multi array
-  boost::multi_array<XYPoint, 2> proj(boost::extents[lx][ly])
+  boost::multi_array<XYPoint, 2> proj(boost::extents[lx][ly]);
 
   FTReal2d &rho_ft = *map_state->ref_to_rho_ft();
   FTReal2d &rho_init = *map_state->ref_to_rho_init();
@@ -106,48 +137,53 @@ void flatten_density(MapState *map_state)
   // eul[i][j] will be the new position of proj[i][j] proposed by a simple
   // Euler step: move a full time interval delta_t with the velocity at time t
   // and position (proj[i][j].x, proj[i][j].y)
-  boost::multi_array<Point, 2> eul(boost::extents[lx][ly]);
-  
+  boost::multi_array<XYPoint, 2> eul(boost::extents[lx][ly]);
+
+  // mid[i*ly+j] will be the new displacement proposed by the midpoint
+  // method (see comment below for the formula).
   boost::multi_array<XYPoint, 2> mid(boost::extents[lx][ly]);
 
-  boost::multi_array<double, 2> vx_intp(boost::extents[lx][ly]);
-  boost::multi_array<double, 2> vy_intp(boost::extents[lx][ly]);
+  // (vx_intp, vy_intp) will be the velocity at position (proj.x, proj.y) at
+  // time t.
+  boost::multi_array<XYPoint, 2> v_intp(boost::extents[lx][ly]);
 
-  boost::multi_array<double, 2> vx_intp_half(boost::extents[lx][ly]);
-  boost::multi_array<double, 2> vy_intp_half(boost::extents[lx][ly]);
+  // (vx_intp_half, vy_intp_half) will be the velocity at the midpoint
+  // (proj.x + 0.5*delta_t*vx_intp, proj.y + 0.5*delta_t*vy_intp) at time
+  // t + 0.5*delta_t.
+  boost::multi_array<XYPoint, 2> v_intp_half(boost::extents[lx][ly]);
 
   // init_griv
 
   double dlx = lx;
   double dly = ly;
 
-  for (unsigned int i = 0; i < lx; i++){
-    for (unsigned int k = 0; k < ly; k++){
-      rho_ft(i, k) /= 4 * lx * ly;
+  for (unsigned int i = 0; i < lx; i++) {
+    for (unsigned int j = 0; j < ly; j++) {
+      rho_ft(i, j) /= 4 * lx * ly;
     }
   }
 
-  for (unsigned int i = 0; i < lx-1; i++){
+  for (unsigned int i = 0; i < lx-1; i++) {
     double di = i;
-    for (unsigned int j = 0; j < ly; j++){
+    for (unsigned int j = 0; j < ly; j++) {
       grid_fluxx_init(i, j) =
         -rho_ft(i+1, j) / (PI * ((di+1)/dlx + (j/(di+1)) * (j/dly) * (dlx/dly)));
     }
   }
-  for (unsigned int j = 0; j < ly; j++){
+  for (unsigned int j = 0; j < ly; j++) {
     grid_fluxx_init(lx-1, j) = 0.0;
   }
-  for (unsigned int i=0; i<lx; i++){
+  for (unsigned int i=0; i<lx; i++) {
     double di = i;
-    for (unsigned int j = 0; j < ly-1; j++){
+    for (unsigned int j = 0; j < ly-1; j++) {
       grid_fluxy_init(i, j) =
         -rho_ft(i, j+1) / (PI * ((di/(j+1)) * (di/dlx) * (dly/dlx) + (j+1)/dly));
     }
   }
-  for (unsigned int i=0; i<lx; i++){
+  for (unsigned int i=0; i<lx; i++) {
     grid_fluxy_init(i, ly-1) = 0.0;
   }
-  
+
   fftw_execute(plan_for_grid_fluxx_init);
   fftw_execute(plan_for_grid_fluxy_init);
 
@@ -155,54 +191,59 @@ void flatten_density(MapState *map_state)
   double delta_t = 1e-2;
   int iter = 0;
 
-  do{
-    
-    // ffb_calcv(t)
+  // Integrate.
+
+  while (t < 1.0) {
+
+    // ffb_calcv(t);
 #pragma omp parallel for
-    for (unsigned int i = 0; i < lx; i++){
-      for (unsigned int k = 0; k < ly; k++){
-        double rho = rho_ft(0, 0) + (1.0 - t) * rho_init(i, k) - rho_ft(0,0);
-        grid_vx[i][k] = -grid_fluxx_init(i, k) / rho;
-        grid_vy[i][k] = -grid_fluxy_init(i, k) / rho;
+    for (unsigned int i = 0; i < lx; i++) {
+      for (unsigned int j = 0; j < ly; j++) {
+        double rho = rho_ft(0, 0) + (1.0 - t) * rho_init(i, j) - rho_ft(0,0);
+        grid_vx[i][j] = -grid_fluxx_init(i, j) / rho;
+        grid_vy[i][j] = -grid_fluxy_init(i, j) / rho;
       }
     }
 
 #pragma omp parallel for
-    for (unsigned int i = 0; i < lx; i++){
-      for (unsigned int k = 0; k < ly; k++){
-        vx_intp[i][k] = interpol(proj[i][k].x, proj[i][k].y, grid_vx, 'x', lx, ly);
-        vy_intp[i][k] = interpol(proj[i][k].x, proj[i][k].y, grid_vy, 'y', lx, ly);
+    for (unsigned int i = 0; i < lx; i++) {
+      for (unsigned int j = 0; j < ly; j++) {
+        v_intp[i][j].x = interpol(proj[i][j].x, proj[i][j].y, grid_vx, 'x', lx, ly);
+        v_intp[i][j].y = interpol(proj[i][j].x, proj[i][j].y, grid_vy, 'y', lx, ly);
       }
     }
     bool accept = false;
 
-    while (!accept){
-      
+    while (!accept) {
+
+      // Simple Euler step.
+
 #pragma omp parallel for
-      for (unsigned int i = 0; i < lx; i++){
-        for (unsigned int k = 0; k < ly; k++){
-          eul[i][k].x = proj[i][k].x + vx_intp[i][k] * delta_t;
-          eul[i][k].y = proj[i][k].y + vx_intp[i][k] * delta_t;
+      for (unsigned int i = 0; i < lx; i++) {
+        for (unsigned int j = 0; j < ly; j++) {
+          eul[i][j].x = proj[i][j].x + v_intp[i][j].x * delta_t;
+          eul[i][j].y = proj[i][j].y + v_intp[i][j].y * delta_t;
         }
       }
 
-      // ffb_calcv(t + 0.5*delta_t)
-#pragma omp parallel for
-      for (unsigned int i = 0; i < lx; i++){
-        for (unsigned int k = 0; k < ly; k++){
-          double rho = rho_ft(0, 0) + (1.0 - (t + 0.5 * delta_t)) * rho_init(i, k) - rho_ft(0,0);
-          grid_vx[i][k] = -grid_fluxx_init(i, k) / rho;
-          grid_vy[i][k] = -grid_fluxy_init(i, k) / rho;
-        }
-      }
+      // Use "explicit midpoint method".
+      // x <- x + delta_t * v_x(x + 0.5*delta_t*v_x(x,y,t),
+      //                        y + 0.5*delta_t*v_y(x,y,t),
+      //                        t + 0.5*delta_t)
+      // and similarly for y.
+
+      // ffb_calcv(t + 0.5*delta_t);
+
+      // Make sure we do not pass a point outside [0, lx] x [0, ly] to
+      // interpol(). Otherwise decrease the time step below and try again.
 
       accept = true;
-      for (unsigned int i = 0; i < lx; i++){
-        for (unsigned int k = 0; k < ly; k++){
-          if (proj[i][k].x + 0.5*delta_t*vx_intp[i][k] < 0.0 ||
-              proj[i][k].x + 0.5*delta_t*vx_intp[i][k] > lx ||
-              proj[i][k].y + 0.5*delta_t*vy_intp[i][k] < 0.0 ||
-              proj[i][k].y + 0.5*delta_t*vy_intp[i][k] > ly) {
+      for (unsigned int i = 0; i < lx; i++) {
+        for (unsigned int j = 0; j < ly; j++) {
+          if (proj[i][j].x + 0.5*delta_t*v_intp[i][j].x < 0.0 ||
+                                                          proj[i][j].x + 0.5*delta_t*v_intp[i][j].x > lx ||
+              proj[i][j].y + 0.5*delta_t*v_intp[i][j].y < 0.0 ||
+                                                          proj[i][j].y + 0.5*delta_t*v_intp[i][j].y > ly) {
             accept = false;
             delta_t *= DEC_AFTER_NOT_ACC;
             break;
@@ -213,22 +254,29 @@ void flatten_density(MapState *map_state)
 
       if (accept) {
 
-#pragma omp parallel for
-        for (unsigned int i = 0; i < lx; i++){
-          for (unsigned int k = 0; k < ly; k++) {
-            vx_intp_half[i][k] = interpol(proj[i][k].x + 0.5*delta_t*vx_intp[i][k],
-                                      proj[i][k].y + 0.5*delta_t*vy_intp[i][k],
-                                      grid_vx, 'x', lx, ly);
-            vy_intp_half[i][k] = interpol(proj[i][k].x + 0.5*delta_t*vx_intp[i][k],
-                                      proj[i][k].y + 0.5*delta_t*vy_intp[i][k],
-                                      grid_vy, 'y', lx, ly);
-            mid[i][k].x = proj[i][k].x + vx_intp_half[i][k] * delta_t;
-            mid[i][k].y = proj[i][k].y + vy_intp_half[i][k] * delta_t;
+        // OK, we can run interpol().
 
-            if ((mid[i][k].x-eul[i][k].x) * (mid[i][k].x-eul[i][k].x) +
-                (mid[i][k].y-eul[i][k].y) * (mid[i][k].y-eul[i][k].y) > ABS_TOL ||
-                mid[i][k].x < 0.0 || mid[i][k].x > lx ||
-                mid[i][k].y < 0.0 || mid[i][k].y > ly){
+#pragma omp parallel for
+        for (unsigned int i = 0; i < lx; i++) {
+          for (unsigned int j = 0; j < ly; j++) {
+            v_intp_half[i][j].x = interpol(proj[i][j].x + 0.5*delta_t*v_intp[i][j].x,
+                                           proj[i][j].y + 0.5*delta_t*v_intp[i][j].y,
+                                           grid_vx, 'x', lx, ly);
+            v_intp_half[i][j].y = interpol(proj[i][j].x + 0.5*delta_t*v_intp[i][j].x,
+                                           proj[i][j].y + 0.5*delta_t*v_intp[i][j].y,
+                                           grid_vy, 'y', lx, ly);
+            mid[i][j].x = proj[i][j].x + v_intp_half[i][j].x * delta_t;
+            mid[i][j].y = proj[i][j].y + v_intp_half[i][j].y * delta_t;
+
+            // Do not accept the integration step if the maximum squared
+            // difference between the Euler and midpoint proposals exceeds
+            // ABS_TOL. Neither should we accept the integration step if one
+            // of the positions wandered out of the boundaries. If it
+            // happened, decrease the time step.
+            if ((mid[i][j].x-eul[i][j].x) * (mid[i][j].x-eul[i][j].x) +
+                (mid[i][j].y-eul[i][j].y) * (mid[i][j].y-eul[i][j].y) > ABS_TOL ||
+                mid[i][j].x < 0.0 || mid[i][j].x > lx ||
+                mid[i][j].y < 0.0 || mid[i][j].y > ly) {
               accept = false;
             }
           }
@@ -238,20 +286,23 @@ void flatten_density(MapState *map_state)
         delta_t *= DEC_AFTER_NOT_ACC;
       }
     }
-    if (iter % 10 == 0){
+
+    // Control ouput.
+    if (iter % 10 == 0) {
       std::cout << "iter = " << iter << ", t = " << t << ", delta_t = " << delta_t << "\n";
     }
 
+    // When we get here, the integration step was accepted.
     t += delta_t;
     iter++;
     boost::multi_array<XYPoint, 2> projtemp = proj;
     proj = mid;
     mid = projtemp;
 
-    delta_t *= INC_AFTER_ACC;
+    delta_t *= INC_AFTER_ACC; // trying a larger step next time
+  }
 
-  } while (t < 1.0);
-
+  // Free memory.
   fftw_destroy_plan(plan_for_grid_fluxx_init);
   fftw_destroy_plan(plan_for_grid_fluxy_init);
 
