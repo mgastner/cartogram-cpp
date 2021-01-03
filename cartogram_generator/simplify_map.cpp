@@ -508,18 +508,23 @@ void simplify_map(MapState *map_state) {
     ct.insert_constraint(polyline.begin(), polyline.end());
   }
 
-  // Sort polyline_list: polyls with more vertices in front
+  // Sort polyline_list: polyls with more vertices in front (for 2-vertex polylines)
   polyline_list.sort(
       [](Polyline polyl1, Polyline polyl2) {
       return polyl1.size() > polyl2.size();
       });
 
-  // 5. Store ct polylines (densified) with their associated original polylines (non-densified)
-  std::map<int, Polyline> pll_dens_to_org = store_polyline_dens_to_org(ct, polyline_list);
+  int hello = 0;
+  std::map<int, std::vector<PLL>> pll_cntr_by_pos;
+  while (pll_cntr_by_pos.size() < polyline_list.size()) {
+    hello++;
+    // 5. Store ct polylines (densified) with their associated original polylines (non-densified)
+    std::map<int, Polyline> pll_dens_to_org = store_polyline_dens_to_org(ct, polyline_list);
 
-  // 6. Store polylines by positions with their associated GeoDivs and Polygon_with_holes
-  std::cout << "Store polylines by positions with their associated GeoDivs and Polygon_with_holes" << std::endl;
-  std::map<int, std::vector<PLL>> pll_cntr_by_pos = store_by_pos(ct, container, pll_dens_to_org);
+    // 6. Store polylines by positions with their associated GeoDivs and Polygon_with_holes
+    std::cout << "Store polylines by positions with their associated GeoDivs and Polygon_with_holes" << std::endl;
+    pll_cntr_by_pos = store_by_pos(ct, container, pll_dens_to_org);
+  }
 
   // 7. Simplify polylines
   PS::simplify(ct, Cost(), Stop(0.2));
@@ -549,4 +554,6 @@ void simplify_map(MapState *map_state) {
   remove_first_point_as_last_point(container_simp);
 
   map_state->set_geo_divs(container_simp);
+
+  if (hello > 1) std::cout << "HAD TO REPEAT!!!" << std::endl;
 }
