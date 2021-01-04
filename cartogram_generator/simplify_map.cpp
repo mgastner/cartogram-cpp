@@ -8,6 +8,8 @@
 #include <unordered_map>
 #include <algorithm>
 #include <chrono>
+#include <cmath>
+#include <iomanip>
 
 #include "cgal_typedef.h"
 #include "map_state.h"
@@ -111,10 +113,31 @@ std::map<int, Polyline> store_polyline_dens_to_org(CT ct,
         for (auto vit = ct.points_in_constraint_begin(*cit); vit != ct.points_in_constraint_end(*cit); vit++) {
           if (pt == *vit) {
             same_v++;
-            if ((same_v >= 3 || (polyl.size() == 2 && same_v == 2))) { // or only 2 vertices in polyline
+            if (same_v >= 3) {
               polyline_match = true;
               pll_dens_to_org[pos] = polyl;
               visited_polyl[polyl_num] = true;
+            } else if (polyl.size() == 2 && same_v == 2) {
+              auto vit_c1 = ct.points_in_constraint_begin(*cit);
+              auto vit_c2 = vit_c1;
+              vit_c2++;
+              Point vit_pt_c1 = *vit_c1;
+              Point vit_pt_c2 = *vit_c2;
+
+              Point pt_c1 = polyl[0];
+              Point pt_c2 = polyl[1];
+
+              double vit_gradient = std::abs((vit_pt_c2[1] - vit_pt_c1[1]) / (vit_pt_c2[0] - (vit_pt_c1[0])));
+              double pt_gradient = std::abs((pt_c2[1] - pt_c1[1]) / (pt_c2[0] - (pt_c1[0])));
+
+              bool equal_gradient = vit_gradient - pt_gradient < 0.0001;
+              std::cout << vit_gradient << " " << pt_gradient << " " << equal_gradient << std::endl;
+
+              if (equal_gradient) {
+                polyline_match = true;
+                pll_dens_to_org[pos] = polyl;
+                visited_polyl[polyl_num] = true;
+              }
             }
             break;
           }
@@ -131,11 +154,11 @@ std::map<int, Polyline> store_polyline_dens_to_org(CT ct,
 }
 
 void check_if_pll_on_pgn_boundary(PLL pll,
-    Polygon pgn,
-    std::map<int, std::vector<PLL>> &pll_cntr_by_pos,
-    std::map<int, Polyline> pll_dens_to_org,
-    int pos,
-    bool is_hole) {
+                                  Polygon pgn,
+                                  std::map<int, std::vector<PLL>> &pll_cntr_by_pos,
+                                  std::map<int, Polyline> pll_dens_to_org,
+                                  int pos,
+                                  bool is_hole) {
   // need >=3 vertices in pll to be on pgn's boundary to count as part of pgn
   int num_v_on_outer = 0;
   for (Point pt : pll.get_pll()) {
@@ -147,23 +170,20 @@ void check_if_pll_on_pgn_boundary(PLL pll,
   if (num_v_on_outer >= 3) {
     // print_pll(pll);
     pll_cntr_by_pos[pos].push_back(pll);
-  } else if (pll_dens_to_org[pos].size() == 2 && !is_hole) {
+  } else if (pll_dens_to_org[pos].size() == 2 && num_v_on_outer == 2 && !is_hole) {
     // If the polyline originally only had 2 vertices, check if the pll is really on the outer
     // Edge case is the border of Missouri, Kentucky, Tennessee
-    bool v1_vl_pll_on_outer = false;
     for (int i = 0; i < (int) pgn.size() - 1; i++) {
-      // accounts for clockwise and counter-clockwise orientation of outer
+      // If the 1st and 2nd polygon vertex are the 1st and last polyline vertex (consecutive check)
+      // Accounts for clockwise and counter-clockwise orientation of outer
       bool direction_1 = pgn[i] == pll.get_v1() && pgn[i + 1] == pll.get_vl();
       bool direction_2 = pgn[i + 1] == pll.get_v1() && pgn[i] == pll.get_vl();
       if (direction_1 || direction_2) {
-        v1_vl_pll_on_outer = true;
+        // std::cout << pll_dens_to_org[pos].size() << " " << pll.get_pll().size() << std::endl;
+        // print_pll(pll);
+        pll_cntr_by_pos[pos].push_back(pll);
         break;
       }
-    }
-    if (v1_vl_pll_on_outer) {
-      // std::cout << pll_dens_to_org[pos].size() << " " << pll.get_pll().size() << std::endl;
-      // print_pll(pll);
-      pll_cntr_by_pos[pos].push_back(pll);
     }
   }
 }
@@ -176,7 +196,7 @@ std::map<int, std::vector<PLL>> store_by_pos(CT &ct,
   for (auto cit = ct.constraints_begin(); cit != ct.constraints_end(); cit++) {
 
     // Bottle neck from here onwards
-    
+
     Polyline polyl;
     for (auto vit = ct.points_in_constraint_begin(*cit); vit != ct.points_in_constraint_end(*cit); vit++)
       polyl.push_back(*vit);
@@ -282,12 +302,12 @@ void set_visited_vals(std::unordered_map<int, std::unordered_map<int, std::unord
 
   // Print out new sequence
   /*
-  for (auto [gd_num, m] : pll_cntr_by_gd_pgnwh)
-    for (auto [pgnwh_num, pll_v] : m)
-      for (PLL pll : pll_v)
-        print_pll(pll);
-  std::cout << std::endl;
-  */
+     for (auto [gd_num, m] : pll_cntr_by_gd_pgnwh)
+     for (auto [pgnwh_num, pll_v] : m)
+     for (PLL pll : pll_v)
+     print_pll(pll);
+     std::cout << std::endl;
+     */
 }
 
 void assemble_pll_to_pgn(std::map<int, std::map<int, std::vector<PLL>>> &pll_cntr_by_gd_pgnwh, 
@@ -474,7 +494,7 @@ void simplify_map(MapState *map_state) {
   // 9. Set visited values
   // 10. Assemble polylines into polygons
   // 11. Remove first point as last point by reference 
-  
+
   const auto start = std::chrono::system_clock::now();
 
   std::vector<GeoDiv> container = map_state->geo_divs();
@@ -498,10 +518,12 @@ void simplify_map(MapState *map_state) {
   }
 
   // Sort polyline_list: polyls with more vertices in front (for 2-vertex polylines)
-  polyline_list.sort(
-      [](Polyline polyl1, Polyline polyl2) {
-      return polyl1.size() > polyl2.size();
-      });
+  /*
+     polyline_list.sort(
+     [](Polyline polyl1, Polyline polyl2) {
+     return polyl1.size() > polyl2.size();
+     });
+     */
 
   // While the resulting pll_cntr_by_pos.size() is incorrect, repeat steps 5 and 6.
   // This accounts for a bug where the CT order changes between steps 5 and 6.
@@ -533,7 +555,6 @@ void simplify_map(MapState *map_state) {
 
   // std::cout << "Assemble polylines into polygons" << std::endl;
   // 10. Assemble polylines into polygons
-  // TODO retain original geo_div id so it doesn't get overwritten
   std::vector<GeoDiv> container_simp;
   assemble_pll_to_pgn(pll_cntr_by_gd_pgnwh, visited, container_simp, container);
 
