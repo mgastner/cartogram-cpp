@@ -9,6 +9,7 @@
 #include "read_geojson.h"
 #include "rescale_map.h"
 #include "write_eps.h"
+#include "find_graticule_intersections.h"
 #include <boost/program_options.hpp>
 #include <iostream>
 #include <fstream>

@@ -11,8 +11,8 @@ MapState::MapState(std::string v, const bool w, const bool wd2eps) :
 
 MapState::~MapState()
 {
-  fftw_destroy_plan(fwd_plan_);
-  fftw_destroy_plan(bwd_plan_);
+  fftw_destroy_plan(fwd_plan_for_rho_);
+  fftw_destroy_plan(bwd_plan_for_rho_);
   return;
 }
 
@@ -51,9 +51,14 @@ void MapState::target_areas_insert(const std::string id, const double area)
   return;
 }
 
-void MapState::colors_insert(const std::string id, const std::string color)
+void MapState::colors_insert(const std::string id, std::string color)
 {
-  colors.insert(std::pair<std::string, std::string>(id, color));
+
+  // From https://stackoverflow.com/questions/313970/how-to-convert-stdstring-
+  // to-lower-case
+  std::transform(color.begin(), color.end(), color.begin(), ::tolower);
+  Color c(color);
+  colors.insert(std::pair<std::string, Color>(id, c));
   return;
 }
 
@@ -62,9 +67,14 @@ double MapState::target_areas_at(const std::string id)
   return target_areas.at(id);
 }
 
-const std::string MapState::colors_at(const std::string id)
+const Color MapState::colors_at(const std::string id)
 {
   return colors.at(id);
+}
+
+bool MapState::colors_empty() const
+{
+  return colors.empty();
 }
 
 void MapState::set_id_header(const std::string id)
@@ -111,12 +121,14 @@ void MapState::make_grid(const unsigned int x, const unsigned int y)
   rho_init_.allocate_ft();
   rho_ft_.set_array_size(lx_, ly_);
   rho_ft_.allocate_ft();
-  fwd_plan_ = fftw_plan_r2r_2d(lx_, ly_,
-                               rho_init_.array(), rho_ft_.array(),
-                               FFTW_REDFT10, FFTW_REDFT10, FFTW_ESTIMATE);
-  bwd_plan_ = fftw_plan_r2r_2d(lx_, ly_,
-                               rho_ft_.array(), rho_init_.array(),
-                               FFTW_REDFT01, FFTW_REDFT01, FFTW_ESTIMATE);
+  fwd_plan_for_rho_ =
+    fftw_plan_r2r_2d(lx_, ly_,
+                     rho_init_.array(), rho_ft_.array(),
+                     FFTW_REDFT10, FFTW_REDFT10, FFTW_ESTIMATE);
+  bwd_plan_for_rho_ =
+    fftw_plan_r2r_2d(lx_, ly_,
+                     rho_ft_.array(), rho_init_.array(),
+                     FFTW_REDFT01, FFTW_REDFT01, FFTW_ESTIMATE);
   return;
 }
 
@@ -142,13 +154,13 @@ FTReal2d *MapState::ref_to_rho_ft()
 
 void MapState::execute_fwd_plan() const
 {
-  fftw_execute(fwd_plan_);
+  fftw_execute(fwd_plan_for_rho_);
   return;
 }
 
 void MapState::execute_bwd_plan() const
 {
-  fftw_execute(bwd_plan_);
+  fftw_execute(bwd_plan_for_rho_);
   return;
 }
 

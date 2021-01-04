@@ -1,4 +1,4 @@
-NAME_1,Population
-Bruxelles,1208542
-Vlaanderen,6589069
-Wallonie,3633795
+NAME_1,Population,Color
+Bruxelles,1208542,#e74c3c
+Vlaanderen,6589069,#f1c40f
+Wallonie,3633795,#34495e

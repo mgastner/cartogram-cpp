@@ -42,7 +42,7 @@ void fill_with_density(MapState* map_state)
 
   // A vector (map_intersections) to store vectors of intersections
   int n_lines = (int) (map_state->ly() * res);
-  std::vector<std::vector<intersection> > map_intersections(n_lines);
+  std::vector<std::vector<intersection>> map_intersections(n_lines);
 
   // Iterate through GeoDivs in map_state
   for (auto gd : map_state->geo_divs()) {
@@ -79,14 +79,13 @@ void fill_with_density(MapState* map_state)
           // intersections have been stored, we iterate between intersections,
           // and add the appropriate densities.
           // We add a small value "epsilon" in case the line with equation
-          // y = line_y goes exactly through curr_point[1]. The addition
-          // ensures that, if there is any intersection, it is only
-          // counted once. It also correctly detect whether the line
-          // crosses through the point without entering or exiting the
-          // polygon.
+          // y = line_y goes exactly through curr_point. The addition ensures
+          // that, if there is any intersection, it is only counted once. It
+          // also correctly detects whether the line crosses through the point
+          // without entering or exiting the polygon.
           double epsilon = 1e-6;
 
-          // First we run the algorithm on the exterior ring.
+          // First we run the algorithm on the exterior ring
           for (unsigned int l = 0; l < ext_ring.size(); l++) {
             double curr_point[2];
             curr_point[0] = ext_ring[l][0];
@@ -184,7 +183,7 @@ void fill_with_density(MapState* map_state)
         map_intersections[(int) round(((line_y - (1.0/res)/2.0) * res))];
 
       // Sort vector in ascending order of intersection
-      sort(intersections.begin(), intersections.end());
+      std::sort(intersections.begin(), intersections.end());
 
       // Fill lines that have no intersections with mean_density
       if (intersections.size() == 0) {
@@ -212,7 +211,10 @@ void fill_with_density(MapState* map_state)
           // Pre-condition to ensure different intersecting points
           if (left_x != right_x) {
             for (unsigned int m = ceil(left_x); m <= ceil(right_x); m++) {
-              if (m == ceil(left_x)) {
+              if (ceil(left_x) == ceil(right_x)) {
+                rho_init(m - 1, k) +=
+                  intersections[l].target_density * (right_x - left_x);
+              } else if (m == ceil(left_x)) {
                 rho_init(m - 1, k) +=
                   ((mean_density/res) * (ceil(left_x) - left_x));
               } else if (m == ceil(right_x)) {
@@ -258,7 +260,10 @@ void fill_with_density(MapState* map_state)
 
         // Fill each cell between intersections
         for (unsigned int m = ceil(left_x); m <= ceil(right_x); m++) {
-          if (m == ceil(left_x)) {
+          if (ceil(left_x) == ceil(right_x)) {
+            rho_init(m - 1, k) +=
+              intersections[l].target_density * (right_x - left_x);
+          } else if (m == ceil(left_x)) {
             rho_init(m - 1, k) +=
               intersections[l].target_density * (ceil(left_x) - left_x);
           } else if (m == ceil(right_x)) {

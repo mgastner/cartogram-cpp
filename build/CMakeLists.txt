@@ -50,13 +50,15 @@ find_package(OpenMP REQUIRED)
 # link_directories(${Boost_LIBRARY_DIR})
 
 add_executable(cartogram ../cartogram_generator/main.cpp
+<<<<<<< HEAD
   ../cartogram_generator/geo_div.cpp
   ../cartogram_generator/map_state.cpp
   ../cartogram_generator/read_csv.cpp
   ../cartogram_generator/rescale_map.cpp
   ../cartogram_generator/write_eps.cpp
+  ../cartogram_generator/colors.cpp
   # ../cartogram_generator/topological_checks.cpp
-  ../cartogram_generator/helper_functions.cpp
+  ../cartogram_generator/find_graticule_intersections.cpp
   ../cartogram_generator/read_geojson.cpp
   ../cartogram_generator/fill_with_density.cpp
   ../cartogram_generator/blur_density.cpp
