@@ -131,7 +131,7 @@ std::map<int, Polyline> store_polyline_dens_to_org(CT ct,
               double pt_gradient = std::abs((pt_c2[1] - pt_c1[1]) / (pt_c2[0] - (pt_c1[0])));
 
               bool equal_gradient = vit_gradient - pt_gradient < 0.0001;
-              std::cout << vit_gradient << " " << pt_gradient << " " << equal_gradient << std::endl;
+              // std::cout << vit_gradient << " " << pt_gradient << " " << equal_gradient << std::endl;
 
               if (equal_gradient) {
                 polyline_match = true;
@@ -539,7 +539,7 @@ void simplify_map(MapState *map_state) {
     pll_cntr_by_pos = store_by_pos(ct, container, pll_dens_to_org);
   }
   if (repeat_count > 1) {
-    std::cout << "Processed steps 5 and 6 an additional " << repeat_count - 1 << " time(s)" << std::endl;
+    std::cout << "Executed steps 5 and 6 an additional " << repeat_count - 1 << " iteration(s)" << std::endl;
   }
 
   // 7. Simplify polylines
