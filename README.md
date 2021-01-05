@@ -35,7 +35,40 @@ Cartogram generator in C++
 6. `make`
 7. `sudo make install`
 
-## Compiling and running on Ubuntu
+## Installing Dependencies on macOS
+
+**Please ensure you have `Homebrew` installed. You may find instruction on [Homebrew's website](https://brew.sh "Homebrew Home Page") for the same.**
+
+#### Installing nlohmann's JSON parser
+
+[nlohmann's GitHub Page](https://github.com/nlohmann/json)
+
+```
+brew tap nlohmann/json
+brew install nlohmann-json
+```
+
+
+#### Installing CGAL
+
+[CGAL Homepage](https://www.cgal.org/)
+
+`brew install cgal`
+
+#### Installing OpenMP
+
+[OpenMP Homepage](https://www.openmp.org/)
+
+`brew install llvm libomp`
+
+
+#### Installing FFTW3
+
+[FFTW Homepage](http://www.fftw.org)
+
+`brew install fftw`
+
+## Compiling and running (Ubuntu or macOS)
 
 #### Compile by running:
 
