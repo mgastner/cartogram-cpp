@@ -50,7 +50,6 @@ find_package(OpenMP REQUIRED)
 # link_directories(${Boost_LIBRARY_DIR})
 
 add_executable(cartogram ../cartogram_generator/main.cpp
-<<<<<<< HEAD
   ../cartogram_generator/geo_div.cpp
   ../cartogram_generator/map_state.cpp
   ../cartogram_generator/read_csv.cpp

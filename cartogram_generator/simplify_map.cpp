@@ -158,7 +158,8 @@ void check_if_pll_on_pgn_boundary(PLL pll,
                                   std::map<int, std::vector<PLL>> &pll_cntr_by_pos,
                                   std::map<int, Polyline> pll_dens_to_org,
                                   int pos,
-                                  bool is_hole) {
+                                  bool is_hole,
+                                  bool &pos_hole_found) {
   // need >=3 vertices in pll to be on pgn's boundary to count as part of pgn
   int num_v_on_outer = 0;
   for (Point pt : pll.get_pll()) {
@@ -168,7 +169,9 @@ void check_if_pll_on_pgn_boundary(PLL pll,
   }
 
   if (num_v_on_outer >= 3) {
-    // print_pll(pll);
+    pos_hole_found = true;
+    std::cout << pos_hole_found << " ";
+    print_pll(pll);
     pll_cntr_by_pos[pos].push_back(pll);
   } else if (pll_dens_to_org[pos].size() == 2 && num_v_on_outer == 2 && !is_hole) {
     // If the polyline originally only had 2 vertices, check if the pll is really on the outer
@@ -180,7 +183,9 @@ void check_if_pll_on_pgn_boundary(PLL pll,
       bool direction_2 = pgn[i + 1] == pll.get_v1() && pgn[i] == pll.get_vl();
       if (direction_1 || direction_2) {
         // std::cout << pll_dens_to_org[pos].size() << " " << pll.get_pll().size() << std::endl;
-        // print_pll(pll);
+        pos_hole_found = true;
+        std::cout << pos_hole_found << " ";
+        print_pll(pll);
         pll_cntr_by_pos[pos].push_back(pll);
         break;
       }
@@ -194,6 +199,7 @@ std::map<int, std::vector<PLL>> store_by_pos(CT &ct,
   std::map<int, std::vector<PLL>> pll_cntr_by_pos; 
   int pos = 0;
   for (auto cit = ct.constraints_begin(); cit != ct.constraints_end(); cit++) {
+    bool pos_hole_found = false;
 
     // Bottle neck from here onwards
 
@@ -209,21 +215,24 @@ std::map<int, std::vector<PLL>> store_by_pos(CT &ct,
         Polygon outer = pgnwh.outer_boundary();
 
         // Check outer polygon
-        check_if_pll_on_pgn_boundary(pll_outer, outer, pll_cntr_by_pos, pll_dens_to_org, pos, false);
+        check_if_pll_on_pgn_boundary(pll_outer, outer, pll_cntr_by_pos, pll_dens_to_org, pos, false, pos_hole_found);
+        if (pos_hole_found) break;
 
         std::vector<Polygon> holes_v(pgnwh.holes_begin(), pgnwh.holes_end());
         for (Polygon hole : holes_v) {
           PLL pll_hole(pos, polyl, gd_num, pgnwh_num, true);
 
           // Check holes
-          check_if_pll_on_pgn_boundary(pll_hole, hole, pll_cntr_by_pos, pll_dens_to_org, pos, true);
+          check_if_pll_on_pgn_boundary(pll_hole, hole, pll_cntr_by_pos, pll_dens_to_org, pos, true, pos_hole_found);
+          if (pos_hole_found) break;
         }
+        if (pos_hole_found) break;
         pgnwh_num++;
       }
+      if (pos_hole_found) break;
       gd_num++;
     }
     pos++;
-    std::cout << pos << std::endl;
   }
   // std::cout << std::endl;
   return pll_cntr_by_pos;
@@ -299,7 +308,6 @@ void set_visited_vals(std::unordered_map<int, std::unordered_map<int, std::unord
           });
     }
   }
-
   // Print out new sequence
   /*
      for (auto [gd_num, m] : pll_cntr_by_gd_pgnwh)

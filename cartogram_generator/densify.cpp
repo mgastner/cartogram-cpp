@@ -1,5 +1,5 @@
 #include "densify.h"
-#include "helper_functions.h"
+#include "find_graticule_intersections.h"
 
 std::list<Polyline> densify(std::list<Polyline> polyline_list) {
   std::list<Polyline> polyline_list_dens; 
