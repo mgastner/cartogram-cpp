@@ -148,7 +148,8 @@ std::map<int, Polyline> store_polyline_dens_to_org(CT ct,
       if (polyline_match) break;
     }
     pos++;
-    std::cout << pos << std::endl;
+    if (pos % 100 == 0)
+      std::cout << pos << std::endl;
   }
   return pll_dens_to_org;
 }
@@ -194,8 +195,8 @@ void check_if_pll_on_pgn_boundary(PLL pll,
 }
 
 std::map<int, std::vector<PLL>> store_by_pos(CT &ct, 
-    std::vector<GeoDiv> container,
-    std::map<int, Polyline> pll_dens_to_org) {
+                                             std::vector<GeoDiv> container,
+                                             std::map<int, Polyline> pll_dens_to_org) {
   std::map<int, std::vector<PLL>> pll_cntr_by_pos; 
   int pos = 0;
   for (auto cit = ct.constraints_begin(); cit != ct.constraints_end(); cit++) {
@@ -216,7 +217,6 @@ std::map<int, std::vector<PLL>> store_by_pos(CT &ct,
 
         // Check outer polygon
         check_if_pll_on_pgn_boundary(pll_outer, outer, pll_cntr_by_pos, pll_dens_to_org, pos, false, pos_hole_found);
-        if (pos_hole_found) break;
 
         std::vector<Polygon> holes_v(pgnwh.holes_begin(), pgnwh.holes_end());
         for (Polygon hole : holes_v) {
@@ -224,17 +224,14 @@ std::map<int, std::vector<PLL>> store_by_pos(CT &ct,
 
           // Check holes
           check_if_pll_on_pgn_boundary(pll_hole, hole, pll_cntr_by_pos, pll_dens_to_org, pos, true, pos_hole_found);
-          if (pos_hole_found) break;
         }
-        if (pos_hole_found) break;
         pgnwh_num++;
       }
-      if (pos_hole_found) break;
       gd_num++;
     }
     pos++;
   }
-  // std::cout << std::endl;
+  std::cout << std::endl;
   return pll_cntr_by_pos;
 }
 
