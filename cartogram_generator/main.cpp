@@ -125,9 +125,7 @@ int main(const int argc, const char *argv[])
   }
 
   try {
-    std::cout << "Started topology checks!" << '\n';
     holes_inside_polygons(&map_state);
-    std::cout << "Finished topology checks!" << '\n';
   } catch (const std::system_error& e) {
     std::cerr << "ERROR: " << e.what() << " (" << e.code() << ")" << std::endl;
     return EXIT_FAILURE;
