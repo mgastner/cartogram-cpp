@@ -19,20 +19,20 @@ double half_floor(double num) {
 }
 
 // Returns intersection of 2 lines, line a1 b1 & line a2 b2
-Point calc_intersection(Point a1, Point b1, Point a2, Point b2) {
+Point calc_intersection(Point p1, Point p2, Point p3, Point p4) {
 
   // From https://www.geeksforgeeks.org/program-for-point-of-intersection-of-two-lines/
-  // Line AB represented as a1x + b1y = c1
-  double a1 = b1[1] - a1[1];
-  double b1 = a1[0] - b1[0];
-  double c1 = a1 * (a1[0]) + b1 * (a1[1]);
+  // Line p1p2 represented as a1x + b1y = c1
+  double a1 = p2[1] - p1[1];
+  double b1 = p1[0] - p2[0];
+  double c1 = a1 * (p1[0]) + b1 * (p1[1]);
 
-  // Line CD represented as a2x + b2y = c2
-  double a2 = b2[1] - a2[1];
-  double b2 = a2[0] - b2[0];
-  double c2 = a2 * (a2[0]) + b2 * (a2[1]);
+  // Line p3p4 represented as a2x + b2y = c2
+  double a2 = p4[1] - p3[1];
+  double b2 = p3[0] - p4[0];
+  double c2 = a2 * (p3[0]) + b2 * (p3[1]);
 
-  double determinant = a1*b2 - a2*b1;
+  double determinant = a1 * b2 - a2 * b1;
 
   if (determinant == 0)
   {
