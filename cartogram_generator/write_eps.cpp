@@ -52,6 +52,7 @@ void write_eps_header_and_definitions(std::ofstream &eps_file,
 
 void write_polygons_to_eps(std::ofstream &eps_file,
                            bool fill_polygons,
+                           bool colors,
                            MapState *map_state)
 {
   eps_file << 0.001 * std::min(map_state->lx(), map_state->ly()) << " slw\n";
@@ -79,7 +80,21 @@ void write_polygons_to_eps(std::ofstream &eps_file,
         }
         eps_file << "c\n";
       }
-      if (fill_polygons) {
+      if (colors) {
+
+        // Getting color
+        Color col = map_state->colors_at(gd.id());
+
+        // Save path before filling it
+        eps_file << "gsave\n";
+
+        // Fill path
+        eps_file << col.eps() << "srgb f\n";
+
+        // Restore path.
+        eps_file << "grestore\n";
+      }
+      else if (fill_polygons) {
 
         // Save path before filling it
         eps_file << "gsave\n";
@@ -102,14 +117,17 @@ void write_map_to_eps(std::string eps_name, MapState *map_state)
 {
   std::ofstream eps_file(eps_name);
   write_eps_header_and_definitions(eps_file, eps_name, map_state);
-  write_polygons_to_eps(eps_file, true, map_state);
+  write_polygons_to_eps(eps_file,
+                        true,
+                        !(map_state->colors_empty()),
+                        map_state);
   eps_file << "showpage\n";
   eps_file << "%%EOF\n";
   eps_file.close();
   return;
 }
 
-// Functions to show a scalar field called "density" as a heat map.
+// Functions to show a scalar field called "density" as a heat map
 double interpolate_for_heatmap(double x,
                                double xmin,
                                double xmax,
@@ -187,14 +205,14 @@ void write_density_to_eps(std::string eps_name,
   double dens_mean = 0.0;
   double dens_max = density[0];
   unsigned int n_grid_cells = map_state->lx() * map_state->ly();
-  for (unsigned int k = 0; k < n_grid_cells; k++) {
+  for (unsigned int k = 0; k < n_grid_cells; ++k) {
     dens_min = std::min(density[k], dens_min);
     dens_mean += density[k];
     dens_max = std::max(density[k], dens_max);
   }
   dens_mean /= n_grid_cells;
-  for (unsigned int i = 0; i < map_state->lx(); i++) {
-    for (unsigned int j = 0; j < map_state->ly(); j++) {
+  for (unsigned int i = 0; i < map_state->lx(); ++i) {
+    for (unsigned int j = 0; j < map_state->ly(); ++j) {
       double r, g, b;
       heatmap_color(density[i*map_state->ly() + j],
                     dens_min,
@@ -205,7 +223,7 @@ void write_density_to_eps(std::string eps_name,
       eps_file << r << " " << g << " " << b << " srgb f\n";
     }
   }
-  write_polygons_to_eps(eps_file, false, map_state);
+  write_polygons_to_eps(eps_file, false, false, map_state);
   eps_file << "showpage\n";
   eps_file << "%%EOF\n";
   eps_file.close();

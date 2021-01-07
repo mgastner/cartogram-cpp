@@ -45,4 +45,5 @@ CTestTestfile.cmake
 _deps
 
 # Added by MTG
-cartogram_generator/cartogram
+cartogram
+*.eps

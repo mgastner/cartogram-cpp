@@ -31,43 +31,45 @@ set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${findFFTW_DIR}")
 cmake_minimum_required(VERSION 3.1)
 project(cartogram LANGUAGES CXX)
 
-# set(PLATFORM_SPECIFIC_LIBS "-lpthread")
 set(CMAKE_CXX_STANDARD 20)
-# add_compile_definitions(_GLIBCXX_USE_CXX11_ABI=0)
 set(THREADS_PREFER_PTHREAD_FLAG ON)
 set(CMAKE_BUILD_TYPE Release)
-set(CMAKE_CXX_COMPILER "g++-10")
-set(CMAKE_C_COMPILER "gcc-10")
 
+# Detecting appropriate compiler
+if (APPLE)
+  set(CMAKE_C_COMPILER "/usr/local/opt/llvm/bin/clang")
+  set(CMAKE_CXX_COMPILER "/usr/local/opt/llvm/bin/clang++")
+elseif(UNIX) # implicit AND NOT APPLE
+  set(CMAKE_CXX_COMPILER "g++-10")
+  set(CMAKE_C_COMPILER "gcc-10")
+endif()
+
+# Finding appropriate packages
 find_package(CGAL)
-# include system to boost?
 find_package(Boost 1.70 COMPONENTS program_options REQUIRED)
 find_package(FFTW)
 find_package(Threads REQUIRED)
 find_package(OpenMP REQUIRED)
 
-# include_directories(${Boost_INCLUDE_DIR})
-# link_directories(${Boost_LIBRARY_DIR})
-
+# Adding executables needed
 add_executable(cartogram ../cartogram_generator/main.cpp
               ../cartogram_generator/geo_div.cpp
           		../cartogram_generator/map_state.cpp
           		../cartogram_generator/read_csv.cpp
           		../cartogram_generator/rescale_map.cpp
           		../cartogram_generator/write_eps.cpp
+              ../cartogram_generator/colors.cpp
               ../cartogram_generator/check_topology.cpp
               # ../cartogram_generator/helper_functions.cpp
           		../cartogram_generator/read_geojson.cpp
           		../cartogram_generator/fill_with_density.cpp
               ../cartogram_generator/blur_density.cpp
               ../cartogram_generator/flatten_density.cpp
-            ../cartogram_generator/ft_real_2d.cpp)
+              ../cartogram_generator/ft_real_2d.cpp)
 
-# Boost::program_options ${Boost_LIBRARIES}
+# Linking appropriate libraries required
 target_link_libraries(cartogram
                       ${Boost_LIBRARIES}
-                      # ${Boost_SYSTEM_LIBRARY}
-                      # Boost::program_options
                       OpenMP::OpenMP_CXX
                       CGAL::CGAL
                       ${FFTW_LIBRARIES}

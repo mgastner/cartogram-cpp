@@ -72,7 +72,7 @@ GeoDiv json_to_cgal(const std::string id,
     // Store exterior ring in CGAL format
     Polygon ext_ring;
     const nlohmann::json jphc_ext = json_pgn_holes_container[0];
-    for (unsigned int j = 0; j < jphc_ext.size() - 1; j++) {
+    for (unsigned int j = 0; j < jphc_ext.size() - 1; ++j) {
       ext_ring.push_back(Point((double)jphc_ext[j][0],
                                (double)jphc_ext[j][1]));
     }
@@ -99,14 +99,13 @@ GeoDiv json_to_cgal(const std::string id,
 
     // Store interior ring
     std::vector<Polygon> int_ring_v;
-    for (unsigned int i = 1; i < json_pgn_holes_container.size(); i++) {
+    for (unsigned int i = 1; i < json_pgn_holes_container.size(); ++i) {
       Polygon int_ring;
       const nlohmann::json jphc_int = json_pgn_holes_container[i];
-      for (unsigned int j = 0; j < jphc_int.size() - 1; j++) {
+      for (unsigned int j = 0; j < jphc_int.size() - 1; ++j) {
         int_ring.push_back(Point((double)jphc_int[j][0],
                                  (double)jphc_int[j][1]));
       }
-      int_ring_v.push_back(int_ring);
       const unsigned int last_index = jphc_int.size() - 1;
       if (jphc_int[0][0] != jphc_int[last_index][0] ||
           jphc_int[0][1] != jphc_int[last_index][1]) {
@@ -120,6 +119,7 @@ GeoDiv json_to_cgal(const std::string id,
       if (int_ring.is_counterclockwise_oriented()) {
         int_ring.reverse_orientation();
       }
+      int_ring_v.push_back(int_ring);
     }
     const Polygon_with_holes pwh(ext_ring,
                                  int_ring_v.begin(),
@@ -163,7 +163,7 @@ void read_geojson(const std::string geometry_file_name, MapState *map_state)
       polygon_warning_has_been_issued = true;
     }
 
-    // Storing id from properties
+    // Storing ID from properties
     const nlohmann::json properties = feature["properties"];
     if (!properties.contains(map_state->id_header())) {
       std::cerr << "ERROR: In GeoJSON, there is no property "
