@@ -18,7 +18,7 @@ double half_floor(double num) {
   return floor(num) - 0.5;
 }
 
-// Returns intersection of 2 lines, line a1 b1 & line a2 b2
+// Returns intersection of 2 lines, line p1p2 & line p3p4
 Point calc_intersection(Point p1, Point p2, Point p3, Point p4) {
 
   // From https://www.geeksforgeeks.org/program-for-point-of-intersection-of-two-lines/
@@ -33,20 +33,10 @@ Point calc_intersection(Point p1, Point p2, Point p3, Point p4) {
   double c2 = a2 * (p3[0]) + b2 * (p3[1]);
 
   double determinant = a1 * b2 - a2 * b1;
-
-  if (determinant == 0)
-  {
-    // The lines are parallel.
-    Point temp(0, 0);
-    return temp;
-  }
-  else
-  {
-    double x = (b2 * c1 - b1 * c2) / determinant;
-    double y = (a1 * c2 - a2 * c1) / determinant;
-    Point temp(x, y);
-    return temp;
-  }
+  double x = (b2 * c1 - b1 * c2) / determinant;
+  double y = (a1 * c2 - a2 * c1) / determinant;
+  Point temp(x, y);
+  return temp;
 }
 
 // Returns intersection of line with vertical grid line
@@ -69,7 +59,7 @@ std::vector<Point> densification_points(Point a, Point b)
   // Vertical intersections (x coordinate lines)
   if (a[0] < b[0]) {
 
-    // X of "a" < x of "b"
+    // X of "a" < x of "b", "i" is each vertical graticule line
     for (double i = half_ceil(a[0]); i < b[0]; ++i) {
       if (i != a[0]) {
 
@@ -96,7 +86,7 @@ std::vector<Point> densification_points(Point a, Point b)
   // Horizontal intersections (y coordinate lines)
   if (a[1] < b[1]) {
 
-    // y of "a" < y of "b"
+    // y of "a" < y of "b", "i" is each horizontal graticule line
     for (double i = half_ceil(a[1]); i < b[1]; ++i) {
       if (i != a[1]) {
         // Get x coordinate, y coordinate = i
@@ -104,7 +94,7 @@ std::vector<Point> densification_points(Point a, Point b)
         Point temp(x, i);
 
         // Ensuring no corner points are pushed back
-        if (x != half_floor(x) || (x == i && a[0] == b[0])) {
+        if (x != half_floor(x) || a[0] == b[0]) {
           intersections.push_back(temp);
         }
       }
@@ -112,14 +102,14 @@ std::vector<Point> densification_points(Point a, Point b)
   } else if (a[1] > b[1]) {
 
     // y of "a" > y of "b"
-    for (double i = half_floor(a[1]); i > b[1]; i -= 0.5) {
+    for (double i = half_floor(a[1]); i > b[1]; --i) {
       if (i != a[1]) {
 
         // Get x coordinate, y coordinate = i
         double x = calc_x_intersection(a, b, i);
         Point temp(x, i);
         // Ensuring no corner points are pushed back
-        if (x != half_floor(x) || (x == i && a[0] == b[0])) {
+        if (x != half_floor(x) || a[0] == b[0]) {
           intersections.push_back(temp);
         }
       }
@@ -129,25 +119,56 @@ std::vector<Point> densification_points(Point a, Point b)
   // Sorting intersections
   std::sort(intersections.begin(), intersections.end());
 
+  // Storing current size
+  unsigned int size = intersections.size();
+
   // Inserting intersection with diagonals
-  if (a[0] < b[0]) {
-    for (unsigned int i = 0; i < intersections.size() - 1; ++i) {
+  // Checking line not through graticule line
+  if (!(a[0] == b[0] && a[0] == half_floor(a[0]))) {
+    std::cout << "BR-TL Run" << '\n';
+    for (unsigned int i = 0; i < size - 1; ++i) {
+
+      // Bottom-right corner
       Point bottom_right(half_floor(intersections[i][0]) + 1,
-                         half_floor(intersections[i][1])); // bottom right corner
-      Point top_left(half_ceil(intersections[i][0]) - 1,
-                     half_ceil(intersections[i][1]));; // top left corner
+                         half_floor(intersections[i][1]));
 
+      // Top-left corner
+      Point top_left(half_ceil(intersections[i + 1][0]) - 1,
+                     half_ceil(intersections[i + 1][1]));
 
+      // Finding intersection
+      Point temp = calc_intersection(intersections[i], intersections[i + 1],
+                                     top_left, bottom_right);
+      intersections.push_back(temp);
     }
-  } else if (a[0] > b[0]) {
-
-  } else {
-
   }
 
-  // // Removing duplicates
+  // Checking line not through middle of graticule line
+  if (a[0] == b[0] && a[0] != floor(a[0])) {
+    std::cout << "BL-TR Run" << '\n';
+    for (unsigned int i = 0; i < size - 1; ++i) {
+
+      // Bottom-left corner
+      Point bottom_left(half_floor(intersections[i][0]),
+                         half_floor(intersections[i][1]));
+
+      // Top-right corner
+      Point top_right(half_ceil(intersections[i + 1][0]),
+                     half_ceil(intersections[i + 1][1]));
+
+      // Finding intersection
+      Point temp = calc_intersection(intersections[i], intersections[i + 1],
+                                     top_right, bottom_left);
+      intersections.push_back(temp);
+    }
+  }
+
+  // Removing duplicates
   // intersections.erase(unique(intersections.begin(), intersections.end()),
   // intersections.end());
+
+  // Sorting intersections
+  std::sort(intersections.begin(), intersections.end());
   if (a[0] > b[0] || (a[1] > b[1] && a[1] == b[1])) {
 
     // Sort in descending order of x coordinates
