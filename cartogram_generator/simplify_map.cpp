@@ -93,37 +93,10 @@ void print_pll(PLL pll) {
   std::cout << " | " << pll.get_v2() << std::endl; 
 }
 
-std::map<int, Polyline> store_polyline_dens_to_org(CT ct, std::list<Polyline> polyline_list) {
-  std::map<int, Polyline> pll_dens_to_org;
-  int pos = 0;
-  for (auto cit = ct.constraints_begin(); cit != ct.constraints_end(); cit++) {
-
-    for (Polyline polyl : polyline_list) {
-      PLL pll(pos, polyl, -1, -1, false);
-      auto vit = ct.points_in_constraint_begin(*cit);
-      auto v1_it = vit;
-      v1_it++;
-      Point v1 = *vit;
-      Point v2 = *v1_it;
-      bool way1 = pll.get_v1() == v1 && pll.get_v2() == v2;
-      bool way2 = pll.get_vl() == v1 && pll.get_v2l() == v2;
-      if (way1 || way2) {
-        pll_dens_to_org[pos] = polyl;
-        break;
-      }
-    }
-    pos++;
-    if (pos % 100 == 0)
-      std::cout << pos << std::endl;
-  }
-  return pll_dens_to_org;
-}
-
 void check_if_pll_on_pgn_boundary(PLL pll,
     Polygon pgn,
     std::map<int, std::vector<PLL>> &pll_cntr_by_pos,
-    int pos,
-    std::map<int, Polyline> pll_dens_to_org) {
+    int pos) {
   // need >=3 vertices in pll to be on pgn's boundary to count as part of pgn
   int num_v_on_outer = 0;
 
@@ -131,36 +104,30 @@ void check_if_pll_on_pgn_boundary(PLL pll,
     Point pt = pll.get_pll()[i];
     bool v_on_outer = CGAL::bounded_side_2(pgn.begin(), pgn.end(), pt) == CGAL::ON_BOUNDARY;
     if (v_on_outer) num_v_on_outer++; 
-    if (i >= 3) {
-      if (num_v_on_outer >= 3) {
-        print_pll(pll);
-        pll_cntr_by_pos[pos].push_back(pll);
-      }
-      break;
-    }
+    if (i == 2) break;
   }
 
-  // TODO fix this
-  if (num_v_on_outer >= 2) { // && pll_dens_to_org[pos].size() == 2) {
-    // Check for consecutive vertices
+  if (num_v_on_outer >= 3) {
+    // print_pll(pll);
+    pll_cntr_by_pos[pos].push_back(pll);
+    if (pos % 100 == 0) std::cout << pos << std::endl;
+  } else if (num_v_on_outer == 2) {
+    // Consecutive pll check: accounts for clockwise and counter-clockwise orientation of pgn
     for (int i = 0; i < (int) pgn.size() - 1; i++) {
-      // If the 1st and 2nd polygon vertex are the 1st and last polyline vertex (consecutive check)
-      // Accounts for clockwise and counter-clockwise orientation of pgn
       bool direction_1 = pgn[i] == pll.get_v1() && pgn[i + 1] == pll.get_v2();
       bool direction_2 = pgn[i + 1] == pll.get_v1() && pgn[i] == pll.get_v2();
       if (direction_1 || direction_2) {
         // std::cout << pll_dens_to_org[pos].size() << " " << pll.get_pll().size() << std::endl;
-        print_pll(pll);
+        // print_pll(pll);
         pll_cntr_by_pos[pos].push_back(pll);
+        if (pos % 100 == 0) std::cout << pos << std::endl;
         break;
       }
     }
   }
 }
 
-std::map<int, std::vector<PLL>> store_by_pos(CT &ct,
-    std::vector<GeoDiv> container_dens,
-    std::map<int, Polyline> pll_dens_to_org) {
+std::map<int, std::vector<PLL>> store_by_pos(CT &ct, std::vector<GeoDiv> container_dens) {
   std::map<int, std::vector<PLL>> pll_cntr_by_pos; 
   int pos = 0;
   for (auto cit = ct.constraints_begin(); cit != ct.constraints_end(); cit++) {
@@ -181,8 +148,7 @@ std::map<int, std::vector<PLL>> store_by_pos(CT &ct,
         check_if_pll_on_pgn_boundary(pll_outer,
             outer,
             pll_cntr_by_pos,
-            pos,
-            pll_dens_to_org);
+            pos);
 
         std::vector<Polygon> holes_v(pgnwh.holes_begin(), pgnwh.holes_end());
         for (Polygon hole : holes_v) {
@@ -192,8 +158,7 @@ std::map<int, std::vector<PLL>> store_by_pos(CT &ct,
           check_if_pll_on_pgn_boundary(pll_hole,
               hole,
               pll_cntr_by_pos,
-              pos,
-              pll_dens_to_org);
+              pos);
         }
       }
     }
@@ -488,11 +453,9 @@ void simplify_map(MapState *map_state) {
     ct.insert_constraint(polyline.begin(), polyline.end());
   }
 
-  std::map<int, Polyline> pll_dens_to_org = store_polyline_dens_to_org(ct, polyline_list);
-
   // 6. Store polylines by positions with their associated GeoDivs and Polygon_with_holes
   // std::cout << "Store polylines by positions with their associated GeoDivs and Polygon_with_holes" << std::endl;
-  std::map<int, std::vector<PLL>> pll_cntr_by_pos = store_by_pos(ct, container_dens, pll_dens_to_org);
+  std::map<int, std::vector<PLL>> pll_cntr_by_pos = store_by_pos(ct, container_dens);
 
   // 7. Simplify polylines
   PS::simplify(ct, Cost(), Stop(0.2));
