@@ -27,18 +27,20 @@ std::vector<GeoDiv> densify(std::vector<GeoDiv> container) {
       for (Polygon hole : holes_v) {
         Polygon hole_dens;
         hole_dens.push_back(hole[0]);
-        for (int j = 0; j < (int) outer.size() - 1; j++) {
+        for (int j = 0; j < (int) hole.size() - 1; j++) {
+
           Point c = hole[j];
           Point d = hole[j + 1];
 
           std::vector<Point> holes_pts_dens = graticule_intersections(c, d);
           for (Point hole_pt : holes_pts_dens)
-            outer_dens.push_back(hole_pt);
+            hole_dens.push_back(hole_pt);
 
-          outer_dens.push_back(d);
+          hole_dens.push_back(d);
         }
         holes_v_dens.push_back(hole_dens);
       }
+
       Polygon_with_holes pgnwh_dens(outer_dens, holes_v_dens.begin(), holes_v_dens.end());  
 
       gd_dens.push_back(pgnwh_dens);

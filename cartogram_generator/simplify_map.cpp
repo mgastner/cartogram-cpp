@@ -441,6 +441,8 @@ void simplify_map(MapState *map_state) {
 
   // Densify container
   std::vector<GeoDiv> container_dens = densify(container);
+  // map_state->set_geo_divs(container_dens);
+  // return;
 
   // 2. Create graph and split graph into unique polylines
   Graph graph = create_pll_graph(container_dens);
