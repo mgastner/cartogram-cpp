@@ -3,7 +3,8 @@
 
 #include <list>
 #include "cgal_typedef.h"
+#include "geo_div.h"
 
-std::list<Polyline> densify(std::list<Polyline> polyline_list);
+std::vector<GeoDiv> densify(std::vector<GeoDiv> container);
 
 #endif

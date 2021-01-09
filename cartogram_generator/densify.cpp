@@ -1,26 +1,52 @@
 #include "densify.h"
 #include "find_graticule_intersections.h"
 
-std::list<Polyline> densify(std::list<Polyline> polyline_list) {
-  std::list<Polyline> polyline_list_dens; 
-  for (Polyline polyl : polyline_list) {
+std::vector<GeoDiv> densify(std::vector<GeoDiv> container) {
 
-    Polyline polyl_dens;
+  std::vector<GeoDiv> container_dens; 
+  for (GeoDiv gd : container) {
+    GeoDiv gd_dens(gd.id());
 
-    polyl_dens.push_back(polyl[0]); 
-    for (int i = 0; i < (int) polyl.size() - 1; i++) {
-      Point a = polyl[i];
-      Point b = polyl[i + 1];
+    for (Polygon_with_holes pgnwh : gd.polygons_with_holes()) {
+      Polygon outer = pgnwh.outer_boundary();
+      Polygon outer_dens;
+      outer_dens.push_back(outer[0]);
+      for (int i = 0; i < (int) outer.size() - 1; i++) {
+        Point a = outer[i];
+        Point b = outer[i + 1];
 
-      std::vector<Point> dens_pts = graticule_intersections(a, b);
-      for (Point pt : dens_pts)
-        polyl_dens.push_back(pt);
-      polyl_dens.push_back(b);
+        std::vector<Point> outer_pts_dens = graticule_intersections(a, b);
+        for (Point outer_pt : outer_pts_dens)
+          outer_dens.push_back(outer_pt);
+
+        outer_dens.push_back(b);
+      }
+
+      std::vector<Polygon> holes_v_dens;
+      std::vector<Polygon> holes_v(pgnwh.holes_begin(), pgnwh.holes_end());
+      for (Polygon hole : holes_v) {
+        Polygon hole_dens;
+        hole_dens.push_back(hole[0]);
+        for (int j = 0; j < (int) outer.size() - 1; j++) {
+          Point c = hole[j];
+          Point d = hole[j + 1];
+
+          std::vector<Point> holes_pts_dens = graticule_intersections(c, d);
+          for (Point hole_pt : holes_pts_dens)
+            outer_dens.push_back(hole_pt);
+
+          outer_dens.push_back(d);
+        }
+        holes_v_dens.push_back(hole_dens);
+      }
+      Polygon_with_holes pgnwh_dens(outer_dens, holes_v_dens.begin(), holes_v_dens.end());  
+
+      gd_dens.push_back(pgnwh_dens);
     }
 
     //std::cout << polyl.size() << " " << polyl_dens.size() << std::endl;
-    polyline_list_dens.push_back(polyl_dens);
+    container_dens.push_back(gd_dens);
   }
-  return polyline_list_dens;
+  return container_dens;
 }
 

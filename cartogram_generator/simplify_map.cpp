@@ -93,140 +93,44 @@ void print_pll(PLL pll) {
   std::cout << " | " << pll.get_v2() << std::endl; 
 }
 
-int get_cit_size(CT ct, Constraint_iterator cit) {
-  int size = 0;
-  for (auto vit = ct.points_in_constraint_begin(*cit); vit != ct.points_in_constraint_end(*cit); vit++)
-    size++;
-  return size;
-}
-
-bool is_same_gradient(CT ct,
-                   Constraint_iterator cit, 
-                   Polyline polyl) {
-  auto vit_c1 = ct.points_in_constraint_begin(*cit);
-  auto vit_c2 = vit_c1;
-  vit_c2++;
-  Point vit_pt_c1 = *vit_c1;
-  Point vit_pt_c2 = *vit_c2;
-
-  Point pt_c1 = polyl[0];
-  Point pt_c2 = polyl[1];
-
-  double vit_gradient = std::abs((vit_pt_c2[1] - vit_pt_c1[1]) / (vit_pt_c2[0] - (vit_pt_c1[0])));
-  double pt_gradient = std::abs((pt_c2[1] - pt_c1[1]) / (pt_c2[0] - (pt_c1[0])));
-
-  // Check if 2 2-vertex polylines are the same by comparing their gradients
-  return vit_gradient - pt_gradient < 0.0001;
-  // std::cout << vit_gradient << " " << pt_gradient << " " << equal_gradient << std::endl;
-}
-
-std::map<int, Polyline> store_polyline_dens_to_org(CT ct, 
-    std::list<Polyline> polyline_list) {
-  std::map<int, Polyline> pll_dens_to_org; 
-  int pos = 0;
-  std::vector<bool> visited_polyl(polyline_list.size(), false);
-  for (auto cit = ct.constraints_begin(); cit != ct.constraints_end(); cit++) {
-
-    bool polyline_match = false;
-    int polyl_num = 0;
-    for (Polyline polyl : polyline_list) {
-      int same_v = 0;
-      for (Point pt : polyl) {
-        for (auto vit = ct.points_in_constraint_begin(*cit); vit != ct.points_in_constraint_end(*cit); vit++) {
-          if (pt == *vit) {
-            same_v++;
-            if (same_v >= 3) {
-              polyline_match = true;
-              pll_dens_to_org[pos] = polyl;
-              visited_polyl[polyl_num] = true;
-            } else if (polyl.size() == 2 && same_v == 2) {
-              bool equal_gradient = is_same_gradient(ct, cit, polyl);
-
-              if (equal_gradient) {
-                polyline_match = true;
-                pll_dens_to_org[pos] = polyl;
-                visited_polyl[polyl_num] = true;
-              }
-            }
-            break;
-          }
-        }
-        if (polyline_match) break;
-      }
-      polyl_num++;
-      if (polyline_match) break;
-    }
-    pos++;
-    if (pos % 100 == 0)
-      std::cout << pos << std::endl;
-  }
-  return pll_dens_to_org;
-}
-
-// Reduces time taken to check if pll is part of pgn
-void complete_gd_pgnwh(
-    PLL pll,
-    Polygon_with_holes pgnwh,
-    bool is_hole,
-    std::map<int, std::map<int, int>> &gd_pgnwh_comp) {
-
-  std::vector<Polygon> holes_v(pgnwh.holes_begin(), pgnwh.holes_end());
-
-  // If the polyline starts and ends at the same point (e.g. hole/island)
-  if (pll.get_v1() == pll.get_vl()) {
-    gd_pgnwh_comp[pll.get_gd()][pll.get_pgnwh()]--;
-  } else {
-  }
-}
-
 void check_if_pll_on_pgn_boundary(PLL pll,
-    Polygon_with_holes pgnwh,
     Polygon pgn,
     std::map<int, std::vector<PLL>> &pll_cntr_by_pos,
-    std::map<int, Polyline> pll_dens_to_org,
-    int pos,
-    bool is_hole,
-    bool &pos_hole_found,
-    std::map<int, std::map<int, int>> &gd_pgnwh_comp) {
+    int pos) {
   // need >=3 vertices in pll to be on pgn's boundary to count as part of pgn
   int num_v_on_outer = 0;
+  bool found = false;
+
   for (Point pt : pll.get_pll()) {
     bool v_on_outer = CGAL::bounded_side_2(pgn.begin(), pgn.end(), pt) == CGAL::ON_BOUNDARY;
     if (v_on_outer) num_v_on_outer++; 
-    if (num_v_on_outer >= 3) break;
-  }
-
-  if (num_v_on_outer >= 3) {
-    pos_hole_found = true;
-    std::cout << pos_hole_found << " ";
-    print_pll(pll);
-    pll_cntr_by_pos[pos].push_back(pll);
-    complete_gd_pgnwh(pll, pgnwh, is_hole, gd_pgnwh_comp);
-  } else if (pll_dens_to_org[pos].size() == 2 && num_v_on_outer == 2 && !is_hole) {
-    // If the polyline originally only had 2 vertices, check if the pll is really on pgn
-    // Edge case is the border of Missouri, Kentucky, Tennessee
-    for (int i = 0; i < (int) pgn.size() - 1; i++) {
-      // If the 1st and 2nd polygon vertex are the 1st and last polyline vertex (consecutive check)
-      // Accounts for clockwise and counter-clockwise orientation of pgn
-      bool direction_1 = pgn[i] == pll.get_v1() && pgn[i + 1] == pll.get_vl();
-      bool direction_2 = pgn[i + 1] == pll.get_v1() && pgn[i] == pll.get_vl();
-      if (direction_1 || direction_2) {
-        // std::cout << pll_dens_to_org[pos].size() << " " << pll.get_pll().size() << std::endl;
-        pos_hole_found = true;
-        std::cout << pos_hole_found << " ";
-        print_pll(pll);
-        pll_cntr_by_pos[pos].push_back(pll);
-        complete_gd_pgnwh(pll, pgnwh, is_hole, gd_pgnwh_comp);
-        break;
+    if (num_v_on_outer >= 3) { 
+      print_pll(pll);
+      pll_cntr_by_pos[pos].push_back(pll);
+      found = true;
+      if (found) break;
+    } else if (num_v_on_outer == 2){
+      // If the polyline originally only had 2 vertices, check if the pll is really on pgn
+      // Edge case is the border of Missouri, Kentucky, Tennessee
+      for (int i = 0; i < (int) pgn.size() - 1; i++) {
+        // If the 1st and 2nd polygon vertex are the 1st and last polyline vertex (consecutive check)
+        // Accounts for clockwise and counter-clockwise orientation of pgn
+        bool direction_1 = pgn[i] == pll.get_v1() && pgn[i + 1] == pll.get_vl();
+        bool direction_2 = pgn[i + 1] == pll.get_v1() && pgn[i] == pll.get_vl();
+        if (direction_1 || direction_2) {
+          // std::cout << pll_dens_to_org[pos].size() << " " << pll.get_pll().size() << std::endl;
+          print_pll(pll);
+          pll_cntr_by_pos[pos].push_back(pll);
+          found = true;
+          break;
+        }
       }
+      if (found) break;
     }
   }
 }
 
-std::map<int, std::vector<PLL>> store_by_pos(CT &ct, 
-    std::vector<GeoDiv> container,
-    std::map<int, Polyline> pll_dens_to_org,
-    std::map<int, std::map<int, int>> gd_pgnwh_comp) {
+std::map<int, std::vector<PLL>> store_by_pos(CT &ct, std::vector<GeoDiv> container_dens) {
   std::map<int, std::vector<PLL>> pll_cntr_by_pos; 
   int pos = 0;
   for (auto cit = ct.constraints_begin(); cit != ct.constraints_end(); cit++) {
@@ -236,27 +140,18 @@ std::map<int, std::vector<PLL>> store_by_pos(CT &ct,
     for (auto vit = ct.points_in_constraint_begin(*cit); vit != ct.points_in_constraint_end(*cit); vit++)
       polyl.push_back(*vit);
 
-    for (int gd_num = 0; gd_num < (int) container.size(); gd_num++) {
-      bool pos_hole_found = false;
-      for (int pgnwh_num = 0; pgnwh_num < (int) container[gd_num].polygons_with_holes().size(); pgnwh_num++) {
-        if (gd_pgnwh_comp[gd_num][pgnwh_num] == 0) continue;
+    for (int gd_num = 0; gd_num < (int) container_dens.size(); gd_num++) {
+      for (int pgnwh_num = 0; pgnwh_num < (int) container_dens[gd_num].polygons_with_holes().size(); pgnwh_num++) {
 
-        Polygon_with_holes pgnwh = container[gd_num].polygons_with_holes()[pgnwh_num];
+        Polygon_with_holes pgnwh = container_dens[gd_num].polygons_with_holes()[pgnwh_num];
         PLL pll_outer(pos, polyl, gd_num, pgnwh_num, false);
         Polygon outer = pgnwh.outer_boundary();
 
         // Check outer polygon
         check_if_pll_on_pgn_boundary(pll_outer,
-            pgnwh,
             outer,
             pll_cntr_by_pos,
-            pll_dens_to_org,
-            pos,
-            false,
-            pos_hole_found,
-            gd_pgnwh_comp);
-
-        if (pos_hole_found) break;
+            pos);
 
         std::vector<Polygon> holes_v(pgnwh.holes_begin(), pgnwh.holes_end());
         for (Polygon hole : holes_v) {
@@ -264,18 +159,10 @@ std::map<int, std::vector<PLL>> store_by_pos(CT &ct,
 
           // Check holes
           check_if_pll_on_pgn_boundary(pll_hole,
-              pgnwh,
               hole,
               pll_cntr_by_pos,
-              pll_dens_to_org,
-              pos,
-              true,
-              pos_hole_found,
-              gd_pgnwh_comp);
-
-          if (pos_hole_found) break;
+              pos);
         }
-        if (pos_hole_found) break;
       }
     }
     pos++;
@@ -552,47 +439,24 @@ void simplify_map(MapState *map_state) {
   // 1. Repeat first point as last point by reference 
   repeat_first_point_as_last_point(container);
 
+  // Densify container
+  std::vector<GeoDiv> container_dens = densify(container);
+
   // 2. Create graph and split graph into unique polylines
-  Graph graph = create_pll_graph(container);
+  Graph graph = create_pll_graph(container_dens);
   std::list<Polyline> polyline_list;
   Polyline_visitor<Graph> polyline_visitor(polyline_list, graph);
   CGAL::split_graph_into_polylines(graph, polyline_visitor);
 
-  // 3. Densify
-  std::list<Polyline> polyline_list_dens = densify(polyline_list);
-
   // 4. Store polylines from polyline_list in CT
   CT ct; 
-  for (Polyline polyline : polyline_list_dens) {
+  for (Polyline polyline : polyline_list) {
     ct.insert_constraint(polyline.begin(), polyline.end());
   }
 
-  // Create map to keep track of geo_divs and pgnwhs and whether they have been completed for step 6
-  // Track progress of plls matching to pgns
-  std::map<int, std::map<int, int>> gd_pgnwh_comp;
-  for (int i = 0; i < (int) container.size(); i++) {
-    for (int j = 0; j < (int) container[i].polygons_with_holes().size(); j++) {
-      Polygon_with_holes pgnwh = container[i].polygons_with_holes()[j];
-      std::vector<Polygon> holes_v(pgnwh.holes_begin(), pgnwh.holes_end());
-      gd_pgnwh_comp[i][j] = 1;
-      gd_pgnwh_comp[i][j] += holes_v.size();
-    }
-  }
-
-  // While the resulting pll_cntr_by_pos.size() is incorrect, repeat steps 5 and 6.
-  // This accounts for a bug where the CT order changes between steps 5 and 6.
-  int repeat_count = 0;
-  std::map<int, std::vector<PLL>> pll_cntr_by_pos;
-  while (pll_cntr_by_pos.size() < polyline_list.size()) {
-    repeat_count++;
-    // 5. Store ct polylines (densified) with their associated original polylines (non-densified)
-    std::map<int, Polyline> pll_dens_to_org = store_polyline_dens_to_org(ct, polyline_list);
-
-    // 6. Store polylines by positions with their associated GeoDivs and Polygon_with_holes
-    // std::cout << "Store polylines by positions with their associated GeoDivs and Polygon_with_holes" << std::endl;
-    pll_cntr_by_pos = store_by_pos(ct, container, pll_dens_to_org, gd_pgnwh_comp);
-  }
-  std::cout << "Executed steps 5 and 6 an additional " << repeat_count - 1 << " iteration(s)" << std::endl;
+  // 6. Store polylines by positions with their associated GeoDivs and Polygon_with_holes
+  // std::cout << "Store polylines by positions with their associated GeoDivs and Polygon_with_holes" << std::endl;
+  std::map<int, std::vector<PLL>> pll_cntr_by_pos = store_by_pos(ct, container_dens);
 
   // 7. Simplify polylines
   PS::simplify(ct, Cost(), Stop(0.2));
@@ -608,11 +472,15 @@ void simplify_map(MapState *map_state) {
   // std::cout << "Assemble polylines into polygons" << std::endl;
   // 10. Assemble polylines into polygons
   std::vector<GeoDiv> container_simp;
-  assemble_pll_to_pgn(pll_cntr_by_gd_pgnwh, visited, container_simp, container);
+  assemble_pll_to_pgn(pll_cntr_by_gd_pgnwh, visited, container_simp, container_dens);
 
-  // Print number of points after simplifying
-  std::cout << "Number of vertices before simplifying: ";
+  // Print number of points before simplifying (container)
+  std::cout << "Number of vertices before simplifying (container): ";
   print_num_pts(container);
+
+  // Print number of points before simplifying (container_dens)
+  std::cout << "Number of vertices before simplifying (container_dens): ";
+  print_num_pts(container_dens);
 
   // Print number of points after simplifying
   std::cout << "Number of vertices after simplifying: ";
