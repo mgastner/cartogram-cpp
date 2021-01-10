@@ -96,6 +96,7 @@ void print_pll(PLL pll) {
 class PgnProg {
   private:
     std::vector<Point> endpts;
+    int island = false;
     int num_holes = 0;
     bool endpts_comp = false;
     bool holes_comp = false;
@@ -121,24 +122,19 @@ class PgnProg {
 
       std::sort(endpts.begin(), endpts.end());
       int pairs = 0;
-      for (int i = 0; i < (int) endpts.size() - 1; i += 2) {
-        if (endpts[i] != endpts[i + 1]) {
-          endpts_comp = false;
-          break;
-        } else {
+      for (int i = 0; i < (int) endpts.size() - 1; i += 2)
+        if (endpts[i] == endpts[i + 1])
           pairs++;
-          if (pairs == endpts.size() / 2) {
-            endpts_comp = true;
-          }
-        }
-      }
+      if (pairs * 2 == (int) endpts.size())
+        endpts_comp = true;
+    }
+
+    void set_island() {
+      island = num_holes == 0 ? true : false;
     }
 
     bool check_comp() {
-      if (endpts_comp && holes_comp)
-        return true;
-      else
-        return false;
+      return island || (endpts_comp && holes_comp);
     }
 };
 
@@ -152,6 +148,19 @@ std::map<int, std::map<int, PgnProg>> create_pgn_prog(std::vector<GeoDiv> contai
     }
   }
   return pgn_prog;
+}
+
+void check_pgn_prog(PLL pll,
+    std::map<int, std::map<int, PgnProg>> &pgn_prog,
+    bool is_hole) {
+  if (pll.get_v1() == pll.get_vl() && is_hole) {
+    pgn_prog[pll.get_gd()][pll.get_pgnwh()].rem_hole();
+  } else if (pll.get_v1() == pll.get_vl() && !is_hole) {
+    pgn_prog[pll.get_gd()][pll.get_pgnwh()].set_island();
+  } else {
+    pgn_prog[pll.get_gd()][pll.get_pgnwh()].add_endpts(pll.get_v1(), pll.get_vl());
+    pgn_prog[pll.get_gd()][pll.get_pgnwh()].update_comp();
+  }
 }
 
 void check_if_pll_on_pgn_boundary(PLL pll,
@@ -172,12 +181,8 @@ void check_if_pll_on_pgn_boundary(PLL pll,
 
   if (num_v_on_outer >= 3) {
     // print_pll(pll);
-    if (pll.get_v1() == pll.get_vl() && is_hole) {
-      pgn_prog[pll.get_gd()][pll.get_pgnwh()].rem_hole();
-    } else if (!is_hole) {
-      pgn_prog[pll.get_gd()][pll.get_pgnwh()].add_endpts(pll.get_v1(), pll.get_vl());
-    }
-    pgn_prog[pll.get_gd()][pll.get_pgnwh()].update_comp();
+    
+    check_pgn_prog(pll, pgn_prog, is_hole);
 
     pll_cntr_by_pos[pos].push_back(pll);
     if (pos % 100 == 0) std::cout << pos << std::endl;
@@ -189,12 +194,8 @@ void check_if_pll_on_pgn_boundary(PLL pll,
       bool direction_2 = pgn[i + 1] == pll.get_v1() && pgn[i] == pll.get_v2();
       if (direction_1 || direction_2) {
         // print_pll(pll);
-        if (pll.get_v1() == pll.get_vl() && is_hole) {
-          pgn_prog[pll.get_gd()][pll.get_pgnwh()].rem_hole();
-        } else if (!is_hole) {
-          pgn_prog[pll.get_gd()][pll.get_pgnwh()].add_endpts(pll.get_v1(), pll.get_vl());
-        }
-        pgn_prog[pll.get_gd()][pll.get_pgnwh()].update_comp();
+
+        check_pgn_prog(pll, pgn_prog, is_hole);
 
         pll_cntr_by_pos[pos].push_back(pll);
         if (pos % 100 == 0) std::cout << pos << std::endl;
