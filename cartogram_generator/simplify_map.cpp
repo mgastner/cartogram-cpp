@@ -93,13 +93,76 @@ void print_pll(PLL pll) {
   std::cout << " | " << pll.get_v2() << std::endl; 
 }
 
+class PgnProg {
+  private:
+    std::vector<Point> endpts;
+    int num_holes = 0;
+    bool endpts_comp = false;
+    bool holes_comp = false;
+  public:
+
+    void add_endpts(Point endpt1, Point endpt2) {
+      endpts.push_back(endpt1);
+      endpts.push_back(endpt2);
+    }
+
+    void add_holes(int num_holes_) {
+      num_holes += num_holes_;
+    }
+
+    void rem_hole() {
+      num_holes--;
+    }
+
+    void update_comp() {
+      if (num_holes == 0) {
+        holes_comp = true;
+      }
+
+      std::sort(endpts.begin(), endpts.end());
+      int pairs = 0;
+      for (int i = 0; i < (int) endpts.size() - 1; i += 2) {
+        if (endpts[i] != endpts[i + 1]) {
+          endpts_comp = false;
+          break;
+        } else {
+          pairs++;
+          if (pairs == endpts.size() / 2) {
+            endpts_comp = true;
+          }
+        }
+      }
+    }
+
+    bool check_comp() {
+      if (endpts_comp && holes_comp)
+        return true;
+      else
+        return false;
+    }
+};
+
+std::map<int, std::map<int, PgnProg>> create_pgn_prog(std::vector<GeoDiv> container_dens) {
+  std::map<int, std::map<int, PgnProg>> pgn_prog;
+  for (int i = 0; i < (int) container_dens.size(); i++) {
+    for (int j = 0; j < (int) container_dens[i].polygons_with_holes().size(); j++) {
+      Polygon_with_holes pgnwh = container_dens[i].polygons_with_holes()[j];
+      std::vector<Polygon> holes_v(pgnwh.holes_begin(), pgnwh.holes_end());
+      pgn_prog[i][j].add_holes(holes_v.size());
+    }
+  }
+  return pgn_prog;
+}
+
 void check_if_pll_on_pgn_boundary(PLL pll,
     Polygon pgn,
     std::map<int, std::vector<PLL>> &pll_cntr_by_pos,
-    int pos) {
+    int pos,
+    std::map<int, std::map<int, PgnProg>> &pgn_prog,
+    bool is_hole) {
+
   // need >=3 vertices in pll to be on pgn's boundary to count as part of pgn
   int num_v_on_outer = 0;
-
   for (int i = 0; i < (int) pll.get_pll().size(); i++) {
     Point pt = pll.get_pll()[i];
     bool v_on_outer = CGAL::bounded_side_2(pgn.begin(), pgn.end(), pt) == CGAL::ON_BOUNDARY;
@@ -109,16 +172,30 @@ void check_if_pll_on_pgn_boundary(PLL pll,
 
   if (num_v_on_outer >= 3) {
     // print_pll(pll);
+    if (pll.get_v1() == pll.get_vl() && is_hole) {
+      pgn_prog[pll.get_gd()][pll.get_pgnwh()].rem_hole();
+    } else if (!is_hole) {
+      pgn_prog[pll.get_gd()][pll.get_pgnwh()].add_endpts(pll.get_v1(), pll.get_vl());
+    }
+    pgn_prog[pll.get_gd()][pll.get_pgnwh()].update_comp();
+
     pll_cntr_by_pos[pos].push_back(pll);
     if (pos % 100 == 0) std::cout << pos << std::endl;
+
   } else if (num_v_on_outer == 2) {
     // Consecutive pll check: accounts for clockwise and counter-clockwise orientation of pgn
     for (int i = 0; i < (int) pgn.size() - 1; i++) {
       bool direction_1 = pgn[i] == pll.get_v1() && pgn[i + 1] == pll.get_v2();
       bool direction_2 = pgn[i + 1] == pll.get_v1() && pgn[i] == pll.get_v2();
       if (direction_1 || direction_2) {
-        // std::cout << pll_dens_to_org[pos].size() << " " << pll.get_pll().size() << std::endl;
         // print_pll(pll);
+        if (pll.get_v1() == pll.get_vl() && is_hole) {
+          pgn_prog[pll.get_gd()][pll.get_pgnwh()].rem_hole();
+        } else if (!is_hole) {
+          pgn_prog[pll.get_gd()][pll.get_pgnwh()].add_endpts(pll.get_v1(), pll.get_vl());
+        }
+        pgn_prog[pll.get_gd()][pll.get_pgnwh()].update_comp();
+
         pll_cntr_by_pos[pos].push_back(pll);
         if (pos % 100 == 0) std::cout << pos << std::endl;
         break;
@@ -127,18 +204,24 @@ void check_if_pll_on_pgn_boundary(PLL pll,
   }
 }
 
-std::map<int, std::vector<PLL>> store_by_pos(CT &ct, std::vector<GeoDiv> container_dens) {
+std::map<int, std::vector<PLL>> store_by_pos(CT &ct, 
+    std::vector<GeoDiv> container_dens) {
+
+  std::map<int, std::map<int, PgnProg>> pgn_prog = create_pgn_prog(container_dens);
+
+  // Create map to check if geo_divs and pgnwhs have been progletely matched
+
   std::map<int, std::vector<PLL>> pll_cntr_by_pos; 
   int pos = 0;
   for (auto cit = ct.constraints_begin(); cit != ct.constraints_end(); cit++) {
 
-    // Bottle neck from here onwards
     Polyline polyl;
     for (auto vit = ct.points_in_constraint_begin(*cit); vit != ct.points_in_constraint_end(*cit); vit++)
       polyl.push_back(*vit);
 
     for (int gd_num = 0; gd_num < (int) container_dens.size(); gd_num++) {
       for (int pgnwh_num = 0; pgnwh_num < (int) container_dens[gd_num].polygons_with_holes().size(); pgnwh_num++) {
+        if (pgn_prog[gd_num][pgnwh_num].check_comp()) continue;
 
         Polygon_with_holes pgnwh = container_dens[gd_num].polygons_with_holes()[pgnwh_num];
         PLL pll_outer(pos, polyl, gd_num, pgnwh_num, false);
@@ -148,7 +231,9 @@ std::map<int, std::vector<PLL>> store_by_pos(CT &ct, std::vector<GeoDiv> contain
         check_if_pll_on_pgn_boundary(pll_outer,
             outer,
             pll_cntr_by_pos,
-            pos);
+            pos,
+            pgn_prog,
+            false);
 
         std::vector<Polygon> holes_v(pgnwh.holes_begin(), pgnwh.holes_end());
         for (Polygon hole : holes_v) {
@@ -158,7 +243,9 @@ std::map<int, std::vector<PLL>> store_by_pos(CT &ct, std::vector<GeoDiv> contain
           check_if_pll_on_pgn_boundary(pll_hole,
               hole,
               pll_cntr_by_pos,
-              pos);
+              pos,
+              pgn_prog,
+              true);
         }
       }
     }
