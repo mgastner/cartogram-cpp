@@ -107,6 +107,10 @@ class PgnProg {
       endpts.push_back(endpt2);
     }
 
+    std::vector<Point> get_endpts() {
+      return endpts;
+    }
+
     void add_holes(int num_holes_) {
       num_holes += num_holes_;
     }
@@ -185,7 +189,7 @@ void check_if_pll_on_pgn_boundary(PLL pll,
     check_pgn_prog(pll, pgn_prog, is_hole);
 
     pll_cntr_by_pos[pos].push_back(pll);
-    if (pos % 100 == 0) std::cout << pos << std::endl;
+    std::cout << pos << std::endl;
 
   } else if (num_v_on_outer == 2) {
     // Consecutive pll check: accounts for clockwise and counter-clockwise orientation of pgn
@@ -198,7 +202,7 @@ void check_if_pll_on_pgn_boundary(PLL pll,
         check_pgn_prog(pll, pgn_prog, is_hole);
 
         pll_cntr_by_pos[pos].push_back(pll);
-        if (pos % 100 == 0) std::cout << pos << std::endl;
+        std::cout << pos << std::endl;
         break;
       }
     }
@@ -222,6 +226,12 @@ std::map<int, std::vector<PLL>> store_by_pos(CT &ct,
 
     for (int gd_num = 0; gd_num < (int) container_dens.size(); gd_num++) {
       for (int pgnwh_num = 0; pgnwh_num < (int) container_dens[gd_num].polygons_with_holes().size(); pgnwh_num++) {
+        /*
+        std::cout << gd_num << " " << pgnwh_num << " " << pgn_prog[gd_num][pgnwh_num].get_endpts().size();
+        std::cout << " " << pgn_prog[gd_num][pgnwh_num].check_comp() << std::endl;
+        for (Point pt : pgn_prog[gd_num][pgnwh_num].get_endpts())
+          std::cout << pt << ", ";
+        */
         if (pgn_prog[gd_num][pgnwh_num].check_comp()) continue;
 
         Polygon_with_holes pgnwh = container_dens[gd_num].polygons_with_holes()[pgnwh_num];
@@ -418,10 +428,9 @@ void assemble_pll_to_pgn(std::map<int, std::map<int, std::vector<PLL>>> &pll_cnt
           }
           Polygon outer_2;
 
-          for (PLL pll_deq : deq) {
+          for (PLL pll_deq : deq)
             for (Point pt : pll_deq.get_pll())
               outer_2.push_back(pt);
-          }
 
           if (pll.get_bool_hole()) {
             holes_v.push_back(outer_2);
