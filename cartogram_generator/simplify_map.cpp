@@ -225,7 +225,7 @@ std::map<int, std::vector<PLL>> store_by_pos(CT &ct,
   std::vector<int> matched_polyl(num_polyl, 0);
 
   for (int gd_num = 0; gd_num < (int) container_dens.size(); gd_num++) {
-    std::cout << gd_num << std::endl;
+    std::cout << "gd: " << gd_num << std::endl;
     for (int pgnwh_num = 0; pgnwh_num < (int) container_dens[gd_num].polygons_with_holes().size(); pgnwh_num++) {
 
       int pos = -1;
@@ -597,5 +597,6 @@ void simplify_map(MapState *map_state) {
   map_state->set_geo_divs(container_simp);
 
   const std::chrono::duration<double, std::milli> duration = std::chrono::system_clock::now() - start;
-  std::cout << "simplify_map() time elapsed: " << duration.count() << "ms" << std::endl;
+  std::cout << "simplify_map() time elapsed: " << duration.count() << "ms (";
+  std::cout << duration.count() / 1000 << "s)" << std::endl;
 }
