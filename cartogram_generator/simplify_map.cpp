@@ -168,6 +168,7 @@ void check_pgn_prog(PLL pll,
 }
 
 void check_if_pll_on_pgn_boundary(PLL pll,
+    std::vector<int> &matched_polyl,
     Polygon pgn,
     std::map<int, std::vector<PLL>> &pll_cntr_by_pos,
     int pos,
@@ -186,10 +187,10 @@ void check_if_pll_on_pgn_boundary(PLL pll,
   if (num_v_on_outer >= 3) {
     // print_pll(pll);
     
+    matched_polyl[pos]++;
     check_pgn_prog(pll, pgn_prog, is_hole);
 
     pll_cntr_by_pos[pos].push_back(pll);
-    std::cout << pos << std::endl;
 
   } else if (num_v_on_outer == 2) {
     // Consecutive pll check: accounts for clockwise and counter-clockwise orientation of pgn
@@ -199,10 +200,10 @@ void check_if_pll_on_pgn_boundary(PLL pll,
       if (direction_1 || direction_2) {
         // print_pll(pll);
 
+        matched_polyl[pos]++;
         check_pgn_prog(pll, pgn_prog, is_hole);
 
         pll_cntr_by_pos[pos].push_back(pll);
-        std::cout << pos << std::endl;
         break;
       }
     }
@@ -215,24 +216,31 @@ std::map<int, std::vector<PLL>> store_by_pos(CT &ct,
   std::map<int, std::map<int, PgnProg>> pgn_prog = create_pgn_prog(container_dens);
 
   // Create map to check if geo_divs and pgnwhs have been progletely matched
-
   std::map<int, std::vector<PLL>> pll_cntr_by_pos; 
-  int pos = 0;
-  for (auto cit = ct.constraints_begin(); cit != ct.constraints_end(); cit++) {
 
-    Polyline polyl;
-    for (auto vit = ct.points_in_constraint_begin(*cit); vit != ct.points_in_constraint_end(*cit); vit++)
-      polyl.push_back(*vit);
+  // Create vector of visited polylines
+  int num_polyl = 0;
+  for (auto cit = ct.constraints_begin(); cit != ct.constraints_end(); cit++)
+    num_polyl++;
+  std::vector<int> matched_polyl(num_polyl, 0);
 
-    for (int gd_num = 0; gd_num < (int) container_dens.size(); gd_num++) {
-      for (int pgnwh_num = 0; pgnwh_num < (int) container_dens[gd_num].polygons_with_holes().size(); pgnwh_num++) {
-        /*
-        std::cout << gd_num << " " << pgnwh_num << " " << pgn_prog[gd_num][pgnwh_num].get_endpts().size();
-        std::cout << " " << pgn_prog[gd_num][pgnwh_num].check_comp() << std::endl;
-        for (Point pt : pgn_prog[gd_num][pgnwh_num].get_endpts())
-          std::cout << pt << ", ";
-        */
-        if (pgn_prog[gd_num][pgnwh_num].check_comp()) continue;
+  for (int gd_num = 0; gd_num < (int) container_dens.size(); gd_num++) {
+    std::cout << gd_num << std::endl;
+    for (int pgnwh_num = 0; pgnwh_num < (int) container_dens[gd_num].polygons_with_holes().size(); pgnwh_num++) {
+
+      int pos = -1;
+      for (auto cit = ct.constraints_begin(); cit != ct.constraints_end(); cit++) {
+        pos++;
+
+        // If the pgnwh has already found all its polylines, break 
+        if (pgn_prog[gd_num][pgnwh_num].check_comp()) break;
+        
+        // If the polyl has already been matched, continue
+        if (matched_polyl[pos] == 2) continue;
+
+        Polyline polyl;
+        for (auto vit = ct.points_in_constraint_begin(*cit); vit != ct.points_in_constraint_end(*cit); vit++)
+          polyl.push_back(*vit);
 
         Polygon_with_holes pgnwh = container_dens[gd_num].polygons_with_holes()[pgnwh_num];
         PLL pll_outer(pos, polyl, gd_num, pgnwh_num, false);
@@ -240,6 +248,7 @@ std::map<int, std::vector<PLL>> store_by_pos(CT &ct,
 
         // Check outer polygon
         check_if_pll_on_pgn_boundary(pll_outer,
+            matched_polyl,
             outer,
             pll_cntr_by_pos,
             pos,
@@ -252,6 +261,7 @@ std::map<int, std::vector<PLL>> store_by_pos(CT &ct,
 
           // Check holes
           check_if_pll_on_pgn_boundary(pll_hole,
+              matched_polyl,
               hole,
               pll_cntr_by_pos,
               pos,
@@ -260,7 +270,6 @@ std::map<int, std::vector<PLL>> store_by_pos(CT &ct,
         }
       }
     }
-    pos++;
   }
   std::cout << std::endl;
   return pll_cntr_by_pos;
