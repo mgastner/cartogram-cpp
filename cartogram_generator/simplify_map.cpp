@@ -165,7 +165,8 @@ void check_pgn_prog(PLL pll,
     matched_polyl[pos] += 1;
   } else if (pll.get_v1() == pll.get_vl() && !is_hole) {
     pgn_prog[pll.get_gd()][pll.get_pgnwh()].set_island();
-    matched_polyl[pos] += 2; // increment 2 because if it's an island, then this polyline only belongs to 1 island
+    // increment 2 because if it's an island, then this polyline only belongs to 1 island
+    matched_polyl[pos] += 2; 
   } else {
     pgn_prog[pll.get_gd()][pll.get_pgnwh()].add_endpts(pll.get_v1(), pll.get_vl());
     pgn_prog[pll.get_gd()][pll.get_pgnwh()].update_prog();
