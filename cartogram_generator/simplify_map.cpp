@@ -133,7 +133,8 @@ class PgnProg {
         endpts_prog = true;
     }
 
-    void set_island() {
+    // lone_pgn includes islands and polygons enclosed by a hole (e.g. Brussels)
+    void set_lone_pgn() {
       island = num_holes == 0 ? true : false;
     }
 
@@ -160,13 +161,15 @@ void check_pgn_prog(PLL pll,
     int pos,
     std::vector<int> &matched_polyl) {
 
+  // TODO
+  // - How do we identify islands?
+  // - How do we identify polylines which only belong to 1 pgnwh?
+
   if (pll.get_v1() == pll.get_vl() && is_hole) {
     pgn_prog[pll.get_gd()][pll.get_pgnwh()].rem_hole();
     matched_polyl[pos] += 1;
   } else if (pll.get_v1() == pll.get_vl() && !is_hole) {
-    pgn_prog[pll.get_gd()][pll.get_pgnwh()].set_island();
-    // increment 2 because if it's an island, then this polyline only belongs to 1 island
-    // TODO tweak this to optimise this
+    pgn_prog[pll.get_gd()][pll.get_pgnwh()].set_lone_pgn();
     matched_polyl[pos] += 1; 
   } else {
     pgn_prog[pll.get_gd()][pll.get_pgnwh()].add_endpts(pll.get_v1(), pll.get_vl());
@@ -218,10 +221,11 @@ std::map<int, std::vector<PLL>> store_by_pos(CT &ct,
     std::vector<GeoDiv> container_dens,
     int num_polyls) {
 
-  std::map<int, std::map<int, PgnProg>> pgn_prog = create_pgn_prog(container_dens);
-
-  // Create map to check if geo_divs and pgnwhs have been progletely matched
+  // Create map to check if geo_divs and pgnwhs have been properly matched
   std::map<int, std::vector<PLL>> pll_cntr_by_pos; 
+
+  // Create map to track polygon matching progress
+  std::map<int, std::map<int, PgnProg>> pgn_prog = create_pgn_prog(container_dens);
 
   // Create vector of visited polylines
   std::vector<int> matched_polyl(num_polyls, 0);
