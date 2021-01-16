@@ -242,9 +242,22 @@ void check_if_pll_on_pgn_boundary2(PLL pll,
   if (num_v_on_outer == 3) matched_pgns_init[pos]++;
 }
 
-void match_plls_to_pgns(std::vector<GeoDiv> container_dens,
-    CT ct,
-    std::vector<int> &matched_pgns_init) {
+std::map<int, std::vector<PLL>> store_by_pos(CT &ct, 
+    std::vector<GeoDiv> container_dens,
+    int num_polyls,
+    std::chrono::time_point<std::chrono::system_clock> start) {
+
+  // Create map to check if geo_divs and pgnwhs have been properly matched
+  std::map<int, std::vector<PLL>> pll_cntr_by_pos; 
+
+  // Create map to track polygon matching progress
+  std::map<int, std::map<int, PgnProg>> pgn_prog = create_pgn_prog(container_dens);
+
+  // Create vector of visited polylines
+  std::vector<int> matched_pgns(num_polyls, 0);
+
+  // Create vector to determine if polyline is single (only belonging to 1 pgnwh)
+  std::vector<int> matched_pgns_init(num_polyls, 0);
 
   for (int gd_num = 0; gd_num < (int) container_dens.size(); gd_num++) {
     std::cout << "gd: " << gd_num << std::endl;
@@ -259,6 +272,7 @@ void match_plls_to_pgns(std::vector<GeoDiv> container_dens,
         auto pt_l_it = ct.points_in_constraint_end(*cit);
         pt_l_it--;
         Point pt_l = *pt_l_it;
+        //if (pt_1 != pt_l) continue;
 
         if (matched_pgns_init[pos] >= 2) continue;
 
@@ -284,21 +298,10 @@ void match_plls_to_pgns(std::vector<GeoDiv> container_dens,
     }
   }
   std::cout << std::endl;
-}
 
-std::map<int, std::vector<PLL>> store_by_pos(CT &ct, 
-    std::vector<GeoDiv> container_dens,
-    int num_polyls,
-    std::vector<int> &matched_pgns_init) {
-
-  // Create map to check if geo_divs and pgnwhs have been properly matched
-  std::map<int, std::vector<PLL>> pll_cntr_by_pos; 
-
-  // Create map to track polygon matching progress
-  std::map<int, std::map<int, PgnProg>> pgn_prog = create_pgn_prog(container_dens);
-
-  // Create vector of visited polylines
-  std::vector<int> matched_pgns(num_polyls, 0);
+  const std::chrono::duration<double, std::milli> duration = std::chrono::system_clock::now() - start;
+  std::cout << "simplify_map() time elapsed: " << duration.count() << "ms (";
+  std::cout << duration.count() / 1000 << "s)" << std::endl;
 
   // Create vector of matched single-pgn polylines
   std::vector<bool> matched_single_pll(num_polyls, false);
@@ -647,18 +650,9 @@ void simplify_map(MapState *map_state) {
     num_polyls++;
   }
 
-  // Create vector to determine if polyline is single (only belonging to 1 pgnwh)
-  std::vector<int> matched_pgns_init(num_polyls, 0);
-
-  match_plls_to_pgns(container_dens, ct, matched_pgns_init);
-
-  const std::chrono::duration<double, std::milli> duration = std::chrono::system_clock::now() - start;
-  std::cout << "simplify_map() time elapsed: " << duration.count() << "ms (";
-  std::cout << duration.count() / 1000 << "s)" << std::endl;
-
   // 6. Store polylines by positions with their associated GeoDivs and Polygon_with_holes
   // std::cout << "Store polylines by positions with their associated GeoDivs and Polygon_with_holes" << std::endl;
-  std::map<int, std::vector<PLL>> pll_cntr_by_pos = store_by_pos(ct, container_dens, num_polyls, matched_pgns_init);
+  std::map<int, std::vector<PLL>> pll_cntr_by_pos = store_by_pos(ct, container_dens, num_polyls, start);
 
   // 7. Simplify polylines
   PS::simplify(ct, Cost(), Stop(0.2));
