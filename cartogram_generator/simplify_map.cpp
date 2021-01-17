@@ -157,11 +157,12 @@ std::map<int, std::map<int, PgnProg>> create_pgn_prog(std::vector<GeoDiv> contai
 
 void check_pgn_prog(PLL pll,
     std::map<int, std::map<int, PgnProg>> &pgn_prog,
-    bool is_hole,
-    int pos,
     std::vector<int> &matched_pgns,
     std::vector<int> matched_pgns_init,
     std::vector<bool> &matched_single_pll) {
+
+  int pos = pll.get_pos();
+  bool is_hole = pll.get_bool_hole();
 
   if (pll.get_v1() == pll.get_vl() && is_hole) {
     pgn_prog[pll.get_gd()][pll.get_pgnwh()].rem_hole();
@@ -190,9 +191,7 @@ void check_if_pll_on_pgn_boundary(PLL pll,
     std::vector<int> &matched_pgns,
     Polygon pgn,
     std::map<int, std::vector<PLL>> &pll_cntr_by_pos,
-    int pos,
     std::map<int, std::map<int, PgnProg>> &pgn_prog,
-    bool is_hole,
     std::vector<int> matched_pgns_init,
     std::vector<bool> &matched_single_pll) {
 
@@ -205,10 +204,12 @@ void check_if_pll_on_pgn_boundary(PLL pll,
     if (i == 2) break;
   }
 
+  int pos = pll.get_pos();
+
   if (num_v_on_outer >= 3) {
     // print_pll(pll);
-    
-    check_pgn_prog(pll, pgn_prog, is_hole, pos, matched_pgns, matched_pgns_init, matched_single_pll);
+
+    check_pgn_prog(pll, pgn_prog, matched_pgns, matched_pgns_init, matched_single_pll);
     pll_cntr_by_pos[pos].push_back(pll);
 
   } else if (num_v_on_outer == 2) {
@@ -219,7 +220,7 @@ void check_if_pll_on_pgn_boundary(PLL pll,
       if (direction_1 || direction_2) {
         // print_pll(pll);
 
-        check_pgn_prog(pll, pgn_prog, is_hole, pos, matched_pgns, matched_pgns_init, matched_single_pll);
+        check_pgn_prog(pll, pgn_prog, matched_pgns, matched_pgns_init, matched_single_pll);
         pll_cntr_by_pos[pos].push_back(pll);
         break;
       }
@@ -227,25 +228,101 @@ void check_if_pll_on_pgn_boundary(PLL pll,
   }
 }
 
+void check_pgn_prog2(PLL pll,
+    std::map<int, std::map<int, PgnProg>> &pgn_prog,
+    std::vector<int> &matched_pgns) {
+
+  int pos = pll.get_pos();
+  int is_hole = pll.get_bool_hole();
+
+  if (pll.get_v1() == pll.get_vl() && is_hole) {
+    pgn_prog[pll.get_gd()][pll.get_pgnwh()].rem_hole();
+    matched_pgns[pos] += 1;
+  } else if (pll.get_v1() == pll.get_vl() && !is_hole) {
+    pgn_prog[pll.get_gd()][pll.get_pgnwh()].set_lone_pgn();
+    matched_pgns[pos] += 2;
+  } else {
+    pgn_prog[pll.get_gd()][pll.get_pgnwh()].add_endpts(pll.get_v1(), pll.get_vl());
+    pgn_prog[pll.get_gd()][pll.get_pgnwh()].update_prog();
+    matched_pgns[pos] += 1;
+  }
+}
+
 void check_if_pll_on_pgn_boundary2(PLL pll,
     Polygon pgn,
-    int pos,
-    std::vector<int> &matched_pgns_init) {
+    std::vector<int> &matched_pgns,
+    std::vector<int> &matched_pgns_init,
+    std::map<int, std::map<int, PgnProg>> pgn_prog) {
+
+  int pos = pll.get_pos();
 
   int num_v_on_outer = 0;
   for (int i = 0; i < (int) pll.get_pll().size(); i++) {
     Point pt = pll.get_pll()[i];
     bool v_on_outer = CGAL::bounded_side_2(pgn.begin(), pgn.end(), pt) == CGAL::ON_BOUNDARY;
-    if (v_on_outer) num_v_on_outer++; 
+    if (v_on_outer) num_v_on_outer++;
     if (i == 2) break;
   }
-  if (num_v_on_outer == 3) matched_pgns_init[pos]++;
+  if (num_v_on_outer == 3) {
+    matched_pgns_init[pos]++;
+    check_pgn_prog2(pll, pgn_prog, matched_pgns); 
+  }
 }
 
-std::map<int, std::vector<PLL>> store_by_pos(CT &ct, 
+void match_pll_to_pgns(std::vector<GeoDiv> container_dens,
+    std::vector<Polyline> ct_polylines,
+    std::vector<int> &matched_pgns_init) {
+
+  std::map<int, std::map<int, PgnProg>> pgn_prog = create_pgn_prog(container_dens);
+
+  // Create vector of visited polylines
+  std::vector<int> matched_pgns(ct_polylines.size(), 0);
+
+  for (int gd_num = 0; gd_num < (int) container_dens.size(); gd_num++) {
+    std::cout << "gd: " << gd_num << std::endl;
+    for (int pgnwh_num = 0; pgnwh_num < (int) container_dens[gd_num].polygons_with_holes().size(); pgnwh_num++) {
+
+      for (int pos = 0; pos < (int) ct_polylines.size(); pos++) {
+        Polyline polyl = ct_polylines[pos];
+
+        if (polyl[0] != polyl[polyl.size() - 1]) continue;
+
+        // If the pgnwh has already found all its polylines, break 
+        if (pgn_prog[gd_num][pgnwh_num].check_prog()) break;
+
+        // If the polyl has already been matched, continue
+        if (matched_pgns[pos] == 2) continue;
+
+        if (matched_pgns_init[pos] >= 2) continue;
+
+        Polygon_with_holes pgnwh = container_dens[gd_num].polygons_with_holes()[pgnwh_num];
+        PLL pll_outer(pos, polyl, gd_num, pgnwh_num, false);
+        Polygon outer = pgnwh.outer_boundary();
+
+        check_if_pll_on_pgn_boundary2(pll_outer,
+            outer,
+            matched_pgns,
+            matched_pgns_init,
+            pgn_prog);
+
+        std::vector<Polygon> holes_v(pgnwh.holes_begin(), pgnwh.holes_end());
+        for (Polygon hole : holes_v) {
+          PLL pll_hole(pos, polyl, gd_num, pgnwh_num, true);
+
+          check_if_pll_on_pgn_boundary2(pll_hole,
+              hole,
+              matched_pgns,
+              matched_pgns_init,
+              pgn_prog);
+        }
+      }
+    }
+  }
+}
+
+std::map<int, std::vector<PLL>> store_by_pos(std::vector<Polyline> &ct_polylines, 
     std::vector<GeoDiv> container_dens,
-    int num_polyls,
-    std::chrono::time_point<std::chrono::system_clock> start) {
+    std::vector<int> matched_pgns_init) {
 
   // Create map to check if geo_divs and pgnwhs have been properly matched
   std::map<int, std::vector<PLL>> pll_cntr_by_pos; 
@@ -254,65 +331,17 @@ std::map<int, std::vector<PLL>> store_by_pos(CT &ct,
   std::map<int, std::map<int, PgnProg>> pgn_prog = create_pgn_prog(container_dens);
 
   // Create vector of visited polylines
-  std::vector<int> matched_pgns(num_polyls, 0);
-
-  // Create vector to determine if polyline is single (only belonging to 1 pgnwh)
-  std::vector<int> matched_pgns_init(num_polyls, 0);
-
-  for (int gd_num = 0; gd_num < (int) container_dens.size(); gd_num++) {
-    std::cout << "gd: " << gd_num << std::endl;
-    for (int pgnwh_num = 0; pgnwh_num < (int) container_dens[gd_num].polygons_with_holes().size(); pgnwh_num++) {
-
-      int pos = -1;
-      for (auto cit = ct.constraints_begin(); cit != ct.constraints_end(); cit++) {
-        pos++;
-
-        auto pt_1_it = ct.points_in_constraint_begin(*cit);
-        Point pt_1 = *pt_1_it; 
-        auto pt_l_it = ct.points_in_constraint_end(*cit);
-        pt_l_it--;
-        Point pt_l = *pt_l_it;
-        //if (pt_1 != pt_l) continue;
-
-        if (matched_pgns_init[pos] >= 2) continue;
-
-        Polyline polyl;
-        for (auto vit = ct.points_in_constraint_begin(*cit); vit != ct.points_in_constraint_end(*cit); vit++)
-          polyl.push_back(*vit);
-
-        Polygon_with_holes pgnwh = container_dens[gd_num].polygons_with_holes()[pgnwh_num];
-        PLL pll_outer(pos, polyl, gd_num, pgnwh_num, false);
-        Polygon outer = pgnwh.outer_boundary();
-
-        check_if_pll_on_pgn_boundary2(pll_outer, outer, pos, matched_pgns_init);
-
-        std::vector<Polygon> holes_v(pgnwh.holes_begin(), pgnwh.holes_end());
-        for (Polygon hole : holes_v) {
-          PLL pll_hole(pos, polyl, gd_num, pgnwh_num, true);
-
-          check_if_pll_on_pgn_boundary2(pll_hole, hole, pos, matched_pgns_init);
-        }
-
-        //std::cout << matched_pgns_init[pos] << std::endl;
-      }
-    }
-  }
-  std::cout << std::endl;
-
-  const std::chrono::duration<double, std::milli> duration = std::chrono::system_clock::now() - start;
-  std::cout << "simplify_map() time elapsed: " << duration.count() << "ms (";
-  std::cout << duration.count() / 1000 << "s)" << std::endl;
+  std::vector<int> matched_pgns(ct_polylines.size(), 0);
 
   // Create vector of matched single-pgn polylines
-  std::vector<bool> matched_single_pll(num_polyls, false);
+  std::vector<bool> matched_single_pll(ct_polylines.size(), false);
 
   for (int gd_num = 0; gd_num < (int) container_dens.size(); gd_num++) {
     std::cout << "gd: " << gd_num << std::endl;
     for (int pgnwh_num = 0; pgnwh_num < (int) container_dens[gd_num].polygons_with_holes().size(); pgnwh_num++) {
 
-      int pos = -1;
-      for (auto cit = ct.constraints_begin(); cit != ct.constraints_end(); cit++) {
-        pos++;
+      for (int pos = 0; pos < (int) ct_polylines.size(); pos++) {
+        Polyline polyl = ct_polylines[pos];
 
         // If the pgnwh has already found all its polylines, break 
         if (pgn_prog[gd_num][pgnwh_num].check_prog()) break;
@@ -323,10 +352,6 @@ std::map<int, std::vector<PLL>> store_by_pos(CT &ct,
         // If polyline is single (only belonging to 1 pgnwh)
         if (matched_single_pll[pos]) continue;
 
-        Polyline polyl;
-        for (auto vit = ct.points_in_constraint_begin(*cit); vit != ct.points_in_constraint_end(*cit); vit++)
-          polyl.push_back(*vit);
-
         Polygon_with_holes pgnwh = container_dens[gd_num].polygons_with_holes()[pgnwh_num];
         PLL pll_outer(pos, polyl, gd_num, pgnwh_num, false);
         Polygon outer = pgnwh.outer_boundary();
@@ -336,9 +361,7 @@ std::map<int, std::vector<PLL>> store_by_pos(CT &ct,
             matched_pgns,
             outer,
             pll_cntr_by_pos,
-            pos,
             pgn_prog,
-            false,
             matched_pgns_init,
             matched_single_pll);
 
@@ -351,9 +374,7 @@ std::map<int, std::vector<PLL>> store_by_pos(CT &ct,
               matched_pgns,
               hole,
               pll_cntr_by_pos,
-              pos,
               pgn_prog,
-              true,
               matched_pgns_init,
               matched_single_pll);
         }
@@ -361,6 +382,7 @@ std::map<int, std::vector<PLL>> store_by_pos(CT &ct,
     }
   }
   std::cout << std::endl;
+
   return pll_cntr_by_pos;
 }
 
@@ -644,15 +666,30 @@ void simplify_map(MapState *map_state) {
 
   // 4. Store polylines from polyline_list in CT
   CT ct; 
-  int num_polyls = 0;
-  for (Polyline polyline : polyline_list) {
+  for (Polyline polyline : polyline_list)
     ct.insert_constraint(polyline.begin(), polyline.end());
-    num_polyls++;
+
+  // Create vector to store polylines in CT order
+  std::vector<Polyline> ct_polylines;
+  for (auto cit = ct.constraints_begin(); cit != ct.constraints_end(); cit++) {
+    Polyline polyl;
+    for (auto vit = ct.points_in_constraint_begin(*cit); vit != ct.points_in_constraint_end(*cit); vit++)
+      polyl.push_back(*vit);
+    ct_polylines.push_back(polyl);
   }
+
+  // Create vector to determine if polyline is single (only belonging to 1 pgnwh)
+  std::vector<int> matched_pgns_init(ct_polylines.size(), 0);
+  match_pll_to_pgns(container_dens, ct_polylines, matched_pgns_init);
+
+  const std::chrono::duration<double, std::milli> duration = std::chrono::system_clock::now() - start;
+  std::cout << "simplify_map() time elapsed: " << duration.count() << "ms (";
+  std::cout << duration.count() / 1000 << "s)" << std::endl;
+  std::cout << std::endl;
 
   // 6. Store polylines by positions with their associated GeoDivs and Polygon_with_holes
   // std::cout << "Store polylines by positions with their associated GeoDivs and Polygon_with_holes" << std::endl;
-  std::map<int, std::vector<PLL>> pll_cntr_by_pos = store_by_pos(ct, container_dens, num_polyls, start);
+  std::map<int, std::vector<PLL>> pll_cntr_by_pos = store_by_pos(ct_polylines, container_dens, matched_pgns_init);
 
   // 7. Simplify polylines
   PS::simplify(ct, Cost(), Stop(0.2));
