@@ -188,10 +188,10 @@ void check_pgn_prog(PLL pll,
 }
 
 void check_if_pll_on_pgn_boundary(PLL pll,
-    std::vector<int> &matched_pgns,
     Polygon pgn,
     std::map<int, std::vector<PLL>> &pll_cntr_by_pos,
     std::map<int, std::map<int, PgnProg>> &pgn_prog,
+    std::vector<int> &matched_pgns,
     std::vector<int> matched_pgns_init,
     std::vector<bool> &matched_single_pll) {
 
@@ -228,33 +228,9 @@ void check_if_pll_on_pgn_boundary(PLL pll,
   }
 }
 
-void check_pgn_prog2(PLL pll,
-    std::map<int, std::map<int, PgnProg>> &pgn_prog,
-    std::vector<int> &matched_pgns) {
-
-  int pos = pll.get_pos();
-  int is_hole = pll.get_bool_hole();
-
-  if (pll.get_v1() == pll.get_vl() && is_hole) {
-    pgn_prog[pll.get_gd()][pll.get_pgnwh()].rem_hole();
-    matched_pgns[pos] += 1;
-  } else if (pll.get_v1() == pll.get_vl() && !is_hole) {
-    pgn_prog[pll.get_gd()][pll.get_pgnwh()].set_lone_pgn();
-    matched_pgns[pos] += 2;
-  } else {
-    pgn_prog[pll.get_gd()][pll.get_pgnwh()].add_endpts(pll.get_v1(), pll.get_vl());
-    pgn_prog[pll.get_gd()][pll.get_pgnwh()].update_prog();
-    matched_pgns[pos] += 1;
-  }
-}
-
 void check_if_pll_on_pgn_boundary2(PLL pll,
     Polygon pgn,
-    std::vector<int> &matched_pgns,
-    std::vector<int> &matched_pgns_init,
-    std::map<int, std::map<int, PgnProg>> pgn_prog) {
-
-  int pos = pll.get_pos();
+    std::vector<int> &matched_pgns_init) {
 
   int num_v_on_outer = 0;
   for (int i = 0; i < (int) pll.get_pll().size(); i++) {
@@ -263,10 +239,8 @@ void check_if_pll_on_pgn_boundary2(PLL pll,
     if (v_on_outer) num_v_on_outer++;
     if (i == 2) break;
   }
-  if (num_v_on_outer == 3) {
-    matched_pgns_init[pos]++;
-    check_pgn_prog2(pll, pgn_prog, matched_pgns); 
-  }
+  if (num_v_on_outer == 3)
+    matched_pgns_init[pll.get_pos()]++;
 }
 
 void match_pll_to_pgns(std::vector<GeoDiv> container_dens,
@@ -274,9 +248,6 @@ void match_pll_to_pgns(std::vector<GeoDiv> container_dens,
     std::vector<int> &matched_pgns_init) {
 
   std::map<int, std::map<int, PgnProg>> pgn_prog = create_pgn_prog(container_dens);
-
-  // Create vector of visited polylines
-  std::vector<int> matched_pgns(ct_polylines.size(), 0);
 
   for (int gd_num = 0; gd_num < (int) container_dens.size(); gd_num++) {
     std::cout << "gd: " << gd_num << std::endl;
@@ -287,12 +258,6 @@ void match_pll_to_pgns(std::vector<GeoDiv> container_dens,
 
         if (polyl[0] != polyl[polyl.size() - 1]) continue;
 
-        // If the pgnwh has already found all its polylines, break 
-        if (pgn_prog[gd_num][pgnwh_num].check_prog()) break;
-
-        // If the polyl has already been matched, continue
-        if (matched_pgns[pos] == 2) continue;
-
         if (matched_pgns_init[pos] >= 2) continue;
 
         Polygon_with_holes pgnwh = container_dens[gd_num].polygons_with_holes()[pgnwh_num];
@@ -301,9 +266,7 @@ void match_pll_to_pgns(std::vector<GeoDiv> container_dens,
 
         check_if_pll_on_pgn_boundary2(pll_outer,
             outer,
-            matched_pgns,
-            matched_pgns_init,
-            pgn_prog);
+            matched_pgns_init);
 
         std::vector<Polygon> holes_v(pgnwh.holes_begin(), pgnwh.holes_end());
         for (Polygon hole : holes_v) {
@@ -311,9 +274,7 @@ void match_pll_to_pgns(std::vector<GeoDiv> container_dens,
 
           check_if_pll_on_pgn_boundary2(pll_hole,
               hole,
-              matched_pgns,
-              matched_pgns_init,
-              pgn_prog);
+              matched_pgns_init);
         }
       }
     }
@@ -358,10 +319,10 @@ std::map<int, std::vector<PLL>> store_by_pos(std::vector<Polyline> &ct_polylines
 
         // Check outer polygon
         check_if_pll_on_pgn_boundary(pll_outer,
-            matched_pgns,
             outer,
             pll_cntr_by_pos,
             pgn_prog,
+            matched_pgns,
             matched_pgns_init,
             matched_single_pll);
 
@@ -371,10 +332,10 @@ std::map<int, std::vector<PLL>> store_by_pos(std::vector<Polyline> &ct_polylines
 
           // Check holes
           check_if_pll_on_pgn_boundary(pll_hole,
-              matched_pgns,
               hole,
               pll_cntr_by_pos,
               pgn_prog,
+              matched_pgns,
               matched_pgns_init,
               matched_single_pll);
         }
