@@ -157,9 +157,7 @@ std::map<int, std::map<int, PgnProg>> create_pgn_prog(std::vector<GeoDiv> contai
 
 void check_pgn_prog(PLL pll,
     std::map<int, std::map<int, PgnProg>> &pgn_prog,
-    std::vector<int> &matched_pgns,
-    std::vector<int> matched_pgns_init,
-    std::vector<bool> &matched_single_pll) {
+    std::vector<int> &matched_pgns) {
 
   int pos = pll.get_pos();
   bool is_hole = pll.get_bool_hole();
@@ -169,21 +167,11 @@ void check_pgn_prog(PLL pll,
     matched_pgns[pos] += 1;
   } else if (pll.get_v1() == pll.get_vl() && !is_hole) {
     pgn_prog[pll.get_gd()][pll.get_pgnwh()].set_lone_pgn();
-    if (matched_pgns_init[pos] == 1) {
-      matched_pgns[pos] += 2;
-      matched_single_pll[pos] = true;
-    } else {
-      matched_pgns[pos] += 1;
-    }
+    matched_pgns[pos] += 1;
   } else {
     pgn_prog[pll.get_gd()][pll.get_pgnwh()].add_endpts(pll.get_v1(), pll.get_vl());
     pgn_prog[pll.get_gd()][pll.get_pgnwh()].update_prog();
-    if (matched_pgns_init[pos] == 1) {
-      matched_pgns[pos] += 2;
-      matched_single_pll[pos] = true;
-    } else {
-      matched_pgns[pos] += 1;
-    }
+    matched_pgns[pos] += 1;
   }
 }
 
@@ -191,9 +179,7 @@ void check_if_pll_on_pgn_boundary(PLL pll,
     Polygon pgn,
     std::map<int, std::vector<PLL>> &pll_cntr_by_pos,
     std::map<int, std::map<int, PgnProg>> &pgn_prog,
-    std::vector<int> &matched_pgns,
-    std::vector<int> matched_pgns_init,
-    std::vector<bool> &matched_single_pll) {
+    std::vector<int> &matched_pgns) {
 
   // need >=3 vertices in pll to be on pgn's boundary to count as part of pgn
   int num_v_on_outer = 0;
@@ -209,7 +195,7 @@ void check_if_pll_on_pgn_boundary(PLL pll,
   if (num_v_on_outer >= 3) {
     // print_pll(pll);
 
-    check_pgn_prog(pll, pgn_prog, matched_pgns, matched_pgns_init, matched_single_pll);
+    check_pgn_prog(pll, pgn_prog, matched_pgns);
     pll_cntr_by_pos[pos].push_back(pll);
 
   } else if (num_v_on_outer == 2) {
@@ -220,7 +206,7 @@ void check_if_pll_on_pgn_boundary(PLL pll,
       if (direction_1 || direction_2) {
         // print_pll(pll);
 
-        check_pgn_prog(pll, pgn_prog, matched_pgns, matched_pgns_init, matched_single_pll);
+        check_pgn_prog(pll, pgn_prog, matched_pgns);
         pll_cntr_by_pos[pos].push_back(pll);
         break;
       }
@@ -228,53 +214,86 @@ void check_if_pll_on_pgn_boundary(PLL pll,
   }
 }
 
-void check_if_pll_on_pgn_boundary2(PLL pll,
-    Polygon pgn,
-    std::vector<int> &matched_pgns_init) {
+bool are_equal(Polyline polyl1, Polyline polyl2) {
+  if (polyl1.size() == 0 || polyl2.size() == 0) return false;
 
-  int num_v_on_outer = 0;
-  for (int i = 0; i < (int) pll.get_pll().size(); i++) {
-    Point pt = pll.get_pll()[i];
-    bool v_on_outer = CGAL::bounded_side_2(pgn.begin(), pgn.end(), pt) == CGAL::ON_BOUNDARY;
-    if (v_on_outer) num_v_on_outer++;
-    if (i == 2) break;
-  }
-  if (num_v_on_outer == 3)
-    matched_pgns_init[pll.get_pos()]++;
+  bool same_vertices = polyl1[0] == polyl2[0]
+    && (polyl1[1] == polyl2[1] || polyl1[1] == polyl2[polyl2.size() - 2])
+    && (polyl1[2] == polyl2[2] || polyl1[2] == polyl2[polyl2.size() - 3])
+    && polyl1[polyl1.size() - 1] == polyl2[polyl2.size() - 1];
+
+  return same_vertices;
 }
 
-void match_pll_to_pgns(std::vector<GeoDiv> container_dens,
-    std::vector<Polyline> ct_polylines,
-    std::vector<int> &matched_pgns_init) {
+bool is_duplicate(std::vector<GeoDiv> container_dens,
+    std::map<int, std::map<int, std::pair<Polyline, bool>>> is_island,
+    Polyline polyl) {
 
-  std::map<int, std::map<int, PgnProg>> pgn_prog = create_pgn_prog(container_dens);
+  for (int gd_num = 0; gd_num < (int) container_dens.size(); gd_num++) {
+    for (int pgnwh_num = 0; pgnwh_num < (int) container_dens[gd_num].polygons_with_holes().size(); pgnwh_num++) {
+      if (are_equal(is_island[gd_num][pgnwh_num].first, polyl))
+        return true;
+    }
+  }
+  return false;
+}
+
+bool update_duplicated(std::map<int, std::map<int, std::pair<Polyline, bool>>> &is_island) {
+}
+
+void identify_islands(std::vector<GeoDiv> container_dens,
+    std::vector<Polyline> ct_polylines,
+    std::map<int, std::map<int, std::pair<Polyline, bool>>> &is_island) {
+
+  for (int gd_num = 0; gd_num < (int) container_dens.size(); gd_num++)
+    for (int pgnwh_num = 0; pgnwh_num < (int) container_dens[gd_num].polygons_with_holes().size(); pgnwh_num++)
+      is_island[gd_num][pgnwh_num] = {{}, false};
 
   for (int gd_num = 0; gd_num < (int) container_dens.size(); gd_num++) {
     std::cout << "gd: " << gd_num << std::endl;
     for (int pgnwh_num = 0; pgnwh_num < (int) container_dens[gd_num].polygons_with_holes().size(); pgnwh_num++) {
 
-      for (int pos = 0; pos < (int) ct_polylines.size(); pos++) {
-        Polyline polyl = ct_polylines[pos];
+      bool match = false;
+      Polygon_with_holes pgnwh = container_dens[gd_num].polygons_with_holes()[pgnwh_num];
 
-        if (polyl[0] != polyl[polyl.size() - 1]) continue;
+      // outer
+      Polygon outer = pgnwh.outer_boundary();
+      Polyline polyl_outer;
+      for (Point pt_outer : outer) polyl_outer.push_back(pt_outer);
+      for (Polyline polyl : ct_polylines) {
+        if (are_equal(polyl_outer, polyl)) {
+          match = true;
+          if (is_duplicate(container_dens, is_island, polyl)) {
+            std::cout << "duplicate" << std::endl;
+            is_island[gd_num][pgnwh_num] = {polyl, false};
+          } else {
+            is_island[gd_num][pgnwh_num] = {polyl, true};
+          }
+          std::cout << "match outer" << std::endl; 
+          break;
+        }
+      }
 
-        if (matched_pgns_init[pos] >= 2) continue;
-
-        Polygon_with_holes pgnwh = container_dens[gd_num].polygons_with_holes()[pgnwh_num];
-        PLL pll_outer(pos, polyl, gd_num, pgnwh_num, false);
-        Polygon outer = pgnwh.outer_boundary();
-
-        check_if_pll_on_pgn_boundary2(pll_outer,
-            outer,
-            matched_pgns_init);
-
+      // hole 
+      if (!match) {
         std::vector<Polygon> holes_v(pgnwh.holes_begin(), pgnwh.holes_end());
         for (Polygon hole : holes_v) {
-          PLL pll_hole(pos, polyl, gd_num, pgnwh_num, true);
-
-          check_if_pll_on_pgn_boundary2(pll_hole,
-              hole,
-              matched_pgns_init);
+          Polyline polyl_hole;
+          for (Point pt_hole: hole) polyl_hole.push_back(pt_hole);
+          for (Polyline polyl : ct_polylines) {
+            if (are_equal(polyl_hole, polyl)) {
+              match = true;
+              if (is_duplicate(container_dens, is_island, polyl)) {
+                std::cout << "duplicate" << std::endl;
+                is_island[gd_num][pgnwh_num] = {polyl, false};
+              } else {
+                is_island[gd_num][pgnwh_num] = {polyl, true};
+              }
+              std::cout << "match hole" << std::endl; 
+              break;
+            }
+          }
+          if (match) break;
         }
       }
     }
@@ -282,8 +301,7 @@ void match_pll_to_pgns(std::vector<GeoDiv> container_dens,
 }
 
 std::map<int, std::vector<PLL>> store_by_pos(std::vector<Polyline> &ct_polylines, 
-    std::vector<GeoDiv> container_dens,
-    std::vector<int> matched_pgns_init) {
+    std::vector<GeoDiv> container_dens) {
 
   // Create map to check if geo_divs and pgnwhs have been properly matched
   std::map<int, std::vector<PLL>> pll_cntr_by_pos; 
@@ -293,9 +311,6 @@ std::map<int, std::vector<PLL>> store_by_pos(std::vector<Polyline> &ct_polylines
 
   // Create vector of visited polylines
   std::vector<int> matched_pgns(ct_polylines.size(), 0);
-
-  // Create vector of matched single-pgn polylines
-  std::vector<bool> matched_single_pll(ct_polylines.size(), false);
 
   for (int gd_num = 0; gd_num < (int) container_dens.size(); gd_num++) {
     std::cout << "gd: " << gd_num << std::endl;
@@ -310,9 +325,6 @@ std::map<int, std::vector<PLL>> store_by_pos(std::vector<Polyline> &ct_polylines
         // If the polyl has already been matched, continue
         if (matched_pgns[pos] == 2) continue;
 
-        // If polyline is single (only belonging to 1 pgnwh)
-        if (matched_single_pll[pos]) continue;
-
         Polygon_with_holes pgnwh = container_dens[gd_num].polygons_with_holes()[pgnwh_num];
         PLL pll_outer(pos, polyl, gd_num, pgnwh_num, false);
         Polygon outer = pgnwh.outer_boundary();
@@ -322,9 +334,7 @@ std::map<int, std::vector<PLL>> store_by_pos(std::vector<Polyline> &ct_polylines
             outer,
             pll_cntr_by_pos,
             pgn_prog,
-            matched_pgns,
-            matched_pgns_init,
-            matched_single_pll);
+            matched_pgns);
 
         std::vector<Polygon> holes_v(pgnwh.holes_begin(), pgnwh.holes_end());
         for (Polygon hole : holes_v) {
@@ -335,9 +345,7 @@ std::map<int, std::vector<PLL>> store_by_pos(std::vector<Polyline> &ct_polylines
               hole,
               pll_cntr_by_pos,
               pgn_prog,
-              matched_pgns,
-              matched_pgns_init,
-              matched_single_pll);
+              matched_pgns);
         }
       }
     }
@@ -616,8 +624,6 @@ void simplify_map(MapState *map_state) {
 
   // Densify container
   std::vector<GeoDiv> container_dens = densify(container);
-  // map_state->set_geo_divs(container_dens);
-  // return;
 
   // 2. Create graph and split graph into unique polylines
   Graph graph = create_pll_graph(container_dens);
@@ -639,10 +645,8 @@ void simplify_map(MapState *map_state) {
     ct_polylines.push_back(polyl);
   }
 
-  // Create vector to determine if polyline is single (only belonging to 1 pgnwh)
-  std::vector<int> matched_pgns_init(ct_polylines.size(), 0);
-  match_pll_to_pgns(container_dens, ct_polylines, matched_pgns_init);
-
+  std::map<int, std::map<int, std::pair<Polyline, bool>>> is_island;
+  identify_islands(container_dens, ct_polylines, is_island);
   const std::chrono::duration<double, std::milli> duration = std::chrono::system_clock::now() - start;
   std::cout << "simplify_map() time elapsed: " << duration.count() << "ms (";
   std::cout << duration.count() / 1000 << "s)" << std::endl;
@@ -650,7 +654,7 @@ void simplify_map(MapState *map_state) {
 
   // 6. Store polylines by positions with their associated GeoDivs and Polygon_with_holes
   // std::cout << "Store polylines by positions with their associated GeoDivs and Polygon_with_holes" << std::endl;
-  std::map<int, std::vector<PLL>> pll_cntr_by_pos = store_by_pos(ct_polylines, container_dens, matched_pgns_init);
+  std::map<int, std::vector<PLL>> pll_cntr_by_pos = store_by_pos(ct_polylines, container_dens);
 
   // 7. Simplify polylines
   PS::simplify(ct, Cost(), Stop(0.2));
