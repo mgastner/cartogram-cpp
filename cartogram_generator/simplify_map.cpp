@@ -645,12 +645,14 @@ void simplify_map(MapState *map_state) {
     ct_polylines.push_back(polyl);
   }
 
+  /*
   std::map<int, std::map<int, std::pair<Polyline, bool>>> is_island;
   identify_islands(container_dens, ct_polylines, is_island);
   const std::chrono::duration<double, std::milli> duration = std::chrono::system_clock::now() - start;
   std::cout << "simplify_map() time elapsed: " << duration.count() << "ms (";
   std::cout << duration.count() / 1000 << "s)" << std::endl;
   std::cout << std::endl;
+  */
 
   // 6. Store polylines by positions with their associated GeoDivs and Polygon_with_holes
   // std::cout << "Store polylines by positions with their associated GeoDivs and Polygon_with_holes" << std::endl;
