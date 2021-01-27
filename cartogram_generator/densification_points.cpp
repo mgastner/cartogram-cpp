@@ -1,6 +1,7 @@
 #include "map_state.h"
+#include <CGAL/intersections.h>
 
-// Returns ceiling up to nearest 0.5 value, e.g. 2.34 returns 2.5
+// Returns ceiling up to nearest 0.5 value, e.g. 2.64 returns 3.5
 double half_ceil(double num) {
   double decimal = num - floor(num);
   if (decimal > 0.5) {
@@ -9,34 +10,13 @@ double half_ceil(double num) {
   return floor(num) + 0.5;
 }
 
-// Returns floor up to nearest 0.5 value, e.g. 2.84 returns 2.5
+// Returns floor up to nearest 0.5 value, e.g. 2.23 returns 1.5
 double half_floor(double num) {
   double decimal = num - floor(num);
   if (decimal >= 0.5) {
     return floor(num) + 0.5;
   }
   return floor(num) - 0.5;
-}
-
-// Returns intersection of 2 lines, line p1p2 & line p3p4
-Point calc_intersection(Point p1, Point p2, Point p3, Point p4) {
-
-  // From https://www.geeksforgeeks.org/program-for-point-of-intersection-of-two-lines/
-  // Line p1p2 represented as a1x + b1y = c1
-  double a1 = p2[1] - p1[1];
-  double b1 = p1[0] - p2[0];
-  double c1 = a1 * (p1[0]) + b1 * (p1[1]);
-
-  // Line p3p4 represented as a2x + b2y = c2
-  double a2 = p4[1] - p3[1];
-  double b2 = p3[0] - p4[0];
-  double c2 = a2 * (p3[0]) + b2 * (p3[1]);
-
-  double determinant = a1 * b2 - a2 * b1;
-  double x = (b2 * c1 - b1 * c2) / determinant;
-  double y = (a1 * c2 - a2 * c1) / determinant;
-  Point temp(x, y);
-  return temp;
 }
 
 // Returns intersection of line with vertical grid line
@@ -51,7 +31,8 @@ double calc_x_intersection(Point a, Point b, double i) {
 
 // This function takes two points, "a" and "b", and returns all horizontal and
 // vertical intersections with a graticule with graticule lines placed
-// 1 unit apart.
+// 1 unit apart. Further, it returns all points that collide with the diaganol
+// of grid cells. Assumes grid cells to start at 0.5, 0.5
 std::vector<Point> densification_points(Point a, Point b)
 {
   std::vector<Point> intersections;
@@ -122,31 +103,38 @@ std::vector<Point> densification_points(Point a, Point b)
   // Storing current size
   unsigned int size = intersections.size();
 
+  // TODO: Fix bug for diaganols when 0 intersections
+
   // Inserting intersection with diagonals
-  // Checking line not through graticule line
-  if (!(a[0] == b[0] && a[0] == half_floor(a[0]))) {
-    std::cout << "BR-TL Run" << '\n';
-    for (unsigned int i = 0; i < size - 1; ++i) {
+  for (unsigned int i = 0; i < size + 1; ++i) {
 
-      // Bottom-right corner
-      Point bottom_right(half_floor(intersections[i][0]) + 1,
-                         half_floor(intersections[i][1]));
+    // Bottom-right corner
+    Point bottom_right(half_floor(intersections[i][0]) + 1,
+                       half_floor(intersections[i][1]));
 
-      // Top-left corner
-      Point top_left(half_ceil(intersections[i + 1][0]) - 1,
-                     half_ceil(intersections[i + 1][1]));
+    // Top-left corner
+    Point top_left(half_ceil(intersections[i + 1][0]) - 1,
+                   half_ceil(intersections[i + 1][1]));
 
-      // Finding intersection
-      Point temp = calc_intersection(intersections[i], intersections[i + 1],
-                                     top_left, bottom_right);
-      intersections.push_back(temp);
+    // Finding intersection
+
+    Segment seg_diaganol(top_left, bottom_right);
+    Segment seg_intersec(intersections[i], intersections[i + 1]);
+
+    auto result = intersection(seg_diaganol, seg_intersec);
+    if (result) {
+      if (const Point *s = boost::get<Point>(&*result)) {
+        intersections.push_back(*s);
+      }
     }
   }
 
-  // Checking line not through middle of graticule line
-  if (a[0] == b[0] && a[0] != floor(a[0])) {
-    std::cout << "BL-TR Run" << '\n';
-    for (unsigned int i = 0; i < size - 1; ++i) {
+  // Checking line not through middle of graticule lines,
+  // Because if middle of graticule lines, then duplicates will be added as
+  // intersection already accounted for by previous for loop.
+  if (!(a[0] == b[0] && a[0] == floor(a[0])) &&
+      !(a[1] == b[1] && a[1] == floor(a[1]))) {
+    for (unsigned int i = 0; i < size + 1; ++i) {
 
       // Bottom-left corner
       Point bottom_left(half_floor(intersections[i][0]),
@@ -157,9 +145,15 @@ std::vector<Point> densification_points(Point a, Point b)
                      half_ceil(intersections[i + 1][1]));
 
       // Finding intersection
-      Point temp = calc_intersection(intersections[i], intersections[i + 1],
-                                     top_right, bottom_left);
-      intersections.push_back(temp);
+      Segment seg_diaganol(top_right, bottom_left);
+      Segment seg_intersec(intersections[i], intersections[i + 1]);
+
+      auto result = intersection(seg_diaganol, seg_intersec);
+      if (result) {
+        if (const Point *s = boost::get<Point>(&*result)) {
+          intersections.push_back(*s);
+        }
+      }
     }
   }
 
