@@ -4,6 +4,8 @@
 #include <CGAL/Exact_predicates_inexact_constructions_kernel.h>
 #include <CGAL/Polygon_with_holes_2.h>
 #include <CGAL/Polyline_simplification_2/simplify.h>
+#include <CGAL/boost/graph/split_graph_into_polylines.h>
+#include <boost/graph/adjacency_list.hpp>
 
 typedef CGAL::Exact_predicates_inexact_constructions_kernel Epick;
 typedef CGAL::Polygon_2<Epick> Polygon;
