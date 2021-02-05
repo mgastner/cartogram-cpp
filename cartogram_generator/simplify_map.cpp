@@ -214,92 +214,6 @@ void check_if_pll_on_pgn_boundary(PLL pll,
   }
 }
 
-bool are_equal(Polyline polyl1, Polyline polyl2) {
-  if (polyl1.size() == 0 || polyl2.size() == 0) return false;
-
-  bool same_vertices = polyl1[0] == polyl2[0]
-    && (polyl1[1] == polyl2[1] || polyl1[1] == polyl2[polyl2.size() - 2])
-    && (polyl1[2] == polyl2[2] || polyl1[2] == polyl2[polyl2.size() - 3])
-    && polyl1[polyl1.size() - 1] == polyl2[polyl2.size() - 1];
-
-  return same_vertices;
-}
-
-bool is_duplicate(std::vector<GeoDiv> container_dens,
-    std::map<int, std::map<int, std::pair<Polyline, bool>>> is_island,
-    Polyline polyl) {
-
-  for (int gd_num = 0; gd_num < (int) container_dens.size(); gd_num++) {
-    for (int pgnwh_num = 0; pgnwh_num < (int) container_dens[gd_num].polygons_with_holes().size(); pgnwh_num++) {
-      if (are_equal(is_island[gd_num][pgnwh_num].first, polyl))
-        return true;
-    }
-  }
-  return false;
-}
-
-bool update_duplicated(std::map<int, std::map<int, std::pair<Polyline, bool>>> &is_island) {
-}
-
-void identify_islands(std::vector<GeoDiv> container_dens,
-    std::vector<Polyline> ct_polylines,
-    std::map<int, std::map<int, std::pair<Polyline, bool>>> &is_island) {
-
-  for (int gd_num = 0; gd_num < (int) container_dens.size(); gd_num++)
-    for (int pgnwh_num = 0; pgnwh_num < (int) container_dens[gd_num].polygons_with_holes().size(); pgnwh_num++)
-      is_island[gd_num][pgnwh_num] = {{}, false};
-
-  for (int gd_num = 0; gd_num < (int) container_dens.size(); gd_num++) {
-    std::cout << "gd: " << gd_num << std::endl;
-    for (int pgnwh_num = 0; pgnwh_num < (int) container_dens[gd_num].polygons_with_holes().size(); pgnwh_num++) {
-
-      bool match = false;
-      Polygon_with_holes pgnwh = container_dens[gd_num].polygons_with_holes()[pgnwh_num];
-
-      // outer
-      Polygon outer = pgnwh.outer_boundary();
-      Polyline polyl_outer;
-      for (Point pt_outer : outer) polyl_outer.push_back(pt_outer);
-      for (Polyline polyl : ct_polylines) {
-        if (are_equal(polyl_outer, polyl)) {
-          match = true;
-          if (is_duplicate(container_dens, is_island, polyl)) {
-            std::cout << "duplicate" << std::endl;
-            is_island[gd_num][pgnwh_num] = {polyl, false};
-          } else {
-            is_island[gd_num][pgnwh_num] = {polyl, true};
-          }
-          std::cout << "match outer" << std::endl; 
-          break;
-        }
-      }
-
-      // hole 
-      if (!match) {
-        std::vector<Polygon> holes_v(pgnwh.holes_begin(), pgnwh.holes_end());
-        for (Polygon hole : holes_v) {
-          Polyline polyl_hole;
-          for (Point pt_hole: hole) polyl_hole.push_back(pt_hole);
-          for (Polyline polyl : ct_polylines) {
-            if (are_equal(polyl_hole, polyl)) {
-              match = true;
-              if (is_duplicate(container_dens, is_island, polyl)) {
-                std::cout << "duplicate" << std::endl;
-                is_island[gd_num][pgnwh_num] = {polyl, false};
-              } else {
-                is_island[gd_num][pgnwh_num] = {polyl, true};
-              }
-              std::cout << "match hole" << std::endl; 
-              break;
-            }
-          }
-          if (match) break;
-        }
-      }
-    }
-  }
-}
-
 std::map<int, std::vector<PLL>> store_by_pos(std::vector<Polyline> &ct_polylines, 
     std::vector<GeoDiv> container_dens) {
 
@@ -604,10 +518,10 @@ void remove_first_point_as_last_point(std::vector<GeoDiv> &container) {
 void simplify_map(MapState *map_state) {
   // Steps:
   // 1. Repeat first point as last point by reference 
-  // 2. Create graph and split graph into unique polylines
-  // 3. Densify
+  // 2. Densify
+  // 3. Create graph and split graph into unique polylines
   // 4. Store polylines from polyline_list in CT
-  // 5. Store ct polylines (densified) with their associated polylines (non-densified)
+  // 5. Create vector to store polylines in CT order
   // 6. Store polylines by positions with their associated GeoDivs and Polygon_with_holes
   // 7. Simplify polylines
   // 8. Store polylines by GeoDivs and Polygon_with_holes with their associated positions
@@ -622,10 +536,10 @@ void simplify_map(MapState *map_state) {
   // 1. Repeat first point as last point by reference 
   repeat_first_point_as_last_point(container);
 
-  // Densify container
+  // 2. Densify container
   std::vector<GeoDiv> container_dens = densify(container);
 
-  // 2. Create graph and split graph into unique polylines
+  // 3. Create graph and split graph into unique polylines
   Graph graph = create_pll_graph(container_dens);
   std::list<Polyline> polyline_list;
   Polyline_visitor<Graph> polyline_visitor(polyline_list, graph);
@@ -636,7 +550,7 @@ void simplify_map(MapState *map_state) {
   for (Polyline polyline : polyline_list)
     ct.insert_constraint(polyline.begin(), polyline.end());
 
-  // Create vector to store polylines in CT order
+  // 5. Create vector to store polylines in CT order
   std::vector<Polyline> ct_polylines;
   for (auto cit = ct.constraints_begin(); cit != ct.constraints_end(); cit++) {
     Polyline polyl;
@@ -644,15 +558,6 @@ void simplify_map(MapState *map_state) {
       polyl.push_back(*vit);
     ct_polylines.push_back(polyl);
   }
-
-  /*
-  std::map<int, std::map<int, std::pair<Polyline, bool>>> is_island;
-  identify_islands(container_dens, ct_polylines, is_island);
-  const std::chrono::duration<double, std::milli> duration = std::chrono::system_clock::now() - start;
-  std::cout << "simplify_map() time elapsed: " << duration.count() << "ms (";
-  std::cout << duration.count() / 1000 << "s)" << std::endl;
-  std::cout << std::endl;
-  */
 
   // 6. Store polylines by positions with their associated GeoDivs and Polygon_with_holes
   // std::cout << "Store polylines by positions with their associated GeoDivs and Polygon_with_holes" << std::endl;
@@ -669,8 +574,8 @@ void simplify_map(MapState *map_state) {
   std::unordered_map<int, std::unordered_map<int, std::unordered_map<int, bool>>> visited;
   set_visited_vals(visited, pll_cntr_by_gd_pgnwh);
 
-  // std::cout << "Assemble polylines into polygons" << std::endl;
   // 10. Assemble polylines into polygons
+  // std::cout << "Assemble polylines into polygons" << std::endl;
   std::vector<GeoDiv> container_simp;
   assemble_pll_to_pgn(pll_cntr_by_gd_pgnwh, visited, container_simp, container_dens);
 
