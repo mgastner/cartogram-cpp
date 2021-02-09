@@ -243,6 +243,8 @@ std::map<int, std::vector<PLL>> store_by_pos(std::vector<Polyline> &ct_polylines
         PLL pll_outer(pos, polyl, gd_num, pgnwh_num, false);
         Polygon outer = pgnwh.outer_boundary();
 
+        // TODO: add code to take into account container_gd_islands to x2 the pll prog if it's an island
+
         // Check outer polygon
         check_if_pll_on_pgn_boundary(pll_outer,
             outer,
