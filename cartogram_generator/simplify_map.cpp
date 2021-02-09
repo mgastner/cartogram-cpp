@@ -543,6 +543,8 @@ bool check_if_island_deep(std::vector<GeoDiv> container, Polygon pgn) {
 }
 
 std::vector<std::vector<bool>> check_if_island(std::vector<GeoDiv> container) {
+  std::cout << "Check start" << std::endl;
+
   std::vector<std::vector<bool>> container_gd_islands(container.size(), std::vector<bool>());
 
   for (int gd_num = 0;  gd_num < container.size(); gd_num++) {
@@ -579,6 +581,9 @@ std::vector<std::vector<bool>> check_if_island(std::vector<GeoDiv> container) {
   std::cout << "num islands: " << num_islands << std::endl;
   std::cout << "num non-islands: " << num_non_islands << std::endl;
 
+  std::cout << "Check end" << std::endl;
+  std::cout << std::endl;
+
   return container_gd_islands;
 }
 
@@ -600,13 +605,11 @@ void simplify_map(MapState *map_state) {
 
   std::vector<GeoDiv> container = map_state->geo_divs();
 
-  // Check if islands
-  std::cout << "Check start" << std::endl;
-  std::vector<std::vector<bool>> container_gd_islands = check_if_island(container);
-  std::cout << "Check end" << std::endl;
-
   // 1. Repeat first point as last point by reference 
   repeat_first_point_as_last_point(container);
+
+  // Check if islands
+  std::vector<std::vector<bool>> container_gd_islands = check_if_island(container);
 
   // 2. Densify container
   std::vector<GeoDiv> container_dens = densify(container);
