@@ -149,8 +149,8 @@ int main(const int argc, const char *argv[])
     //integration++;
   //}
 
-  json test_json = cgal_to_json(&map_state);
-  write_to_json(test_json, geo_file_name, "cartogram.geojson");
+  json cart_json = cgal_to_json(&map_state);
+  write_to_json(cart_json, geo_file_name, "cartogram.geojson");
 
   return EXIT_SUCCESS;
 }
