@@ -50,7 +50,7 @@ void flatten_density(MapState *map_state)
   const unsigned int ly = map_state->ly();
 
   // Define proj and proj2 multi arrays
-  boost::multi_array<XYPoint, 2> proj = *map_state->proj();
+  boost::multi_array<XYPoint, 2> &proj = *map_state->proj();
 
   // Resize proj multi array if running for the first time
   if (map_state->n_finished_integrations() == 0){
