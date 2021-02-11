@@ -1,6 +1,7 @@
-#include <boost/multi_array.hpp>
 #include <iostream>
 #include <algorithm>
+
+#include "interpol.h"
 
 // Function to bilinearly interpolate a numerical array grid[0..lx*ly-1]     
 // whose entries are numbers for the positions:                              
