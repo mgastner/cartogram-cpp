@@ -171,8 +171,3 @@ boost::multi_array<XYPoint, 2> *MapState::proj()
 {
   return &proj_;
 }
-
-boost::multi_array<XYPoint, 2> *MapState::proj2()
-{
-  return &proj2_;
-}

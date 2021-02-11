@@ -8,7 +8,7 @@
 #include <vector>
 #include <boost/multi_array.hpp>
 
-struct XYPoint{ // For use in proj & proj2 arrays and flatten_density
+struct XYPoint{
   double x;
   double y;
 };
@@ -29,7 +29,6 @@ private:
   fftw_plan fwd_plan_for_rho_, bwd_plan_for_rho_;
   unsigned int n_finished_integrations_;
   boost::multi_array<XYPoint, 2> proj_;
-  boost::multi_array<XYPoint, 2> proj2_;
   MapState();
 public:
   explicit MapState(const std::string, const bool, const bool);
@@ -60,7 +59,6 @@ public:
   void push_back(const GeoDiv);
   unsigned int n_finished_integrations() const;
   boost::multi_array<XYPoint, 2> *proj();
-  boost::multi_array<XYPoint, 2> *proj2();
 };
 
 #endif
