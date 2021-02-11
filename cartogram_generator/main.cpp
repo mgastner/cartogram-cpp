@@ -10,6 +10,7 @@
 #include "rescale_map.h"
 #include "write_eps.h"
 #include "check_topology.h"
+#include "project.h"
 #include <boost/program_options.hpp>
 #include <iostream>
 
@@ -146,6 +147,7 @@ int main(const int argc, const char *argv[])
     blur_density(5.0, &map_state);
     flatten_density(&map_state);
     //integration++;
+	project(&map_state);
   //}
 
 
