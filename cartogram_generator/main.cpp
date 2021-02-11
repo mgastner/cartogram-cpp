@@ -143,7 +143,7 @@ int main(const int argc, const char *argv[])
   // UNTOUCHED FOR THE TIME BEING.
   //while (1 == 0) {
     fill_with_density(&map_state);
-    blur_density(10.0, &map_state);
+    blur_density(5.0, &map_state);
     flatten_density(&map_state);
     //integration++;
   //}
