@@ -7,8 +7,8 @@ using json = nlohmann::json;
 
 #include "map_state.h"
 
-json cgal_to_json(MapState *map_state);
+json cgal_to_json(MapState*);
 
-void write_to_json(json container, std::string geo_file_name, std::string new_geo_fn);
+void write_to_json(json, std::string, std::string);
 
 #endif
