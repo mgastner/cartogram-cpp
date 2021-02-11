@@ -10,6 +10,7 @@
 #include "rescale_map.h"
 #include "write_eps.h"
 #include "check_topology.h"
+#include "write_to_json.h"
 #include <boost/program_options.hpp>
 #include <iostream>
 
@@ -148,6 +149,8 @@ int main(const int argc, const char *argv[])
     //integration++;
   //}
 
+  json test_json = cgal_to_json(&map_state);
+  write_to_json(test_json, geo_file_name, "cartogram.geojson");
 
   return EXIT_SUCCESS;
 }
