@@ -71,6 +71,8 @@ std::vector<std::vector<bool>> get_gd_pgnwh_island_bool(std::vector<GeoDiv> cont
   for (int gd_num = 0;  gd_num < (int) container.size(); gd_num++) {
     GeoDiv gd = container[gd_num];
 
+    std::cout << "gd: " << gd_num << std::endl;
+
     std::vector<bool> vb(gd.polygons_with_holes().size(), false);
     gd_pgnwh_island_bool[gd_num] = vb;
 
@@ -101,7 +103,6 @@ std::vector<std::vector<bool>> get_gd_pgnwh_island_bool(std::vector<GeoDiv> cont
   }
   std::cout << "Number of islands: " << num_islands << std::endl;
   std::cout << "Number of non-islands: " << num_non_islands << std::endl;
-  std::cout << std::endl;
 
   return gd_pgnwh_island_bool;
 }
@@ -615,15 +616,22 @@ void simplify_map(MapState *map_state) {
   // 10. Assemble polylines into polygons
   // 11. Remove first point as last point by reference 
 
-  const auto start = std::chrono::system_clock::now();
-
   std::vector<GeoDiv> container = map_state->geo_divs();
 
   // 1. Repeat first point as last point by reference 
   repeat_first_point_as_last_point(container);
 
-  // 2. Check if islands
+  // Start timer for step 2
+  const auto start_s2 = std::chrono::system_clock::now();
+  // 2. Get vector of geodiv/pgnwh bool values of whether they are islands
   std::vector<std::vector<bool>> gd_pgnwh_island_bool = get_gd_pgnwh_island_bool(container);
+  const std::chrono::duration<double, std::milli> dur_s2 = std::chrono::system_clock::now() - start_s2;
+  std::cout << "get_gd_pgnwh_island_bool() time elapsed: " << dur_s2.count() << "ms (";
+  std::cout << dur_s2.count() / 1000 << "s)" << std::endl;
+  std::cout << std::endl;
+
+  // Start timer for remaining simplification steps
+  const auto start_s311 = std::chrono::system_clock::now();
 
   // 3. Create graph and split graph into unique polylines
   Graph graph = create_pll_graph(container);
@@ -678,7 +686,7 @@ void simplify_map(MapState *map_state) {
 
   map_state->set_geo_divs(container_simp);
 
-  const std::chrono::duration<double, std::milli> duration2 = std::chrono::system_clock::now() - start;
-  std::cout << "simplify_map() time elapsed: " << duration2.count() << "ms (";
-  std::cout << duration2.count() / 1000 << "s)" << std::endl;
+  const std::chrono::duration<double, std::milli> dur_s311 = std::chrono::system_clock::now() - start_s311;
+  std::cout << "Remaining simplification steps time elapsed: " << dur_s311.count() << "ms (";
+  std::cout << dur_s311.count() / 1000 << "s)" << std::endl;
 }
