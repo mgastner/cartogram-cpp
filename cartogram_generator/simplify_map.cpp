@@ -221,7 +221,7 @@ void check_if_pll_on_pgn_boundary(PLL pll,
 
 std::map<int, std::vector<PLL>> store_by_pos(std::vector<Polyline> &ct_polylines, 
     std::vector<GeoDiv> container_dens,
-    std::vector<std::vector<bool>> container_gd_islands) {
+    std::vector<std::vector<bool>> gd_pgnwh_island_bool) {
 
   // Create map to check if geo_divs and pgnwhs have been properly matched
   std::map<int, std::vector<PLL>> pll_cntr_by_pos; 
@@ -246,7 +246,7 @@ std::map<int, std::vector<PLL>> store_by_pos(std::vector<Polyline> &ct_polylines
         if (matched_pgns[pos] == 2) continue;
 
         Polygon_with_holes pgnwh = container_dens[gd_num].polygons_with_holes()[pgnwh_num];
-        bool pgnwh_is_island = container_gd_islands[gd_num][pgnwh_num];
+        bool pgnwh_is_island = gd_pgnwh_island_bool[gd_num][pgnwh_num];
 
         PLL pll_outer(pos, polyl, gd_num, pgnwh_num, false);
         Polygon outer = pgnwh.outer_boundary();
@@ -526,7 +526,7 @@ void remove_first_point_as_last_point(std::vector<GeoDiv> &container) {
   }
 }
 
-bool check_if_island_deep(std::vector<GeoDiv> container, Polygon pgn) {
+bool check_all_vertices(std::vector<GeoDiv> container, Polygon pgn) {
   for (GeoDiv gd : container) {
     for (Polygon_with_holes pgnwh : gd.polygons_with_holes()) {
       Polygon outer = pgnwh.outer_boundary();
@@ -553,23 +553,23 @@ bool check_if_island_deep(std::vector<GeoDiv> container, Polygon pgn) {
   return true;
 }
 
-std::vector<std::vector<bool>> check_if_island(std::vector<GeoDiv> container) {
+std::vector<std::vector<bool>> get_gd_pgnwh_island_bool(std::vector<GeoDiv> container) {
   std::cout << "Check start" << std::endl;
 
-  std::vector<std::vector<bool>> container_gd_islands(container.size(), std::vector<bool>());
+  std::vector<std::vector<bool>> gd_pgnwh_island_bool(container.size(), std::vector<bool>());
 
   for (int gd_num = 0;  gd_num < container.size(); gd_num++) {
     GeoDiv gd = container[gd_num];
 
     std::vector<bool> vb(gd.polygons_with_holes().size(), false);
-    container_gd_islands[gd_num] = vb;
+    gd_pgnwh_island_bool[gd_num] = vb;
 
     for (int pgnwh_num = 0; pgnwh_num < gd.polygons_with_holes().size(); pgnwh_num++) {
       Polygon_with_holes pgnwh = gd.polygons_with_holes()[pgnwh_num];
 
       Polygon outer = pgnwh.outer_boundary();
 
-      container_gd_islands[gd_num][pgnwh_num] = check_if_island_deep(container, outer);  
+      gd_pgnwh_island_bool[gd_num][pgnwh_num] = check_all_vertices(container, outer);  
       // No need to check if pts are inside holes because
       // if they are inside the outer polygon, then
       // they are neighbours with the outer polygon and holes
@@ -582,11 +582,11 @@ std::vector<std::vector<bool>> check_if_island(std::vector<GeoDiv> container) {
 
   int num_islands = 0;
   int num_non_islands = 0;
-  for (int i = 0; i < container_gd_islands.size(); i++) {
-    for (int j = 0; j < container_gd_islands[i].size(); j++) {
-      std::cout << i << " " << j << " " << container_gd_islands[i][j] << std::endl;
-      num_islands = container_gd_islands[i][j] ? num_islands + 1 : num_islands; 
-      num_non_islands = !container_gd_islands[i][j] ? num_non_islands + 1 : num_non_islands; 
+  for (int i = 0; i < gd_pgnwh_island_bool.size(); i++) {
+    for (int j = 0; j < gd_pgnwh_island_bool[i].size(); j++) {
+      std::cout << i << " " << j << " " << gd_pgnwh_island_bool[i][j] << std::endl;
+      num_islands = gd_pgnwh_island_bool[i][j] ? num_islands + 1 : num_islands; 
+      num_non_islands = !gd_pgnwh_island_bool[i][j] ? num_non_islands + 1 : num_non_islands; 
     }
   }
   std::cout << "num islands: " << num_islands << std::endl;
@@ -595,7 +595,7 @@ std::vector<std::vector<bool>> check_if_island(std::vector<GeoDiv> container) {
   std::cout << "Check end" << std::endl;
   std::cout << std::endl;
 
-  return container_gd_islands;
+  return gd_pgnwh_island_bool;
 }
 
 void simplify_map(MapState *map_state) {
@@ -620,7 +620,7 @@ void simplify_map(MapState *map_state) {
   repeat_first_point_as_last_point(container);
 
   // Check if islands
-  std::vector<std::vector<bool>> container_gd_islands = check_if_island(container);
+  std::vector<std::vector<bool>> gd_pgnwh_island_bool = get_gd_pgnwh_island_bool(container);
 
   // 2. Densify container
   std::vector<GeoDiv> container_dens = densify(container);
@@ -647,7 +647,7 @@ void simplify_map(MapState *map_state) {
 
   // 6. Store polylines by positions with their associated GeoDivs and Polygon_with_holes
   // std::cout << "Store polylines by positions with their associated GeoDivs and Polygon_with_holes" << std::endl;
-  std::map<int, std::vector<PLL>> pll_cntr_by_pos = store_by_pos(ct_polylines, container_dens, container_gd_islands);
+  std::map<int, std::vector<PLL>> pll_cntr_by_pos = store_by_pos(ct_polylines, container_dens, gd_pgnwh_island_bool);
 
   // 7. Simplify polylines
   PS::simplify(ct, Cost(), Stop(0.2));
