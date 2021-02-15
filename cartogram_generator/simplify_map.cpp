@@ -17,6 +17,95 @@
 #include "pll.h"
 #include "densify.h"
 
+// Repeat first point as last point by reference 
+void repeat_first_point_as_last_point(std::vector<GeoDiv> &container) {
+  for (GeoDiv &gd : container) {
+    for (Polygon_with_holes &pgnwh : *gd.ref_to_polygons_with_holes()) {
+      Polygon_with_holes pgnwh_new;
+
+      Polygon *outer = &pgnwh.outer_boundary();
+      outer->push_back((*outer)[0]);
+
+      std::vector<Polygon> holes_v(pgnwh.holes_begin(), pgnwh.holes_end());
+      for (auto hole = pgnwh.holes_begin(); hole != pgnwh.holes_end(); hole++) {
+        hole->push_back((*hole)[0]); 
+      }
+    }
+  }
+}
+
+bool check_all_vertices(std::vector<GeoDiv> container, Polygon pgn) {
+  
+  for (GeoDiv gd : container) {
+    for (Polygon_with_holes pgnwh : gd.polygons_with_holes()) {
+      Polygon outer = pgnwh.outer_boundary();
+      for (Point pt_outer : outer) {
+        bool identical = outer == pgn;
+        auto bounded_side = CGAL::bounded_side_2(pgn.begin(), pgn.end(), pt_outer);
+        bool inside_pgn = bounded_side == CGAL::ON_BOUNDED_SIDE;
+        bool on_boundary_pgn = bounded_side == CGAL::ON_BOUNDARY;
+        if (!identical && (inside_pgn || on_boundary_pgn)) return false;
+      }
+
+      std::vector<Polygon> holes_v(pgnwh.holes_begin(), pgnwh.holes_end());
+      for (Polygon hole : holes_v) {
+        for (Point pt_hole : hole) {
+          bool identical = hole == pgn;
+          auto bounded_side = CGAL::bounded_side_2(pgn.begin(), pgn.end(), pt_hole);
+          bool inside_pgn = bounded_side == CGAL::ON_BOUNDED_SIDE;
+          bool on_boundary_pgn = bounded_side == CGAL::ON_BOUNDARY;
+          if (!identical && (inside_pgn || on_boundary_pgn)) return false;
+        }
+      }
+    }
+  }
+  return true;
+}
+
+// Get vector of geodiv/pgnwh bool values of whether they are islands
+std::vector<std::vector<bool>> get_gd_pgnwh_island_bool(std::vector<GeoDiv> container) {
+  std::cout << "Identifying islands..." << std::endl;
+
+  std::vector<std::vector<bool>> gd_pgnwh_island_bool(container.size(), std::vector<bool>());
+
+  for (int gd_num = 0;  gd_num < (int) container.size(); gd_num++) {
+    GeoDiv gd = container[gd_num];
+
+    std::vector<bool> vb(gd.polygons_with_holes().size(), false);
+    gd_pgnwh_island_bool[gd_num] = vb;
+
+    for (int pgnwh_num = 0; pgnwh_num < (int) gd.polygons_with_holes().size(); pgnwh_num++) {
+      Polygon_with_holes pgnwh = gd.polygons_with_holes()[pgnwh_num];
+
+      Polygon outer = pgnwh.outer_boundary();
+
+      gd_pgnwh_island_bool[gd_num][pgnwh_num] = check_all_vertices(container, outer);  
+      // No need to check if pts are inside holes because
+      // if they are inside the outer polygon, then
+      // they are neighbours with the outer polygon and holes
+      // and so, the entire pgnwh is not an island
+      //
+      // Similarly, if pts are not inside the outer,
+      // Then they are not inside the hole
+    }
+  }
+
+  int num_islands = 0;
+  int num_non_islands = 0;
+  for (int i = 0; i < (int) gd_pgnwh_island_bool.size(); i++) {
+    for (int j = 0; j < (int) gd_pgnwh_island_bool[i].size(); j++) {
+      //std::cout << i << " " << j << " " << gd_pgnwh_island_bool[i][j] << std::endl;
+      num_islands = gd_pgnwh_island_bool[i][j] ? num_islands + 1 : num_islands; 
+      num_non_islands = !gd_pgnwh_island_bool[i][j] ? num_non_islands + 1 : num_non_islands; 
+    }
+  }
+  std::cout << "Number of islands: " << num_islands << std::endl;
+  std::cout << "Number of non-islands: " << num_non_islands << std::endl;
+  std::cout << std::endl;
+
+  return gd_pgnwh_island_bool;
+}
+
 // Inserts a polyline into the graph
 void insert(const std::vector<Point>& poly, 
             Graph& graph,
@@ -231,6 +320,8 @@ std::map<int, std::vector<PLL>> store_by_pos(std::vector<Polyline> &ct_polylines
 
   // Create vector of visited polylines
   std::vector<int> matched_pgns(ct_polylines.size(), 0);
+
+  std::cout << "Matching polylines to polygons..." << std::endl;
 
   for (int gd_num = 0; gd_num < (int) container_dens.size(); gd_num++) {
     std::cout << "gd: " << gd_num << std::endl;
@@ -490,22 +581,6 @@ void print_num_pts(std::vector<GeoDiv> container) {
   std::cout << num_pts << std::endl;
 }
 
-void repeat_first_point_as_last_point(std::vector<GeoDiv> &container) {
-  for (GeoDiv &gd : container) {
-    for (Polygon_with_holes &pgnwh : *gd.ref_to_polygons_with_holes()) {
-      Polygon_with_holes pgnwh_new;
-
-      Polygon *outer = &pgnwh.outer_boundary();
-      outer->push_back((*outer)[0]);
-
-      std::vector<Polygon> holes_v(pgnwh.holes_begin(), pgnwh.holes_end());
-      for (auto hole = pgnwh.holes_begin(); hole != pgnwh.holes_end(); hole++) {
-        hole->push_back((*hole)[0]); 
-      }
-    }
-  }
-}
-
 void remove_first_point_as_last_point(std::vector<GeoDiv> &container) {
   for (GeoDiv &gd : container) {
     for (Polygon_with_holes &pgnwh : *gd.ref_to_polygons_with_holes()) {
@@ -526,82 +601,10 @@ void remove_first_point_as_last_point(std::vector<GeoDiv> &container) {
   }
 }
 
-bool check_all_vertices(std::vector<GeoDiv> container, Polygon pgn) {
-  for (GeoDiv gd : container) {
-    for (Polygon_with_holes pgnwh : gd.polygons_with_holes()) {
-      Polygon outer = pgnwh.outer_boundary();
-      for (Point pt_outer : outer) {
-        bool identical = outer == pgn;
-        auto bounded_side = CGAL::bounded_side_2(pgn.begin(), pgn.end(), pt_outer);
-        bool inside_pgn = bounded_side == CGAL::ON_BOUNDED_SIDE;
-        bool on_boundary_pgn = bounded_side == CGAL::ON_BOUNDARY;
-        if (!identical && (inside_pgn || on_boundary_pgn)) return false;
-      }
-
-      std::vector<Polygon> holes_v(pgnwh.holes_begin(), pgnwh.holes_end());
-      for (Polygon hole : holes_v) {
-        for (Point pt_hole : hole) {
-          bool identical = hole == pgn;
-          auto bounded_side = CGAL::bounded_side_2(pgn.begin(), pgn.end(), pt_hole);
-          bool inside_pgn = bounded_side == CGAL::ON_BOUNDED_SIDE;
-          bool on_boundary_pgn = bounded_side == CGAL::ON_BOUNDARY;
-          if (!identical && (inside_pgn || on_boundary_pgn)) return false;
-        }
-      }
-    }
-  }
-  return true;
-}
-
-std::vector<std::vector<bool>> get_gd_pgnwh_island_bool(std::vector<GeoDiv> container) {
-  std::cout << "Check start" << std::endl;
-
-  std::vector<std::vector<bool>> gd_pgnwh_island_bool(container.size(), std::vector<bool>());
-
-  for (int gd_num = 0;  gd_num < container.size(); gd_num++) {
-    GeoDiv gd = container[gd_num];
-
-    std::vector<bool> vb(gd.polygons_with_holes().size(), false);
-    gd_pgnwh_island_bool[gd_num] = vb;
-
-    for (int pgnwh_num = 0; pgnwh_num < gd.polygons_with_holes().size(); pgnwh_num++) {
-      Polygon_with_holes pgnwh = gd.polygons_with_holes()[pgnwh_num];
-
-      Polygon outer = pgnwh.outer_boundary();
-
-      gd_pgnwh_island_bool[gd_num][pgnwh_num] = check_all_vertices(container, outer);  
-      // No need to check if pts are inside holes because
-      // if they are inside the outer polygon, then
-      // they are neighbours with the outer polygon and holes
-      // and so, the entire pgnwh is not an island
-      //
-      // Similarly, if pts are not inside the outer,
-      // Then they are not inside the hole
-    }
-  }
-
-  int num_islands = 0;
-  int num_non_islands = 0;
-  for (int i = 0; i < gd_pgnwh_island_bool.size(); i++) {
-    for (int j = 0; j < gd_pgnwh_island_bool[i].size(); j++) {
-      std::cout << i << " " << j << " " << gd_pgnwh_island_bool[i][j] << std::endl;
-      num_islands = gd_pgnwh_island_bool[i][j] ? num_islands + 1 : num_islands; 
-      num_non_islands = !gd_pgnwh_island_bool[i][j] ? num_non_islands + 1 : num_non_islands; 
-    }
-  }
-  std::cout << "num islands: " << num_islands << std::endl;
-  std::cout << "num non-islands: " << num_non_islands << std::endl;
-
-  std::cout << "Check end" << std::endl;
-  std::cout << std::endl;
-
-  return gd_pgnwh_island_bool;
-}
-
 void simplify_map(MapState *map_state) {
   // Steps:
   // 1. Repeat first point as last point by reference 
-  // 2. Densify
+  // 2. Get vector of geodiv/pgnwh bool values of whether they are islands
   // 3. Create graph and split graph into unique polylines
   // 4. Store polylines from polyline_list in CT
   // 5. Create vector to store polylines in CT order
@@ -619,14 +622,11 @@ void simplify_map(MapState *map_state) {
   // 1. Repeat first point as last point by reference 
   repeat_first_point_as_last_point(container);
 
-  // Check if islands
+  // 2. Check if islands
   std::vector<std::vector<bool>> gd_pgnwh_island_bool = get_gd_pgnwh_island_bool(container);
 
-  // 2. Densify container
-  std::vector<GeoDiv> container_dens = densify(container);
-
   // 3. Create graph and split graph into unique polylines
-  Graph graph = create_pll_graph(container_dens);
+  Graph graph = create_pll_graph(container);
   std::list<Polyline> polyline_list;
   Polyline_visitor<Graph> polyline_visitor(polyline_list, graph);
   CGAL::split_graph_into_polylines(graph, polyline_visitor);
@@ -647,7 +647,7 @@ void simplify_map(MapState *map_state) {
 
   // 6. Store polylines by positions with their associated GeoDivs and Polygon_with_holes
   // std::cout << "Store polylines by positions with their associated GeoDivs and Polygon_with_holes" << std::endl;
-  std::map<int, std::vector<PLL>> pll_cntr_by_pos = store_by_pos(ct_polylines, container_dens, gd_pgnwh_island_bool);
+  std::map<int, std::vector<PLL>> pll_cntr_by_pos = store_by_pos(ct_polylines, container, gd_pgnwh_island_bool);
 
   // 7. Simplify polylines
   PS::simplify(ct, Cost(), Stop(0.2));
@@ -663,15 +663,11 @@ void simplify_map(MapState *map_state) {
   // 10. Assemble polylines into polygons
   // std::cout << "Assemble polylines into polygons" << std::endl;
   std::vector<GeoDiv> container_simp;
-  assemble_pll_to_pgn(pll_cntr_by_gd_pgnwh, visited, container_simp, container_dens);
+  assemble_pll_to_pgn(pll_cntr_by_gd_pgnwh, visited, container_simp, container);
 
   // Print number of points before simplifying (container)
   std::cout << "Number of vertices before simplifying (container): ";
   print_num_pts(container);
-
-  // Print number of points before simplifying (container_dens)
-  std::cout << "Number of vertices before simplifying (container_dens): ";
-  print_num_pts(container_dens);
 
   // Print number of points after simplifying
   std::cout << "Number of vertices after simplifying: ";
