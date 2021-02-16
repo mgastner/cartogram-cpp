@@ -11,6 +11,7 @@
 #include "write_eps.h"
 #include "check_topology.h"
 #include "project.h"
+#include "area_error.h"
 #include <boost/program_options.hpp>
 #include <iostream>
 
@@ -138,17 +139,25 @@ int main(const int argc, const char *argv[])
     std::cout << "Writing input_polygons.eps" << std::endl;
     write_map_to_eps("input_polygons.eps", &map_state);
   }
-
-  // Calculate density-equalizing projection
-  // THE CONDITION FOR THE WHILE-LOOP WILL BECOME MORE COMPLEX. LEAVE IT
-  // UNTOUCHED FOR THE TIME BEING.
-  //while (1 == 0) {
+  
+  // Start map integration
+  while (map_state.n_finished_integrations() == 0 ||
+        (max_area_err(&map_state) > 0.01 &&
+        (!map_state.is_world_map() || map_state.n_finished_integrations() < 30))) {
+    
     fill_with_density(&map_state);
-    blur_density(5.0, &map_state);
+    
+    if (map_state.n_finished_integrations() == 0){
+      blur_density(5.0, &map_state);
+    }
+    else{
+      blur_density(0.0, &map_state);
+    }
+    
     flatten_density(&map_state);
-    //integration++;
-	project(&map_state);
-  //}
+    project(&map_state);
+    map_state.inc_integration();
+  }
 
 
   return EXIT_SUCCESS;
