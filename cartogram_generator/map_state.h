@@ -58,6 +58,7 @@ public:
   void execute_bwd_plan() const;
   void push_back(const GeoDiv);
   unsigned int n_finished_integrations() const;
+  void inc_integration();
   boost::multi_array<XYPoint, 2> *proj();
 };
 

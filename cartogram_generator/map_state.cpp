@@ -167,6 +167,11 @@ unsigned int MapState::n_finished_integrations() const
   return n_finished_integrations_;
 }
 
+void MapState::inc_integration()
+{
+  n_finished_integrations_ += 1;
+}
+
 boost::multi_array<XYPoint, 2> *MapState::proj()
 {
   return &proj_;
