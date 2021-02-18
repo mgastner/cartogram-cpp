@@ -70,7 +70,6 @@ add_executable(
   ../cartogram_generator/ft_real_2d.cpp
   ../cartogram_generator/interpol.cpp
   ../cartogram_generator/project.cpp
-  ../cartogram_generator/area_error.cpp
 )
 
 # Linking appropriate libraries required

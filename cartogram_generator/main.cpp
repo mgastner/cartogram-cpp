@@ -11,7 +11,6 @@
 #include "write_eps.h"
 #include "check_topology.h"
 #include "project.h"
-#include "area_error.h"
 #include <boost/program_options.hpp>
 #include <iostream>
 
@@ -142,7 +141,7 @@ int main(const int argc, const char *argv[])
 
   // Start map integration
   while (map_state.n_finished_integrations() < max_integrations &&
-         max_area_err(&map_state) > max_permitted_area_error) {
+         map_state.max_area_err() > max_permitted_area_error) {
     fill_with_density(&map_state);
     if (map_state.n_finished_integrations() == 0) {
       blur_density(5.0, &map_state);

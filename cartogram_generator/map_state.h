@@ -60,6 +60,7 @@ public:
   unsigned int n_finished_integrations() const;
   void inc_integration();
   boost::multi_array<XYPoint, 2> *proj();
+  double max_area_err();
 };
 
 #endif
