@@ -139,26 +139,19 @@ int main(const int argc, const char *argv[])
     std::cout << "Writing input_polygons.eps" << std::endl;
     write_map_to_eps("input_polygons.eps", &map_state);
   }
-  
+
   // Start map integration
-  while (map_state.n_finished_integrations() == 0 ||
-        (max_area_err(&map_state) > 0.01 &&
-        (!map_state.is_world_map() || map_state.n_finished_integrations() < 30))) {
-    
+  while (map_state.n_finished_integrations() < max_integrations &&
+         max_area_err(&map_state) > max_permitted_area_error) {
     fill_with_density(&map_state);
-    
-    if (map_state.n_finished_integrations() == 0){
+    if (map_state.n_finished_integrations() == 0) {
       blur_density(5.0, &map_state);
-    }
-    else{
+    } else{
       blur_density(0.0, &map_state);
     }
-    
     flatten_density(&map_state);
     project(&map_state);
     map_state.inc_integration();
   }
-
-
   return EXIT_SUCCESS;
 }

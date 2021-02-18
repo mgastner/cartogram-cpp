@@ -1,11 +1,9 @@
 #include "area_error.h"
 #include <algorithm>
 
-#define MAX_PERMITTED_AREA_ERROR 0.01
-
 double max_area_err(MapState *map_state){
-  
-  // Formula for relative area error: 
+
+  // Formula for relative area error:
   // area_on_cartogram / target_area - 1
 
   double sum_target_area = 0.0;
