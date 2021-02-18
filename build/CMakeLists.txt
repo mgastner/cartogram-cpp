@@ -65,7 +65,10 @@ add_executable(cartogram ../cartogram_generator/main.cpp
           		../cartogram_generator/fill_with_density.cpp
                 ../cartogram_generator/blur_density.cpp
                 ../cartogram_generator/flatten_density.cpp
-                ../cartogram_generator/ft_real_2d.cpp)
+                ../cartogram_generator/ft_real_2d.cpp
+				../cartogram_generator/interpol.cpp
+				../cartogram_generator/project.cpp
+        ../cartogram_generator/area_error.cpp)
 
 # Linking appropriate libraries required
 target_link_libraries(cartogram

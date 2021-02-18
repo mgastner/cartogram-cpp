@@ -6,8 +6,9 @@
 #include "colors.h"
 #include <fftw3.h>
 #include <vector>
+#include <boost/multi_array.hpp>
 
-struct XYPoint {
+struct XYPoint{
   double x;
   double y;
 };
@@ -27,6 +28,7 @@ private:
   FTReal2d rho_ft_;  // Fourier transform
   fftw_plan fwd_plan_for_rho_, bwd_plan_for_rho_;
   unsigned int n_finished_integrations_;
+  boost::multi_array<XYPoint, 2> proj_;
   MapState();
 public:
   explicit MapState(const std::string, const bool, const bool);
@@ -34,6 +36,7 @@ public:
   unsigned int n_geo_divs() const;
   const std::vector<GeoDiv> geo_divs() const;
   std::vector<GeoDiv> *ref_to_geo_divs();
+  void set_geo_divs(std::vector<GeoDiv>);
   void target_areas_insert(std::string, double);
   void colors_insert(std::string, std::string);
   double target_areas_at(const std::string);
@@ -55,6 +58,8 @@ public:
   void execute_bwd_plan() const;
   void push_back(const GeoDiv);
   unsigned int n_finished_integrations() const;
+  void inc_integration();
+  boost::multi_array<XYPoint, 2> *proj();
 };
 
 #endif
