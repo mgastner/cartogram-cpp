@@ -1,5 +1,5 @@
 #include "map_state.h"
-#include "interpol.h"
+#include "interpolate_bilinearly.h"
 #include <boost/multi_array.hpp>
 #include <iostream>
 #include <algorithm>
@@ -41,7 +41,7 @@ void ffb_calcv (double t,
 }
 
 // Function to integrate the equations of motion with the fast flow-based
-// method.                                                               
+// method.
 
 void flatten_density(MapState *map_state)
 {
@@ -53,11 +53,11 @@ void flatten_density(MapState *map_state)
   boost::multi_array<XYPoint, 2> &proj = *map_state->proj();
 
   // Resize proj multi array if running for the first time
-  if (map_state->n_finished_integrations() == 0){
+  if (map_state->n_finished_integrations() == 0) {
     proj.resize(boost::extents[lx][ly]);
   }
 
-  for (unsigned int i = 0; i < lx; i++){
+  for (unsigned int i = 0; i < lx; i++) {
     for (unsigned int j = 0; j < ly; j++) {
       proj[i][j].x = i + 0.5;
       proj[i][j].y = j + 0.5;
@@ -101,18 +101,18 @@ void flatten_density(MapState *map_state)
   // t + 0.5*delta_t.
   boost::multi_array<XYPoint, 2> v_intp_half(boost::extents[lx][ly]);
 
-  // Initialize the Fourier transforms of gridvx[] and gridvy[] at         
-  // every point on the lx-times-ly grid at t = 0. After this has          
+  // Initialize the Fourier transforms of gridvx[] and gridvy[] at
+  // every point on the lx-times-ly grid at t = 0. After this has
   // finished, we do not need to do any further Fourier transforms for this
-  // round of integration                                                  
+  // round of integration
 
   double dlx = lx;                // We must typecast. Otherwise the ratios in
-  double dly = ly;                // the denominator will evaluate as zero.   
+  double dly = ly;                // the denominator will evaluate as zero.
 
-  // We temporarily insert the Fourier coefficients for the x- and      
+  // We temporarily insert the Fourier coefficients for the x- and
   // y-components of the flux vector in the arrays grid_fluxx_init[] and
-  // grid_fluxy_init[].                                                 
-  
+  // grid_fluxy_init[].
+
   for (unsigned int i = 0; i < lx-1; i++) {
     double di = i;
     for (unsigned int j = 0; j < ly; j++) {
@@ -135,7 +135,7 @@ void flatten_density(MapState *map_state)
   }
 
   // Compute the flux vector and store the result in grid_fluxx_init[] and
-  // grid_fluxy_init[].                                                   
+  // grid_fluxy_init[].
 
   fftw_execute(plan_for_grid_fluxx_init);
   fftw_execute(plan_for_grid_fluxy_init);
@@ -156,10 +156,17 @@ void flatten_density(MapState *map_state)
         // We know, either because of the initialization or because of the
         // check at the end of the last iteration, that (proj.x[k], proj.y[k])
         // is inside the rectangle [0, lx] x [0, ly]. This fact guarantees
-        // that interpol() is given a point that cannot cause it to fail.
+        // that interpolate_bilinearly() is given a point that cannot cause it
+        // to fail.
 
-        v_intp[i][j].x = interpol(proj[i][j].x, proj[i][j].y, &grid_vx, 'x', lx, ly);
-        v_intp[i][j].y = interpol(proj[i][j].x, proj[i][j].y, &grid_vy, 'y', lx, ly);
+        v_intp[i][j].x =
+          interpolate_bilinearly(proj[i][j].x, proj[i][j].y,
+                                 &grid_vx, 'x',
+                                 lx, ly);
+        v_intp[i][j].y =
+          interpolate_bilinearly(proj[i][j].x, proj[i][j].y,
+                                 &grid_vy, 'y',
+                                 lx, ly);
       }
     }
     bool accept = false;
@@ -183,18 +190,19 @@ void flatten_density(MapState *map_state)
       // and similarly for y.
 
       ffb_calcv(t + 0.5*delta_t, grid_fluxx_init, grid_fluxy_init,
-              rho_ft, rho_init, &grid_vx, &grid_vy, lx, ly);
+                rho_ft, rho_init, &grid_vx, &grid_vy, lx, ly);
 
       // Make sure we do not pass a point outside [0, lx] x [0, ly] to
-      // interpol(). Otherwise decrease the time step below and try again.
+      // interpolate_bilinearly(). Otherwise decrease the time step below and
+      // try again.
 
       accept = true;
       for (unsigned int i = 0; i < lx; i++) {
         for (unsigned int j = 0; j < ly; j++) {
           if (proj[i][j].x + 0.5*delta_t*v_intp[i][j].x < 0.0 ||
-              proj[i][j].x + 0.5*delta_t*v_intp[i][j].x > lx ||
+                                                          proj[i][j].x + 0.5*delta_t*v_intp[i][j].x > lx ||
               proj[i][j].y + 0.5*delta_t*v_intp[i][j].y < 0.0 ||
-              proj[i][j].y + 0.5*delta_t*v_intp[i][j].y > ly) {
+                                                          proj[i][j].y + 0.5*delta_t*v_intp[i][j].y > ly) {
             accept = false;
             delta_t *= DEC_AFTER_NOT_ACC;
             break;
@@ -205,17 +213,21 @@ void flatten_density(MapState *map_state)
 
       if (accept) {
 
-        // OK, we can run interpol().
+        // OK, we can run interpolate_bilinearly().
 
 #pragma omp parallel for
         for (unsigned int i = 0; i < lx; i++) {
           for (unsigned int j = 0; j < ly; j++) {
-            v_intp_half[i][j].x = interpol(proj[i][j].x + 0.5*delta_t*v_intp[i][j].x,
-                                           proj[i][j].y + 0.5*delta_t*v_intp[i][j].y,
-                                           &grid_vx, 'x', lx, ly);
-            v_intp_half[i][j].y = interpol(proj[i][j].x + 0.5*delta_t*v_intp[i][j].x,
-                                           proj[i][j].y + 0.5*delta_t*v_intp[i][j].y,
-                                           &grid_vy, 'y', lx, ly);
+            v_intp_half[i][j].x =
+              interpolate_bilinearly(proj[i][j].x + 0.5*delta_t*v_intp[i][j].x,
+                                     proj[i][j].y + 0.5*delta_t*v_intp[i][j].y,
+                                     &grid_vx, 'x',
+                                     lx, ly);
+            v_intp_half[i][j].y =
+              interpolate_bilinearly(proj[i][j].x + 0.5*delta_t*v_intp[i][j].x,
+                                     proj[i][j].y + 0.5*delta_t*v_intp[i][j].y,
+                                     &grid_vy, 'y',
+                                     lx, ly);
             mid[i][j].x = proj[i][j].x + v_intp_half[i][j].x * delta_t;
             mid[i][j].y = proj[i][j].y + v_intp_half[i][j].y * delta_t;
 
