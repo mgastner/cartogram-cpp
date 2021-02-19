@@ -21,7 +21,6 @@
 void repeat_first_point_as_last_point(std::vector<GeoDiv> &container) {
   for (GeoDiv &gd : container) {
     for (Polygon_with_holes &pgnwh : *gd.ref_to_polygons_with_holes()) {
-      Polygon_with_holes pgnwh_new;
 
       Polygon *outer = &pgnwh.outer_boundary();
       outer->push_back((*outer)[0]);
@@ -34,11 +33,25 @@ void repeat_first_point_as_last_point(std::vector<GeoDiv> &container) {
   }
 }
 
+bool bbox_overlap(Polygon pgn1, Polygon pgn2) {
+  CGAL::Bbox_2 bbox1 = pgn1.bbox();
+  CGAL::Bbox_2 bbox2 = pgn2.bbox();
+
+  return bbox1.xmax() >= bbox2.xmin() && bbox2.xmax() >= bbox1.xmin()
+    && bbox1.ymax() >= bbox2.ymin() && bbox2.ymax() >= bbox1.ymin();
+}
+
 bool check_all_vertices(std::vector<GeoDiv> container, Polygon pgn) {
-  
+  // TODO add check to skip over polygons that are inside a polygon??
+
   for (GeoDiv gd : container) {
     for (Polygon_with_holes pgnwh : gd.polygons_with_holes()) {
       Polygon outer = pgnwh.outer_boundary();
+
+      // If bboxes don't overlap, then the polygons are certainly not neighbours
+      // and we can move on to check the next pgnwh
+      if (!bbox_overlap(pgn, outer)) continue;
+
       for (Point pt_outer : outer) {
         bool identical = outer == pgn;
         auto bounded_side = CGAL::bounded_side_2(pgn.begin(), pgn.end(), pt_outer);
@@ -48,7 +61,14 @@ bool check_all_vertices(std::vector<GeoDiv> container, Polygon pgn) {
       }
 
       std::vector<Polygon> holes_v(pgnwh.holes_begin(), pgnwh.holes_end());
+
       for (Polygon hole : holes_v) {
+
+        // If bboxes don't overmap, then the polygons are certainly not neighbours
+        // and we can move on to check the next hole
+        if (!bbox_overlap(pgn, hole)) continue;
+
+        // To consider: do we need to iterate through all points in a hole?? Or will just 1 do?
         for (Point pt_hole : hole) {
           bool identical = hole == pgn;
           auto bounded_side = CGAL::bounded_side_2(pgn.begin(), pgn.end(), pt_hole);
@@ -82,13 +102,12 @@ std::vector<std::vector<bool>> get_gd_pgnwh_island_bool(std::vector<GeoDiv> cont
       Polygon outer = pgnwh.outer_boundary();
 
       gd_pgnwh_island_bool[gd_num][pgnwh_num] = check_all_vertices(container, outer);  
-      // No need to check if pts are inside holes because
-      // if they are inside the outer polygon, then
-      // they are neighbours with the outer polygon and holes
-      // and so, the entire pgnwh is not an island
+      // No need to check if pts are inside holes because if they are inside 
+      // the outer polygon, then they are neighbours with the outer polygon 
+      // and holes and so, the entire pgnwh is not an island.
       //
-      // Similarly, if pts are not inside the outer,
-      // Then they are not inside the hole
+      // Similarly, if pts are not inside the outer, then they are not 
+      // inside the hole.
     }
   }
 
@@ -109,8 +128,8 @@ std::vector<std::vector<bool>> get_gd_pgnwh_island_bool(std::vector<GeoDiv> cont
 
 // Inserts a polyline into the graph
 void insert(const std::vector<Point>& poly, 
-            Graph& graph,
-            Point_vertex_map& pvmap) {
+    Graph& graph,
+    Point_vertex_map& pvmap) {
   vertex_descriptor u, v;
   for (int i = 0; i < (int) poly.size(); i++) {
     // check if the point is not yet in the graph
@@ -585,7 +604,6 @@ void print_num_pts(std::vector<GeoDiv> container) {
 void remove_first_point_as_last_point(std::vector<GeoDiv> &container) {
   for (GeoDiv &gd : container) {
     for (Polygon_with_holes &pgnwh : *gd.ref_to_polygons_with_holes()) {
-      Polygon_with_holes pgnwh_new;
 
       Polygon *outer = &pgnwh.outer_boundary();
       auto outer_it = outer->end();
