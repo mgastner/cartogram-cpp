@@ -707,4 +707,10 @@ void simplify_map(MapState *map_state) {
   const std::chrono::duration<double, std::milli> dur_s311 = std::chrono::system_clock::now() - start_s311;
   std::cout << "Remaining simplification steps time elapsed: " << dur_s311.count() << "ms (";
   std::cout << dur_s311.count() / 1000 << "s)" << std::endl;
+  std::cout << std::endl;
+
+  double dur_total = dur_s2.count() + dur_s311.count();
+  std::cout << "Total simplification time elapsed: " << dur_total << "ms (";
+  std::cout << dur_total / 1000 << "s)" << std::endl;
+  std::cout << std::endl;
 }
