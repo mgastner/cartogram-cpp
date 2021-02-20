@@ -33,12 +33,24 @@ void repeat_first_point_as_last_point(std::vector<GeoDiv> &container) {
   }
 }
 
-bool bbox_overlap(Polygon pgn1, Polygon pgn2) {
+bool bboxes_overlap(Polygon pgn1, Polygon pgn2) {
   CGAL::Bbox_2 bbox1 = pgn1.bbox();
   CGAL::Bbox_2 bbox2 = pgn2.bbox();
 
   return bbox1.xmax() >= bbox2.xmin() && bbox2.xmax() >= bbox1.xmin()
     && bbox1.ymax() >= bbox2.ymin() && bbox2.ymax() >= bbox1.ymin();
+}
+
+bool pgns_contiguous(Polygon pgn1, Polygon pgn2) {
+  // To consider: do we need to iterate through all points in a hole?? Or will just 1 do?
+  for (Point pt : pgn2) {
+    bool identical = pgn1 == pgn2;
+    auto bounded_side = CGAL::bounded_side_2(pgn1.begin(), pgn1.end(), pt);
+    bool inside_of_pgn = bounded_side == CGAL::ON_BOUNDED_SIDE;
+    bool on_boundary_of_pgn = bounded_side == CGAL::ON_BOUNDARY;
+    if (!identical && (inside_of_pgn || on_boundary_of_pgn)) return false;
+  }
+  return true; // but don't want to return true on main function
 }
 
 bool check_all_vertices(std::vector<GeoDiv> container, Polygon pgn) {
@@ -50,15 +62,9 @@ bool check_all_vertices(std::vector<GeoDiv> container, Polygon pgn) {
 
       // If bboxes don't overlap, then the polygons are certainly not neighbours
       // and we can move on to check the next pgnwh.
-      if (!bbox_overlap(pgn, outer)) continue;
+      if (!bboxes_overlap(pgn, outer)) continue;
 
-      for (Point pt_outer : outer) {
-        bool identical = outer == pgn;
-        auto bounded_side = CGAL::bounded_side_2(pgn.begin(), pgn.end(), pt_outer);
-        bool inside_pgn = bounded_side == CGAL::ON_BOUNDED_SIDE;
-        bool on_boundary_pgn = bounded_side == CGAL::ON_BOUNDARY;
-        if (!identical && (inside_pgn || on_boundary_pgn)) return false;
-      }
+      if (!pgns_contiguous(pgn, outer)) return false;
 
       std::vector<Polygon> holes_v(pgnwh.holes_begin(), pgnwh.holes_end());
 
@@ -66,16 +72,9 @@ bool check_all_vertices(std::vector<GeoDiv> container, Polygon pgn) {
 
         // If bboxes don't overmap, then the polygons are certainly not neighbours
         // and we can move on to check the next hole
-        if (!bbox_overlap(pgn, hole)) continue;
+        if (!bboxes_overlap(pgn, hole)) continue;
 
-        // To consider: do we need to iterate through all points in a hole?? Or will just 1 do?
-        for (Point pt_hole : hole) {
-          bool identical = hole == pgn;
-          auto bounded_side = CGAL::bounded_side_2(pgn.begin(), pgn.end(), pt_hole);
-          bool inside_pgn = bounded_side == CGAL::ON_BOUNDED_SIDE;
-          bool on_boundary_pgn = bounded_side == CGAL::ON_BOUNDARY;
-          if (!identical && (inside_pgn || on_boundary_pgn)) return false;
-        }
+        if (!pgns_contiguous(pgn, hole)) return false;
       }
     }
   }
