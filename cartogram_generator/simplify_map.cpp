@@ -42,14 +42,14 @@ bool bbox_overlap(Polygon pgn1, Polygon pgn2) {
 }
 
 bool check_all_vertices(std::vector<GeoDiv> container, Polygon pgn) {
-  // TODO add check to skip over polygons that are inside a polygon??
+  // TODO add set to keep track of polygons (outer/hole) already registered as part of another polygon
 
   for (GeoDiv gd : container) {
     for (Polygon_with_holes pgnwh : gd.polygons_with_holes()) {
       Polygon outer = pgnwh.outer_boundary();
 
       // If bboxes don't overlap, then the polygons are certainly not neighbours
-      // and we can move on to check the next pgnwh
+      // and we can move on to check the next pgnwh.
       if (!bbox_overlap(pgn, outer)) continue;
 
       for (Point pt_outer : outer) {
