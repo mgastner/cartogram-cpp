@@ -53,38 +53,23 @@ bool pgns_contiguous(Polygon pgn1, Polygon pgn2) {
   return true; // but don't want to return true on main function
 }
 
-bool check_all_vertices(std::vector<GeoDiv> container,
-    Polygon pgn,
-    std::vector<std::vector<bool>> &status_conf) {
+bool check_all_vertices(std::vector<GeoDiv> container, Polygon pgn) {
   // TODO add set to keep track of polygons (outer/hole) already registered as part of another polygon
-  
-  int gd_num = -1;
+
   for (GeoDiv gd : container) {
-    gd_num++;
-    int pgnwh_num = -1;
     for (Polygon_with_holes pgnwh : gd.polygons_with_holes()) {
-      pgnwh_num++;
       Polygon outer = pgnwh.outer_boundary();
       // If bboxes don't overlap, then the polygons are certainly not neighbours
       // and we can move on to check the next pgnwh.
       if (!bboxes_overlap(pgn, outer)) continue;
-      if (!pgns_contiguous(pgn, outer)) {
-        // the status of the outer is confirmed (true) to be false
-        //std::cout << "hi" << std::endl;
-        status_conf[gd_num][pgnwh_num] = true;
-        return false;
-      }
+      if (!pgns_contiguous(pgn, outer)) return false;
 
       std::vector<Polygon> holes_v(pgnwh.holes_begin(), pgnwh.holes_end());
       for (Polygon hole : holes_v) {
         // If bboxes don't overmap, then the polygons are certainly not neighbours
         // and we can move on to check the next hole
         if (!bboxes_overlap(pgn, hole)) continue;
-        if (!pgns_contiguous(pgn, hole)) {
-          // the status of the hole is confirmed (true) to be false
-          status_conf[gd_num][pgnwh_num] = true;
-          return false;
-        }
+        if (!pgns_contiguous(pgn, hole)) return false;
       }
     }
   }
@@ -97,32 +82,20 @@ std::vector<std::vector<bool>> get_gd_pgnwh_island_bool(std::vector<GeoDiv> cont
 
   std::vector<std::vector<bool>> gd_pgnwh_island_bool(container.size(), std::vector<bool>());
 
-  // Confirms that pgnwhs' status are confirmed (island or non-island)
-  std::vector<std::vector<bool>> status_conf(container.size(), std::vector<bool>());
-
-  // Fill default boolean values for gd_pgnwh_island_bool and status_conf
-  for (int gd_num = 0; gd_num < (int) container.size(); gd_num++) {
-    std::vector<bool> vb(container[gd_num].polygons_with_holes().size(), false);
-    gd_pgnwh_island_bool[gd_num] = vb;
-    status_conf[gd_num] = vb;
-  }
-
-  for (int gd_num = 0; gd_num < (int) container.size(); gd_num++) {
+  for (int gd_num = 0;  gd_num < (int) container.size(); gd_num++) {
     GeoDiv gd = container[gd_num];
 
     std::cout << "gd: " << gd_num << std::endl;
 
+    std::vector<bool> vb(gd.polygons_with_holes().size(), false);
+    gd_pgnwh_island_bool[gd_num] = vb;
+
     for (int pgnwh_num = 0; pgnwh_num < (int) gd.polygons_with_holes().size(); pgnwh_num++) {
       Polygon_with_holes pgnwh = gd.polygons_with_holes()[pgnwh_num];
 
-      if (status_conf[gd_num][pgnwh_num]) continue;
-
-      // the status of the pgn is confirmed (true) to be either true or false
-      status_conf[gd_num][pgnwh_num] = true;
-
       Polygon outer = pgnwh.outer_boundary();
 
-      gd_pgnwh_island_bool[gd_num][pgnwh_num] = check_all_vertices(container, outer, status_conf);  
+      gd_pgnwh_island_bool[gd_num][pgnwh_num] = check_all_vertices(container, outer);  
       // No need to check if pts are inside holes because if they are inside 
       // the outer polygon, then they are neighbours with the outer polygon 
       // and holes and so, the entire pgnwh is not an island.
