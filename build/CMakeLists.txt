@@ -70,6 +70,7 @@ add_executable(
   ../cartogram_generator/ft_real_2d.cpp
   ../cartogram_generator/interpolate_bilinearly.cpp
   ../cartogram_generator/project.cpp
+  ../cartogram_generator/write_to_json.cpp)
 )
 
 # Linking appropriate libraries required
