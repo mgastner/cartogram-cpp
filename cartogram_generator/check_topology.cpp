@@ -12,7 +12,7 @@ void holes_inside_polygons(MapState *map_state)
         for (unsigned int i = 0; i < hole.size(); ++i) {
 
           // In the future, a better method would be to only check whether one
-          // point in each hole on in the bounded side of the exterior ring.
+          // point in each hole is on the bounded side of the exterior ring.
           // Next, check whether the hole intersects the polygon at any point.
           // For this, the function "do_intersect(Polygon, Polygon)" may help.
           if (ext_ring.bounded_side(hole[i]) != CGAL::ON_BOUNDED_SIDE) {
@@ -24,8 +24,6 @@ void holes_inside_polygons(MapState *map_state)
             _Exit(20);
           }
         }
-
-
       }
     }
   }

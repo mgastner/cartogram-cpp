@@ -139,18 +139,20 @@ int main(const int argc, const char *argv[])
     write_map_to_eps("input_polygons.eps", &map_state);
   }
 
-  // Calculate density-equalizing projection
-  // THE CONDITION FOR THE WHILE-LOOP WILL BECOME MORE COMPLEX. LEAVE IT
-  // UNTOUCHED FOR THE TIME BEING.
-  //while (1 == 0) {
+  // Start map integration
+  while (map_state.n_finished_integrations() < max_integrations &&
+         map_state.max_area_err() > max_permitted_area_error) {
     fill_with_density(&map_state);
-    blur_density(10.0, &map_state);
+    if (map_state.n_finished_integrations() == 0) {
+      blur_density(5.0, &map_state);
+    } else{
+      blur_density(0.0, &map_state);
+    }
     flatten_density(&map_state);
-    //integration++;
-  //}
-
+    project(&map_state);
+    map_state.inc_integration();
+  }
   json cart_json = cgal_to_json(&map_state);
   write_to_json(cart_json, geo_file_name, "cartogram.geojson");
-
   return EXIT_SUCCESS;
 }

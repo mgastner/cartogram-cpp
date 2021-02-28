@@ -1,26 +1,26 @@
 if (MSVC)
-    # warning level 4
-    add_compile_options(/W4)
+  # warning level 4
+  add_compile_options(/W4)
 else()
-    # lots of warnings
-    add_compile_options(-Wall -Wextra -pedantic)
+  # lots of warnings
+  add_compile_options(-Wall -Wextra -pedantic)
 endif()
 
 # code for findFFTW
 configure_file(downloadFindFFTW.cmake.in findFFTW-download/CMakeLists.txt)
 execute_process(COMMAND ${CMAKE_COMMAND} -G "${CMAKE_GENERATOR}" .
-        RESULT_VARIABLE result
-        WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/findFFTW-download )
+  RESULT_VARIABLE result
+WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/findFFTW-download )
 if(result)
-    message(FATAL_ERROR "CMake step for findFFTW failed: ${result}")
-    else()
-    message("CMake step for findFFTW completed (${result}).")
+  message(FATAL_ERROR "CMake step for findFFTW failed: ${result}")
+else()
+  message("CMake step for findFFTW completed (${result}).")
 endif()
 execute_process(COMMAND ${CMAKE_COMMAND} --build .
-        RESULT_VARIABLE result
-        WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/findFFTW-download )
+  RESULT_VARIABLE result
+WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/findFFTW-download )
 if(result)
-    message(FATAL_ERROR "Build step for findFFTW failed: ${result}")
+  message(FATAL_ERROR "Build step for findFFTW failed: ${result}")
 endif()
 
 set(findFFTW_DIR ${CMAKE_CURRENT_BINARY_DIR}/findFFTW-src)
@@ -52,26 +52,33 @@ find_package(Threads REQUIRED)
 find_package(OpenMP REQUIRED)
 
 # Adding executables needed
-add_executable(cartogram ../cartogram_generator/main.cpp
-                ../cartogram_generator/geo_div.cpp
-          		../cartogram_generator/map_state.cpp
-          		../cartogram_generator/read_csv.cpp
-          		../cartogram_generator/rescale_map.cpp
-          		../cartogram_generator/write_eps.cpp
-                ../cartogram_generator/colors.cpp
-                ../cartogram_generator/check_topology.cpp
-                # ../cartogram_generator/helper_functions.cpp
-          		../cartogram_generator/read_geojson.cpp
-          		../cartogram_generator/fill_with_density.cpp
-                ../cartogram_generator/blur_density.cpp
-                ../cartogram_generator/flatten_density.cpp
-                ../cartogram_generator/ft_real_2d.cpp
-				../cartogram_generator/write_to_json.cpp)
+add_executable(
+  cartogram
+  ../cartogram_generator/main.cpp
+  ../cartogram_generator/geo_div.cpp
+  ../cartogram_generator/map_state.cpp
+  ../cartogram_generator/read_csv.cpp
+  ../cartogram_generator/rescale_map.cpp
+  ../cartogram_generator/write_eps.cpp
+  ../cartogram_generator/colors.cpp
+  ../cartogram_generator/check_topology.cpp
+  # ../cartogram_generator/helper_functions.cpp
+  ../cartogram_generator/read_geojson.cpp
+  ../cartogram_generator/fill_with_density.cpp
+  ../cartogram_generator/blur_density.cpp
+  ../cartogram_generator/flatten_density.cpp
+  ../cartogram_generator/ft_real_2d.cpp
+  ../cartogram_generator/interpolate_bilinearly.cpp
+  ../cartogram_generator/project.cpp
+  ../cartogram_generator/write_to_json.cpp)
+)
 
 # Linking appropriate libraries required
-target_link_libraries(cartogram
-                      ${Boost_LIBRARIES}
-                      OpenMP::OpenMP_CXX
-                      CGAL::CGAL
-                      ${FFTW_LIBRARIES}
-                      ${CMAKE_THREAD_LIBS_INIT})
+target_link_libraries(
+  cartogram
+  ${Boost_LIBRARIES}
+  OpenMP::OpenMP_CXX
+  CGAL::CGAL
+  ${FFTW_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+)

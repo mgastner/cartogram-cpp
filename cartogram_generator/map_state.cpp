@@ -31,6 +31,12 @@ std::vector<GeoDiv> *MapState::ref_to_geo_divs()
   return &geo_divs_;
 }
 
+void MapState::set_geo_divs(std::vector<GeoDiv> geo_divs_new)
+{
+  geo_divs_.clear();
+  geo_divs_ = geo_divs_new;
+}
+
 void MapState::target_areas_insert(const std::string id, const double area)
 {
   target_areas.insert(std::pair<std::string, double>(id, area));
@@ -159,4 +165,41 @@ void MapState::push_back(const GeoDiv gd)
 unsigned int MapState::n_finished_integrations() const
 {
   return n_finished_integrations_;
+}
+
+void MapState::inc_integration()
+{
+  n_finished_integrations_ += 1;
+}
+
+boost::multi_array<XYPoint, 2> *MapState::proj()
+{
+  return &proj_;
+}
+
+double MapState::max_area_err()
+{
+
+  // Formula for relative area error:
+  // area_on_cartogram / target_area - 1
+
+  double sum_target_area = 0.0;
+  double sum_cart_area = 0.0;
+  for (auto gd : geo_divs_) {
+    sum_target_area += target_areas_at(gd.id());
+    sum_cart_area += gd.area();
+  }
+  double mae = 0.0;
+  for (auto gd : geo_divs_) {
+    double obj_area =
+      target_areas_at(gd.id()) * sum_cart_area / sum_target_area;
+    double relative_area_error = gd.area() / obj_area - 1;
+    if (relative_area_error < 0) {
+      mae = std::max(mae, -relative_area_error);
+    } else{
+      mae = std::max(mae, relative_area_error);
+    }
+  }
+  std::cout << "max. area err: " << mae << std::endl;
+  return mae;
 }
