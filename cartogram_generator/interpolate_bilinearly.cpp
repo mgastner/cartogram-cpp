@@ -14,7 +14,6 @@
 // determined by continuing the function value at 0.5 (or lx-0.5 or ly-0.5)
 // all the way to the edge (i.e. the slope is 0 consistent with a cosine
 // transform).
-
 double interpolate_bilinearly(double x,
                               double y,
                               const boost::multi_array<double, 2> *grid,

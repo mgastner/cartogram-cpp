@@ -3,11 +3,11 @@
 
 #include <boost/multi_array.hpp>
 
-double interpolate_bilinearly(double x,
-                              double y,
-                              const boost::multi_array<double, 2> *grid,
-                              char zero,
-                              const unsigned int lx,
-                              const unsigned int ly);
+double interpolate_bilinearly(double,
+                              double,
+                              const boost::multi_array<double, 2>*,
+                              char,
+                              const unsigned int,
+                              const unsigned int);
 
 #endif
