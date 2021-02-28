@@ -5,6 +5,7 @@
 #include "blur_density.h"
 #include "fill_with_density.h"
 #include "flatten_density.h"
+#include "project.h"
 #include "read_csv.h"
 #include "read_geojson.h"
 #include "rescale_map.h"

@@ -71,7 +71,6 @@ add_executable(
   ../cartogram_generator/interpolate_bilinearly.cpp
   ../cartogram_generator/project.cpp
   ../cartogram_generator/write_to_json.cpp)
-)
 
 # Linking appropriate libraries required
 target_link_libraries(
