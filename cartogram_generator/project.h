@@ -5,4 +5,11 @@
 
 void project(MapState*);
 
+std::vector<int> find_graticule_point(const int,
+                                      const int,
+                                      const int,
+                                      const int);
+
+void project_graticule(MapState*);
+
 #endif
