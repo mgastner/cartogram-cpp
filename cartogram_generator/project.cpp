@@ -76,11 +76,18 @@ void project(MapState *map_state)
   return;
 }
 
+// Applying the function find_graticule_point to any cartogram point would
+// return the coordinates (x, y) of the bottom left point of the original
+// (untransformed) square graticule the cartogram point was in. This square
+// graticule would always have four vertices of coordinates (x, y), (x + 1, y),
+// (x + 1, y + 1) and (x, y + 1).
+
 std::vector<int> find_graticule_point(const int x,
                                       const int y,
                                       const int lx,
                                       const int ly)
 {
+  
   if (x < 0 || x > lx || y < 0 || y > ly) {
     std::cout << "ERROR: coordinate outside bounding box in find_graticule_point()." << "\n";
     std::cout << "x=" << x << ", y=" << y << "\n";
@@ -94,6 +101,10 @@ std::vector<int> find_graticule_point(const int x,
 
   return graticule_point;
 }
+
+// After running the project_graticule function, calling graticule_points[x][y].x
+// and graticule_points[x][y].y would return the transformed coordinates tx and ty
+// of the transformed graticule point that was originally of coordinates (x, y).
 
 void project_graticule(MapState *map_state)
 {
@@ -140,5 +151,6 @@ void project_graticule(MapState *map_state)
       graticule_points[i][j].y = new_y;
     }
   }
+
   return;
 }
