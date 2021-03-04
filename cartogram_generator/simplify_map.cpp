@@ -41,8 +41,9 @@ bool bboxes_overlap(Polygon pgn1, Polygon pgn2) {
     && bbox1.ymax() >= bbox2.ymin() && bbox2.ymax() >= bbox1.ymin();
 }
 
-bool pgns_contiguous(Polygon pgn1, Polygon pgn2) {
+bool pgn_not_contiguous(Polygon pgn1, Polygon pgn2) {
   // To consider: do we need to iterate through all points in a hole?? Or will just 1 do?
+  
   for (Point pt : pgn2) {
     bool identical = pgn1 == pgn2;
     auto bounded_side = CGAL::bounded_side_2(pgn1.begin(), pgn1.end(), pt);
@@ -50,7 +51,7 @@ bool pgns_contiguous(Polygon pgn1, Polygon pgn2) {
     bool on_boundary_of_pgn = bounded_side == CGAL::ON_BOUNDARY;
     if (!identical && (inside_of_pgn || on_boundary_of_pgn)) return false;
   }
-  return true; // but don't want to return true on main function
+  return true; // but not return true to get_gd_pgnwh_island_bool()
 }
 
 bool check_all_vertices(std::vector<GeoDiv> container, Polygon pgn) {
@@ -62,14 +63,14 @@ bool check_all_vertices(std::vector<GeoDiv> container, Polygon pgn) {
       // If bboxes don't overlap, then the polygons are certainly not neighbours
       // and we can move on to check the next pgnwh.
       if (!bboxes_overlap(pgn, outer)) continue;
-      if (!pgns_contiguous(pgn, outer)) return false;
+      if (!pgn_not_contiguous(pgn, outer)) return false;
 
       std::vector<Polygon> holes_v(pgnwh.holes_begin(), pgnwh.holes_end());
       for (Polygon hole : holes_v) {
-        // If bboxes don't overmap, then the polygons are certainly not neighbours
+        // If bboxes don't overlap, then the polygons are certainly not neighbours
         // and we can move on to check the next hole
         if (!bboxes_overlap(pgn, hole)) continue;
-        if (!pgns_contiguous(pgn, hole)) return false;
+        if (!pgn_not_contiguous(pgn, hole)) return false;
       }
     }
   }
