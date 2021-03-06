@@ -19,18 +19,24 @@
 
 // Repeat first point as last point by reference 
 void repeat_first_point_as_last_point(std::vector<GeoDiv> &container) {
+  int num_vertices = 0;
   for (GeoDiv &gd : container) {
     for (Polygon_with_holes &pgnwh : *gd.ref_to_polygons_with_holes()) {
 
       Polygon *outer = &pgnwh.outer_boundary();
       outer->push_back((*outer)[0]);
+      num_vertices += outer->size();
 
       std::vector<Polygon> holes_v(pgnwh.holes_begin(), pgnwh.holes_end());
       for (auto hole = pgnwh.holes_begin(); hole != pgnwh.holes_end(); hole++) {
         hole->push_back((*hole)[0]); 
+        num_vertices += hole->size();
       }
     }
   }
+  std::cout << std::endl;
+  std::cout << "Original number of vertices (double-counts shared boundaries): " << num_vertices << std::endl; 
+  std::cout << std::endl;
 }
 
 bool bboxes_overlap(Polygon pgn1, Polygon pgn2) {
@@ -639,8 +645,8 @@ void simplify_map(MapState *map_state) {
   // 2. Get vector of geodiv/pgnwh bool values of whether they are islands
   std::vector<std::vector<bool>> gd_pgnwh_island_bool = get_gd_pgnwh_island_bool(container);
   const std::chrono::duration<double, std::milli> dur_s2 = std::chrono::system_clock::now() - start_s2;
-  std::cout << "get_gd_pgnwh_island_bool() time elapsed: " << dur_s2.count() << "ms (";
-  std::cout << dur_s2.count() / 1000 << "s)" << std::endl;
+  std::cout << "get_gd_pgnwh_island_bool() time elapsed: " << dur_s2.count() << " ms (";
+  std::cout << dur_s2.count() / 1000 << " s)" << std::endl;
   std::cout << std::endl;
 
   // Start timer for remaining simplification steps
@@ -700,12 +706,12 @@ void simplify_map(MapState *map_state) {
   map_state->set_geo_divs(container_simp);
 
   const std::chrono::duration<double, std::milli> dur_s311 = std::chrono::system_clock::now() - start_s311;
-  std::cout << "Remaining simplification steps time elapsed: " << dur_s311.count() << "ms (";
-  std::cout << dur_s311.count() / 1000 << "s)" << std::endl;
+  std::cout << "Remaining simplification steps time elapsed: " << dur_s311.count() << " ms (";
+  std::cout << dur_s311.count() / 1000 << " s)" << std::endl;
   std::cout << std::endl;
 
   double dur_total = dur_s2.count() + dur_s311.count();
-  std::cout << "Total simplification time elapsed: " << dur_total << "ms (";
-  std::cout << dur_total / 1000 << "s)" << std::endl;
+  std::cout << "Total simplification time elapsed: " << dur_total << " ms (";
+  std::cout << dur_total / 1000 << " s)" << std::endl;
   std::cout << std::endl;
 }
