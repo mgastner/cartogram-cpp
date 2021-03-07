@@ -83,11 +83,11 @@ void write_to_json(json container,
   newJ.push_back({"aaatype", old_j["type"]});
   newJ.push_back({"bbox", old_j["bbox"]});
   
-  std::ofstream o("temp.json");
+  std::ofstream o("temporary.json");
   o << newJ << std::endl;
 
   // Replaces "aaatype" with "type" so that "type" appears at the top of the GeoJSON file
-  std::ifstream in_new("temp.json");
+  std::ifstream in_new("temporary.json");
   std::ofstream out_new(new_geo_fn);
   std::string line;
   while (std::getline(in_new, line)) {
