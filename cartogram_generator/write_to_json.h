@@ -5,6 +5,10 @@
 #include <nlohmann/json.hpp>
 using json = nlohmann::json;
 
-void write_to_json(json container, std::string geo_file_name);
+#include "map_state.h"
+
+json cgal_to_json(MapState*);
+
+void write_to_json(json, std::string, std::string);
 
 #endif

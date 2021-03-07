@@ -5,18 +5,19 @@
 #include "blur_density.h"
 #include "fill_with_density.h"
 #include "flatten_density.h"
+#include "project.h"
 #include "read_csv.h"
 #include "read_geojson.h"
 #include "rescale_map.h"
 #include "write_eps.h"
 #include "find_graticule_intersections.h"
+#include "check_topology.h"
+#include "write_to_json.h"
 #include <boost/program_options.hpp>
 #include <iostream>
 #include <fstream>
 
 #include "simplify_map.h"
-#include "cgal_to_json.h"
-#include "write_to_json.h"
 #include "rescale_map_rev.h"
 
 // Functions that are called if the corresponding command-line options are
@@ -130,6 +131,13 @@ int main(const int argc, const char *argv[])
     return EXIT_FAILURE;
   }
 
+  try {
+    holes_inside_polygons(&map_state);
+  } catch (const std::system_error& e) {
+    std::cerr << "ERROR: " << e.what() << " (" << e.code() << ")" << std::endl;
+    return EXIT_FAILURE;
+  }
+
   // Rescale map to fit into a rectangular box [0, lx] * [0, ly].
   rescale_map(long_grid_side_length, &map_state);
   if (input_polygons_to_eps) {
@@ -137,26 +145,26 @@ int main(const int argc, const char *argv[])
     write_map_to_eps("input_polygons.eps", &map_state);
   }
 
-  // Calculate density-equalizing projection
-  // THE CONDITION FOR THE WHILE-LOOP WILL BECOME MORE COMPLEX. LEAVE IT
-  // UNTOUCHED FOR THE TIME BEING.
-  //while (1 == 0) {
-  
-  //if (map_state.n_points() > 100000) {
   simplify_map(&map_state);
-  //}
   
-  json new_j = cgal_to_json(map_state.geo_divs());
-  write_to_json(new_j, geo_file_name);
+  /*
+  // Start map integration
+  while (map_state.n_finished_integrations() < max_integrations &&
+         map_state.max_area_err() > max_permitted_area_error) {
+    fill_with_density(&map_state);
+    if (map_state.n_finished_integrations() == 0) {
+      blur_density(5.0, &map_state);
+    } else{
+      blur_density(0.0, &map_state);
+    }
+    flatten_density(&map_state);
+    project(&map_state);
+    map_state.inc_integration();
+  }
+  */
 
-  //rescale_map_rev(512, &map_state);
-
-  fill_with_density(&map_state);
-  blur_density(10.0, &map_state);
-  flatten_density(&map_state);
-
-  //integration++;
-  //}
+  json cart_json = cgal_to_json(&map_state);
+  write_to_json(cart_json, geo_file_name, "cartogram.geojson");
 
   return EXIT_SUCCESS;
 }
