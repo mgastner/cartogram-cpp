@@ -55,11 +55,12 @@ bool bboxes_overlap(Polygon pgn1, Polygon pgn2)
   CGAL::Bbox_2 bbox1 = pgn1.bbox();
   CGAL::Bbox_2 bbox2 = pgn2.bbox();
 
+  /* Formula to check if two sets of bboxes overlap. */
   return bbox1.xmax() >= bbox2.xmin() && bbox2.xmax() >= bbox1.xmin()
     && bbox1.ymax() >= bbox2.ymin() && bbox2.ymax() >= bbox1.ymin();
 }
 
-bool pgn_not_contiguous(Polygon pgn1, Polygon pgn2)
+bool pgns_are_not_contiguous(Polygon pgn1, Polygon pgn2)
 {
   for (Point pt : pgn2) {
     bool identical = pgn1 == pgn2;
@@ -71,32 +72,39 @@ bool pgn_not_contiguous(Polygon pgn1, Polygon pgn2)
   return true;
 }
 
-bool check_for_neighbours(std::vector<GeoDiv> container, Polygon pgn)
+bool check_for_neighbours(std::vector<GeoDiv> gd_vector, Polygon pgn)
 {
   /* TODO add set to keep track of polygons (outer/hole) 
    * already registered as part of another polygon */
 
-  for (GeoDiv gd : container) {
+  for (GeoDiv gd : gd_vector) {
     for (Polygon_with_holes pgnwh : gd.polygons_with_holes()) {
-      Polygon outer = pgnwh.outer_boundary();
-      // If bboxes don't overlap, then the polygons are certainly not neighbours
-      // and we can move on to check the next pgnwh.
-      if (!bboxes_overlap(pgn, outer)) continue;
-      if (!pgn_not_contiguous(pgn, outer)) return false;
+      Polygon outer_pgn = pgnwh.outer_boundary();
+
+      /* If bboxes don't overlap, pgns are not neighbours. Continue. */
+      if (!bboxes_overlap(pgn, outer_pgn)) continue;
+
+      /* If pgns are contiguous, pgn is not an island. */
+      if (!pgns_are_not_contiguous(pgn, outer_pgn)) return false;
 
       std::vector<Polygon> holes_v(pgnwh.holes_begin(), pgnwh.holes_end());
       for (Polygon hole : holes_v) {
-        // If bboxes don't overlap, then the polygons are certainly not neighbours
-        // and we can move on to check the next hole
+
+        /* If bboxes don't overlap, pgns are not neighbours. Continue. */
         if (!bboxes_overlap(pgn, hole)) continue;
-        if (!pgn_not_contiguous(pgn, hole)) return false;
+
+        /* If pgns are contiguous, pgn is not an island. */
+        if (!pgns_are_not_contiguous(pgn, hole)) return false;
       }
     }
   }
+
+  /* If pgn's bbox no overlap and not contiguous, then pgn is an island. */
   return true;
 }
 
 /*** 2. Function to return a vector<vector<bool>> of pgns IDed as islands. ***/
+
 std::vector<std::vector<bool>> get_pgn_bool_island(
     std::vector<GeoDiv> gd_vector)
 {
@@ -132,9 +140,9 @@ std::vector<std::vector<bool>> get_pgn_bool_island(
   int num_non_islands = 0;
   for (int i = 0; i < (int) pgn_bool_island.size(); i++) {
     for (int j = 0; j < (int) pgn_bool_island[i].size(); j++) {
-      //std::cout << i << " " << j << " " << pgn_bool_island[i][j] << std::endl;
       num_islands = pgn_bool_island[i][j] ? num_islands + 1 : num_islands; 
-      num_non_islands = !pgn_bool_island[i][j] ? num_non_islands + 1 : num_non_islands; 
+      num_non_islands = !pgn_bool_island[i][j] ? num_non_islands + 1
+                                                 : num_non_islands; 
     }
   }
   std::cout << "Number of islands: " << num_islands << std::endl;
