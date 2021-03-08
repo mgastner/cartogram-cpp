@@ -151,20 +151,23 @@ std::vector<std::vector<bool>> get_pgn_bool_island(
   return pgn_bool_island;
 }
 
-// Inserts a polyline into the graph
-void insert(const std::vector<Point>& poly, 
-    Graph& graph,
-    Point_vertex_map& pvmap) {
+void insert_pll_into_graph(Polyline &pll, 
+                           Graph &graph,
+                           Point_vertex_map &pv_map) 
+{
   vertex_descriptor u, v;
-  for (int i = 0; i < (int) poly.size(); i++) {
-    // check if the point is not yet in the graph
-    if (pvmap.find(poly[i]) == pvmap.end()) {
+  for (int i = 0; i < (int) pll.size(); i++) {
+
+    /* If the point is not yet in the graph. */
+    if (pv_map.find(pll[i]) == pv_map.end()) {
       v = add_vertex(graph);
-      pvmap[poly[i]] = v;
+      pv_map[pll[i]] = v;
     } else {
-      v = pvmap[poly[i]];
+      v = pv_map[pll[i]];
     }
-    graph[v] = poly[i];  // associate the point to the vertex
+
+    /* Associate the point to the vertex. */
+    graph[v] = pll[i];  
     if (i != 0) {
       add_edge(u, v, graph);
     }
@@ -173,7 +176,8 @@ void insert(const std::vector<Point>& poly,
 }
 
 template <typename Graph>
-struct Polyline_visitor {
+struct Polyline_visitor
+{
   std::list<Polyline>& polylines;
   const Graph& points_pmap;
 
@@ -194,23 +198,28 @@ struct Polyline_visitor {
   void end_polyline() {}
 };
 
-Graph create_pll_graph(std::vector<GeoDiv> container) {
+/**** 3. Functions to create graph and split graph into unique polylines. ****/
+
+Graph create_pll_graph(std::vector<GeoDiv> gd_vector)
+{
   Graph graph;
-  Point_vertex_map pvmap;
-  for (GeoDiv gd : container) {
+  Point_vertex_map pv_map;
+  for (GeoDiv gd : gd_vector) {
     for (Polygon_with_holes pgnwh : gd.polygons_with_holes()) {
-      Polyline pll_outer; // polyline for outer boundary
+      Polyline pll_outer;
       Polygon outer = pgnwh.outer_boundary();
       for (Point pt_outer : outer)
         pll_outer.push_back(pt_outer);
-      insert(pll_outer, graph, pvmap); // insert pll_outer into graph
+
+      insert_pll_into_graph(pll_outer, graph, pv_map);
 
       std::vector<Polygon> holes_v(pgnwh.holes_begin(), pgnwh.holes_end());
       for (Polygon hole : holes_v) {
-        Polyline pll_hole; // polyline for hole
+        Polyline pll_hole;
         for (Point pt_hole : hole)
           pll_hole.push_back(pt_hole);
-        insert(pll_hole, graph, pvmap); // insert pll_hole into graph
+
+        insert_pll_into_graph(pll_hole, graph, pv_map);
       }
     }
   }
@@ -650,7 +659,7 @@ void simplify_map(MapState *map_state)
   /********************************* Steps: **********************************/
   /* 1. Function to repeat the first point as the last point.                */
   /* 2. Function to return a vector<vector<bool>> of pgns IDed as islands.   */
-  // 3. Create graph and split graph into unique polylines
+  /* 3. Functions to create graph and split graph into unique polylines.     */ 
   // 4. Store polylines from polyline_list in CT
   // 5. Create vector to store polylines in CT order
   // 6. Store polylines by positions with their associated GeoDivs and Polygon_with_holes
@@ -678,10 +687,10 @@ void simplify_map(MapState *map_state)
   std::cout << dur_s2.count() / 1000 << " s)" << std::endl;
   std::cout << std::endl;
 
-  /* Start timer for remaining steps */
+  /* Start timer for remaining steps. */
   const auto start_s311 = std::chrono::system_clock::now();
 
-  // 3. Create graph and split graph into unique polylines
+  /*** 3. Functions to create graph and split graph into unique polylines. ***/
   Graph graph = create_pll_graph(container);
   std::list<Polyline> polyline_list;
   Polyline_visitor<Graph> polyline_visitor(polyline_list, graph);
