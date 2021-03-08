@@ -1,3 +1,5 @@
+/******************************** Inclusions. ********************************/
+
 #include <iostream>
 #include <fstream>
 #include <string>
@@ -17,25 +19,33 @@
 #include "pll.h"
 #include "densify.h"
 
-// Repeat first point as last point by reference 
-void repeat_first_point_as_last_point(std::vector<GeoDiv> &container) {
+/********** 1. Function to repeat the first point as the last point. *********/
+
+void repeat_first_point_as_last_point(std::vector<GeoDiv> &gd_vector) {
   int num_vertices = 0;
-  for (GeoDiv &gd : container) {
+  int num_holes = 0;
+
+  for (GeoDiv &gd : gd_vector) {
     for (Polygon_with_holes &pgnwh : *gd.ref_to_polygons_with_holes()) {
 
-      Polygon *outer = &pgnwh.outer_boundary();
-      outer->push_back((*outer)[0]);
-      num_vertices += outer->size();
+      Polygon *outer_pgn = &pgnwh.outer_boundary();
+      outer_pgn->push_back((*outer_pgn)[0]);
+
+      num_vertices += outer_pgn->size();
 
       std::vector<Polygon> holes_v(pgnwh.holes_begin(), pgnwh.holes_end());
       for (auto hole = pgnwh.holes_begin(); hole != pgnwh.holes_end(); hole++) {
         hole->push_back((*hole)[0]); 
+
         num_vertices += hole->size();
+        num_holes += 1;
       }
     }
   }
   std::cout << std::endl;
-  std::cout << "Original number of vertices (double-counts shared boundaries): " << num_vertices << std::endl; 
+  std::cout << "Original number of vertices (double-counts shared ";
+  std::cout << "boundaries): " << num_vertices << std::endl;
+  std::cout << "Original number of holes: " << num_holes << std::endl;
   std::cout << std::endl;
 }
 
@@ -83,8 +93,8 @@ bool check_all_vertices(std::vector<GeoDiv> container, Polygon pgn) {
   return true;
 }
 
-// Get vector of geodiv/pgnwh bool values of whether they are islands
-std::vector<std::vector<bool>> get_gd_pgnwh_island_bool(std::vector<GeoDiv> container) {
+/*** 2. Function to return a vector<vector<bool>> of pgns IDed as islands. ***/
+std::vector<std::vector<bool>> get_pgn_bool_island(std::vector<GeoDiv> container) {
   std::cout << "Identifying islands..." << std::endl;
 
   std::vector<std::vector<bool>> gd_pgnwh_island_bool(container.size(), std::vector<bool>());
@@ -622,9 +632,10 @@ void remove_first_point_as_last_point(std::vector<GeoDiv> &container) {
 }
 
 void simplify_map(MapState *map_state) {
-  // Steps:
-  // 1. Repeat first point as last point by reference 
-  // 2. Get vector of geodiv/pgnwh bool values of whether they are islands
+
+  /********************************* Steps: **********************************/
+  /* 1. Function to repeat the first point as the last point.                */
+  /* 2. Function to return a vector<vector<bool>> of pgns IDed as islands.   */
   // 3. Create graph and split graph into unique polylines
   // 4. Store polylines from polyline_list in CT
   // 5. Create vector to store polylines in CT order
@@ -637,19 +648,23 @@ void simplify_map(MapState *map_state) {
 
   std::vector<GeoDiv> container = map_state->geo_divs();
 
-  // 1. Repeat first point as last point by reference 
+  /********* 1. Function to repeat the first point as the last point. ********/
   repeat_first_point_as_last_point(container);
 
-  // Start timer for step 2
+  /* Start timer for step 2. */
   const auto start_s2 = std::chrono::system_clock::now();
-  // 2. Get vector of geodiv/pgnwh bool values of whether they are islands
-  std::vector<std::vector<bool>> gd_pgnwh_island_bool = get_gd_pgnwh_island_bool(container);
+
+  /** 2. Function to return a vector<vector<bool>> of pgns IDed as islands. **/
+  std::vector<std::vector<bool>> pgn_bool_island = 
+    get_pgn_bool_island(container);
+
+  /* Get and print step 2's elapsed time */
   const std::chrono::duration<double, std::milli> dur_s2 = std::chrono::system_clock::now() - start_s2;
   std::cout << "get_gd_pgnwh_island_bool() time elapsed: " << dur_s2.count() << " ms (";
   std::cout << dur_s2.count() / 1000 << " s)" << std::endl;
   std::cout << std::endl;
 
-  // Start timer for remaining simplification steps
+  /* Start timer for remaining steps */
   const auto start_s311 = std::chrono::system_clock::now();
 
   // 3. Create graph and split graph into unique polylines
@@ -674,7 +689,7 @@ void simplify_map(MapState *map_state) {
 
   // 6. Store polylines by positions with their associated GeoDivs and Polygon_with_holes
   // std::cout << "Store polylines by positions with their associated GeoDivs and Polygon_with_holes" << std::endl;
-  std::map<int, std::vector<PLL>> pll_cntr_by_pos = store_by_pos(ct_polylines, container, gd_pgnwh_island_bool);
+  std::map<int, std::vector<PLL>> pll_cntr_by_pos = store_by_pos(ct_polylines, container, pgn_bool_island);
 
   // 7. Simplify polylines
   PS::simplify(ct, Cost(), Stop(0.2));
