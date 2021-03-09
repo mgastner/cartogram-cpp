@@ -140,7 +140,7 @@ std::vector<std::vector<bool>> get_pgn_bool_island(
   int num_non_islands = 0;
   for (int i = 0; i < (int) pgn_bool_island.size(); i++) {
     for (int j = 0; j < (int) pgn_bool_island[i].size(); j++) {
-      num_islands = pgn_bool_island[i][j] ? num_islands + 1 : num_islands; 
+      num_islands = pgn_bool_island[i][j] ? num_islands + 1 : num_islands;
       num_non_islands = !pgn_bool_island[i][j] ? num_non_islands + 1
                                                  : num_non_islands; 
     }
