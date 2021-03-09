@@ -696,8 +696,10 @@ void simplify_map(MapState *map_state)
     get_pgn_bool_island(container);
 
   /* Get and print step 2's elapsed time */
-  const std::chrono::duration<double, std::milli> dur_s2 = std::chrono::system_clock::now() - start_s2;
-  std::cout << "get_gd_pgnwh_island_bool() time elapsed: " << dur_s2.count() << " ms (";
+  const std::chrono::duration<double, std::milli> dur_s2 =
+        std::chrono::system_clock::now() - start_s2;
+  std::cout << "get_gd_pgnwh_island_bool() time elapsed: ";
+  std::cout << dur_s2.count() << " ms (";
   std::cout << dur_s2.count() / 1000 << " s)" << std::endl;
   std::cout << std::endl;
 
