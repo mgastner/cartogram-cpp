@@ -512,7 +512,9 @@ void set_visited_vals(std::unordered_map<int, std::unordered_map<int, std::unord
 void assemble_pll_to_pgn(std::map<int, std::map<int, std::vector<PLL>>> &pll_cntr_by_gd_pgnwh, 
     std::unordered_map<int, std::unordered_map<int, std::unordered_map<int, bool>>> &visited, 
     std::vector<GeoDiv> &container_final,
-    std::vector<GeoDiv> container_org) {
+    std::vector<GeoDiv> container_org)
+{
+  std::cout << "Assembling polylines into polygons..." << std::endl;
   for (auto [gd_num, m] : pll_cntr_by_gd_pgnwh) {
     GeoDiv gd_final(container_org[gd_num].id());
     std::vector<Polygon> holes_v;
@@ -679,13 +681,13 @@ void simplify_map(MapState *map_state)
 
   std::vector<GeoDiv> container = map_state->geo_divs();
 
-  /********* 1. Function to repeat the first point as the last point. ********/
+  /* 1. Function to repeat the first point as the last point.                */
   repeat_first_point_as_last_point(container);
 
   /* Start timer for step 2. */
   const auto start_s2 = std::chrono::system_clock::now();
 
-  /** 2. Function to return a vector<vector<bool>> of pgns IDed as islands. **/
+  /* 2. Function to return a vector<vector<bool>> of pgns IDed as islands    */
   std::vector<std::vector<bool>> pgn_bool_island = 
     get_pgn_bool_island(container);
 
@@ -698,41 +700,42 @@ void simplify_map(MapState *map_state)
   /* Start timer for remaining steps. */
   const auto start_s311 = std::chrono::system_clock::now();
 
-  /*** 3. Functions to create graph and split graph into unique polylines. ***/
+  /* 3. Functions to create graph and split graph into unique polylines.     */
   Graph graph = create_pll_graph(container);
   std::list<Polyline> polyline_list;
   Polyline_visitor<Graph> polyline_visitor(polyline_list, graph);
   CGAL::split_graph_into_polylines(graph, polyline_visitor);
 
-  /********** 4. Store polylines from polyline_list in a CT object. **********/
+  /* 4. Store polylines from polyline_list in a CT object.                   */
   CT ct; 
   for (Polyline polyline : polyline_list) {
     ct.insert_constraint(polyline.begin(), polyline.end());
   }
 
-  /******* 5. Store polylines in a vector in the order of CT polylines. ******/
-  /** 
+  /* 5. Store polylines in a vector in the order of CT polylines.            */
+  /* 
    * This is so that we no longer need to use the CT data structure when
    * carrying out operations, which has limited methods available to use.
    * Instead, we can use the vector data structure and its methods.
    */
   std::vector<Polyline> ct_polylines;
-  for (auto cit = ct.constraints_begin(); cit != ct.constraints_end(); cit++) {
+  for (auto cit = ct.constraints_begin(); cit != ct.constraints_end()
+                                        ; cit++) {
     Polyline polyl;
-    for (auto vit = ct.points_in_constraint_begin(*cit); vit != ct.points_in_constraint_end(*cit); vit++)
+    for (auto vit = ct.points_in_constraint_begin(*cit)
+         ; vit != ct.points_in_constraint_end(*cit); vit++) {
       polyl.push_back(*vit);
+    }
     ct_polylines.push_back(polyl);
   }
 
   // 6. Store polylines by positions with their associated GeoDivs and Polygon_with_holes
-  // std::cout << "Store polylines by positions with their associated GeoDivs and Polygon_with_holes" << std::endl;
   std::map<int, std::vector<PLL>> pll_cntr_by_pos = store_by_pos(ct_polylines, container, pgn_bool_island);
 
   // 7. Simplify polylines
   PS::simplify(ct, Cost(), Stop(0.2));
 
   // 8. Store polylines by GeoDivs and Polygon_with_holes with their associated positions
-  // std::cout << "Store polylines by GeoDivs and Polygon_with_holes with their associated positions" << std::endl;
   std::map<int, std::map<int, std::vector<PLL>>> pll_cntr_by_gd_pgnwh = store_by_gd_pgnwh(container, ct, pll_cntr_by_pos);
 
   // 9. Set visited values
@@ -740,7 +743,6 @@ void simplify_map(MapState *map_state)
   set_visited_vals(visited, pll_cntr_by_gd_pgnwh);
 
   // 10. Assemble polylines into polygons
-  // std::cout << "Assemble polylines into polygons" << std::endl;
   std::vector<GeoDiv> container_simp;
   assemble_pll_to_pgn(pll_cntr_by_gd_pgnwh, visited, container_simp, container);
 
