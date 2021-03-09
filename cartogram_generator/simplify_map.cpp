@@ -370,6 +370,9 @@ void check_if_pll_on_pgn_boundary(PLL pll,
   }
 }
 
+/** 6. Match and store polylines according to their original map_state      **/
+/**    positions along with their associated GeoDiv and Polygon_with_hole.  **/
+
 std::map<int, std::vector<PLL>> store_by_pos(std::vector<Polyline> &ct_polylines, 
     std::vector<GeoDiv> container_dens,
     std::vector<std::vector<bool>> gd_pgnwh_island_bool) {
@@ -672,8 +675,9 @@ void simplify_map(MapState *map_state)
   /* 3. Functions to create graph and split graph into unique polylines.     */ 
   /* 4. Store polylines in a CT object from polyline_list.                   */
   /* 5. Store polylines in a vector in the order of CT polylines.            */
-  // 6. Store polylines by positions with their associated GeoDivs and Polygon_with_holes
-  // 7. Simplify polylines
+  /* 6. Match and store polylines according to their original map_state      */
+  /*    positions along with their associated GeoDiv and Polygon_with_hole.  */
+  /* 7. Simplify polylines.                                                  */
   // 8. Store polylines by GeoDivs and Polygon_with_holes with their associated positions
   // 9. Set visited values
   // 10. Assemble polylines into polygons
@@ -713,11 +717,9 @@ void simplify_map(MapState *map_state)
   }
 
   /* 5. Store polylines in a vector in the order of CT polylines.            */
-  /* 
-   * This is so that we no longer need to use the CT data structure when
-   * carrying out operations, which has limited methods available to use.
-   * Instead, we can use the vector data structure and its methods.
-   */
+  /* This is so that we no longer need to use the CT data structure when     */
+  /* carrying out operations, which has limited methods available to use.    */
+  /* Instead, we can use the vector data structure and its methods.          */
   std::vector<Polyline> ct_polylines;
   for (auto cit = ct.constraints_begin(); cit != ct.constraints_end()
                                         ; cit++) {
@@ -729,10 +731,13 @@ void simplify_map(MapState *map_state)
     ct_polylines.push_back(polyl);
   }
 
-  // 6. Store polylines by positions with their associated GeoDivs and Polygon_with_holes
-  std::map<int, std::vector<PLL>> pll_cntr_by_pos = store_by_pos(ct_polylines, container, pgn_bool_island);
+  /* 6. Match and store polylines according to their original map_state      */
+  /*    positions along with their associated GeoDiv and Polygon_with_hole.  */
+  std::map<int, std::vector<PLL>> pll_cntr_by_pos = 
+                                  store_by_pos(ct_polylines, 
+                                               container, pgn_bool_island);
 
-  // 7. Simplify polylines
+  /* 7. Simplify polylines.                                                  */
   PS::simplify(ct, Cost(), Stop(0.2));
 
   // 8. Store polylines by GeoDivs and Polygon_with_holes with their associated positions
