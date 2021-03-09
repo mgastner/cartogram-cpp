@@ -113,16 +113,25 @@ void project_graticule(MapState *map_state)
   boost::multi_array<XYPoint, 2> &proj = *map_state->proj();
   
   boost::multi_array<XYPoint, 2> &graticule_points = *map_state->graticule_points();
+  boost::multi_array<XYPoint, 2> &graticule_centroids = *map_state->graticule_centroids();
   
   // Resize multi array if running for the first time
   if (map_state->n_finished_integrations() == 0) {
     graticule_points.resize(boost::extents[lx + 1][ly + 1]);
+    graticule_centroids.resize(boost::extents[lx][ly]);
   }
 
   for (unsigned int i = 0; i < lx + 1; i++){
     for (unsigned int j = 0; j < ly + 1; j++){
       graticule_points[i][j].x = i;
       graticule_points[i][j].y = j;
+    }
+  }
+
+  for (unsigned int i = 0; i < lx; i++){
+    for (unsigned int j = 0; j < ly; j++){
+      graticule_centroids[i][j].x = i + 0.5;
+      graticule_centroids[i][j].y = j + 0.5;
     }
   }
 
@@ -136,7 +145,7 @@ void project_graticule(MapState *map_state)
     }
   }
 
-  // Project graticules
+  // Project graticule points
   for (unsigned int i = 0; i < lx; i++){
     for (unsigned int j = 0; j < ly; j++){
       double new_x =
@@ -152,5 +161,36 @@ void project_graticule(MapState *map_state)
     }
   }
 
+  // Project graticule centroids
+  for (unsigned int i = 0; i < lx; i++){
+    for (unsigned int j = 0; j < ly; j++){
+      double x_disp =
+        graticule_points[i][j].x - i +
+        graticule_points[i + 1][j].x - i - 1 +
+        graticule_points[i][j + 1].x - i +
+        graticule_points[i + 1][j + 1].x - i - 1;
+      double y_disp =
+        graticule_points[i][j].y - j +
+        graticule_points[i + 1][j].y - j - 1 +
+        graticule_points[i][j + 1].y - j +
+        graticule_points[i + 1][j + 1].y - j - 1;
+      x_disp /= 4;
+      y_disp /= 4;
+      graticule_centroids[i][j].x += x_disp;
+      graticule_centroids[i][j].y += y_disp;
+    }
+  }
+
+  return;
+}
+
+// Applying the function find_graticule_point to any cartogram point would
+// return the coordinates (x, y) of the bottom left point of the original
+// (untransformed) square graticule the cartogram point was in. This square
+// graticule would always have four vertices of coordinates (x, y), (x + 1, y),
+// (x + 1, y + 1) and (x, y + 1).
+
+void project_with_triangulation(MapState *map_state)
+{
   return;
 }

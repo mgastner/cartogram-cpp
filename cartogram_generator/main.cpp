@@ -151,6 +151,7 @@ int main(const int argc, const char *argv[])
     }
     flatten_density(&map_state);
     project(&map_state);
+    project_graticule(&map_state);
     map_state.inc_integration();
   }
   json cart_json = cgal_to_json(&map_state);

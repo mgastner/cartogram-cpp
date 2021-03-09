@@ -30,6 +30,7 @@ private:
   unsigned int n_finished_integrations_;
   boost::multi_array<XYPoint, 2> proj_;
   boost::multi_array<XYPoint, 2> graticule_points_;
+  boost::multi_array<XYPoint, 2> graticule_centroids_;
   MapState();
 public:
   explicit MapState(const std::string, const bool, const bool);
@@ -62,6 +63,7 @@ public:
   void inc_integration();
   boost::multi_array<XYPoint, 2> *proj();
   boost::multi_array<XYPoint, 2> *graticule_points();
+  boost::multi_array<XYPoint, 2> *graticule_centroids();
   double max_area_err();
 };
 
