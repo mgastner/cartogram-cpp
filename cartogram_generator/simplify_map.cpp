@@ -185,16 +185,18 @@ Graph create_pll_graph(std::vector<GeoDiv> gd_vector)
     for (Polygon_with_holes pgnwh : gd.polygons_with_holes()) {
       Polyline pll_outer;
       Polygon outer = pgnwh.outer_boundary();
-      for (Point pt_outer : outer)
+      for (Point pt_outer : outer) {
         pll_outer.push_back(pt_outer);
+      }
 
       insert_pll_into_graph(pll_outer, graph, pv_map);
 
       std::vector<Polygon> holes_v(pgnwh.holes_begin(), pgnwh.holes_end());
       for (Polygon hole : holes_v) {
         Polyline pll_hole;
-        for (Point pt_hole : hole)
+        for (Point pt_hole : hole) {
           pll_hole.push_back(pt_hole);
+        }
 
         insert_pll_into_graph(pll_hole, graph, pv_map);
       }
@@ -272,11 +274,14 @@ class PgnProg {
 
       std::sort(endpts.begin(), endpts.end());
       int pairs = 0;
-      for (int i = 0; i < (int) endpts.size() - 1; i += 2)
-        if (endpts[i] == endpts[i + 1])
+      for (int i = 0; i < (int) endpts.size() - 1; i += 2) {
+        if (endpts[i] == endpts[i + 1]) {
           pairs++;
-      if (pairs * 2 == (int) endpts.size())
+        }
+      }
+      if (pairs * 2 == (int) endpts.size()) {
         endpts_prog = true;
+      }
     }
 
     // lone_pgn includes islands and polygons enclosed by a hole (e.g. Brussels)
@@ -663,8 +668,8 @@ void simplify_map(MapState *map_state)
   /* 1. Function to repeat the first point as the last point.                */
   /* 2. Function to return a vector<vector<bool>> of pgns IDed as islands.   */
   /* 3. Functions to create graph and split graph into unique polylines.     */ 
-  // 4. Store polylines from polyline_list in CT
-  // 5. Create vector to store polylines in CT order
+  /* 4. Store polylines in a CT object from polyline_list.                   */
+  /* 5. Store polylines in a vector in the order of CT polylines.            */
   // 6. Store polylines by positions with their associated GeoDivs and Polygon_with_holes
   // 7. Simplify polylines
   // 8. Store polylines by GeoDivs and Polygon_with_holes with their associated positions
@@ -699,12 +704,18 @@ void simplify_map(MapState *map_state)
   Polyline_visitor<Graph> polyline_visitor(polyline_list, graph);
   CGAL::split_graph_into_polylines(graph, polyline_visitor);
 
-  // 4. Store polylines from polyline_list in CT
+  /********** 4. Store polylines from polyline_list in a CT object. **********/
   CT ct; 
-  for (Polyline polyline : polyline_list)
+  for (Polyline polyline : polyline_list) {
     ct.insert_constraint(polyline.begin(), polyline.end());
+  }
 
-  // 5. Create vector to store polylines in CT order
+  /******* 5. Store polylines in a vector in the order of CT polylines. ******/
+  /** 
+   * This is so that we no longer need to use the CT data structure when
+   * carrying out operations, which has limited methods available to use.
+   * Instead, we can use the vector data structure and its methods.
+   */
   std::vector<Polyline> ct_polylines;
   for (auto cit = ct.constraints_begin(); cit != ct.constraints_end(); cit++) {
     Polyline polyl;
