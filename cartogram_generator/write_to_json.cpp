@@ -28,6 +28,9 @@ json cgal_to_json(MapState *map_state){
         er_container.push_back(arr);
       }
 
+      /* Repeat first point as last point as per GeoJSON standards. */
+      er_container.push_back({ext_ring[0][0], ext_ring[0][1]});
+
       polygon_container.push_back(er_container);
 
       // Get PWH holes
@@ -42,6 +45,9 @@ json cgal_to_json(MapState *map_state){
           arr[1] = hole[i][1];
           hole_container.push_back(arr);
         }
+
+        /* Repeat first point as last point as per GeoJSON standards. */
+        hole_container.push_back({hole[0][0], hole[0][1]});
 
         polygon_container.push_back(hole_container);
       }
