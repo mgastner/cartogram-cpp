@@ -175,29 +175,6 @@ void insert_pll_into_graph(Polyline &pll,
   }
 }
 
-template <typename Graph>
-struct Polyline_visitor
-{
-  std::list<Polyline>& polylines;
-  const Graph& points_pmap;
-
-  Polyline_visitor(std::list<Polyline>& lines, const Graph& points_property_map)
-    : polylines(lines), points_pmap(points_property_map)
-  {}
-
-  void start_new_polyline() {
-    Polyline V;
-    polylines.push_back(V);
-  }
-
-  void add_node(typename boost::graph_traits<Graph>::vertex_descriptor vd) {
-    Polyline& polyline = polylines.back();
-    polyline.push_back(points_pmap[vd]);
-  }
-
-  void end_polyline() {}
-};
-
 /**** 3. Functions to create graph and split graph into unique polylines. ****/
 
 Graph create_pll_graph(std::vector<GeoDiv> gd_vector)
@@ -225,6 +202,32 @@ Graph create_pll_graph(std::vector<GeoDiv> gd_vector)
   }
   return graph;
 }
+
+/* Struct template using Graph internally. */
+template <typename Graph>
+struct Polyline_visitor
+{
+  std::list<Polyline>& polyline_list;
+  const Graph& points_pmap;
+
+  /* Member initializer list. */
+  Polyline_visitor(std::list<Polyline>& lines,
+                   const Graph& points_property_map)
+    : polyline_list(lines), points_pmap(points_property_map)
+  {}
+
+  void start_new_polyline() {
+    Polyline V;
+    polyline_list.push_back(V);
+  }
+
+  void add_node(typename boost::graph_traits<Graph>::vertex_descriptor vd) {
+    Polyline& polyline = polyline_list.back();
+    polyline.push_back(points_pmap[vd]);
+  }
+
+  void end_polyline() {}
+};
 
 void print_pll(PLL pll) {
   std::cout << pll.get_gd();
