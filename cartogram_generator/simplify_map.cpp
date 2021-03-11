@@ -284,6 +284,11 @@ class PgnProg {
           pairs++;
         }
       }
+      
+      /**
+       * If the number of equal endpt pairs is half of the number of endpts,
+       * then the pgnwh has found all its endpt and completed its progress.
+       */
       if (pairs * 2 == (int) endpts.size()) {
         endpts_prog = true;
       }
@@ -292,11 +297,18 @@ class PgnProg {
     /** 
      * lone_pgn includes islands and polygons enclosed by a hole.
      * e.g. Brussels
+     *
+     * So, if the current pgnwh has 0 holes, then the pll that it is 
+     * matched to is an island, otherwise, it is not an island.
      */
     void set_lone_pgn() {
       island = num_holes == 0 ? true : false;
     }
 
+    /**
+     * To complete its progress, the pgnwh must be an island or it must
+     * fulfill both endpts_prog and holes_prog.
+     */
     bool check_prog() {
       return island || (endpts_prog && holes_prog);
     }
@@ -320,6 +332,10 @@ std::map<int, std::map<int, PgnProg>> create_pgnprog_map(
   return pgnprog_map;
 }
 
+/**
+ * Check if pll is on the boundary of pgn and return the
+ * number of pll vertices on the boundary of the pgn.
+ */
 int check_if_pll_on_pgn_boundary(PLL pll, Polygon pgn)
 {
   /* Iterate through all vertices (points) inside the polyline. */
@@ -342,23 +358,44 @@ int check_if_pll_on_pgn_boundary(PLL pll, Polygon pgn)
   return num_v_on_boundary;
 }
 
+/**
+ * Check the matching progress of its polylines to its original gds and pgnwhs.
+ */
 void check_pgnprog_map(PLL pll,
-    std::map<int, std::map<int, PgnProg>> &pgnprog_map,
-    std::vector<int> &plls_match,
-    bool pgnwh_is_island) {
-
+                       std::map<int, std::map<int, PgnProg>> &pgnprog_map,
+                       std::vector<int> &plls_match,
+                       bool pgnwh_is_island)
+{
   int pos = pll.get_pos();
   bool is_hole = pll.get_bool_hole();
 
+  /**
+   * If the pll's 1st vertex equals its last vertex and it's a hole,
+   * remove 1 hole from pgnprog_map and increment plls_match by 1.
+   */
   if (pll.get_v1() == pll.get_vl() && is_hole) {
     pgnprog_map[pll.get_gd()][pll.get_pgnwh()].rem_hole();
     plls_match[pos] += 1;
+
+  /**
+   * If the pll's 1st vertex equals its last vertex and it's an island,
+   * set it to be a lone polygon and increment plls_match by 2.
+   */
   } else if (pll.get_v1() == pll.get_vl() && pgnwh_is_island) {
     pgnprog_map[pll.get_gd()][pll.get_pgnwh()].set_lone_pgn();
     plls_match[pos] += 2;
+
+  /**
+   * If the pll's 1st vertex equals its last vertex and it's not a hole,
+   * set it to be a lone polygon and increment plls_match by 1.
+   */
   } else if (pll.get_v1() == pll.get_vl() && !is_hole) {
     pgnprog_map[pll.get_gd()][pll.get_pgnwh()].set_lone_pgn();
     plls_match[pos] += 1;
+
+  /**
+   * Else, add its endpoints, update its progress, and increment plls_match by 1.
+   */
   } else {
     pgnprog_map[pll.get_gd()][pll.get_pgnwh()].add_endpts(pll.get_v1(), pll.get_vl());
     pgnprog_map[pll.get_gd()][pll.get_pgnwh()].update_prog();
@@ -366,6 +403,9 @@ void check_pgnprog_map(PLL pll,
   }
 }
 
+/**
+ * Depending on num_v_pll_outer, call check_pgnprog_map and plls_by_pos.
+ */
 void check_prog_store_pll(int num_v_on_boundary,
                           PLL pll,
                           Polygon pgn,
@@ -414,9 +454,9 @@ void check_prog_store_pll(int num_v_on_boundary,
 /**    positions along with their associated GeoDiv and Polygon_with_hole.  **/
 
 std::map<int, std::vector<PLL>> store_by_pos(
-    std::vector<Polyline> &ct_polylines, 
-    std::vector<GeoDiv> gd_vector,
-    std::vector<std::vector<bool>> gd_pgnwh_island_bool)
+          std::vector<Polyline> &ct_polylines, 
+          std::vector<GeoDiv> gd_vector,
+          std::vector<std::vector<bool>> gd_pgnwh_island_bool)
 {
   /**
    * Create map to match and store polylines according to their original
@@ -471,7 +511,7 @@ std::map<int, std::vector<PLL>> store_by_pos(
 
         /**
          * Check if pll_outer is on the boundary of outer_pgn and return 
-         * the number of pll vertices on the boundary of the polygon.
+         * the number of pll vertices on the boundary of the pgn.
          */
         int num_v_pll_outer = check_if_pll_on_pgn_boundary(pll_outer,
                                                            outer_pgn);
@@ -491,7 +531,10 @@ std::map<int, std::vector<PLL>> store_by_pos(
         for (Polygon hole : holes_v) {
           PLL pll_hole(pos, polyl, gd_num, pgnwh_num, true);
 
-          /* Check if pll_hole is on the boundary of hole. (for each hole) */
+          /**
+           * Check if pll_hole is on the boundary of hole and return 
+           * the number of pll vertices on the boundary of the pgn.
+           */
           int num_v_pll_hole = check_if_pll_on_pgn_boundary(pll_hole, hole);
 
           /**
