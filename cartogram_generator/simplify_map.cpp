@@ -556,12 +556,17 @@ std::map<int, std::vector<PLL>> store_by_pos(
   return plls_by_pos;
 }
 
-std::map<int, std::map<int, std::vector<PLL>>> store_by_gd_pgnwh(std::vector<GeoDiv> container, 
-    CT &ct, std::map<int, 
-    std::vector<PLL>> &plls_by_pos) {
+/** 8. Store polylines according to their GeoDivs and Polygon_with_holes    **/
+/**    along with their associated ct_polyline positions.                   **/
+
+std::map<int, std::map<int, std::vector<PLL>>> store_by_gd_pgnwh(std::vector<GeoDiv> gd_vector, 
+                                                                 CT &ct, std::map<int, 
+                                                                 std::vector<PLL>> &plls_by_pos)
+{
   std::map<int, std::map<int, std::vector<PLL>>> plls_by_gd_pgnwh;
-  for (int gd_num = 0; gd_num < (int) container.size(); gd_num++) {
-    for (int pgnwh_num = 0; pgnwh_num < (int) container[gd_num].polygons_with_holes().size(); pgnwh_num++) {
+
+  for (int gd_num = 0; gd_num < (int) gd_vector.size(); gd_num++) {
+    for (int pgnwh_num = 0; pgnwh_num < (int) gd_vector[gd_num].polygons_with_holes().size(); pgnwh_num++) {
       int cit_num = 0;
       for (auto cit = ct.constraints_begin(); cit != ct.constraints_end(); cit++) {
         for (PLL pll : plls_by_pos[cit_num]) {
@@ -798,7 +803,8 @@ void simplify_map(MapState *map_state)
   /* 6. Match and store polylines according to their original map_state      */
   /*    positions along with their associated GeoDiv and Polygon_with_hole.  */
   /* 7. Simplify polylines.                                                  */
-  // 8. Store polylines by GeoDivs and Polygon_with_holes with their associated positions
+  /* 8. Store polylines according to their GeoDivs and Polygon_with_holes    */
+  /*    along with their associated original map_state positions.            */
   // 9. Set visited values
   // 10. Assemble polylines into polygons
   // 11. Remove first point as last point by reference 
@@ -863,7 +869,8 @@ void simplify_map(MapState *map_state)
   /* 7. Simplify polylines.                                                  */
   PS::simplify(ct, Cost(), Stop(0.2));
 
-  // 8. Store polylines by GeoDivs and Polygon_with_holes with their associated positions
+  /* 8. Store polylines according to their GeoDivs and Polygon_with_holes    */
+  /*    along with their associated original map_state positions.            */
   std::map<int, std::map<int, std::vector<PLL>>> plls_by_gd_pgnwh = store_by_gd_pgnwh(container, ct, plls_by_pos);
 
   // 9. Set visited values
