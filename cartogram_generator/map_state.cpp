@@ -59,6 +59,13 @@ double MapState::target_areas_at(const std::string id)
   return target_areas.at(id);
 }
 
+bool MapState::target_area_is_missing(const std::string id) const
+{
+
+  // We use negative area as indication that GeoDiv has no target area
+  return target_areas.at(id) < 0.0;
+}
+
 const Color MapState::colors_at(const std::string id)
 {
   return colors.at(id);
@@ -186,18 +193,22 @@ double MapState::max_area_err()
   double sum_target_area = 0.0;
   double sum_cart_area = 0.0;
   for (auto gd : geo_divs_) {
-    sum_target_area += target_areas_at(gd.id());
-    sum_cart_area += gd.area();
+    if (!target_area_is_missing(gd.id())) {
+      sum_target_area += target_areas_at(gd.id());
+      sum_cart_area += gd.area();
+    }
   }
   double mae = 0.0;
   for (auto gd : geo_divs_) {
-    double obj_area =
-      target_areas_at(gd.id()) * sum_cart_area / sum_target_area;
-    double relative_area_error = gd.area() / obj_area - 1;
-    if (relative_area_error < 0) {
-      mae = std::max(mae, -relative_area_error);
-    } else{
-      mae = std::max(mae, relative_area_error);
+    if (!target_area_is_missing(gd.id())) {
+      double obj_area =
+        target_areas_at(gd.id()) * sum_cart_area / sum_target_area;
+      double relative_area_error = gd.area() / obj_area - 1;
+      if (relative_area_error < 0) {
+        mae = std::max(mae, -relative_area_error);
+      } else {
+        mae = std::max(mae, relative_area_error);
+      }
     }
   }
   std::cout << "max. area err: " << mae << std::endl;

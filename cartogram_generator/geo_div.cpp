@@ -40,6 +40,7 @@ double GeoDiv::area() const
     for (auto hci = pwh.holes_begin(); hci != pwh.holes_end(); ++hci) {
       Polygon hole = *hci;
       a += hole.area();
+      std::cout << "hole.area() = " << hole.area() << std::endl;
     }
   }
   return a;

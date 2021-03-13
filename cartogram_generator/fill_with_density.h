@@ -1,10 +1,13 @@
 #ifndef FILL_WITH_DENSITY_H_
 #define FILL_WITH_DENSITY_H_
 
+#include <string.h>
+
 // Struct to store intersection data
 struct intersection {
   double x;  // x-coordinate of intersection
   double target_density;  // GeoDiv's target_density
+  std::string geo_div_id;
   bool direction;  // Does intersection enter or exit?
 
   // Overload "<" operator for this data type. Idea from
