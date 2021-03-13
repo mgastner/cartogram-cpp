@@ -46,13 +46,13 @@ void fill_with_density(MapState* map_state)
   // missing values
   double total_current_area = 0.0;
   for (auto gd : map_state->geo_divs()) {
-    if (map_state->target_areas_at(gd.id()) > 0.0) {
+    if (!map_state->target_area_is_missing(gd.id())) {
       total_current_area += gd.area();
     }
   }
   double total_target_area = 0.0;
   for (auto gd : map_state->geo_divs()) {
-    if (map_state->target_areas_at(gd.id()) > 0.0) {
+    if (!map_state->target_area_is_missing(gd.id())) {
       total_target_area += map_state->target_areas_at(gd.id());
     }
   }
@@ -81,7 +81,7 @@ void fill_with_density(MapState* map_state)
     // Associative area. It is only called once to find out the target
     // density.
     double target_density;
-    if (map_state->target_areas_at(gd.id()) >= 0.0) {
+    if (!map_state->target_area_is_missing(gd.id())) {
       target_density = map_state->target_areas_at(gd.id()) / gd.area();
       target_density /= res;
     } else {

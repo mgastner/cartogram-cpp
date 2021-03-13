@@ -40,6 +40,7 @@ public:
   void target_areas_insert(std::string, double);
   void colors_insert(std::string, std::string);
   double target_areas_at(const std::string);
+  bool target_area_is_missing(const std::string) const;
   const Color colors_at(const std::string);
   bool colors_empty() const;
   void set_id_header(const std::string);
