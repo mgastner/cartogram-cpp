@@ -31,15 +31,30 @@ bool line_y_intersects(XYPoint a,
   return false;
 }
 
+
 void fill_with_density(MapState* map_state)
 {
+
+  std::map<std::string, double> gd_to_number;
+
+  for (GeoDiv gd : map_state->geo_divs()) {
+    double temp = 0.0;
+    gd_to_number.insert(std::pair<std::string, double>(gd.id(), temp));
+  }
+
+  // Calculate the total current area and total target area, excluding any
+  // missing values
   double total_current_area = 0.0;
   for (auto gd : map_state->geo_divs()) {
-    total_current_area += gd.area();
+    if (map_state->target_areas_at(gd.id()) > 0.0) {
+      total_current_area += gd.area();
+    }
   }
   double total_target_area = 0.0;
   for (auto gd : map_state->geo_divs()) {
-    total_target_area += map_state->target_areas_at(gd.id());
+    if (map_state->target_areas_at(gd.id()) > 0.0) {
+      total_target_area += map_state->target_areas_at(gd.id());
+    }
   }
   double mean_density = total_target_area / total_current_area;
   FTReal2d &rho_init = *map_state->ref_to_rho_init();
@@ -65,8 +80,13 @@ void fill_with_density(MapState* map_state)
 
     // Associative area. It is only called once to find out the target
     // density.
-    double target_density = map_state->target_areas_at(gd.id()) / gd.area();
-    target_density /= res;
+    double target_density;
+    if (map_state->target_areas_at(gd.id()) >= 0.0) {
+      target_density = map_state->target_areas_at(gd.id()) / gd.area();
+      target_density /= res;
+    } else {
+      target_density = mean_density / res;
+    }
 
     // Iterate through "polygons with holes" in map_state
     for (int j = 0; j < gd.n_polygons_with_holes(); ++j) {
@@ -87,6 +107,7 @@ void fill_with_density(MapState* map_state)
           XYPoint prev_point;
           prev_point.x = ext_ring[ext_ring.size()-1][0];
           prev_point.y = ext_ring[ext_ring.size()-1][1];
+
 
           // Temporary vector of intersections for this particular line
           std::vector<intersection> intersections;
@@ -115,6 +136,7 @@ void fill_with_density(MapState* map_state)
                                   &temp,
                                   target_density,
                                   epsilon)) {
+              temp.geo_div_id = gd.id();
               intersections.push_back(temp);
             }
             prev_point.x = curr_point.x;
@@ -137,6 +159,8 @@ void fill_with_density(MapState* map_state)
                                     &temp,
                                     target_density,
                                     epsilon)) {
+
+                temp.geo_div_id = gd.id();
                 intersections.push_back(temp);
               }
               prev_point.x = curr_point.x;
@@ -257,22 +281,42 @@ void fill_with_density(MapState* map_state)
 
         // Fill each cell between intersections
         for (unsigned int m = ceil(left_x); m <= ceil(right_x); ++m) {
+
+          double td;
+
+          std::string gd_id = intersections[l].geo_div_id;
+
           if (ceil(left_x) == ceil(right_x)) {
             rho_init(m - 1, k) +=
               intersections[l].target_density * (right_x - left_x);
+            td = intersections[l].target_density * (right_x - left_x);
           } else if (m == ceil(left_x)) {
             rho_init(m - 1, k) +=
               intersections[l].target_density * (ceil(left_x) - left_x);
+            td = intersections[l].target_density * (ceil(left_x) - left_x);
           } else if (m == ceil(right_x)) {
             rho_init(m - 1, k) +=
               intersections[l].target_density * (right_x - floor(right_x));
+            td = intersections[l].target_density * (right_x - floor(right_x));
           } else {
             rho_init(m - 1, k) += intersections[l].target_density;
+            td = intersections[l].target_density;
           }
+
+          gd_to_number.at(gd_id) = gd_to_number.at(gd_id) + td;
+
         }
       }
     }
   }
+
+  for (GeoDiv gd : map_state->geo_divs()) {
+    std::cout << "ID: " << gd.id() << ", ";
+    std::cout << "effective target area: "
+              << gd_to_number.at(gd.id()) << '\n';
+  }
+
+
   if (map_state->trigger_write_density_to_eps()) {
     std::string file_name =
       std::string("unblurred_density_") +

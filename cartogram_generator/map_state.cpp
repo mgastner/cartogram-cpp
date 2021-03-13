@@ -186,18 +186,22 @@ double MapState::max_area_err()
   double sum_target_area = 0.0;
   double sum_cart_area = 0.0;
   for (auto gd : geo_divs_) {
-    sum_target_area += target_areas_at(gd.id());
-    sum_cart_area += gd.area();
+    if (target_areas_at(gd.id()) >= 0.0) {
+      sum_target_area += target_areas_at(gd.id());
+      sum_cart_area += gd.area();
+    }
   }
   double mae = 0.0;
   for (auto gd : geo_divs_) {
-    double obj_area =
-      target_areas_at(gd.id()) * sum_cart_area / sum_target_area;
-    double relative_area_error = gd.area() / obj_area - 1;
-    if (relative_area_error < 0) {
-      mae = std::max(mae, -relative_area_error);
-    } else{
-      mae = std::max(mae, relative_area_error);
+    if (target_areas_at(gd.id()) >= 0.0) {
+      double obj_area =
+        target_areas_at(gd.id()) * sum_cart_area / sum_target_area;
+      double relative_area_error = gd.area() / obj_area - 1;
+      if (relative_area_error < 0) {
+        mae = std::max(mae, -relative_area_error);
+      } else {
+        mae = std::max(mae, relative_area_error);
+      }
     }
   }
   std::cout << "max. area err: " << mae << std::endl;
