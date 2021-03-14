@@ -605,6 +605,8 @@ store_by_gd_pgnwh(std::vector<GeoDiv> gd_vector,
   return plls_by_gd_pgnwh;
 }
 
+/******* 9. Set all polylines to not-visited and sort pll_by_gd_pgnwh. *******/
+
 void set_visited_vals(std::unordered_map<int, 
     std::unordered_map<int, std::unordered_map<int, bool>>> &visited,
     std::map<int, std::map<int, std::vector<PLL>>> &plls_by_gd_pgnwh)
@@ -612,12 +614,17 @@ void set_visited_vals(std::unordered_map<int,
   for (auto [gd_num, map_iv] : plls_by_gd_pgnwh) {
     for (auto [pgnwh_num, pll_v] : map_iv) {
       for (PLL pll : pll_v) {
-        /* Set all visited to false. */
+        /* Set all polylines to not-visited. */
         visited[gd_num][pgnwh_num][pll.get_pos()] = false;
       }
-      // Sort each vector<PLL> so that all holes are in front
-      std::sort(plls_by_gd_pgnwh[gd_num][pgnwh_num].begin(), plls_by_gd_pgnwh[gd_num][pgnwh_num].end(), 
-          [](PLL pll1, PLL pll2) {
+
+      /** 
+       * Sort each pll_v so that all holes are in front
+       * to evaluate them in the next step first.
+       */
+      std::sort(plls_by_gd_pgnwh[gd_num][pgnwh_num].begin(),
+                plls_by_gd_pgnwh[gd_num][pgnwh_num].end(), 
+                [](PLL pll1, PLL pll2) {
           return pll1.get_is_hole() > pll2.get_is_hole();
           });
     }
@@ -745,7 +752,7 @@ void assemble_pll_to_pgn(std::map<int, std::map<int, std::vector<PLL>>> &plls_by
   }
 }
 
-/* Print the number of points in the gd_vector.                             */
+/* Print the number of points in the gd_vector. */
 
 void print_num_pts(std::vector<GeoDiv> gd_vector) {
   int num_pts = 0;
@@ -796,7 +803,7 @@ void simplify_map(MapState *map_state)
   /* 7. Simplify polylines.                                                  */
   /* 8. Store polylines according to their GeoDivs and Polygon_with_holes    */
   /*    along with their associated original map_state positions.            */
-  /* 9. Set visited values                                                   */
+  /* 9. Set all polylines to not-visited and sort pll_by_gd_pgnwh.           */
   // 10. Assemble polylines into polygons
   /* 11. Remove the last point                                               */ 
 
@@ -864,7 +871,7 @@ void simplify_map(MapState *map_state)
   /*    along with their associated original map_state positions.            */
   std::map<int, std::map<int, std::vector<PLL>>> plls_by_gd_pgnwh = store_by_gd_pgnwh(gd_vector, ct, plls_by_pos);
 
-  // 9. Set visited values
+  /* 9. Set all polylines to not-visited and sort pll_by_gd_pgnwh.           */
   std::unordered_map<int, std::unordered_map<int, std::unordered_map<int, bool>>> visited;
   set_visited_vals(visited, plls_by_gd_pgnwh);
 
@@ -872,11 +879,11 @@ void simplify_map(MapState *map_state)
   std::vector<GeoDiv> gd_vector_simp;
   assemble_pll_to_pgn(plls_by_gd_pgnwh, visited, gd_vector_simp, gd_vector);
 
-  // Print number of points before simplifying (gd_vector)
+  /* Print number of points before simplifying (gd_vector). */
   std::cout << "Number of vertices before simplifying (gd_vector): ";
   print_num_pts(gd_vector);
 
-  // Print number of points after simplifying
+  /* Print number of points after simplifying. */
   std::cout << "Number of vertices after simplifying: ";
   print_num_pts(gd_vector_simp);
 
