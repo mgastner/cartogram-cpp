@@ -7,7 +7,7 @@ PLL::PLL(int pos_,
     Polyline pll_,
     int gd_,
     int pgnwh_,
-    bool bool_hole_) {
+    bool is_hole_) {
   pos = pos_;
   pll = pll_;
   gd = gd_;
@@ -22,7 +22,7 @@ PLL::PLL(int pos_,
   v2l_it++;
   v2l = *v2l_it;
 
-  bool_hole = bool_hole_;
+  is_hole = is_hole_;
 }
 
 int PLL::get_pos() {
@@ -57,8 +57,8 @@ int PLL::get_pgnwh() {
   return pgnwh;
 }
 
-bool PLL::get_bool_hole() {
-  return bool_hole;
+bool PLL::get_is_hole() {
+  return is_hole;
 }
 
 void PLL::set_pll(Polyline pll_) {
@@ -73,6 +73,6 @@ void PLL::set_pll(Polyline pll_) {
   v2l = *v2l_it;
 }
 
-void PLL::set_bool_hole(bool b) {
-  bool_hole = b;
+void PLL::set_is_hole(bool b) {
+  is_hole = b;
 }

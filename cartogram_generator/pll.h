@@ -13,14 +13,14 @@ class PLL {
     Point v1, v2, vl, v2l;
     int gd;
     int pgnwh;
-    bool bool_hole;
+    bool is_hole;
 
   public:
     PLL(int pos_,
         Polyline pll_,
         int gd_v_,
         int pgnwh_v_,
-        bool bool_hole_);
+        bool is_hole_);
 
     int get_pos();
     Polyline get_pll();
@@ -30,9 +30,9 @@ class PLL {
     Point get_v2l();
     int get_gd();
     int get_pgnwh();
-    bool get_bool_hole();
+    bool get_is_hole();
     void set_pll(Polyline pll_);
-    void set_bool_hole(bool b);
+    void set_is_hole(bool b);
 };
 
 #endif

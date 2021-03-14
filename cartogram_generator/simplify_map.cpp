@@ -237,7 +237,7 @@ void print_pll(PLL pll) {
   std::cout << pll.get_gd();
   std::cout << " | " << pll.get_pgnwh();
   std::cout << " | " << pll.get_pos();
-  std::cout << " | " << pll.get_bool_hole();
+  std::cout << " | " << pll.get_is_hole();
   std::cout << " | " << pll.get_v1();
   std::cout << " | " << pll.get_vl();
   std::cout << " | " << pll.get_v2() << std::endl; 
@@ -367,7 +367,7 @@ void check_pgnprog_map(PLL pll,
                        bool pgnwh_is_island)
 {
   int pos = pll.get_pos();
-  bool is_hole = pll.get_bool_hole();
+  bool is_hole = pll.get_is_hole();
 
   /**
    * If the pll's 1st vertex equals its last vertex and it's a hole,
@@ -559,22 +559,37 @@ std::map<int, std::vector<PLL>> store_by_pos(
 /** 8. Store polylines according to their GeoDivs and Polygon_with_holes    **/
 /**    along with their associated ct_polyline positions.                   **/
 
-std::map<int, std::map<int, std::vector<PLL>>> store_by_gd_pgnwh(std::vector<GeoDiv> gd_vector, 
-                                                                 CT &ct, std::map<int, 
-                                                                 std::vector<PLL>> &plls_by_pos)
+std::map<int, std::map<int, std::vector<PLL>>> 
+store_by_gd_pgnwh(std::vector<GeoDiv> gd_vector,
+                  CT &ct, std::map<int,
+                  std::vector<PLL>> &plls_by_pos)
 {
   std::map<int, std::map<int, std::vector<PLL>>> plls_by_gd_pgnwh;
 
   for (int gd_num = 0; gd_num < (int) gd_vector.size(); gd_num++) {
-    for (int pgnwh_num = 0; pgnwh_num < (int) gd_vector[gd_num].polygons_with_holes().size(); pgnwh_num++) {
+    for (int pgnwh_num = 0; 
+         pgnwh_num < (int) gd_vector[gd_num].polygons_with_holes().size();
+         pgnwh_num++) {
+      /** 
+       * Iterates through each cit, which represents a now simplified polyline.
+       */
       int cit_num = 0;
-      for (auto cit = ct.constraints_begin(); cit != ct.constraints_end(); cit++) {
+      for (auto cit = ct.constraints_begin(); cit != ct.constraints_end();
+                                              cit++) {
+        /* Iterates through each non-simplified polyline. */
         for (PLL pll : plls_by_pos[cit_num]) {
+
+          /* If this popyline's associated gd and pgnwh are valid: */
           if (pll.get_gd() == gd_num && pll.get_pgnwh() == pgnwh_num) {
             Polyline pll_ct;
-            for (auto vit = ct.points_in_constraint_begin(*cit); vit != ct.points_in_constraint_end(*cit); vit++)
+            for (auto vit = ct.points_in_constraint_begin(*cit);
+                vit != ct.points_in_constraint_end(*cit);
+                vit++) {
               pll_ct.push_back(*vit);
-            PLL pll_new(pll.get_pos(), pll_ct, pll.get_gd(), pll.get_pgnwh(), pll.get_bool_hole());
+            }
+            PLL pll_new(pll.get_pos(), pll_ct, pll.get_gd(), pll.get_pgnwh(), pll.get_is_hole());
+
+            /* Stores polyline in plls_by_gd_pgnwh. */
             plls_by_gd_pgnwh[gd_num][pgnwh_num].push_back(pll_new);
             break;
           }
@@ -598,7 +613,7 @@ void label_holes_correctly(std::vector<GeoDiv> container,
             std::vector<Polygon> holes_v(pgnwh3.holes_begin(), pgnwh3.holes_end());
             if (gd_num2 == gd_num && pgnwh_num2 == pgnwh_num && holes_v.empty()) {
               for (int i = 0; i < (int) plls_by_gd_pgnwh[gd_num][pgnwh_num].size(); i++)
-                pll.set_bool_hole(false);
+                pll.set_is_hole(false);
             } else {
               break;
             }
@@ -623,7 +638,7 @@ void set_visited_vals(std::unordered_map<int, std::unordered_map<int, std::unord
       // Sort each vector<PLL> so that all holes are in front
       std::sort(plls_by_gd_pgnwh[gd_num][pgnwh_num].begin(), plls_by_gd_pgnwh[gd_num][pgnwh_num].end(), 
           [](PLL pll1, PLL pll2) {
-          return pll1.get_bool_hole() > pll2.get_bool_hole();
+          return pll1.get_is_hole() > pll2.get_is_hole();
           });
     }
   }
@@ -652,7 +667,7 @@ void assemble_pll_to_pgn(std::map<int, std::map<int, std::vector<PLL>>> &plls_by
         Polygon outer; // This will only be for islands/holes anyway
         if (visited[gd_num][pgnwh_num][pll.get_pos()]) continue;
 
-        // std::cout << pll.get_gd() << " " << pll.get_pgnwh() << " " << pll.get_pos() << " " << pll.get_bool_hole() << std::endl;
+        // std::cout << pll.get_gd() << " " << pll.get_pgnwh() << " " << pll.get_pos() << " " << pll.get_is_hole() << std::endl;
 
         // if it is a single polyline (e.g. island)
         if (pll.get_v1() == pll.get_vl() && !visited[gd_num][pgnwh_num][pll.get_pos()]) {
@@ -662,10 +677,10 @@ void assemble_pll_to_pgn(std::map<int, std::map<int, std::vector<PLL>>> &plls_by
           for (Point pt : pll.get_pll())
             outer.push_back(pt);
 
-          if (!pll.get_bool_hole() && holes_v.empty()) {
+          if (!pll.get_is_hole() && holes_v.empty()) {
             Polygon_with_holes pgnwh(outer);
             gd_final.push_back(pgnwh);
-          } else if (!pll.get_bool_hole() && !holes_v.empty()) { // if there is a hole within
+          } else if (!pll.get_is_hole() && !holes_v.empty()) { // if there is a hole within
             // Check if hole's middle vertex is inside boundary
             bool holes_inside = true; 
 
@@ -729,7 +744,7 @@ void assemble_pll_to_pgn(std::map<int, std::map<int, std::vector<PLL>>> &plls_by
             for (Point pt : pll_deq.get_pll())
               outer_2.push_back(pt);
 
-          if (pll.get_bool_hole()) {
+          if (pll.get_is_hole()) {
             holes_v.push_back(outer_2);
             continue;
           }
