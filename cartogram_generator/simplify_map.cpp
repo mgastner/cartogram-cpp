@@ -19,7 +19,7 @@
 #include "pll.h"
 #include "densify.h"
 
-/********** 1. Function to repeat the first point as the last point. *********/
+/**************** 1. Repeat the first point as the last point. ***************/
 
 void repeat_first_point_as_last_point(std::vector<GeoDiv> &gd_vector)
 {
@@ -105,7 +105,7 @@ bool check_for_neighbours(std::vector<GeoDiv> gd_vector, Polygon pgn)
   return true;
 }
 
-/*** 2. Function to return a vector<vector<bool>> of pgns IDed as islands. ***/
+/********* 2. Return a vector<vector<bool>> of pgns IDed as islands. *********/
 
 std::vector<std::vector<bool>> get_pgn_bool_island(
     std::vector<GeoDiv> gd_vector)
@@ -177,7 +177,7 @@ void insert_pll_into_graph(Polyline &pll,
   }
 }
 
-/**** 3. Functions to create graph and split graph into unique polylines. ****/
+/*********** 3. Create graph and split graph into unique polylines. **********/
 
 Graph create_pll_graph(std::vector<GeoDiv> gd_vector)
 {
@@ -587,7 +587,11 @@ store_by_gd_pgnwh(std::vector<GeoDiv> gd_vector,
                 vit++) {
               pll_ct.push_back(*vit);
             }
-            PLL pll_new(pll.get_pos(), pll_ct, pll.get_gd(), pll.get_pgnwh(), pll.get_is_hole());
+            PLL pll_new(pll.get_pos(),
+                        pll_ct,
+                        pll.get_gd(),
+                        pll.get_pgnwh(),
+                        pll.get_is_hole());
 
             /* Stores polyline in plls_by_gd_pgnwh. */
             plls_by_gd_pgnwh[gd_num][pgnwh_num].push_back(pll_new);
@@ -601,14 +605,15 @@ store_by_gd_pgnwh(std::vector<GeoDiv> gd_vector,
   return plls_by_gd_pgnwh;
 }
 
-void set_visited_vals(std::unordered_map<int, std::unordered_map<int, std::unordered_map<int, bool>>> &visited,
-    std::map<int, std::map<int, std::vector<PLL>>> &plls_by_gd_pgnwh) {
-  for (auto [gd_num, m] : plls_by_gd_pgnwh) {
-    for (auto [pgnwh_num, pll_v] : m) {
-      int i = 0;
+void set_visited_vals(std::unordered_map<int, 
+    std::unordered_map<int, std::unordered_map<int, bool>>> &visited,
+    std::map<int, std::map<int, std::vector<PLL>>> &plls_by_gd_pgnwh)
+{
+  for (auto [gd_num, map_iv] : plls_by_gd_pgnwh) {
+    for (auto [pgnwh_num, pll_v] : map_iv) {
       for (PLL pll : pll_v) {
-        visited[gd_num][pgnwh_num][pll.get_pos()] = false; // Set all visited to false
-        i++;
+        /* Set all visited to false. */
+        visited[gd_num][pgnwh_num][pll.get_pos()] = false;
       }
       // Sort each vector<PLL> so that all holes are in front
       std::sort(plls_by_gd_pgnwh[gd_num][pgnwh_num].begin(), plls_by_gd_pgnwh[gd_num][pgnwh_num].end(), 
@@ -740,9 +745,11 @@ void assemble_pll_to_pgn(std::map<int, std::map<int, std::vector<PLL>>> &plls_by
   }
 }
 
-void print_num_pts(std::vector<GeoDiv> container) {
+/* Print the number of points in the gd_vector.                             */
+
+void print_num_pts(std::vector<GeoDiv> gd_vector) {
   int num_pts = 0;
-  for (GeoDiv gd : container) {
+  for (GeoDiv gd : gd_vector) {
     for (Polygon_with_holes pgnwh : gd.polygons_with_holes()) {
       Polygon outer = pgnwh.outer_boundary();
       num_pts += outer.size();
@@ -754,6 +761,8 @@ void print_num_pts(std::vector<GeoDiv> container) {
   }
   std::cout << num_pts << std::endl;
 }
+
+/*********************** 11. Remove the the last point. **********************/
 
 void remove_first_point_as_last_point(std::vector<GeoDiv> &container) {
   for (GeoDiv &gd : container) {
@@ -777,9 +786,9 @@ void remove_first_point_as_last_point(std::vector<GeoDiv> &container) {
 void simplify_map(MapState *map_state)
 {
   /********************************* Steps: **********************************/
-  /* 1. Function to repeat the first point as the last point.                */
-  /* 2. Function to return a vector<vector<bool>> of pgns IDed as islands.   */
-  /* 3. Functions to create graph and split graph into unique polylines.     */ 
+  /* 1. Repeat the first point as the last point.                            */
+  /* 2. Return a vector<vector<bool>> of pgns IDed as islands.               */
+  /* 3. Create graph and split graph into unique polylines.                  */ 
   /* 4. Store polylines in a CT object from polyline_list.                   */
   /* 5. Store polylines in a vector in the order of CT polylines.            */
   /* 6. Match and store polylines according to their original map_state      */
@@ -789,19 +798,19 @@ void simplify_map(MapState *map_state)
   /*    along with their associated original map_state positions.            */
   /* 9. Set visited values                                                   */
   // 10. Assemble polylines into polygons
-  // 11. Remove first point as last point by reference 
+  /* 11. Remove the last point                                               */ 
 
-  std::vector<GeoDiv> container = map_state->geo_divs();
+  std::vector<GeoDiv> gd_vector = map_state->geo_divs();
 
-  /* 1. Function to repeat the first point as the last point.                */
-  repeat_first_point_as_last_point(container);
+  /* 1. Repeat the first point as the last point.                            */
+  repeat_first_point_as_last_point(gd_vector);
 
   /* Start timer for step 2. */
   const auto start_s2 = std::chrono::system_clock::now();
 
-  /* 2. Function to return a vector<vector<bool>> of pgns IDed as islands    */
+  /* 2. Return a vector<vector<bool>> of pgns IDed as islands                */
   std::vector<std::vector<bool>> pgn_bool_island = 
-    get_pgn_bool_island(container);
+    get_pgn_bool_island(gd_vector);
 
   /* Get and print step 2's elapsed time */
   const std::chrono::duration<double, std::milli> dur_s2 =
@@ -814,8 +823,8 @@ void simplify_map(MapState *map_state)
   /* Start timer for remaining steps. */
   const auto start_s311 = std::chrono::system_clock::now();
 
-  /* 3. Functions to create graph and split graph into unique polylines.     */
-  Graph graph = create_pll_graph(container);
+  /* 3. Create graph and split graph into unique polylines.                  */
+  Graph graph = create_pll_graph(gd_vector);
   std::list<Polyline> polyline_list;
   Polyline_visitor<Graph> polyline_visitor(polyline_list, graph);
   CGAL::split_graph_into_polylines(graph, polyline_visitor);
@@ -846,35 +855,35 @@ void simplify_map(MapState *map_state)
   /* 6. Match and store polylines according to their original map_state      */
   /*    positions along with their associated GeoDiv and Polygon_with_hole.  */
   std::map<int, std::vector<PLL>> 
-    plls_by_pos = store_by_pos(ct_polylines, container, pgn_bool_island);
+    plls_by_pos = store_by_pos(ct_polylines, gd_vector, pgn_bool_island);
 
   /* 7. Simplify polylines.                                                  */
   PS::simplify(ct, Cost(), Stop(0.2));
 
   /* 8. Store polylines according to their GeoDivs and Polygon_with_holes    */
   /*    along with their associated original map_state positions.            */
-  std::map<int, std::map<int, std::vector<PLL>>> plls_by_gd_pgnwh = store_by_gd_pgnwh(container, ct, plls_by_pos);
+  std::map<int, std::map<int, std::vector<PLL>>> plls_by_gd_pgnwh = store_by_gd_pgnwh(gd_vector, ct, plls_by_pos);
 
   // 9. Set visited values
   std::unordered_map<int, std::unordered_map<int, std::unordered_map<int, bool>>> visited;
   set_visited_vals(visited, plls_by_gd_pgnwh);
 
   // 10. Assemble polylines into polygons
-  std::vector<GeoDiv> container_simp;
-  assemble_pll_to_pgn(plls_by_gd_pgnwh, visited, container_simp, container);
+  std::vector<GeoDiv> gd_vector_simp;
+  assemble_pll_to_pgn(plls_by_gd_pgnwh, visited, gd_vector_simp, gd_vector);
 
-  // Print number of points before simplifying (container)
-  std::cout << "Number of vertices before simplifying (container): ";
-  print_num_pts(container);
+  // Print number of points before simplifying (gd_vector)
+  std::cout << "Number of vertices before simplifying (gd_vector): ";
+  print_num_pts(gd_vector);
 
   // Print number of points after simplifying
   std::cout << "Number of vertices after simplifying: ";
-  print_num_pts(container_simp);
+  print_num_pts(gd_vector_simp);
 
-  // 11. Remove first point as last point by reference 
-  remove_first_point_as_last_point(container_simp);
+  /* 11. Remove the last point                                               */ 
+  remove_first_point_as_last_point(gd_vector_simp);
 
-  map_state->set_geo_divs(container_simp);
+  map_state->set_geo_divs(gd_vector_simp);
 
   const std::chrono::duration<double, std::milli> dur_s311 = std::chrono::system_clock::now() - start_s311;
   std::cout << "Remaining simplification steps time elapsed: " << dur_s311.count() << " ms (";
