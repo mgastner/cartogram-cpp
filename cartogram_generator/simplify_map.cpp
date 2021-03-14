@@ -601,31 +601,6 @@ store_by_gd_pgnwh(std::vector<GeoDiv> gd_vector,
   return plls_by_gd_pgnwh;
 }
 
-void label_holes_correctly(std::vector<GeoDiv> container,
-    std::map<int, std::map<int, std::vector<PLL>>> &plls_by_gd_pgnwh) {
-  for (auto [gd_num, m] : plls_by_gd_pgnwh) {
-    for (auto [pgnwh_num, v] : m) {
-      for (PLL pll : v) {
-        int gd_num2 = 0;
-        for (GeoDiv gd3 : container) {
-          int pgnwh_num2 = 0;
-          for (Polygon_with_holes pgnwh3 : gd3.polygons_with_holes()) {
-            std::vector<Polygon> holes_v(pgnwh3.holes_begin(), pgnwh3.holes_end());
-            if (gd_num2 == gd_num && pgnwh_num2 == pgnwh_num && holes_v.empty()) {
-              for (int i = 0; i < (int) plls_by_gd_pgnwh[gd_num][pgnwh_num].size(); i++)
-                pll.set_is_hole(false);
-            } else {
-              break;
-            }
-            pgnwh_num2++;
-          }
-          gd_num2++;
-        }
-      }
-    }
-  }
-}
-
 void set_visited_vals(std::unordered_map<int, std::unordered_map<int, std::unordered_map<int, bool>>> &visited,
     std::map<int, std::map<int, std::vector<PLL>>> &plls_by_gd_pgnwh) {
   for (auto [gd_num, m] : plls_by_gd_pgnwh) {
@@ -642,14 +617,6 @@ void set_visited_vals(std::unordered_map<int, std::unordered_map<int, std::unord
           });
     }
   }
-  // Print out new sequence
-  /*
-     for (auto [gd_num, m] : plls_by_gd_pgnwh)
-     for (auto [pgnwh_num, pll_v] : m)
-     for (PLL pll : pll_v)
-     print_pll(pll);
-     std::cout << std::endl;
-     */
 }
 
 void assemble_pll_to_pgn(std::map<int, std::map<int, std::vector<PLL>>> &plls_by_gd_pgnwh, 
@@ -820,7 +787,7 @@ void simplify_map(MapState *map_state)
   /* 7. Simplify polylines.                                                  */
   /* 8. Store polylines according to their GeoDivs and Polygon_with_holes    */
   /*    along with their associated original map_state positions.            */
-  // 9. Set visited values
+  /* 9. Set visited values                                                   */
   // 10. Assemble polylines into polygons
   // 11. Remove first point as last point by reference 
 
