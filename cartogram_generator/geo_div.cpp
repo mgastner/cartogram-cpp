@@ -83,12 +83,15 @@ const
 
   std::cout << "Product " << prod_ext << std::endl;
 
-  //for (auto hci = pwh.holes_begin(); hci != pwh.holes_end(); ++hci) {
-  //  Polygon hole = *hci;
-  //a += hole.area();
-  //std::cout << "hole.area() = " << hole.area() << std::endl;
-  //}
-  //}
+  std::vector<CGAL::Vector_2<Epick> > prod_hole;
+  for (auto hci = pwh.holes_begin(); hci != pwh.holes_end(); ++hci) {
+    Polygon hole = *hci;
+    double a_hole = hole.area();
+    Point c_hole = centroid_of_polygon(hole);
+    CGAL::Vector_2<Epick> p_hole(c_hole[0], c_hole[1]);
+    p_hole *= a_hole;
+    prod_hole.push_back(p_hole);
+  }
   return c_ext;
 }
 
