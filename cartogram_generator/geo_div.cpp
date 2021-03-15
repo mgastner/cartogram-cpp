@@ -70,18 +70,18 @@ Point GeoDiv::centroid_of_polygon(const Polygon polyg) const
   return CGAL::ORIGIN + centre;
 }
 
-Point GeoDiv::centroid_of_polygon_with_holes(
-  const Polygon_with_holes pwh
-  ) const
+Point GeoDiv::centroid_of_polygon_with_holes(const Polygon_with_holes pwh)
+const
 {
   // Idea from https://math.stackexchange.com/questions/623841/finding-
   // centroid-of-a-polygon-with-holes
   Polygon ext_ring = pwh.outer_boundary();
   double a_ext = ext_ring.area();
-  Point centroid_ext = centroid_of_polygon(ext_ring);
+  Point c_ext = centroid_of_polygon(ext_ring);
+  CGAL::Vector_2<Epick> prod_ext(c_ext[0], c_ext[1]);
+  prod_ext *= a_ext;
 
-  std::cout << "a_ext = " << a_ext << "\n";
-  std::cout << "centroid_ext = " << centroid_ext << std::endl;
+  std::cout << "Product " << prod_ext << std::endl;
 
   //for (auto hci = pwh.holes_begin(); hci != pwh.holes_end(); ++hci) {
   //  Polygon hole = *hci;
@@ -89,7 +89,7 @@ Point GeoDiv::centroid_of_polygon_with_holes(
   //std::cout << "hole.area() = " << hole.area() << std::endl;
   //}
   //}
-  return centroid_ext;
+  return c_ext;
 }
 
 Point GeoDiv::centroid_of_largest_polygon_with_holes() const
