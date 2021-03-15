@@ -111,54 +111,63 @@ int main(const int argc, const char *argv[])
                      density_to_eps);
 
   // Read visual variables (e.g. area, color) from CSV
-  read_csv(vm, &map_state);
+  //read_csv(vm, &map_state);
 
   // Read geometry
-  try {
-    read_geojson(geo_file_name, &map_state);
-  } catch (const std::system_error& e) {
-    std::cerr << "ERROR: "
-              << e.what()
-              << " ("
-              << e.code()
-              << ")"
-              << std::endl;
-    return EXIT_FAILURE;
-  }
+  // try {
+  //   read_geojson(geo_file_name, &map_state);
+  // } catch (const std::system_error& e) {
+  //   std::cerr << "ERROR: "
+  //             << e.what()
+  //             << " ("
+  //             << e.code()
+  //             << ")"
+  //             << std::endl;
+  //   return EXIT_FAILURE;
+  // }
 
-  try {
-    holes_inside_polygons(&map_state);
-  } catch (const std::system_error& e) {
-    std::cerr << "ERROR: " << e.what() << " (" << e.code() << ")" << std::endl;
-    return EXIT_FAILURE;
-  }
+  //for (auto gd : map_state.geo_divs()) {
+    //std::cout << "GeoDiv ID: " << gd.id() << std::endl;
+    //gd.point_in_geodiv();
+    //std::cout << "End of loop" << std::endl;
+  //}
+  //std::cout << "Out of loop" << std::endl;
 
-  // Rescale map to fit into a rectangular box [0, lx] * [0, ly].
-  rescale_map(long_grid_side_length, &map_state);
-  if (input_polygons_to_eps) {
-    std::cout << "Writing input_polygons.eps" << std::endl;
-    write_map_to_eps("input_polygons.eps", &map_state);
-  }
-
-  // Start map integration
-  while (map_state.n_finished_integrations() < max_integrations &&
-         map_state.max_area_err() > max_permitted_area_error) {
-
-    std::cout << "Integration number "
-              << map_state.n_finished_integrations()
-              <<std::endl;
-
-    fill_with_density(&map_state);
-    if (map_state.n_finished_integrations() == 0) {
-      blur_density(5.0, &map_state);
-    } else{
-      blur_density(0.0, &map_state);
-    }
-    flatten_density(&map_state);
-    project(&map_state);
-    map_state.inc_integration();
-  }
-  json cart_json = cgal_to_json(&map_state);
-  write_to_json(cart_json, geo_file_name, "cartogram.geojson");
   return EXIT_SUCCESS;
+
+  // try {
+  //   holes_inside_polygons(&map_state);
+  // } catch (const std::system_error& e) {
+  //   std::cerr << "ERROR: " << e.what() << " (" << e.code() << ")" << std::endl;
+  //   return EXIT_FAILURE;
+  // }
+  //
+  // // Rescale map to fit into a rectangular box [0, lx] * [0, ly].
+  // rescale_map(long_grid_side_length, &map_state);
+  // if (input_polygons_to_eps) {
+  //   std::cout << "Writing input_polygons.eps" << std::endl;
+  //   write_map_to_eps("input_polygons.eps", &map_state);
+  // }
+  //
+  // // Start map integration
+  // while (map_state.n_finished_integrations() < max_integrations &&
+  //        map_state.max_area_err() > max_permitted_area_error) {
+  //
+  //   std::cout << "Integration number "
+  //             << map_state.n_finished_integrations()
+  //             <<std::endl;
+  //
+  //   fill_with_density(&map_state);
+  //   if (map_state.n_finished_integrations() == 0) {
+  //     blur_density(5.0, &map_state);
+  //   } else{
+  //     blur_density(0.0, &map_state);
+  //   }
+  //   flatten_density(&map_state);
+  //   project(&map_state);
+  //   map_state.inc_integration();
+  // }
+  // json cart_json = cgal_to_json(&map_state);
+  // write_to_json(cart_json, geo_file_name, "cartogram.geojson");
+  // return EXIT_SUCCESS;
 }

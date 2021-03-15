@@ -45,3 +45,22 @@ double GeoDiv::area() const
   }
   return a;
 }
+
+Point GeoDiv::point_in_geodiv() const
+{
+  // Find largest polygon with hole in GeoDiv
+  for (auto pwh : polygons_with_holes()) {
+    Polygon ext_ring = pwh.outer_boundary();
+    std::cout << "pos A" << std::endl;
+    double a = ext_ring.area();
+    std::cout << "pos B" << std::endl;
+    for (auto hci = pwh.holes_begin(); hci != pwh.holes_end(); ++hci) {
+      Polygon hole = *hci;
+      std::cout << "pos C" << std::endl;
+      a += hole.area();
+      std::cout << "pos D" << std::endl;
+    }
+    std::cout << "Polygon has area " << a << "\n";
+  }
+  return Point(0, 0);
+}

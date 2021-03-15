@@ -18,6 +18,7 @@ class GeoDiv {
     std::vector<Polygon_with_holes> *ref_to_polygons_with_holes();
     void push_back(const Polygon_with_holes);
     double area() const;
+    Point point_in_geodiv() const;
 };
 
 #endif

@@ -6,13 +6,20 @@ MapState::MapState(std::string v, const bool w, const bool wd2eps) :
   write_density_to_eps_(wd2eps)
 {
   n_finished_integrations_ = 0;
+  fwd_plan_for_rho_ = NULL;
+  bwd_plan_for_rho_ = NULL;
   return;
 }
 
 MapState::~MapState()
 {
-  fftw_destroy_plan(fwd_plan_for_rho_);
-  fftw_destroy_plan(bwd_plan_for_rho_);
+  std::cout << "In destructor" << std::endl;
+  if (fwd_plan_for_rho_) {
+    fftw_destroy_plan(fwd_plan_for_rho_);
+  }
+  if (bwd_plan_for_rho_) {
+    fftw_destroy_plan(bwd_plan_for_rho_);
+  }
   return;
 }
 
