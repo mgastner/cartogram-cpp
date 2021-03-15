@@ -46,21 +46,78 @@ double GeoDiv::area() const
   return a;
 }
 
-Point GeoDiv::point_in_geodiv() const
+Point GeoDiv::centroid_of_polygon(const Polygon polyg) const
+{
+  // Code for centroid from: https://graphics.stanford.edu/courses/cs368-04-
+  // spring/manuals/CGAL_Tutorial.pdf (accessed on 2021-Mar-15).
+  // Check if the polygon has at least three vertices.
+  assert (polyg.size() >= 3);
+  Polygon::Vertex_circulator start = polyg.vertices_circulator();
+  Polygon::Vertex_circulator cur = start;
+  Polygon::Vertex_circulator next = cur;
+  ++next;
+  CGAL::Vector_2<Epick> centre(0, 0);
+  double a = 0.0, atot = 0.0;
+  do {
+    a = ((*cur).x()) * ((*next).y()) - ((*next).x()) * ((*cur).y());
+    centre = centre + a * ((*cur - CGAL::ORIGIN) + (*next - CGAL::ORIGIN));
+    atot = atot + a;
+    cur = next;
+    ++next;
+  } while (cur != start);
+  atot = 3 * atot;
+  centre = centre / atot;
+  return CGAL::ORIGIN + centre;
+}
+
+Point GeoDiv::centroid_of_polygon_with_holes(
+  const Polygon_with_holes pwh
+  ) const
+{
+  // Idea from https://math.stackexchange.com/questions/623841/finding-
+  // centroid-of-a-polygon-with-holes
+  Polygon ext_ring = pwh.outer_boundary();
+  double a_ext = ext_ring.area();
+  Point centroid_ext = centroid_of_polygon(ext_ring);
+
+  std::cout << "a_ext = " << a_ext << "\n";
+  std::cout << "centroid_ext = " << centroid_ext << std::endl;
+
+  //for (auto hci = pwh.holes_begin(); hci != pwh.holes_end(); ++hci) {
+  //  Polygon hole = *hci;
+  //a += hole.area();
+  //std::cout << "hole.area() = " << hole.area() << std::endl;
+  //}
+  //}
+  return centroid_ext;
+}
+
+Point GeoDiv::centroid_of_largest_polygon_with_holes() const
 {
   // Find largest polygon with hole in GeoDiv
-  for (auto pwh : polygons_with_holes()) {
+  double max_pwh_area = 0.0;
+  unsigned int max_pwh_index = 0;
+  for (int j = 0; j < n_polygons_with_holes(); ++j) {
+    Polygon_with_holes pwh = polygons_with_holes()[j];
     Polygon ext_ring = pwh.outer_boundary();
-    std::cout << "pos A" << std::endl;
     double a = ext_ring.area();
-    std::cout << "pos B" << std::endl;
     for (auto hci = pwh.holes_begin(); hci != pwh.holes_end(); ++hci) {
       Polygon hole = *hci;
-      std::cout << "pos C" << std::endl;
       a += hole.area();
-      std::cout << "pos D" << std::endl;
     }
-    std::cout << "Polygon has area " << a << "\n";
+    if (a > max_pwh_area) {
+      max_pwh_area = a;
+      max_pwh_index = j;
+    }
   }
+
+  std::cout << "Max. polygon "
+            << max_pwh_index
+            << " has area "
+            << max_pwh_area
+            << std::endl;
+
+  Polygon_with_holes max_pwh = polygons_with_holes()[max_pwh_index];
+  centroid_of_polygon_with_holes(max_pwh);
   return Point(0, 0);
 }

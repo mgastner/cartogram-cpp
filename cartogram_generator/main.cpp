@@ -111,27 +111,25 @@ int main(const int argc, const char *argv[])
                      density_to_eps);
 
   // Read visual variables (e.g. area, color) from CSV
-  //read_csv(vm, &map_state);
+  read_csv(vm, &map_state);
 
   // Read geometry
-  // try {
-  //   read_geojson(geo_file_name, &map_state);
-  // } catch (const std::system_error& e) {
-  //   std::cerr << "ERROR: "
-  //             << e.what()
-  //             << " ("
-  //             << e.code()
-  //             << ")"
-  //             << std::endl;
-  //   return EXIT_FAILURE;
-  // }
+  try {
+    read_geojson(geo_file_name, &map_state);
+  } catch (const std::system_error& e) {
+    std::cerr << "ERROR: "
+              << e.what()
+              << " ("
+              << e.code()
+              << ")"
+              << std::endl;
+    return EXIT_FAILURE;
+  }
 
-  //for (auto gd : map_state.geo_divs()) {
-    //std::cout << "GeoDiv ID: " << gd.id() << std::endl;
-    //gd.point_in_geodiv();
-    //std::cout << "End of loop" << std::endl;
-  //}
-  //std::cout << "Out of loop" << std::endl;
+  for (auto gd : map_state.geo_divs()) {
+    std::cout << "GeoDiv ID: " << gd.id() << std::endl;
+    gd.centroid_of_largest_polygon_with_holes();
+  }
 
   return EXIT_SUCCESS;
 
