@@ -13,7 +13,6 @@ MapState::MapState(std::string v, const bool w, const bool wd2eps) :
 
 MapState::~MapState()
 {
-  std::cout << "In destructor" << std::endl;
   if (fwd_plan_for_rho_) {
     fftw_destroy_plan(fwd_plan_for_rho_);
   }
