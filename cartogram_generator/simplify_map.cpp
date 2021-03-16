@@ -668,7 +668,8 @@ void assemble_pll_to_pgn(
           if (pll.get_is_hole()) {
             holes_v.push_back(hole_or_island);
 
-            // TODO add special case where the hole contains a hole.
+            // TODO
+            // - add special case where the hole contains a hole.
 
           /* If the pll is not a hole (and so it's an island): */
           } else {
@@ -776,9 +777,12 @@ void assemble_pll_to_pgn(
           } else {
 
             /**
-             * Check if the holes are not inside the island by checking if
-             * holes' middle vertices are not inside the island's boundary.
+             * Check if the holes are not inside the polygon by checking if
+             * holes' middle vertices are not inside the polygon's boundary.
              */
+
+            // check_holes_inside_pgn(holes_v, outer, gd_final);
+
             bool holes_inside = true; 
             for (Polygon hole : holes_v) {
               if (CGAL::bounded_side_2(outer.begin(),
