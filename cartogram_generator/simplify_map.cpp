@@ -641,59 +641,82 @@ void assemble_pll_to_pgn(
     std::vector<GeoDiv> gd_vector_org)
 {
   std::cout << "Assembling polylines into polygons..." << std::endl;
-  for (auto [gd_num, m] : plls_by_gd_pgnwh) {
+  for (auto [gd_num, map_iv] : plls_by_gd_pgnwh) {
     GeoDiv gd_final(gd_vector_org[gd_num].id());
+
+    /* 1 holes_v exists per geo_div. */
     std::vector<Polygon> holes_v;
-    for (auto [pgnwh_num, pll_v] : m) {
+    for (auto [pgnwh_num, pll_v] : map_iv) {
       for (PLL pll : pll_v) {
-        Polygon outer; // This will only be for islands/holes anyway
+        Polygon hole_or_island; // This will only be for islands/holes anyway
 
         if (visited[gd_num][pgnwh_num][pll.get_pos()]) continue;
 
         /* If it is a single polyline (e.g. island, hole): */
-        if (pll.get_v1() == pll.get_vl() && !visited[gd_num][pgnwh_num][pll.get_pos()]) {
+        if (pll.get_v1() == pll.get_vl()
+            && !visited[gd_num][pgnwh_num][pll.get_pos()]) {
 
           visited[gd_num][pgnwh_num][pll.get_pos()] = true;
 
           for (Point pt : pll.get_pll()) {
-            outer.push_back(pt);
+            hole_or_island.push_back(pt);
           }
 
-          /* If the pll is not a hole and there doesn't exist a hole within: */
-          if (!pll.get_is_hole() && holes_v.empty()) {
-            Polygon_with_holes pgnwh(outer);
-            gd_final.push_back(pgnwh);
+          /* If the pll is a hole, add it to holes_v. */
+          if (pll.get_is_hole()) {
+            holes_v.push_back(hole_or_island);
 
-          /* If the pll is not a hole and there exists a hole within: */
-          } else if (!pll.get_is_hole() && !holes_v.empty()) {
+            // TODO add special case where the hole contains a hole.
 
-            /* Check if hole's middle vertex is inside boundary. */
-            bool holes_inside = true; 
-
-            for (Polygon hole : holes_v)
-              if (CGAL::bounded_side_2(outer.begin(), outer.end(), hole[hole.size() / 2]) != CGAL::ON_BOUNDED_SIDE)
-                holes_inside = false;
-
-            if (holes_inside) {
-              Polygon_with_holes pgnwh_final_2(outer, holes_v.begin(), holes_v.end());
-              gd_final.push_back(pgnwh_final_2);
-              holes_v.clear();
-            }
-            /* If the pll is a hole, add it to holes_v. */
+          /* If the pll is not a hole (and so it's an island): */
           } else {
-            holes_v.push_back(outer);
+
+            /* If there does not exist a hole inside the geo_div: */
+            if (holes_v.empty()) {
+              Polygon_with_holes pgnwh(hole_or_island);
+              gd_final.push_back(pgnwh);
+
+              /* If there exists a hole inside the geo_div: */
+            } else {
+
+              /**
+               * Check if the holes are not inside the island by checking if
+               * holes' middle vertices are not inside the island's boundary.
+               */
+              bool holes_inside = true; 
+              for (Polygon hole : holes_v) {
+                if (CGAL::bounded_side_2(hole_or_island.begin(),
+                                         hole_or_island.end(),
+                                         hole[hole.size() / 2]) 
+                                         != CGAL::ON_BOUNDED_SIDE) {
+                  holes_inside = false;
+                }
+              }
+
+              if (holes_inside) {
+                Polygon_with_holes pgnwh_final(hole_or_island,
+                                                 holes_v.begin(),
+                                                 holes_v.end());
+                gd_final.push_back(pgnwh_final);
+                holes_v.clear();
+              }
+            }
           }
+
+          /* If it is part of a pgnwh with >1 polyline: */
         } else {
           std::deque<PLL> deq;
           deq.push_back(pll);
           visited[gd_num][pgnwh_num][pll.get_pos()] = true;
 
-          // Connect together all polylines belonging to a Polygon_with_holes
+          /* Connect together all polylines belonging to a pgnwh. */
           while (1) {
             bool found = false;
 
             for (PLL pll2 : plls_by_gd_pgnwh[pll.get_gd()][pll.get_pgnwh()]) {
-              if (visited[gd_num][pgnwh_num][pll2.get_pos()] == true) continue;
+              if (visited[gd_num][pgnwh_num][pll2.get_pos()] == true) {
+                continue;
+              }
 
               if (deq.front().get_v1()[0] == pll2.get_vl()[0] &&
                   deq.front().get_v1()[1] == pll2.get_vl()[1]) {
@@ -725,35 +748,54 @@ void assemble_pll_to_pgn(
             }
             if (!found) break;
           }
-          Polygon outer_2;
 
-          for (PLL pll_deq : deq)
-            for (Point pt : pll_deq.get_pll())
-              outer_2.push_back(pt);
+          Polygon outer;
 
+          /* With the finished deque, create the pgnwh's outer_boundary(). */
+          for (PLL pll_deq : deq) {
+            for (Point pt : pll_deq.get_pll()) {
+              outer.push_back(pt);
+            }
+          }
+
+          /* If the pll is a hole, add it to holes_v. */
+          /* Special case of a hole having >1 polylines e.g. Switzerland */
           if (pll.get_is_hole()) {
-            holes_v.push_back(outer_2);
+            holes_v.push_back(outer);
             continue;
           }
 
+          /* If there does not exist a hole inside the geo_div: */
           if (holes_v.empty()) {
-            Polygon_with_holes pgnwh_final_2(outer_2);
-            gd_final.push_back(pgnwh_final_2);
+            Polygon_with_holes pgnwh_final(outer);
+            gd_final.push_back(pgnwh_final);
+
+            /* If there exists a hole inside the geo_div: */
           } else {
-            // Check if hole's middle vertex is inside boundary
+
+            /**
+             * Check if the holes are not inside the island by checking if
+             * holes' middle vertices are not inside the island's boundary.
+             */
             bool holes_inside = true; 
-            for (Polygon hole : holes_v)
-              if (CGAL::bounded_side_2(outer_2.begin(), outer_2.end(), hole[hole.size() / 2]) != CGAL::ON_BOUNDED_SIDE)
+            for (Polygon hole : holes_v) {
+              if (CGAL::bounded_side_2(outer.begin(),
+                                       outer.end(),
+                                       hole[hole.size() / 2])
+                                       != CGAL::ON_BOUNDED_SIDE) {
                 holes_inside = false;
+              }
+            }
+
             if (holes_inside) {
-              Polygon_with_holes pgnwh_final_2(outer_2, holes_v.begin(), holes_v.end());
-              gd_final.push_back(pgnwh_final_2);
+              Polygon_with_holes pgnwh_final(outer,
+                                             holes_v.begin(),
+                                             holes_v.end());
+              gd_final.push_back(pgnwh_final);
               holes_v.clear();
             }
           }
-          // std::cout << std::endl;
         }
-
       }
     }
     gd_vector_final.push_back(gd_final);
@@ -829,7 +871,7 @@ void simplify_map(MapState *map_state)
 
   /* Get and print step 2's elapsed time */
   const std::chrono::duration<double, std::milli> dur_s2 =
-        std::chrono::system_clock::now() - start_s2;
+    std::chrono::system_clock::now() - start_s2;
   std::cout << "get_gd_pgnwh_island_bool() time elapsed: ";
   std::cout << dur_s2.count() << " ms (";
   std::cout << dur_s2.count() / 1000 << " s)" << std::endl;
@@ -858,10 +900,10 @@ void simplify_map(MapState *map_state)
    */
   std::vector<Polyline> ct_polylines;
   for (auto cit = ct.constraints_begin(); cit != ct.constraints_end()
-                                        ; cit++) {
+      ; cit++) {
     Polyline polyl;
     for (auto vit = ct.points_in_constraint_begin(*cit)
-         ; vit != ct.points_in_constraint_end(*cit); vit++) {
+        ; vit != ct.points_in_constraint_end(*cit); vit++) {
       polyl.push_back(*vit);
     }
     ct_polylines.push_back(polyl);
