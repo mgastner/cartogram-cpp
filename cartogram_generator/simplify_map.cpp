@@ -631,6 +631,36 @@ void set_visited_vals(std::unordered_map<int,
   }
 }
 
+/**
+* Check if the holes are not inside the pgn by checking if
+* holes' middle vertices are not inside the pgn's boundary.
+*
+* Then update gd_final accordingly.
+*/
+
+void check_holes_inside_pgn(std::vector<Polygon> &holes_v,
+                            Polygon pgn,
+                            GeoDiv &gd_final)
+{
+   bool holes_inside = true; 
+   for (Polygon hole : holes_v) {
+     if (CGAL::bounded_side_2(pgn.begin(), pgn.end(), hole[hole.size() / 2])
+                              != CGAL::ON_BOUNDED_SIDE) {
+       holes_inside = false;
+     }
+   }
+
+   if (holes_inside) {
+     Polygon_with_holes pgnwh_final(pgn, holes_v.begin(), holes_v.end());
+
+     /* Update gd_final by adding pgnwh. */
+     gd_final.push_back(pgnwh_final);
+
+     /* No other pgnwh would have the same holes. */
+     holes_v.clear();
+   }
+}
+
 /******************* 10. Assemble polylines into polygons. *******************/
 
 void assemble_pll_to_pgn(
@@ -674,35 +704,14 @@ void assemble_pll_to_pgn(
           /* If the pll is not a hole (and so it's an island): */
           } else {
 
-            /* If there does not exist a hole inside the geo_div: */
+            /* If there does not exist a hole inside the pgnwh: */
             if (holes_v.empty()) {
               Polygon_with_holes pgnwh(hole_or_island);
               gd_final.push_back(pgnwh);
 
-              /* If there exists a hole inside the geo_div: */
+              /* If there exists a hole inside the pgnwh: */
             } else {
-
-              /**
-               * Check if the holes are not inside the island by checking if
-               * holes' middle vertices are not inside the island's boundary.
-               */
-              bool holes_inside = true; 
-              for (Polygon hole : holes_v) {
-                if (CGAL::bounded_side_2(hole_or_island.begin(),
-                                         hole_or_island.end(),
-                                         hole[hole.size() / 2]) 
-                                         != CGAL::ON_BOUNDED_SIDE) {
-                  holes_inside = false;
-                }
-              }
-
-              if (holes_inside) {
-                Polygon_with_holes pgnwh_final(hole_or_island,
-                                                 holes_v.begin(),
-                                                 holes_v.end());
-                gd_final.push_back(pgnwh_final);
-                holes_v.clear();
-              }
+              check_holes_inside_pgn(holes_v, hole_or_island, gd_final);
             }
           }
 
@@ -768,38 +777,14 @@ void assemble_pll_to_pgn(
             continue;
           }
 
-          /* If there does not exist a hole inside the geo_div: */
+          /* If there does not exist a hole inside the pgnwh: */
           if (holes_v.empty()) {
             Polygon_with_holes pgnwh_final(outer);
             gd_final.push_back(pgnwh_final);
 
-            /* If there exists a hole inside the geo_div: */
+            /* If there exists a hole inside the pgnwh: */
           } else {
-
-            /**
-             * Check if the holes are not inside the polygon by checking if
-             * holes' middle vertices are not inside the polygon's boundary.
-             */
-
-            // check_holes_inside_pgn(holes_v, outer, gd_final);
-
-            bool holes_inside = true; 
-            for (Polygon hole : holes_v) {
-              if (CGAL::bounded_side_2(outer.begin(),
-                                       outer.end(),
-                                       hole[hole.size() / 2])
-                                       != CGAL::ON_BOUNDED_SIDE) {
-                holes_inside = false;
-              }
-            }
-
-            if (holes_inside) {
-              Polygon_with_holes pgnwh_final(outer,
-                                             holes_v.begin(),
-                                             holes_v.end());
-              gd_final.push_back(pgnwh_final);
-              holes_v.clear();
-            }
+            check_holes_inside_pgn(holes_v, outer, gd_final);
           }
         }
       }
