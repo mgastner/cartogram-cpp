@@ -631,36 +631,43 @@ void set_visited_vals(std::unordered_map<int,
   }
 }
 
-void assemble_pll_to_pgn(std::map<int, std::map<int, std::vector<PLL>>> &plls_by_gd_pgnwh, 
-    std::unordered_map<int, std::unordered_map<int, std::unordered_map<int, bool>>> &visited, 
-    std::vector<GeoDiv> &container_final,
-    std::vector<GeoDiv> container_org)
+/******************* 10. Assemble polylines into polygons. *******************/
+
+void assemble_pll_to_pgn(
+    std::map<int, std::map<int, std::vector<PLL>>> &plls_by_gd_pgnwh, 
+    std::unordered_map
+    <int, std::unordered_map<int, std::unordered_map<int, bool>>> &visited, 
+    std::vector<GeoDiv> &gd_vector_final,
+    std::vector<GeoDiv> gd_vector_org)
 {
   std::cout << "Assembling polylines into polygons..." << std::endl;
   for (auto [gd_num, m] : plls_by_gd_pgnwh) {
-    GeoDiv gd_final(container_org[gd_num].id());
+    GeoDiv gd_final(gd_vector_org[gd_num].id());
     std::vector<Polygon> holes_v;
     for (auto [pgnwh_num, pll_v] : m) {
-
       for (PLL pll : pll_v) {
         Polygon outer; // This will only be for islands/holes anyway
+
         if (visited[gd_num][pgnwh_num][pll.get_pos()]) continue;
 
-        // std::cout << pll.get_gd() << " " << pll.get_pgnwh() << " " << pll.get_pos() << " " << pll.get_is_hole() << std::endl;
-
-        // if it is a single polyline (e.g. island)
+        /* If it is a single polyline (e.g. island, hole): */
         if (pll.get_v1() == pll.get_vl() && !visited[gd_num][pgnwh_num][pll.get_pos()]) {
 
           visited[gd_num][pgnwh_num][pll.get_pos()] = true;
 
-          for (Point pt : pll.get_pll())
+          for (Point pt : pll.get_pll()) {
             outer.push_back(pt);
+          }
 
+          /* If the pll is not a hole and there doesn't exist a hole within: */
           if (!pll.get_is_hole() && holes_v.empty()) {
             Polygon_with_holes pgnwh(outer);
             gd_final.push_back(pgnwh);
-          } else if (!pll.get_is_hole() && !holes_v.empty()) { // if there is a hole within
-            // Check if hole's middle vertex is inside boundary
+
+          /* If the pll is not a hole and there exists a hole within: */
+          } else if (!pll.get_is_hole() && !holes_v.empty()) {
+
+            /* Check if hole's middle vertex is inside boundary. */
             bool holes_inside = true; 
 
             for (Polygon hole : holes_v)
@@ -672,6 +679,7 @@ void assemble_pll_to_pgn(std::map<int, std::map<int, std::vector<PLL>>> &plls_by
               gd_final.push_back(pgnwh_final_2);
               holes_v.clear();
             }
+            /* If the pll is a hole, add it to holes_v. */
           } else {
             holes_v.push_back(outer);
           }
@@ -748,7 +756,7 @@ void assemble_pll_to_pgn(std::map<int, std::map<int, std::vector<PLL>>> &plls_by
 
       }
     }
-    container_final.push_back(gd_final);
+    gd_vector_final.push_back(gd_final);
   }
 }
 
@@ -771,8 +779,8 @@ void print_num_pts(std::vector<GeoDiv> gd_vector) {
 
 /*********************** 11. Remove the the last point. **********************/
 
-void remove_first_point_as_last_point(std::vector<GeoDiv> &container) {
-  for (GeoDiv &gd : container) {
+void remove_first_point_as_last_point(std::vector<GeoDiv> &gd_vector) {
+  for (GeoDiv &gd : gd_vector) {
     for (Polygon_with_holes &pgnwh : *gd.ref_to_polygons_with_holes()) {
 
       Polygon *outer = &pgnwh.outer_boundary();
@@ -804,7 +812,7 @@ void simplify_map(MapState *map_state)
   /* 8. Store polylines according to their GeoDivs and Polygon_with_holes    */
   /*    along with their associated original map_state positions.            */
   /* 9. Set all polylines to not-visited and sort pll_by_gd_pgnwh.           */
-  // 10. Assemble polylines into polygons
+  /* 10. Assemble polylines into polygon.                                    */
   /* 11. Remove the last point                                               */ 
 
   std::vector<GeoDiv> gd_vector = map_state->geo_divs();
@@ -875,7 +883,7 @@ void simplify_map(MapState *map_state)
   std::unordered_map<int, std::unordered_map<int, std::unordered_map<int, bool>>> visited;
   set_visited_vals(visited, plls_by_gd_pgnwh);
 
-  // 10. Assemble polylines into polygons
+  /* 10. Assemble polylines into polygons.                                   */
   std::vector<GeoDiv> gd_vector_simp;
   assemble_pll_to_pgn(plls_by_gd_pgnwh, visited, gd_vector_simp, gd_vector);
 
