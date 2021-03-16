@@ -644,9 +644,11 @@ void assemble_pll_to_pgn(
   for (auto [gd_num, map_iv] : plls_by_gd_pgnwh) {
     GeoDiv gd_final(gd_vector_org[gd_num].id());
 
-    /* 1 holes_v exists per geo_div. */
-    std::vector<Polygon> holes_v;
     for (auto [pgnwh_num, pll_v] : map_iv) {
+
+      /* 1 holes_v per pgnwh. */
+      std::vector<Polygon> holes_v;
+
       for (PLL pll : pll_v) {
         Polygon hole_or_island; // This will only be for islands/holes anyway
 
