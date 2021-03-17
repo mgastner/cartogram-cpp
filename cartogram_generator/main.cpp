@@ -170,7 +170,7 @@ int main(const int argc, const char *argv[])
     }
     flatten_density(&map_state);
     //project(&map_state);
-    map_state.set_geo_divs(densify(map_state.geo_divs()));
+    // map_state.set_geo_divs(densify(map_state.geo_divs()));
     project_graticule_centroids(&map_state);
     project_with_triangulation(&map_state);
     map_state.inc_integration();
