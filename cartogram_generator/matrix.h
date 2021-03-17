@@ -11,7 +11,7 @@ struct Matrix {
   Matrix(); // constructor for identity matrix
   // Matrix(Triangle); // matrix from a triangle
   Matrix(XYPoint a, XYPoint b, XYPoint c); // matrix from triangle of XYPoints
-  void scale(double); //
+  void scale(double); 
   void print();
   double det();
   Matrix adjugate();
