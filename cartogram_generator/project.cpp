@@ -2,6 +2,7 @@
 #include <iostream>
 #include <vector>
 #include "interpolate_bilinearly.h"
+#include "matrix.h";
 
 #include "project.h"
 
@@ -327,39 +328,22 @@ XYPoint affine_trans(std::vector<XYPoint> *tri,
   // post.x = t11*x + t12*y + t13, pre.y = t21*x + t22*y + t23.
 
   XYPoint pre;
+  pre.x = x;
+  pre.y = y;
 
-  /**************************** Determinant of A. ****************************/
+  // Old triangle (a, b, c) as a matrix, explained earlier as Matrix A
+  Matrix abc_mA = ((*org_tri)[0], (*org_tri)[1], (*org_tri)[2]);
 
-  double det = (*tri)[0].x * (*tri)[1].y + (*tri)[1].x * (*tri)[2].y + (*tri)[2].x * (*tri)[0].y
-               - (*tri)[1].x * (*tri)[0].y - (*tri)[2].x * (*tri)[1].y - (*tri)[0].x * (*tri)[2].y;
+  // New triangle (p, q, r) as a matrix, explained earlier as Matrix P
+  Matrix pqr_mP = ((*tri)[0], (*tri)[1], (*tri)[2]);
 
-  /*********** Compute det(A) * A^{-1}. We divide by det(A) later. ***********/
+  // Calculating transformation matrix
+  Matrix mT = pqr_mP.multiply(abc_mA.inverse());
 
-  double ainv11 = (*tri)[1].y - (*tri)[2].y;
-  double ainv12 = (*tri)[2].x - (*tri)[1].x;
-  double ainv13 = (*tri)[1].x * (*tri)[2].y - (*tri)[1].y * (*tri)[2].x;
-  double ainv21 = (*tri)[2].y - (*tri)[0].y;
-  double ainv22 = (*tri)[0].x - (*tri)[2].x;
-  double ainv23 = (*tri)[0].y * (*tri)[2].x - (*tri)[0].x * (*tri)[2].y;
-  double ainv31 = (*tri)[0].y - (*tri)[1].y;
-  double ainv32 = (*tri)[1].x - (*tri)[0].x;
-  double ainv33 = (*tri)[0].x * (*tri)[1].y - (*tri)[0].y * (*tri)[1].x;
+  // Transforming point and pushing back to temporary_ext_boundary
+  XYPoint post = mT.transform_XYPoint(pre);
 
-  /******************************** Compute T. *******************************/
-
-  double t11 = (*org_tri)[0].x * ainv11 + (*org_tri)[1].x * ainv21 + (*org_tri)[2].x * ainv31;
-  double t12 = (*org_tri)[0].x * ainv12 + (*org_tri)[1].x * ainv22 + (*org_tri)[2].x * ainv32;
-  double t13 = (*org_tri)[0].x * ainv13 + (*org_tri)[1].x * ainv23 + (*org_tri)[2].x * ainv33;
-  double t21 = (*org_tri)[0].y * ainv11 + (*org_tri)[1].y * ainv21 + (*org_tri)[2].y * ainv31;
-  double t22 = (*org_tri)[0].y * ainv12 + (*org_tri)[1].y * ainv22 + (*org_tri)[2].y * ainv32;
-  double t23 = (*org_tri)[0].y * ainv13 + (*org_tri)[1].y * ainv23 + (*org_tri)[2].y * ainv33;
-
-  /********************* Transform the input coordinates. ********************/
-
-  pre.x = (t11*x + t12*y + t13) / det;
-  pre.y = (t21*x + t22*y + t23) / det;
-
-  return pre;
+  return post;
 }
 
 void project_with_triangulation(MapState *map_state)
@@ -394,7 +378,6 @@ void project_with_triangulation(MapState *map_state)
       Polygon_with_holes temp_pwh(temp_ext_boundary, holes_temp.begin(), holes_temp.end());
       temp_geodiv.push_back(temp_pwh);
     }
-    // new_map.push_back(temp_geodiv);
   }
   return;
 }
