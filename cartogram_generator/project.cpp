@@ -87,7 +87,7 @@ std::vector<int> find_graticule(const int x,
                                 const int lx,
                                 const int ly)
 {
-  
+
   if (x < 0 || x > lx || y < 0 || y > ly) {
     std::cout << "ERROR: coordinate outside bounding box in find_graticule()." << "\n";
     std::cout << "x=" << x << ", y=" << y << "\n";
@@ -106,7 +106,7 @@ std::vector<int> find_graticule(const int x,
 }
 
 void project_graticule_centroids(MapState *map_state){
-  
+
   const unsigned int lx = map_state->lx();
   const unsigned int ly = map_state->ly();
 
@@ -166,7 +166,7 @@ std::vector<XYPoint> find_triangle(const int x,
 
   boost::multi_array<double, 2> vx (boost::extents[2][2]);
   boost::multi_array<double, 2> vy (boost::extents[2][2]);
-  
+
   vx[0][0] = (*proj)[x0][y0].x;
   vy[0][0] = (*proj)[x0][y0].y;
 
@@ -224,14 +224,14 @@ std::vector<XYPoint> find_triangle(const int x,
                                    boost::multi_array<XYPoint, 2> *proj,
                                    boost::multi_array<XYPoint, 2> *graticule_centroids)
 {
-  
+
   if (x < 0 || x > lx || y < 0 || y > ly) {
     std::cerr << "ERROR: coordinate outside bounding box in "
               << "find_triangle().\n";
     std::cerr << "x=" << x << ", y=" << y << std::endl;
     exit(1);
   }
-  
+
   std::vector<XYPoint> triangle_coordinates;
 
   // Get graticule coordinates and centroid.
@@ -239,14 +239,14 @@ std::vector<XYPoint> find_triangle(const int x,
 
   int x0 = floor(x + 0.5) - 0.5;
   int y0 = floor(y + 0.5) - 0.5;
-  
+
   XYPoint centroid;
   centroid.x = x0 + 0.5;
   centroid.y = y0 + 0.5;
 
   boost::multi_array<double, 2> vx (boost::extents[2][2]);
   boost::multi_array<double, 2> vy (boost::extents[2][2]);
-  
+
   for (int i = 0; i < 2; i++){
     for (int j = 0; j < 2; j++){
       vx[i][j] = x0 + i;
@@ -306,7 +306,7 @@ std::vector<XYPoint> find_triangle(const int x,
 XYPoint affine_trans(std::vector<XYPoint> *tri,
                      std::vector<XYPoint> *org_tri,
                      double x, double y){
-  
+
   XYPoint pre;
 
   /**************************** Determinant of A. ****************************/
@@ -315,7 +315,7 @@ XYPoint affine_trans(std::vector<XYPoint> *tri,
                - (*tri)[1].x * (*tri)[0].y - (*tri)[2].x * (*tri)[1].y - (*tri)[0].x * (*tri)[2].y;
 
   /*********** Compute det(A) * A^{-1}. We divide by det(A) later. ***********/
-  
+
   double ainv11 = (*tri)[1].y - (*tri)[2].y;
   double ainv12 = (*tri)[2].x - (*tri)[1].x;
   double ainv13 = (*tri)[1].x * (*tri)[2].y - (*tri)[1].y * (*tri)[2].x;
@@ -345,6 +345,53 @@ XYPoint affine_trans(std::vector<XYPoint> *tri,
 
 void project_with_triangulation(MapState *map_state)
 {
+
+  for (GeoDiv gd : map_state.geo_divs()) {
+
+    GeoDiv temp_geodiv("same as earlier");
+    for (Polygon_with_holes pwh : gd.polygons_with_holes()) {
+
+      Polygon temp_ext_boundary;
+
+      for (Point p : pwh.outer_boundary()) {
+
+      // Suppose we find that, before the cartogram transformation, a point (x, y)
+      // is in the triangle (a, b, c). We want to find its position in
+      // the projected triangle (p, q, r). We locally approximate the cartogram
+      // transformation by an affine transformation T such that T(a) = p,
+      // T(b) = q and T(c) = r. We can think of T as a 3x3 matrix
+      //  /t11 t12 t13\
+      // | t21 t22 t23 |  such that
+      //  \ 0   0   1 /
+      //  /t11 t12 t13\   /a1 b1 c1\     /p1 q1 r1\
+      // | t21 t22 t23 | | a2 b2 c2 | = | p2 q2 r2 | or TA = P. Hence T = PA^{-1}
+      //  \ 0   0   1 /   \ 1  1  1/     \ 1  1  1/
+      //                              /b2-c2 c1-b1 b1*c2-b2*c1\
+      // We have A^{-1} = (1/det(A)) | c2-a2 a1-c1 a2*c1-a1*c2 |. By multiplying
+      //                              \a2-b2 b1-a1 a1*b2-a2*b1/
+      // PA^{-1} we obtain t11, t12, t13, t21, t22, t23. The postimage of (x, y) i
+      // the unprojected map is then "pre" with coordinates
+      // post.x = t11*x + t12*y + t13, pre.y = t21*x + t22*y + t23.
+
+      std::vector<Polygon> holes_temp;
+      for (auto hci = pwh.holes_begin(); hci != pwh.holes_end(); ++hci) {
+
+        Polygon hole = *hci;
+        Polygon hole_temp;
+
+        for (Point p : hole) {
+
+        }
+
+        holes_temp.push_back(hole_temp);
+      }
+
+      Polygon_with_holes temp_pwh(temp_ext_boundary, holes_temp.begin(), holes_temp.end());
+      temp_geodiv.push_back(temp_pwh);
+    }
+    // new_map.push_back(temp_geodiv);
+  }
+
   return;
 }
 
@@ -369,10 +416,10 @@ void project_graticule(MapState *map_state)
   const unsigned int lx = map_state->lx();
   const unsigned int ly = map_state->ly();
   boost::multi_array<XYPoint, 2> &proj = *map_state->proj();
-  
+
   boost::multi_array<XYPoint, 2> &graticule_points = *map_state->graticule_points();
   boost::multi_array<XYPoint, 2> &graticule_centroids = *map_state->graticule_centroids();
-  
+
   // Resize multi array if running for the first time
   if (map_state->n_finished_integrations() == 0) {
     graticule_points.resize(boost::extents[lx + 1][ly + 1]);
