@@ -82,29 +82,6 @@ void project(MapState *map_state)
 // graticule would always have four vertices of coordinates (x, y), (x + 1, y),
 // (x + 1, y + 1) and (x, y + 1).
 
-std::vector<int> find_graticule(const int x,
-                                const int y,
-                                const int lx,
-                                const int ly)
-{
-  
-  if (x < 0 || x > lx || y < 0 || y > ly) {
-    std::cout << "ERROR: coordinate outside bounding box in find_graticule()." << "\n";
-    std::cout << "x=" << x << ", y=" << y << "\n";
-    exit(1);
-  }
-
-  std::vector<int> graticule_point;
-
-  double x0 = std::max(0.0, floor(x + 0.5) - 0.5);
-  double y0 = std::max(0.0, floor(y + 0.5) - 0.5);
-
-  graticule_point.push_back(int(x0));
-  graticule_point.push_back(int(y0));
-
-  return graticule_point;
-}
-
 void project_graticule_centroids(MapState *map_state){
   
   const unsigned int lx = map_state->lx();
@@ -146,83 +123,10 @@ void project_graticule_centroids(MapState *map_state){
   }
 }
 
-/*
 std::vector<XYPoint> find_triangle(const int x,
                                    const int y,
                                    const int lx,
-                                   const int ly,
-                                   boost::multi_array<XYPoint, 2> *proj,
-                                   boost::multi_array<XYPoint, 2> *graticule_centroids)
-{
-  std::vector<XYPoint> triangle_coordinates;
-
-  // Get graticule coordinates and centroid.
-
-  int x0 = int(std::max(0.0, floor(x + 0.5) - 0.5));
-  int y0 = int(std::max(0.0, floor(y + 0.5) - 0.5));
-
-  double centroid_x = (*graticule_centroids)[x0][y0].x;
-  double centroid_y = (*graticule_centroids)[x0][y0].y;
-
-  boost::multi_array<double, 2> vx (boost::extents[2][2]);
-  boost::multi_array<double, 2> vy (boost::extents[2][2]);
-  
-  vx[0][0] = (*proj)[x0][y0].x;
-  vy[0][0] = (*proj)[x0][y0].y;
-
-  vx[1][0] = (*proj)[x0 + 1][y0].x;
-  vy[1][0] = (*proj)[x0 + 1][y0].y;
-
-  vx[1][1] = (*proj)[x0 + 1][y0 + 1].x;
-  vy[1][1] = (*proj)[x0 + 1][y0 + 1].y;
-
-  vx[0][1] = (*proj)[x0][y0 + 1].x;
-  vy[0][1] = (*proj)[x0][y0 + 1].y;
-
-  int c0x = 0;
-  int c0y = 0;
-
-  if (x > centroid_x){
-    c0x = 1;
-  }
-  if (y > centroid_y){
-    c0y = 1;
-  }
-
-  double a = (vy[c0x][c0y] - centroid_y) / (vx[c0x][c0y] - centroid_x);
-  double b = centroid_y - a * centroid_x;
-
-  int c1x;
-  int c1y;
-
-  if (y >= a * x + b){
-    if (c0y == 0){
-      c1y = 1;
-      c1x = c0x;
-    } else {
-      c1x = 1 - c0x;
-      c1y = c0y;
-    }
-  } else {
-    if (c0y == 0){
-      c1x = 1 - c0x;
-      c1y = c0y;
-    } else {
-      c1y = 0;
-      c1x = c0x;
-    }
-  }
-
-  return triangle_coordinates;
-}
-*/
-
-std::vector<XYPoint> find_triangle(const int x,
-                                   const int y,
-                                   const int lx,
-                                   const int ly,
-                                   boost::multi_array<XYPoint, 2> *proj,
-                                   boost::multi_array<XYPoint, 2> *graticule_centroids)
+                                   const int ly)
 {
   
   if (x < 0 || x > lx || y < 0 || y > ly) {
@@ -345,6 +249,114 @@ XYPoint affine_trans(std::vector<XYPoint> *tri,
 
 void project_with_triangulation(MapState *map_state)
 {
+  const unsigned int lx = map_state->lx();
+  const unsigned int ly = map_state->ly();
+  boost::multi_array<XYPoint, 2> &proj = *map_state->proj();
+  boost::multi_array<XYPoint, 2> &graticule_centroids = *map_state->graticule_centroids();
+
+  std::vector<GeoDiv> new_geo_divs;
+
+  for (auto gd : map_state->geo_divs()) {
+
+    // For each GeoDiv
+    GeoDiv new_gd(gd.id());
+
+    for (auto pwh : gd.polygons_with_holes()) {
+      // For each polygon with holes
+
+      Polygon old_ext_ring = pwh.outer_boundary();
+      Polygon new_ext_ring;
+
+      for (unsigned int i = 0; i < old_ext_ring.size(); i++) {
+
+        // Update exterior ring coordinates
+
+        std::vector<XYPoint> ext_ring_triangle =
+          find_triangle(old_ext_ring[i][0], old_ext_ring[i][1],
+                        lx, ly);
+
+        std::vector<XYPoint> transformed_ext_ring_triangle;
+
+        XYPoint centroid;
+        centroid.x =
+          graticule_centroids[int(ext_ring_triangle[0].x) - 1][int(ext_ring_triangle[0].y) - 1].x;
+        centroid.y =
+          graticule_centroids[int(ext_ring_triangle[0].x) - 1][int(ext_ring_triangle[0].y) - 1].y;
+
+        XYPoint v1;
+        v1.x =
+          proj[int(ext_ring_triangle[1].x)][int(ext_ring_triangle[1].y)].x;
+        v1.y =
+          proj[int(ext_ring_triangle[1].x)][int(ext_ring_triangle[1].y)].y;
+
+        XYPoint v2;
+        v2.x =
+          proj[int(ext_ring_triangle[2].x)][int(ext_ring_triangle[2].y)].x;
+        v2.y =
+          proj[int(ext_ring_triangle[2].x)][int(ext_ring_triangle[2].y)].y;
+
+        transformed_ext_ring_triangle.push_back(centroid);
+        transformed_ext_ring_triangle.push_back(v1);
+        transformed_ext_ring_triangle.push_back(v2);
+
+        XYPoint old_ext_ring_intp = affine_trans(&transformed_ext_ring_triangle,
+                                             &ext_ring_triangle,
+                                             old_ext_ring[i][0], old_ext_ring[i][1]);
+
+        new_ext_ring.push_back(Point(old_ext_ring_intp.x,
+                                     old_ext_ring_intp.y));
+      }
+      std::vector<Polygon> hole_v;
+      for (auto hci = pwh.holes_begin(); hci != pwh.holes_end(); hci++) {
+        Polygon old_hole = *hci;
+        Polygon new_hole;
+        for (unsigned int i = 0; i < old_hole.size(); i++) {
+
+          std::vector<XYPoint> hole_triangle =
+            find_triangle(old_hole[i][0], old_hole[i][1],
+                          lx, ly);
+
+          std::vector<XYPoint> transformed_hole_triangle;
+
+          XYPoint centroid;
+          centroid.x =
+            graticule_centroids[int(hole_triangle[0].x) - 1][int(hole_triangle[0].y) - 1].x;
+          centroid.y =
+            graticule_centroids[int(hole_triangle[0].x) - 1][int(hole_triangle[0].y) - 1].y;
+
+          XYPoint v1;
+          v1.x =
+            proj[int(hole_triangle[1].x)][int(hole_triangle[1].y)].x;
+          v1.y =
+            proj[int(hole_triangle[1].x)][int(hole_triangle[1].y)].y;
+
+          XYPoint v2;
+          v2.x =
+            proj[int(hole_triangle[2].x)][int(hole_triangle[2].y)].x;
+          v2.y =
+            proj[int(hole_triangle[2].x)][int(hole_triangle[2].y)].y;
+
+          transformed_hole_triangle.push_back(centroid);
+          transformed_hole_triangle.push_back(v1);
+          transformed_hole_triangle.push_back(v2);
+
+          XYPoint old_hole_intp = affine_trans(&transformed_hole_triangle,
+                                               &hole_triangle,
+                                               old_hole[i][0], old_hole[i][1]);
+
+          new_hole.push_back(Point(old_hole_intp.x,
+                                   old_hole_intp.y));
+        }
+        hole_v.push_back(new_hole);
+      }
+      const Polygon_with_holes new_pwh(new_ext_ring,
+                                       hole_v.begin(),
+                                       hole_v.end());
+      new_gd.push_back(new_pwh);
+    }
+    new_geo_divs.push_back(new_gd);
+  }
+  map_state->set_geo_divs(new_geo_divs);
   return;
 }
 

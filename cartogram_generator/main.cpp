@@ -139,7 +139,7 @@ int main(const int argc, const char *argv[])
     std::cout << "Writing input_polygons.eps" << std::endl;
     write_map_to_eps("input_polygons.eps", &map_state);
   }
-
+/*
   // Start map integration
   while (map_state.n_finished_integrations() < max_integrations &&
          map_state.max_area_err() > max_permitted_area_error) {
@@ -150,10 +150,24 @@ int main(const int argc, const char *argv[])
       blur_density(0.0, &map_state);
     }
     flatten_density(&map_state);
-    project(&map_state);
+    //project(&map_state);
     project_graticule_centroids(&map_state);
+    project_with_triangulation(&map_state);
     map_state.inc_integration();
   }
+*/
+  fill_with_density(&map_state);
+    if (map_state.n_finished_integrations() == 0) {
+      blur_density(5.0, &map_state);
+    } else{
+      blur_density(0.0, &map_state);
+    }
+    flatten_density(&map_state);
+    //project(&map_state);
+    project_graticule_centroids(&map_state);
+    project_with_triangulation(&map_state);
+    map_state.inc_integration();
+
   json cart_json = cgal_to_json(&map_state);
   write_to_json(cart_json, geo_file_name, "cartogram.geojson");
   return EXIT_SUCCESS;
