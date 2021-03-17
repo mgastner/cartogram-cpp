@@ -38,14 +38,21 @@ void read_csv(const boost::program_options::variables_map vm,
     // Get target area
     csv::CSVField area_field =
       vm.count("area") ? row[vm["area"].as<std::string>()] : row[1];
+    double area;
     if (!area_field.is_num()) {
-      std::cerr << "ERROR: non-numeric value as area in CSV" << std::endl;
-      _Exit(201);
-    }
-    double area = area_field.get<double>();
-    if (area < 0.0) {
-      std::cerr << "ERROR: negative area in CSV" << std::endl;
-      _Exit(101);
+      std::cout << "area_field" << area_field.get() << std::endl;
+      if (area_field.get().compare("NA") == 0) {
+        area = -1.0;  // Use negative area as sign of a missing value
+      } else {
+        std::cerr << "ERROR: Areas must be numeric or NA" << std::endl;
+        _Exit(201);
+      }
+    } else {
+      area = area_field.get<double>();
+      if (area < 0.0) {
+        std::cerr << "ERROR: negative area in CSV" << std::endl;
+        _Exit(101);
+      }
     }
     map_state->target_areas_insert(id, area);
 

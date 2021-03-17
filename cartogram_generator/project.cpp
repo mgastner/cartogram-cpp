@@ -2,6 +2,7 @@
 #include <iostream>
 #include <vector>
 #include "interpolate_bilinearly.h"
+#include "matrix.h";
 
 #include "project.h"
 
@@ -83,7 +84,7 @@ void project(MapState *map_state)
 // (x + 1, y + 1) and (x, y + 1).
 
 void project_graticule_centroids(MapState *map_state){
-  
+
   const unsigned int lx = map_state->lx();
   const unsigned int ly = map_state->ly();
 
@@ -128,14 +129,14 @@ std::vector<XYPoint> find_triangle(const int x,
                                    const int lx,
                                    const int ly)
 {
-  
+
   if (x < 0 || x > lx || y < 0 || y > ly) {
     std::cerr << "ERROR: coordinate outside bounding box in "
               << "find_triangle().\n";
     std::cerr << "x=" << x << ", y=" << y << std::endl;
     exit(1);
   }
-  
+
   std::vector<XYPoint> triangle_coordinates;
 
   // Get graticule coordinates and centroid.
@@ -143,14 +144,14 @@ std::vector<XYPoint> find_triangle(const int x,
 
   int x0 = floor(x + 0.5) - 0.5;
   int y0 = floor(y + 0.5) - 0.5;
-  
+
   XYPoint centroid;
   centroid.x = x0 + 0.5;
   centroid.y = y0 + 0.5;
 
   boost::multi_array<double, 2> vx (boost::extents[2][2]);
   boost::multi_array<double, 2> vy (boost::extents[2][2]);
-  
+
   for (int i = 0; i < 2; i++){
     for (int j = 0; j < 2; j++){
       vx[i][j] = x0 + i;
@@ -210,41 +211,43 @@ std::vector<XYPoint> find_triangle(const int x,
 XYPoint affine_trans(std::vector<XYPoint> *tri,
                      std::vector<XYPoint> *org_tri,
                      double x, double y){
-  
+
+  // For each point, we make the following transformation.
+  // Suppose we find that, before the cartogram transformation, a point (x, y)
+  // is in the triangle (a, b, c). We want to find its position in
+  // the projected triangle (p, q, r). We locally approximate the cartogram
+  // transformation by an affine transformation T such that T(a) = p,
+  // T(b) = q and T(c) = r. We can think of T as a 3x3 matrix
+  //  /t11 t12 t13\
+  // | t21 t22 t23 |  such that
+  //  \ 0   0   1 /
+  //  /t11 t12 t13\   /a1 b1 c1\     /p1 q1 r1\
+  // | t21 t22 t23 | | a2 b2 c2 | = | p2 q2 r2 | or TA = P. Hence T = PA^{-1}
+  //  \ 0   0   1 /   \ 1  1  1/     \ 1  1  1/
+  //                              /b2-c2 c1-b1 b1*c2-b2*c1\
+  // We have A^{-1} = (1/det(A)) | c2-a2 a1-c1 a2*c1-a1*c2 |. By multiplying
+  //                              \a2-b2 b1-a1 a1*b2-a2*b1/
+  // PA^{-1} we obtain t11, t12, t13, t21, t22, t23. The postimage of (x, y) i
+  // the unprojected map is then "pre" with coordinates
+  // post.x = t11*x + t12*y + t13, pre.y = t21*x + t22*y + t23.
+
   XYPoint pre;
+  pre.x = x;
+  pre.y = y;
 
-  /**************************** Determinant of A. ****************************/
+  // Old triangle (a, b, c) as a matrix, explained earlier as Matrix A
+  Matrix abc_mA = ((*org_tri)[0], (*org_tri)[1], (*org_tri)[2]);
 
-  double det = (*tri)[0].x * (*tri)[1].y + (*tri)[1].x * (*tri)[2].y + (*tri)[2].x * (*tri)[0].y
-               - (*tri)[1].x * (*tri)[0].y - (*tri)[2].x * (*tri)[1].y - (*tri)[0].x * (*tri)[2].y;
+  // New triangle (p, q, r) as a matrix, explained earlier as Matrix P
+  Matrix pqr_mP = ((*tri)[0], (*tri)[1], (*tri)[2]);
 
-  /*********** Compute det(A) * A^{-1}. We divide by det(A) later. ***********/
-  
-  double ainv11 = (*tri)[1].y - (*tri)[2].y;
-  double ainv12 = (*tri)[2].x - (*tri)[1].x;
-  double ainv13 = (*tri)[1].x * (*tri)[2].y - (*tri)[1].y * (*tri)[2].x;
-  double ainv21 = (*tri)[2].y - (*tri)[0].y;
-  double ainv22 = (*tri)[0].x - (*tri)[2].x;
-  double ainv23 = (*tri)[0].y * (*tri)[2].x - (*tri)[0].x * (*tri)[2].y;
-  double ainv31 = (*tri)[0].y - (*tri)[1].y;
-  double ainv32 = (*tri)[1].x - (*tri)[0].x;
-  double ainv33 = (*tri)[0].x * (*tri)[1].y - (*tri)[0].y * (*tri)[1].x;
+  // Calculating transformation matrix
+  Matrix mT = pqr_mP.multiply(abc_mA.inverse());
 
-  /******************************** Compute T. *******************************/
+  // Transforming point and pushing back to temporary_ext_boundary
+  XYPoint post = mT.transform_XYPoint(pre);
 
-  double t11 = (*org_tri)[0].x * ainv11 + (*org_tri)[1].x * ainv21 + (*org_tri)[2].x * ainv31;
-  double t12 = (*org_tri)[0].x * ainv12 + (*org_tri)[1].x * ainv22 + (*org_tri)[2].x * ainv32;
-  double t13 = (*org_tri)[0].x * ainv13 + (*org_tri)[1].x * ainv23 + (*org_tri)[2].x * ainv33;
-  double t21 = (*org_tri)[0].y * ainv11 + (*org_tri)[1].y * ainv21 + (*org_tri)[2].y * ainv31;
-  double t22 = (*org_tri)[0].y * ainv12 + (*org_tri)[1].y * ainv22 + (*org_tri)[2].y * ainv32;
-  double t23 = (*org_tri)[0].y * ainv13 + (*org_tri)[1].y * ainv23 + (*org_tri)[2].y * ainv33;
-
-  /********************* Transform the input coordinates. ********************/
-
-  pre.x = (t11*x + t12*y + t13) / det;
-  pre.y = (t21*x + t22*y + t23) / det;
-
-  return pre;
+  return post;
 }
 
 void project_with_triangulation(MapState *map_state)
@@ -381,10 +384,10 @@ void project_graticule(MapState *map_state)
   const unsigned int lx = map_state->lx();
   const unsigned int ly = map_state->ly();
   boost::multi_array<XYPoint, 2> &proj = *map_state->proj();
-  
+
   boost::multi_array<XYPoint, 2> &graticule_points = *map_state->graticule_points();
   boost::multi_array<XYPoint, 2> &graticule_centroids = *map_state->graticule_centroids();
-  
+
   // Resize multi array if running for the first time
   if (map_state->n_finished_integrations() == 0) {
     graticule_points.resize(boost::extents[lx + 1][ly + 1]);
