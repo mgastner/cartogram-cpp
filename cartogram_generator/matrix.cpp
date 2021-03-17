@@ -31,25 +31,25 @@ Matrix::Matrix (const Matrix &m1) {
 }
 
 // Matrix from a triangle
-Matrix::Matrix (Triangle triangle) {
-
-  // first vertex
-  p11 = triangle[0][0];
-  p21 = triangle[0][1];
-
-  // second vertex
-  p12 = triangle[1][0];
-  p22 = triangle[1][1];
-
-  // third vertex
-  p13 = triangle[2][0];
-  p23 = triangle[2][1];
-
-  // to make it a 3x3 matrix
-  p31 = 1;
-  p32 = 1;
-  p33 = 1;
-}
+// Matrix::Matrix (Triangle triangle) {
+//
+//   // first vertex
+//   p11 = triangle[0][0];
+//   p21 = triangle[0][1];
+//
+//   // second vertex
+//   p12 = triangle[1][0];
+//   p22 = triangle[1][1];
+//
+//   // third vertex
+//   p13 = triangle[2][0];
+//   p23 = triangle[2][1];
+//
+//   // to make it a 3x3 matrix
+//   p31 = 1;
+//   p32 = 1;
+//   p33 = 1;
+// }
 
 // Matrix from three XYPoints
 Matrix::Matrix (XYPoint a, XYPoint b, XYPoint c) {
@@ -59,12 +59,12 @@ Matrix::Matrix (XYPoint a, XYPoint b, XYPoint c) {
   p21 = a.y;
 
   // second vertex
-  p12 = a.x;
-  p22 = a.y;
+  p12 = b.x;
+  p22 = b.y;
 
   // third vertex
-  p13 = a.x;
-  p23 = a.y;
+  p13 = c.x;
+  p23 = c.y;
 
   // to make it a 3x3 matrix
   p31 = 1;
