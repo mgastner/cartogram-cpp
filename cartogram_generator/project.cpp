@@ -2,7 +2,7 @@
 #include <iostream>
 #include <vector>
 #include "interpolate_bilinearly.h"
-#include "matrix.h";
+#include "matrix.h"
 
 #include "project.h"
 
