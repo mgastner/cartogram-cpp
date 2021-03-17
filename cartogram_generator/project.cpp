@@ -236,10 +236,10 @@ XYPoint affine_trans(std::vector<XYPoint> *tri,
   pre.y = y;
 
   // Old triangle (a, b, c) as a matrix, explained earlier as Matrix A
-  Matrix abc_mA = ((*org_tri)[0], (*org_tri)[1], (*org_tri)[2]);
+  Matrix abc_mA((*org_tri)[0], (*org_tri)[1], (*org_tri)[2]);
 
   // New triangle (p, q, r) as a matrix, explained earlier as Matrix P
-  Matrix pqr_mP = ((*tri)[0], (*tri)[1], (*tri)[2]);
+  Matrix pqr_mP((*tri)[0], (*tri)[1], (*tri)[2]);
 
   // Calculating transformation matrix
   Matrix mT = pqr_mP.multiply(abc_mA.inverse());

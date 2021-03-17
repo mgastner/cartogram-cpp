@@ -9,9 +9,8 @@ struct Matrix {
   // all positions of matrix
   double p11, p12, p13, p21, p22, p23, p31, p32, p33;
   Matrix(); // constructor for identity matrix
-  Matrix (const Matrix &); // copy constructor
   // Matrix(Triangle); // matrix from a triangle
-  Matrix(XYPoint, XYPoint, XYPoint); // matrix from triangle of XYPoints
+  Matrix(XYPoint a, XYPoint b, XYPoint c); // matrix from triangle of XYPoints
   void scale(double); //
   void print();
   double det();

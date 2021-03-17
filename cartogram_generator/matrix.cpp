@@ -16,20 +16,6 @@ Matrix::Matrix() {
   p33 = 1;
 }
 
-// copy constructor
-Matrix::Matrix (const Matrix &m1) {
-
-  p11 = m1.p11;
-  p12 = m1.p12;
-  p13 = m1.p13;
-  p21 = m1.p21;
-  p22 = m1.p22;
-  p23 = m1.p23;
-  p31 = m1.p31;
-  p32 = m1.p32;
-  p33 = m1.p33;
-}
-
 // Matrix from a triangle
 // Matrix::Matrix (Triangle triangle) {
 //
