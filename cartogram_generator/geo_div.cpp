@@ -39,7 +39,7 @@ double GeoDiv::area() const
     a += ext_ring.area();
     for (auto hci = pwh.holes_begin(); hci != pwh.holes_end(); ++hci) {
       Polygon hole = *hci;
-      a -= hole.area();
+      a += hole.area();
     }
   }
   return a;

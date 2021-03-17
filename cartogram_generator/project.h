@@ -10,6 +10,8 @@ std::vector<int> find_graticule_point(const int,
                                       const int,
                                       const int);
 
-void project_graticule(MapState*);
+void project_graticule_centroids(MapState*);
+
+void project_with_triangulation(MapState*);
 
 #endif
