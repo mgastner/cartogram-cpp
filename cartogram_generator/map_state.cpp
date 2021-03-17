@@ -6,13 +6,19 @@ MapState::MapState(std::string v, const bool w, const bool wd2eps) :
   write_density_to_eps_(wd2eps)
 {
   n_finished_integrations_ = 0;
+  fwd_plan_for_rho_ = NULL;
+  bwd_plan_for_rho_ = NULL;
   return;
 }
 
 MapState::~MapState()
 {
-  fftw_destroy_plan(fwd_plan_for_rho_);
-  fftw_destroy_plan(bwd_plan_for_rho_);
+  if (fwd_plan_for_rho_) {
+    fftw_destroy_plan(fwd_plan_for_rho_);
+  }
+  if (bwd_plan_for_rho_) {
+    fftw_destroy_plan(bwd_plan_for_rho_);
+  }
   return;
 }
 
@@ -57,6 +63,13 @@ void MapState::colors_insert(const std::string id, std::string color)
 double MapState::target_areas_at(const std::string id)
 {
   return target_areas.at(id);
+}
+
+bool MapState::target_area_is_missing(const std::string id) const
+{
+
+  // We use negative area as indication that GeoDiv has no target area
+  return target_areas.at(id) < 0.0;
 }
 
 const Color MapState::colors_at(const std::string id)
@@ -196,18 +209,22 @@ double MapState::max_area_err()
   double sum_target_area = 0.0;
   double sum_cart_area = 0.0;
   for (auto gd : geo_divs_) {
-    sum_target_area += target_areas_at(gd.id());
-    sum_cart_area += gd.area();
+    if (!target_area_is_missing(gd.id())) {
+      sum_target_area += target_areas_at(gd.id());
+      sum_cart_area += gd.area();
+    }
   }
   double mae = 0.0;
   for (auto gd : geo_divs_) {
-    double obj_area =
-      target_areas_at(gd.id()) * sum_cart_area / sum_target_area;
-    double relative_area_error = gd.area() / obj_area - 1;
-    if (relative_area_error < 0) {
-      mae = std::max(mae, -relative_area_error);
-    } else{
-      mae = std::max(mae, relative_area_error);
+    if (!target_area_is_missing(gd.id())) {
+      double obj_area =
+        target_areas_at(gd.id()) * sum_cart_area / sum_target_area;
+      double relative_area_error = gd.area() / obj_area - 1;
+      if (relative_area_error < 0) {
+        mae = std::max(mae, -relative_area_error);
+      } else {
+        mae = std::max(mae, relative_area_error);
+      }
     }
   }
   std::cout << "max. area err: " << mae << std::endl;
