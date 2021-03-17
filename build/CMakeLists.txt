@@ -63,7 +63,8 @@ add_executable(
   ../cartogram_generator/colors.cpp
   ../cartogram_generator/check_topology.cpp
   ../cartogram_generator/matrix.cpp
-  # ../cartogram_generator/helper_functions.cpp
+  ../cartogram_generator/densify.cpp
+  ../cartogram_generator/densification_points.cpp
   ../cartogram_generator/read_geojson.cpp
   ../cartogram_generator/fill_with_density.cpp
   ../cartogram_generator/blur_density.cpp
