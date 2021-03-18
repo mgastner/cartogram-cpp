@@ -31,6 +31,7 @@ private:
   boost::multi_array<XYPoint, 2> proj_;
   boost::multi_array<XYPoint, 2> graticule_points_;
   boost::multi_array<XYPoint, 2> graticule_centroids_;
+  boost::multi_array<int, 2> graticule_diagonals_;
   MapState();
 public:
   explicit MapState(const std::string, const bool, const bool);
@@ -65,6 +66,7 @@ public:
   boost::multi_array<XYPoint, 2> *proj();
   boost::multi_array<XYPoint, 2> *graticule_points();
   boost::multi_array<XYPoint, 2> *graticule_centroids();
+  boost::multi_array<int, 2> *graticule_diagonals();
   double max_area_err();
 };
 

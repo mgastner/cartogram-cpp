@@ -14,4 +14,6 @@ void project_graticule_centroids(MapState*);
 
 void project_with_triangulation(MapState*);
 
+void choose_diag(MapState*);
+
 #endif

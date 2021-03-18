@@ -200,6 +200,11 @@ boost::multi_array<XYPoint, 2> *MapState::graticule_centroids()
   return &graticule_centroids_;
 }
 
+boost::multi_array<int, 2> *MapState::graticule_diagonals()
+{
+  return &graticule_diagonals_;
+}
+
 double MapState::max_area_err()
 {
 

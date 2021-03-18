@@ -13,6 +13,7 @@
 #include "write_eps.h"
 #include "check_topology.h"
 #include "write_to_json.h"
+#include "geo_div.h"
 #include <boost/program_options.hpp>
 #include <iostream>
 
@@ -140,7 +141,7 @@ int main(const int argc, const char *argv[])
     std::cout << "Writing input_polygons.eps" << std::endl;
     write_map_to_eps("input_polygons.eps", &map_state);
   }
-/*
+
   // Start map integration
   while (map_state.n_finished_integrations() < max_integrations &&
          map_state.max_area_err() > max_permitted_area_error) {
@@ -157,11 +158,12 @@ int main(const int argc, const char *argv[])
     }
     flatten_density(&map_state);
     //project(&map_state);
-    project_graticule_centroids(&map_state);
+    choose_diag(&map_state);
     project_with_triangulation(&map_state);
     map_state.inc_integration();
   }
-*/
+
+/*
   fill_with_density(&map_state);
     if (map_state.n_finished_integrations() == 0) {
       blur_density(5.0, &map_state);
@@ -170,11 +172,13 @@ int main(const int argc, const char *argv[])
     }
     flatten_density(&map_state);
     //project(&map_state);
-    // map_state.set_geo_divs(densify(map_state.geo_divs()));
-    project_graticule_centroids(&map_state);
+    //map_state.set_geo_divs(densify(map_state.geo_divs()));
+    // project_graticule_centroids(&map_state);
+    // project_with_triangulation(&map_state);
+    choose_diag(&map_state);
     project_with_triangulation(&map_state);
     map_state.inc_integration();
-
+*/
   json cart_json = cgal_to_json(&map_state);
   write_to_json(cart_json, geo_file_name, "cartogram.geojson");
   return EXIT_SUCCESS;

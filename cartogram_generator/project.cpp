@@ -77,6 +77,40 @@ void project(MapState *map_state)
   return;
 }
 
+void choose_diag(MapState *map_state){
+
+  const unsigned int lx = map_state->lx();
+  const unsigned int ly = map_state->ly();
+
+  boost::multi_array<XYPoint, 2> &proj = *map_state->proj();
+  boost::multi_array<int, 2> &graticule_diagonals = *map_state->graticule_diagonals();
+
+  if (map_state->n_finished_integrations() == 0) {
+    graticule_diagonals.resize(boost::extents[lx][ly]);
+  }
+
+  for (unsigned int i = 0; i < lx - 1; i++){
+    for (unsigned int j = 0; j < ly - 1; j++){
+
+      // Get line equation of first diagonal originating from bottom left
+      // point of graticule cell
+
+      double a = (proj[i][j].y - proj[i + 1][j + 1].y) / (proj[i][j].x - proj[i + 1][j + 1].x);
+      double b = proj[i][j].y - proj[i][j].x;
+
+      if (proj[i + 1][j].y >= a * proj[i + 1][j].x + b ||
+          proj[i][j + 1].y <= a * proj[i][j + 1].x + b){
+        graticule_diagonals[i][j] = 1;
+      } else {
+        graticule_diagonals[i][j] = 0;
+      }
+      
+    }
+  }
+
+  return;
+}
+
 // Applying the function find_graticule to any cartogram point would
 // return the coordinates (x, y) of the bottom left point of the original
 // (untransformed) square graticule the cartogram point was in. This square
@@ -208,6 +242,91 @@ std::vector<XYPoint> find_triangle(const int x,
   return triangle_coordinates;
 }
 
+std::vector<XYPoint> find_triangle_2(const int x,
+                                     const int y,
+                                     const int lx,
+                                     const int ly,
+                                     boost::multi_array<int, 2> *graticule_diagonals)
+{
+
+  if (x < 0 || x > lx || y < 0 || y > ly) {
+    std::cerr << "ERROR: coordinate outside bounding box in "
+              << "find_triangle().\n";
+    std::cerr << "x=" << x << ", y=" << y << std::endl;
+    exit(1);
+  }
+
+  std::vector<XYPoint> triangle_coordinates;
+
+  // Get graticule coordinates and centroid.
+
+  int x0 = floor(x + 0.5) - 0.5;
+  int y0 = floor(y + 0.5) - 0.5;
+
+  if ((*graticule_diagonals)[int(x0)][int(y0)] == 0) {
+    double a = 1.0;
+    double b = y0 - a * x0;
+
+    XYPoint v0;
+    v0.x = x0;
+    v0.y = y0;
+    triangle_coordinates.push_back(v0);
+
+    if (y >= a * x + b){
+
+      XYPoint v1;
+      v1.x = x0;
+      v1.y = y0 + 1;
+      triangle_coordinates.push_back(v1);
+
+    } else {
+
+      XYPoint v1;
+      v1.x = x0 + 1;
+      v1.y = y0;
+      triangle_coordinates.push_back(v1);
+
+    }
+
+    XYPoint v2;
+    v2.x = x0 + 1;
+    v2.y = y0 + 1;
+    triangle_coordinates.push_back(v2);
+
+  } else {
+    double a = - 1.0;
+    double b = y0 - a * x0;
+
+    XYPoint v0;
+    v0.x = x0 + 1;
+    v0.y = y0;
+    triangle_coordinates.push_back(v0);
+
+    if (y >= a * x + b){
+
+      XYPoint v1;
+      v1.x = x0 + 1;
+      v1.y = y0 + 1;
+      triangle_coordinates.push_back(v1);
+
+    } else {
+
+      XYPoint v1;
+      v1.x = x0;
+      v1.y = y0;
+      triangle_coordinates.push_back(v1);
+
+    }
+
+    XYPoint v2;
+    v2.x = x0;
+    v2.y = y0 + 1;
+    triangle_coordinates.push_back(v2);
+  }
+
+  return triangle_coordinates;
+}
+
 XYPoint affine_trans(std::vector<XYPoint> *tri,
                      std::vector<XYPoint> *org_tri,
                      double x, double y){
@@ -256,6 +375,7 @@ void project_with_triangulation(MapState *map_state)
   const unsigned int ly = map_state->ly();
   boost::multi_array<XYPoint, 2> &proj = *map_state->proj();
   boost::multi_array<XYPoint, 2> &graticule_centroids = *map_state->graticule_centroids();
+  boost::multi_array<int, 2> &graticule_diagonals = *map_state->graticule_diagonals();
 
   std::vector<GeoDiv> new_geo_divs;
 
@@ -275,16 +395,16 @@ void project_with_triangulation(MapState *map_state)
         // Update exterior ring coordinates
 
         std::vector<XYPoint> ext_ring_triangle =
-          find_triangle(old_ext_ring[i][0], old_ext_ring[i][1],
-                        lx, ly);
+          find_triangle_2(old_ext_ring[i][0], old_ext_ring[i][1],
+                        lx, ly, &graticule_diagonals);
 
         std::vector<XYPoint> transformed_ext_ring_triangle;
 
-        XYPoint centroid;
-        centroid.x =
-          graticule_centroids[int(ext_ring_triangle[0].x) - 1][int(ext_ring_triangle[0].y) - 1].x;
-        centroid.y =
-          graticule_centroids[int(ext_ring_triangle[0].x) - 1][int(ext_ring_triangle[0].y) - 1].y;
+        XYPoint v0;
+        v0.x =
+          proj[int(ext_ring_triangle[0].x)][int(ext_ring_triangle[0].y)].x;
+        v0.y =
+          proj[int(ext_ring_triangle[0].x)][int(ext_ring_triangle[0].y)].y;
 
         XYPoint v1;
         v1.x =
@@ -298,7 +418,7 @@ void project_with_triangulation(MapState *map_state)
         v2.y =
           proj[int(ext_ring_triangle[2].x)][int(ext_ring_triangle[2].y)].y;
 
-        transformed_ext_ring_triangle.push_back(centroid);
+        transformed_ext_ring_triangle.push_back(v0);
         transformed_ext_ring_triangle.push_back(v1);
         transformed_ext_ring_triangle.push_back(v2);
 
@@ -316,16 +436,16 @@ void project_with_triangulation(MapState *map_state)
         for (unsigned int i = 0; i < old_hole.size(); i++) {
 
           std::vector<XYPoint> hole_triangle =
-            find_triangle(old_hole[i][0], old_hole[i][1],
-                          lx, ly);
+            find_triangle_2(old_hole[i][0], old_hole[i][1],
+                          lx, ly, &graticule_diagonals);
 
           std::vector<XYPoint> transformed_hole_triangle;
 
-          XYPoint centroid;
-          centroid.x =
-            graticule_centroids[int(hole_triangle[0].x) - 1][int(hole_triangle[0].y) - 1].x;
-          centroid.y =
-            graticule_centroids[int(hole_triangle[0].x) - 1][int(hole_triangle[0].y) - 1].y;
+          XYPoint v0;
+          v0.x =
+            proj[int(hole_triangle[0].x)][int(hole_triangle[0].y)].x;
+          v0.y =
+            proj[int(hole_triangle[0].x)][int(hole_triangle[0].y)].y;
 
           XYPoint v1;
           v1.x =
@@ -339,7 +459,7 @@ void project_with_triangulation(MapState *map_state)
           v2.y =
             proj[int(hole_triangle[2].x)][int(hole_triangle[2].y)].y;
 
-          transformed_hole_triangle.push_back(centroid);
+          transformed_hole_triangle.push_back(v0);
           transformed_hole_triangle.push_back(v1);
           transformed_hole_triangle.push_back(v2);
 
