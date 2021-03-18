@@ -126,6 +126,7 @@ int main(const int argc, const char *argv[])
     return EXIT_FAILURE;
   }
 
+  rescale_map(long_grid_side_length, &map_state);
   for (auto gd : map_state.geo_divs()) {
     std::cout << "GeoDiv ID: " << gd.id() << std::endl;
     gd.centroid_of_largest_polygon_with_holes();

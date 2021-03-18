@@ -78,21 +78,21 @@ const
   Polygon ext_ring = pwh.outer_boundary();
   double a_ext = ext_ring.area();
   Point c_ext = centroid_of_polygon(ext_ring);
-  CGAL::Vector_2<Epick> prod_ext(c_ext[0], c_ext[1]);
-  prod_ext *= a_ext;
-
-  std::cout << "Product " << prod_ext << std::endl;
-
-  std::vector<CGAL::Vector_2<Epick> > prod_hole;
+  CGAL::Vector_2<Epick> weighted_sum_of_centroids(c_ext[0], c_ext[1]);
+  weighted_sum_of_centroids *= a_ext;
+  double total_area = a_ext;
   for (auto hci = pwh.holes_begin(); hci != pwh.holes_end(); ++hci) {
     Polygon hole = *hci;
     double a_hole = hole.area();
     Point c_hole = centroid_of_polygon(hole);
-    CGAL::Vector_2<Epick> p_hole(c_hole[0], c_hole[1]);
-    p_hole *= a_hole;
-    prod_hole.push_back(p_hole);
+    CGAL::Vector_2<Epick> c_hole_vector(c_hole[0], c_hole[1]);
+    weighted_sum_of_centroids += a_hole * c_hole_vector;
+    total_area += a_hole;
   }
-  return c_ext;
+  weighted_sum_of_centroids /= total_area;
+  Point c_pwh(weighted_sum_of_centroids[0], weighted_sum_of_centroids[1]);
+  std::cout << "Centroid of pwh: " << c_pwh << std::endl;
+  return c_pwh;
 }
 
 Point GeoDiv::centroid_of_largest_polygon_with_holes() const
