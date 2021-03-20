@@ -111,57 +111,124 @@ void choose_diag(MapState *map_state){
   return;
 }
 
-// Applying the function find_graticule to any cartogram point would
-// return the coordinates (x, y) of the bottom left point of the original
-// (untransformed) square graticule the cartogram point was in. This square
-// graticule would always have four vertices of coordinates (x, y), (x + 1, y),
-// (x + 1, y + 1) and (x, y + 1).
-
-void project_graticule_centroids(MapState *map_state){
-
+void choose_diag_2(MapState *map_state){
+  
   const unsigned int lx = map_state->lx();
   const unsigned int ly = map_state->ly();
 
   boost::multi_array<XYPoint, 2> &proj = *map_state->proj();
-  boost::multi_array<XYPoint, 2> &graticule_centroids = *map_state->graticule_centroids();
+  boost::multi_array<int, 2> &graticule_diagonals = *map_state->graticule_diagonals();
 
-  // Resize multi array if running for the first time
   if (map_state->n_finished_integrations() == 0) {
-    graticule_centroids.resize(boost::extents[lx][ly]);
+    graticule_diagonals.resize(boost::extents[lx][ly]);
   }
+
+  bool has_concave = false;
 
   for (unsigned int i = 0; i < lx - 1; i++){
     for (unsigned int j = 0; j < ly - 1; j++){
-      graticule_centroids[i][j].x = i;
-      graticule_centroids[i][j].y = j;
+
+      double v0x = proj[i][j].x;
+      double v0y = proj[i][j].y;
+
+      double v1x = proj[i + 1][j].x;
+      double v1y = proj[i + 1][j].y;
+
+      double v2x = proj[i + 1][j + 1].x;
+      double v2y = proj[i + 1][j + 1].y;
+
+      double v3x = proj[i][j + 1].x;
+      double v3y = proj[i][j + 1].y;
+      
+      bool diag0_outside;
+      bool diag1_outside;
+
+      // Check first diagonal passing through
+      // v0 and v2
+
+      if (v0x - v2x == 0){
+        
+        // Case where diagonal is vertical
+
+        if ((v1x >= v0x && v3x >= v0x) || (v1x <= v0x && v3x <= v0x)){
+          diag0_outside = true;
+        } else {
+          diag0_outside = false;
+        }
+
+      } else {
+        
+        // Case where diagonal is not vertical
+
+        double a = (v0y - v2y) / (v0x - v2x);
+        double b = v0y - a * v0x;
+
+        if ((v1y >= (a * v1x + b) && v3y >= (a * v3x + b)) ||
+            (v1y <= (a * v1x + b) && v3y <= (a * v3x + b))){
+          diag0_outside = true;
+        } else {
+          diag0_outside = false;
+        }
+
+      }
+
+      // Check second diagonal passing through
+      // v1 and v3
+
+      if (v1x - v3x == 0){
+        // Case where diagonal is vertical
+
+        if ((v0x >= v1x && v2x >= v1x) || (v0x <= v1x && v2x <= v1x)){
+          diag1_outside = true;
+        } else {
+          diag1_outside = false;
+        }
+
+      } else {
+
+        // Case where diagonal is not vertical
+        
+        double a = (v1y - v3y) / (v1x - v3x);
+        double b = v1y - a * v1x;
+
+        if ((v0y >= (a * v0x + b) && v2y >= (a * v2x + b)) ||
+            (v0y <= (a * v0x + b) && v2y <= (a * v2x + b))){
+          diag1_outside = true;
+        } else {
+          diag1_outside = false;
+        }
+
+      }
+
+      if (diag0_outside || diag1_outside){
+        has_concave = true;
+      }
+
+      if (diag0_outside && diag1_outside){
+        std::cout << "Invalid transformed graticule cell! \n"
+                  << "Both diagonals outside for graticule cell \n"
+                  << "starting at " << i + 0.5 << ", " << j + 0.5;
+        exit(1);
+      } else if (diag0_outside) {
+        graticule_diagonals[i][j] = 1;
+      } else {
+        graticule_diagonals[i][j] = 0;
+      }
+
     }
   }
 
-  // Project graticule centroids
-  for (unsigned int i = 0; i < lx - 1; i++){
-    for (unsigned int j = 0; j < ly - 1; j++){
-      double x_disp =
-        proj[i][j].x - i - 0.5 +
-        proj[i + 1][j].x - i - 1.5 +
-        proj[i][j + 1].x - i - 0.5 +
-        proj[i + 1][j + 1].x - i - 1.5;
-      double y_disp =
-        proj[i][j].y - j - 0.5 +
-        proj[i + 1][j].y - j - 0.5 +
-        proj[i][j + 1].y - j - 1.5 +
-        proj[i + 1][j + 1].y - j - 1.5;
-      x_disp /= 4;
-      y_disp /= 4;
-      graticule_centroids[i][j].x += x_disp;
-      graticule_centroids[i][j].y += y_disp;
-    }
-  }
+  std::cout << "Concave graticule cell: " << has_concave << "\n";
+
+  return;
 }
+
 
 std::vector<XYPoint> find_triangle(const int x,
                                    const int y,
                                    const int lx,
-                                   const int ly)
+                                   const int ly,
+                                   boost::multi_array<int, 2> *graticule_diagonals)
 {
 
   if (x < 0 || x > lx || y < 0 || y > ly) {
@@ -175,97 +242,12 @@ std::vector<XYPoint> find_triangle(const int x,
 
   // Get graticule coordinates and centroid.
 
-
-  int x0 = floor(x + 0.5) - 0.5;
-  int y0 = floor(y + 0.5) - 0.5;
-
-  XYPoint centroid;
-  centroid.x = x0 + 0.5;
-  centroid.y = y0 + 0.5;
-
-  boost::multi_array<double, 2> vx (boost::extents[2][2]);
-  boost::multi_array<double, 2> vy (boost::extents[2][2]);
-
-  for (int i = 0; i < 2; i++){
-    for (int j = 0; j < 2; j++){
-      vx[i][j] = x0 + i;
-      vy[i][j] = y0 + j;
-    }
-  }
-
-  int c0x = 0;
-  int c0y = 0;
-
-  if (x > centroid.x){
-    c0x = 1;
-  }
-  if (y > centroid.y){
-    c0y = 1;
-  }
-
-  double a = (vy[c0x][c0y] - centroid.y) / (vx[c0x][c0y] - centroid.x);
-  double b = centroid.y - a * centroid.x;
-
-  int c1x;
-  int c1y;
-
-  if (y >= a * x + b){
-    if (c0y == 0){
-      c1y = 1;
-      c1x = c0x;
-    } else {
-      c1x = 1 - c0x;
-      c1y = c0y;
-    }
-  } else {
-    if (c0y == 0){
-      c1x = 1 - c0x;
-      c1y = c0y;
-    } else {
-      c1y = 0;
-      c1x = c0x;
-    }
-  }
-
-  triangle_coordinates.push_back(centroid);
-
-  XYPoint c0;
-  c0.x = vx[c0x][c0y];
-  c0.y = vy[c0x][c0y];
-  triangle_coordinates.push_back(c0);
-
-  XYPoint c1;
-  c1.x = vx[c1x][c1y];
-  c1.y = vy[c1x][c1y];
-  triangle_coordinates.push_back(c1);
-
-  return triangle_coordinates;
-}
-
-std::vector<XYPoint> find_triangle_2(const int x,
-                                     const int y,
-                                     const int lx,
-                                     const int ly,
-                                     boost::multi_array<int, 2> *graticule_diagonals)
-{
-
-  if (x < 0 || x > lx || y < 0 || y > ly) {
-    std::cerr << "ERROR: coordinate outside bounding box in "
-              << "find_triangle().\n";
-    std::cerr << "x=" << x << ", y=" << y << std::endl;
-    exit(1);
-  }
-
-  std::vector<XYPoint> triangle_coordinates;
-
-  // Get graticule coordinates and centroid.
-
-  int x0 = floor(x + 0.5) - 0.5;
-  int y0 = floor(y + 0.5) - 0.5;
+  double x0 = floor(x + 0.5) - 0.5;
+  double y0 = floor(y + 0.5) - 0.5;
 
   if ((*graticule_diagonals)[int(x0)][int(y0)] == 0) {
     double a = 1.0;
-    double b = y0 - a * x0;
+    double b = y0 - x0;
 
     XYPoint v0;
     v0.x = x0;
@@ -276,26 +258,26 @@ std::vector<XYPoint> find_triangle_2(const int x,
 
       XYPoint v1;
       v1.x = x0;
-      v1.y = y0 + 1;
+      v1.y = y0 + 1.0;
       triangle_coordinates.push_back(v1);
 
     } else {
 
       XYPoint v1;
-      v1.x = x0 + 1;
+      v1.x = x0 + 1.0;
       v1.y = y0;
       triangle_coordinates.push_back(v1);
 
     }
 
     XYPoint v2;
-    v2.x = x0 + 1;
-    v2.y = y0 + 1;
+    v2.x = x0 + 1.0;
+    v2.y = y0 + 1.0;
     triangle_coordinates.push_back(v2);
 
   } else {
-    double a = - 1.0;
-    double b = y0 - a * x0;
+    double a = (-1.0);
+    double b = y0 + x0;
 
     XYPoint v0;
     v0.x = x0 + 1;
@@ -374,7 +356,6 @@ void project_with_triangulation(MapState *map_state)
   const unsigned int lx = map_state->lx();
   const unsigned int ly = map_state->ly();
   boost::multi_array<XYPoint, 2> &proj = *map_state->proj();
-  boost::multi_array<XYPoint, 2> &graticule_centroids = *map_state->graticule_centroids();
   boost::multi_array<int, 2> &graticule_diagonals = *map_state->graticule_diagonals();
 
   std::vector<GeoDiv> new_geo_divs;
@@ -395,7 +376,7 @@ void project_with_triangulation(MapState *map_state)
         // Update exterior ring coordinates
 
         std::vector<XYPoint> ext_ring_triangle =
-          find_triangle_2(old_ext_ring[i][0], old_ext_ring[i][1],
+          find_triangle(old_ext_ring[i][0], old_ext_ring[i][1],
                         lx, ly, &graticule_diagonals);
 
         std::vector<XYPoint> transformed_ext_ring_triangle;
@@ -436,7 +417,7 @@ void project_with_triangulation(MapState *map_state)
         for (unsigned int i = 0; i < old_hole.size(); i++) {
 
           std::vector<XYPoint> hole_triangle =
-            find_triangle_2(old_hole[i][0], old_hole[i][1],
+            find_triangle(old_hole[i][0], old_hole[i][1],
                           lx, ly, &graticule_diagonals);
 
           std::vector<XYPoint> transformed_hole_triangle;
@@ -482,109 +463,3 @@ void project_with_triangulation(MapState *map_state)
   map_state->set_geo_divs(new_geo_divs);
   return;
 }
-
-/*
-XYPoint affine_trans(double ax, double bx, double cx,
-                     double ay, double by, double cy,
-                     double px, double qx, double rx,
-                     double py, double qy, double ry,
-                     double x, double y){
-  XYPoint trans_point;
-  return trans_point;
-}
-*/
-/*
-
-// After running the project_graticule function, calling graticule_points[x][y].x
-// and graticule_points[x][y].y would return the transformed coordinates tx and ty
-// of the transformed graticule point that was originally of coordinates (x, y).
-
-void project_graticule(MapState *map_state)
-{
-  const unsigned int lx = map_state->lx();
-  const unsigned int ly = map_state->ly();
-  boost::multi_array<XYPoint, 2> &proj = *map_state->proj();
-
-  boost::multi_array<XYPoint, 2> &graticule_points = *map_state->graticule_points();
-  boost::multi_array<XYPoint, 2> &graticule_centroids = *map_state->graticule_centroids();
-
-  // Resize multi array if running for the first time
-  if (map_state->n_finished_integrations() == 0) {
-    graticule_points.resize(boost::extents[lx + 1][ly + 1]);
-    graticule_centroids.resize(boost::extents[lx][ly]);
-  }
-
-  for (unsigned int i = 0; i < lx + 1; i++){
-    for (unsigned int j = 0; j < ly + 1; j++){
-      graticule_points[i][j].x = i;
-      graticule_points[i][j].y = j;
-    }
-  }
-
-  for (unsigned int i = 0; i < lx; i++){
-    for (unsigned int j = 0; j < ly; j++){
-      graticule_centroids[i][j].x = i + 0.5;
-      graticule_centroids[i][j].y = j + 0.5;
-    }
-  }
-
-  // Calculate displacement from proj array
-  boost::multi_array<double, 2> xdisp(boost::extents[lx][ly]);
-  boost::multi_array<double, 2> ydisp(boost::extents[lx][ly]);
-  for (unsigned int i = 0; i < lx; i++) {
-    for (unsigned int j=0; j<ly; j++) {
-      xdisp[i][j] = proj[i][j].x - i - 0.5;
-      ydisp[i][j] = proj[i][j].y - j - 0.5;
-    }
-  }
-
-  // Project graticule points
-  for (unsigned int i = 0; i < lx; i++){
-    for (unsigned int j = 0; j < ly; j++){
-      double new_x =
-        interpolate_bilinearly(graticule_points[i][j].x,
-                               graticule_points[i][j].y,
-                               &xdisp, 'x', lx, ly);
-      double new_y =
-        interpolate_bilinearly(graticule_points[i][j].x,
-                               graticule_points[i][j].y,
-                               &ydisp, 'y', lx, ly);
-      graticule_points[i][j].x = new_x;
-      graticule_points[i][j].y = new_y;
-    }
-  }
-
-  // Project graticule centroids
-  for (unsigned int i = 0; i < lx; i++){
-    for (unsigned int j = 0; j < ly; j++){
-      double x_disp =
-        graticule_points[i][j].x - i +
-        graticule_points[i + 1][j].x - i - 1 +
-        graticule_points[i][j + 1].x - i +
-        graticule_points[i + 1][j + 1].x - i - 1;
-      double y_disp =
-        graticule_points[i][j].y - j +
-        graticule_points[i + 1][j].y - j +
-        graticule_points[i][j + 1].y - j - 1 +
-        graticule_points[i + 1][j + 1].y - j - 1;
-      x_disp /= 4;
-      y_disp /= 4;
-      graticule_centroids[i][j].x += x_disp;
-      graticule_centroids[i][j].y += y_disp;
-    }
-  }
-
-  return;
-}
-
-// Applying the function find_graticule to any cartogram point would
-// return the coordinates (x, y) of the bottom left point of the original
-// (untransformed) square graticule the cartogram point was in. This square
-// graticule would always have four vertices of coordinates (x, y), (x + 1, y),
-// (x + 1, y + 1) and (x, y + 1).
-
-void project_with_triangulation(MapState *map_state)
-{
-  return;
-}
-*/
