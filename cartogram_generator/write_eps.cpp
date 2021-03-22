@@ -55,7 +55,8 @@ void write_polygons_to_eps(std::ofstream &eps_file,
                            bool colors,
                            MapState *map_state)
 {
-  eps_file << 0.001 * std::min(map_state->lx(), map_state->ly()) << " slw\n";
+  // eps_file << 0.001 * std::min(map_state->lx(), map_state->ly()) << " slw\n";
+  eps_file << 0.0000000001 << " slw\n";
   for (auto gd : map_state->geo_divs()) {
     for (auto pwh : gd.polygons_with_holes()) {
       Polygon ext_ring = pwh.outer_boundary();

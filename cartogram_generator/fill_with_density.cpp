@@ -170,13 +170,13 @@ void fill_with_density(MapState* map_state)
 
           // Check if odd number of intersections
           if (intersections.size() % 2 != 0) {
-            std::cerr << "Incorrect Topology" << std::endl;
-            std::cerr << "Number of intersections: " << intersections.size();
-            std::cerr << std::endl;
-            std::cerr << "Y-coordinate: " << line_y << std::endl;
-            std::cerr << "Intersection points: " << std::endl;
+            std::cout << "Incorrect Topology" << std::endl;
+            std::cout << "Number of intersections: " << intersections.size();
+            std::cout << std::endl;
+            std::cout << "Y-coordinate: " << line_y << std::endl;
+            std::cout << "Intersection points: " << std::endl;
             for (unsigned int l = 0; l < intersections.size(); ++l) {
-              std::cerr << intersections[l].x << std::endl;
+              std::cout << intersections[l].x << std::endl;
             }
             _Exit(932875);
           }
