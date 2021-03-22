@@ -661,12 +661,82 @@ void check_holes_inside_pgn(std::vector<Polygon> &holes_v,
    }
 }
 
+/* Connect together all polylines belonging to a pgnwh. */
+
+void connect_polylines_in_deq(
+    std::map<int, std::map<int, std::vector<PLL>>> plls_by_gd_pgnwh,
+    std::unordered_map
+      <int, std::unordered_map<int, std::unordered_map<int, bool>>> &visited,
+    std::deque<PLL> &deq,
+    PLL pll,
+    int gd_num,
+    int pgnwh_num)
+{
+  while (1) {
+    bool pll_siblings_found= false;
+
+    for (PLL pll2 : plls_by_gd_pgnwh[pll.get_gd()][pll.get_pgnwh()]) {
+      if (visited[gd_num][pgnwh_num][pll2.get_pos()] == true) {
+        continue;
+      }
+
+      /**
+       * If deq's 1st PLL's 1st vertex == pll2's last vertex,
+       * connect them.
+       */
+      if (deq.front().get_v1()[0] == pll2.get_vl()[0] &&
+          deq.front().get_v1()[1] == pll2.get_vl()[1]) {
+        deq.push_front(pll2);
+        visited[gd_num][pgnwh_num][pll2.get_pos()] = true;
+        pll_siblings_found = true;
+
+        /**
+         * If deq's last PLL's last vertex == pll2's 1st vertex,
+         * connect them.
+         */
+      } else if (deq.back().get_vl()[0] == pll2.get_v1()[0] &&
+          deq.back().get_vl()[1] == pll2.get_v1()[1]) {
+        deq.push_back(pll2);
+        visited[gd_num][pgnwh_num][pll2.get_pos()] = true;
+        pll_siblings_found = true;
+
+        /**
+         * If deq's 1st PLL's 1st vertex == pll2's 1st vertex,
+         * reverse pll2 and connect them.
+         */
+      } else if (deq.front().get_v1()[0] == pll2.get_v1()[0] &&
+          deq.front().get_v1()[1] == pll2.get_v1()[1]) {
+        Polyline polyl_new = pll2.get_pll();
+        std::reverse(polyl_new.begin(), polyl_new.end());
+        pll2.set_pll(polyl_new);
+        deq.push_front(pll2);
+        visited[gd_num][pgnwh_num][pll2.get_pos()] = true;
+        pll_siblings_found = true;
+
+        /**
+         * If deq's last PLL's last vertex == pll2's last vertex,
+         * reverse pll2 and connect them.
+         */
+      } else if (deq.back().get_vl()[0] == pll2.get_vl()[0] &&
+          deq.back().get_vl()[1] == pll2.get_vl()[1]) {
+        Polyline polyl_new = pll2.get_pll();
+        std::reverse(polyl_new.begin(), polyl_new.end());
+        pll2.set_pll(polyl_new);
+        deq.push_back(pll2);
+        visited[gd_num][pgnwh_num][pll2.get_pos()] = true;
+        pll_siblings_found = true;
+      }
+    }
+    if (!pll_siblings_found) break;
+  }
+}
+
 /******************* 10. Assemble polylines into polygons. *******************/
 
 void assemble_pll_to_pgn(
     std::map<int, std::map<int, std::vector<PLL>>> &plls_by_gd_pgnwh, 
     std::unordered_map
-    <int, std::unordered_map<int, std::unordered_map<int, bool>>> &visited, 
+      <int, std::unordered_map<int, std::unordered_map<int, bool>>> &visited, 
     std::vector<GeoDiv> &gd_vector_final,
     std::vector<GeoDiv> gd_vector_org)
 {
@@ -717,68 +787,15 @@ void assemble_pll_to_pgn(
 
           /* If it is part of a pgnwh with >1 polyline: */
         } else {
+          /* deq represents the outer_boundary of a pgnwh. */
           std::deque<PLL> deq;
           deq.push_back(pll);
           visited[gd_num][pgnwh_num][pll.get_pos()] = true;
 
-          /* Connect together all polylines belonging to a pgnwh. */
-          while (1) {
-            bool pll_siblings_found= false;
-
-            for (PLL pll2 : plls_by_gd_pgnwh[pll.get_gd()][pll.get_pgnwh()]) {
-              if (visited[gd_num][pgnwh_num][pll2.get_pos()] == true) {
-                continue;
-              }
-
-              /**
-               * If deq's 1st PLL's 1st vertex == pll2's last vertex,
-               * connect them.
-               */
-              if (deq.front().get_v1()[0] == pll2.get_vl()[0] &&
-                  deq.front().get_v1()[1] == pll2.get_vl()[1]) {
-                deq.push_front(pll2);
-                visited[gd_num][pgnwh_num][pll2.get_pos()] = true;
-                pll_siblings_found = true;
-
-                /**
-                 * If deq's last PLL's last vertex == pll2's 1st vertex,
-                 * connect them.
-                 */
-              } else if (deq.back().get_vl()[0] == pll2.get_v1()[0] &&
-                  deq.back().get_vl()[1] == pll2.get_v1()[1]) {
-                deq.push_back(pll2);
-                visited[gd_num][pgnwh_num][pll2.get_pos()] = true;
-                pll_siblings_found = true;
-
-                /**
-                 * If deq's 1st PLL's 1st vertex == pll2's 1st vertex,
-                 * reverse pll2 and connect them.
-                 */
-              } else if (deq.front().get_v1()[0] == pll2.get_v1()[0] &&
-                  deq.front().get_v1()[1] == pll2.get_v1()[1]) {
-                Polyline polyl_new = pll2.get_pll();
-                std::reverse(polyl_new.begin(), polyl_new.end());
-                pll2.set_pll(polyl_new);
-                deq.push_front(pll2);
-                visited[gd_num][pgnwh_num][pll2.get_pos()] = true;
-                pll_siblings_found = true;
-
-                /**
-                 * If deq's last PLL's last vertex == pll2's last vertex,
-                 * reverse pll2 and connect them.
-                 */
-              } else if (deq.back().get_vl()[0] == pll2.get_vl()[0] &&
-                  deq.back().get_vl()[1] == pll2.get_vl()[1]) {
-                Polyline polyl_new = pll2.get_pll();
-                std::reverse(polyl_new.begin(), polyl_new.end());
-                pll2.set_pll(polyl_new);
-                deq.push_back(pll2);
-                visited[gd_num][pgnwh_num][pll2.get_pos()] = true;
-                pll_siblings_found = true;
-              }
-            }
-            if (!pll_siblings_found) break;
-          }
+          connect_polylines_in_deq(plls_by_gd_pgnwh,
+                                   visited, deq, pll,
+                                   gd_num,
+                                   pgnwh_num);
 
           Polygon outer;
 
