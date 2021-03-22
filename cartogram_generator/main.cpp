@@ -157,11 +157,22 @@ int main(const int argc, const char *argv[])
       blur_density(0.0, &map_state);
     }
     flatten_density(&map_state);
-    //project(&map_state);
-    choose_diag_2(&map_state);
+    // project(&map_state);
+    choose_diag_3(&map_state);
     project_with_triangulation(&map_state);
     map_state.inc_integration();
+    std::string cartogram_file_name =
+      "cartogram_" +
+      std::to_string(map_state.n_finished_integrations()) +
+      ".geojson";
+    json cart_json = cgal_to_json(&map_state);
+    write_to_json(cart_json, geo_file_name, cartogram_file_name);
   }
+
+  std::cout << "Running fill with density again!" << std::endl;;
+  fill_with_density(&map_state);
+
+  
 
 /*
   fill_with_density(&map_state);
@@ -179,7 +190,9 @@ int main(const int argc, const char *argv[])
     project_with_triangulation(&map_state);
     map_state.inc_integration();
 */
+/*
   json cart_json = cgal_to_json(&map_state);
   write_to_json(cart_json, geo_file_name, "cartogram.geojson");
+*/
   return EXIT_SUCCESS;
 }

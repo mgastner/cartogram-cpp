@@ -123,7 +123,7 @@ void choose_diag_2(MapState *map_state){
     graticule_diagonals.resize(boost::extents[lx][ly]);
   }
 
-  bool has_concave = false;
+  int has_concave = 0;
 
   for (unsigned int i = 0; i < lx - 1; i++){
     for (unsigned int j = 0; j < ly - 1; j++){
@@ -201,7 +201,7 @@ void choose_diag_2(MapState *map_state){
       }
 
       if (diag0_outside || diag1_outside){
-        has_concave = true;
+        has_concave += 1;
       }
 
       if (diag0_outside && diag1_outside){
@@ -220,6 +220,94 @@ void choose_diag_2(MapState *map_state){
 
   std::cout << "Concave graticule cell: " << has_concave << "\n";
 
+  return;
+}
+
+void choose_diag_3(MapState *map_state)
+{
+  const unsigned int lx = map_state->lx();
+  const unsigned int ly = map_state->ly();
+
+  boost::multi_array<XYPoint, 2> &proj = *map_state->proj();
+  boost::multi_array<int, 2> &graticule_diagonals = *map_state->graticule_diagonals();
+
+  if (map_state->n_finished_integrations() == 0) {
+    graticule_diagonals.resize(boost::extents[lx][ly]);
+  }
+
+  int num_concave = 0;
+
+  
+
+  for (unsigned int i = 0; i < lx - 1; i++){
+    for (unsigned int j = 0; j < ly - 1; j++){
+
+      bool diag0_outside;
+      
+      Polygon trans_graticule;
+
+      double v0x = proj[i][j].x;
+      double v0y = proj[i][j].y;
+
+      double v1x = proj[i + 1][j].x;
+      double v1y = proj[i + 1][j].y;
+
+      double v2x = proj[i + 1][j + 1].x;
+      double v2y = proj[i + 1][j + 1].y;
+
+      double v3x = proj[i][j + 1].x;
+      double v3y = proj[i][j + 1].y;
+
+      trans_graticule.push_back(Point(v0x, v0y));
+      trans_graticule.push_back(Point(v1x, v1y));
+      trans_graticule.push_back(Point(v2x, v2y));
+      trans_graticule.push_back(Point(v3x, v3y));
+
+      if (not(trans_graticule.is_simple())){
+
+        std::cout << "Invalid graticule cell!\n";
+        exit(1); 
+
+      } else if (not(trans_graticule.is_convex())){
+
+        num_concave += 1;
+        
+        XYPoint midpoint0;
+        midpoint0.x = (v0x + v2x) / 2;
+        midpoint0.y = (v0y + v2y) / 2;
+/*
+        XYPoint midpoint1;
+        midpoint1.x = (v1x + v3x) / 2;
+        midpoint1.y = (v1y + v3y) / 2;
+*/
+        if (trans_graticule.bounded_side(Point(midpoint0.x, midpoint0.y)) != CGAL::ON_BOUNDED_SIDE){
+          diag0_outside = true;
+          //diag1_outside = false;
+        } else {
+          diag0_outside = false;
+          //diag1_outside = true;
+        }
+        
+      } else {
+        diag0_outside = false;
+        //diag1_outside = false;
+      }
+/*
+      if (diag0_outside || diag1_outside){
+        has_concave += 1;
+      }
+*/
+      if (diag0_outside) {
+        graticule_diagonals[i][j] = 0;
+      } else {
+        graticule_diagonals[i][j] = 1;
+      }
+
+    }
+  }
+
+  std::cout << "Number of concave graticule cells: " << num_concave << "\n";
+  
   return;
 }
 
