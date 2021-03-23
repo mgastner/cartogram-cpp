@@ -672,9 +672,11 @@ void connect_polylines_in_deq(
     int gd_num,
     int pgnwh_num)
 {
+  /* Search for polylines that connect with the plls inside the deq. */
   while (1) {
-    bool pll_siblings_found= false;
+    bool pll_siblings_found = false;
 
+    /* Iterate through all plls inside the current gd/pgnwh. */
     for (PLL pll2 : plls_by_gd_pgnwh[pll.get_gd()][pll.get_pgnwh()]) {
       if (visited[gd_num][pgnwh_num][pll2.get_pos()] == true) {
         continue;
@@ -727,6 +729,10 @@ void connect_polylines_in_deq(
         pll_siblings_found = true;
       }
     }
+    /**
+     * If siblings cannot be found for any while iteration, then the current
+     * deq along with its plls have no more polylines to connect to. So, break.
+     */
     if (!pll_siblings_found) break;
   }
 }
