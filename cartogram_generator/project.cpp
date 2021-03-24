@@ -275,17 +275,20 @@ void choose_diag_3(MapState *map_state)
         XYPoint midpoint0;
         midpoint0.x = (v0x + v2x) / 2;
         midpoint0.y = (v0y + v2y) / 2;
-/*
+
         XYPoint midpoint1;
         midpoint1.x = (v1x + v3x) / 2;
         midpoint1.y = (v1y + v3y) / 2;
-*/
-        if (trans_graticule.bounded_side(Point(midpoint0.x, midpoint0.y)) != CGAL::ON_BOUNDED_SIDE){
-          diag0_outside = true;
-          //diag1_outside = false;
-        } else {
+
+        if (trans_graticule.bounded_side(Point(midpoint0.x, midpoint0.y)) == CGAL::ON_BOUNDED_SIDE){
           diag0_outside = false;
+          //diag1_outside = false;
+        } else if (trans_graticule.bounded_side(Point(midpoint1.x, midpoint1.y)) == CGAL::ON_BOUNDED_SIDE){
+          diag0_outside = true;
           //diag1_outside = true;
+        } else {
+          std::cout << "Error! No diagonal inside of poly \n";
+          exit(1);
         }
         
       } else {
@@ -301,6 +304,100 @@ void choose_diag_3(MapState *map_state)
         graticule_diagonals[i][j] = 0;
       } else {
         graticule_diagonals[i][j] = 1;
+      }
+
+    }
+  }
+
+  std::cout << "Number of concave graticule cells: " << num_concave << "\n";
+  
+  return;
+}
+
+void choose_diag_4(MapState *map_state)
+{
+  const unsigned int lx = map_state->lx();
+  const unsigned int ly = map_state->ly();
+
+  boost::multi_array<XYPoint, 2> &proj = *map_state->proj();
+  boost::multi_array<int, 2> &graticule_diagonals = *map_state->graticule_diagonals();
+
+  if (map_state->n_finished_integrations() == 0) {
+    graticule_diagonals.resize(boost::extents[lx][ly]);
+  }
+
+  int num_concave = 0;
+
+  
+
+  for (unsigned int i = 0; i < lx - 1; i++){
+    for (unsigned int j = 0; j < ly - 1; j++){
+
+      //bool diag0_outside;
+      
+      Polygon trans_graticule;
+
+      double v0x = proj[i][j].x;
+      double v0y = proj[i][j].y;
+
+      double v1x = proj[i + 1][j].x;
+      double v1y = proj[i + 1][j].y;
+
+      double v2x = proj[i + 1][j + 1].x;
+      double v2y = proj[i + 1][j + 1].y;
+
+      double v3x = proj[i][j + 1].x;
+      double v3y = proj[i][j + 1].y;
+
+      trans_graticule.push_back(Point(v0x, v0y));
+      trans_graticule.push_back(Point(v1x, v1y));
+      trans_graticule.push_back(Point(v2x, v2y));
+      trans_graticule.push_back(Point(v3x, v3y));
+
+      XYPoint midpoint0;
+      midpoint0.x = (v0x + v2x) / 2;
+      midpoint0.y = (v0y + v2y) / 2;
+
+      XYPoint midpoint1;
+      midpoint1.x = (v1x + v3x) / 2;
+      midpoint1.y = (v1y + v3y) / 2;
+
+      if (trans_graticule.bounded_side(Point(midpoint0.x, midpoint0.y)) == CGAL::ON_BOUNDED_SIDE){
+        graticule_diagonals[i][j] = 0;
+      } else if (trans_graticule.bounded_side(Point(midpoint1.x, midpoint1.y)) == CGAL::ON_BOUNDED_SIDE){
+        graticule_diagonals[i][j] = 1;
+      } else {
+        std::cout << "Invalid graticule cell!\n";;
+        exit(1);
+      }
+/*
+      if (trans_graticule.bounded_side(Point(midpoint1.x, midpoint1.y)) == CGAL::ON_BOUNDED_SIDE){
+        graticule_diagonals[i][j] = 1;
+      } else if (trans_graticule.bounded_side(Point(midpoint0.x, midpoint0.y)) == CGAL::ON_BOUNDED_SIDE){
+        graticule_diagonals[i][j] = 0;
+      } else {
+        std::cout << "Invalid graticule cell!\n";;
+        exit(1);
+      }
+      */
+/*
+      if ((i == 134 && j == 228) || (i == 435 && j == 310)){
+        std::cout << "Graticule cell " << i << " by " << j << "\n";
+        std::cout << "V0: " << v0x << " " << v0y << "\n";
+        std::cout << "V1: " << v1x << " " << v1y << "\n";
+        std::cout << "V2: " << v2x << " " << v2y << "\n";
+        std::cout << "V3: " << v3x << " " << v3y << "\n";
+        std::cout << "Diagonal chosen: " << graticule_diagonals[i][j] << "\n";
+      }
+*/
+
+      if (trans_graticule.is_convex() == false){
+        std::cout << "Concave graticule cell " << i << " by " << j << "\n";
+        std::cout << "V0: " << v0x << " " << v0y << "\n";
+        std::cout << "V1: " << v1x << " " << v1y << "\n";
+        std::cout << "V2: " << v2x << " " << v2y << "\n";
+        std::cout << "V3: " << v3x << " " << v3y << "\n";
+        std::cout << "Diagonal chosen: " << graticule_diagonals[i][j] << "\n";
       }
 
     }
@@ -397,6 +494,92 @@ std::vector<XYPoint> find_triangle(const int x,
   return triangle_coordinates;
 }
 
+std::vector<XYPoint> find_triangle_2(const int x,
+                                    const int y,
+                                    const int lx,
+                                    const int ly,
+                                    boost::multi_array<int, 2> *graticule_diagonals)
+{
+
+  if (x < 0 || x > lx || y < 0 || y > ly) {
+    std::cerr << "ERROR: coordinate outside bounding box in "
+              << "find_triangle().\n";
+    std::cerr << "x=" << x << ", y=" << y << std::endl;
+    exit(1);
+  }
+
+  std::vector<XYPoint> triangle_coordinates;
+
+  // Get graticule coordinates and centroid.
+
+  double v0x = floor(x + 0.5) - 0.5;
+  double v0y = floor(y + 0.5) - 0.5;
+
+  double v1x = v0x + 1.0;
+  double v1y = v0y;
+
+  double v2x = v0x + 1.0;
+  double v2y = v0y + 1.0;
+
+  double v3x = v0x;
+  double v3y = v0y + 1.0;
+
+  Polygon triangle1;
+  Polygon triangle2;
+
+  if ((*graticule_diagonals)[int(v0x)][int(v0y)] == 0) {
+    
+    triangle1.push_back(Point(v0x, v0y));
+    triangle1.push_back(Point(v1x, v1y));
+    triangle1.push_back(Point(v2x, v2y));
+
+    triangle2.push_back(Point(v0x, v0y));
+    triangle2.push_back(Point(v2x, v2y));
+    triangle2.push_back(Point(v3x, v3y));
+
+  } else {
+
+    triangle1.push_back(Point(v0x, v0y));
+    triangle1.push_back(Point(v1x, v1y));
+    triangle1.push_back(Point(v3x, v3y));
+
+    triangle2.push_back(Point(v1x, v1y));
+    triangle2.push_back(Point(v2x, v2y));
+    triangle2.push_back(Point(v3x, v3y));
+
+  }
+
+  if ((triangle1.bounded_side(Point(x, y)) == CGAL::ON_BOUNDED_SIDE) ||
+      (triangle1.bounded_side(Point(x, y)) == CGAL::ON_BOUNDARY)){
+        
+    for (unsigned int i = 0; i < triangle1.size(); i++){
+      
+      XYPoint triangle_point;
+      triangle_point.x = triangle1[i][0];
+      triangle_point.y = triangle1[i][1];
+
+      triangle_coordinates.push_back(triangle_point);
+
+    }
+
+  } else {
+    
+    for (unsigned int i = 0; i < triangle2.size(); i++){
+      
+      XYPoint triangle_point;
+      triangle_point.x = triangle2[i][0];
+      triangle_point.y = triangle2[i][1];
+
+      triangle_coordinates.push_back(triangle_point);
+    
+    }
+
+  }
+
+  return triangle_coordinates;
+}
+
+
 XYPoint affine_trans(std::vector<XYPoint> *tri,
                      std::vector<XYPoint> *org_tri,
                      double x, double y){
@@ -464,7 +647,7 @@ void project_with_triangulation(MapState *map_state)
         // Update exterior ring coordinates
 
         std::vector<XYPoint> ext_ring_triangle =
-          find_triangle(old_ext_ring[i][0], old_ext_ring[i][1],
+          find_triangle_2(old_ext_ring[i][0], old_ext_ring[i][1],
                         lx, ly, &graticule_diagonals);
 
         std::vector<XYPoint> transformed_ext_ring_triangle;
@@ -505,7 +688,7 @@ void project_with_triangulation(MapState *map_state)
         for (unsigned int i = 0; i < old_hole.size(); i++) {
 
           std::vector<XYPoint> hole_triangle =
-            find_triangle(old_hole[i][0], old_hole[i][1],
+            find_triangle_2(old_hole[i][0], old_hole[i][1],
                           lx, ly, &graticule_diagonals);
 
           std::vector<XYPoint> transformed_hole_triangle;

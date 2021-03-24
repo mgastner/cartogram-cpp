@@ -158,7 +158,7 @@ int main(const int argc, const char *argv[])
     }
     flatten_density(&map_state);
     // project(&map_state);
-    choose_diag_3(&map_state);
+    choose_diag_4(&map_state);
     project_with_triangulation(&map_state);
     map_state.inc_integration();
     std::string cartogram_file_name =

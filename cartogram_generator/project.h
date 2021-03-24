@@ -13,4 +13,6 @@ void choose_diag_2(MapState*);
 
 void choose_diag_3(MapState*);
 
+void choose_diag_4(MapState*);
+
 #endif
