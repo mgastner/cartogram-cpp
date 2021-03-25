@@ -153,12 +153,15 @@ int main(const int argc, const char *argv[])
     fill_with_density(&map_state);
     if (map_state.n_finished_integrations() == 0) {
       blur_density(5.0, &map_state);
-    } else{
+    } /*else if (map_state.n_finished_integrations() == 1){
+      blur_density(1.0, &map_state);
+    } */else {
       blur_density(0.0, &map_state);
     }
     flatten_density(&map_state);
     // project(&map_state);
     choose_diag_4(&map_state);
+    //map_state.set_geo_divs(densify(map_state.geo_divs()));
     project_with_triangulation(&map_state);
     map_state.inc_integration();
     std::string cartogram_file_name =
