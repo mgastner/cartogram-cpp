@@ -970,7 +970,7 @@ void simplify_map(MapState *map_state)
   std::cout << "Number of vertices after simplifying: ";
   print_num_pts(gd_vector_simp);
 
-  /* 11. Remove the last point                                               */ 
+  /* 11. Remove the last point.                                              */ 
   remove_first_point_as_last_point(gd_vector_simp);
 
   /* Set gd_vector_simp as map_state's gd_vector. */
