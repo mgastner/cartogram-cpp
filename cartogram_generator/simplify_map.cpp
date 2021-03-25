@@ -973,6 +973,7 @@ void simplify_map(MapState *map_state)
   /* 11. Remove the last point                                               */ 
   remove_first_point_as_last_point(gd_vector_simp);
 
+  /* Set gd_vector_simp as map_state's gd_vector. */
   map_state->set_geo_divs(gd_vector_simp);
 
   const std::chrono::duration<double, std::milli> dur_s311 = std::chrono::system_clock::now() - start_s311;
