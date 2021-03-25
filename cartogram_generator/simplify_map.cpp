@@ -803,9 +803,8 @@ void assemble_pll_to_pgn(
                                    gd_num,
                                    pgnwh_num);
 
-          Polygon outer;
-
           /* With the finished deque, create the pgnwh's outer_boundary(). */
+          Polygon outer;
           for (PLL pll_deq : deq) {
             for (Point pt : pll_deq.get_pll()) {
               outer.push_back(pt);
