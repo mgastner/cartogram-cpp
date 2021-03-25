@@ -129,11 +129,11 @@ std::vector<std::vector<bool>> get_pgn_bool_island(
                           ; pgnwh_num++) {
 
       Polygon_with_holes pgnwh = gd.polygons_with_holes()[pgnwh_num];
-      Polygon outer = pgnwh.outer_boundary();
+      Polygon outer_pgn = pgnwh.outer_boundary();
 
       /* Check if this pgnwh has neighbours. */
       pgn_bool_island[gd_num][pgnwh_num] = check_for_neighbours(gd_vector,
-                                                                outer);
+                                                                outer_pgn);
     }
   }
 
@@ -186,8 +186,8 @@ Graph create_pll_graph(std::vector<GeoDiv> gd_vector)
   for (GeoDiv gd : gd_vector) {
     for (Polygon_with_holes pgnwh : gd.polygons_with_holes()) {
       Polyline pll_outer;
-      Polygon outer = pgnwh.outer_boundary();
-      for (Point pt_outer : outer) {
+      Polygon outer_pgn = pgnwh.outer_boundary();
+      for (Point pt_outer : outer_pgn) {
         pll_outer.push_back(pt_outer);
       }
 
@@ -804,28 +804,28 @@ void assemble_pll_to_pgn(
                                    pgnwh_num);
 
           /* With the finished deque, create the pgnwh's outer_boundary(). */
-          Polygon outer;
+          Polygon outer_pgn;
           for (PLL pll_deq : deq) {
             for (Point pt : pll_deq.get_pll()) {
-              outer.push_back(pt);
+              outer_pgn.push_back(pt);
             }
           }
 
           /* If the pll is a hole, add it to holes_v. */
           /* Special case of a hole having >1 polylines e.g. Switzerland */
           if (pll.get_is_hole()) {
-            holes_v.push_back(outer);
+            holes_v.push_back(outer_pgn);
             continue;
           }
 
           /* If there does not exist a hole inside the pgnwh: */
           if (holes_v.empty()) {
-            Polygon_with_holes pgnwh_final(outer);
+            Polygon_with_holes pgnwh_final(outer_pgn);
             gd_final.push_back(pgnwh_final);
 
             /* If there exists a hole inside the pgnwh: */
           } else {
-            check_holes_inside_pgn(holes_v, outer, gd_final);
+            check_holes_inside_pgn(holes_v, outer_pgn, gd_final);
           }
         }
       }
@@ -840,8 +840,8 @@ void print_num_pts(std::vector<GeoDiv> gd_vector) {
   int num_pts = 0;
   for (GeoDiv gd : gd_vector) {
     for (Polygon_with_holes pgnwh : gd.polygons_with_holes()) {
-      Polygon outer = pgnwh.outer_boundary();
-      num_pts += outer.size();
+      Polygon outer_pgn = pgnwh.outer_boundary();
+      num_pts += outer_pgn.size();
 
       std::vector<Polygon> holes_v(pgnwh.holes_begin(), pgnwh.holes_end());
       for (Polygon hole : holes_v)
@@ -857,10 +857,10 @@ void remove_first_point_as_last_point(std::vector<GeoDiv> &gd_vector) {
   for (GeoDiv &gd : gd_vector) {
     for (Polygon_with_holes &pgnwh : *gd.ref_to_polygons_with_holes()) {
 
-      Polygon *outer = &pgnwh.outer_boundary();
-      auto outer_it = outer->end();
-      outer_it--;
-      outer->erase(outer_it);
+      Polygon *outer_pgn = &pgnwh.outer_boundary();
+      auto outer_pgn_it = outer_pgn->end();
+      outer_pgn_it--;
+      outer_pgn->erase(outer_pgn_it);
 
       std::vector<Polygon> holes_v(pgnwh.holes_begin(), pgnwh.holes_end());
       for (auto hole = pgnwh.holes_begin(); hole != pgnwh.holes_end(); hole++) {
