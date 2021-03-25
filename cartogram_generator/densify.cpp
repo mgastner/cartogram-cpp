@@ -46,7 +46,7 @@ std::vector<GeoDiv> densify(std::vector<GeoDiv> geodivs) {
       gd_dens.push_back(pgnwh_dens);
     }
 
-    //std::cout << polyl.size() << " " << polyl_dens.size() << std::endl;
+    // std::cout << polyl.size() << " " << polyl_dens.size() << std::endl;
     geodivs_dens.push_back(gd_dens);
   }
   return geodivs_dens;

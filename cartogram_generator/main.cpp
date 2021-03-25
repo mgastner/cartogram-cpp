@@ -158,6 +158,10 @@ int main(const int argc, const char *argv[])
     }
     flatten_density(&map_state);
     // project(&map_state);
+
+    // Densify
+    map_state.set_geo_divs(densify(map_state.geo_divs()));
+
     choose_diag_4(&map_state);
     project_with_triangulation(&map_state);
     map_state.inc_integration();
@@ -172,7 +176,7 @@ int main(const int argc, const char *argv[])
   std::cout << "Running fill with density again!" << std::endl;;
   fill_with_density(&map_state);
 
-  
+
 
 /*
   fill_with_density(&map_state);

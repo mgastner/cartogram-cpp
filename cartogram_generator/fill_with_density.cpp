@@ -270,12 +270,12 @@ void fill_with_density(MapState* map_state)
         // Check for intersection of polygons, holes and GeoDivs
         if (intersections[l].direction == intersections[l + 1].direction) {
 
-          // Highlight where intersection is present
-          std::cerr << "Invalid Geometry!" << std::endl;
-          std::cerr << "Intersection of Polygons/Holes/Geodivs" << std::endl;
-          std::cerr << "Y-coordinate: " << k << std::endl;
-          std::cerr << "Left X-coordinate: " << left_x << std::endl;
-          std::cerr << "Right X-coordinate: " << right_x << std::endl;
+          // // Highlight where intersection is present
+          // std::cerr << "Invalid Geometry!" << std::endl;
+          // std::cerr << "Intersection of Polygons/Holes/Geodivs" << std::endl;
+          // std::cerr << "Y-coordinate: " << k << std::endl;
+          // std::cerr << "Left X-coordinate: " << left_x << std::endl;
+          // std::cerr << "Right X-coordinate: " << right_x << std::endl;
           _Exit(8026519);
         }
 
