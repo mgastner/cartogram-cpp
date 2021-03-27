@@ -46,7 +46,7 @@ double GeoDiv::area() const
   return a;
 }
 
-Point GeoDiv::centroid_of_polygon(const Polygon polyg) const
+XY_Point GeoDiv::centroid_of_polygon(const Polygon polyg) const
 {
   // Code for centroid from: https://graphics.stanford.edu/courses/cs368-04-
   // spring/manuals/CGAL_Tutorial.pdf (accessed on 2021-Mar-15).
@@ -66,36 +66,36 @@ Point GeoDiv::centroid_of_polygon(const Polygon polyg) const
     ++next;
   } while (cur != start);
   atot = 3 * atot;
-  centre = centre / atot;
-  return CGAL::ORIGIN + centre;
+  centre /= atot;
+  return XY_Point(CGAL::ORIGIN + centre);
 }
 
-Point GeoDiv::centroid_of_polygon_with_holes(const Polygon_with_holes pwh)
+XY_Point GeoDiv::centroid_of_polygon_with_holes(const Polygon_with_holes pwh)
 const
 {
   // Idea from https://math.stackexchange.com/questions/623841/finding-
   // centroid-of-a-polygon-with-holes
   Polygon ext_ring = pwh.outer_boundary();
   double a_ext = ext_ring.area();
-  Point c_ext = centroid_of_polygon(ext_ring);
-  CGAL::Vector_2<Epick> weighted_sum_of_centroids(c_ext[0], c_ext[1]);
+  XY_Point c_ext = centroid_of_polygon(ext_ring);
+  CGAL::Vector_2<Epick> weighted_sum_of_centroids(c_ext.x, c_ext.y);
   weighted_sum_of_centroids *= a_ext;
   double total_area = a_ext;
   for (auto hci = pwh.holes_begin(); hci != pwh.holes_end(); ++hci) {
     Polygon hole = *hci;
     double a_hole = hole.area();
-    Point c_hole = centroid_of_polygon(hole);
-    CGAL::Vector_2<Epick> c_hole_vector(c_hole[0], c_hole[1]);
+    XY_Point c_hole = centroid_of_polygon(hole);
+    CGAL::Vector_2<Epick> c_hole_vector(c_hole.x, c_hole.y);
     weighted_sum_of_centroids += a_hole * c_hole_vector;
     total_area += a_hole;
   }
   weighted_sum_of_centroids /= total_area;
-  Point c_pwh(weighted_sum_of_centroids[0], weighted_sum_of_centroids[1]);
-  std::cout << "Centroid of pwh: " << c_pwh << std::endl;
+  XY_Point c_pwh(CGAL::ORIGIN + weighted_sum_of_centroids);
+  std::cout << "Centroid of pwh: (" << c_pwh.x << ", " << c_pwh.y << ")" << std::endl;
   return c_pwh;
 }
 
-Point GeoDiv::point_in_largest_polygon_with_holes() const
+XY_Point GeoDiv::point_in_largest_polygon_with_holes() const
 {
   // Find largest polygon with hole in GeoDiv
   double max_pwh_area = 0.0;
