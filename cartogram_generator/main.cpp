@@ -125,28 +125,25 @@ int main(const int argc, const char *argv[])
               << std::endl;
     return EXIT_FAILURE;
   }
-
-  rescale_map(long_grid_side_length, &map_state);
-  for (auto gd : map_state.geo_divs()) {
-    std::cout << "GeoDiv ID: " << gd.id() << std::endl;
-    gd.centroid_of_largest_polygon_with_holes();
+  try {
+    holes_inside_polygons(&map_state);
+  } catch (const std::system_error& e) {
+    std::cerr << "ERROR: " << e.what() << " (" << e.code() << ")" << std::endl;
+    return EXIT_FAILURE;
   }
 
-  return EXIT_SUCCESS;
+  // Rescale map to fit into a rectangular box [0, lx] * [0, ly].
+  rescale_map(long_grid_side_length, &map_state);
 
-  // try {
-  //   holes_inside_polygons(&map_state);
-  // } catch (const std::system_error& e) {
-  //   std::cerr << "ERROR: " << e.what() << " (" << e.code() << ")" << std::endl;
-  //   return EXIT_FAILURE;
-  // }
-  //
-  // // Rescale map to fit into a rectangular box [0, lx] * [0, ly].
-  // rescale_map(long_grid_side_length, &map_state);
-  // if (input_polygons_to_eps) {
-  //   std::cout << "Writing input_polygons.eps" << std::endl;
-  //   write_map_to_eps("input_polygons.eps", &map_state);
-  // }
+  for (auto gd : map_state.geo_divs()) {
+    std::cout << "GeoDiv ID: " << gd.id() << std::endl;
+    gd.point_in_largest_polygon_with_holes();
+  }
+
+  if (input_polygons_to_eps) {
+    std::cout << "Writing input_polygons.eps" << std::endl;
+    write_map_to_eps("input_polygons.eps", &map_state);
+  }
   //
   // // Start map integration
   // while (map_state.n_finished_integrations() < max_integrations &&

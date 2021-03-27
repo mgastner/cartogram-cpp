@@ -9,7 +9,7 @@ void project(MapState *map_state)
 {
   const unsigned int lx = map_state->lx();
   const unsigned int ly = map_state->ly();
-  boost::multi_array<XYPoint, 2> &proj = *map_state->proj();
+  boost::multi_array<XY_Point, 2> &proj = *map_state->proj();
 
   // Calculate displacement from proj array
   boost::multi_array<double, 2> xdisp(boost::extents[lx][ly]);

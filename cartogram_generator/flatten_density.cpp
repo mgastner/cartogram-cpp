@@ -45,7 +45,7 @@ void flatten_density(MapState *map_state)
   const double abs_tol = (std::min(lx, ly) * 1e-6);
 
   // Define proj and proj2 multi arrays
-  boost::multi_array<XYPoint, 2> &proj = *map_state->proj();
+  boost::multi_array<XY_Point, 2> &proj = *map_state->proj();
 
   // Resize proj multi array if running for the first time
   if (map_state->n_finished_integrations() == 0) {
@@ -79,20 +79,20 @@ void flatten_density(MapState *map_state)
   // eul[i][j] will be the new position of proj[i][j] proposed by a simple
   // Euler step: move a full time interval delta_t with the velocity at time t
   // and position (proj[i][j].x, proj[i][j].y)
-  boost::multi_array<XYPoint, 2> eul(boost::extents[lx][ly]);
+  boost::multi_array<XY_Point, 2> eul(boost::extents[lx][ly]);
 
   // mid[i][j] will be the new displacement proposed by the midpoint
   // method (see comment below for the formula)
-  boost::multi_array<XYPoint, 2> mid(boost::extents[lx][ly]);
+  boost::multi_array<XY_Point, 2> mid(boost::extents[lx][ly]);
 
   // (vx_intp, vy_intp) will be the velocity at position (proj.x, proj.y) at
   // time t
-  boost::multi_array<XYPoint, 2> v_intp(boost::extents[lx][ly]);
+  boost::multi_array<XY_Point, 2> v_intp(boost::extents[lx][ly]);
 
   // (vx_intp_half, vy_intp_half) will be the velocity at the midpoint
   // (proj.x + 0.5*delta_t*vx_intp, proj.y + 0.5*delta_t*vy_intp) at time
   // t + 0.5*delta_t
-  boost::multi_array<XYPoint, 2> v_intp_half(boost::extents[lx][ly]);
+  boost::multi_array<XY_Point, 2> v_intp_half(boost::extents[lx][ly]);
 
   // Initialize the Fourier transforms of gridvx[] and gridvy[] at
   // every point on the lx-times-ly grid at t = 0. After this has

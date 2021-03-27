@@ -121,6 +121,10 @@ void write_map_to_eps(std::string eps_name, MapState *map_state)
                         true,
                         !(map_state->colors_empty()),
                         map_state);
+  for (auto gd : map_state->geo_divs()) {
+    Point pilpwh = gd.point_in_largest_polygon_with_holes();
+    eps_file << pilpwh[0] << " " << pilpwh[1] << " 10 0 360 arc s\n";
+  }
   eps_file << "showpage\n";
   eps_file << "%%EOF\n";
   eps_file.close();

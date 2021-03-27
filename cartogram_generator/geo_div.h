@@ -20,7 +20,7 @@ class GeoDiv {
     double area() const;
     Point centroid_of_polygon(const Polygon) const;
     Point centroid_of_polygon_with_holes(const Polygon_with_holes) const;
-    Point centroid_of_largest_polygon_with_holes() const;
+    Point point_in_largest_polygon_with_holes() const;
 };
 
 #endif

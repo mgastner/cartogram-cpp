@@ -51,7 +51,7 @@ Point GeoDiv::centroid_of_polygon(const Polygon polyg) const
   // Code for centroid from: https://graphics.stanford.edu/courses/cs368-04-
   // spring/manuals/CGAL_Tutorial.pdf (accessed on 2021-Mar-15).
   // Check if the polygon has at least three vertices.
-  assert (polyg.size() >= 3);
+  assert(polyg.size() >= 3);
   Polygon::Vertex_circulator start = polyg.vertices_circulator();
   Polygon::Vertex_circulator cur = start;
   Polygon::Vertex_circulator next = cur;
@@ -95,7 +95,7 @@ const
   return c_pwh;
 }
 
-Point GeoDiv::centroid_of_largest_polygon_with_holes() const
+Point GeoDiv::point_in_largest_polygon_with_holes() const
 {
   // Find largest polygon with hole in GeoDiv
   double max_pwh_area = 0.0;
@@ -121,6 +121,5 @@ Point GeoDiv::centroid_of_largest_polygon_with_holes() const
             << std::endl;
 
   Polygon_with_holes max_pwh = polygons_with_holes()[max_pwh_index];
-  centroid_of_polygon_with_holes(max_pwh);
-  return Point(0, 0);
+  return centroid_of_polygon_with_holes(max_pwh);
 }

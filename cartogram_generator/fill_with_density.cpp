@@ -2,8 +2,8 @@
 #include "write_eps.h"
 #include "fill_with_density.h"
 
-bool line_y_intersects(XYPoint a,
-                       XYPoint b,
+bool line_y_intersects(XY_Point a,
+                       XY_Point b,
                        double line_y,
                        intersection *temp,
                        double target_density,
@@ -104,7 +104,7 @@ void fill_with_density(MapState* map_state)
              line_y < k + 1;
              line_y += (1.0/res)) {
           Polygon ext_ring = pwh.outer_boundary();
-          XYPoint prev_point;
+          XY_Point prev_point;
           prev_point.x = ext_ring[ext_ring.size()-1][0];
           prev_point.y = ext_ring[ext_ring.size()-1][1];
 
@@ -126,7 +126,7 @@ void fill_with_density(MapState* map_state)
 
           // First we run the algorithm on the exterior ring
           for (unsigned int l = 0; l < ext_ring.size(); ++l) {
-            XYPoint curr_point;
+            XY_Point curr_point;
             curr_point.x = ext_ring[l][0];
             curr_point.y = ext_ring[l][1];
             intersection temp;
@@ -149,7 +149,7 @@ void fill_with_density(MapState* map_state)
             prev_point.x = hole[hole.size()-1][0];
             prev_point.y = hole[hole.size()-1][1];
             for (unsigned int l = 0; l < hole.size(); ++l) {
-              XYPoint curr_point;
+              XY_Point curr_point;
               curr_point.x = hole[l][0];
               curr_point.y = hole[l][1];
               intersection temp;
