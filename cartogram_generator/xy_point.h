@@ -1,6 +1,8 @@
 #ifndef XY_POINT_H_
 #define XY_POINT_H_
 
+#include "cgal_typedef.h"
+
 struct XY_Point {
   double x;
   double y;

@@ -55,6 +55,7 @@ find_package(OpenMP REQUIRED)
 add_executable(
   cartogram
   ../cartogram_generator/main.cpp
+  ../cartogram_generator/find_intersections_at_y.cpp
   ../cartogram_generator/geo_div.cpp
   ../cartogram_generator/map_state.cpp
   ../cartogram_generator/read_csv.cpp
@@ -62,7 +63,6 @@ add_executable(
   ../cartogram_generator/write_eps.cpp
   ../cartogram_generator/colors.cpp
   ../cartogram_generator/check_topology.cpp
-  # ../cartogram_generator/helper_functions.cpp
   ../cartogram_generator/read_geojson.cpp
   ../cartogram_generator/fill_with_density.cpp
   ../cartogram_generator/blur_density.cpp

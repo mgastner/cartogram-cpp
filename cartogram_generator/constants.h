@@ -12,4 +12,7 @@ constexpr double pi = std::numbers::pi;
 // Fraction of square side length by which squares on heatmap overlap
 constexpr double sq_overlap = 0.2;
 
+// Number of divisions per grid length if subsampled densities are needed
+constexpr unsigned int sub_sample_resolution = 16;
+
 #endif
