@@ -8,7 +8,8 @@ struct XY_Point {
   double y;
 
   // Constructor, setting points to 0
-  XY_Point() {
+  XY_Point()
+  {
     x = 0;
     y = 0;
   }
@@ -23,6 +24,14 @@ struct XY_Point {
   XY_Point(double xg, double yg) {
     x = xg;
     y = yg;
+  }
+
+  bool is_in_polygon_with_holes(Polygon_with_holes pwh)
+  {
+    Point pt(this->x, this->y);
+    Polygon ext_ring = pwh.outer_boundary();
+    ext_ring.bounded_side(pt);
+    return true;
   }
 };
 

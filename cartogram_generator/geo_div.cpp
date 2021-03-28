@@ -113,13 +113,10 @@ XY_Point GeoDiv::point_in_largest_polygon_with_holes() const
       max_pwh_index = j;
     }
   }
-
-  std::cout << "Max. polygon "
-            << max_pwh_index
-            << " has area "
-            << max_pwh_area
-            << std::endl;
-
   Polygon_with_holes max_pwh = polygons_with_holes()[max_pwh_index];
-  return centroid_of_polygon_with_holes(max_pwh);
+  XY_Point centroid = centroid_of_polygon_with_holes(max_pwh);
+  if (centroid.is_in_polygon_with_holes(max_pwh)) {
+    std::cout << "Nominally in pwh" << std::endl;
+  }
+  return centroid;
 }
