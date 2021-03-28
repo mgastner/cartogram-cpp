@@ -117,6 +117,8 @@ XY_Point GeoDiv::point_in_largest_polygon_with_holes() const
   XY_Point centroid = centroid_of_polygon_with_holes(max_pwh);
   if (centroid.is_in_polygon_with_holes(max_pwh)) {
     std::cout << "Nominally in pwh" << std::endl;
+  } else {
+    std::cout << "Not Nominally in pwh" << std::endl;
   }
   return centroid;
 }
