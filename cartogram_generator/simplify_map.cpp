@@ -35,7 +35,8 @@ void repeat_first_point_as_last_point(std::vector<GeoDiv> &gd_vector)
       num_vertices += outer_pgn->size();
 
       std::vector<Polygon> holes_v(pgnwh.holes_begin(), pgnwh.holes_end());
-      for (auto hole = pgnwh.holes_begin(); hole != pgnwh.holes_end(); hole++) {
+      for (auto hole = pgnwh.holes_begin(); hole != pgnwh.holes_end(); hole++)
+      {
         hole->push_back((*hole)[0]); 
 
         num_vertices += hole->size();
@@ -397,7 +398,8 @@ void check_pgnprog_map(PLL pll,
    * Else, add its endpoints, update its progress, and increment plls_match by 1.
    */
   } else {
-    pgnprog_map[pll.get_gd()][pll.get_pgnwh()].add_endpts(pll.get_v1(), pll.get_vl());
+    pgnprog_map[pll.get_gd()][pll.get_pgnwh()]
+      .add_endpts(pll.get_v1(), pll.get_vl());
     pgnprog_map[pll.get_gd()][pll.get_pgnwh()].update_prog();
     plls_match[pos] += 1;
   }
@@ -469,7 +471,8 @@ std::map<int, std::vector<PLL>> store_by_pos(
    * Create a map where each pgnwh has an associated PgnProg object to track
    * the matching progress of its polylines to its original gds and pgnwhs.
    */
-  std::map<int, std::map<int, PgnProg>> pgnprog_map = create_pgnprog_map(gd_vector);
+  std::map<int, std::map<int, PgnProg>>
+    pgnprog_map = create_pgnprog_map(gd_vector);
 
   /**
    * Create a vector of polylines and an associated value x,
@@ -571,7 +574,7 @@ store_by_gd_pgnwh(std::vector<GeoDiv> gd_vector,
          pgnwh_num < (int) gd_vector[gd_num].polygons_with_holes().size();
          pgnwh_num++) {
       /** 
-       * Iterates through each cit, which represents a now simplified polyline.
+       * Iterates through each cit, which represents a now-simplified polyline.
        */
       int cit_num = 0;
       for (auto cit = ct.constraints_begin(); cit != ct.constraints_end();
@@ -863,7 +866,8 @@ void remove_first_point_as_last_point(std::vector<GeoDiv> &gd_vector) {
       outer_pgn->erase(outer_pgn_it);
 
       std::vector<Polygon> holes_v(pgnwh.holes_begin(), pgnwh.holes_end());
-      for (auto hole = pgnwh.holes_begin(); hole != pgnwh.holes_end(); hole++) {
+      for (auto hole = pgnwh.holes_begin(); hole != pgnwh.holes_end(); hole++)
+      {
         auto hole_it = hole->end();
         hole_it--;
         hole->erase(hole_it);
@@ -951,10 +955,13 @@ void simplify_map(MapState *map_state)
 
   /* 8. Store polylines according to their GeoDivs and Polygon_with_holes    */
   /*    along with their associated original map_state positions.            */
-  std::map<int, std::map<int, std::vector<PLL>>> plls_by_gd_pgnwh = store_by_gd_pgnwh(gd_vector, ct, plls_by_pos);
+  std::map<int, std::map<int, std::vector<PLL>>>
+    plls_by_gd_pgnwh = store_by_gd_pgnwh(gd_vector, ct, plls_by_pos);
 
   /* 9. Set all polylines to not-visited and sort pll_by_gd_pgnwh.           */
-  std::unordered_map<int, std::unordered_map<int, std::unordered_map<int, bool>>> visited;
+  std::unordered_map<int,
+                     std::unordered_map<int, std::unordered_map<int, bool>>
+                     > visited;
   set_visited_vals(visited, plls_by_gd_pgnwh);
 
   /* 10. Assemble polylines into polygons.                                   */
@@ -975,8 +982,10 @@ void simplify_map(MapState *map_state)
   /* Set gd_vector_simp as map_state's gd_vector. */
   map_state->set_geo_divs(gd_vector_simp);
 
-  const std::chrono::duration<double, std::milli> dur_s311 = std::chrono::system_clock::now() - start_s311;
-  std::cout << "Remaining simplification steps time elapsed: " << dur_s311.count() << " ms (";
+  const std::chrono::duration<double, std::milli>
+    dur_s311 = std::chrono::system_clock::now() - start_s311;
+  std::cout << "Remaining simplification steps time elapsed: ";
+  std::cout << dur_s311.count() << " ms (";
   std::cout << dur_s311.count() / 1000 << " s)" << std::endl;
   std::cout << std::endl;
 
