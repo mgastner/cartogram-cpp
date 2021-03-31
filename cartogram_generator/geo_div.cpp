@@ -202,7 +202,7 @@ XY_Point GeoDiv::point_on_surface(const Polygon_with_holes pwh) const
 
   // Iterating through lengths
   for (unsigned int l = 0; l < intersections.size(); l += 2) { \
-    if (intersections[l].target_density >= max_length) {
+    if (intersections[l].target_density > max_length) {
       left = intersections[l].x;
       right = intersections[l + 1].x;
       max_length = intersections[l].target_density;
