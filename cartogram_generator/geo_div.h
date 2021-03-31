@@ -21,6 +21,7 @@ class GeoDiv {
     double area() const;
     XY_Point centroid_of_polygon(const Polygon) const;
     XY_Point centroid_of_polygon_with_holes(const Polygon_with_holes) const;
+    XY_Point point_on_surface(const Polygon_with_holes) const;
     XY_Point point_in_largest_polygon_with_holes() const;
 };
 
