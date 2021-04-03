@@ -39,8 +39,7 @@ struct XY_Point {
       }
     }
     Polygon ext_ring = pwh.outer_boundary();
-    ext_ring.bounded_side(pt);
-    return true;
+    return ext_ring.bounded_side(pt) == CGAL::ON_BOUNDED_SIDE;
   }
 };
 

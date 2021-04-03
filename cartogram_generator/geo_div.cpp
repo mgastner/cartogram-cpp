@@ -93,7 +93,6 @@ const
   }
   weighted_sum_of_centroids /= total_area;
   XY_Point c_pwh(CGAL::ORIGIN + weighted_sum_of_centroids);
-  std::cout << "Centroid of pwh: (" << c_pwh.x << ", " << c_pwh.y << ")" << std::endl;
   return c_pwh;
 }
 
