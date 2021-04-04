@@ -361,23 +361,27 @@ void choose_diag_4(MapState *map_state)
       XYPoint midpoint1;
       midpoint1.x = (v1x + v3x) / 2;
       midpoint1.y = (v1y + v3y) / 2;
-/*
+
       if (trans_graticule.bounded_side(Point(midpoint0.x, midpoint0.y)) == CGAL::ON_BOUNDED_SIDE){
         graticule_diagonals[i][j] = 0;
       } else if (trans_graticule.bounded_side(Point(midpoint1.x, midpoint1.y)) == CGAL::ON_BOUNDED_SIDE){
         graticule_diagonals[i][j] = 1;
       } else {
-        std::cout << "Invalid graticule cell!\n";;
+        std::cout << "Invalid graticule cell! At\n";
+        std::cout << "(" << v0x << ", " << v0y << ")\n";
+        std::cout << "(" << v1x << ", " << v1y << ")\n";
+        std::cout << "(" << v2x << ", " << v2y << ")\n";
+        std::cout << "(" << v3x << ", " << v3y << ")\n";
         exit(1);
       }
-      */
-
+      
+/*
       if (trans_graticule.bounded_side(Point(midpoint1.x, midpoint1.y)) == CGAL::ON_BOUNDED_SIDE){
         graticule_diagonals[i][j] = 1;
       } else if (trans_graticule.bounded_side(Point(midpoint0.x, midpoint0.y)) == CGAL::ON_BOUNDED_SIDE){
         graticule_diagonals[i][j] = 0;
       } else {
-        std::cout << "Invalid graticule cell! At\n";;
+        std::cout << "Invalid graticule cell! At\n";
         std::cout << "(" << v0x << ", " << v0y << ")\n";
         std::cout << "(" << v1x << ", " << v1y << ")\n";
         std::cout << "(" << v2x << ", " << v2y << ")\n";
@@ -501,10 +505,10 @@ std::vector<XYPoint> find_triangle(const double x,
 }
 
 std::vector<XYPoint> find_triangle_2(const double x,
-                                    const double y,
-                                    const int lx,
-                                    const int ly,
-                                    boost::multi_array<int, 2> *graticule_diagonals)
+                                     const double y,
+                                     const int lx,
+                                     const int ly,
+                                     boost::multi_array<int, 2> *graticule_diagonals)
 {
 
   if (x < 0 || x > lx || y < 0 || y > ly) {
@@ -678,6 +682,64 @@ XYPoint affine_trans(std::vector<XYPoint> *tri,
   return post;
 }
 
+void round_points (MapState *map_state)
+{
+  const unsigned int lx = map_state->lx();
+  const unsigned int ly = map_state->ly();
+  // boost::multi_array<XYPoint, 2> &proj = *map_state->proj();
+  // boost::multi_array<int, 2> &graticule_diagonals = *map_state->graticule_diagonals();
+
+  std::vector<GeoDiv> new_geo_divs;
+
+  for (auto gd : map_state->geo_divs()) {
+
+    // For each GeoDiv
+    GeoDiv new_gd(gd.id());
+
+    for (auto pwh : gd.polygons_with_holes()) {
+      // For each polygon with holes
+
+      Polygon old_ext_ring = pwh.outer_boundary();
+      Polygon new_ext_ring;
+
+      long long res = 10e10;
+
+      for (unsigned int i = 0; i < old_ext_ring.size(); i++) {
+
+        // Update exterior ring coordinates
+
+        double rounded_x = floor(old_ext_ring[i][0] * res) / res;
+        double rounded_y = floor(old_ext_ring[i][1] * res) / res;
+
+        new_ext_ring.push_back(Point(rounded_x,
+                                     rounded_y));
+      }
+      std::vector<Polygon> hole_v;
+      for (auto hci = pwh.holes_begin(); hci != pwh.holes_end(); hci++) {
+        Polygon old_hole = *hci;
+        Polygon new_hole;
+        for (unsigned int i = 0; i < old_hole.size(); i++) {
+
+          double rounded_x = floor(old_hole[i][0] * res) / res;
+          double rounded_y = floor(old_hole[i][1] * res) / res;
+
+          new_ext_ring.push_back(Point(rounded_x,
+                                      rounded_y));
+        }
+        hole_v.push_back(new_hole);
+      }
+      const Polygon_with_holes new_pwh(new_ext_ring,
+                                       hole_v.begin(),
+                                       hole_v.end());
+      new_gd.push_back(new_pwh);
+    }
+    new_geo_divs.push_back(new_gd);
+  }
+  map_state->set_geo_divs(new_geo_divs);
+
+  return;
+}
+
 void project_with_triangulation(MapState *map_state)
 {
   const unsigned int lx = map_state->lx();
@@ -734,16 +796,18 @@ void project_with_triangulation(MapState *map_state)
                                              &ext_ring_triangle,
                                              old_ext_ring[i][0], old_ext_ring[i][1]);
 
-        if ((173.25 <= old_ext_ring_intp.x && 173.27 >= old_ext_ring_intp.x) &&
-              (225.96 <= old_ext_ring_intp.y && 225.99 >= old_ext_ring_intp.y)){
+        if ((295.147 <= old_ext_ring_intp.x && 295.148 >= old_ext_ring_intp.x) &&
+              (342.150 <= old_ext_ring_intp.y && 342.151 >= old_ext_ring_intp.y)){
 
                 std::vector<XYPoint> ext_ring_graticule_cell =
                     find_graticule(old_ext_ring[i][0], old_ext_ring[i][1],
                                     lx, ly);
 
-                std::cout << "Transformed point at (" << old_ext_ring_intp.x << ", "
+                std::cout << "Transformed point at (" << std::setprecision(20) << old_ext_ring_intp.x << ", "
                           << old_ext_ring_intp.y << ")\n";
                 std::cout << "Originally at (" << old_ext_ring[i][0] << ", " << old_ext_ring[i][1] << ")\n";
+
+                std::cout << "In GeoDiv " << gd.id() << "\n";
 
                 std::cout << "Original graticule cell cordinates: \n";
                 for (unsigned int a = 0; a < 4; a++){

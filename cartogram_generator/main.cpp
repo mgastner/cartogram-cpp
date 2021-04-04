@@ -142,6 +142,13 @@ int main(const int argc, const char *argv[])
     write_map_to_eps("input_polygons.eps", &map_state);
   }
 
+  std::string cartogram_file_name =
+      "cartogram_" +
+      std::to_string(map_state.n_finished_integrations()) +
+      ".geojson";
+    json cart_json = cgal_to_json(&map_state);
+    write_to_json(cart_json, geo_file_name, cartogram_file_name);
+
   // Start map integration
   while (map_state.n_finished_integrations() < max_integrations &&
          map_state.max_area_err() > max_permitted_area_error) {
@@ -159,11 +166,21 @@ int main(const int argc, const char *argv[])
       blur_density(0.0, &map_state);
     }
     flatten_density(&map_state);
-    // project(&map_state);
+    //project(&map_state);
 
     // Densify
     map_state.set_geo_divs(densify(map_state.geo_divs()));
+    round_points(&map_state);
 
+    if (map_state.n_finished_integrations() == 0){
+      std::string cartogram_file_name =
+        "cartogram_" +
+        std::to_string(map_state.n_finished_integrations()) +
+        ".geojson";
+      json cart_json = cgal_to_json(&map_state);
+      write_to_json(cart_json, geo_file_name, cartogram_file_name);
+    }
+    
     choose_diag_4(&map_state);
     //map_state.set_geo_divs(densify(map_state.geo_divs()));
     project_with_triangulation(&map_state);
@@ -176,8 +193,8 @@ int main(const int argc, const char *argv[])
     write_to_json(cart_json, geo_file_name, cartogram_file_name);
   }
 
-  std::cout << "Running fill with density again!" << std::endl;;
-  fill_with_density(&map_state);
+  //std::cout << "Running fill with density again!" << std::endl;;
+  //fill_with_density(&map_state);
 
 
 
