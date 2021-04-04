@@ -17,4 +17,6 @@ void choose_diag_4(MapState*);
 
 void round_points(MapState*);
 
+void point_search(MapState*, double, double, double, double);
+
 #endif

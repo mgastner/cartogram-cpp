@@ -740,6 +740,93 @@ void round_points (MapState *map_state)
   return;
 }
 
+void point_search(MapState *map_state, double x_min, double x_max, double y_min, double y_max)
+{
+  const unsigned int lx = map_state->lx();
+  const unsigned int ly = map_state->ly();
+  //boost::multi_array<XYPoint, 2> &proj = *map_state->proj();
+  boost::multi_array<int, 2> &graticule_diagonals = *map_state->graticule_diagonals();
+
+  //std::vector<GeoDiv> new_geo_divs;
+
+  std::cout << std::setprecision(20);
+
+  for (auto gd : map_state->geo_divs()) {
+
+    // For each GeoDiv
+
+    for (auto pwh : gd.polygons_with_holes()) {
+      // For each polygon with holes
+
+      Polygon old_ext_ring = pwh.outer_boundary();
+
+      for (unsigned int i = 0; i < old_ext_ring.size(); i++) {
+
+        if ((x_min <= old_ext_ring[i][0] && x_max >= old_ext_ring[i][0]) &&
+              (y_min <= old_ext_ring[i][1] && y_max >= old_ext_ring[i][1])){
+
+          for (unsigned int a = (i - 1); a < (i + 2); a++){
+
+            std::vector<XYPoint> ext_ring_graticule_cell =
+                find_graticule(old_ext_ring[a][0], old_ext_ring[a][1],
+                                lx, ly);
+
+            std::cout << "Point at (" << old_ext_ring[a][0] << ", " << old_ext_ring[a][1] << ")\n";
+
+            std::cout << "On external boundary of " << gd.id() << "\n";
+
+            std::cout << "Point " << i << " out of " << old_ext_ring.size() << "\n";
+
+            std::cout << "Graticule cell cordinates: \n";
+            for (unsigned int z = 0; z < 4; z++){
+              std::cout << "V" << z << ": (" << ext_ring_graticule_cell[z].x << ", " << ext_ring_graticule_cell[z].y << ")\n";
+            }
+
+            std::cout << "Diagonal chosen: " << graticule_diagonals[int(ext_ring_graticule_cell[0].x)][int(ext_ring_graticule_cell[0].y)] << "\n";
+          }
+        }
+
+      }
+      std::vector<Polygon> hole_v;
+      for (auto hci = pwh.holes_begin(); hci != pwh.holes_end(); hci++) {
+        
+        Polygon old_hole = *hci;
+        
+        for (unsigned int i = 0; i < old_hole.size(); i++) {
+          
+          if ((x_min <= old_hole[i][0] && x_max >= old_hole[i][0]) &&
+              (y_min <= old_hole[i][1] && y_max >= old_hole[i][1])){
+
+            for (unsigned int a = (i - 1); a < (i + 2); a++){
+
+              std::vector<XYPoint> ext_ring_graticule_cell =
+                  find_graticule(old_hole[a][0], old_hole[a][1],
+                                  lx, ly);
+
+              std::cout << "Point at (" << old_hole[a][0] << ", " << old_hole[a][1] << ")\n";
+
+              std::cout << "On external boundary of " << gd.id() << "\n";
+
+              std::cout << "Graticule cell cordinates: \n";
+              for (unsigned int z = 0; z < 4; z++){
+                std::cout << "V" << z << ": (" << ext_ring_graticule_cell[z].x << ", " << ext_ring_graticule_cell[z].y << ")\n";
+              }
+
+              std::cout << "Diagonal chosen: " << graticule_diagonals[int(ext_ring_graticule_cell[0].x)][int(ext_ring_graticule_cell[0].y)] << "\n";
+            }
+              }
+          
+        }
+        
+      }
+      
+    }
+    
+  }
+  
+  return;
+}
+
 void project_with_triangulation(MapState *map_state)
 {
   const unsigned int lx = map_state->lx();
