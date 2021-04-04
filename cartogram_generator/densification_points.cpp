@@ -11,6 +11,30 @@ double half_floor(double num) {
   return floor(num + 0.5) - 0.5;
 }
 
+bool almost_equal(double a, double b) {
+  // very similar doubles
+  return abs(a - b) <= 1e-11;
+}
+
+bool point_almost_equal(Point a, Point b) {
+
+  return (almost_equal(a[0], b[0]) && almost_equal(a[1], b[1]));
+
+}
+
+double round_down(double value) {
+    return floor(value * 1e11) / 1e11;
+}
+
+Point round_point(Point p1) {
+
+  double x1 = round_down(p1[0]);
+  double y1 = round_down(p1[1]);
+  Point rounded_point(x1, y1);
+  return rounded_point;
+
+}
+
 // Returns intersection of line with vertical grid line
 double calc_y_intersection(Point a, Point b, double x) {
   return (a[1] * (b[0] - x) + b[1] * (x - a[0])) / (b[0] - a[0]);
