@@ -149,6 +149,9 @@ int main(const int argc, const char *argv[])
     json cart_json = cgal_to_json(&map_state);
     write_to_json(cart_json, geo_file_name, cartogram_file_name);
 
+  // Round all points in cartogram
+  round_points(&map_state);
+
   // Start map integration
   while (map_state.n_finished_integrations() < max_integrations &&
          map_state.max_area_err() > max_permitted_area_error) {
@@ -170,7 +173,6 @@ int main(const int argc, const char *argv[])
 
     // Densify
     map_state.set_geo_divs(densify(map_state.geo_divs()));
-    round_points(&map_state);
 
     if (map_state.n_finished_integrations() == 0){
       std::string cartogram_file_name =
