@@ -104,7 +104,7 @@ void choose_diag(MapState *map_state){
       } else {
         graticule_diagonals[i][j] = 0;
       }
-      
+
     }
   }
 
@@ -112,7 +112,7 @@ void choose_diag(MapState *map_state){
 }
 
 void choose_diag_2(MapState *map_state){
-  
+
   const unsigned int lx = map_state->lx();
   const unsigned int ly = map_state->ly();
 
@@ -139,7 +139,7 @@ void choose_diag_2(MapState *map_state){
 
       double v3x = proj[i][j + 1].x;
       double v3y = proj[i][j + 1].y;
-      
+
       bool diag0_outside;
       bool diag1_outside;
 
@@ -147,7 +147,7 @@ void choose_diag_2(MapState *map_state){
       // v0 and v2
 
       if (v0x - v2x == 0){
-        
+
         // Case where diagonal is vertical
 
         if ((v1x >= v0x && v3x >= v0x) || (v1x <= v0x && v3x <= v0x)){
@@ -157,7 +157,7 @@ void choose_diag_2(MapState *map_state){
         }
 
       } else {
-        
+
         // Case where diagonal is not vertical
 
         double a = (v0y - v2y) / (v0x - v2x);
@@ -187,7 +187,7 @@ void choose_diag_2(MapState *map_state){
       } else {
 
         // Case where diagonal is not vertical
-        
+
         double a = (v1y - v3y) / (v1x - v3x);
         double b = v1y - a * v1x;
 
@@ -237,13 +237,13 @@ void choose_diag_3(MapState *map_state)
 
   int num_concave = 0;
 
-  
+
 
   for (unsigned int i = 0; i < lx - 1; i++){
     for (unsigned int j = 0; j < ly - 1; j++){
 
       bool diag0_outside;
-      
+
       Polygon trans_graticule;
 
       double v0x = proj[i][j].x;
@@ -266,12 +266,12 @@ void choose_diag_3(MapState *map_state)
       if (not(trans_graticule.is_simple())){
 
         std::cout << "Invalid graticule cell!\n";
-        exit(1); 
+        exit(1);
 
       } else if (not(trans_graticule.is_convex())){
 
         num_concave += 1;
-        
+
         XYPoint midpoint0;
         midpoint0.x = (v0x + v2x) / 2;
         midpoint0.y = (v0y + v2y) / 2;
@@ -290,7 +290,7 @@ void choose_diag_3(MapState *map_state)
           std::cout << "Error! No diagonal inside of poly \n";
           exit(1);
         }
-        
+
       } else {
         diag0_outside = false;
         //diag1_outside = false;
@@ -310,7 +310,7 @@ void choose_diag_3(MapState *map_state)
   }
 
   std::cout << "Number of concave graticule cells: " << num_concave << "\n";
-  
+
   return;
 }
 
@@ -328,13 +328,13 @@ void choose_diag_4(MapState *map_state)
 
   int num_concave = 0;
 
-  
+
 
   for (unsigned int i = 0; i < lx - 1; i++){
     for (unsigned int j = 0; j < ly - 1; j++){
 
       //bool diag0_outside;
-      
+
       Polygon trans_graticule;
 
       double v0x = proj[i][j].x;
@@ -374,7 +374,7 @@ void choose_diag_4(MapState *map_state)
         std::cout << "(" << v3x << ", " << v3y << ")\n";
         exit(1);
       }
-      
+
 /*
       if (trans_graticule.bounded_side(Point(midpoint1.x, midpoint1.y)) == CGAL::ON_BOUNDED_SIDE){
         graticule_diagonals[i][j] = 1;
@@ -388,7 +388,7 @@ void choose_diag_4(MapState *map_state)
         std::cout << "(" << v3x << ", " << v3y << ")\n";
         exit(1);
       }
-      
+
 /*
       if ((i == 134 && j == 228) || (i == 435 && j == 310)){
         std::cout << "Graticule cell " << i << " by " << j << "\n";
@@ -414,7 +414,7 @@ void choose_diag_4(MapState *map_state)
   }
 
   //std::cout << "Number of concave graticule cells: " << num_concave << "\n";
-  
+
   return;
 }
 
@@ -538,7 +538,7 @@ std::vector<XYPoint> find_triangle_2(const double x,
   Polygon triangle2;
 
   if ((*graticule_diagonals)[int(v0x)][int(v0y)] == 0) {
-    
+
     triangle1.push_back(Point(v0x, v0y));
     triangle1.push_back(Point(v1x, v1y));
     triangle1.push_back(Point(v2x, v2y));
@@ -561,9 +561,9 @@ std::vector<XYPoint> find_triangle_2(const double x,
 
   if ((triangle1.bounded_side(Point(x, y)) == CGAL::ON_BOUNDED_SIDE) ||
       (triangle1.bounded_side(Point(x, y)) == CGAL::ON_BOUNDARY)){
-        
+
     for (unsigned int i = 0; i < triangle1.size(); i++){
-      
+
       XYPoint triangle_point;
       triangle_point.x = triangle1[i][0];
       triangle_point.y = triangle1[i][1];
@@ -574,20 +574,20 @@ std::vector<XYPoint> find_triangle_2(const double x,
 
   } else if ((triangle2.bounded_side(Point(x, y)) == CGAL::ON_BOUNDED_SIDE) ||
              (triangle2.bounded_side(Point(x, y)) == CGAL::ON_BOUNDARY)) {
-    
+
     for (unsigned int i = 0; i < triangle2.size(); i++){
-      
+
       XYPoint triangle_point;
       triangle_point.x = triangle2[i][0];
       triangle_point.y = triangle2[i][1];
 
       triangle_coordinates.push_back(triangle_point);
-    
+
     }
 
   } else {
     std::cout << "Point not in graticule cell!\n";
-    exit(1); 
+    exit(1);
   }
 
   return triangle_coordinates;
@@ -638,7 +638,7 @@ std::vector<XYPoint> find_graticule(const double x,
 
   return graticule_vertices;
 }
-                            
+
 
 XYPoint affine_trans(std::vector<XYPoint> *tri,
                      std::vector<XYPoint> *org_tri,
@@ -684,21 +684,16 @@ XYPoint affine_trans(std::vector<XYPoint> *tri,
 
 void round_points (MapState *map_state)
 {
-  const unsigned int lx = map_state->lx();
-  const unsigned int ly = map_state->ly();
-  // boost::multi_array<XYPoint, 2> &proj = *map_state->proj();
-  // boost::multi_array<int, 2> &graticule_diagonals = *map_state->graticule_diagonals();
-
   std::vector<GeoDiv> new_geo_divs;
 
-  for (auto gd : map_state->geo_divs()) {
+  for (GeoDiv gd : map_state->geo_divs()) {
 
     // For each GeoDiv
     GeoDiv new_gd(gd.id());
 
     for (auto pwh : gd.polygons_with_holes()) {
-      // For each polygon with holes
 
+      // For each polygon with holes
       Polygon old_ext_ring = pwh.outer_boundary();
       Polygon new_ext_ring;
 
@@ -707,13 +702,13 @@ void round_points (MapState *map_state)
       for (unsigned int i = 0; i < old_ext_ring.size(); i++) {
 
         // Update exterior ring coordinates
-
         double rounded_x = floor(old_ext_ring[i][0] * res) / res;
         double rounded_y = floor(old_ext_ring[i][1] * res) / res;
 
         new_ext_ring.push_back(Point(rounded_x,
                                      rounded_y));
       }
+
       std::vector<Polygon> hole_v;
       for (auto hci = pwh.holes_begin(); hci != pwh.holes_end(); hci++) {
         Polygon old_hole = *hci;
@@ -723,7 +718,7 @@ void round_points (MapState *map_state)
           double rounded_x = floor(old_hole[i][0] * res) / res;
           double rounded_y = floor(old_hole[i][1] * res) / res;
 
-          new_ext_ring.push_back(Point(rounded_x,
+          new_hole.push_back(Point(rounded_x,
                                       rounded_y));
         }
         hole_v.push_back(new_hole);
@@ -789,11 +784,11 @@ void point_search(MapState *map_state, double x_min, double x_max, double y_min,
       }
       std::vector<Polygon> hole_v;
       for (auto hci = pwh.holes_begin(); hci != pwh.holes_end(); hci++) {
-        
+
         Polygon old_hole = *hci;
-        
+
         for (unsigned int i = 0; i < old_hole.size(); i++) {
-          
+
           if ((x_min <= old_hole[i][0] && x_max >= old_hole[i][0]) &&
               (y_min <= old_hole[i][1] && y_max >= old_hole[i][1])){
 
@@ -815,15 +810,15 @@ void point_search(MapState *map_state, double x_min, double x_max, double y_min,
               std::cout << "Diagonal chosen: " << graticule_diagonals[int(ext_ring_graticule_cell[0].x)][int(ext_ring_graticule_cell[0].y)] << "\n";
             }
               }
-          
+
         }
-        
+
       }
-      
+
     }
-    
+
   }
-  
+
   return;
 }
 

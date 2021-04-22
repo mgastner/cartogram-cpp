@@ -3,23 +3,55 @@
 
 // Returns ceiling up to nearest 0.5 value, e.g. 2.64 returns 3.5
 double half_ceil(double num) {
-  return ceil(num - 0.5) + 0.5;
+
+  // Extracting decimal
+  double decimal = num - floor(num);
+
+  // Checking whether decimal is 0.5
+  if (abs(decimal - 0.5) <= 1e-11) {
+    decimal = 0.5;
+  }
+
+  // Checking whether to ceil
+  if (decimal > 0.5) {
+    return ceil(num) + 0.5;
+  }
+
+  // Else flooring
+  return floor(num) + 0.5;
+
 }
 
 // Returns floor up to nearest 0.5 value, e.g. 2.23 returns 1.5
 double half_floor(double num) {
-  return floor(num + 0.5) - 0.5;
+
+  // Extracting decimal
+  double decimal = num - floor(num);
+
+  // Checking whether decimal is 0.5
+  if (abs(decimal - 0.5) < 1e-11) {
+    decimal = 0.5;
+  }
+
+  // Checking whether to add 0.5
+  if (decimal >= 0.5) {
+    return floor(num) + 0.5;
+  }
+
+  // Else subtracting 0.5
+  return floor(num) - 0.5;
 }
 
 bool almost_equal(double a, double b) {
-  // very similar doubles
+
+  // Very similar doubles
   return abs(a - b) <= 1e-11;
 }
 
 bool point_almost_equal(Point a, Point b) {
 
+  // Very similar points
   return (almost_equal(a[0], b[0]) && almost_equal(a[1], b[1]));
-
 }
 
 double round_down(double value) {
