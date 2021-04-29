@@ -268,16 +268,20 @@ void fill_with_density(MapState* map_state)
         double right_x = intersections[l + 1].x;
 
         // Check for intersection of polygons, holes and GeoDivs
-        // if (intersections[l].direction == intersections[l + 1].direction) {
+        // TODO: Decide whether to comment out? (probably not)
+        if (intersections[l].direction == intersections[l + 1].direction) {
 
-        //   // Highlight where intersection is present
-        //   std::cerr << "Invalid Geometry!" << std::endl;
-        //   std::cerr << "Intersection of Polygons/Holes/Geodivs" << std::endl;
-        //   std::cerr << "Y-coordinate: " << k << std::endl;
-        //   std::cerr << "Left X-coordinate: " << left_x << std::endl;
-        //   std::cerr << "Right X-coordinate: " << right_x << std::endl;
-        //   _Exit(8026519);
-        // }
+          // Highlight where intersection is present
+          std::cerr << std::endl << "Invalid Geometry!" << std::endl;
+          std::cerr << "Intersection of Polygons/Holes/Geodivs" << std::endl;
+          std::cerr << "Y-coordinate: " << k << std::endl;
+          std::cerr << "Left X-coordinate: " << left_x << std::endl;
+          std::cerr << "Right X-coordinate: " << right_x << std::endl;
+          std::cerr << "Integration number: "
+                    << map_state->n_finished_integrations()
+                    << std::endl << std::endl;
+          // _Exit(8026519);
+        }
 
         // Fill each cell between intersections
         for (unsigned int m = ceil(left_x); m <= ceil(right_x); ++m) {
