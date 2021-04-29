@@ -44,9 +44,7 @@ int main(const int argc, const char *argv[])
   bool world;
 
   // Other boolean values that are needed to parse the command line arguments
-  bool input_polygons_to_eps,
-       density_to_eps;
-
+  bool input_polygons_to_eps, density_to_eps;
   // Parse command-line options. See
   // https://theboostcpplibraries.com/boost.program_options
   variables_map vm;
@@ -158,7 +156,23 @@ int main(const int argc, const char *argv[])
     project(&map_state);
     map_state.inc_integration();
   }
+
+  // Printing final cartogram
   json cart_json = cgal_to_json(&map_state);
-  write_to_json(cart_json, geo_file_name, "cartogram.geojson");
+  write_to_json(cart_json, geo_file_name, "cartogram_scaled.geojson");
+
+  // Printing EPS of output polygon
+  if (input_polygons_to_eps) {
+    std::cout << "Writing output_polygons.eps" << std::endl;
+    write_map_to_eps("output_polygons.eps", &map_state);
+  }
+
+  // Removing transformations
+  unscale_map(&map_state);
+
+  // Printing unscaled cartogram
+  cart_json = cgal_to_json(&map_state);
+  write_to_json(cart_json, geo_file_name, "cartogram_unscaled.geojson");
+
   return EXIT_SUCCESS;
 }
