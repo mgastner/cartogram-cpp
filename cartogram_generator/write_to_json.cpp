@@ -6,7 +6,7 @@
 #include "map_state.h"
 
 json cgal_to_json(MapState *map_state){
-  
+
   json container;
 
   for (auto gd : map_state->geo_divs()){
@@ -29,6 +29,12 @@ json cgal_to_json(MapState *map_state){
         er_container.push_back(arr);
       }
 
+      // Duplicating last point
+      double last_point_ext_ring[2];
+      last_point_ext_ring[0] = ext_ring[0][0];
+      last_point_ext_ring[1] = ext_ring[0][1];
+      er_container.push_back(last_point_ext_ring);
+
       polygon_container.push_back(er_container);
 
       // Get PWH holes
@@ -43,6 +49,12 @@ json cgal_to_json(MapState *map_state){
           arr[1] = hole[i][1];
           hole_container.push_back(arr);
         }
+
+        // Duplicating last point
+        double last_point_hole[2];
+        last_point_hole[0] = hole[0][0];
+        last_point_hole[1] = hole[0][1];
+        hole_container.push_back(last_point_hole);
 
         polygon_container.push_back(hole_container);
       }
@@ -59,7 +71,7 @@ json cgal_to_json(MapState *map_state){
 void write_to_json(json container,
                    std::string old_geo_fn,
                    std::string new_geo_fn) {
-  
+
   // TODO Add properties back to newJ
 
   std::ifstream i(old_geo_fn);
@@ -67,16 +79,16 @@ void write_to_json(json container,
   i >> old_j;
 
   json newJ;
-  // For each multipolygon in the container 
+  // For each multipolygon in the container
   for (int i = 0; i < (int) container.size(); i++){
     newJ["features"][i]["properties"] = old_j["features"][i]["properties"];
     newJ["features"][i]["id"] = old_j["features"][i]["id"];
 
     newJ["features"][i]["type"] = "Feature";
     newJ["features"][i]["geometry"]["type"] = "MultiPolygon";
-    // For each pgnWH (container of either polygons or holes) in the multipolygon 
+    // For each pgnWH (container of either polygons or holes) in the multipolygon
     for (int j = 0; j < (int) container[i].size(); j++) {
-      // For each polygon or hole in the pgnWH 
+      // For each polygon or hole in the pgnWH
       for (int k = 0; k < (int) container[i][j].size(); k++) {
         newJ["features"][i]["geometry"]["coordinates"][j][k] = container[i][j][k];
       }
@@ -84,7 +96,7 @@ void write_to_json(json container,
   }
   newJ.push_back({"aaatype", old_j["type"]});
   newJ.push_back({"bbox", old_j["bbox"]});
-  
+
   std::ofstream o("temp.json");
   o << newJ << std::endl;
 
@@ -95,7 +107,7 @@ void write_to_json(json container,
   while (std::getline(in_new, line)) {
     while (true) {
       size_t pos = line.find("aaatype");
-      if (pos != std::string::npos) 
+      if (pos != std::string::npos)
         line.replace(pos, 7, "type");
       else
         break;

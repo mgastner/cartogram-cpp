@@ -8,7 +8,7 @@ double half_ceil(double num) {
   double decimal = num - floor(num);
 
   // Checking whether decimal is 0.5
-  if (abs(decimal - 0.5) <= 1e-11) {
+  if (abs(decimal - 0.5) <= 1e-10) {
     decimal = 0.5;
   }
 
@@ -29,7 +29,7 @@ double half_floor(double num) {
   double decimal = num - floor(num);
 
   // Checking whether decimal is 0.5
-  if (abs(decimal - 0.5) < 1e-11) {
+  if (abs(decimal - 0.5) < 1e-10) {
     decimal = 0.5;
   }
 
@@ -45,7 +45,7 @@ double half_floor(double num) {
 bool almost_equal(double a, double b) {
 
   // Very similar doubles
-  return abs(a - b) <= 1e-11;
+  return abs(a - b) <= 1e-10;
 }
 
 bool point_almost_equal(Point a, Point b) {
@@ -55,7 +55,7 @@ bool point_almost_equal(Point a, Point b) {
 }
 
 double round_down(double value) {
-    return floor(value * 1e11) / 1e11;
+    return floor(value * 1e10) / 1e10;
 }
 
 Point round_point(Point p1) {

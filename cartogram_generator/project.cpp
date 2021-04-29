@@ -3,7 +3,7 @@
 #include <vector>
 #include "interpolate_bilinearly.h"
 #include "matrix.h"
-
+#include "densification_points.h"
 #include "project.h"
 
 void project(MapState *map_state)
@@ -697,16 +697,10 @@ void round_points (MapState *map_state)
       Polygon old_ext_ring = pwh.outer_boundary();
       Polygon new_ext_ring;
 
-      long long res = 10e10;
+      long long res = 1e10;
 
       for (unsigned int i = 0; i < old_ext_ring.size(); i++) {
-
-        // Update exterior ring coordinates
-        double rounded_x = floor(old_ext_ring[i][0] * res) / res;
-        double rounded_y = floor(old_ext_ring[i][1] * res) / res;
-
-        new_ext_ring.push_back(Point(rounded_x,
-                                     rounded_y));
+        new_ext_ring.push_back(round_point(old_ext_ring[i]));
       }
 
       std::vector<Polygon> hole_v;
@@ -714,12 +708,7 @@ void round_points (MapState *map_state)
         Polygon old_hole = *hci;
         Polygon new_hole;
         for (unsigned int i = 0; i < old_hole.size(); i++) {
-
-          double rounded_x = floor(old_hole[i][0] * res) / res;
-          double rounded_y = floor(old_hole[i][1] * res) / res;
-
-          new_hole.push_back(Point(rounded_x,
-                                      rounded_y));
+          new_hole.push_back(round_point(old_hole[i]));
         }
         hole_v.push_back(new_hole);
       }

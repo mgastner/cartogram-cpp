@@ -142,6 +142,7 @@ int main(const int argc, const char *argv[])
     write_map_to_eps("input_polygons.eps", &map_state);
   }
 
+  // Map after rescaling, wihtout projecting
   std::string cartogram_file_name =
       "cartogram_" +
       std::to_string(map_state.n_finished_integrations()) +
@@ -152,41 +153,51 @@ int main(const int argc, const char *argv[])
   // Round all points in cartogram
   round_points(&map_state);
 
+  // Map after rounding points
+  json cart_json_1 = cgal_to_json(&map_state);
+  write_to_json(cart_json_1, geo_file_name, "post_rounding.geojson");
+
   // Start map integration
   while (map_state.n_finished_integrations() < max_integrations &&
          map_state.max_area_err() > max_permitted_area_error) {
 
-    std::cout << "Integration number "
+    std::cout << std::endl
+              << "Integration number "
               << map_state.n_finished_integrations()
-              <<std::endl;
+              << std::endl;
 
+    // Rounding Points
+    round_points(&map_state);
+
+    // Filling density
     fill_with_density(&map_state);
+
+    // Blurring map
     if (map_state.n_finished_integrations() == 0) {
       blur_density(5.0, &map_state);
-    } /*else if (map_state.n_finished_integrations() == 1){
+    } else if (map_state.n_finished_integrations() == 1){
       blur_density(1.0, &map_state);
-    } */else {
+    } else {
       blur_density(0.0, &map_state);
     }
-    flatten_density(&map_state);
-    //project(&map_state);
 
-    // Densify
+    // Flattening density
+    flatten_density(&map_state);
+
+    // Densify map
     map_state.set_geo_divs(densify(map_state.geo_divs()));
 
-    if (map_state.n_finished_integrations() == 0){
-      std::string cartogram_file_name =
-        "cartogram_" +
-        std::to_string(map_state.n_finished_integrations()) +
-        ".geojson";
-      json cart_json = cgal_to_json(&map_state);
-      write_to_json(cart_json, geo_file_name, cartogram_file_name);
-    }
-    
+    // Choosing diaganols that are inside graticule cells
     choose_diag_4(&map_state);
-    //map_state.set_geo_divs(densify(map_state.geo_divs()));
+
+    // Projecting with Triangulation
     project_with_triangulation(&map_state);
+
+    // Rounding map again
+    round_points(&map_state);
     map_state.inc_integration();
+
+    // Printing cartogram
     std::string cartogram_file_name =
       "cartogram_" +
       std::to_string(map_state.n_finished_integrations()) +
@@ -195,10 +206,11 @@ int main(const int argc, const char *argv[])
     write_to_json(cart_json, geo_file_name, cartogram_file_name);
   }
 
-  //std::cout << "Running fill with density again!" << std::endl;;
-  //fill_with_density(&map_state);
-
-
+  std::cout << std::endl
+            << "Final cartogram: cartogram_"
+            << map_state.n_finished_integrations()
+            << ".geojson"
+            << std::endl << std::endl;
 
 /*
   fill_with_density(&map_state);
