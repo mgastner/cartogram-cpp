@@ -759,7 +759,7 @@ void point_search(MapState *map_state, double x_min, double x_max, double y_min,
 
             std::cout << "On external boundary of " << gd.id() << "\n";
 
-            std::cout << "Point " << i << " out of " << old_ext_ring.size() << "\n";
+            std::cout << "Point " << a << " out of " << old_ext_ring.size() << "\n";
 
             std::cout << "Graticule cell cordinates: \n";
             for (unsigned int z = 0; z < 4; z++){
@@ -789,7 +789,7 @@ void point_search(MapState *map_state, double x_min, double x_max, double y_min,
 
               std::cout << "Point at (" << old_hole[a][0] << ", " << old_hole[a][1] << ")\n";
 
-              std::cout << "On external boundary of " << gd.id() << "\n";
+              std::cout << "On internal boundary of " << gd.id() << "\n";
 
               std::cout << "Graticule cell cordinates: \n";
               for (unsigned int z = 0; z < 4; z++){
@@ -867,8 +867,8 @@ void project_with_triangulation(MapState *map_state)
                                              &ext_ring_triangle,
                                              old_ext_ring[i][0], old_ext_ring[i][1]);
 
-        if ((295.147 <= old_ext_ring_intp.x && 295.148 >= old_ext_ring_intp.x) &&
-              (342.150 <= old_ext_ring_intp.y && 342.151 >= old_ext_ring_intp.y)){
+        if ((197.483 <= old_ext_ring_intp.x && 197.484 >= old_ext_ring_intp.x) &&
+              (256.237 <= old_ext_ring_intp.y && 256.238 >= old_ext_ring_intp.y)){
 
                 std::vector<XYPoint> ext_ring_graticule_cell =
                     find_graticule(old_ext_ring[i][0], old_ext_ring[i][1],
