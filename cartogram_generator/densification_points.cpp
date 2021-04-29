@@ -20,6 +20,12 @@ double half_ceil(double num) {
   // Else flooring
   return floor(num) + 0.5;
 
+  //return floor(num + 0.5) + 0.5;
+
+}
+
+double simple_half_ceil(double num){
+  return floor(num + 0.5) + 0.5;
 }
 
 // Returns floor up to nearest 0.5 value, e.g. 2.23 returns 1.5
@@ -40,6 +46,12 @@ double half_floor(double num) {
 
   // Else subtracting 0.5
   return floor(num) - 0.5;
+
+  //return floor(num + 0.5) - 0.5;
+}
+
+double simple_half_floor(double num){
+  return floor(num + 0.5) - 0.5;
 }
 
 bool almost_equal(double a, double b) {
@@ -279,6 +291,7 @@ std::vector<Point> densification_points(Point a, Point b)
     Point top_left(half_ceil(intersections[i + 1][0]) - 1,
                    half_ceil(intersections[i + 1][1]));
 
+
     // Finding intersection
 
     // std::cout << "Calculating segments..." << '\n';
@@ -313,6 +326,18 @@ std::vector<Point> densification_points(Point a, Point b)
     // Top-right corner
     Point top_right(half_ceil(intersections[i + 1][0]),
                     half_ceil(intersections[i + 1][1]));
+
+    if (a[0] >= 197.485 && a[0] <= 197.486 && a[1] >= 257.620 && a[1] <= 257.621 &&
+        b[0] >= 197.667 && b[0] <= 197.668 && b[1] >= 257.403 && b[1] <= 257.404) {
+      
+      std::cout << "\nCurrent diagonal: \n"
+                << "(" << bottom_left[0] << ", " << bottom_left[1] << ")\n"
+                << "(" << top_right[0] << ", " << top_right[1] << ")\n";
+
+      std::cout << "Rounded from: \n"
+                << "(" << intersections[i][0] << ", " << intersections[i][1] << ")\n"
+                << "(" << intersections[i + 1][0] << ", " << intersections[i + 1][1] << ")\n";
+    }
 
     // Finding intersection
     Segment seg_diaganol(top_right, bottom_left);

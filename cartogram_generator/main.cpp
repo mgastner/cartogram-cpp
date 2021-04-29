@@ -14,6 +14,7 @@
 #include "check_topology.h"
 #include "write_to_json.h"
 #include "geo_div.h"
+#include "densification_points.h"
 #include <boost/program_options.hpp>
 #include <iostream>
 
@@ -35,6 +36,10 @@ void on_visual_variable_file(const std::string geometry_file_name)
 
 int main(const int argc, const char *argv[])
 {
+
+  std::cout << simple_half_ceil(2.5) << "\n";
+  std::cout << simple_half_floor(2.5) << "\n";
+
   using namespace boost::program_options;
   std::string geo_file_name;
 
@@ -153,7 +158,7 @@ int main(const int argc, const char *argv[])
   round_points(&map_state);
 
   // Start map integration
-  while (map_state.n_finished_integrations() < max_integrations &&
+  while (map_state.n_finished_integrations() < max_integrations && // max_integrations
          map_state.max_area_err() > max_permitted_area_error) {
 
     std::cout << "Integration number "
@@ -163,13 +168,15 @@ int main(const int argc, const char *argv[])
     fill_with_density(&map_state);
     if (map_state.n_finished_integrations() == 0) {
       blur_density(5.0, &map_state);
-    } /*else if (map_state.n_finished_integrations() == 1){
+    } else if (map_state.n_finished_integrations() == 1){
       blur_density(1.0, &map_state);
-    } */else {
+    } else {
       blur_density(0.0, &map_state);
     }
     flatten_density(&map_state);
     //project(&map_state);
+
+    point_search(&map_state, 197.485, 197.486, 257.620, 257.621);
 
     // Densify
     map_state.set_geo_divs(densify(map_state.geo_divs()));

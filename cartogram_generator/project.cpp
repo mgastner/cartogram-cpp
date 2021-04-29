@@ -878,8 +878,8 @@ void project_with_triangulation(MapState *map_state)
                                              &ext_ring_triangle,
                                              old_ext_ring[i][0], old_ext_ring[i][1]);
 
-        if ((197.483 <= old_ext_ring_intp.x && 197.484 >= old_ext_ring_intp.x) &&
-              (256.237 <= old_ext_ring_intp.y && 256.238 >= old_ext_ring_intp.y)){
+        if ((197.400 <= old_ext_ring_intp.x && 197.401 >= old_ext_ring_intp.x) &&
+              (256.349 <= old_ext_ring_intp.y && 256.350 >= old_ext_ring_intp.y)){
 
                 std::vector<XYPoint> ext_ring_graticule_cell =
                     find_graticule(old_ext_ring[i][0], old_ext_ring[i][1],
