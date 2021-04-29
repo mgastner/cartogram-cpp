@@ -697,8 +697,6 @@ void round_points (MapState *map_state)
       Polygon old_ext_ring = pwh.outer_boundary();
       Polygon new_ext_ring;
 
-      long long res = 1e10;
-
       for (unsigned int i = 0; i < old_ext_ring.size(); i++) {
         new_ext_ring.push_back(round_point(old_ext_ring[i]));
       }
