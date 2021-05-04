@@ -1,6 +1,5 @@
 #include <iostream>
 #include <fstream>
-
 #include "cgal_typedef.h"
 #include "write_to_json.h"
 #include "map_state.h"
@@ -29,11 +28,8 @@ json cgal_to_json(MapState *map_state){
         er_container.push_back(arr);
       }
 
-      // Duplicating last point
-      double last_point_ext_ring[2];
-      last_point_ext_ring[0] = ext_ring[0][0];
-      last_point_ext_ring[1] = ext_ring[0][1];
-      er_container.push_back(last_point_ext_ring);
+      /* Repeat first point as last point as per GeoJSON standards. */
+      er_container.push_back({ext_ring[0][0], ext_ring[0][1]});
 
       polygon_container.push_back(er_container);
 
@@ -50,11 +46,8 @@ json cgal_to_json(MapState *map_state){
           hole_container.push_back(arr);
         }
 
-        // Duplicating last point
-        double last_point_hole[2];
-        last_point_hole[0] = hole[0][0];
-        last_point_hole[1] = hole[0][1];
-        hole_container.push_back(last_point_hole);
+        /* Repeat first point as last point as per GeoJSON standards. */
+        hole_container.push_back({hole[0][0], hole[0][1]});
 
         polygon_container.push_back(hole_container);
       }
@@ -77,7 +70,6 @@ void write_to_json(json container,
   std::ifstream i(old_geo_fn);
   json old_j;
   i >> old_j;
-
   json newJ;
   // For each multipolygon in the container
   for (int i = 0; i < (int) container.size(); i++){
@@ -97,11 +89,11 @@ void write_to_json(json container,
   newJ.push_back({"aaatype", old_j["type"]});
   newJ.push_back({"bbox", old_j["bbox"]});
 
-  std::ofstream o("temp.json");
+  std::ofstream o("temporary.json");
   o << newJ << std::endl;
 
   // Replaces "aaatype" with "type" so that "type" appears at the top of the GeoJSON file
-  std::ifstream in_new("temp.json");
+  std::ifstream in_new("temporary.json");
   std::ofstream out_new(new_geo_fn);
   std::string line;
   while (std::getline(in_new, line)) {
