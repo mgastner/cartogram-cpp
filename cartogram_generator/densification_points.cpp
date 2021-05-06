@@ -288,9 +288,8 @@ std::vector<Point> densification_points(Point a, Point b)
                        half_floor(intersections[i][1]));
 
     // Top-left corner
-    Point top_left(half_ceil(intersections[i + 1][0]) - 1,
-                   half_ceil(intersections[i + 1][1]));
-
+    Point top_left(bottom_right[0] - 1,
+                   bottom_right[1] + 1);
 
     // Finding intersection
 
@@ -324,20 +323,20 @@ std::vector<Point> densification_points(Point a, Point b)
                       half_floor(intersections[i][1]));
 
     // Top-right corner
-    Point top_right(half_ceil(intersections[i + 1][0]),
-                    half_ceil(intersections[i + 1][1]));
+    Point top_right(bottom_left[0] + 1,
+                    bottom_left[1] + 1);
 
-    if (a[0] >= 197.485 && a[0] <= 197.486 && a[1] >= 257.620 && a[1] <= 257.621 &&
-        b[0] >= 197.667 && b[0] <= 197.668 && b[1] >= 257.403 && b[1] <= 257.404) {
-      
-      std::cout << "\nCurrent diagonal: \n"
-                << "(" << bottom_left[0] << ", " << bottom_left[1] << ")\n"
-                << "(" << top_right[0] << ", " << top_right[1] << ")\n";
-
-      std::cout << "Rounded from: \n"
-                << "(" << intersections[i][0] << ", " << intersections[i][1] << ")\n"
-                << "(" << intersections[i + 1][0] << ", " << intersections[i + 1][1] << ")\n";
-    }
+    // if (a[0] >= 197.485 && a[0] <= 197.486 && a[1] >= 257.620 && a[1] <= 257.621 &&
+    //     b[0] >= 197.667 && b[0] <= 197.668 && b[1] >= 257.403 && b[1] <= 257.404) {
+    //
+    //   std::cout << "\nCurrent diagonal: \n"
+    //             << "(" << bottom_left[0] << ", " << bottom_left[1] << ")\n"
+    //             << "(" << top_right[0] << ", " << top_right[1] << ")\n";
+    //
+    //   std::cout << "Rounded from: \n"
+    //             << "(" << intersections[i][0] << ", " << intersections[i][1] << ")\n"
+    //             << "(" << intersections[i + 1][0] << ", " << intersections[i + 1][1] << ")\n";
+    // }
 
     // Finding intersection
     Segment seg_diaganol(top_right, bottom_left);
