@@ -166,7 +166,7 @@ int main(const int argc, const char *argv[])
   write_to_json(cart_json_1, geo_file_name, "post_rounding.geojson");
 
   // Start map integration
-  while (map_state.n_finished_integrations() < max_integrations && // max_integrations
+  while (map_state.n_finished_integrations() < 20 && // max_integrations
          map_state.max_area_err() > max_permitted_area_error) {
 
     std::cout << std::endl
@@ -229,6 +229,36 @@ int main(const int argc, const char *argv[])
             << map_state.n_finished_integrations()
             << ".geojson"
             << std::endl << std::endl;
+
+  // Export population debug map
+
+  std::map<std::string, std::vector<double>> &population_debug =
+    *map_state.debug_population();
+
+  FILE *debug = fopen("debug.csv", "w");
+
+  if (debug == NULL)
+  {
+    printf("Error opening file!\n");
+    exit(1);
+  }
+
+  std::cout << "writing debug file...\n";
+
+  fprintf(debug, "Region,Population");
+  for (unsigned int i = 0; i < map_state.n_finished_integrations(); i++){
+    fprintf(debug, ",Integration %d", i);
+  }
+
+  for (auto gd : map_state.geo_divs()){
+    fprintf(debug, "\n%s", gd.id().c_str());
+    fprintf(debug, ",%f", map_state.target_areas_at(gd.id()));
+    for (unsigned int i = 0; i < map_state.n_finished_integrations(); i++){
+      fprintf(debug, ",%f", population_debug[gd.id()][i]);
+    }
+  }
+
+  fclose(debug);
 
 /*
   fill_with_density(&map_state);

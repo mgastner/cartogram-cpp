@@ -314,10 +314,14 @@ void fill_with_density(MapState* map_state)
     }
   }
 
+  std::map<std::string, std::vector<double>> &debug_population =
+    *map_state->debug_population();
+
   for (GeoDiv gd : map_state->geo_divs()) {
     std::cout << "ID: " << gd.id() << ", ";
     std::cout << "effective target area: "
               << gd_to_number.at(gd.id()) << '\n';
+    debug_population[gd.id()].push_back(gd_to_number.at(gd.id()));
   }
 
 

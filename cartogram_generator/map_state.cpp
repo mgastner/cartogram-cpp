@@ -249,3 +249,7 @@ void MapState::set_zero_target_area(){
     }
   }
 }
+
+std::map<std::string, std::vector<double>> *MapState::debug_population(){
+  return &debug_population_;
+}
