@@ -372,6 +372,7 @@ void choose_diag_4(MapState *map_state)
         std::cout << "(" << v1x << ", " << v1y << ")\n";
         std::cout << "(" << v2x << ", " << v2y << ")\n";
         std::cout << "(" << v3x << ", " << v3y << ")\n";
+        std::cout << "i: " << i << "j: " << j << "\n";
         exit(1);
       }
 

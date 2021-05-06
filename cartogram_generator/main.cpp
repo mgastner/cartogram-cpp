@@ -17,6 +17,7 @@
 #include "densification_points.h"
 #include <boost/program_options.hpp>
 #include <iostream>
+#include <cmath>
 
 // Functions that are called if the corresponding command-line options are
 // present
@@ -39,6 +40,8 @@ int main(const int argc, const char *argv[])
 
   std::cout << simple_half_ceil(2.5) << "\n";
   std::cout << simple_half_floor(2.5) << "\n";
+
+  std::cout << std::pow(2.0, -1) << "\n";
 
   using namespace boost::program_options;
   std::string geo_file_name;
@@ -174,22 +177,29 @@ int main(const int argc, const char *argv[])
     // Rounding Points
     round_points(&map_state);
 
+    // Run set_zero_target_area if running for first time
+    if (map_state.n_finished_integrations() == 0) {
+      map_state.set_zero_target_area();
+    }
+
     // Filling density
     fill_with_density(&map_state);
 
     // Blurring map
     if (map_state.n_finished_integrations() == 0) {
       blur_density(5.0, &map_state);
-    } else if (map_state.n_finished_integrations() == 1){
-      blur_density(1.0, &map_state);
     } else {
-      blur_density(0.0, &map_state);
+      double blur_width =
+      (std::pow(2.0, 3 - int(map_state.n_finished_integrations())) > 1e-1) ? std::pow(2.0, 3 - int(map_state.n_finished_integrations())) : 0.0;
+      //std::cout << "Blur condition: " << std::pow(2.0, 3 - (int)(map_state.n_finished_integrations())) << "with" << map_state.n_finished_integrations() << "\n";
+      std::cout << "Blur width: " << blur_width << "\n";
+      blur_density(blur_width, &map_state);
     }
 
     // Flattening density
     flatten_density(&map_state);
 
-    point_search(&map_state, 197.485, 197.486, 257.620, 257.621);
+    //point_search(&map_state, 197.485, 197.486, 257.620, 257.621);
 
     // Densify
     // Densify map

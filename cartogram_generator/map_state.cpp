@@ -235,3 +235,17 @@ double MapState::max_area_err()
   std::cout << "max. area err: " << mae << std::endl;
   return mae;
 }
+
+void MapState::set_zero_target_area(){
+  double min_area = 1e10;
+  for (auto gd : geo_divs_) {
+    if (target_areas_at(gd.id()) > 0.0) {
+      min_area = std::min(min_area, target_areas_at(gd.id()));
+    }
+  }
+  for (auto gd : geo_divs_) {
+    if (target_areas_at(gd.id()) == 0.0) {
+      target_areas[gd.id()] = 0.2 * min_area;
+    }
+  }
+}

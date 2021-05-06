@@ -68,6 +68,7 @@ public:
   boost::multi_array<XYPoint, 2> *graticule_centroids();
   boost::multi_array<int, 2> *graticule_diagonals();
   double max_area_err();
+  void set_zero_target_area();
 };
 
 #endif
