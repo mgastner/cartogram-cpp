@@ -248,7 +248,7 @@ void flatten_density(MapState *map_state)
     }
 
     // Control ouput.
-    if (iter % 10 == 0) {
+    if (iter % 10 == 0 || iter <= 10) {
       std::cout << "iter = " << iter << ", t = " << t << ", delta_t = " << delta_t << "\n";
     }
 

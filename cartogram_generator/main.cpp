@@ -165,6 +165,10 @@ int main(const int argc, const char *argv[])
   json cart_json_1 = cgal_to_json(&map_state);
   write_to_json(cart_json_1, geo_file_name, "post_rounding.geojson");
 
+  std::map<std::string, double> initial_area_errors = map_state.area_err();
+
+  std::map<std::string, std::vector<double>> debug_area_error;
+
   // Start map integration
   while (map_state.n_finished_integrations() < 20 && // max_integrations
          map_state.max_area_err() > max_permitted_area_error) {
@@ -222,6 +226,15 @@ int main(const int argc, const char *argv[])
       ".geojson";
     json cart_json = cgal_to_json(&map_state);
     write_to_json(cart_json, geo_file_name, cartogram_file_name);
+
+    // Update debug_area_error
+
+    std::map<std::string, double> current_area_errors = map_state.area_err();
+
+    for (auto gd : map_state.geo_divs()){
+      debug_area_error[gd.id()].push_back(current_area_errors[gd.id()]);
+    }
+    
   }
 
   std::cout << std::endl
@@ -235,9 +248,9 @@ int main(const int argc, const char *argv[])
   std::map<std::string, std::vector<double>> &population_debug =
     *map_state.debug_population();
 
-  FILE *debug = fopen("debug.csv", "w");
+  FILE *debug_pop = fopen("population_debug.csv", "w");
 
-  if (debug == NULL)
+  if (debug_pop == NULL)
   {
     printf("Error opening file!\n");
     exit(1);
@@ -245,20 +258,51 @@ int main(const int argc, const char *argv[])
 
   std::cout << "writing debug file...\n";
 
-  fprintf(debug, "Region,Population");
+  fprintf(debug_pop, "Region,Population");
   for (unsigned int i = 0; i < map_state.n_finished_integrations(); i++){
-    fprintf(debug, ",Integration %d", i);
+    fprintf(debug_pop, ",Integration %d", i);
   }
 
   for (auto gd : map_state.geo_divs()){
-    fprintf(debug, "\n%s", gd.id().c_str());
-    fprintf(debug, ",%f", map_state.target_areas_at(gd.id()));
+    fprintf(debug_pop, "\n%s", gd.id().c_str());
+    fprintf(debug_pop, ",%f", map_state.target_areas_at(gd.id()));
     for (unsigned int i = 0; i < map_state.n_finished_integrations(); i++){
-      fprintf(debug, ",%f", population_debug[gd.id()][i]);
+      fprintf(debug_pop, ",%f", population_debug[gd.id()][i]);
     }
   }
 
-  fclose(debug);
+  fclose(debug_pop);
+
+
+
+  // std::map<std::string, std::vector<double>> &debug_area_error =
+  //   *map_state.debug_area_error();
+
+  FILE *debug_area_error_file = fopen("area_error_debug.csv", "w");
+
+  if (debug_area_error_file == NULL)
+  {
+    printf("Error opening file!\n");
+    exit(1);
+  }
+
+  std::cout << "writing debug file...\n";
+
+  fprintf(debug_area_error_file, "Region,Initial Area Errors");
+  for (unsigned int i = 0; i < map_state.n_finished_integrations(); i++){
+    fprintf(debug_area_error_file, ",Integration %d", i);
+  }
+
+  for (auto gd : map_state.geo_divs()){
+    fprintf(debug_area_error_file, "\n%s", gd.id().c_str());
+    fprintf(debug_area_error_file, ",%f", initial_area_errors[gd.id()]);
+    for (unsigned int i = 0; i < map_state.n_finished_integrations(); i++){
+      fprintf(debug_area_error_file, ",%f", debug_area_error[gd.id()][i]);
+    }
+  }
+
+  fclose(debug_area_error_file);
+  
 
 /*
   fill_with_density(&map_state);

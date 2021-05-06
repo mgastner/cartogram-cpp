@@ -205,11 +205,9 @@ boost::multi_array<int, 2> *MapState::graticule_diagonals()
   return &graticule_diagonals_;
 }
 
-double MapState::max_area_err()
+std::map<std::string, double> MapState::area_err()
 {
-
-  // Formula for relative area error:
-  // area_on_cartogram / target_area - 1
+  std::map<std::string, double> relative_area_error_map;
 
   double sum_target_area = 0.0;
   double sum_cart_area = 0.0;
@@ -219,19 +217,60 @@ double MapState::max_area_err()
       sum_cart_area += gd.area();
     }
   }
-  double mae = 0.0;
+
+  // Formula for relative area error:
+  // area_on_cartogram / target_area - 1
+
   for (auto gd : geo_divs_) {
     if (!target_area_is_missing(gd.id())) {
       double obj_area =
         target_areas_at(gd.id()) * sum_cart_area / sum_target_area;
       double relative_area_error = gd.area() / obj_area - 1;
       if (relative_area_error < 0) {
-        mae = std::max(mae, -relative_area_error);
+        relative_area_error_map[gd.id()] = -relative_area_error;
       } else {
-        mae = std::max(mae, relative_area_error);
+        relative_area_error_map[gd.id()] = relative_area_error;
       }
     }
   }
+
+  return relative_area_error_map;
+}
+
+double MapState::max_area_err()
+{
+
+  // Formula for relative area error:
+  // area_on_cartogram / target_area - 1
+
+  // double sum_target_area = 0.0;
+  // double sum_cart_area = 0.0;
+  // for (auto gd : geo_divs_) {
+  //   if (!target_area_is_missing(gd.id())) {
+  //     sum_target_area += target_areas_at(gd.id());
+  //     sum_cart_area += gd.area();
+  //   }
+  // }
+  // double mae = 0.0;
+  // for (auto gd : geo_divs_) {
+  //   if (!target_area_is_missing(gd.id())) {
+  //     double obj_area =
+  //       target_areas_at(gd.id()) * sum_cart_area / sum_target_area;
+  //     double relative_area_error = gd.area() / obj_area - 1;
+  //     if (relative_area_error < 0) {
+  //       mae = std::max(mae, -relative_area_error);
+  //     } else {
+  //       mae = std::max(mae, relative_area_error);
+  //     }
+  //   }
+  // }
+
+  double mae = 0.0;
+  std::map<std::string, double> relative_area_error_map = area_err();
+  for (auto const& x : relative_area_error_map) {
+    mae = std::max(mae, x.second);
+  }
+
   std::cout << "max. area err: " << mae << std::endl;
   return mae;
 }
@@ -252,4 +291,8 @@ void MapState::set_zero_target_area(){
 
 std::map<std::string, std::vector<double>> *MapState::debug_population(){
   return &debug_population_;
+}
+
+std::map<std::string, std::vector<double>> *MapState::debug_area_error(){
+  return &debug_area_error_;
 }
