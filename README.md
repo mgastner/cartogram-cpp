@@ -1,17 +1,17 @@
 # cartogram_cpp
 Cartogram generator in C++
 
-## Note: This is still a work-in-progress and, hence, cartograms are not outputted at the moment.
-
 ## Installing Dependencies on Ubuntu
 
 #### Installing nlohmann's JSON parser
 1. Go to https://github.com/nlohmann/json
 2. Click on "Code" -> "Download Zip"
 3. Go to Downloads folder
-4. `cmake .`
-5. `make`
-6. `sudo make install`
+4. Unzip the file you just installed (you can use the `unzip` command)
+5. Go into the newly created unzipped folder
+6. `cmake .`
+7. `make`
+8. `sudo make install`
 
 #### Installing CGAL
 
@@ -59,14 +59,22 @@ brew install nlohmann-json
 
 [OpenMP Homepage](https://www.openmp.org/)
 
-`brew install llvm libomp`
+`brew install libomp`
 
+#### Installing LLVM Compilers
+
+[LLVM Homepage](https://llvm.org)
+`brew install llvm`
 
 #### Installing FFTW3
 
 [FFTW Homepage](http://www.fftw.org)
 
 `brew install fftw`
+
+#### Alternatively, install all, except nlhomann's JSON parser, at once:
+
+`brew install fftw llvm libomp cgal`
 
 ## Compiling and running (Ubuntu or macOS)
 
