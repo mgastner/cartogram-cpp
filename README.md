@@ -8,7 +8,7 @@ Cartogram generator in C++
 2. Click on "Code" -> "Download Zip"
 3. Go to Downloads folder
 4. Unzip the file you just installed (you can use the `unzip` command)
-5. Go into the newly created unzipped folder
+5. Go into the newly created unzipped folder json-develop (you can use the `cd` command)
 6. `cmake .`
 7. `make`
 8. `sudo make install`
