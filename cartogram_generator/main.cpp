@@ -140,6 +140,8 @@ int main(const int argc, const char *argv[])
     write_map_to_eps("input_polygons.eps", &map_state);
   }
 
+  // Setting initial area errors
+  map_state.set_area_errs();
   // Start map integration
   while (map_state.n_finished_integrations() < max_integrations &&
          map_state.max_area_err() > max_permitted_area_error) {
@@ -157,6 +159,9 @@ int main(const int argc, const char *argv[])
     flatten_density(&map_state);
     project(&map_state);
     map_state.inc_integration();
+
+    // Setting updated area errors
+    map_state.set_area_errs();
   }
   json cart_json = cgal_to_json(&map_state);
   write_to_json(cart_json, geo_file_name, "cartogram.geojson");

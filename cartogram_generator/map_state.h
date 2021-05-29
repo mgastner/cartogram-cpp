@@ -17,6 +17,7 @@ class MapState {
 private:
   std::vector<GeoDiv> geo_divs_;
   std::map<std::string, double> target_areas;
+  std::map<std::string, double> area_errs;
   std::map<std::string, Color> colors;
   std::string id_header_;
   std::string visual_variable_file_;
@@ -61,6 +62,7 @@ public:
   unsigned int n_finished_integrations() const;
   void inc_integration();
   boost::multi_array<XYPoint, 2> *proj();
+  void set_area_errs();
   double max_area_err();
 };
 
