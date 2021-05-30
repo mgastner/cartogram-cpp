@@ -24,8 +24,8 @@ private:
   bool is_world_map_;
   bool write_density_to_eps_;
   unsigned int lx_, ly_;  // Lattice dimensions
-  unsigned int new_xmin_, new_ymin_; // Vector to translate
-  double map_scale_; // Double to scale map
+  unsigned int new_xmin_, new_ymin_; // To store map translation vector
+  double map_scale_; // Double to map scale
   FTReal2d rho_init_;  // Rasterized density
   FTReal2d rho_ft_;  // Fourier transform
   fftw_plan fwd_plan_for_rho_, bwd_plan_for_rho_;
