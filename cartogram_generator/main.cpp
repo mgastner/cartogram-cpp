@@ -38,11 +38,6 @@ void on_visual_variable_file(const std::string geometry_file_name)
 int main(const int argc, const char *argv[])
 {
 
-  std::cout << simple_half_ceil(2.5) << "\n";
-  std::cout << simple_half_floor(2.5) << "\n";
-
-  std::cout << std::pow(2.0, -1) << "\n";
-
   using namespace boost::program_options;
   std::string geo_file_name;
 
@@ -150,20 +145,21 @@ int main(const int argc, const char *argv[])
     write_map_to_eps("input_polygons.eps", &map_state);
   }
 
+  // File name without extension
+  std::string map_name = geo_file_name.substr(0, geo_file_name.size() - 8);
+
   // Map after rescaling, wihtout projecting
-  std::string cartogram_file_name =
-      "cartogram_" +
-      std::to_string(map_state.n_finished_integrations()) +
-      ".geojson";
-    json cart_json = cgal_to_json(&map_state);
-    write_to_json(cart_json, geo_file_name, cartogram_file_name);
+  std::string precart_name = map_name + "_pre-cartogram.geojson";
+  json precart_json = cgal_to_json(&map_state);
+  write_to_json(precart_json, geo_file_name, precart_name);
 
   // Round all points in cartogram
   round_points(&map_state);
 
   // Map after rounding points
+  std::string postround_name = map_name + "_pre-cartogram_post-rounding.geojson";
   json cart_json_1 = cgal_to_json(&map_state);
-  write_to_json(cart_json_1, geo_file_name, "post_rounding.geojson");
+  write_to_json(cart_json_1, geo_file_name, postround_name);
 
   std::map<std::string, double> initial_area_errors = map_state.area_err();
 
@@ -187,7 +183,7 @@ int main(const int argc, const char *argv[])
     }
 
     // Filling density
-    fill_with_density(&map_state);
+    fill_with_density(&map_state, map_name);
 
     // Blurring map
     if (map_state.n_finished_integrations() == 0) {
@@ -217,11 +213,11 @@ int main(const int argc, const char *argv[])
 
     // Rounding map again
     round_points(&map_state);
-    map_state.inc_integration();
 
     // Printing cartogram
     std::string cartogram_file_name =
-      "cartogram_" +
+      map_name +
+      "_cartogram_" +
       std::to_string(map_state.n_finished_integrations()) +
       ".geojson";
     json cart_json = cgal_to_json(&map_state);
@@ -234,7 +230,9 @@ int main(const int argc, const char *argv[])
     for (auto gd : map_state.geo_divs()){
       debug_area_error[gd.id()].push_back(current_area_errors[gd.id()]);
     }
-    
+
+    map_state.inc_integration();
+
   }
 
   std::cout << std::endl
@@ -302,7 +300,7 @@ int main(const int argc, const char *argv[])
   }
 
   fclose(debug_area_error_file);
-  
+
 
 /*
   fill_with_density(&map_state);

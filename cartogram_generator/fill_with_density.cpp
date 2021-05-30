@@ -32,7 +32,7 @@ bool line_y_intersects(XYPoint a,
 }
 
 
-void fill_with_density(MapState* map_state)
+void fill_with_density(MapState* map_state, std::string map_name)
 {
 
   std::map<std::string, double> gd_to_number;
@@ -274,13 +274,38 @@ void fill_with_density(MapState* map_state)
           // Highlight where intersection is present
           std::cerr << std::endl << "Invalid Geometry!" << std::endl;
           std::cerr << "Intersection of Polygons/Holes/Geodivs" << std::endl;
-          std::cerr << "Y-coordinate: " << k << std::endl;
+          std::cerr << "Y-coordinate: " << line_y << std::endl;
           std::cerr << "Left X-coordinate: " << left_x << std::endl;
           std::cerr << "Right X-coordinate: " << right_x << std::endl;
           std::cerr << "Integration number: "
                     << map_state->n_finished_integrations()
                     << std::endl << std::endl;
           // _Exit(8026519);
+
+          // Export error data
+          std::string err_file_name = map_name + "_intersections.txt";
+
+          FILE *err_file = fopen(err_file_name.c_str(), "a");
+
+          if (err_file == NULL)
+          {
+            printf("Error opening intersections file!\n");
+            exit(1);
+          }
+
+          std::string cartogram_file_name =
+            map_name +
+            "_cartogram_" +
+            std::to_string(map_state->n_finished_integrations()) +
+            ".geojson";
+
+          fprintf(err_file, "Y-coordinate: %f\n", line_y);
+          fprintf(err_file, "Left X-coordinate: %f\n", left_x);
+          fprintf(err_file, "Right X-coordinate: %f\n", right_x);
+          fprintf(err_file, "Corresponding file: %s\n\n", cartogram_file_name.c_str());
+
+          fclose(err_file);
+
         }
 
         // Fill each cell between intersections
