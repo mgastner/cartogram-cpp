@@ -145,8 +145,14 @@ int main(const int argc, const char *argv[])
     write_map_to_eps("input_polygons.eps", &map_state);
   }
 
-  // File name without extension
-  std::string map_name = geo_file_name.substr(0, geo_file_name.size() - 8);
+  // Determining name of input map
+  std::string map_name = geo_file_name;
+  if (map_name.find_last_of("/\\") != std::string::npos) {
+    map_name = map_name.substr(map_name.find_last_of("/\\") + 1);
+  }
+  if (map_name.find('.') != std::string::npos) {
+    map_name = map_name.substr(0, map_name.find('.'));
+  }
 
   // Map after rescaling, wihtout projecting
   std::string precart_name = map_name + "_pre-cartogram.geojson";
@@ -201,7 +207,6 @@ int main(const int argc, const char *argv[])
 
     //point_search(&map_state, 197.485, 197.486, 257.620, 257.621);
 
-    // Densify
     // Densify map
     map_state.set_geo_divs(densify(map_state.geo_divs()));
 
@@ -236,7 +241,9 @@ int main(const int argc, const char *argv[])
   }
 
   std::cout << std::endl
-            << "Final cartogram: cartogram_"
+            << "Final cartogram: "
+            << map_name
+            << "_cartogram_"
             << map_state.n_finished_integrations()
             << ".geojson"
             << std::endl << std::endl;
