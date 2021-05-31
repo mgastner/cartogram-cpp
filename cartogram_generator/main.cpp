@@ -44,8 +44,7 @@ int main(const int argc, const char *argv[])
   bool world;
 
   // Other boolean values that are needed to parse the command line arguments
-  bool input_polygons_to_eps,
-       density_to_eps;
+  bool polygons_to_eps, density_to_eps;
 
   // Parse command-line options. See
   // https://theboostcpplibraries.com/boost.program_options
@@ -56,11 +55,14 @@ int main(const int argc, const char *argv[])
       "help,h", "Help screen"
       )(
       "geometry,g",
-      value<std::string>(&geo_file_name)->required()->notifier(on_geometry),
+      value<std::string>(&geo_file_name)
+      ->required()
+      ->notifier(on_geometry),
       "GeoJSON file"
       )(
       "visual_variable_file,v",
-      value<std::string>()->notifier(on_visual_variable_file),
+      value<std::string>()
+      ->notifier(on_visual_variable_file),
       "CSV file with ID, area, and (optionally) colour"
       )(
       "id,i",
@@ -80,23 +82,25 @@ int main(const int argc, const char *argv[])
       "Number of grid cells along longer Cartesian coordinate axis"
       )(
       "world,w",
-      value<bool>(&world)->default_value(false)->implicit_value(false),
-      "Boolean: is input a world map in longitude-latitude format?"
-      )(
-      "input_polygons_to_eps",
-      value<bool>(&input_polygons_to_eps)
+      value<bool>(&world)
       ->default_value(false)
       ->implicit_value(true),
-      "Boolean: make EPS image input_polygons.eps?"
+      "Boolean: is input a world map in longitude-latitude format?"
       )(
-      "density_to_eps",
+      "polygons_to_eps,e",
+      value<bool>(&polygons_to_eps)
+      ->default_value(false)
+      ->implicit_value(true),
+      "Boolean: make EPS image of input and output?"
+      )(
+      "density_to_eps,d",
       value<bool>(&density_to_eps)
       ->default_value(false)
       ->implicit_value(true),
-      "Boolean: make EPS images input_*.eps?"
+      "Boolean: make EPS images *_density_*.eps?"
       );
     store(parse_command_line(argc, argv, desc), vm);
-    if (vm.count("help") || vm.empty()) {
+    if (vm.count("help") || argc == 1) {
       std::cerr << desc << '\n';
       return EXIT_SUCCESS;
     } else {
@@ -129,15 +133,31 @@ int main(const int argc, const char *argv[])
   try {
     holes_inside_polygons(&map_state);
   } catch (const std::system_error& e) {
-    std::cerr << "ERROR: " << e.what() << " (" << e.code() << ")" << std::endl;
+    std::cerr << "ERROR: "
+              << e.what()
+              << " ("
+              << e.code()
+              << ")"
+              << std::endl;
     return EXIT_FAILURE;
+  }
+
+  // Determining name of input map
+  std::string map_name = geo_file_name;
+  if (map_name.find_last_of("/\\") != std::string::npos) {
+    map_name = map_name.substr(map_name.find_last_of("/\\") + 1);
+  }
+  if (map_name.find('.') != std::string::npos) {
+    map_name = map_name.substr(0, map_name.find('.'));
   }
 
   // Rescale map to fit into a rectangular box [0, lx] * [0, ly].
   rescale_map(long_grid_side_length, &map_state);
-  if (input_polygons_to_eps) {
-    std::cout << "Writing input_polygons.eps" << std::endl;
-    write_map_to_eps("input_polygons.eps", &map_state);
+
+  // Writing EPS, if requested by command line option
+  if (polygons_to_eps) {
+    std::cout << "Writing " << map_name << "_input.eps" << std::endl;
+    write_map_to_eps((map_name + "_input.eps"), &map_state);
   }
 
   // Setting initial area errors
@@ -163,7 +183,27 @@ int main(const int argc, const char *argv[])
     // Setting updated area errors
     map_state.set_area_errs();
   }
+
+  // Printing final cartogram
   json cart_json = cgal_to_json(&map_state);
-  write_to_json(cart_json, geo_file_name, "cartogram.geojson");
+  write_to_json(cart_json,
+                geo_file_name,
+                (map_name + "_cartogram_scaled.geojson"));
+
+  // Printing EPS of output cartogram
+  if (polygons_to_eps) {
+    std::cout << "Writing " << map_name << "_output.eps" << std::endl;
+    write_map_to_eps((map_name + "_output.eps"), &map_state);
+  }
+
+  // Removing transformations
+  unscale_map(&map_state);
+
+  // Printing unscaled cartogram
+  cart_json = cgal_to_json(&map_state);
+  write_to_json(cart_json,
+                geo_file_name,
+                (map_name + "_cartogram_unscaled.geojson"));
+
   return EXIT_SUCCESS;
 }

@@ -147,6 +147,36 @@ unsigned int MapState::ly() const
   return ly_;
 }
 
+unsigned int MapState::new_xmin() const
+{
+  return new_xmin_;
+}
+
+unsigned int MapState::new_ymin() const
+{
+  return new_ymin_;
+}
+
+void MapState::set_new_xmin(const unsigned int new_xmin)
+{
+  new_xmin_ = new_xmin;
+}
+
+void MapState::set_new_ymin(const unsigned int new_ymin)
+{
+  new_ymin_ = new_ymin;
+}
+
+double MapState::map_scale() const
+{
+  return map_scale_;
+}
+
+void MapState::set_map_scale(const double map_scale)
+{
+  map_scale_ = map_scale;
+}
+
 FTReal2d *MapState::ref_to_rho_init()
 {
   return &rho_init_;
