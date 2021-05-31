@@ -80,5 +80,33 @@ void rescale_map(int long_grid_side_length, MapState *map_state)
       }
     }
   }
+
+  // Storing coordinates to rescale in future
+  map_state->set_new_xmin(new_xmin);
+  map_state->set_new_ymin(new_ymin);
+  map_state->set_map_scale(latt_const);
+
+  return;
+}
+
+void unscale_map(MapState *map_state)
+{
+
+  // Rescale all GeoDiv coordinates
+  Transformation translate(CGAL::TRANSLATION,
+                           CGAL::Vector_2<Epick>(map_state->new_xmin(),
+                                                 map_state->new_ymin()));
+  Transformation scale(CGAL::SCALING, map_state->map_scale());
+  for (auto &gd : *map_state->ref_to_geo_divs()) {
+    for (auto &pwh : *gd.ref_to_polygons_with_holes()) {
+      Polygon *ext_ring = &pwh.outer_boundary();
+      *ext_ring = transform(scale, *ext_ring);
+      *ext_ring = transform(translate, *ext_ring);
+      for (auto hi = pwh.holes_begin(); hi != pwh.holes_end(); ++hi) {
+        *hi = transform(scale, *hi);
+        *hi = transform(translate, *hi);
+      }
+    }
+  }
   return;
 }

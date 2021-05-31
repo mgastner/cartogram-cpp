@@ -24,6 +24,8 @@ private:
   bool is_world_map_;
   bool write_density_to_eps_;
   unsigned int lx_, ly_;  // Lattice dimensions
+  unsigned int new_xmin_, new_ymin_; // To store map translation vector
+  double map_scale_; // Double to map scale
   FTReal2d rho_init_;  // Rasterized density
   FTReal2d rho_ft_;  // Fourier transform
   fftw_plan fwd_plan_for_rho_, bwd_plan_for_rho_;
@@ -53,6 +55,12 @@ public:
   void make_grid(const unsigned int, const unsigned int);
   unsigned int lx() const;
   unsigned int ly() const;
+  unsigned int new_xmin() const;
+  unsigned int new_ymin() const;
+  void set_new_xmin(const unsigned int);
+  void set_new_ymin(const unsigned int);
+  double map_scale() const;
+  void set_map_scale(const double);
   FTReal2d *ref_to_rho_init();
   FTReal2d *ref_to_rho_ft();
   void execute_fwd_plan() const;
