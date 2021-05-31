@@ -45,6 +45,7 @@ int main(const int argc, const char *argv[])
 
   // Other boolean values that are needed to parse the command line arguments
   bool polygons_to_eps, density_to_eps;
+
   // Parse command-line options. See
   // https://theboostcpplibraries.com/boost.program_options
   variables_map vm;
@@ -54,11 +55,14 @@ int main(const int argc, const char *argv[])
       "help,h", "Help screen"
       )(
       "geometry,g",
-      value<std::string>(&geo_file_name)->required()->notifier(on_geometry),
+      value<std::string>(&geo_file_name)
+      ->required()
+      ->notifier(on_geometry),
       "GeoJSON file"
       )(
       "visual_variable_file,v",
-      value<std::string>()->notifier(on_visual_variable_file),
+      value<std::string>()
+      ->notifier(on_visual_variable_file),
       "CSV file with ID, area, and (optionally) colour"
       )(
       "id,i",
@@ -78,7 +82,9 @@ int main(const int argc, const char *argv[])
       "Number of grid cells along longer Cartesian coordinate axis"
       )(
       "world,w",
-      value<bool>(&world)->default_value(false)->implicit_value(true),
+      value<bool>(&world)
+      ->default_value(false)
+      ->implicit_value(true),
       "Boolean: is input a world map in longitude-latitude format?"
       )(
       "polygons_to_eps,e",
@@ -91,7 +97,7 @@ int main(const int argc, const char *argv[])
       value<bool>(&density_to_eps)
       ->default_value(false)
       ->implicit_value(true),
-      "Boolean: make EPS images input_*.eps?"
+      "Boolean: make EPS images *_density_*.eps?"
       );
     store(parse_command_line(argc, argv, desc), vm);
     if (vm.count("help") || argc == 1) {
@@ -127,7 +133,12 @@ int main(const int argc, const char *argv[])
   try {
     holes_inside_polygons(&map_state);
   } catch (const std::system_error& e) {
-    std::cerr << "ERROR: " << e.what() << " (" << e.code() << ")" << std::endl;
+    std::cerr << "ERROR: "
+              << e.what()
+              << " ("
+              << e.code()
+              << ")"
+              << std::endl;
     return EXIT_FAILURE;
   }
 
@@ -170,7 +181,9 @@ int main(const int argc, const char *argv[])
 
   // Printing final cartogram
   json cart_json = cgal_to_json(&map_state);
-  write_to_json(cart_json, geo_file_name, (map_name + "_cartogram_scaled.geojson"));
+  write_to_json(cart_json,
+                geo_file_name,
+                (map_name + "_cartogram_scaled.geojson"));
 
   // Printing EPS of output cartogram
   if (polygons_to_eps) {
@@ -183,7 +196,9 @@ int main(const int argc, const char *argv[])
 
   // Printing unscaled cartogram
   cart_json = cgal_to_json(&map_state);
-  write_to_json(cart_json, geo_file_name, (map_name + "_cartogram_unscaled.geojson"));
+  write_to_json(cart_json,
+                geo_file_name,
+                (map_name + "_cartogram_unscaled.geojson"));
 
   return EXIT_SUCCESS;
 }
