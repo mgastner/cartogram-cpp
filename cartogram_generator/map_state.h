@@ -71,6 +71,7 @@ public:
   void inc_integration();
   boost::multi_array<XYPoint, 2> *proj();
   void set_area_errs();
+  double area_errs_at(const std::string);
   double max_area_err();
 };
 

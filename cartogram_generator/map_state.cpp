@@ -245,6 +245,11 @@ void MapState::set_area_errs()
   }
 }
 
+double MapState::area_errs_at(const std::string id)
+{
+  return area_errs.at(id);
+}
+
 double MapState::max_area_err()
 {
   double mae = 0.0;
