@@ -80,7 +80,7 @@ int main(const int argc, const char *argv[])
       "Number of grid cells along longer Cartesian coordinate axis"
       )(
       "world,w",
-      value<bool>(&world)->default_value(false)->implicit_value(false),
+      value<bool>(&world)->default_value(false)->implicit_value(true),
       "Boolean: is input a world map in longitude-latitude format?"
       )(
       "input_polygons_to_eps",
@@ -96,7 +96,7 @@ int main(const int argc, const char *argv[])
       "Boolean: make EPS images input_*.eps?"
       );
     store(parse_command_line(argc, argv, desc), vm);
-    if (vm.count("help") || vm.empty()) {
+    if (vm.count("help") || argc == 1) {
       std::cerr << desc << '\n';
       return EXIT_SUCCESS;
     } else {
