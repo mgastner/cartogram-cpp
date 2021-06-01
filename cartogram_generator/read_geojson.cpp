@@ -129,7 +129,26 @@ GeoDiv json_to_cgal(const std::string id,
   return gd;
 }
 
-void read_geojson(const std::string geometry_file_name, MapState *map_state)
+void print_properties_map(std::map<std::string, std::vector<std::string>> properties_map, unsigned long chosen_number) {
+  unsigned long i = 0;
+  for (auto [key, value_vec] : properties_map) {
+    i++;
+    if (chosen_number == i || chosen_number == properties_map.size() + 1) {
+      std::cout << i << ". " << key << ": { ";
+      for (long unsigned int j = 0; j < value_vec.size(); j++) {
+          std::cout << value_vec[j];
+        if (j != value_vec.size() - 1) { 
+          std::cout << ", ";
+        } else {
+          std::cout << " }";
+        }
+      }
+      std::cout << std::endl;
+    }
+  }
+}
+
+void read_geojson(const std::string geometry_file_name, MapState *map_state, bool make_csv)
 {
   bool is_polygon;
   bool polygon_warning_has_been_issued = false;
@@ -191,6 +210,60 @@ void read_geojson(const std::string geometry_file_name, MapState *map_state)
     ids_in_geojson.insert(id);
     const GeoDiv gd = json_to_cgal(id, geometry["coordinates"], is_polygon);
     map_state->push_back(gd);
+  }
+
+  if (make_csv) {
+    // Declare map for key-value pairs
+    std::map<std::string, std::vector<std::string>> properties_map;
+    for (auto feature : j["features"]) {
+      for (auto property_item : feature["properties"].items()) {
+        auto key = property_item.key();
+        auto value = property_item.value();
+        auto value_vec = properties_map[key];
+        bool value_not_inside = std::find(value_vec.begin(), value_vec.end(), value) == value_vec.end();
+
+        if (value != "" && value_not_inside) {
+          properties_map[key].push_back(value);
+        }
+      }
+    }
+
+    // Discard unwanted key-value pairs
+    std::map<std::string, std::vector<std::string>> viable_properties_map = properties_map;
+    for (auto [key, value_vec] : properties_map) {
+      if (value_vec.size() < j["features"].size()) {
+        viable_properties_map.erase(key);
+      }
+    }
+    std::cout << std::endl;
+
+    // Present user with all possible identifiers and a few examples
+    std::cout << "These are the available unique identifiers and their values: " << std::endl;
+    print_properties_map(viable_properties_map, viable_properties_map.size() + 1);
+    std::cout << viable_properties_map.size() + 1 << ". All" << std::endl << std::endl;
+
+    // Have the user choose which key(s) they want to use as the identifier(s)
+    std::cout << "Please enter your number here: ";
+    unsigned long chosen_number;
+    std::cin >> chosen_number;
+    std::cout << std::endl;
+
+    // Declare chosen identifier(s)
+    std::map<std::string, std::vector<std::string>> chosen_identifiers;
+    size_t i = 0;
+    for (auto [key, value_vec] : viable_properties_map) {
+      i++;
+      if (chosen_number == i || chosen_number == viable_properties_map.size() + 1) {
+        chosen_identifiers[key] = value_vec;
+      }
+    }
+
+    // Print chosen identifiers
+    std::cout << "Chosen identifiers: " << std::endl;
+    print_properties_map(viable_properties_map, chosen_number);
+    std::cout << std::endl;
+
+    _Exit(18);
   }
 
   // Check whether all IDs in visual_variable_file appear in GeoJSON

@@ -15,8 +15,6 @@
 #include <boost/program_options.hpp>
 #include <iostream>
 
-#include "geojson_to_csv.cpp"
-
 // Functions that are called if the corresponding command-line options are
 // present
 void on_geometry(const std::string geometry_file_name)
@@ -119,14 +117,6 @@ int main(const int argc, const char *argv[])
     return EXIT_FAILURE;
   }
 
-  if (make_csv) {
-    std::cout << "YAY! The flag works!" << '\n';
-    // call your fucntion here @Philemon
-    geojson_to_csv(geo_file_name);
-
-    return EXIT_SUCCESS;
-  }
-
   MapState map_state(vm["visual_variable_file"].as<std::string>(),
                      world,
                      density_to_eps);
@@ -136,7 +126,7 @@ int main(const int argc, const char *argv[])
 
   // Read geometry
   try {
-    read_geojson(geo_file_name, &map_state);
+    read_geojson(geo_file_name, &map_state, make_csv);
   } catch (const std::system_error& e) {
     std::cerr << "ERROR: "
               << e.what()
