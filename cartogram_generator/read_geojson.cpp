@@ -222,7 +222,7 @@ void read_geojson(const std::string geometry_file_name, MapState *map_state, boo
         auto value_vec = properties_map[key];
         bool value_not_inside = std::find(value_vec.begin(), value_vec.end(), value) == value_vec.end();
 
-        if (value != "" && value_not_inside) {
+        if (value != "" && !value.is_null() && value_not_inside) {
           properties_map[key].push_back(value);
         }
       }
