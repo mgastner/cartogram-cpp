@@ -22,15 +22,15 @@ class PLL {
         int pgnwh_v,
         bool is_hole);
 
-    int get_pos();
-    Polyline get_pll();
-    Point get_v1();
-    Point get_v2();
-    Point get_vl();
-    Point get_v2l();
-    int get_gd();
-    int get_pgnwh();
-    bool get_is_hole();
+    int pos();
+    Polyline pll();
+    Point v1();
+    Point v2();
+    Point vl();
+    Point v2l();
+    int gd();
+    int pgnwh();
+    bool is_hole();
     void set_pll(Polyline pll);
     void set_is_hole(bool b);
 };

@@ -25,39 +25,39 @@ PLL::PLL(int pos,
   is_hole_ = is_hole;
 }
 
-int PLL::get_pos() {
+int PLL::pos() {
   return pos_;
 }
 
-Polyline PLL::get_pll() {
+Polyline PLL::pll() {
   return pll_;
 }
 
-Point PLL::get_v1() {
+Point PLL::v1() {
   return v1_;
 }
 
-Point PLL::get_v2() {
+Point PLL::v2() {
   return v2_;
 }
 
-Point PLL::get_vl() {
+Point PLL::vl() {
   return vl_;
 }
 
-Point PLL::get_v2l() {
+Point PLL::v2l() {
   return v2l_;
 }
 
-int PLL::get_gd() {
+int PLL::gd() {
   return gd_;
 }
 
-int PLL::get_pgnwh() {
+int PLL::pgnwh() {
   return pgnwh_;
 }
 
-bool PLL::get_is_hole() {
+bool PLL::is_hole() {
   return is_hole_;
 }
 

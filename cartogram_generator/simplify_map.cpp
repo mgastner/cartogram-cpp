@@ -235,13 +235,13 @@ struct Polyline_visitor
 };
 
 void print_pll(PLL pll) {
-  std::cout << pll.get_gd();
-  std::cout << " | " << pll.get_pgnwh();
-  std::cout << " | " << pll.get_pos();
-  std::cout << " | " << pll.get_is_hole();
-  std::cout << " | " << pll.get_v1();
-  std::cout << " | " << pll.get_vl();
-  std::cout << " | " << pll.get_v2() << std::endl; 
+  std::cout << pll.gd();
+  std::cout << " | " << pll.pgnwh();
+  std::cout << " | " << pll.pos();
+  std::cout << " | " << pll.is_hole();
+  std::cout << " | " << pll.v1();
+  std::cout << " | " << pll.vl();
+  std::cout << " | " << pll.v2() << std::endl; 
 }
 
 /**
@@ -341,8 +341,8 @@ int check_if_pll_on_pgn_boundary(PLL pll, Polygon pgn)
 {
   /* Iterate through all vertices (points) inside the polyline. */
   int num_v_on_boundary = 0;
-  for (int i = 0; i < (int) pll.get_pll().size(); i++) {
-    Point pt = pll.get_pll()[i];
+  for (int i = 0; i < (int) pll.pll().size(); i++) {
+    Point pt = pll.pll()[i];
     bool v_on_boundary = CGAL::bounded_side_2(
                          pgn.begin(), pgn.end(), pt) == CGAL::ON_BOUNDARY;
 
@@ -367,40 +367,40 @@ void check_pgnprog_map(PLL pll,
                        std::vector<int> &plls_match,
                        bool pgnwh_is_island)
 {
-  int pos = pll.get_pos();
-  bool is_hole = pll.get_is_hole();
+  int pos = pll.pos();
+  bool is_hole = pll.is_hole();
 
   /**
    * If the pll's 1st vertex equals its last vertex and it's a hole,
    * remove 1 hole from pgnprog_map and increment plls_match by 1.
    */
-  if (pll.get_v1() == pll.get_vl() && is_hole) {
-    pgnprog_map[pll.get_gd()][pll.get_pgnwh()].rem_hole();
+  if (pll.v1() == pll.vl() && is_hole) {
+    pgnprog_map[pll.gd()][pll.pgnwh()].rem_hole();
     plls_match[pos] += 1;
 
   /**
    * If the pll's 1st vertex equals its last vertex and it's an island,
    * set it to be a lone polygon and increment plls_match by 2.
    */
-  } else if (pll.get_v1() == pll.get_vl() && pgnwh_is_island) {
-    pgnprog_map[pll.get_gd()][pll.get_pgnwh()].set_lone_pgn();
+  } else if (pll.v1() == pll.vl() && pgnwh_is_island) {
+    pgnprog_map[pll.gd()][pll.pgnwh()].set_lone_pgn();
     plls_match[pos] += 2;
 
   /**
    * If the pll's 1st vertex equals its last vertex and it's not a hole,
    * set it to be a lone polygon and increment plls_match by 1.
    */
-  } else if (pll.get_v1() == pll.get_vl() && !is_hole) {
-    pgnprog_map[pll.get_gd()][pll.get_pgnwh()].set_lone_pgn();
+  } else if (pll.v1() == pll.vl() && !is_hole) {
+    pgnprog_map[pll.gd()][pll.pgnwh()].set_lone_pgn();
     plls_match[pos] += 1;
 
   /**
    * Else, add its endpoints, update its progress, and increment plls_match by 1.
    */
   } else {
-    pgnprog_map[pll.get_gd()][pll.get_pgnwh()]
-      .add_endpts(pll.get_v1(), pll.get_vl());
-    pgnprog_map[pll.get_gd()][pll.get_pgnwh()].update_prog();
+    pgnprog_map[pll.gd()][pll.pgnwh()]
+      .add_endpts(pll.v1(), pll.vl());
+    pgnprog_map[pll.gd()][pll.pgnwh()].update_prog();
     plls_match[pos] += 1;
   }
 }
@@ -424,7 +424,7 @@ void check_prog_store_pll(int num_v_on_boundary,
    */
   if (num_v_on_boundary >= 3) {
     check_pgnprog_map(pll, pgnprog_map, plls_match, pgnwh_is_island);
-    plls_by_pos[pll.get_pos()].push_back(pll);
+    plls_by_pos[pll.pos()].push_back(pll);
 
     /**
      * If the number of vertices on the pgn's boundary only reached 2, iterate
@@ -434,8 +434,8 @@ void check_prog_store_pll(int num_v_on_boundary,
      */
   } else if (num_v_on_boundary == 2) {
     for (int i = 0; i < (int) pgn.size() - 1; i++) {
-      bool direction_1 = pgn[i] == pll.get_v1() && pgn[i + 1] == pll.get_v2();
-      bool direction_2 = pgn[i + 1] == pll.get_v1() && pgn[i] == pll.get_v2();
+      bool direction_1 = pgn[i] == pll.v1() && pgn[i + 1] == pll.v2();
+      bool direction_2 = pgn[i + 1] == pll.v1() && pgn[i] == pll.v2();
 
       /** If the 2 common vertices are consecutive:
        * a) Check pgnprog for this pgn taking into account this pll.
@@ -445,7 +445,7 @@ void check_prog_store_pll(int num_v_on_boundary,
        */
       if (direction_1 || direction_2) {
         check_pgnprog_map(pll, pgnprog_map, plls_match, pgnwh_is_island);
-        plls_by_pos[pll.get_pos()].push_back(pll);
+        plls_by_pos[pll.pos()].push_back(pll);
         break;
       }
     }
@@ -583,18 +583,18 @@ store_by_gd_pgnwh(std::vector<GeoDiv> gd_vector,
         for (PLL pll : plls_by_pos[cit_num]) {
 
           /* If this popyline's associated gd and pgnwh are valid: */
-          if (pll.get_gd() == gd_num && pll.get_pgnwh() == pgnwh_num) {
+          if (pll.gd() == gd_num && pll.pgnwh() == pgnwh_num) {
             Polyline pll_ct;
             for (auto vit = ct.points_in_constraint_begin(*cit);
                 vit != ct.points_in_constraint_end(*cit);
                 vit++) {
               pll_ct.push_back(*vit);
             }
-            PLL pll_new(pll.get_pos(),
+            PLL pll_new(pll.pos(),
                         pll_ct,
-                        pll.get_gd(),
-                        pll.get_pgnwh(),
-                        pll.get_is_hole());
+                        pll.gd(),
+                        pll.pgnwh(),
+                        pll.is_hole());
 
             /* Stores polyline in plls_by_gd_pgnwh. */
             plls_by_gd_pgnwh[gd_num][pgnwh_num].push_back(pll_new);
@@ -618,7 +618,7 @@ void set_visited_vals(std::unordered_map<int,
     for (auto [pgnwh_num, pll_v] : map_iv) {
       for (PLL pll : pll_v) {
         /* Set all polylines to not-visited. */
-        visited[gd_num][pgnwh_num][pll.get_pos()] = false;
+        visited[gd_num][pgnwh_num][pll.pos()] = false;
       }
 
       /** 
@@ -628,7 +628,7 @@ void set_visited_vals(std::unordered_map<int,
       std::sort(plls_by_gd_pgnwh[gd_num][pgnwh_num].begin(),
                 plls_by_gd_pgnwh[gd_num][pgnwh_num].end(), 
                 [](PLL pll1, PLL pll2) {
-          return pll1.get_is_hole() > pll2.get_is_hole();
+          return pll1.is_hole() > pll2.is_hole();
           });
     }
   }
@@ -680,8 +680,8 @@ void connect_polylines_in_deq(
     bool pll_siblings_found = false;
 
     /* Iterate through all plls inside the current gd/pgnwh. */
-    for (PLL pll_inner : plls_by_gd_pgnwh[pll.get_gd()][pll.get_pgnwh()]) {
-      if (visited[gd_num][pgnwh_num][pll_inner.get_pos()] == true) {
+    for (PLL pll_inner : plls_by_gd_pgnwh[pll.gd()][pll.pgnwh()]) {
+      if (visited[gd_num][pgnwh_num][pll_inner.pos()] == true) {
         continue;
       }
 
@@ -689,46 +689,46 @@ void connect_polylines_in_deq(
        * If deq's 1st PLL's 1st vertex == pll_inner's last vertex,
        * connect them.
        */
-      if (deq.front().get_v1()[0] == pll_inner.get_vl()[0] &&
-          deq.front().get_v1()[1] == pll_inner.get_vl()[1]) {
+      if (deq.front().v1()[0] == pll_inner.vl()[0] &&
+          deq.front().v1()[1] == pll_inner.vl()[1]) {
         deq.push_front(pll_inner);
-        visited[gd_num][pgnwh_num][pll_inner.get_pos()] = true;
+        visited[gd_num][pgnwh_num][pll_inner.pos()] = true;
         pll_siblings_found = true;
 
         /**
          * If deq's last PLL's last vertex == pll_inner's 1st vertex,
          * connect them.
          */
-      } else if (deq.back().get_vl()[0] == pll_inner.get_v1()[0] &&
-          deq.back().get_vl()[1] == pll_inner.get_v1()[1]) {
+      } else if (deq.back().vl()[0] == pll_inner.v1()[0] &&
+          deq.back().vl()[1] == pll_inner.v1()[1]) {
         deq.push_back(pll_inner);
-        visited[gd_num][pgnwh_num][pll_inner.get_pos()] = true;
+        visited[gd_num][pgnwh_num][pll_inner.pos()] = true;
         pll_siblings_found = true;
 
         /**
          * If deq's 1st PLL's 1st vertex == pll_inner's 1st vertex,
          * reverse pll_inner and connect them.
          */
-      } else if (deq.front().get_v1()[0] == pll_inner.get_v1()[0] &&
-          deq.front().get_v1()[1] == pll_inner.get_v1()[1]) {
-        Polyline polyl_new = pll_inner.get_pll();
+      } else if (deq.front().v1()[0] == pll_inner.v1()[0] &&
+          deq.front().v1()[1] == pll_inner.v1()[1]) {
+        Polyline polyl_new = pll_inner.pll();
         std::reverse(polyl_new.begin(), polyl_new.end());
         pll_inner.set_pll(polyl_new);
         deq.push_front(pll_inner);
-        visited[gd_num][pgnwh_num][pll_inner.get_pos()] = true;
+        visited[gd_num][pgnwh_num][pll_inner.pos()] = true;
         pll_siblings_found = true;
 
         /**
          * If deq's last PLL's last vertex == pll_inner's last vertex,
          * reverse pll_inner and connect them.
          */
-      } else if (deq.back().get_vl()[0] == pll_inner.get_vl()[0] &&
-          deq.back().get_vl()[1] == pll_inner.get_vl()[1]) {
-        Polyline polyl_new = pll_inner.get_pll();
+      } else if (deq.back().vl()[0] == pll_inner.vl()[0] &&
+          deq.back().vl()[1] == pll_inner.vl()[1]) {
+        Polyline polyl_new = pll_inner.pll();
         std::reverse(polyl_new.begin(), polyl_new.end());
         pll_inner.set_pll(polyl_new);
         deq.push_back(pll_inner);
-        visited[gd_num][pgnwh_num][pll_inner.get_pos()] = true;
+        visited[gd_num][pgnwh_num][pll_inner.pos()] = true;
         pll_siblings_found = true;
       }
     }
@@ -761,20 +761,20 @@ void assemble_pll_to_pgn(
       for (PLL pll : pll_v) {
         Polygon hole_or_island; // This will only be for islands/holes anyway
 
-        if (visited[gd_num][pgnwh_num][pll.get_pos()]) continue;
+        if (visited[gd_num][pgnwh_num][pll.pos()]) continue;
 
         /* If it is a single polyline (e.g. island, hole): */
-        if (pll.get_v1() == pll.get_vl()
-            && !visited[gd_num][pgnwh_num][pll.get_pos()]) {
+        if (pll.v1() == pll.vl()
+            && !visited[gd_num][pgnwh_num][pll.pos()]) {
 
-          visited[gd_num][pgnwh_num][pll.get_pos()] = true;
+          visited[gd_num][pgnwh_num][pll.pos()] = true;
 
-          for (Point pt : pll.get_pll()) {
+          for (Point pt : pll.pll()) {
             hole_or_island.push_back(pt);
           }
 
           /* If the pll is a hole, add it to holes_v. */
-          if (pll.get_is_hole()) {
+          if (pll.is_hole()) {
             holes_v.push_back(hole_or_island);
 
             // TODO
@@ -799,7 +799,7 @@ void assemble_pll_to_pgn(
           /* deq represents the outer_boundary of a pgnwh. */
           std::deque<PLL> deq;
           deq.push_back(pll);
-          visited[gd_num][pgnwh_num][pll.get_pos()] = true;
+          visited[gd_num][pgnwh_num][pll.pos()] = true;
 
           connect_polylines_in_deq(plls_by_gd_pgnwh,
                                    visited, deq, pll,
@@ -809,14 +809,14 @@ void assemble_pll_to_pgn(
           /* With the finished deque, create the pgnwh's outer_boundary(). */
           Polygon outer_pgn;
           for (PLL pll_deq : deq) {
-            for (Point pt : pll_deq.get_pll()) {
+            for (Point pt : pll_deq.pll()) {
               outer_pgn.push_back(pt);
             }
           }
 
           /* If the pll is a hole, add it to holes_v. */
           /* Special case of a hole having >1 polylines e.g. Switzerland */
-          if (pll.get_is_hole()) {
+          if (pll.is_hole()) {
             holes_v.push_back(outer_pgn);
             continue;
           }
