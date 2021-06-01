@@ -18,6 +18,28 @@ struct intersection {
   }
 };
 
+// Struct to store final weighted density of particular geodiv
+struct density {
+  double weight; // Store weight
+  double target_density; // Store target density
+
+  density ()
+  {
+    weight = 0;
+    target_density = 0;
+  }
+
+  density (double weight_, double target_density_)
+  {
+    weight = weight_;
+    target_density = target_density_;
+  }
+
+};
+
+// Density of one graticule cell
+typedef std::vector<density> cell;
+
 void fill_with_density(MapState*);
 
 #endif
