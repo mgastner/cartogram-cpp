@@ -234,7 +234,7 @@ struct Polyline_visitor
   void end_polyline() {}
 };
 
-void print_pll(Polyline_advanced pll_adv) {
+void print_pll_adv(Polyline_advanced pll_adv) {
   std::cout << pll_adv.gd();
   std::cout << " | " << pll_adv.pgnwh();
   std::cout << " | " << pll_adv.pos();
@@ -337,7 +337,7 @@ std::map<int, std::map<int, PgnProg>> create_pgnprog_map(
  * Check if pll_adv is on the boundary of pgn and return the
  * number of pll_adv vertices on the boundary of the pgn.
  */
-int check_if_pll_on_pgn_boundary(Polyline_advanced pll_adv, Polygon pgn)
+int check_if_pll_adv_on_pgn_boundary(Polyline_advanced pll_adv, Polygon pgn)
 {
   /* Iterate through all vertices (points) inside the polyline. */
   int num_v_on_boundary = 0;
@@ -516,7 +516,7 @@ std::map<int, std::vector<Polyline_advanced>> store_by_pos(
          * Check if pll_adv_outer is on the boundary of outer_pgn and return 
          * the number of pll vertices on the boundary of the pgn.
          */
-        int num_v_pll_adv_outer = check_if_pll_on_pgn_boundary(pll_adv_outer,
+        int num_v_pll_adv_outer = check_if_pll_adv_on_pgn_boundary(pll_adv_outer,
                                                            outer_pgn);
 
         /**
@@ -538,7 +538,7 @@ std::map<int, std::vector<Polyline_advanced>> store_by_pos(
            * Check if pll_adv_hole is on the boundary of hole and return 
            * the number of pll vertices on the boundary of the pgn.
            */
-          int num_v_pll_adv_hole = check_if_pll_on_pgn_boundary(pll_adv_hole, hole);
+          int num_v_pll_adv_hole = check_if_pll_adv_on_pgn_boundary(pll_adv_hole, hole);
 
           /**
            * Depending on num_v_pll_adv_hole, call check_pgnprog_map and plls_adv_by_pos.
@@ -590,14 +590,14 @@ store_by_gd_pgnwh(std::vector<GeoDiv> gd_vector,
                 vit++) {
               pll_ct.push_back(*vit);
             }
-            Polyline_advanced pll_new(pll_adv.pos(),
+            Polyline_advanced pll_adv_new(pll_adv.pos(),
                         pll_ct,
                         pll_adv.gd(),
                         pll_adv.pgnwh(),
                         pll_adv.is_hole());
 
             /* Stores polyline in plls_adv_by_gd_pgnwh. */
-            plls_adv_by_gd_pgnwh[gd_num][pgnwh_num].push_back(pll_new);
+            plls_adv_by_gd_pgnwh[gd_num][pgnwh_num].push_back(pll_adv_new);
             break;
           }
         }
@@ -608,7 +608,7 @@ store_by_gd_pgnwh(std::vector<GeoDiv> gd_vector,
   return plls_adv_by_gd_pgnwh;
 }
 
-/******* 9. Set all polylines to not-visited and sort pll_by_gd_pgnwh. *******/
+/******* 9. Set all polylines to not-visited and sort pll_adv_by_gd_pgnwh. *******/
 
 void set_visited_vals(std::unordered_map<int, 
     std::unordered_map<int, std::unordered_map<int, bool>>> &visited,
@@ -616,9 +616,9 @@ void set_visited_vals(std::unordered_map<int,
 {
   for (auto [gd_num, map_iv] : plls_adv_by_gd_pgnwh) {
     for (auto [pgnwh_num, pll_adv_v] : map_iv) {
-      for (Polyline_advanced pll : pll_adv_v) {
+      for (Polyline_advanced pll_adv : pll_adv_v) {
         /* Set all polylines to not-visited. */
-        visited[gd_num][pgnwh_num][pll.pos()] = false;
+        visited[gd_num][pgnwh_num][pll_adv.pos()] = false;
       }
 
       /** 
@@ -889,7 +889,7 @@ void simplify_map(MapState *map_state)
   /* 7. Simplify polylines.                                                  */
   /* 8. Store polylines according to their GeoDivs and Polygon_with_holes    */
   /*    along with their associated original map_state positions.            */
-  /* 9. Set all polylines to not-visited and sort pll_by_gd_pgnwh.           */
+  /* 9. Set all polylines to not-visited and sort pll_adv_by_gd_pgnwh.       */
   /* 10. Assemble polylines into polygon.                                    */
   /* 11. Remove the last point                                               */ 
 
@@ -958,7 +958,7 @@ void simplify_map(MapState *map_state)
   std::map<int, std::map<int, std::vector<Polyline_advanced>>>
     plls_adv_by_gd_pgnwh = store_by_gd_pgnwh(gd_vector, ct, plls_adv_by_pos);
 
-  /* 9. Set all polylines to not-visited and sort pll_by_gd_pgnwh.           */
+  /* 9. Set all polylines to not-visited and sort pll_adv_by_gd_pgnwh.           */
   std::unordered_map<int,
                      std::unordered_map<int, std::unordered_map<int, bool>>
                      > visited;
