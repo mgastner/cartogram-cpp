@@ -8,19 +8,19 @@
 
 class PLL {
   private:
-    int pos;
-    Polyline pll;
-    Point v1, v2, vl, v2l;
-    int gd;
-    int pgnwh;
-    bool is_hole;
+    int pos_;
+    Polyline pll_;
+    Point v1_, v2_, vl_, v2l_;
+    int gd_;
+    int pgnwh_;
+    bool is_hole_;
 
   public:
-    PLL(int pos_,
-        Polyline pll_,
-        int gd_v_,
-        int pgnwh_v_,
-        bool is_hole_);
+    PLL(int pos,
+        Polyline pll,
+        int gd_v,
+        int pgnwh_v,
+        bool is_hole);
 
     int get_pos();
     Polyline get_pll();
@@ -31,7 +31,7 @@ class PLL {
     int get_gd();
     int get_pgnwh();
     bool get_is_hole();
-    void set_pll(Polyline pll_);
+    void set_pll(Polyline pll);
     void set_is_hole(bool b);
 };
 

@@ -7,14 +7,13 @@
 #include <CGAL/boost/graph/split_graph_into_polylines.h>
 #include <boost/graph/adjacency_list.hpp>
 
-typedef CGAL::Exact_predicates_inexact_constructions_kernel Epick;
-typedef CGAL::Polygon_2<Epick> Polygon;
-typedef CGAL::Polygon_with_holes_2<Epick> Polygon_with_holes;
-typedef CGAL::Aff_transformation_2<Epick> Transformation;
-typedef CGAL::Point_2<Epick> Point;
+typedef CGAL::Exact_predicates_inexact_constructions_kernel K;
+typedef CGAL::Polygon_2<K> Polygon;
+typedef CGAL::Polygon_with_holes_2<K> Polygon_with_holes;
+typedef CGAL::Aff_transformation_2<K> Transformation;
+typedef CGAL::Point_2<K> Point;
 
 // Polyline
-typedef CGAL::Exact_predicates_inexact_constructions_kernel K;
 namespace PS = CGAL::Polyline_simplification_2;
 typedef PS::Vertex_base_2<K> Vb;
 typedef CGAL::Constrained_triangulation_face_base_2<K> Fb;

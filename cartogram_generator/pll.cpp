@@ -3,76 +3,76 @@
 
 #include "pll.h"
 
-PLL::PLL(int pos_,
-    Polyline pll_,
-    int gd_,
-    int pgnwh_,
-    bool is_hole_) {
-  pos = pos_;
-  pll = pll_;
-  gd = gd_;
-  pgnwh = pgnwh_;
+PLL::PLL(int pos,
+    Polyline pll,
+    int gd,
+    int pgnwh,
+    bool is_hole) {
+  pos_ = pos;
+  pll_ = pll;
+  gd_ = gd;
+  pgnwh_ = pgnwh;
 
-  v1 = *pll_.begin();
-  auto v2_it = pll_.begin();
+  v1_ = *pll.begin();
+  auto v2_it = pll.begin();
   v2_it++;
-  v2 = *v2_it;
-  vl = *pll_.rbegin();
-  auto v2l_it = pll_.rbegin();
+  v2_ = *v2_it;
+  vl_ = *pll.rbegin();
+  auto v2l_it = pll.rbegin();
   v2l_it++;
-  v2l = *v2l_it;
+  v2l_ = *v2l_it;
 
-  is_hole = is_hole_;
+  is_hole_ = is_hole;
 }
 
 int PLL::get_pos() {
-  return pos;
+  return pos_;
 }
 
 Polyline PLL::get_pll() {
-  return pll;
+  return pll_;
 }
 
 Point PLL::get_v1() {
-  return v1;
+  return v1_;
 }
 
 Point PLL::get_v2() {
-  return v2;
+  return v2_;
 }
 
 Point PLL::get_vl() {
-  return vl;
+  return vl_;
 }
 
 Point PLL::get_v2l() {
-  return v2l;
+  return v2l_;
 }
 
 int PLL::get_gd() {
-  return gd;
+  return gd_;
 }
 
 int PLL::get_pgnwh() {
-  return pgnwh;
+  return pgnwh_;
 }
 
 bool PLL::get_is_hole() {
-  return is_hole;
+  return is_hole_;
 }
 
-void PLL::set_pll(Polyline pll_) {
-  pll = pll_;
-  v1 = *pll_.begin();
-  auto v2_it = pll_.begin();
+void PLL::set_pll(Polyline pll) {
+  pll_ = pll;
+  v1_ = *pll.begin();
+  auto v2_it = pll.begin();
   v2_it++;
-  v2 = *v2_it;
-  vl = *pll_.rbegin();
-  auto v2l_it = pll_.rbegin();
+  v2_ = *v2_it;
+  vl_ = *pll.rbegin();
+  auto v2l_it = pll.rbegin();
   v2l_it++;
-  v2l = *v2l_it;
+  v2l_ = *v2l_it;
 }
 
 void PLL::set_is_hole(bool b) {
-  is_hole = b;
+  is_hole_ = b;
 }
