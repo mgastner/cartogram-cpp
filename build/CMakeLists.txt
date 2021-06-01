@@ -69,7 +69,7 @@ add_executable(
   ../cartogram_generator/blur_density.cpp
   ../cartogram_generator/flatten_density.cpp
   ../cartogram_generator/ft_real_2d.cpp
-  ../cartogram_generator/pll.cpp
+  ../cartogram_generator/polyline_advanced.cpp
   ../cartogram_generator/simplify_map.cpp
   ../cartogram_generator/densify.cpp
   ../cartogram_generator/interpolate_bilinearly.cpp
