@@ -18,7 +18,6 @@
 #include <fstream>
 
 #include "simplify_map.h"
-#include "rescale_map_rev.h"
 
 // Functions that are called if the corresponding command-line options are
 // present

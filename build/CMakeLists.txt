@@ -72,7 +72,6 @@ add_executable(
   ../cartogram_generator/pll.cpp
   ../cartogram_generator/simplify_map.cpp
   ../cartogram_generator/densify.cpp
-  ../cartogram_generator/rescale_map_rev.cpp
   ../cartogram_generator/interpolate_bilinearly.cpp
   ../cartogram_generator/project.cpp
   ../cartogram_generator/write_to_json.cpp)
