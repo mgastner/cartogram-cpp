@@ -25,42 +25,52 @@ PLL::PLL(int pos,
   is_hole_ = is_hole;
 }
 
+// Get the position of the polyline inside ct_polylines
 int PLL::pos() {
   return pos_;
 }
 
+// Get the CGAL polyline object stored inside
 Polyline PLL::pll() {
   return pll_;
 }
 
+// Get its first vertex
 Point PLL::v1() {
   return v1_;
 }
 
+// Get its second vertex
 Point PLL::v2() {
   return v2_;
 }
 
+// Get its last vertex
 Point PLL::vl() {
   return vl_;
 }
 
+// Get its second last vertex
 Point PLL::v2l() {
   return v2l_;
 }
 
+// Get its associated GeoDiv
 int PLL::gd() {
   return gd_;
 }
 
+// Get its associated Polygon_with_holes
 int PLL::pgnwh() {
   return pgnwh_;
 }
 
+// Get whether it is a hole or not
 bool PLL::is_hole() {
   return is_hole_;
 }
 
+// Set/assign the CGAL polyline object stored inside
 void PLL::set_pll(Polyline pll) {
   pll_ = pll;
   v1_ = *pll.begin();
@@ -73,6 +83,7 @@ void PLL::set_pll(Polyline pll) {
   v2l_ = *v2l_it;
 }
 
+// Set/assign whether it is a hole or not
 void PLL::set_is_hole(bool b) {
   is_hole_ = b;
 }

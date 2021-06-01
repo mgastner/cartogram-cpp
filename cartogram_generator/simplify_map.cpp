@@ -582,7 +582,7 @@ store_by_gd_pgnwh(std::vector<GeoDiv> gd_vector,
         /* Iterates through each non-simplified polyline. */
         for (PLL pll : plls_by_pos[cit_num]) {
 
-          /* If this popyline's associated gd and pgnwh are valid: */
+          /* If this polyline's associated gd and pgnwh are valid: */
           if (pll.gd() == gd_num && pll.pgnwh() == pgnwh_num) {
             Polyline pll_ct;
             for (auto vit = ct.points_in_constraint_begin(*cit);
