@@ -17,6 +17,7 @@ class MapState {
 private:
   std::vector<GeoDiv> geo_divs_;
   std::map<std::string, double> target_areas;
+  std::map<std::string, double> area_errs;
   std::map<std::string, Color> colors;
   std::string id_header_;
   std::string visual_variable_file_;
@@ -24,6 +25,8 @@ private:
   bool is_world_map_;
   bool write_density_to_eps_;
   unsigned int lx_, ly_;  // Lattice dimensions
+  unsigned int new_xmin_, new_ymin_; // To store map translation vector
+  double map_scale_; // Double to map scale
   FTReal2d rho_init_;  // Rasterized density
   FTReal2d rho_ft_;  // Fourier transform
   fftw_plan fwd_plan_for_rho_, bwd_plan_for_rho_;
@@ -58,6 +61,12 @@ public:
   void make_grid(const unsigned int, const unsigned int);
   unsigned int lx() const;
   unsigned int ly() const;
+  unsigned int new_xmin() const;
+  unsigned int new_ymin() const;
+  void set_new_xmin(const unsigned int);
+  void set_new_ymin(const unsigned int);
+  double map_scale() const;
+  void set_map_scale(const double);
   FTReal2d *ref_to_rho_init();
   FTReal2d *ref_to_rho_ft();
   void execute_fwd_plan() const;
@@ -70,6 +79,8 @@ public:
   boost::multi_array<XYPoint, 2> *graticule_centroids();
   boost::multi_array<int, 2> *graticule_diagonals();
   std::map<std::string, double> area_err();
+  void set_area_errs();
+  double area_errs_at(const std::string);
   double max_area_err();
   void set_zero_target_area();
   std::map<std::string, std::vector<double>> *debug_population();

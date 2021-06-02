@@ -147,6 +147,36 @@ unsigned int MapState::ly() const
   return ly_;
 }
 
+unsigned int MapState::new_xmin() const
+{
+  return new_xmin_;
+}
+
+unsigned int MapState::new_ymin() const
+{
+  return new_ymin_;
+}
+
+void MapState::set_new_xmin(const unsigned int new_xmin)
+{
+  new_xmin_ = new_xmin;
+}
+
+void MapState::set_new_ymin(const unsigned int new_ymin)
+{
+  new_ymin_ = new_ymin;
+}
+
+double MapState::map_scale() const
+{
+  return map_scale_;
+}
+
+void MapState::set_map_scale(const double map_scale)
+{
+  map_scale_ = map_scale;
+}
+
 FTReal2d *MapState::ref_to_rho_init()
 {
   return &rho_init_;
@@ -205,6 +235,31 @@ boost::multi_array<int, 2> *MapState::graticule_diagonals()
   return &graticule_diagonals_;
 }
 
+void MapState::set_area_errs()
+{
+
+  // Formula for relative area error:
+  // area_on_cartogram / target_area - 1
+
+  double sum_target_area = 0.0;
+  double sum_cart_area = 0.0;
+  for (auto gd : geo_divs_) {
+    if (!target_area_is_missing(gd.id())) {
+      sum_target_area += target_areas_at(gd.id());
+      sum_cart_area += gd.area();
+    }
+  }
+
+  for (auto gd : geo_divs_) {
+    if (!target_area_is_missing(gd.id())) {
+      double obj_area =
+        target_areas_at(gd.id()) * sum_cart_area / sum_target_area;
+      double relative_area_error = std::abs( (gd.area() / obj_area) - 1);
+      area_errs[gd.id()] = relative_area_error;
+    }
+  }
+}
+
 std::map<std::string, double> MapState::area_err()
 {
   std::map<std::string, double> relative_area_error_map;
@@ -235,6 +290,11 @@ std::map<std::string, double> MapState::area_err()
   }
 
   return relative_area_error_map;
+}
+
+double MapState::area_errs_at(const std::string id)
+{
+  return area_errs.at(id);
 }
 
 double MapState::max_area_err()
