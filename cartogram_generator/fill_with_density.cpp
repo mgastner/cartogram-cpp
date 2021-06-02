@@ -285,7 +285,7 @@ void fill_with_density(MapState* map_state, std::string map_name)
           std::cerr << "Integration number: "
                     << map_state->n_finished_integrations()
                     << std::endl << std::endl;
-          // _Exit(8026519);
+           _Exit(8026519);
 
           // Export error data
           std::string err_file_name = map_name + "_intersections.txt";
