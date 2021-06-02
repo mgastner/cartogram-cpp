@@ -18,9 +18,9 @@ struct intersection {
   }
 };
 
-// Struct to store final weighted density of particular geodiv
-struct density {
-  double weight; // Store weight
+// Contribution to a cell's density that comes from one ray and one geo_div
+struct density { // density_contribution
+  double weight; // Store weight (area_err * how much of ray is inside geo_div)
   double target_density; // Store target density
 
   density ()
@@ -37,8 +37,8 @@ struct density {
 
 };
 
-// Density of one graticule cell
-typedef std::vector<density> cell;
+// Vector of all density contributions to a particular cell
+typedef std::vector<density> cell; // cell_dens_info
 
 void fill_with_density(MapState*);
 

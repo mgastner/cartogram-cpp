@@ -99,6 +99,7 @@ void fill_with_density(MapState* map_state)
   int n_lines = (int) (map_state->ly() * res);
   std::vector<std::vector<intersection> > map_intersections(n_lines);
 
+  // Density information for each cell in the map
   std::vector<std::vector<cell>>
     density_map(map_state->lx(), std::vector<cell> (map_state->ly()));
 
@@ -227,6 +228,7 @@ void fill_with_density(MapState* map_state)
     for (double line_y = k + (1.0/res)/2;
          line_y < k + 1;
          line_y += (1.0/res)) {
+      // The intersections for one ray
       std::vector<intersection> intersections =
         map_intersections[(int) round(((line_y - (1.0/res)/2.0) * res))];
 
@@ -262,6 +264,7 @@ void fill_with_density(MapState* map_state)
           // Pre-condition to ensure different intersecting points
           if (left_x != right_x) {
             for (unsigned int m = ceil(left_x); m <= ceil(right_x); ++m) {
+              // We are intersecting with a GeoDiv
               if (ceil(left_x) == ceil(right_x)) {
                 // rho_init(m - 1, k) +=
                 //   intersections[l].target_density * (right_x - left_x);
