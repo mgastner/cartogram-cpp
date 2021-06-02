@@ -2,28 +2,28 @@
 #include "write_eps.h"
 #include "fill_with_density.h"
 
-bool line_y_intersects(XYPoint a,
+bool ray_y_intersects(XYPoint a,
                        XYPoint b,
-                       double line_y,
+                       double ray_y,
                        intersection *temp,
                        double target_density,
                        double epsilon)
 {
   // Check if intersection is present
-  if (((a.y <= line_y && b.y >= line_y) ||
-       (a.y >= line_y && b.y <= line_y)) &&
+  if (((a.y <= ray_y && b.y >= ray_y) ||
+       (a.y >= ray_y && b.y <= ray_y)) &&
 
       // Pre-condition to ignore grazing incidence (i.e. a line segment along
-      // the polygon is exactly on the test line)
+      // the polygon is exactly on the test ray)
       (a.y != b.y)) {
-    if (a.y == line_y) {
+    if (a.y == ray_y) {
       a.y += epsilon;
-    } else if (b.y == line_y) {
+    } else if (b.y == ray_y) {
       b.y += epsilon;
     }
 
     // Edit intersection passed by reference
-    temp->x = (a.x * (b.y - line_y) + b.x * (line_y - a.y)) / (b.y - a.y);
+    temp->x = (a.x * (b.y - ray_y) + b.x * (ray_y - a.y)) / (b.y - a.y);
     temp->target_density = target_density;
     temp->direction = false;  // Temporary value
     return true;
@@ -66,20 +66,19 @@ void fill_with_density(MapState* map_state)
   }
 
   // Resolution with which we sample polygons. "res" is the number of
-  // horizontal "test lines" between each of the ly consecutive horizontal
+  // horizontal "test rays" between each of the ly consecutive horizontal
   // graticule lines.
   unsigned int res = 16;
 
   // A vector (map_intersections) to store vectors of intersections
-  int n_lines = (int) (map_state->ly() * res);
-  std::vector<std::vector<intersection> > map_intersections(n_lines);
-
-  // Density information for each cell in the map
-  // std::vector<std::vector<cell> >
-  //   density_map(map_state->lx(), std::vector<cell> (map_state->ly()));
+  int n_rays = (int) (map_state->ly() * res);
+  std::vector<std::vector<intersection> > map_intersections(n_rays);
 
   // Density numerator and denominator for each graticule cell
-  // Initialising all elements to 0
+  // A density of a graticule cell can be calculated with (rho_num / rho_den)
+  // Initialising all elements to 0 because we initially assume all graticule
+  // cells to not be inside any GeoDiv. Any graticule cell where rho_den is 0
+  // will get the mean_density
   std::vector<std::vector<double> >
     rho_num(map_state->lx(), std::vector<double> (map_state->ly(), 0));
   std::vector<std::vector<double> >
@@ -107,29 +106,29 @@ void fill_with_density(MapState* map_state)
            k <= ceil(bb.ymax()) + 1;
            ++k) {
 
-        // Cycle through each of the "test lines" between the graticule lines
+        // Cycle through each of the "test rays" between the graticule lines
         // y = k and y = k+1
-        for (double line_y = k + (1.0/res)/2;
-             line_y < k + 1;
-             line_y += (1.0/res)) {
+        for (double ray_y = k + (1.0/res)/2;
+             ray_y < k + 1;
+             ray_y += (1.0/res)) {
           Polygon ext_ring = pwh.outer_boundary();
           XYPoint prev_point;
           prev_point.x = ext_ring[ext_ring.size()-1][0];
           prev_point.y = ext_ring[ext_ring.size()-1][1];
 
 
-          // Temporary vector of intersections for this particular line
+          // Temporary vector of intersections for this particular rays
           std::vector<intersection> intersections;
 
-          // The following algorithm works by iterating through "res" lines in
-          // each cell. For each line, we iterate through every edge in a
+          // The following algorithm works by iterating through "res" rays in
+          // each cell. For each ray, we iterate through every edge in a
           // polygon and store any intersections. Finally, once all
           // intersections have been stored, we iterate between intersections,
           // and add the appropriate densities.
-          // We add a small value "epsilon" in case the line with equation
-          // y = line_y goes exactly through curr_point. The addition ensures
+          // We add a small value "epsilon" in case the ray with equation
+          // y = ray_y goes exactly through curr_point. The addition ensures
           // that, if there is any intersection, it is only counted once. It
-          // also correctly detects whether the line crosses through the point
+          // also correctly detects whether the ray crosses through the point
           // without entering or exiting the polygon.
           double epsilon = 1e-6 * (1.0/res);
 
@@ -139,9 +138,9 @@ void fill_with_density(MapState* map_state)
             curr_point.x = ext_ring[l][0];
             curr_point.y = ext_ring[l][1];
             intersection temp;
-            if (line_y_intersects(curr_point,
+            if (ray_y_intersects(curr_point,
                                   prev_point,
-                                  line_y,
+                                  ray_y,
                                   &temp,
                                   target_density,
                                   epsilon)) {
@@ -162,9 +161,9 @@ void fill_with_density(MapState* map_state)
               curr_point.x = hole[l][0];
               curr_point.y = hole[l][1];
               intersection temp;
-              if (line_y_intersects(curr_point,
+              if (ray_y_intersects(curr_point,
                                     prev_point,
-                                    line_y,
+                                    ray_y,
                                     &temp,
                                     target_density,
                                     epsilon)) {
@@ -182,7 +181,7 @@ void fill_with_density(MapState* map_state)
             std::cerr << "Incorrect Topology" << std::endl;
             std::cerr << "Number of intersections: " << intersections.size();
             std::cerr << std::endl;
-            std::cerr << "Y-coordinate: " << line_y << std::endl;
+            std::cerr << "Y-coordinate: " << ray_y << std::endl;
             std::cerr << "Intersection points: " << std::endl;
             for (unsigned int l = 0; l < intersections.size(); ++l) {
               std::cerr << intersections[l].x << std::endl;
@@ -194,7 +193,7 @@ void fill_with_density(MapState* map_state)
           // Add sorted vector of intersections to vector map_intersections
           for (unsigned int l = 0; l < intersections.size(); ++l) {
             intersections[l].direction = (l%2 == 0);
-            int index = round(((line_y - (1.0/res)/2.0) * res));
+            int index = round(((ray_y - (1.0/res)/2.0) * res));
             map_intersections[index].push_back(intersections[l]);
           }
         }
@@ -203,25 +202,32 @@ void fill_with_density(MapState* map_state)
   }
 
   // Filling rho_num and rho_den
+  // rho_num is the sum of the weight * target_density for each segment of a
+  // ray that is inside a GeoDiv
+  // rho_num is the sum of the weights of a ray that is inside a GeoDiv
+  // The weight of a segment of a ray that is inside a GeoDiv is calculated by
+  // (the length of the segment inside the geo_div) *
+  // (the area_err of the geodiv)
   // Cycle through y-coordinates in map_state
   for (unsigned int k = 0; k < map_state->ly(); ++k) {
 
     // Cycle through each of the "res" number of rays in one cell
-    for (double line_y = k + (1.0/res)/2;
-         line_y < k + 1;
-         line_y += (1.0/res)) {
+    for (double ray_y = k + (1.0/res)/2;
+         ray_y < k + 1;
+         ray_y += (1.0/res)) {
 
       // The intersections for one ray
       std::vector<intersection> intersections =
-        map_intersections[(int) round(((line_y - (1.0/res)/2.0) * res))];
+        map_intersections[(int) round(((ray_y - (1.0/res)/2.0) * res))];
 
       // Sort vector in ascending order of intersection
       sort(intersections.begin(), intersections.end());
 
-      // Ensuring that lines actually have intersections
+      // Ensuring that the ray actually has intersections
       if (intersections.size() != 0) {
 
         // Fill any empty spaces between GeoDivs
+        // where a segment is inside a GeoDiv
         for (unsigned int l = 1; l < intersections.size() - 1; l += 2) {
           double left_x = intersections[l].x;
           double right_x = intersections[l + 1].x;
@@ -230,7 +236,8 @@ void fill_with_density(MapState* map_state)
           if (left_x != right_x) {
             for (unsigned int m = ceil(left_x); m <= ceil(right_x); ++m) {
 
-              // We are intersecting with a GeoDiv
+              // We are intersecting with a GeoDiv. Hence, part of the ray
+              // inside the graticule cell is inside the GeoDiv
               if (ceil(left_x) == ceil(right_x)) {
                 double weight =
                   map_state->area_errs_at(intersections[l].geo_div_id) *
@@ -238,13 +245,13 @@ void fill_with_density(MapState* map_state)
                 double target_dens = intersections[l].target_density;
                 rho_num[m - 1][k] += weight * target_dens;
                 rho_den[m - 1][k] += weight;
-                // density_map[m - 1][k].push_back(wd);
               }
             }
           }
         }
 
-        // Fill from last GeoDiv up to last coordinate
+        // Fill last intersection with GeoDiv where part of ray inside the
+        // graticule cell is inside the GeoDiv
         for (unsigned int l = ceil(intersections.back().x);
              l <= map_state->lx();
              ++l) {
