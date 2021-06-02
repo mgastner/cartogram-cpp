@@ -31,31 +31,6 @@ bool line_y_intersects(XYPoint a,
   return false;
 }
 
-// Function to calculate the final density of particular cell
-double solve(cell graticule_cell) {
-
-  // To store total weight of graticule cell
-  double total_weight = 0;
-
-  // Calculating total weight
-  for (density dens : graticule_cell) {
-    total_weight += dens.weight;
-  }
-
-  if (total_weight == 0) {
-    return graticule_cell[0].target_density;
-  }
-
-  // To store final density of graticule cell
-  double final_density = 0;
-
-  // Calculating total weight
-  for (density dens : graticule_cell) {
-    final_density += (dens.weight / total_weight) * dens.target_density;
-  }
-  return final_density;
-}
-
 void fill_with_density(MapState* map_state)
 {
 
@@ -100,8 +75,15 @@ void fill_with_density(MapState* map_state)
   std::vector<std::vector<intersection> > map_intersections(n_lines);
 
   // Density information for each cell in the map
-  std::vector<std::vector<cell>>
-    density_map(map_state->lx(), std::vector<cell> (map_state->ly()));
+  // std::vector<std::vector<cell> >
+  //   density_map(map_state->lx(), std::vector<cell> (map_state->ly()));
+
+  // Density numerator and denominator for each graticule cell
+  // Initialising all elements to 0
+  std::vector<std::vector<double> >
+    rho_num(map_state->lx(), std::vector<double> (map_state->ly(), 0));
+  std::vector<std::vector<double> >
+    rho_den(map_state->lx(), std::vector<double> (map_state->ly(), 0));
 
   // Iterate through GeoDivs in map_state
   for (auto gd : map_state->geo_divs()) {
@@ -111,9 +93,8 @@ void fill_with_density(MapState* map_state)
     double target_density;
     if (!map_state->target_area_is_missing(gd.id())) {
       target_density = map_state->target_areas_at(gd.id()) / gd.area();
-      target_density /= res;
     } else {
-      target_density = mean_density / res;
+      target_density = mean_density;
     }
 
     // Iterate through "polygons with holes" in map_state
@@ -221,13 +202,15 @@ void fill_with_density(MapState* map_state)
     }
   }
 
+  // Filling rho_num and rho_den
   // Cycle through y-coordinates in map_state
   for (unsigned int k = 0; k < map_state->ly(); ++k) {
 
-    // Cycle through each of the "res" number of lines in one cell
+    // Cycle through each of the "res" number of rays in one cell
     for (double line_y = k + (1.0/res)/2;
          line_y < k + 1;
          line_y += (1.0/res)) {
+
       // The intersections for one ray
       std::vector<intersection> intersections =
         map_intersections[(int) round(((line_y - (1.0/res)/2.0) * res))];
@@ -239,7 +222,7 @@ void fill_with_density(MapState* map_state)
       if (intersections.size() == 0) {
         for (unsigned int l = 0; l < map_state->lx(); ++l) {
           // rho_init(l, k) += mean_density/res;
-          density_map[l][k].push_back(density(0.0, mean_density));
+          // density_map[l][k].push_back(density(0.0, mean_density));
         }
       } else {
 
@@ -249,10 +232,10 @@ void fill_with_density(MapState* map_state)
             // rho_init(l - 1, k) +=
             //   (mean_density/res) *
             //   (intersections[0].x - floor(intersections[0].x));
-            density_map[l - 1][k].push_back(density(0.0, mean_density));
+            // density_map[l - 1][k].push_back(density(0.0, mean_density));
           } else {
             // rho_init(l - 1, k) += mean_density/res;
-            density_map[l - 1][k].push_back(density(0.0, mean_density));
+            // density_map[l - 1][k].push_back(density(0.0, mean_density));
           }
         }
 
@@ -270,24 +253,30 @@ void fill_with_density(MapState* map_state)
                 //   intersections[l].target_density * (right_x - left_x);
 
                 // To store GeoDiv's weighted density
-                density wd;
-                wd.target_density =
-                  intersections[l].target_density * res;
-                wd.weight =
+                // density wd;
+                // wd.target_density =
+                //   intersections[l].target_density * res;
+                // wd.weight =
+                //   map_state->area_errs_at(intersections[l].geo_div_id) *
+                //                                           (right_x - left_x);
+                double weight =
                   map_state->area_errs_at(intersections[l].geo_div_id) *
                                                           (right_x - left_x);
-                density_map[m - 1][k].push_back(wd);
+                double target_dens = intersections[l].target_density;
+                rho_num[m - 1][k] += weight * target_dens;
+                rho_den[m - 1][k] += weight;
+                // density_map[m - 1][k].push_back(wd);
               } else if (m == ceil(left_x)) {
                 // rho_init(m - 1, k) +=
                   // ((mean_density/res) * (ceil(left_x) - left_x));
-                density_map[m - 1][k].push_back(density(0.0, mean_density));
+                // density_map[m - 1][k].push_back(density(0.0, mean_density));
               } else if (m == ceil(right_x)) {
                 // rho_init(m - 1, k) +=
                 //   ((mean_density/res) * (right_x - floor(right_x)));
-                density_map[m - 1][k].push_back(density(0.0, mean_density));
+                // density_map[m - 1][k].push_back(density(0.0, mean_density));
               } else {
                 // rho_init(m - 1, k) += (mean_density/res);
-                density_map[m - 1][k].push_back(density(0.0, mean_density));
+                // density_map[m - 1][k].push_back(density(0.0, mean_density));
               }
             }
           }
@@ -303,16 +292,23 @@ void fill_with_density(MapState* map_state)
             //   (ceil(intersections.back().x) - intersections.back().x);
 
             // To store GeoDiv's weighted density
-            density wd;
-            wd.target_density =
-              intersections.back().target_density * res;
-            wd.weight =
+            // density wd;
+            // wd.target_density =
+            //   intersections.back().target_density * res;
+            // wd.weight =
+            //   map_state->area_errs_at(intersections.back().geo_div_id) *
+            //             (ceil(intersections.back().x) - intersections.back().x);
+
+            // density_map[l - 1][k].push_back(wd);
+            double weight =
               map_state->area_errs_at(intersections.back().geo_div_id) *
                         (ceil(intersections.back().x) - intersections.back().x);
-            density_map[l - 1][k].push_back(wd);
+            double target_dens = intersections.back().target_density;
+            rho_num[l - 1][k] += weight * target_dens;
+            rho_den[l - 1][k] += weight;
           } else {
             // rho_init(l - 1, k) += mean_density/res;
-            density_map[l - 1][k].push_back(density(0.0, mean_density));
+            // density_map[l - 1][k].push_back(density(0.0, mean_density));
           }
         }
       }
@@ -338,53 +334,64 @@ void fill_with_density(MapState* map_state)
         for (unsigned int m = ceil(left_x); m <= ceil(right_x); ++m) {
 
           double td;
-
           std::string gd_id = intersections[l].geo_div_id;
 
           // To store GeoDiv's weighted density
-          density wd;
-          wd.target_density =
-            intersections[l].target_density * res;
+          // density wd;
+          // wd.target_density =
+          //   intersections[l].target_density * res;
 
+          double weight =
+            map_state->area_errs_at(intersections.back().geo_div_id);
+          double target_dens = intersections[l].target_density;
           if (ceil(left_x) == ceil(right_x)) {
             // rho_init(m - 1, k) +=
             //   intersections[l].target_density * (right_x - left_x);
-            wd.weight =
-              map_state->area_errs_at(intersections[l].geo_div_id) *
-              (right_x - left_x);
+            // wd.weight =
+            //   map_state->area_errs_at(intersections[l].geo_div_id) *
+            //   (right_x - left_x);
             td = intersections[l].target_density * (right_x - left_x);
+            weight *= (right_x - left_x);
           } else if (m == ceil(left_x)) {
             // rho_init(m - 1, k) +=
             //   intersections[l].target_density * (ceil(left_x) - left_x);
-            wd.weight =
-              map_state->area_errs_at(intersections[l].geo_div_id) *
-              (ceil(left_x) - left_x);
+            // wd.weight =
+            //   map_state->area_errs_at(intersections[l].geo_div_id) *
+            //   (ceil(left_x) - left_x);
             td = intersections[l].target_density * (ceil(left_x) - left_x);
+            weight *= (ceil(left_x) - left_x);
           } else if (m == ceil(right_x)) {
             // rho_init(m - 1, k) +=
             //   intersections[l].target_density * (right_x - floor(right_x));
-            wd.weight =
-              map_state->area_errs_at(intersections[l].geo_div_id) *
-              (right_x - floor(right_x));
+            // wd.weight =
+            //   map_state->area_errs_at(intersections[l].geo_div_id) *
+            //   (right_x - floor(right_x));
             td = intersections[l].target_density * (right_x - floor(right_x));
+            weight *= (right_x - floor(right_x));
           } else {
             // rho_init(m - 1, k) += intersections[l].target_density;
-            wd.weight = map_state->area_errs_at(intersections[l].geo_div_id);
+            // wd.weight = map_state->area_errs_at(intersections[l].geo_div_id);
             td = intersections[l].target_density;
           }
+          rho_num[m - 1][k] += weight * target_dens;
+          rho_den[m - 1][k] += weight;
 
-          gd_to_number.at(gd_id) = gd_to_number.at(gd_id) + td;
-          density_map[m - 1][k].push_back(wd);
+          gd_to_number.at(gd_id) = gd_to_number.at(gd_id) + td * res;
+          // density_map[m - 1][k].push_back(wd);
 
         }
       }
     }
   }
 
-  // Iterating through density map and rho_init
+  // Filling rho_init by dividing rho_num with rho_den
   for (unsigned int i = 0; i < map_state->lx(); ++i) {
     for (unsigned int j = 0; j < map_state->ly(); ++j) {
-      rho_init(i, j) = solve(density_map[i][j]);
+      if (rho_den[i][j] == 0) {
+        rho_init(i, j) = mean_density;
+      } else {
+        rho_init(i, j) = rho_num[i][j] / rho_den[i][j];
+      }
     }
   }
 

@@ -18,28 +18,6 @@ struct intersection {
   }
 };
 
-// Contribution to a cell's density that comes from one ray and one geo_div
-struct density { // density_contribution
-  double weight; // Store weight (area_err * how much of ray is inside geo_div)
-  double target_density; // Store target density
-
-  density ()
-  {
-    weight = 0;
-    target_density = 0;
-  }
-
-  density (double weight_, double target_density_)
-  {
-    weight = weight_;
-    target_density = target_density_;
-  }
-
-};
-
-// Vector of all density contributions to a particular cell
-typedef std::vector<density> cell; // cell_dens_info
-
 void fill_with_density(MapState*);
 
 #endif
