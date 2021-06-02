@@ -67,7 +67,7 @@ bool point_almost_equal(Point a, Point b) {
 }
 
 double round_down(double value) {
-    return floor(value * 1e10) / 1e10;
+    return floor(value * 1e9) / 1e9;
 }
 
 Point round_point(Point p1) {
