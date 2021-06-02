@@ -866,50 +866,50 @@ void project_with_triangulation(MapState *map_state)
                                              &ext_ring_triangle,
                                              old_ext_ring[i][0], old_ext_ring[i][1]);
 
-        if ((197.400 <= old_ext_ring_intp.x && 197.401 >= old_ext_ring_intp.x) &&
-              (256.349 <= old_ext_ring_intp.y && 256.350 >= old_ext_ring_intp.y)){
+        // if ((197.400 <= old_ext_ring_intp.x && 197.401 >= old_ext_ring_intp.x) &&
+        //       (256.349 <= old_ext_ring_intp.y && 256.350 >= old_ext_ring_intp.y)){
 
-                std::vector<XYPoint> ext_ring_graticule_cell =
-                    find_graticule(old_ext_ring[i][0], old_ext_ring[i][1],
-                                    lx, ly);
+        //         std::vector<XYPoint> ext_ring_graticule_cell =
+        //             find_graticule(old_ext_ring[i][0], old_ext_ring[i][1],
+        //                             lx, ly);
 
-                std::cout << "Transformed point at (" << std::setprecision(20) << old_ext_ring_intp.x << ", "
-                          << old_ext_ring_intp.y << ")\n";
-                std::cout << "Originally at (" << old_ext_ring[i][0] << ", " << old_ext_ring[i][1] << ")\n";
+        //         std::cout << "Transformed point at (" << std::setprecision(20) << old_ext_ring_intp.x << ", "
+        //                   << old_ext_ring_intp.y << ")\n";
+        //         std::cout << "Originally at (" << old_ext_ring[i][0] << ", " << old_ext_ring[i][1] << ")\n";
 
-                std::cout << "In GeoDiv " << gd.id() << "\n";
+        //         std::cout << "In GeoDiv " << gd.id() << "\n";
 
-                std::cout << "Original graticule cell cordinates: \n";
-                for (unsigned int a = 0; a < 4; a++){
-                  std::cout << "V" << a << ": (" << ext_ring_graticule_cell[a].x << ", " << ext_ring_graticule_cell[a].y << ")\n";
-                }
+        //         std::cout << "Original graticule cell cordinates: \n";
+        //         for (unsigned int a = 0; a < 4; a++){
+        //           std::cout << "V" << a << ": (" << ext_ring_graticule_cell[a].x << ", " << ext_ring_graticule_cell[a].y << ")\n";
+        //         }
 
-                std::cout << "Transformed graticule cell coordinates: \n";
-                for (unsigned int a = 0; a < 4; a++){
-                  XYPoint v;
-                  v.x =
-                    proj[int(ext_ring_graticule_cell[a].x)][int(ext_ring_graticule_cell[a].y)].x;
-                  v.y =
-                    proj[int(ext_ring_graticule_cell[a].x)][int(ext_ring_graticule_cell[a].y)].y;
+        //         std::cout << "Transformed graticule cell coordinates: \n";
+        //         for (unsigned int a = 0; a < 4; a++){
+        //           XYPoint v;
+        //           v.x =
+        //             proj[int(ext_ring_graticule_cell[a].x)][int(ext_ring_graticule_cell[a].y)].x;
+        //           v.y =
+        //             proj[int(ext_ring_graticule_cell[a].x)][int(ext_ring_graticule_cell[a].y)].y;
 
-                  std::cout << "V" << a << ": (" << v.x << ", " << v.y << ")\n";
-                }
+        //           std::cout << "V" << a << ": (" << v.x << ", " << v.y << ")\n";
+        //         }
 
-                std::cout << "Diagonal chosen: " << graticule_diagonals[int(ext_ring_graticule_cell[0].x)][int(ext_ring_graticule_cell[0].y)] << "\n";
+        //         std::cout << "Diagonal chosen: " << graticule_diagonals[int(ext_ring_graticule_cell[0].x)][int(ext_ring_graticule_cell[0].y)] << "\n";
 
-                std::cout << "Original triangle coordinates: \n";
-                for (unsigned int a = 0; a < 3; a++){
-                  std::cout << "(" << ext_ring_triangle[a].x << ", " << ext_ring_triangle[a].y << ")\n";
-                }
+        //         std::cout << "Original triangle coordinates: \n";
+        //         for (unsigned int a = 0; a < 3; a++){
+        //           std::cout << "(" << ext_ring_triangle[a].x << ", " << ext_ring_triangle[a].y << ")\n";
+        //         }
 
-                std::cout << "Transformed triangle coordinates: \n";
-                for (unsigned int a = 0; a < 3; a++){
-                  std::cout << "(" << transformed_ext_ring_triangle[a].x << ", " << transformed_ext_ring_triangle[a].y << ")\n";
-                }
-              }
+        //         std::cout << "Transformed triangle coordinates: \n";
+        //         for (unsigned int a = 0; a < 3; a++){
+        //           std::cout << "(" << transformed_ext_ring_triangle[a].x << ", " << transformed_ext_ring_triangle[a].y << ")\n";
+        //         }
+        //       }
 
-        new_ext_ring.push_back(Point(old_ext_ring_intp.x,
-                                     old_ext_ring_intp.y));
+        new_ext_ring.push_back(round_point(Point(old_ext_ring_intp.x,
+                                                 old_ext_ring_intp.y)));
       }
       std::vector<Polygon> hole_v;
       for (auto hci = pwh.holes_begin(); hci != pwh.holes_end(); hci++) {
@@ -949,8 +949,8 @@ void project_with_triangulation(MapState *map_state)
                                                &hole_triangle,
                                                old_hole[i][0], old_hole[i][1]);
 
-          new_hole.push_back(Point(old_hole_intp.x,
-                                   old_hole_intp.y));
+          new_hole.push_back(round_point(Point(old_hole_intp.x,
+                                               old_hole_intp.y)));
         }
         hole_v.push_back(new_hole);
       }

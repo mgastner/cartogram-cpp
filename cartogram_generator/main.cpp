@@ -230,7 +230,7 @@ int main(const int argc, const char *argv[])
     project_with_triangulation(&map_state);
 
     // Rounding map again
-    round_points(&map_state);
+    // round_points(&map_state);
 
     // Printing cartogram
     std::string cartogram_file_name =
