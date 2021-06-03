@@ -179,6 +179,7 @@ void fill_with_density(MapState* map_state)
             for (unsigned int l = 0; l < intersections.size(); ++l) {
               std::cerr << intersections[l].x << std::endl;
             }
+            std::cerr << std::endl << std::endl;
             _Exit(932875);
           }
           std::sort(intersections.begin(), intersections.end());
@@ -228,37 +229,29 @@ void fill_with_density(MapState* map_state)
 
           // Pre-condition to ensure different intersecting points
           if (left_x != right_x) {
-            // for (unsigned int m = ceil(left_x); m <= ceil(right_x); ++m) {
 
-              // We are intersecting with a GeoDiv. Hence, part of the ray
-              // inside the graticule cell is inside the GeoDiv
-              if (ceil(left_x) == ceil(right_x)) {
-                double weight =
-                  map_state->area_errs_at(intersections[l].geo_div_id) *
-                                                          (right_x - left_x);
-                double target_dens = intersections[l].target_density;
-                rho_num[ceil(left_x) - 1][k] += weight * target_dens;
-                rho_den[ceil(left_x) - 1][k] += weight;
-              }
-            // }
+            // We are intersecting with a GeoDiv. Hence, part of the ray
+            // inside the graticule cell is inside the GeoDiv
+            if (ceil(left_x) == ceil(right_x)) {
+              double weight =
+                map_state->area_errs_at(intersections[l].geo_div_id) *
+                                                        (right_x - left_x);
+              double target_dens = intersections[l].target_density;
+              rho_num[ceil(left_x) - 1][k] += weight * target_dens;
+              rho_den[ceil(left_x) - 1][k] += weight;
+            }
           }
         }
 
         // Fill last exiting intersection with GeoDiv where part of ray inside
         // the graticule cell is inside the GeoDiv
-        // for (unsigned int l = ceil(intersections.back().x);
-        //      l <= map_state->lx();
-        //      ++l) {
-          // if (l == ceil(intersections.back().x)) {
-            unsigned int last_x = intersections.back().x;
-            double weight_last =
-              map_state->area_errs_at(intersections.back().geo_div_id) *
-                        (ceil(last_x) - last_x);
-            double target_dens_last = intersections.back().target_density;
-            rho_num[ceil(last_x) - 1][k] += weight_last * target_dens_last;
-            rho_den[ceil(last_x) - 1][k] += weight_last;
-          // }
-        // }
+        unsigned int last_x = intersections.back().x;
+        double last_weight =
+          map_state->area_errs_at(intersections.back().geo_div_id) *
+                    (ceil(last_x) - last_x);
+        double last_target_density = intersections.back().target_density;
+        rho_num[ceil(last_x) - 1][k] += last_weight * last_target_density;
+        rho_den[ceil(last_x) - 1][k] += last_weight;
       }
 
       // Fill GeoDivs by iterating through intersections
@@ -272,9 +265,10 @@ void fill_with_density(MapState* map_state)
           // Highlight where intersection is present
           std::cerr << "Invalid Geometry!" << std::endl;
           std::cerr << "Intersection of Polygons/Holes/Geodivs" << std::endl;
-          std::cerr << "Y-coordinate: " << k << std::endl;
+          std::cerr << "Y-coordinate: " << ray_y << std::endl;
           std::cerr << "Left X-coordinate: " << left_x << std::endl;
           std::cerr << "Right X-coordinate: " << right_x << std::endl;
+          std::cerr << std::endl;
           // _Exit(8026519);
         }
 
@@ -290,7 +284,7 @@ void fill_with_density(MapState* map_state)
             weight *= (ceil(left_x) - left_x);
           } else if (m == ceil(right_x)) {
             weight *= (right_x - floor(right_x));
-          } 
+          }
           rho_num[m - 1][k] += weight * target_dens;
           rho_den[m - 1][k] += weight;
 
