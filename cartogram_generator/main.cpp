@@ -160,13 +160,15 @@ int main(const int argc, const char *argv[])
     write_map_to_eps((map_name + "_input.eps"), &map_state);
   }
 
+  // Setting initial area errors
+  map_state.set_area_errs();
   // Start map integration
   while (map_state.n_finished_integrations() < max_integrations &&
          map_state.max_area_err() > max_permitted_area_error) {
 
     std::cout << "Integration number "
               << map_state.n_finished_integrations()
-              <<std::endl;
+              << std::endl;
 
     fill_with_density(&map_state);
     if (map_state.n_finished_integrations() == 0) {
@@ -177,6 +179,9 @@ int main(const int argc, const char *argv[])
     flatten_density(&map_state);
     project(&map_state);
     map_state.inc_integration();
+
+    // Setting updated area errors
+    map_state.set_area_errs();
   }
 
   // Printing final cartogram
