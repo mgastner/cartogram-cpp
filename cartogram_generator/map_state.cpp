@@ -258,6 +258,6 @@ double MapState::max_area_err()
     mae = std::max(mae, area_err);
   }
 
-  std::cout << "max. area err: " << mae << std::endl;
+  std::cout << "max. area err: " << mae << std::endl << std::endl;
   return mae;
 }

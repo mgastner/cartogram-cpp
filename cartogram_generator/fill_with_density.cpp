@@ -195,7 +195,7 @@ void fill_with_density(MapState* map_state)
     }
   }
 
-  // Filling rho_num and rho_den (rho numberator and denominator)
+  // Filling rho_num and rho_den (rho numerator and denominator)
   // rho_num is the sum of the weight * target_density for each segment of a
   // ray that is inside a GeoDiv
   // rho_den is the sum of the weights of a ray that is inside a GeoDiv
