@@ -32,12 +32,12 @@ bool line_y_intersects(XYPoint a,
 }
 
 
-void fill_with_density(MapState* map_state)
+void fill_with_density(InsetState* inset_state)
 {
 
   std::map<std::string, double> gd_to_number;
 
-  for (GeoDiv gd : map_state->geo_divs()) {
+  for (GeoDiv gd : inset_state->geo_divs()) {
     double temp = 0.0;
     gd_to_number.insert(std::pair<std::string, double>(gd.id(), temp));
   }
@@ -45,23 +45,23 @@ void fill_with_density(MapState* map_state)
   // Calculate the total current area and total target area, excluding any
   // missing values
   double total_current_area = 0.0;
-  for (auto gd : map_state->geo_divs()) {
-    if (!map_state->target_area_is_missing(gd.id())) {
+  for (auto gd : inset_state->geo_divs()) {
+    if (!inset_state->target_area_is_missing(gd.id())) {
       total_current_area += gd.area();
     }
   }
   double total_target_area = 0.0;
-  for (auto gd : map_state->geo_divs()) {
-    if (!map_state->target_area_is_missing(gd.id())) {
-      total_target_area += map_state->target_areas_at(gd.id());
+  for (auto gd : inset_state->geo_divs()) {
+    if (!inset_state->target_area_is_missing(gd.id())) {
+      total_target_area += inset_state->target_areas_at(gd.id());
     }
   }
   double mean_density = total_target_area / total_current_area;
-  FTReal2d &rho_init = *map_state->ref_to_rho_init();
+  FTReal2d &rho_init = *inset_state->ref_to_rho_init();
 
   // Initially assign 0 to all densities
-  for (unsigned int i = 0; i < map_state->lx(); ++i) {
-    for (unsigned int j = 0; j < map_state->ly(); ++j) {
+  for (unsigned int i = 0; i < inset_state->lx(); ++i) {
+    for (unsigned int j = 0; j < inset_state->ly(); ++j) {
       rho_init(i, j) = 0;
     }
   }
@@ -72,23 +72,23 @@ void fill_with_density(MapState* map_state)
   unsigned int res = 16;
 
   // A vector (map_intersections) to store vectors of intersections
-  int n_lines = (int) (map_state->ly() * res);
+  int n_lines = (int) (inset_state->ly() * res);
   std::vector<std::vector<intersection> > map_intersections(n_lines);
 
-  // Iterate through GeoDivs in map_state
-  for (auto gd : map_state->geo_divs()) {
+  // Iterate through GeoDivs in inset_state
+  for (auto gd : inset_state->geo_divs()) {
 
     // Associative area. It is only called once to find out the target
     // density.
     double target_density;
-    if (!map_state->target_area_is_missing(gd.id())) {
-      target_density = map_state->target_areas_at(gd.id()) / gd.area();
+    if (!inset_state->target_area_is_missing(gd.id())) {
+      target_density = inset_state->target_areas_at(gd.id()) / gd.area();
       target_density /= res;
     } else {
       target_density = mean_density / res;
     }
 
-    // Iterate through "polygons with holes" in map_state
+    // Iterate through "polygons with holes" in inset_state
     for (int j = 0; j < gd.n_polygons_with_holes(); ++j) {
       Polygon_with_holes pwh = gd.polygons_with_holes()[j];
       CGAL::Bbox_2 bb = pwh.bbox();
@@ -193,8 +193,8 @@ void fill_with_density(MapState* map_state)
     }
   }
 
-  // Cycle through y-coordinates in map_state
-  for (unsigned int k = 0; k < map_state->ly(); ++k) {
+  // Cycle through y-coordinates in inset_state
+  for (unsigned int k = 0; k < inset_state->ly(); ++k) {
 
     // Cycle through each of the "res" number of lines in one cell
     for (double line_y = k + (1.0/res)/2;
@@ -208,7 +208,7 @@ void fill_with_density(MapState* map_state)
 
       // Fill lines that have no intersections with mean_density
       if (intersections.size() == 0) {
-        for (unsigned int l = 0; l < map_state->lx(); ++l) {
+        for (unsigned int l = 0; l < inset_state->lx(); ++l) {
           rho_init(l, k) += mean_density/res;
         }
       } else {
@@ -250,7 +250,7 @@ void fill_with_density(MapState* map_state)
 
         // Fill from last GeoDiv up to last coordinate
         for (unsigned int l = ceil(intersections.back().x);
-             l <= map_state->lx();
+             l <= inset_state->lx();
              ++l) {
           if (l == ceil(intersections.back().x)) {
             rho_init(l - 1, k) +=
@@ -310,21 +310,21 @@ void fill_with_density(MapState* map_state)
     }
   }
 
-  for (GeoDiv gd : map_state->geo_divs()) {
+  for (GeoDiv gd : inset_state->geo_divs()) {
     std::cout << "ID: " << gd.id() << ", ";
     std::cout << "effective target area: "
               << gd_to_number.at(gd.id()) << '\n';
   }
 
 
-  if (map_state->trigger_write_density_to_eps()) {
+  if (inset_state->trigger_write_density_to_eps()) {
     std::string file_name =
       std::string("unblurred_density_") +
-      std::to_string(map_state->n_finished_integrations()) +
+      std::to_string(inset_state->n_finished_integrations()) +
       ".eps";
     std::cout << "Writing " << file_name << std::endl;
-    write_density_to_eps(file_name, rho_init.array(), map_state);
+    write_density_to_eps(file_name, rho_init.array(), inset_state);
   }
-  map_state->execute_fwd_plan();
+  inset_state->execute_fwd_plan();
   return;
 }

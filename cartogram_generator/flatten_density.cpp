@@ -33,11 +33,11 @@ void calculate_velocity(double t,
 
 // Function to integrate the equations of motion with the fast flow-based
 // method.
-void flatten_density(MapState *map_state)
+void flatten_density(InsetState *inset_state)
 {
   std::cout << "In flatten_density()" << std::endl;
-  const unsigned int lx = map_state->lx();
-  const unsigned int ly = map_state->ly();
+  const unsigned int lx = inset_state->lx();
+  const unsigned int ly = inset_state->ly();
 
   // Constants for the numerical integrator
   const double inc_after_acc = 1.1;
@@ -45,10 +45,10 @@ void flatten_density(MapState *map_state)
   const double abs_tol = (std::min(lx, ly) * 1e-6);
 
   // Define proj and proj2 multi arrays
-  boost::multi_array<XYPoint, 2> &proj = *map_state->proj();
+  boost::multi_array<XYPoint, 2> &proj = *inset_state->proj();
 
   // Resize proj multi array if running for the first time
-  if (map_state->n_finished_integrations() == 0) {
+  if (inset_state->n_finished_integrations() == 0) {
     proj.resize(boost::extents[lx][ly]);
   }
   for (unsigned int i = 0; i < lx; i++) {
@@ -57,8 +57,8 @@ void flatten_density(MapState *map_state)
       proj[i][j].y = j + 0.5;
     }
   }
-  FTReal2d &rho_ft = *map_state->ref_to_rho_ft();
-  FTReal2d &rho_init = *map_state->ref_to_rho_init();
+  FTReal2d &rho_ft = *inset_state->ref_to_rho_ft();
+  FTReal2d &rho_init = *inset_state->ref_to_rho_init();
 
   // Allocate memory for the velocity grid
   boost::multi_array<double, 2> grid_vx(boost::extents[lx][ly]);

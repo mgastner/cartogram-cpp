@@ -3,6 +3,6 @@
 
 #include "map_state.h"
 
-void project(MapState*);
+void project(InsetState*);
 
 #endif

@@ -149,7 +149,7 @@ void print_properties_map(std::map<std::string, std::vector<std::string>> proper
   }
 }
 
-void read_geojson(const std::string geometry_file_name, MapState *map_state, bool make_csv)
+void read_geojson(const std::string geometry_file_name, InsetState *inset_state, bool make_csv)
 {
   bool is_polygon;
   bool polygon_warning_has_been_issued = false;
@@ -187,10 +187,10 @@ void read_geojson(const std::string geometry_file_name, MapState *map_state, boo
 
       // Storing ID from properties
       const nlohmann::json properties = feature["properties"];
-      if (!properties.contains(map_state->id_header()) &&
-          map_state->id_header() != "") { // Visual file not provided
+      if (!properties.contains(inset_state->id_header()) &&
+          inset_state->id_header() != "") { // Visual file not provided
         std::cerr << "ERROR: In GeoJSON, there is no property "
-                  << map_state->id_header()
+                  << inset_state->id_header()
                   << " in feature." << std::endl;
         std::cerr << "Available properties are: "
                   << properties
@@ -200,7 +200,7 @@ void read_geojson(const std::string geometry_file_name, MapState *map_state, boo
 
       // Use dump() instead of get() so that we can handle string and numeric
       // IDs in GeoJSON. Both types of IDs are converted to C++ strings.
-      std::string id = properties[map_state->id_header()].dump();
+      std::string id = properties[inset_state->id_header()].dump();
       if (id.front() == '"' && id.back() == '"' && id.length() > 2) {
         id = id.substr(1, id.length() - 2);
       }
@@ -213,7 +213,7 @@ void read_geojson(const std::string geometry_file_name, MapState *map_state, boo
       }
       ids_in_geojson.insert(id);
       const GeoDiv gd = json_to_cgal(id, geometry["coordinates"], is_polygon);
-      map_state->push_back(gd);
+      inset_state->push_back(gd);
     }
   }
 
@@ -311,7 +311,7 @@ void read_geojson(const std::string geometry_file_name, MapState *map_state, boo
 
   // Check whether all IDs in visual_variable_file appear in GeoJSON
   const std::set<std::string> ids_in_vv_file =
-    map_state->ids_in_visual_variables_file();
+    inset_state->ids_in_visual_variables_file();
   std::set<std::string> ids_not_in_geojson;
   std::set_difference(ids_in_vv_file.begin(), ids_in_vv_file.end(),
                       ids_in_geojson.begin(), ids_in_geojson.end(),
@@ -319,10 +319,10 @@ void read_geojson(const std::string geometry_file_name, MapState *map_state, boo
                                     ids_not_in_geojson.end()));
   if (!ids_not_in_geojson.empty()) {
     std::cerr << "ERROR: Mismatch between GeoJSON and "
-              << map_state->visual_variable_file()
+              << inset_state->visual_variable_file()
               << "."
               << std::endl;
-    std::cerr << "The following IDs do not appear in the GeoJSON:"
+    std::cerr << "The following IDs do not appear in the GeoJSON or CSV:"
               << std::endl;
     for (auto id : ids_not_in_geojson) {
       std::cerr << "  " << id << std::endl;
@@ -338,11 +338,11 @@ void read_geojson(const std::string geometry_file_name, MapState *map_state, boo
                                     ids_not_in_vv.end()));
   if (!ids_not_in_vv.empty()) {
     std::cerr << "ERROR: Mismatch between GeoJSON and "
-              << map_state->visual_variable_file()
+              << inset_state->visual_variable_file()
               << "."
               << std::endl;
     std::cerr << "The following IDs do not appear in "
-              << map_state->visual_variable_file()
+              << inset_state->visual_variable_file()
               << ": "
               << std::endl;
     for (auto id : ids_not_in_vv) {

@@ -13,16 +13,12 @@ struct XYPoint{
   double y;
 };
 
-class MapState {
+class InsetState {
 private:
+  std::string inset_pos_;
   std::vector<GeoDiv> geo_divs_;
   std::map<std::string, double> target_areas;
   std::map<std::string, Color> colors;
-  std::string id_header_;
-  std::string visual_variable_file_;
-  std::set<std::string> ids_in_visual_variables_file_;
-  bool is_world_map_;
-  bool write_density_to_eps_;
   unsigned int lx_, ly_;  // Lattice dimensions
   unsigned int new_xmin_, new_ymin_; // To store map translation vector
   double map_scale_; // Double to map scale
@@ -31,10 +27,10 @@ private:
   fftw_plan fwd_plan_for_rho_, bwd_plan_for_rho_;
   unsigned int n_finished_integrations_;
   boost::multi_array<XYPoint, 2> proj_;
-  MapState();
+  InsetState();
 public:
-  explicit MapState(const std::string, const bool, const bool);
-  ~MapState();
+  explicit InsetState(const std::string);
+  ~InsetState();
   unsigned int n_geo_divs() const;
   const std::vector<GeoDiv> geo_divs() const;
   std::vector<GeoDiv> *ref_to_geo_divs();
@@ -45,13 +41,6 @@ public:
   bool target_area_is_missing(const std::string) const;
   const Color colors_at(const std::string);
   bool colors_empty() const;
-  void set_id_header(const std::string);
-  const std::string id_header() const;
-  const std::string visual_variable_file() const;
-  void insert_id_in_visual_variables_file(const std::string);
-  const std::set<std::string> ids_in_visual_variables_file() const;
-  bool is_world_map() const;
-  bool trigger_write_density_to_eps() const;
   void make_grid(const unsigned int, const unsigned int);
   unsigned int lx() const;
   unsigned int ly() const;
@@ -70,6 +59,29 @@ public:
   void inc_integration();
   boost::multi_array<XYPoint, 2> *proj();
   double max_area_err();
+  void set_inset_pos(std::string inset_pos);
 };
 
+class CartogramInfo {
+private:
+  std::vector<InsetState> inset_states_;
+  std::string id_header_;
+  std::string visual_variable_file_;
+  std::set<std::string> ids_in_visual_variables_file_;
+  bool is_world_map_;
+  bool write_density_to_eps_;
+  std::string map_name;
+public:
+  explicit CartogramInfo(const std::string, const bool, const bool);
+  void set_id_header(const std::string);
+  void insert_id_in_visual_variables_file(const std::string);
+  const std::set<std::string> ids_in_visual_variables_file() const;
+  const std::string id_header() const;
+  const std::string visual_variable_file() const;
+  bool is_world_map() const;
+  bool trigger_write_density_to_eps() const;
+  void set_map_name(std::string map_name);
+  const std::vector<InsetState> inset_states() const;
+  void push_back(const InsetState);
+};
 #endif

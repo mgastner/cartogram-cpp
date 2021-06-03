@@ -1,13 +1,13 @@
 #include "constants.h"
 #include "map_state.h"
 
-void rescale_map(int long_grid_side_length, MapState *map_state)
+void rescale_map(int long_grid_side_length, InsetState *inset_state)
 {
-  double padding = (map_state->is_world_map() ?  1.0 : padding_unless_world);
+  double padding = (inset_state->is_world_map() ?  1.0 : padding_unless_world);
 
   // Initialize bounding box of map with bounding box of 0-th
   // Polygon_with_holes in 0-th GeoDiv
-  GeoDiv gd0 = map_state->geo_divs()[0];
+  GeoDiv gd0 = inset_state->geo_divs()[0];
   std::vector<Polygon_with_holes> pwhs = gd0.polygons_with_holes();
   CGAL::Bbox_2 bb0 = pwhs[0].bbox();
   double map_xmin = bb0.xmin();
@@ -16,7 +16,7 @@ void rescale_map(int long_grid_side_length, MapState *map_state)
   double map_ymax = bb0.ymax();
 
   // Expand bounding box to enclose all GeoDivs
-  for (auto gd : map_state->geo_divs()) {
+  for (auto gd : inset_state->geo_divs()) {
     for (auto pwh : gd.polygons_with_holes()) {
       CGAL::Bbox_2 bb = pwh.bbox();
       map_xmin = (bb.xmin() < map_xmin ? bb.xmin() : map_xmin);
@@ -62,14 +62,14 @@ void rescale_map(int long_grid_side_length, MapState *map_state)
             << new_xmax << ", " << new_ymax << ")"
             << std::endl;
 
-  // Set grid dimensions in map_state
-  map_state->make_grid(lx, ly);
+  // Set grid dimensions in inset_state
+  inset_state->make_grid(lx, ly);
 
   // Rescale all GeoDiv coordinates
   Transformation translate(CGAL::TRANSLATION,
                            CGAL::Vector_2<Epick>(-new_xmin, -new_ymin));
   Transformation scale(CGAL::SCALING, (1.0/latt_const));
-  for (auto &gd : *map_state->ref_to_geo_divs()) {
+  for (auto &gd : *inset_state->ref_to_geo_divs()) {
     for (auto &pwh : *gd.ref_to_polygons_with_holes()) {
       Polygon *ext_ring = &pwh.outer_boundary();
       *ext_ring = transform(translate, *ext_ring);
@@ -82,22 +82,22 @@ void rescale_map(int long_grid_side_length, MapState *map_state)
   }
 
   // Storing coordinates to rescale in future
-  map_state->set_new_xmin(new_xmin);
-  map_state->set_new_ymin(new_ymin);
-  map_state->set_map_scale(latt_const);
+  inset_state->set_new_xmin(new_xmin);
+  inset_state->set_new_ymin(new_ymin);
+  inset_state->set_map_scale(latt_const);
 
   return;
 }
 
-void unscale_map(MapState *map_state)
+void unscale_map(InsetState *inset_state)
 {
 
   // Rescale all GeoDiv coordinates
   Transformation translate(CGAL::TRANSLATION,
-                           CGAL::Vector_2<Epick>(map_state->new_xmin(),
-                                                 map_state->new_ymin()));
-  Transformation scale(CGAL::SCALING, map_state->map_scale());
-  for (auto &gd : *map_state->ref_to_geo_divs()) {
+                           CGAL::Vector_2<Epick>(inset_state->new_xmin(),
+                                                 inset_state->new_ymin()));
+  Transformation scale(CGAL::SCALING, inset_state->map_scale());
+  for (auto &gd : *inset_state->ref_to_geo_divs()) {
     for (auto &pwh : *gd.ref_to_polygons_with_holes()) {
       Polygon *ext_ring = &pwh.outer_boundary();
       *ext_ring = transform(scale, *ext_ring);

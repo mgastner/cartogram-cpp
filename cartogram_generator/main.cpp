@@ -117,19 +117,19 @@ int main(const int argc, const char *argv[])
     return EXIT_FAILURE;
   }
 
-  MapState map_state(visual_file_name,
-                     world,
-                     density_to_eps);
+  CartogramInfo cart_info(visual_file_name,
+                         world,
+                         density_to_eps);
 
   if (!make_csv) {
-    
+
     // Read visual variables (e.g. area, color) from CSV
-    read_csv(vm, &map_state);
+    read_csv(vm, &cart_info);
   }
 
   // Read geometry
   try {
-    read_geojson(geo_file_name, &map_state, make_csv);
+    read_geojson(geo_file_name, &cart_info, make_csv);
   } catch (const std::system_error& e) {
     std::cerr << "ERROR: "
               << e.what()
@@ -140,8 +140,9 @@ int main(const int argc, const char *argv[])
     return EXIT_FAILURE;
   }
 
+  // Error checking Geometry
   try {
-    holes_inside_polygons(&map_state);
+    holes_inside_polygons(&inset_state);
   } catch (const std::system_error& e) {
     std::cerr << "ERROR: "
               << e.what()
@@ -162,35 +163,35 @@ int main(const int argc, const char *argv[])
   }
 
   // Rescale map to fit into a rectangular box [0, lx] * [0, ly].
-  rescale_map(long_grid_side_length, &map_state);
+  rescale_map(long_grid_side_length, &inset_state);
 
   // Writing EPS, if requested by command line option
   if (polygons_to_eps) {
     std::cout << "Writing " << map_name << "_input.eps" << std::endl;
-    write_map_to_eps((map_name + "_input.eps"), &map_state);
+    write_map_to_eps((map_name + "_input.eps"), &inset_state);
   }
 
   // Start map integration
-  while (map_state.n_finished_integrations() < max_integrations &&
-         map_state.max_area_err() > max_permitted_area_error) {
+  while (inset_state.n_finished_integrations() < max_integrations &&
+         inset_state.max_area_err() > max_permitted_area_error) {
 
     std::cout << "Integration number "
-              << map_state.n_finished_integrations()
+              << inset_state.n_finished_integrations()
               <<std::endl;
 
-    fill_with_density(&map_state);
-    if (map_state.n_finished_integrations() == 0) {
-      blur_density(5.0, &map_state);
+    fill_with_density(&inset_state);
+    if (inset_state.n_finished_integrations() == 0) {
+      blur_density(5.0, &inset_state);
     } else{
-      blur_density(0.0, &map_state);
+      blur_density(0.0, &inset_state);
     }
-    flatten_density(&map_state);
-    project(&map_state);
-    map_state.inc_integration();
+    flatten_density(&inset_state);
+    project(&inset_state);
+    inset_state.inc_integration();
   }
 
   // Printing final cartogram
-  json cart_json = cgal_to_json(&map_state);
+  json cart_json = cgal_to_json(&inset_state);
   write_to_json(cart_json,
                 geo_file_name,
                 (map_name + "_cartogram_scaled.geojson"));
@@ -198,14 +199,14 @@ int main(const int argc, const char *argv[])
   // Printing EPS of output cartogram
   if (polygons_to_eps) {
     std::cout << "Writing " << map_name << "_output.eps" << std::endl;
-    write_map_to_eps((map_name + "_output.eps"), &map_state);
+    write_map_to_eps((map_name + "_output.eps"), &inset_state);
   }
 
   // Removing transformations
-  unscale_map(&map_state);
+  unscale_map(&inset_state);
 
   // Printing unscaled cartogram
-  cart_json = cgal_to_json(&map_state);
+  cart_json = cgal_to_json(&inset_state);
   write_to_json(cart_json,
                 geo_file_name,
                 (map_name + "_cartogram_unscaled.geojson"));
