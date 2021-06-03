@@ -35,7 +35,6 @@ void calculate_velocity(double t,
 // method.
 void flatten_density(MapState *map_state)
 {
-  std::cout << "In flatten_density()" << std::endl;
   const unsigned int lx = map_state->lx();
   const unsigned int ly = map_state->ly();
 
