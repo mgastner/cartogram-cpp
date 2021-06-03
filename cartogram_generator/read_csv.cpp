@@ -72,18 +72,28 @@ void read_csv(const boost::program_options::variables_map vm,
     }
 
     // Read inset
-    std::string inset = "C"; // Assuming inset is C
+    std::string inset_pos = "C"; // Assuming inset_pos is C
     if (inset_col != csv::CSV_NOT_FOUND) {
-      inset = row[inset_col].get();
+      inset_pos = row[inset_col].get();
     }
 
-    InsetState inset_state(inset);
-    inset_state.target_areas_insert(id, area);
-    if (color != "") {
-      inset_state.colors_insert(id, color);
+    bool found = false;
+    for (auto &inset_state : *cart_info->ref_to_inset_states()) {
+      if (inset_state.inset_pos() == inset_pos) {
+        inset_state.target_areas_insert(id, area);
+        inset_state.colors_insert(id, color);
+      }
     }
 
-    cart_info->push_back(inset_state);
+    if (!found) {
+      InsetState inset_state(inset_pos);
+      inset_state.target_areas_insert(id, area);
+      if (color != "") {
+        inset_state.colors_insert(id, color);
+      }
+
+      cart_info->push_back(inset_state);
+    }
 
   }
 

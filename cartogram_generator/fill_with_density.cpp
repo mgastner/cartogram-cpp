@@ -277,7 +277,7 @@ void fill_with_density(InsetState* inset_state,
           std::cerr << "Y-coordinate: " << k << std::endl;
           std::cerr << "Left X-coordinate: " << left_x << std::endl;
           std::cerr << "Right X-coordinate: " << right_x << std::endl;
-          _Exit(8026519);
+          // _Exit(8026519);
         }
 
         // Fill each cell between intersections

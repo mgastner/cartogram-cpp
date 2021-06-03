@@ -60,6 +60,7 @@ public:
   boost::multi_array<XYPoint, 2> *proj();
   double max_area_err();
   void set_inset_pos(std::string inset_pos);
+  const std::string inset_pos() const;
 };
 
 class CartogramInfo {

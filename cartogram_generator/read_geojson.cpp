@@ -205,6 +205,7 @@ void read_geojson(const std::string geometry_file_name, CartogramInfo *cart_info
         if (id.front() == '"' && id.back() == '"' && id.length() > 2) {
           id = id.substr(1, id.length() - 2);
         }
+        // This should not be commented
         // if (ids_in_geojson.contains(id)) {
         //   std::cerr << "ERROR: ID "
         //             << id

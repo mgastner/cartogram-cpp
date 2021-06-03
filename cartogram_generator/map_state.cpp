@@ -218,6 +218,11 @@ void InsetState::set_inset_pos(std::string inset_pos)
   inset_pos_ = inset_pos;
 }
 
+const std::string InsetState::inset_pos() const
+{
+  return inset_pos_;
+}
+
 CartogramInfo::CartogramInfo(std::string v, const bool w, const bool wd2eps) :
   visual_variable_file_(v),
   is_world_map_(w),
