@@ -184,7 +184,7 @@ int main(const int argc, const char *argv[])
 
       std::cout << "Integration number "
                 << inset_state.n_finished_integrations()
-                << std::endl << std::endl;
+                << std::endl;
 
 
       fill_with_density(&inset_state,
