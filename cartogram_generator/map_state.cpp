@@ -1,7 +1,7 @@
 #include "map_state.h"
 
 InsetState::InsetState(std::string inset_pos) :
-  inset_pos_(inset_pos),
+  inset_pos_(inset_pos)
 {
   n_finished_integrations_ = 0;
   fwd_plan_for_rho_ = NULL;
@@ -267,9 +267,14 @@ void CartogramInfo::set_map_name(std::string map_name)
   map_name_ = map_name;
 }
 
-const std::vector<InsetStates> CartogramInfo::inset_states() const
+const std::vector<InsetState> CartogramInfo::inset_states() const
 {
   return inset_states_;
+}
+
+std::vector<InsetState> *CartogramInfo::ref_to_inset_states()
+{
+  return &inset_states_;
 }
 
 void CartogramInfo::push_back(const InsetState is)

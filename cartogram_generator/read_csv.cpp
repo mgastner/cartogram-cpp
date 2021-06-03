@@ -78,9 +78,9 @@ void read_csv(const boost::program_options::variables_map vm,
     }
 
     InsetState inset_state(inset);
-    inset_state->target_areas_insert(id, area);
+    inset_state.target_areas_insert(id, area);
     if (color != "") {
-      inset_state->colors_insert(id, color);
+      inset_state.colors_insert(id, color);
     }
 
     cart_info->push_back(inset_state);

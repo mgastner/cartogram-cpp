@@ -1,9 +1,11 @@
 #include "constants.h"
 #include "map_state.h"
 
-void rescale_map(int long_grid_side_length, InsetState *inset_state)
+void rescale_map(int long_grid_side_length,
+                 InsetState *inset_state,
+                 bool is_world_map)
 {
-  double padding = (inset_state->is_world_map() ?  1.0 : padding_unless_world);
+  double padding = (is_world_map ?  1.0 : padding_unless_world);
 
   // Initialize bounding box of map with bounding box of 0-th
   // Polygon_with_holes in 0-th GeoDiv

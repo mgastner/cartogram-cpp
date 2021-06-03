@@ -32,7 +32,8 @@ bool line_y_intersects(XYPoint a,
 }
 
 
-void fill_with_density(InsetState* inset_state)
+void fill_with_density(InsetState* inset_state,
+                       bool trigger_write_density_to_eps)
 {
 
   std::map<std::string, double> gd_to_number;
@@ -317,7 +318,7 @@ void fill_with_density(InsetState* inset_state)
   }
 
 
-  if (inset_state->trigger_write_density_to_eps()) {
+  if (trigger_write_density_to_eps) {
     std::string file_name =
       std::string("unblurred_density_") +
       std::to_string(inset_state->n_finished_integrations()) +

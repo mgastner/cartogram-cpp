@@ -3,7 +3,9 @@
 #include "write_eps.h"
 #include <iostream>
 
-void blur_density(const double blur_width, InsetState *inset_state)
+void blur_density(const double blur_width,
+                  InsetState *inset_state,
+                  bool trigger_write_density_to_eps)
 {
   const unsigned int lx = inset_state->lx();
   const unsigned int ly = inset_state->ly();
@@ -18,7 +20,7 @@ void blur_density(const double blur_width, InsetState *inset_state)
     }
   }
   inset_state->execute_bwd_plan();
-  if (inset_state->trigger_write_density_to_eps()) {
+  if (trigger_write_density_to_eps) {
     std::string file_name =
       std::string("blurred_density_") +
       std::to_string(inset_state->n_finished_integrations()) +
