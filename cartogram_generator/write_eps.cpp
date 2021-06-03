@@ -119,6 +119,7 @@ void write_map_to_eps(std::string eps_name, InsetState *inset_state)
   write_eps_header_and_definitions(eps_file, eps_name, inset_state);
   write_polygons_to_eps(eps_file,
                         true,
+                        // false,
                         !(inset_state->colors_empty()),
                         inset_state);
   eps_file << "showpage\n";

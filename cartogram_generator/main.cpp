@@ -175,13 +175,17 @@ int main(const int argc, const char *argv[])
       write_map_to_eps((map_name + "_input.eps"), &inset_state);
     }
 
+    // Setting initial area errors
+    inset_state.set_area_errs();
+
     // Start map integration
     while (inset_state.n_finished_integrations() < max_integrations &&
            inset_state.max_area_err() > max_permitted_area_error) {
 
       std::cout << "Integration number "
                 << inset_state.n_finished_integrations()
-                <<std::endl;
+                << std::endl << std::endl;
+
 
       fill_with_density(&inset_state,
                         cart_info.trigger_write_density_to_eps());
@@ -197,6 +201,9 @@ int main(const int argc, const char *argv[])
       flatten_density(&inset_state);
       project(&inset_state);
       inset_state.inc_integration();
+
+      // Updating area errors
+      inset_state.set_area_errs();
     }
 
     // Printing final cartogram
