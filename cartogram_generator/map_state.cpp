@@ -182,7 +182,7 @@ boost::multi_array<XYPoint, 2> *InsetState::proj()
   return &proj_;
 }
 
-void InsetState::set_area_errs()
+double InsetState::max_area_err()
 {
 
   // Formula for relative area error:
@@ -196,31 +196,20 @@ void InsetState::set_area_errs()
       sum_cart_area += gd.area();
     }
   }
-
+  double mae = 0.0;
   for (auto gd : geo_divs_) {
     if (!target_area_is_missing(gd.id())) {
       double obj_area =
         target_areas_at(gd.id()) * sum_cart_area / sum_target_area;
-      double relative_area_error = std::abs( (gd.area() / obj_area) - 1);
-      area_errs[gd.id()] = relative_area_error;
+      double relative_area_error = gd.area() / obj_area - 1;
+      if (relative_area_error < 0) {
+        mae = std::max(mae, -relative_area_error);
+      } else {
+        mae = std::max(mae, relative_area_error);
+      }
     }
   }
-}
-
-double InsetState::area_errs_at(const std::string id) const
-{
-  return area_errs.at(id);
-}
-
-double InsetState::max_area_err() const
-{
-  double mae = 0.0;
-
-  for (auto const& [gd_id, area_err] : area_errs) {
-    mae = std::max(mae, area_err);
-  }
-
-  std::cout << "max. area err: " << mae << std::endl << std::endl;
+  std::cout << "max. area err: " << mae << std::endl;
   return mae;
 }
 

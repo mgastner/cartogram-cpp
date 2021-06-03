@@ -18,7 +18,6 @@ private:
   std::string inset_pos_;
   std::vector<GeoDiv> geo_divs_;
   std::map<std::string, double> target_areas;
-  std::map<std::string, double> area_errs;
   std::map<std::string, Color> colors;
   unsigned int lx_, ly_;  // Lattice dimensions
   unsigned int new_xmin_, new_ymin_; // To store map translation vector
@@ -59,9 +58,7 @@ public:
   unsigned int n_finished_integrations() const;
   void inc_integration();
   boost::multi_array<XYPoint, 2> *proj();
-  void set_area_errs();
-  double area_errs_at(const std::string) const;
-  double max_area_err() const;
+  double max_area_err();
   void set_inset_pos(std::string inset_pos);
   const std::string inset_pos() const;
 };
