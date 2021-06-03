@@ -309,14 +309,6 @@ void fill_with_density(MapState* map_state)
       }
     }
   }
-
-  for (GeoDiv gd : map_state->geo_divs()) {
-    std::cout << "ID: " << gd.id() << ", ";
-    std::cout << "effective target area: "
-              << gd_to_number.at(gd.id()) << '\n';
-  }
-
-
   if (map_state->trigger_write_density_to_eps()) {
     std::string file_name =
       std::string("unblurred_density_") +
