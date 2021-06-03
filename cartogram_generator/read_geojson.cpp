@@ -1,6 +1,7 @@
 #include "geo_div.h"
 #include "map_state.h"
 #include <nlohmann/json.hpp>
+#include "csv.hpp"
 #include <iostream>
 #include <fstream>
 
@@ -137,7 +138,7 @@ void print_properties_map(std::map<std::string, std::vector<std::string>> proper
       std::cout << i << ". " << key << ": { ";
       for (long unsigned int j = 0; j < value_vec.size(); j++) {
           std::cout << value_vec[j];
-        if (j != value_vec.size() - 1) { 
+        if (j != value_vec.size() - 1) {
           std::cout << ", ";
         } else {
           std::cout << " }";
@@ -182,37 +183,42 @@ void read_geojson(const std::string geometry_file_name, MapState *map_state, boo
       polygon_warning_has_been_issued = true;
     }
 
-    // Storing ID from properties
-    const nlohmann::json properties = feature["properties"];
-    if (!properties.contains(map_state->id_header())) {
-      std::cerr << "ERROR: In GeoJSON, there is no property "
-                << map_state->id_header()
-                << " in feature." << std::endl;
-      std::cerr << "Available properties are: "
-                << properties
-                << std::endl;
-      _Exit(16);
-    }
+    if (!make_csv) {
 
-    // Use dump() instead of get() so that we can handle string and numeric
-    // IDs in GeoJSON. Both types of IDs are converted to C++ strings.
-    std::string id = properties[map_state->id_header()].dump();
-    if (id.front() == '"' && id.back() == '"' && id.length() > 2) {
-      id = id.substr(1, id.length() - 2);
+      // Storing ID from properties
+      const nlohmann::json properties = feature["properties"];
+      if (!properties.contains(map_state->id_header()) &&
+          map_state->id_header() != "") { // Visual file not provided
+        std::cerr << "ERROR: In GeoJSON, there is no property "
+                  << map_state->id_header()
+                  << " in feature." << std::endl;
+        std::cerr << "Available properties are: "
+                  << properties
+                  << std::endl;
+        _Exit(16);
+      }
+
+      // Use dump() instead of get() so that we can handle string and numeric
+      // IDs in GeoJSON. Both types of IDs are converted to C++ strings.
+      std::string id = properties[map_state->id_header()].dump();
+      if (id.front() == '"' && id.back() == '"' && id.length() > 2) {
+        id = id.substr(1, id.length() - 2);
+      }
+      if (ids_in_geojson.contains(id)) {
+        std::cerr << "ERROR: ID "
+                  << id
+                  << " appears more than once in GeoJSON"
+                  << std::endl;
+        _Exit(17);
+      }
+      ids_in_geojson.insert(id);
+      const GeoDiv gd = json_to_cgal(id, geometry["coordinates"], is_polygon);
+      map_state->push_back(gd);
     }
-    if (ids_in_geojson.contains(id)) {
-      std::cerr << "ERROR: ID "
-                << id
-                << " appears more than once in GeoJSON"
-                << std::endl;
-      _Exit(17);
-    }
-    ids_in_geojson.insert(id);
-    const GeoDiv gd = json_to_cgal(id, geometry["coordinates"], is_polygon);
-    map_state->push_back(gd);
   }
 
   if (make_csv) {
+
     // Declare map for key-value pairs
     std::map<std::string, std::vector<std::string>> properties_map;
     for (auto feature : j["features"]) {
@@ -258,11 +264,48 @@ void read_geojson(const std::string geometry_file_name, MapState *map_state, boo
       }
     }
 
-    // Print chosen identifiers
+    // Printing chosen identifiers
     std::cout << "Chosen identifiers: " << std::endl;
     print_properties_map(viable_properties_map, chosen_number);
     std::cout << std::endl;
 
+    // Writing CSV
+    std::ofstream out_file_csv;
+    out_file_csv.open ("template_from_geojson.csv");
+    if (!out_file_csv) {
+      throw std::system_error(errno,
+                              std::system_category(),
+                              "failed to open template_from_geojson.csv");
+    }
+
+    // Each vector of strings will represent one row
+    std::vector<std::vector<std::string>>
+      csv_rows(chosen_identifiers.begin()->second.size() + 1);
+
+    // Converting map into a vector
+    int column = 0;
+    for (auto [column_name, ids] : chosen_identifiers) {
+      csv_rows[0].push_back(column_name);
+      if (column == 0) {
+        csv_rows[0].push_back("Cartogram Data (eg. Population)");
+        csv_rows[0].push_back("Color (see GitHub page for format)");
+      }
+      for (size_t k = 0; k < ids.size(); k++) {
+        csv_rows[k + 1].push_back(ids[k]);
+        if (column == 0) {
+          csv_rows[k + 1].push_back("");
+          csv_rows[k + 1].push_back("");
+        }
+      }
+      column++;
+    }
+
+    auto writer = csv::make_csv_writer(out_file_csv);
+    for (auto row : csv_rows) {
+      writer << row;
+    }
+
+    out_file_csv.close();
     _Exit(18);
   }
 
