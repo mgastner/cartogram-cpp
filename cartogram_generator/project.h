@@ -1,7 +1,8 @@
 #ifndef PROJECT_H_
 #define PROJECT_H_
 
-#include "map_state.h"
+#include "cartogram_info.h"
+#include "inset_state.h"
 
 void project(InsetState*);
 

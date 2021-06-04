@@ -5,7 +5,8 @@
 #include <nlohmann/json.hpp>
 using json = nlohmann::json;
 
-#include "map_state.h"
+#include "cartogram_info.h"
+#include "inset_state.h"
 
 json cgal_to_json(InsetState*);
 

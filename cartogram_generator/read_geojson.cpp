@@ -1,5 +1,6 @@
 #include "geo_div.h"
-#include "map_state.h"
+#include "cartogram_info.h"
+#include "inset_state.h"
 #include <nlohmann/json.hpp>
 #include "csv.hpp"
 #include <iostream>

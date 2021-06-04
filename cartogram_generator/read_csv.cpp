@@ -1,4 +1,5 @@
-#include "map_state.h"
+#include "cartogram_info.h"
+#include "inset_state.h"
 #include "csv.hpp"
 #include <boost/program_options.hpp>
 #include <iostream>

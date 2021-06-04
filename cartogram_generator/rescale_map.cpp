@@ -1,5 +1,6 @@
 #include "constants.h"
-#include "map_state.h"
+#include "cartogram_info.h"
+#include "inset_state.h"
 
 void rescale_map(int long_grid_side_length,
                  InsetState *inset_state,

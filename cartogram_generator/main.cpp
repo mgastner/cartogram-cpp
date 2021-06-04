@@ -1,7 +1,8 @@
 // TO DO: positional matching of argument flags
 
 #include "constants.h"
-#include "map_state.h"
+#include "cartogram_info.h"
+#include "inset_state.h"
 #include "blur_density.h"
 #include "fill_with_density.h"
 #include "flatten_density.h"
