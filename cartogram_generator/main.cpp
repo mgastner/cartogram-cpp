@@ -14,6 +14,7 @@
 #include "write_to_json.h"
 #include <boost/program_options.hpp>
 #include <iostream>
+#include "albers_projection.h"
 
 // Functions that are called if the corresponding command-line options are
 // present
@@ -153,7 +154,9 @@ int main(const int argc, const char *argv[])
 
     // Error checking Geometry
     try {
-      holes_inside_polygons(&inset_state);
+      albers_projection(&inset_state);
+      return EXIT_SUCCESS;
+      // holes_inside_polygons(&inset_state);
     } catch (const std::system_error& e) {
       std::cerr << "ERROR: "
                 << e.what()
