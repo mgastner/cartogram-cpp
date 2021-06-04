@@ -130,7 +130,9 @@ GeoDiv json_to_cgal(const std::string id,
   return gd;
 }
 
-void print_properties_map(std::map<std::string, std::vector<std::string>> properties_map, unsigned long chosen_number) {
+void print_properties_map(std::map<std::string, std::vector<std::string>>
+                          properties_map, unsigned long chosen_number)
+{
   unsigned long i = 0;
   for (auto [key, value_vec] : properties_map) {
     i++;
@@ -149,7 +151,8 @@ void print_properties_map(std::map<std::string, std::vector<std::string>> proper
   }
 }
 
-void read_geojson(const std::string geometry_file_name, MapState *map_state, bool make_csv)
+void read_geojson(
+  const std::string geometry_file_name, MapState *map_state, bool make_csv)
 {
   bool is_polygon;
   bool polygon_warning_has_been_issued = false;
@@ -182,7 +185,6 @@ void read_geojson(const std::string geometry_file_name, MapState *map_state, boo
                 << "for best results use MultiPolygon" << "\n";
       polygon_warning_has_been_issued = true;
     }
-
     if (!make_csv) {
 
       // Storing ID from properties
@@ -216,9 +218,7 @@ void read_geojson(const std::string geometry_file_name, MapState *map_state, boo
       map_state->push_back(gd);
     }
   }
-
   if (make_csv) {
-
     // Declare map for key-value pairs
     std::map<std::string, std::vector<std::string>> properties_map;
     for (auto feature : j["features"]) {
@@ -226,7 +226,9 @@ void read_geojson(const std::string geometry_file_name, MapState *map_state, boo
         auto key = property_item.key();
         auto value = property_item.value();
         auto value_vec = properties_map[key];
-        bool value_not_inside = std::find(value_vec.begin(), value_vec.end(), value.dump()) == value_vec.end();
+        bool value_not_inside = 
+          std::find(value_vec.begin(), value_vec.end(), value.dump())
+          == value_vec.end();
 
         if (value != "" && !value.is_null() && value_not_inside) {
           properties_map[key].push_back(value.dump());
@@ -234,8 +236,9 @@ void read_geojson(const std::string geometry_file_name, MapState *map_state, boo
       }
     }
 
-    // Discard unwanted key-value pairs
-    std::map<std::string, std::vector<std::string>> viable_properties_map = properties_map;
+    // Discard keys with repeating or missing values
+    std::map<std::string, std::vector<std::string>> 
+        viable_properties_map = properties_map;
     for (auto [key, value_vec] : properties_map) {
       if (value_vec.size() < j["features"].size()) {
         viable_properties_map.erase(key);
@@ -244,9 +247,12 @@ void read_geojson(const std::string geometry_file_name, MapState *map_state, boo
     std::cout << std::endl;
 
     // Present user with all possible identifiers and a few examples
-    std::cout << "These are the available unique identifiers and their values: " << std::endl;
-    print_properties_map(viable_properties_map, viable_properties_map.size() + 1);
-    std::cout << viable_properties_map.size() + 1 << ". All" << std::endl << std::endl;
+    std::cout << "These are the unique identifiers and their values: ";
+    std::cout << std::endl;
+    print_properties_map(
+      viable_properties_map, viable_properties_map.size() + 1);
+    std::cout << viable_properties_map.size() + 1 << ". All";
+    std::cout << std::endl << std::endl;
 
     // Have the user choose which key(s) they want to use as the identifier(s)
     std::cout << "Please enter your number here: ";
@@ -259,7 +265,8 @@ void read_geojson(const std::string geometry_file_name, MapState *map_state, boo
     size_t i = 0;
     for (auto [key, value_vec] : viable_properties_map) {
       i++;
-      if (chosen_number == i || chosen_number == viable_properties_map.size() + 1) {
+      if (chosen_number == i 
+          || chosen_number == viable_properties_map.size() + 1) {
         chosen_identifiers[key] = value_vec;
       }
     }
@@ -299,12 +306,10 @@ void read_geojson(const std::string geometry_file_name, MapState *map_state, boo
       }
       column++;
     }
-
     auto writer = csv::make_csv_writer(out_file_csv);
     for (auto row : csv_rows) {
       writer << row;
     }
-
     out_file_csv.close();
     _Exit(18);
   }
