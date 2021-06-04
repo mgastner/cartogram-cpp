@@ -17,7 +17,6 @@
 #include "map_state.h"
 #include "geo_div.h"
 #include "polyline_advanced.h"
-#include "densify.h"
 
 /**************** 1. Repeat the first point as the last point. ***************/
 
