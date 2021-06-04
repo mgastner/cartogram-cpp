@@ -63,7 +63,6 @@ add_executable(
   ../cartogram_generator/colors.cpp
   ../cartogram_generator/find_graticule_intersections.cpp
   ../cartogram_generator/check_topology.cpp
-  # ../cartogram_generator/helper_functions.cpp
   ../cartogram_generator/read_geojson.cpp
   ../cartogram_generator/fill_with_density.cpp
   ../cartogram_generator/blur_density.cpp
@@ -71,7 +70,6 @@ add_executable(
   ../cartogram_generator/ft_real_2d.cpp
   ../cartogram_generator/polyline_advanced.cpp
   ../cartogram_generator/simplify_map.cpp
-  ../cartogram_generator/densify.cpp
   ../cartogram_generator/interpolate_bilinearly.cpp
   ../cartogram_generator/project.cpp
   ../cartogram_generator/write_to_json.cpp)
