@@ -154,7 +154,7 @@ int main(const int argc, const char *argv[])
 
     // Error checking Geometry
     try {
-      albers_projection(&inset_state);
+      albers_projection(geo_file_name, &inset_state);
       // holes_inside_polygons(&inset_state);
     } catch (const std::system_error& e) {
       std::cerr << "ERROR: "
