@@ -240,7 +240,7 @@ void read_geojson(
         bool value_not_inside =
           std::find(value_vec.begin(), value_vec.end(), value)
           == value_vec.end();
-        if (!value.empty() && value_not_inside) {
+        if (!value.empty() && value != "null" && value_not_inside) {
           properties_map[key].push_back(value);
         }
       }
