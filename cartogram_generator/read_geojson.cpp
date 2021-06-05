@@ -233,14 +233,14 @@ void read_geojson(
 
         // Handling strings, and numbers
         std::string value = property_item.value().dump();
-        if (value.front() == '"' && value.back() == '"') {
+        if (value != "null") {
           value = value.substr(1, value.length() - 2);
         }
         auto value_vec = properties_map[key];
         bool value_not_inside =
           std::find(value_vec.begin(), value_vec.end(), value)
           == value_vec.end();
-        if (!value.empty() && value != "null" && value_not_inside) {
+        if (value != "null" && !value.empty() && value_not_inside) {
           properties_map[key].push_back(value);
         }
       }
