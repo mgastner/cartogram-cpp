@@ -6,8 +6,13 @@
 #include "cgal_typedef.h"
 #include "map_state.h"
 
-Point albers_formula(Point coords) {
-  Point coords_converted = coords;
+Point albers_formula(std::vector<double> bbox, Point coords) {
+  int x_converted, y_converted;
+
+  // TODO
+  // Convert albers_formula Python code to C++
+
+  Point coords_converted(x_converted, y_converted);
 
   return coords_converted;
 }
@@ -19,9 +24,9 @@ void albers_projection(std::string geo_file_name, InsetState *inset_state) {
   in_file >> j;
   std::vector<double> bbox = j["bbox"].get<std::vector<double>>();
 
-  std::vector<GeoDiv> inset_state_converted = inset_state->geo_divs();
-
-  for (GeoDiv gd : inset_state_converted) {
+  // Create new vector of GeoDivs
+  std::vector<GeoDiv> gd_converted_vector = {};
+  for (GeoDiv gd : inset_state->geo_divs()) {
     GeoDiv gd_converted(gd.id());
     for (Polygon_with_holes pgnwh : gd.polygons_with_holes()) {
       // Create new outer polygon
@@ -30,7 +35,7 @@ void albers_projection(std::string geo_file_name, InsetState *inset_state) {
       // Iterate through outer polygon and return new coords
       Polygon outer_pgn = pgnwh.outer_boundary();
       for (Point coords_pgn : outer_pgn) {
-        Point coords_pgn_converted = albers_formula(coords_pgn);
+        Point coords_pgn_converted = albers_formula(bbox, coords_pgn);
         outer_pgn_converted.push_back(coords_pgn_converted);
       }
 
@@ -45,17 +50,23 @@ void albers_projection(std::string geo_file_name, InsetState *inset_state) {
 
         // Iterate through each hole and return new coords for each hole
         for (Point coords_hole : hole) {
-          Point coords_hole_converted = albers_formula(coords_hole);
+          Point coords_hole_converted = albers_formula(bbox, coords_hole);
           hole_converted.push_back(coords_hole_converted);
         }
         holes_v_converted.push_back(hole_converted);
       }
 
+      // Create new Polygon_with_holes
       Polygon_with_holes pgnwh_converted(outer_pgn_converted,
                                          holes_v_converted.begin(),
                                          holes_v_converted.end());
+
+      // Add new Polygon_with_holes to new GeoDiv
+      gd_converted.push_back(pgnwh_converted);
     }
+    // Add new GeoDiv to new vector of GeoDivs
+    gd_converted_vector.push_back(gd_converted);
   }
 
-  inset_state->set_geo_divs(inset_state_converted);
+  inset_state->set_geo_divs(gd_converted_vector);
 }

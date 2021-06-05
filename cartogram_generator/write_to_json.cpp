@@ -1,6 +1,5 @@
 #include <iostream>
 #include <fstream>
-
 #include "cgal_typedef.h"
 #include "write_to_json.h"
 #include "map_state.h"
@@ -29,6 +28,9 @@ json cgal_to_json(InsetState *inset_state){
         er_container.push_back(arr);
       }
 
+      /* Repeat first point as last point as per GeoJSON standards. */
+      er_container.push_back({ext_ring[0][0], ext_ring[0][1]});
+
       polygon_container.push_back(er_container);
 
       // Get PWH holes
@@ -43,6 +45,9 @@ json cgal_to_json(InsetState *inset_state){
           arr[1] = hole[i][1];
           hole_container.push_back(arr);
         }
+
+        /* Repeat first point as last point as per GeoJSON standards. */
+        hole_container.push_back({hole[0][0], hole[0][1]});
 
         polygon_container.push_back(hole_container);
       }
@@ -65,7 +70,6 @@ void write_to_json(json container,
   std::ifstream i(old_geo_fn);
   json old_j;
   i >> old_j;
-
   json newJ;
   // For each multipolygon in the container 
   for (int i = 0; i < (int) container.size(); i++){
@@ -82,24 +86,9 @@ void write_to_json(json container,
       }
     }
   }
-  newJ.push_back({"aaatype", old_j["type"]});
+  newJ.push_back({"type", old_j["type"]});
   newJ.push_back({"bbox", old_j["bbox"]});
   
-  std::ofstream o("temp.json");
+  std::ofstream o(new_geo_fn);
   o << newJ << std::endl;
-
-  // Replaces "aaatype" with "type" so that "type" appears at the top of the GeoJSON file
-  std::ifstream in_new("temp.json");
-  std::ofstream out_new(new_geo_fn);
-  std::string line;
-  while (std::getline(in_new, line)) {
-    while (true) {
-      size_t pos = line.find("aaatype");
-      if (pos != std::string::npos) 
-        line.replace(pos, 7, "type");
-      else
-        break;
-    }
-    out_new << line << std::endl;
-  }
 }
