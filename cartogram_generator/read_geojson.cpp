@@ -140,10 +140,15 @@ void print_properties_map(std::map<std::string, std::vector<std::string>>
       std::cout << i << ". " << key << ": { ";
       for (long unsigned int j = 0; j < value_vec.size(); j++) {
           std::cout << value_vec[j];
-        if (j != value_vec.size() - 1) {
+        if (j < value_vec.size() - 1 && j < 5) {
           std::cout << ", ";
         } else {
-          std::cout << " }";
+          if (j < value_vec.size() - 1) {
+            std::cout << " ...";
+          } else {
+            std::cout << " }";
+          }
+          break;
         }
       }
       std::cout << std::endl;
@@ -219,25 +224,30 @@ void read_geojson(
     }
   }
   if (make_csv) {
+
     // Declare map for key-value pairs
     std::map<std::string, std::vector<std::string>> properties_map;
     for (auto feature : j["features"]) {
       for (auto property_item : feature["properties"].items()) {
         auto key = property_item.key();
-        auto value = property_item.value();
+
+        // Handling strings, and numbers
+        std::string value = property_item.value().dump();
+        if (value.front() == '"' && value.back() == '"' && value.length() > 1) {
+          value = value.substr(1, value.length() - 2);
+        }
         auto value_vec = properties_map[key];
-        bool value_not_inside = 
+        bool value_not_inside =
           std::find(value_vec.begin(), value_vec.end(), value)
           == value_vec.end();
-
-        if (value != "" && !value.is_null() && value_not_inside) {
+        if (!value.empty() && value_not_inside) {
           properties_map[key].push_back(value);
         }
       }
     }
 
     // Discard keys with repeating or missing values
-    std::map<std::string, std::vector<std::string>> 
+    std::map<std::string, std::vector<std::string>>
         viable_properties_map = properties_map;
     for (auto [key, value_vec] : properties_map) {
       if (value_vec.size() < j["features"].size()) {
@@ -257,7 +267,26 @@ void read_geojson(
     // Have the user choose which key(s) they want to use as the identifier(s)
     std::cout << "Please enter your number here: ";
     unsigned long chosen_number;
-    std::cin >> chosen_number;
+    while (std::cin.fail()
+           || chosen_number < 1
+           || chosen_number > viable_properties_map.size() + 1) {
+
+      // Prompting User for Input
+      std::cout << "Please enter your number here: ";
+      std::cin >> chosen_number;
+      if (std::cin.fail()) {
+        std::cout << "Invalid input! Try again." << std::endl;
+
+        // Clearing std::cin buffer
+        std::cin.clear();
+        std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
+      } else if (chosen_number < 1
+                 || chosen_number > viable_properties_map.size() + 1) {
+        std::cout << "Please enter a number between 1 and "
+                  << viable_properties_map.size() + 1
+                  << std::endl;
+      }
+    }
     std::cout << std::endl;
 
     // Declare chosen identifier(s)
@@ -265,7 +294,7 @@ void read_geojson(
     size_t i = 0;
     for (auto [key, value_vec] : viable_properties_map) {
       i++;
-      if (chosen_number == i 
+      if (chosen_number == i
           || chosen_number == viable_properties_map.size() + 1) {
         chosen_identifiers[key] = value_vec;
       }
