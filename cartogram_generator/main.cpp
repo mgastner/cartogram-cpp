@@ -159,6 +159,7 @@ int main(const int argc, const char *argv[])
     // Determining the name of the inset
     std::string inset_name = map_name;
 
+    // Printing Inset Position if multiple insets present
     if (cart_info.n_insets() > 1) {
       inset_name = inset_name + "_" + inset_state.pos();
       std::cout << std::endl << std::endl
@@ -166,7 +167,6 @@ int main(const int argc, const char *argv[])
                 << inset_state.pos()
                 << std::endl;
     }
-
     inset_state.set_inset_name(inset_name);
 
     // Error checking Geometry
