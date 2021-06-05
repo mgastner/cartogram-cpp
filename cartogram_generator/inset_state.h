@@ -15,7 +15,8 @@ struct XYPoint{
 
 class InsetState {
 private:
-  std::string inset_pos_;
+  std::string pos_; // Position of inset ("C", "TR" etc.)
+  std::string inset_name_; // Map name, appended with Position if n_insets > 2
   std::vector<GeoDiv> geo_divs_;
   std::map<std::string, double> target_areas;
   std::map<std::string, double> area_errs;
@@ -62,8 +63,10 @@ public:
   void set_area_errs();
   double area_errs_at(const std::string) const;
   double max_area_err() const;
-  void set_inset_pos(std::string inset_pos);
-  const std::string inset_pos() const;
+  void set_pos(std::string);
+  const std::string pos() const;
+  void set_inset_name(std::string);
+  const std::string inset_name() const;
 };
 
 #endif

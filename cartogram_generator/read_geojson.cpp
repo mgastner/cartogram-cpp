@@ -175,6 +175,8 @@ void read_geojson(const std::string geometry_file_name, CartogramInfo *cart_info
   }
   check_geojson_validity(j);
   std::set<std::string> ids_in_geojson;
+
+  // Iterate through each inset
   for (auto &inset_state : *cart_info->ref_to_inset_states()) {
     for (auto feature : j["features"]) {
       const nlohmann::json geometry = feature["geometry"];
@@ -202,21 +204,25 @@ void read_geojson(const std::string geometry_file_name, CartogramInfo *cart_info
 
         // Use dump() instead of get() so that we can handle string and numeric
         // IDs in GeoJSON. Both types of IDs are converted to C++ strings.
+        // For instance, Brussels
         std::string id = properties[cart_info->id_header()].dump();
+
         if (id.front() == '"' && id.back() == '"' && id.length() > 2) {
           id = id.substr(1, id.length() - 2);
         }
-        // This should not be commented
-        // if (ids_in_geojson.contains(id)) {
-        //   std::cerr << "ERROR: ID "
-        //             << id
-        //             << " appears more than once in GeoJSON"
-        //             << std::endl;
-        //   _Exit(17);
-        // }
-        ids_in_geojson.insert(id);
-        const GeoDiv gd = json_to_cgal(id, geometry["coordinates"], is_polygon);
-        inset_state.push_back(gd);
+
+        if (inset_state.pos() == cart_info->inset_at_gd(id)) {
+          if (ids_in_geojson.contains(id)) {
+            std::cerr << "ERROR: ID "
+                      << id
+                      << " appears more than once in GeoJSON"
+                      << std::endl;
+            _Exit(17);
+          }
+          ids_in_geojson.insert(id);
+          const GeoDiv gd = json_to_cgal(id, geometry["coordinates"], is_polygon);
+          inset_state.push_back(gd);
+        }
       }
     }
   }

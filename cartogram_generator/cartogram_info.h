@@ -1,13 +1,13 @@
 #ifndef CARTOGRAM_INFO_H_
 #define CARTOGRAM_INFO_H_
 
-#include "geo_div.h"
 #include "inset_state.h"
 #include <vector>
 
 class CartogramInfo {
 private:
   std::vector<InsetState> inset_states_;
+  std::map<std::string, std::string> gd_to_inset_;
   std::string id_header_;
   std::string visual_variable_file_;
   std::set<std::string> ids_in_visual_variables_file_;
@@ -24,8 +24,11 @@ public:
   bool is_world_map() const;
   bool trigger_write_density_to_eps() const;
   void set_map_name(std::string map_name);
+  int n_insets() const;
   const std::vector<InsetState> inset_states() const;
   std::vector<InsetState> *ref_to_inset_states();
   void push_back(const InsetState);
+  void gd_to_inset_insert(std::string, std::string);
+  const std::string inset_at_gd(const std::string);
 };
 #endif

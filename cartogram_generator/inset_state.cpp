@@ -1,7 +1,7 @@
 #include "inset_state.h"
 
-InsetState::InsetState(std::string inset_pos) :
-  inset_pos_(inset_pos)
+InsetState::InsetState(std::string pos) :
+  pos_(pos)
 {
   n_finished_integrations_ = 0;
   fwd_plan_for_rho_ = NULL;
@@ -224,12 +224,22 @@ double InsetState::max_area_err() const
   return mae;
 }
 
-void InsetState::set_inset_pos(std::string inset_pos)
+void InsetState::set_pos(std::string pos)
 {
-  inset_pos_ = inset_pos;
+  pos_ = pos;
 }
 
-const std::string InsetState::inset_pos() const
+const std::string InsetState::pos() const
 {
-  return inset_pos_;
+  return pos_;
+}
+
+void InsetState::set_inset_name(std::string inset_name)
+{
+  inset_name_ = inset_name;
+}
+
+const std::string InsetState::inset_name() const
+{
+  return inset_name_;
 }

@@ -49,6 +49,11 @@ void CartogramInfo::set_map_name(std::string map_name)
   map_name_ = map_name;
 }
 
+int CartogramInfo::n_insets() const
+{
+  return inset_states_.size();
+}
+
 const std::vector<InsetState> CartogramInfo::inset_states() const
 {
   return inset_states_;
@@ -63,4 +68,15 @@ void CartogramInfo::push_back(const InsetState is)
 {
   inset_states_.push_back(is);
   return;
+}
+
+void CartogramInfo::gd_to_inset_insert(const std::string id, std::string inset)
+{
+  gd_to_inset_.insert(std::pair<std::string, std::string>(id, inset));
+  return;
+}
+
+const std::string CartogramInfo::inset_at_gd(const std::string id)
+{
+  return gd_to_inset_.at(id);
 }

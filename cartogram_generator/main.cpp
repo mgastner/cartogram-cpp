@@ -152,6 +152,19 @@ int main(const int argc, const char *argv[])
 
   for (auto &inset_state : *cart_info.ref_to_inset_states()) {
 
+    // Determining the name of the inset
+    std::string inset_name = map_name;
+
+    if (cart_info.n_insets() > 1) {
+      inset_name = inset_name + "_" + inset_state.pos();
+      std::cout << std::endl << std::endl
+                << "Working on Inset with position: "
+                << inset_state.pos()
+                << std::endl;
+    }
+
+    inset_state.set_inset_name(inset_name);
+
     // Error checking Geometry
     try {
       holes_inside_polygons(&inset_state);
@@ -172,8 +185,8 @@ int main(const int argc, const char *argv[])
 
     // Writing EPS, if requested by command line option
     if (polygons_to_eps) {
-      std::cout << "Writing " << map_name << "_input.eps" << std::endl;
-      write_map_to_eps((map_name + "_input.eps"), &inset_state);
+      std::cout << "Writing " << inset_name << "_input.eps" << std::endl;
+      write_map_to_eps((inset_name + "_input.eps"), &inset_state);
     }
 
     // Setting initial area errors
@@ -211,12 +224,12 @@ int main(const int argc, const char *argv[])
     json cart_json = cgal_to_json(&inset_state);
     write_to_json(cart_json,
                   geo_file_name,
-                  (map_name + "_cartogram_scaled.geojson"));
+                  (inset_name + "_cartogram_scaled.geojson"));
 
     // Printing EPS of output cartogram
     if (polygons_to_eps) {
-      std::cout << "Writing " << map_name << "_output.eps" << std::endl;
-      write_map_to_eps((map_name + "_output.eps"), &inset_state);
+      std::cout << "Writing " << inset_name << "_output.eps" << std::endl;
+      write_map_to_eps((inset_name + "_output.eps"), &inset_state);
     }
 
     // Removing transformations
@@ -226,7 +239,7 @@ int main(const int argc, const char *argv[])
     cart_json = cgal_to_json(&inset_state);
     write_to_json(cart_json,
                   geo_file_name,
-                  (map_name + "_cartogram_unscaled.geojson"));
+                  (inset_name + "_cartogram_unscaled.geojson"));
 
   }
 

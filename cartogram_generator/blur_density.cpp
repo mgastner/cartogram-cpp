@@ -23,7 +23,8 @@ void blur_density(const double blur_width,
   inset_state->execute_bwd_plan();
   if (trigger_write_density_to_eps) {
     std::string file_name =
-      std::string("blurred_density_") +
+      inset_state->inset_name() +
+      "_blurred_density_" +
       std::to_string(inset_state->n_finished_integrations()) +
       ".eps";
     std::cout << "Writing " << file_name << std::endl;

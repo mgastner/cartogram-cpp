@@ -19,7 +19,7 @@ void read_csv(const boost::program_options::variables_map vm,
   // Opening CSV Reader
   csv::CSVReader reader(csv_name);
 
-  // Finding index of column with name "Inset"
+  // Finding index of column with header name "Inset"
   int inset_col = reader.index_of("Inset");
 
   // Reading CSV
@@ -78,11 +78,17 @@ void read_csv(const boost::program_options::variables_map vm,
       inset_pos = row[inset_col].get();
     }
 
+    // Associating GeoDiv ID with InsetPos
+    cart_info->gd_to_inset_insert(id, inset_pos);
+
     bool found = false;
     for (auto &inset_state : *cart_info->ref_to_inset_states()) {
-      if (inset_state.inset_pos() == inset_pos) {
+      if (inset_state.pos() == inset_pos) {
         inset_state.target_areas_insert(id, area);
-        inset_state.colors_insert(id, color);
+        if (color != "") {
+          inset_state.colors_insert(id, color);
+        }
+        found = true;
       }
     }
 
@@ -97,6 +103,9 @@ void read_csv(const boost::program_options::variables_map vm,
     }
 
   }
+
+  // Map
+  // IDS in visual variable file -> inset position
 
   // Store header name of identifiers to read GeoJSON
   if (vm.count("id")) {

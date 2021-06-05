@@ -308,7 +308,8 @@ void fill_with_density(InsetState* inset_state,
 
   if (trigger_write_density_to_eps) {
     std::string file_name =
-      std::string("unblurred_density_") +
+      inset_state->inset_name() +
+      "_unblurred_density_" +
       std::to_string(inset_state->n_finished_integrations()) +
       ".eps";
     std::cout << "Writing " << file_name << std::endl;
