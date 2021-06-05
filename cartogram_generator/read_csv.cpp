@@ -19,21 +19,54 @@ void read_csv(const boost::program_options::variables_map vm,
   // Opening CSV Reader
   csv::CSVReader reader(csv_name);
 
+  // Finding index of column with IDs
+  std::string id_header;
+  int id_col = 0;
+  if (vm.count("id")) {
+    id_header = vm["id"].as<std::string>();
+    id_col = reader.index_of(id_header);
+  } else {
+    id_header = reader.get_col_names()[0];
+  }
+
+  // Store header name of identifiers to read GeoJSON
+  cart_info->set_id_header(id_header);
+
+  // Finding index of column with Target Areas
+  int area_col = 1;
+  if (vm.count("area")) {
+    area_col = reader.index_of(vm["area"].as<std::string>());
+  }
+
   // Finding index of column with header name "Inset"
-  int inset_col = reader.index_of("Inset");
+  std::string inset_header = "Inset";
+  if (vm.count("inset")) {
+    inset_header = vm["inset"].as<std::string>();
+  }
+  int inset_col = reader.index_of(inset_header);
+
+  // Finding index of column with header name "Color/Colour"
+  std::string color_header = "Color";
+  if (vm.count("color")) {
+    color_header = vm["color"].as<std::string>();
+  }
+  int color_col = reader.index_of(color_header);
+  if (color_col == csv::CSV_NOT_FOUND) {
+    color_col = reader.index_of("Colour");
+  }
 
   // Reading CSV
   for (auto &row : reader) {
     if (row.size() < 2) {
       std::cerr << "ERROR: CSV with >= 2 columns (IDs, target areas) required"
+                << std::endl
+                << "Some rows in your CSV may not have values for all columns"
                 << std::endl;
       _Exit(17);
     }
 
     // Read ID of geographic division
-    csv::CSVField id_field =
-      vm.count("id") ? row[vm["id"].as<std::string>()] : row[0];
-    std::string id = id_field.get();
+    std::string id = row[id_col].get();
     if (cart_info->ids_in_visual_variables_file().contains(id)) {
       std::cerr << "ERROR: ID "
                 << id
@@ -44,11 +77,10 @@ void read_csv(const boost::program_options::variables_map vm,
     cart_info->insert_id_in_visual_variables_file(id);
 
     // Get target area
-    csv::CSVField area_field =
-      vm.count("area") ? row[vm["area"].as<std::string>()] : row[1];
+    csv::CSVField area_field = row[area_col];
     double area;
     if (!area_field.is_num()) {
-      std::cout << "area_field" << area_field.get() << std::endl;
+      std::cout << "area_field: " << area_field.get() << std::endl;
       if (area_field.get().compare("NA") == 0) {
         area = -1.0;  // Use negative area as sign of a missing value
       } else {
@@ -65,11 +97,8 @@ void read_csv(const boost::program_options::variables_map vm,
 
     // Read color
     std::string color = "";
-    if (vm.count("color")) {
-      color = row[vm["color"].as<std::string>()].get();
-
-    } else if (row.size() > 2) {
-      color = row[2].get();
+    if (color_col != csv::CSV_NOT_FOUND) {
+      color = row[color_col].get();
     }
 
     // Read inset
@@ -78,9 +107,10 @@ void read_csv(const boost::program_options::variables_map vm,
       inset_pos = row[inset_col].get();
     }
 
-    // Associating GeoDiv ID with InsetPos
+    // Associating GeoDiv ID with Inset Positon
     cart_info->gd_to_inset_insert(id, inset_pos);
 
+    // Checking whether inset_state for inset_pos already exists
     bool found = false;
     for (auto &inset_state : *cart_info->ref_to_inset_states()) {
       if (inset_state.pos() == inset_pos) {
@@ -91,27 +121,14 @@ void read_csv(const boost::program_options::variables_map vm,
         found = true;
       }
     }
-
     if (!found) {
       InsetState inset_state(inset_pos);
       inset_state.target_areas_insert(id, area);
       if (color != "") {
         inset_state.colors_insert(id, color);
       }
-
       cart_info->push_back(inset_state);
     }
-
-  }
-
-  // Map
-  // IDS in visual variable file -> inset position
-
-  // Store header name of identifiers to read GeoJSON
-  if (vm.count("id")) {
-    cart_info->set_id_header(vm["id"].as<std::string>());
-  } else {
-    cart_info->set_id_header(reader.get_col_names()[0]);
   }
   return;
 }

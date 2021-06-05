@@ -70,7 +70,7 @@ int main(const int argc, const char *argv[])
       value<bool>(&make_csv)
       ->default_value(false)
       ->implicit_value(true),
-      "Boolean: make EPS image of input and output?"
+      "Boolean: create a CSV file from the GeoJSON file passed to the -g flag?"
       )(
       "id,i",
       value<std::string>(),
@@ -82,7 +82,11 @@ int main(const int argc, const char *argv[])
       )(
       "color,c",
       value<std::string>(),
-      "Column name for colors (default: 3rd CSV column if it exists)"
+      "Column name for colors (assumed column name: \"Color\" or \"Colour\")"
+      )(
+      "inset,i",
+      value<std::string>(),
+      "Column name for insets (assumed column name: \"Inset\")"
       )(
       "long_grid_side_length,l",
       value<int>(&long_grid_side_length),

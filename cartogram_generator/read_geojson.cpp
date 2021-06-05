@@ -186,7 +186,6 @@ void read_geojson(const std::string geometry_file_name, CartogramInfo *cart_info
                   << "for best results use MultiPolygon" << "\n";
         polygon_warning_has_been_issued = true;
       }
-
       if (!make_csv) {
 
         // Storing ID from properties
@@ -210,7 +209,6 @@ void read_geojson(const std::string geometry_file_name, CartogramInfo *cart_info
         if (id.front() == '"' && id.back() == '"' && id.length() > 2) {
           id = id.substr(1, id.length() - 2);
         }
-
         if (inset_state.pos() == cart_info->inset_at_gd(id)) {
           if (ids_in_geojson.contains(id)) {
             std::cerr << "ERROR: ID "
@@ -226,7 +224,6 @@ void read_geojson(const std::string geometry_file_name, CartogramInfo *cart_info
       }
     }
   }
-
   if (make_csv) {
 
     // Declare map for key-value pairs
@@ -237,7 +234,6 @@ void read_geojson(const std::string geometry_file_name, CartogramInfo *cart_info
         auto value = property_item.value();
         auto value_vec = properties_map[key];
         bool value_not_inside = std::find(value_vec.begin(), value_vec.end(), value) == value_vec.end();
-
         if (value != "" && !value.is_null() && value_not_inside) {
           properties_map[key].push_back(value);
         }
@@ -298,23 +294,28 @@ void read_geojson(const std::string geometry_file_name, CartogramInfo *cart_info
       csv_rows[0].push_back(column_name);
       if (column == 0) {
         csv_rows[0].push_back("Cartogram Data (eg. Population)");
-        csv_rows[0].push_back("Color (see GitHub page for format)");
+        csv_rows[0].push_back("Color");
+        csv_rows[0].push_back("Inset");
+        csv_rows[0].push_back("Abbreviation");
       }
       for (size_t k = 0; k < ids.size(); k++) {
         csv_rows[k + 1].push_back(ids[k]);
         if (column == 0) {
-          csv_rows[k + 1].push_back("");
-          csv_rows[k + 1].push_back("");
+          for (size_t i = 0; i < 4; i++) {
+            csv_rows[k + 1].push_back("");
+          }
         }
       }
       column++;
     }
 
+    // Writing to CSV writer object
     auto writer = csv::make_csv_writer(out_file_csv);
     for (auto row : csv_rows) {
       writer << row;
     }
 
+    // Closing out_file and exiting
     out_file_csv.close();
     _Exit(18);
   }
