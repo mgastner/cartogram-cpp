@@ -69,7 +69,7 @@ int main(const int argc, const char *argv[])
       value<bool>(&make_csv)
       ->default_value(false)
       ->implicit_value(true),
-      "Boolean: make EPS image of input and output?"
+      "Boolean: create a CSV file from the GeoJSON file passed to the -g flag?"
       )(
       "id,i",
       value<std::string>(),
@@ -122,7 +122,7 @@ int main(const int argc, const char *argv[])
                      density_to_eps);
 
   if (!make_csv) {
-    
+
     // Read visual variables (e.g. area, color) from CSV
     read_csv(vm, &map_state);
   }

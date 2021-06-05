@@ -233,7 +233,7 @@ void read_geojson(
 
         // Handling strings, and numbers
         std::string value = property_item.value().dump();
-        if (value.front() == '"' && value.back() == '"' && value.length() > 1) {
+        if (value.front() == '"' && value.back() == '"') {
           value = value.substr(1, value.length() - 2);
         }
         auto value_vec = properties_map[key];
