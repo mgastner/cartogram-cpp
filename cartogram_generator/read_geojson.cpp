@@ -208,7 +208,11 @@ void read_geojson(
       // Use dump() instead of get() so that we can handle string and numeric
       // IDs in GeoJSON. Both types of IDs are converted to C++ strings.
       std::string id = properties[map_state->id_header()].dump();
-      if (id.front() == '"' && id.back() == '"' && id.length() > 2) {
+
+      // We only need to check whether the front of the string is '"' because
+      // dump automatically prefixes and postfixes a '"' to any non-NULL string
+      // that is not an integer
+      if (id.front() == '"') {
         id = id.substr(1, id.length() - 2);
       }
       if (ids_in_geojson.contains(id)) {
@@ -217,6 +221,10 @@ void read_geojson(
                   << " appears more than once in GeoJSON"
                   << std::endl;
         _Exit(17);
+      }
+      if (id == "null") {
+        std::cerr << "ERROR: ID in GeoJSON is null" << std::endl;
+        _Exit(18);
       }
       ids_in_geojson.insert(id);
       const GeoDiv gd = json_to_cgal(id, geometry["coordinates"], is_polygon);
@@ -233,7 +241,7 @@ void read_geojson(
 
         // Handling strings, and numbers
         std::string value = property_item.value().dump();
-        if (value != "null") {
+        if (value.front() == '"') {
           value = value.substr(1, value.length() - 2);
         }
         auto value_vec = properties_map[key];
@@ -340,7 +348,7 @@ void read_geojson(
       writer << row;
     }
     out_file_csv.close();
-    _Exit(18);
+    _Exit(19);
   }
 
   // Check whether all IDs in visual_variable_file appear in GeoJSON
@@ -361,7 +369,7 @@ void read_geojson(
     for (auto id : ids_not_in_geojson) {
       std::cerr << "  " << id << std::endl;
     }
-    _Exit(18);
+    _Exit(20);
   }
 
   // Check whether all IDs in GeoJSON appear in visual_variable_file.
