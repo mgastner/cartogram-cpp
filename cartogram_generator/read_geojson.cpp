@@ -131,7 +131,9 @@ GeoDiv json_to_cgal(const std::string id,
   return gd;
 }
 
-void print_properties_map(std::map<std::string, std::vector<std::string>> properties_map, unsigned long chosen_number) {
+void print_properties_map(std::map<std::string, std::vector<std::string>>
+                          properties_map, unsigned long chosen_number)
+{
   unsigned long i = 0;
   for (auto [key, value_vec] : properties_map) {
     i++;
@@ -139,10 +141,15 @@ void print_properties_map(std::map<std::string, std::vector<std::string>> proper
       std::cout << i << ". " << key << ": { ";
       for (long unsigned int j = 0; j < value_vec.size(); j++) {
           std::cout << value_vec[j];
-        if (j != value_vec.size() - 1) {
+        if (j < value_vec.size() - 1 && j < 5) {
           std::cout << ", ";
         } else {
-          std::cout << " }";
+          if (j < value_vec.size() - 1) {
+            std::cout << " ...";
+          } else {
+            std::cout << " }";
+          }
+          break;
         }
       }
       std::cout << std::endl;
@@ -188,40 +195,30 @@ void read_geojson(const std::string geometry_file_name, CartogramInfo *cart_info
       }
       if (!make_csv) {
 
-        // Storing ID from properties
-        const nlohmann::json properties = feature["properties"];
-        if (!properties.contains(cart_info->id_header()) &&
-            cart_info->id_header() != "") { // Visual file not provided
-          std::cerr << "ERROR: In GeoJSON, there is no property "
-                    << cart_info->id_header()
-                    << " in feature." << std::endl;
-          std::cerr << "Available properties are: "
-                    << properties
-                    << std::endl;
-          _Exit(16);
-        }
+      // Use dump() instead of get() so that we can handle string and numeric
+      // IDs in GeoJSON. Both types of IDs are converted to C++ strings.
+      std::string id = properties[inset_state->id_header()].dump();
 
-        // Use dump() instead of get() so that we can handle string and numeric
-        // IDs in GeoJSON. Both types of IDs are converted to C++ strings.
-        // For instance, Brussels
-        std::string id = properties[cart_info->id_header()].dump();
-
-        if (id.front() == '"' && id.back() == '"' && id.length() > 2) {
-          id = id.substr(1, id.length() - 2);
-        }
-        if (inset_state.pos() == cart_info->inset_at_gd(id)) {
-          if (ids_in_geojson.contains(id)) {
-            std::cerr << "ERROR: ID "
-                      << id
-                      << " appears more than once in GeoJSON"
-                      << std::endl;
-            _Exit(17);
-          }
-          ids_in_geojson.insert(id);
-          const GeoDiv gd = json_to_cgal(id, geometry["coordinates"], is_polygon);
-          inset_state.push_back(gd);
-        }
+      // We only need to check whether the front of the string is '"' because
+      // dump automatically prefixes and postfixes a '"' to any non-NULL string
+      // that is not an integer
+      if (id.front() == '"') {
+        id = id.substr(1, id.length() - 2);
       }
+      if (ids_in_geojson.contains(id)) {
+        std::cerr << "ERROR: ID "
+                  << id
+                  << " appears more than once in GeoJSON"
+                  << std::endl;
+        _Exit(17);
+      }
+      if (id == "null") {
+        std::cerr << "ERROR: ID in GeoJSON is null" << std::endl;
+        _Exit(18);
+      }
+      ids_in_geojson.insert(id);
+      const GeoDiv gd = json_to_cgal(id, geometry["coordinates"], is_polygon);
+      inset_state->push_back(gd);
     }
   }
   if (make_csv) {
@@ -231,17 +228,25 @@ void read_geojson(const std::string geometry_file_name, CartogramInfo *cart_info
     for (auto feature : j["features"]) {
       for (auto property_item : feature["properties"].items()) {
         auto key = property_item.key();
-        auto value = property_item.value();
+
+        // Handling strings, and numbers
+        std::string value = property_item.value().dump();
+        if (value.front() == '"') {
+          value = value.substr(1, value.length() - 2);
+        }
         auto value_vec = properties_map[key];
-        bool value_not_inside = std::find(value_vec.begin(), value_vec.end(), value) == value_vec.end();
-        if (value != "" && !value.is_null() && value_not_inside) {
+        bool value_not_inside =
+          std::find(value_vec.begin(), value_vec.end(), value)
+          == value_vec.end();
+        if (value != "null" && !value.empty() && value_not_inside) {
           properties_map[key].push_back(value);
         }
       }
     }
 
-    // Discard unwanted key-value pairs
-    std::map<std::string, std::vector<std::string>> viable_properties_map = properties_map;
+    // Discard keys with repeating or missing values
+    std::map<std::string, std::vector<std::string>>
+        viable_properties_map = properties_map;
     for (auto [key, value_vec] : properties_map) {
       if (value_vec.size() < j["features"].size()) {
         viable_properties_map.erase(key);
@@ -250,14 +255,36 @@ void read_geojson(const std::string geometry_file_name, CartogramInfo *cart_info
     std::cout << std::endl;
 
     // Present user with all possible identifiers and a few examples
-    std::cout << "These are the available unique identifiers and their values: " << std::endl;
-    print_properties_map(viable_properties_map, viable_properties_map.size() + 1);
-    std::cout << viable_properties_map.size() + 1 << ". All" << std::endl << std::endl;
+    std::cout << "These are the unique identifiers and their values: ";
+    std::cout << std::endl;
+    print_properties_map(
+      viable_properties_map, viable_properties_map.size() + 1);
+    std::cout << viable_properties_map.size() + 1 << ". All";
+    std::cout << std::endl << std::endl;
 
     // Have the user choose which key(s) they want to use as the identifier(s)
     std::cout << "Please enter your number here: ";
-    unsigned long chosen_number;
-    std::cin >> chosen_number;
+    unsigned long chosen_number = 0;
+    while (std::cin.fail()
+           || chosen_number < 1
+           || chosen_number > viable_properties_map.size() + 1) {
+
+      // Prompting User for Input
+      std::cout << "Please enter your number here: ";
+      std::cin >> chosen_number;
+      if (std::cin.fail()) {
+        std::cout << "Invalid input! Try again." << std::endl;
+
+        // Clearing std::cin buffer
+        std::cin.clear();
+        std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
+      } else if (chosen_number < 1
+                 || chosen_number > viable_properties_map.size() + 1) {
+        std::cout << "Please enter a number between 1 and "
+                  << viable_properties_map.size() + 1
+                  << std::endl;
+      }
+    }
     std::cout << std::endl;
 
     // Declare chosen identifier(s)
@@ -265,7 +292,8 @@ void read_geojson(const std::string geometry_file_name, CartogramInfo *cart_info
     size_t i = 0;
     for (auto [key, value_vec] : viable_properties_map) {
       i++;
-      if (chosen_number == i || chosen_number == viable_properties_map.size() + 1) {
+      if (chosen_number == i
+          || chosen_number == viable_properties_map.size() + 1) {
         chosen_identifiers[key] = value_vec;
       }
     }
@@ -317,7 +345,7 @@ void read_geojson(const std::string geometry_file_name, CartogramInfo *cart_info
 
     // Closing out_file and exiting
     out_file_csv.close();
-    _Exit(18);
+    _Exit(19);
   }
 
   // Check whether all IDs in visual_variable_file appear in GeoJSON
@@ -338,7 +366,7 @@ void read_geojson(const std::string geometry_file_name, CartogramInfo *cart_info
     for (auto id : ids_not_in_geojson) {
       std::cerr << "  " << id << std::endl;
     }
-    _Exit(18);
+    _Exit(20);
   }
 
   // Check whether all IDs in GeoJSON appear in visual_variable_file.
@@ -359,7 +387,7 @@ void read_geojson(const std::string geometry_file_name, CartogramInfo *cart_info
     for (auto id : ids_not_in_vv) {
       std::cerr << "  " << id << std::endl;
     }
-    _Exit(19);
+    _Exit(21);
   }
   return;
 }
