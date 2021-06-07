@@ -23,10 +23,10 @@ void on_geometry(const std::string geometry_file_name)
   return;
 }
 
-void on_visual_variable_file(const std::string geometry_file_name)
+void on_visual_variable_file(const std::string visual_file_name)
 {
   std::cerr << "Using visual variables from file "
-            << geometry_file_name
+            << visual_file_name
             << std::endl;
   return;
 }
@@ -34,7 +34,7 @@ void on_visual_variable_file(const std::string geometry_file_name)
 int main(const int argc, const char *argv[])
 {
   using namespace boost::program_options;
-  std::string geo_file_name;
+  std::string geo_file_name = "", visual_file_name = ""; // Default values
 
   // Default number of grid cells along longer Cartesian coordinate axis.
   int long_grid_side_length = default_long_grid_side_length;
@@ -44,7 +44,7 @@ int main(const int argc, const char *argv[])
   bool world;
 
   // Other boolean values that are needed to parse the command line arguments
-  bool polygons_to_eps, density_to_eps;
+  bool polygons_to_eps, density_to_eps, make_csv;
 
   // Parse command-line options. See
   // https://theboostcpplibraries.com/boost.program_options
@@ -61,9 +61,15 @@ int main(const int argc, const char *argv[])
       "GeoJSON file"
       )(
       "visual_variable_file,v",
-      value<std::string>()
+      value<std::string>(&visual_file_name)
       ->notifier(on_visual_variable_file),
       "CSV file with ID, area, and (optionally) colour"
+      )(
+      "make_csv,m",
+      value<bool>(&make_csv)
+      ->default_value(false)
+      ->implicit_value(true),
+      "Boolean: create a CSV file from the GeoJSON file passed to the -g flag?"
       )(
       "id,i",
       value<std::string>(),
@@ -110,16 +116,20 @@ int main(const int argc, const char *argv[])
     std::cerr << "ERROR: " << ex.what() << std::endl;
     return EXIT_FAILURE;
   }
-  MapState map_state(vm["visual_variable_file"].as<std::string>(),
+
+  MapState map_state(visual_file_name,
                      world,
                      density_to_eps);
 
-  // Read visual variables (e.g. area, color) from CSV
-  read_csv(vm, &map_state);
+  if (!make_csv) {
+
+    // Read visual variables (e.g. area, color) from CSV
+    read_csv(vm, &map_state);
+  }
 
   // Read geometry
   try {
-    read_geojson(geo_file_name, &map_state);
+    read_geojson(geo_file_name, &map_state, make_csv);
   } catch (const std::system_error& e) {
     std::cerr << "ERROR: "
               << e.what()

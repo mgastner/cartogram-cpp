@@ -1,6 +1,7 @@
 #include "geo_div.h"
 #include "map_state.h"
 #include <nlohmann/json.hpp>
+#include "csv.hpp"
 #include <iostream>
 #include <fstream>
 
@@ -129,7 +130,34 @@ GeoDiv json_to_cgal(const std::string id,
   return gd;
 }
 
-void read_geojson(const std::string geometry_file_name, MapState *map_state)
+void print_properties_map(std::map<std::string, std::vector<std::string>>
+                          properties_map, unsigned long chosen_number)
+{
+  unsigned long i = 0;
+  for (auto [key, value_vec] : properties_map) {
+    i++;
+    if (chosen_number == i || chosen_number == properties_map.size() + 1) {
+      std::cout << i << ". " << key << ": { ";
+      for (long unsigned int j = 0; j < value_vec.size(); j++) {
+          std::cout << value_vec[j];
+        if (j < value_vec.size() - 1 && j < 5) {
+          std::cout << ", ";
+        } else {
+          if (j < value_vec.size() - 1) {
+            std::cout << " ...";
+          } else {
+            std::cout << " }";
+          }
+          break;
+        }
+      }
+      std::cout << std::endl;
+    }
+  }
+}
+
+void read_geojson(
+  const std::string geometry_file_name, MapState *map_state, bool make_csv)
 {
   bool is_polygon;
   bool polygon_warning_has_been_issued = false;
@@ -162,35 +190,165 @@ void read_geojson(const std::string geometry_file_name, MapState *map_state)
                 << "for best results use MultiPolygon" << "\n";
       polygon_warning_has_been_issued = true;
     }
+    if (!make_csv) {
 
-    // Storing ID from properties
-    const nlohmann::json properties = feature["properties"];
-    if (!properties.contains(map_state->id_header())) {
-      std::cerr << "ERROR: In GeoJSON, there is no property "
-                << map_state->id_header()
-                << " in feature." << std::endl;
-      std::cerr << "Available properties are: "
-                << properties
-                << std::endl;
-      _Exit(16);
+      // Storing ID from properties
+      const nlohmann::json properties = feature["properties"];
+      if (!properties.contains(map_state->id_header()) &&
+          map_state->id_header() != "") { // Visual file not provided
+        std::cerr << "ERROR: In GeoJSON, there is no property "
+                  << map_state->id_header()
+                  << " in feature." << std::endl;
+        std::cerr << "Available properties are: "
+                  << properties
+                  << std::endl;
+        _Exit(16);
+      }
+
+      // Use dump() instead of get() so that we can handle string and numeric
+      // IDs in GeoJSON. Both types of IDs are converted to C++ strings.
+      std::string id = properties[map_state->id_header()].dump();
+
+      // We only need to check whether the front of the string is '"' because
+      // dump automatically prefixes and postfixes a '"' to any non-NULL string
+      // that is not an integer
+      if (id.front() == '"') {
+        id = id.substr(1, id.length() - 2);
+      }
+      if (ids_in_geojson.contains(id)) {
+        std::cerr << "ERROR: ID "
+                  << id
+                  << " appears more than once in GeoJSON"
+                  << std::endl;
+        _Exit(17);
+      }
+      if (id == "null") {
+        std::cerr << "ERROR: ID in GeoJSON is null" << std::endl;
+        _Exit(18);
+      }
+      ids_in_geojson.insert(id);
+      const GeoDiv gd = json_to_cgal(id, geometry["coordinates"], is_polygon);
+      map_state->push_back(gd);
+    }
+  }
+  if (make_csv) {
+
+    // Declare map for key-value pairs
+    std::map<std::string, std::vector<std::string>> properties_map;
+    for (auto feature : j["features"]) {
+      for (auto property_item : feature["properties"].items()) {
+        auto key = property_item.key();
+
+        // Handling strings, and numbers
+        std::string value = property_item.value().dump();
+        if (value.front() == '"') {
+          value = value.substr(1, value.length() - 2);
+        }
+        auto value_vec = properties_map[key];
+        bool value_not_inside =
+          std::find(value_vec.begin(), value_vec.end(), value)
+          == value_vec.end();
+        if (value != "null" && !value.empty() && value_not_inside) {
+          properties_map[key].push_back(value);
+        }
+      }
     }
 
-    // Use dump() instead of get() so that we can handle string and numeric
-    // IDs in GeoJSON. Both types of IDs are converted to C++ strings.
-    std::string id = properties[map_state->id_header()].dump();
-    if (id.front() == '"' && id.back() == '"' && id.length() > 2) {
-      id = id.substr(1, id.length() - 2);
+    // Discard keys with repeating or missing values
+    std::map<std::string, std::vector<std::string>>
+        viable_properties_map = properties_map;
+    for (auto [key, value_vec] : properties_map) {
+      if (value_vec.size() < j["features"].size()) {
+        viable_properties_map.erase(key);
+      }
     }
-    if (ids_in_geojson.contains(id)) {
-      std::cerr << "ERROR: ID "
-                << id
-                << " appears more than once in GeoJSON"
-                << std::endl;
-      _Exit(17);
+    std::cout << std::endl;
+
+    // Present user with all possible identifiers and a few examples
+    std::cout << "These are the unique identifiers and their values: ";
+    std::cout << std::endl;
+    print_properties_map(
+      viable_properties_map, viable_properties_map.size() + 1);
+    std::cout << viable_properties_map.size() + 1 << ". All";
+    std::cout << std::endl << std::endl;
+
+    // Have the user choose which key(s) they want to use as the identifier(s)
+    std::cout << "Please enter your number here: ";
+    unsigned long chosen_number = 0;
+    while (std::cin.fail()
+           || chosen_number < 1
+           || chosen_number > viable_properties_map.size() + 1) {
+
+      // Prompting User for Input
+      std::cout << "Please enter your number here: ";
+      std::cin >> chosen_number;
+      if (std::cin.fail()) {
+        std::cout << "Invalid input! Try again." << std::endl;
+
+        // Clearing std::cin buffer
+        std::cin.clear();
+        std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
+      } else if (chosen_number < 1
+                 || chosen_number > viable_properties_map.size() + 1) {
+        std::cout << "Please enter a number between 1 and "
+                  << viable_properties_map.size() + 1
+                  << std::endl;
+      }
     }
-    ids_in_geojson.insert(id);
-    const GeoDiv gd = json_to_cgal(id, geometry["coordinates"], is_polygon);
-    map_state->push_back(gd);
+    std::cout << std::endl;
+
+    // Declare chosen identifier(s)
+    std::map<std::string, std::vector<std::string>> chosen_identifiers;
+    size_t i = 0;
+    for (auto [key, value_vec] : viable_properties_map) {
+      i++;
+      if (chosen_number == i
+          || chosen_number == viable_properties_map.size() + 1) {
+        chosen_identifiers[key] = value_vec;
+      }
+    }
+
+    // Printing chosen identifiers
+    std::cout << "Chosen identifiers: " << std::endl;
+    print_properties_map(viable_properties_map, chosen_number);
+    std::cout << std::endl;
+
+    // Writing CSV
+    std::ofstream out_file_csv;
+    out_file_csv.open ("template_from_geojson.csv");
+    if (!out_file_csv) {
+      throw std::system_error(errno,
+                              std::system_category(),
+                              "failed to open template_from_geojson.csv");
+    }
+
+    // Each vector of strings will represent one row
+    std::vector<std::vector<std::string>>
+      csv_rows(chosen_identifiers.begin()->second.size() + 1);
+
+    // Converting map into a vector
+    int column = 0;
+    for (auto [column_name, ids] : chosen_identifiers) {
+      csv_rows[0].push_back(column_name);
+      if (column == 0) {
+        csv_rows[0].push_back("Cartogram Data (eg. Population)");
+        csv_rows[0].push_back("Color (see GitHub page for format)");
+      }
+      for (size_t k = 0; k < ids.size(); k++) {
+        csv_rows[k + 1].push_back(ids[k]);
+        if (column == 0) {
+          csv_rows[k + 1].push_back("");
+          csv_rows[k + 1].push_back("");
+        }
+      }
+      column++;
+    }
+    auto writer = csv::make_csv_writer(out_file_csv);
+    for (auto row : csv_rows) {
+      writer << row;
+    }
+    out_file_csv.close();
+    _Exit(19);
   }
 
   // Check whether all IDs in visual_variable_file appear in GeoJSON
@@ -211,7 +369,7 @@ void read_geojson(const std::string geometry_file_name, MapState *map_state)
     for (auto id : ids_not_in_geojson) {
       std::cerr << "  " << id << std::endl;
     }
-    _Exit(18);
+    _Exit(20);
   }
 
   // Check whether all IDs in GeoJSON appear in visual_variable_file.
