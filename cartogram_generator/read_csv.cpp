@@ -13,7 +13,7 @@ void read_csv(const boost::program_options::variables_map vm,
     csv_name = vm["visual_variable_file"].as<std::string>();
   } else {
     std::cerr << "ERROR: No CSV file given!" << std::endl;
-    _Exit(16);
+    _Exit(15);
   }
 
   // Opening CSV Reader

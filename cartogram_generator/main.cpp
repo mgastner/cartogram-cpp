@@ -129,7 +129,22 @@ int main(const int argc, const char *argv[])
   if (!make_csv) {
 
     // Read visual variables (e.g. area, color) from CSV
-    read_csv(vm, &cart_info);
+    try {
+      read_csv(vm, &cart_info);
+    } catch (const std::runtime_error& e) {
+      std::cerr << "ERROR: "
+                << e.what()
+                << std::endl;
+      return EXIT_FAILURE;
+    } catch (const std::system_error& e) {
+      std::cerr << "ERROR: "
+                << e.what()
+                << " ("
+                << e.code()
+                << ")"
+                << std::endl;
+      return EXIT_FAILURE;
+    }
   }
 
   // Read geometry
