@@ -274,7 +274,7 @@ void read_geojson(
 
     // Have the user choose which key(s) they want to use as the identifier(s)
     std::cout << "Please enter your number here: ";
-    unsigned long chosen_number;
+    unsigned long chosen_number = 0;
     while (std::cin.fail()
            || chosen_number < 1
            || chosen_number > viable_properties_map.size() + 1) {
