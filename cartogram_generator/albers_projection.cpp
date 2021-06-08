@@ -7,7 +7,6 @@
 #include "inset_state.h"
 
 Point albers_formula(std::vector<double> bbox, Point coords) {
-
   // TODO
   // Convert albers_formula Python code to C++
 
@@ -23,49 +22,34 @@ void albers_projection(std::string geo_file_name, InsetState *inset_state) {
   in_file >> j;
   std::vector<double> bbox = j["bbox"].get<std::vector<double>>();
 
-  // Create new vector of GeoDivs
-  std::vector<GeoDiv> gd_converted_vector = {};
-  for (GeoDiv gd : inset_state->geo_divs()) {
-    GeoDiv gd_converted(gd.id());
-    for (Polygon_with_holes pgnwh : gd.polygons_with_holes()) {
-      // Create new outer polygon
-      Polygon outer_pgn_converted;
+  // Iterate through GeoDivs
+  for (GeoDiv &gd : *(inset_state->ref_to_geo_divs())) {
 
-      // Iterate through outer polygon and return new coords
-      Polygon outer_pgn = pgnwh.outer_boundary();
-      for (Point coords_pgn : outer_pgn) {
-        Point coords_pgn_converted = albers_formula(bbox, coords_pgn);
-        outer_pgn_converted.push_back(coords_pgn_converted);
+    // Iterate through Polygon_with_holes
+    for (Polygon_with_holes &pgnwh : *(gd.ref_to_polygons_with_holes())) {
+
+      // Get outer boundary
+      Polygon &outer_boundary = *(&pgnwh.outer_boundary());
+
+      // Iterate through outer boundary's coordinates
+      for (Point &coords_outer : outer_boundary) {
+
+        // Assign outer boundary's coordinates to transformed coordinates
+        coords_outer = albers_formula(bbox, coords_outer);
       }
 
-      // Create new vector of holes
-      std::vector<Polygon> holes_v_converted = {};
+      // Iterate through holes
+      for (auto hole_it = pgnwh.holes_begin(); hole_it != pgnwh.holes_end();
+           hole_it++) {
+        Polygon &hole = *hole_it;
 
-      // Iterate through all holes
-      std::vector<Polygon> holes_v(pgnwh.holes_begin(), pgnwh.holes_end());
-      for (Polygon hole : holes_v) {
-        // Create new hole (Polygon type)
-        Polygon hole_converted;
+        // Iterate through hole's coordinates
+        for (Point &coords_hole : hole) {
 
-        // Iterate through each hole and return new coords for each hole
-        for (Point coords_hole : hole) {
-          Point coords_hole_converted = albers_formula(bbox, coords_hole);
-          hole_converted.push_back(coords_hole_converted);
+          // Assign hole's coordinates to transformed coordinates
+          coords_hole = albers_formula(bbox, coords_hole);
         }
-        holes_v_converted.push_back(hole_converted);
       }
-
-      // Create new Polygon_with_holes
-      Polygon_with_holes pgnwh_converted(outer_pgn_converted,
-                                         holes_v_converted.begin(),
-                                         holes_v_converted.end());
-
-      // Add new Polygon_with_holes to new GeoDiv
-      gd_converted.push_back(pgnwh_converted);
     }
-    // Add new GeoDiv to new vector of GeoDivs
-    gd_converted_vector.push_back(gd_converted);
   }
-
-  inset_state->set_geo_divs(gd_converted_vector);
 }
