@@ -241,11 +241,11 @@ int main(const int argc, const char *argv[])
   //     inset_state.set_area_errs();
   //   }
 
-  //   // Printing final cartogram
-  //   json cart_json = cgal_to_json(&inset_state);
-  //   write_to_json(cart_json,
-  //                 geo_file_name,
-  //                 (inset_name + "_cartogram_scaled.geojson"));
+    // Printing final cartogram
+    json cart_json = cgal_to_json(&inset_state);
+    write_to_json(cart_json,
+                  geo_file_name,
+                  (inset_name + "_cartogram_scaled.geojson"));
 
   //   // Printing EPS of output cartogram
   //   if (polygons_to_eps) {
@@ -262,7 +262,7 @@ int main(const int argc, const char *argv[])
   //                 geo_file_name,
   //                 (inset_name + "_cartogram_unscaled.geojson"));
 
-  // }
+  }
 
   return EXIT_SUCCESS;
 }

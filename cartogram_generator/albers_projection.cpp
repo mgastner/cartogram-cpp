@@ -4,14 +4,14 @@
 #include <utility>
 
 #include "cgal_typedef.h"
-#include "map_state.h"
+#include "inset_state.h"
 
 Point albers_formula(std::vector<double> bbox, Point coords) {
 
   // TODO
   // Convert albers_formula Python code to C++
 
-  Point coords_converted(coords.x(), coords.y());
+  Point coords_converted(coords.x() + 10000, coords.y() + 10000);
 
   return coords_converted;
 }
