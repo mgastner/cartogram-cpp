@@ -1,5 +1,5 @@
-#ifndef MAP_STATE_H_
-#define MAP_STATE_H_
+#ifndef INSET_STATE_H_
+#define INSET_STATE_H_
 
 #include "ft_real_2d.h"
 #include "geo_div.h"
@@ -15,7 +15,8 @@ struct XYPoint{
 
 class InsetState {
 private:
-  std::string inset_pos_;
+  std::string pos_; // Position of inset ("C", "TR" etc.)
+  std::string inset_name_; // Map name, appended with Position if n_insets > 2
   std::vector<GeoDiv> geo_divs_;
   std::map<std::string, double> target_areas;
   std::map<std::string, double> area_errs;
@@ -62,31 +63,10 @@ public:
   void set_area_errs();
   double area_errs_at(const std::string) const;
   double max_area_err() const;
-  void set_inset_pos(std::string inset_pos);
-  const std::string inset_pos() const;
+  void set_pos(std::string);
+  const std::string pos() const;
+  void set_inset_name(std::string);
+  const std::string inset_name() const;
 };
 
-class CartogramInfo {
-private:
-  std::vector<InsetState> inset_states_;
-  std::string id_header_;
-  std::string visual_variable_file_;
-  std::set<std::string> ids_in_visual_variables_file_;
-  bool is_world_map_;
-  bool write_density_to_eps_;
-  std::string map_name_;
-public:
-  explicit CartogramInfo(const std::string, const bool, const bool);
-  void set_id_header(const std::string);
-  void insert_id_in_visual_variables_file(const std::string);
-  const std::set<std::string> ids_in_visual_variables_file() const;
-  const std::string id_header() const;
-  const std::string visual_variable_file() const;
-  bool is_world_map() const;
-  bool trigger_write_density_to_eps() const;
-  void set_map_name(std::string map_name);
-  const std::vector<InsetState> inset_states() const;
-  std::vector<InsetState> *ref_to_inset_states();
-  void push_back(const InsetState);
-};
 #endif

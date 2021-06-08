@@ -1,7 +1,7 @@
-#include "map_state.h"
+#include "inset_state.h"
 
-InsetState::InsetState(std::string inset_pos) :
-  inset_pos_(inset_pos)
+InsetState::InsetState(std::string pos) :
+  pos_(pos)
 {
   n_finished_integrations_ = 0;
   fwd_plan_for_rho_ = NULL;
@@ -224,77 +224,22 @@ double InsetState::max_area_err() const
   return mae;
 }
 
-void InsetState::set_inset_pos(std::string inset_pos)
+void InsetState::set_pos(std::string pos)
 {
-  inset_pos_ = inset_pos;
+  pos_ = pos;
 }
 
-const std::string InsetState::inset_pos() const
+const std::string InsetState::pos() const
 {
-  return inset_pos_;
+  return pos_;
 }
 
-CartogramInfo::CartogramInfo(std::string v, const bool w, const bool wd2eps) :
-  visual_variable_file_(v),
-  is_world_map_(w),
-  write_density_to_eps_(wd2eps)
+void InsetState::set_inset_name(std::string inset_name)
 {
-  return;
+  inset_name_ = inset_name;
 }
 
-void CartogramInfo::set_id_header(const std::string id)
+const std::string InsetState::inset_name() const
 {
-  id_header_ = id;
-  return;
-}
-
-const std::string CartogramInfo::id_header() const
-{
-  return id_header_;
-}
-
-const std::string CartogramInfo::visual_variable_file() const
-{
-  return visual_variable_file_;
-}
-
-void CartogramInfo::insert_id_in_visual_variables_file(const std::string id)
-{
-  ids_in_visual_variables_file_.insert(id);
-}
-
-const std::set<std::string> CartogramInfo::ids_in_visual_variables_file() const
-{
-  return ids_in_visual_variables_file_;
-}
-
-bool CartogramInfo::is_world_map() const
-{
-  return is_world_map_;
-}
-
-bool CartogramInfo::trigger_write_density_to_eps() const
-{
-  return write_density_to_eps_;
-}
-
-void CartogramInfo::set_map_name(std::string map_name)
-{
-  map_name_ = map_name;
-}
-
-const std::vector<InsetState> CartogramInfo::inset_states() const
-{
-  return inset_states_;
-}
-
-std::vector<InsetState> *CartogramInfo::ref_to_inset_states()
-{
-  return &inset_states_;
-}
-
-void CartogramInfo::push_back(const InsetState is)
-{
-  inset_states_.push_back(is);
-  return;
+  return inset_name_;
 }

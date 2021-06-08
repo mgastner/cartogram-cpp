@@ -3,8 +3,8 @@
 
 #include <string>
 
-#include "map_state.h"
+#include "inset_state.h"
 
-void albers_projection(const std::string, InsetState*);
+void albers_projection(InsetState*);
 
 #endif

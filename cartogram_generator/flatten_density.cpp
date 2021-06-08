@@ -1,5 +1,6 @@
 #include "constants.h"
-#include "map_state.h"
+#include "cartogram_info.h"
+#include "inset_state.h"
 #include "interpolate_bilinearly.h"
 #include <boost/multi_array.hpp>
 #include <iostream>
