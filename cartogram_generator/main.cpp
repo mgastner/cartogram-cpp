@@ -211,9 +211,9 @@ int main(const int argc, const char *argv[])
                       cart_info.trigger_write_density_to_eps());
 
     // Automatically coloring if no colors provided
-    // if (inset_state.colors_empty()) {
+    if (inset_state.colors_empty()) {
       auto_color(&inset_state);
-    // }
+    }
 
     // Writing EPS, if requested by command line option
     if (polygons_to_eps) {
