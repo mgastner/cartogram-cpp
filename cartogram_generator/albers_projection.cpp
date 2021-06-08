@@ -4,39 +4,6 @@
 #include "cgal_typedef.h"
 #include "inset_state.h"
 
-<<<<<<< HEAD
-Point albers_formula(std::vector<double> bbox, Point coords) {
-
-  double min_lon = bbox[0];
-  double min_lat = bbox[1];
-  double max_lon = bbox[2];
-  double max_lat = bbox[3];
-
-  double lon = coords[0];
-  double lat = coords[1];
-
-  double radius = 1;
-
-  // Reference Longitude and Latitude
-  double lambda_0 = (min_lon + max_lon) / 2;
-  double phi_0 = (min_lat + max_lat) / 2;
-
-  // Standard Parallels
-  double phi_1 = (phi_0 + max_lat) / 2;
-  double phi_2 = (phi_0 + min_lat) /2;
-
-  double n = (1/2) * (sin(phi_1) + sin(phi_2));
-
-  double theta = n * (lon - lambda_0);
-  double c = pow(cos(phi_1), 2) + (2 * n * sin(phi_1));
-  double rho = (radius / n) * sqrt(c - (2 * n * sin(lat)));
-  double rho_0 = (radius / n) * sqrt(c - (2 * n * sin(phi_0)));
-
-  double new_lon = rho * sin(theta);
-  double new_lat = rho_0 - (rho * cos(theta));
-
-  Point coords_converted(new_lon, new_lat);
-=======
 void print_bbox(CGAL::Bbox_2 bbox) {
   std::cout << "Bounding box:" << std::endl;
   std::cout << "lon_min: " << bbox.xmin() << std::endl;
@@ -72,11 +39,36 @@ CGAL::Bbox_2 inset_bbox(InsetState *inset_state) {
 }
 
 Point albers_formula(CGAL::Bbox_2 bbox, Point coords) {
-  // TODO
-  // Convert albers_formula Python code to C++
+
+  double min_lon = bbox[0];
+  double min_lat = bbox[1];
+  double max_lon = bbox[2];
+  double max_lat = bbox[3];
+
+  double lon = coords[0];
+  double lat = coords[1];
+
+  double radius = 1;
+
+  // Reference Longitude and Latitude
+  double lambda_0 = (min_lon + max_lon) / 2;
+  double phi_0 = (min_lat + max_lat) / 2;
+
+  // Standard Parallels
+  double phi_1 = (phi_0 + max_lat) / 2;
+  double phi_2 = (phi_0 + min_lat) /2;
+
+  double n = (1/2) * (sin(phi_1) + sin(phi_2));
+
+  double theta = n * (lon - lambda_0);
+  double c = pow(cos(phi_1), 2) + (2 * n * sin(phi_1));
+  double rho = (radius / n) * sqrt(c - (2 * n * sin(lat)));
+  double rho_0 = (radius / n) * sqrt(c - (2 * n * sin(phi_0)));
+
+  double new_lon = rho * sin(theta);
+  double new_lat = rho_0 - (rho * cos(theta));
 
   Point coords_converted(coords.x() + 10000, coords.y() + 10000);
->>>>>>> d6af73765ee92b5485d48d76f7644f23b54cf7bc
 
   return coords_converted;
 }
@@ -112,10 +104,4 @@ void albers_projection(InsetState *inset_state) {
       }
     }
   }
-<<<<<<< HEAD
-
-  inset_state->set_geo_divs(gd_converted_vector);
 }
-=======
-}
->>>>>>> d6af73765ee92b5485d48d76f7644f23b54cf7bc
