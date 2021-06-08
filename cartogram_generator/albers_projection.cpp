@@ -1,12 +1,44 @@
 #include <fstream>
 #include <iostream>
-#include <nlohmann/json.hpp>
-#include <utility>
 
 #include "cgal_typedef.h"
 #include "inset_state.h"
 
-Point albers_formula(std::vector<double> bbox, Point coords) {
+void print_bbox(CGAL::Bbox_2 bbox) {
+  std::cout << "Bounding box:" << std::endl;
+  std::cout << "lon_min: " << bbox.xmin() << std::endl;
+  std::cout << "lat_min: " << bbox.ymin() << std::endl;
+  std::cout << "lon_max: " << bbox.xmax() << std::endl;
+  std::cout << "lat_max: " << bbox.ymax() << std::endl << std::endl;
+}
+
+CGAL::Bbox_2 inset_bbox(InsetState *inset_state) {
+  double inset_xmin, inset_ymin, inset_xmax, inset_ymax;
+
+  for (GeoDiv gd : inset_state->geo_divs()) {
+    for (Polygon_with_holes pgnwh : gd.polygons_with_holes()) {
+      CGAL::Bbox_2 pgnwh_bbox = pgnwh.bbox();
+      inset_xmin = !inset_xmin || pgnwh_bbox.xmin() < inset_xmin
+                       ? pgnwh_bbox.xmin()
+                       : inset_xmin;
+      inset_ymin = !inset_ymin || pgnwh_bbox.ymin() < inset_ymin
+                       ? pgnwh_bbox.ymin()
+                       : inset_ymin;
+      inset_xmax = !inset_xmax || pgnwh_bbox.xmax() > inset_xmax
+                       ? pgnwh_bbox.xmax()
+                       : inset_xmax;
+      inset_ymax = !inset_ymax || pgnwh_bbox.ymax() > inset_ymax
+                       ? pgnwh_bbox.ymax()
+                       : inset_ymax;
+    }
+  }
+
+  CGAL::Bbox_2 inset_bbox(inset_xmin, inset_ymin, inset_xmax, inset_ymax);
+
+  return inset_bbox;
+}
+
+Point albers_formula(CGAL::Bbox_2 bbox, Point coords) {
   // TODO
   // Convert albers_formula Python code to C++
 
@@ -15,25 +47,20 @@ Point albers_formula(std::vector<double> bbox, Point coords) {
   return coords_converted;
 }
 
-void albers_projection(std::string geo_file_name, InsetState *inset_state) {
-  // Get bbox from GeoJSON
-  std::ifstream in_file(geo_file_name);
-  nlohmann::json j;
-  in_file >> j;
-  std::vector<double> bbox = j["bbox"].get<std::vector<double>>();
+void albers_projection(InsetState *inset_state) {
+  // Get inset's bbox
+  CGAL::Bbox_2 bbox = inset_bbox(inset_state);
+  print_bbox(bbox);
 
   // Iterate through GeoDivs
   for (GeoDiv &gd : *(inset_state->ref_to_geo_divs())) {
-
     // Iterate through Polygon_with_holes
     for (Polygon_with_holes &pgnwh : *(gd.ref_to_polygons_with_holes())) {
-
       // Get outer boundary
       Polygon &outer_boundary = *(&pgnwh.outer_boundary());
 
       // Iterate through outer boundary's coordinates
       for (Point &coords_outer : outer_boundary) {
-
         // Assign outer boundary's coordinates to transformed coordinates
         coords_outer = albers_formula(bbox, coords_outer);
       }
@@ -45,7 +72,6 @@ void albers_projection(std::string geo_file_name, InsetState *inset_state) {
 
         // Iterate through hole's coordinates
         for (Point &coords_hole : hole) {
-
           // Assign hole's coordinates to transformed coordinates
           coords_hole = albers_formula(bbox, coords_hole);
         }
