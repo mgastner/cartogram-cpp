@@ -7,12 +7,11 @@
 #include "map_state.h"
 
 Point albers_formula(std::vector<double> bbox, Point coords) {
-  int x_converted, y_converted;
 
   // TODO
   // Convert albers_formula Python code to C++
 
-  Point coords_converted(x_converted, y_converted);
+  Point coords_converted(coords, coords);
 
   return coords_converted;
 }
