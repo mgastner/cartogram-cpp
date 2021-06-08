@@ -11,7 +11,7 @@ Point albers_formula(std::vector<double> bbox, Point coords) {
   // TODO
   // Convert albers_formula Python code to C++
 
-  Point coords_converted(coords, coords);
+  Point coords_converted(coords.x(), coords.y());
 
   return coords_converted;
 }
