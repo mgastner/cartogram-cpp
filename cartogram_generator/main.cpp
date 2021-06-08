@@ -1,7 +1,8 @@
 // TO DO: positional matching of argument flags
 
 #include "constants.h"
-#include "map_state.h"
+#include "cartogram_info.h"
+#include "inset_state.h"
 #include "blur_density.h"
 #include "fill_with_density.h"
 #include "flatten_density.h"
@@ -70,7 +71,7 @@ int main(const int argc, const char *argv[])
       value<bool>(&make_csv)
       ->default_value(false)
       ->implicit_value(true),
-      "Boolean: make EPS image of input and output?"
+      "Boolean: create a CSV file from the GeoJSON file passed to the -g flag?"
       )(
       "id,i",
       value<std::string>(),
@@ -82,7 +83,11 @@ int main(const int argc, const char *argv[])
       )(
       "color,c",
       value<std::string>(),
-      "Column name for colors (default: 3rd CSV column if it exists)"
+      "Column name for colors (assumed column name: \"Color\" or \"Colour\")"
+      )(
+      "inset,i",
+      value<std::string>(),
+      "Column name for insets (assumed column name: \"Inset\")"
       )(
       "long_grid_side_length,l",
       value<int>(&long_grid_side_length),
@@ -125,7 +130,22 @@ int main(const int argc, const char *argv[])
   if (!make_csv) {
 
     // Read visual variables (e.g. area, color) from CSV
-    read_csv(vm, &cart_info);
+    try {
+      read_csv(vm, &cart_info);
+    } catch (const std::runtime_error& e) {
+      std::cerr << "ERROR: "
+                << e.what()
+                << std::endl;
+      return EXIT_FAILURE;
+    } catch (const std::system_error& e) {
+      std::cerr << "ERROR: "
+                << e.what()
+                << " ("
+                << e.code()
+                << ")"
+                << std::endl;
+      return EXIT_FAILURE;
+    }
   }
 
   // Read geometry
@@ -152,6 +172,19 @@ int main(const int argc, const char *argv[])
 
   for (auto &inset_state : *cart_info.ref_to_inset_states()) {
 
+    // Determining the name of the inset
+    std::string inset_name = map_name;
+
+    // Printing Inset Position if multiple insets present
+    if (cart_info.n_insets() > 1) {
+      inset_name = inset_name + "_" + inset_state.pos();
+      std::cout << std::endl << std::endl
+                << "Working on Inset with position: "
+                << inset_state.pos()
+                << std::endl;
+    }
+    inset_state.set_inset_name(inset_name);
+
     // Error checking Geometry
     try {
       albers_projection(geo_file_name, &inset_state);
@@ -166,70 +199,70 @@ int main(const int argc, const char *argv[])
       return EXIT_FAILURE;
     }
 
-    // // Rescale map to fit into a rectangular box [0, lx] * [0, ly].
-    // rescale_map(long_grid_side_length,
-    //             &inset_state,
-    //             cart_info.is_world_map());
+  //   // Rescale map to fit into a rectangular box [0, lx] * [0, ly].
+  //   rescale_map(long_grid_side_length,
+  //               &inset_state,
+  //               cart_info.is_world_map());
 
-    // // Writing EPS, if requested by command line option
-    // if (polygons_to_eps) {
-    //   std::cout << "Writing " << map_name << "_input.eps" << std::endl;
-    //   write_map_to_eps((map_name + "_input.eps"), &inset_state);
-    // }
+  //   // Writing EPS, if requested by command line option
+  //   if (polygons_to_eps) {
+  //     std::cout << "Writing " << inset_name << "_input.eps" << std::endl;
+  //     write_map_to_eps((inset_name + "_input.eps"), &inset_state);
+  //   }
 
-    // // Setting initial area errors
-    // inset_state.set_area_errs();
+  //   // Setting initial area errors
+  //   inset_state.set_area_errs();
 
-    // // Start map integration
-    // while (inset_state.n_finished_integrations() < max_integrations &&
-    //        inset_state.max_area_err() > max_permitted_area_error) {
+  //   // Start map integration
+  //   while (inset_state.n_finished_integrations() < max_integrations &&
+  //          inset_state.max_area_err() > max_permitted_area_error) {
 
-    //   std::cout << "Integration number "
-    //             << inset_state.n_finished_integrations()
-    //             << std::endl;
+  //     std::cout << "Integration number "
+  //               << inset_state.n_finished_integrations()
+  //               << std::endl;
 
 
-    //   fill_with_density(&inset_state,
-    //                     cart_info.trigger_write_density_to_eps());
-    //   if (inset_state.n_finished_integrations() == 0) {
-    //     blur_density(5.0,
-    //                  &inset_state,
-    //                  cart_info.trigger_write_density_to_eps());
-    //   } else {
-    //     blur_density(0.0,
-    //                  &inset_state,
-    //                  cart_info.trigger_write_density_to_eps());
-    //   }
-    //   flatten_density(&inset_state);
-    //   project(&inset_state);
-    //   inset_state.inc_integration();
+  //     fill_with_density(&inset_state,
+  //                       cart_info.trigger_write_density_to_eps());
+  //     if (inset_state.n_finished_integrations() == 0) {
+  //       blur_density(5.0,
+  //                    &inset_state,
+  //                    cart_info.trigger_write_density_to_eps());
+  //     } else {
+  //       blur_density(0.0,
+  //                    &inset_state,
+  //                    cart_info.trigger_write_density_to_eps());
+  //     }
+  //     flatten_density(&inset_state);
+  //     project(&inset_state);
+  //     inset_state.inc_integration();
 
-    //   // Updating area errors
-    //   inset_state.set_area_errs();
-    // }
+  //     // Updating area errors
+  //     inset_state.set_area_errs();
+  //   }
 
-    // // Printing final cartogram
-    json cart_json = cgal_to_json(&inset_state);
-    write_to_json(cart_json,
-                  geo_file_name,
-                  (map_name + "_cartogram_scaled.geojson"));
+  //   // Printing final cartogram
+  //   json cart_json = cgal_to_json(&inset_state);
+  //   write_to_json(cart_json,
+  //                 geo_file_name,
+  //                 (inset_name + "_cartogram_scaled.geojson"));
 
-    // // Printing EPS of output cartogram
-    // if (polygons_to_eps) {
-    //   std::cout << "Writing " << map_name << "_output.eps" << std::endl;
-    //   write_map_to_eps((map_name + "_output.eps"), &inset_state);
-    // }
+  //   // Printing EPS of output cartogram
+  //   if (polygons_to_eps) {
+  //     std::cout << "Writing " << inset_name << "_output.eps" << std::endl;
+  //     write_map_to_eps((inset_name + "_output.eps"), &inset_state);
+  //   }
 
-    // // Removing transformations
-    // unscale_map(&inset_state);
+  //   // // Removing transformations
+  //   // unscale_map(&inset_state);
 
-    // Printing unscaled cartogram
-    // cart_json = cgal_to_json(&inset_state);
-    // write_to_json(cart_json,
-    //               geo_file_name,
-    //               (map_name + "_cartogram_unscaled.geojson"));
+  //   // Printing unscaled cartogram
+  //   cart_json = cgal_to_json(&inset_state);
+  //   write_to_json(cart_json,
+  //                 geo_file_name,
+  //                 (inset_name + "_cartogram_unscaled.geojson"));
 
-  }
+  // }
 
   return EXIT_SUCCESS;
 }
