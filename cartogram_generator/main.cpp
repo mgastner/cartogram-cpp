@@ -141,6 +141,8 @@ int main(const int argc, const char *argv[])
                 << std::endl;
       return EXIT_FAILURE;
     } catch (const std::runtime_error& e) {
+
+      // Likely due to invalid CSV file
       std::cerr << "ERROR: "
                 << e.what()
                 << std::endl;
