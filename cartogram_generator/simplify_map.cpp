@@ -937,9 +937,8 @@ void simplify_map(MapState *map_state)
   for (auto cit = ct.constraints_begin(); cit != ct.constraints_end()
       ; cit++) {
     Polyline pll;
-    for (auto vit = ct.points_in_constraint_begin(*cit)
-        ; vit != ct.points_in_constraint_end(*cit); vit++) {
-      pll.push_back(*vit);
+    for (auto v : ct.vertices_in_constraint(*cit)) {
+      pll.push_back(v->point());
     }
     ct_polylines.push_back(pll);
   }
