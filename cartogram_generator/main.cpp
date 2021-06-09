@@ -14,9 +14,8 @@
 #include "check_topology.h"
 #include "write_to_json.h"
 #include <boost/program_options.hpp>
-#include <iostream>
-
 #include "simplify_map.h"
+#include <iostream>
 
 // Functions that are called if the corresponding command-line options are
 // present
@@ -221,6 +220,8 @@ int main(const int argc, const char *argv[])
                 << inset_state.n_finished_integrations()
                 << std::endl;
 
+      // Simplify inset state
+      simplify_map(&inset_state);
 
       fill_with_density(&inset_state,
                         cart_info.trigger_write_density_to_eps());
@@ -240,6 +241,9 @@ int main(const int argc, const char *argv[])
       // Updating area errors
       inset_state.set_area_errs();
     }
+
+    // Simplify inset state
+    simplify_map(&inset_state);
 
     // Printing final cartogram
     json cart_json = cgal_to_json(&inset_state);
