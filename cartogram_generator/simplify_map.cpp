@@ -584,10 +584,8 @@ store_by_gd_pgnwh(std::vector<GeoDiv> gd_vector,
           /* If this polyline's associated gd and pgnwh are valid: */
           if (pll_adv.gd() == gd_num && pll_adv.pgnwh() == pgnwh_num) {
             Polyline pll_ct;
-            for (auto vit = ct.points_in_constraint_begin(*cit);
-                vit != ct.points_in_constraint_end(*cit);
-                vit++) {
-              pll_ct.push_back(*vit);
+            for (auto v : ct.vertices_in_constraint(*cit)) {
+              pll_ct.push_back(v->point());
             }
             Polyline_advanced pll_adv_new(pll_adv.pos(),
                         pll_ct,
