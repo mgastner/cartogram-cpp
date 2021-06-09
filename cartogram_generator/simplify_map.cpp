@@ -947,7 +947,7 @@ void simplify_map(MapState *map_state)
     plls_adv_by_pos = store_by_pos(ct_polylines, gd_vector, pgn_bool_island);
 
   /* 7. Simplify polylines.                                                  */
-  PS::simplify(ct, Cost(), Stop(0.2));
+  PS::simplify(ct, Cost(), Stop(0.5));
 
   /* 8. Store polylines according to their GeoDivs and Polygon_with_holes    */
   /*    along with their associated original map_state positions.            */
