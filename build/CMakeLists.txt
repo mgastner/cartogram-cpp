@@ -56,7 +56,8 @@ add_executable(
   cartogram
   ../cartogram_generator/main.cpp
   ../cartogram_generator/geo_div.cpp
-  ../cartogram_generator/map_state.cpp
+  ../cartogram_generator/cartogram_info.cpp
+  ../cartogram_generator/inset_state.cpp
   ../cartogram_generator/read_csv.cpp
   ../cartogram_generator/rescale_map.cpp
   ../cartogram_generator/write_eps.cpp

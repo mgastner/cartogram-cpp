@@ -2,13 +2,14 @@
 #include <fstream>
 #include "cgal_typedef.h"
 #include "write_to_json.h"
-#include "map_state.h"
+#include "cartogram_info.h"
+#include "inset_state.h"
 
-json cgal_to_json(MapState *map_state){
+json cgal_to_json(InsetState *inset_state){
   
   json container;
 
-  for (auto gd : map_state->geo_divs()){
+  for (auto gd : inset_state->geo_divs()){
     // For each GeoDiv
     json gd_container;
 

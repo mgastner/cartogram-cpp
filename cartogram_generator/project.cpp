@@ -5,11 +5,11 @@
 
 #include "project.h"
 
-void project(MapState *map_state)
+void project(InsetState *inset_state)
 {
-  const unsigned int lx = map_state->lx();
-  const unsigned int ly = map_state->ly();
-  boost::multi_array<XYPoint, 2> &proj = *map_state->proj();
+  const unsigned int lx = inset_state->lx();
+  const unsigned int ly = inset_state->ly();
+  boost::multi_array<XYPoint, 2> &proj = *inset_state->proj();
 
   // Calculate displacement from proj array
   boost::multi_array<double, 2> xdisp(boost::extents[lx][ly]);
@@ -21,7 +21,7 @@ void project(MapState *map_state)
     }
   }
   std::vector<GeoDiv> new_geo_divs;
-  for (auto gd : map_state->geo_divs()) {
+  for (auto gd : inset_state->geo_divs()) {
 
     // For each GeoDiv
     GeoDiv new_gd(gd.id());
@@ -72,6 +72,6 @@ void project(MapState *map_state)
     }
     new_geo_divs.push_back(new_gd);
   }
-  map_state->set_geo_divs(new_geo_divs);
+  inset_state->set_geo_divs(new_geo_divs);
   return;
 }
