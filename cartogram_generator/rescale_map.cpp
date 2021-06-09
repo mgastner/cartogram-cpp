@@ -97,7 +97,7 @@ void unscale_map(InsetState *inset_state)
 
   // Rescale all GeoDiv coordinates
   Transformation translate(CGAL::TRANSLATION,
-                           CGAL::Vector_2<Epick>(inset_state->new_xmin(),
+                           CGAL::Vector_2<K>(inset_state->new_xmin(),
                                                  inset_state->new_ymin()));
   Transformation scale(CGAL::SCALING, inset_state->map_scale());
   for (auto &gd : *inset_state->ref_to_geo_divs()) {

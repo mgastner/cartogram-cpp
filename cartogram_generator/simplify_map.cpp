@@ -14,7 +14,7 @@
 #include <iomanip>
 
 #include "cgal_typedef.h"
-#include "map_state.h"
+#include "inset_state.h"
 #include "geo_div.h"
 #include "polyline_advanced.h"
 
@@ -418,7 +418,7 @@ void check_prog_store_pll(int num_v_on_boundary,
   /**
    * If the number of vertices on the pgn's boundary reached 3:
    * a) Check pgnprog for this pgn taking into account this pll_adv.
-   * b) Store this pll_adv according to its original map_state position
+   * b) Store this pll_adv according to its original inset_state position
    *   along with its associated GeoDiv and Polygon_with_hole.
    */
   if (num_v_on_boundary >= 3) {
@@ -438,7 +438,7 @@ void check_prog_store_pll(int num_v_on_boundary,
 
       /** If the 2 common vertices are consecutive:
        * a) Check pgnprog for this pgn taking into account this pll_adv.
-       * b) Store this pll_adv according to its original map_state position
+       * b) Store this pll_adv according to its original inset_state position
        *    along with its associated GeoDiv and Polygon_with_hole.
        * c) Break because we no longer need to check all other vertices.
        */
@@ -451,7 +451,7 @@ void check_prog_store_pll(int num_v_on_boundary,
   }
 }
 
-/** 6. Match and store polylines according to their original map_state      **/
+/** 6. Match and store polylines according to their original inset_state      **/
 /**    positions along with their associated GeoDiv and Polygon_with_hole.  **/
 
 std::map<int, std::vector<Polyline_advanced>> store_by_pos(
@@ -461,7 +461,7 @@ std::map<int, std::vector<Polyline_advanced>> store_by_pos(
 {
   /**
    * Create map to match and store polylines according to their original
-   * map_state positions along with their associated GeoDiv and
+   * inset_state positions along with their associated GeoDiv and
    * Polygon_with_hole.
    */
   std::map<int, std::vector<Polyline_advanced>> plls_adv_by_pos; 
@@ -873,7 +873,7 @@ void remove_first_point_as_last_point(std::vector<GeoDiv> &gd_vector) {
   }
 }
 
-void simplify_map(MapState *map_state)
+void simplify_map(InsetState *inset_state)
 {
   /********************************* Steps: **********************************/
   /* 1. Repeat the first point as the last point.                            */
@@ -881,16 +881,16 @@ void simplify_map(MapState *map_state)
   /* 3. Create graph and split graph into unique polylines.                  */ 
   /* 4. Store polylines in a CT object from polyline_list.                   */
   /* 5. Store polylines in a vector in the order of CT polylines.            */
-  /* 6. Match and store polylines according to their original map_state      */
+  /* 6. Match and store polylines according to their original inset_state      */
   /*    positions along with their associated GeoDiv and Polygon_with_hole.  */
   /* 7. Simplify polylines.                                                  */
   /* 8. Store polylines according to their GeoDivs and Polygon_with_holes    */
-  /*    along with their associated original map_state positions.            */
+  /*    along with their associated original inset_state positions.            */
   /* 9. Set all polylines to not-visited and sort pll_adv_by_gd_pgnwh.       */
   /* 10. Assemble polylines into polygon.                                    */
   /* 11. Remove the last point                                               */ 
 
-  std::vector<GeoDiv> gd_vector = map_state->geo_divs();
+  std::vector<GeoDiv> gd_vector = inset_state->geo_divs();
 
   /* 1. Repeat the first point as the last point.                            */
   repeat_first_point_as_last_point(gd_vector);
@@ -941,7 +941,7 @@ void simplify_map(MapState *map_state)
     ct_polylines.push_back(pll);
   }
 
-  /* 6. Match and store polylines according to their original map_state      */
+  /* 6. Match and store polylines according to their original inset_state      */
   /*    positions along with their associated GeoDiv and Polygon_with_hole.  */
   std::map<int, std::vector<Polyline_advanced>> 
     plls_adv_by_pos = store_by_pos(ct_polylines, gd_vector, pgn_bool_island);
@@ -950,7 +950,7 @@ void simplify_map(MapState *map_state)
   PS::simplify(ct, Cost(), Stop(0.5));
 
   /* 8. Store polylines according to their GeoDivs and Polygon_with_holes    */
-  /*    along with their associated original map_state positions.            */
+  /*    along with their associated original inset_state positions.            */
   std::map<int, std::map<int, std::vector<Polyline_advanced>>>
     plls_adv_by_gd_pgnwh = store_by_gd_pgnwh(gd_vector, ct, plls_adv_by_pos);
 
@@ -975,8 +975,8 @@ void simplify_map(MapState *map_state)
   /* 11. Remove the last point.                                              */ 
   remove_first_point_as_last_point(gd_vector_simp);
 
-  /* Set gd_vector_simp as map_state's gd_vector. */
-  map_state->set_geo_divs(gd_vector_simp);
+  /* Set gd_vector_simp as inset_state's gd_vector. */
+  inset_state->set_geo_divs(gd_vector_simp);
 
   const std::chrono::duration<double, std::milli>
     dur_s311 = std::chrono::system_clock::now() - start_s311;
