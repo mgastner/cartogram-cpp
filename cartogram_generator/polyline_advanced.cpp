@@ -70,6 +70,16 @@ bool Polyline_advanced::is_hole() {
   return is_hole_;
 }
 
+void Polyline_advanced::pop_front() {
+  pll_.erase(pll_.begin());
+}
+
+void Polyline_advanced::pop_back() {
+  auto v_after_l = pll_.end();
+  v_after_l--;
+  pll_.erase(v_after_l);
+}
+
 // Set/assign the CGAL polyline object stored inside
 void Polyline_advanced::set_pll(Polyline pll) {
   pll_ = pll;

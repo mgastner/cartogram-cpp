@@ -688,6 +688,7 @@ void connect_polylines_in_deq(
        */
       if (pll_adv_deq.front().v1()[0] == pll_adv_inner.vl()[0] &&
           pll_adv_deq.front().v1()[1] == pll_adv_inner.vl()[1]) {
+        pll_adv_deq.front().pop_front(); // Remove otherwise repeated vertex
         pll_adv_deq.push_front(pll_adv_inner);
         visited[gd_num][pgnwh_num][pll_adv_inner.pos()] = true;
         pll_adv_siblings_found = true;
@@ -698,6 +699,7 @@ void connect_polylines_in_deq(
          */
       } else if (pll_adv_deq.back().vl()[0] == pll_adv_inner.v1()[0] &&
           pll_adv_deq.back().vl()[1] == pll_adv_inner.v1()[1]) {
+        pll_adv_deq.back().pop_back(); // Remove otherwise repeated vertex
         pll_adv_deq.push_back(pll_adv_inner);
         visited[gd_num][pgnwh_num][pll_adv_inner.pos()] = true;
         pll_adv_siblings_found = true;
@@ -711,6 +713,7 @@ void connect_polylines_in_deq(
         Polyline pll_new = pll_adv_inner.pll();
         std::reverse(pll_new.begin(), pll_new.end());
         pll_adv_inner.set_pll(pll_new);
+        pll_adv_deq.front().pop_front(); // Remove otherwise repeated vertex
         pll_adv_deq.push_front(pll_adv_inner);
         visited[gd_num][pgnwh_num][pll_adv_inner.pos()] = true;
         pll_adv_siblings_found = true;
@@ -724,6 +727,7 @@ void connect_polylines_in_deq(
         Polyline pll_new = pll_adv_inner.pll();
         std::reverse(pll_new.begin(), pll_new.end());
         pll_adv_inner.set_pll(pll_new);
+        pll_adv_deq.back().pop_back(); // Remove otherwise repeated vertex
         pll_adv_deq.push_back(pll_adv_inner);
         visited[gd_num][pgnwh_num][pll_adv_inner.pos()] = true;
         pll_adv_siblings_found = true;

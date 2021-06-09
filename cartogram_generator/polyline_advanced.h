@@ -31,6 +31,8 @@ class Polyline_advanced {
     int gd();
     int pgnwh();
     bool is_hole();
+    void pop_front();
+    void pop_back();
     void set_pll(Polyline pll);
     void set_is_hole(bool b);
 };
