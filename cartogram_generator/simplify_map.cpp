@@ -866,12 +866,32 @@ void remove_first_point_as_last_point(std::vector<GeoDiv> &gd_vector) {
       outer_pgn_it--;
       outer_pgn->erase(outer_pgn_it);
 
-      std::vector<Polygon> holes_v(pgnwh.holes_begin(), pgnwh.holes_end());
       for (auto hole = pgnwh.holes_begin(); hole != pgnwh.holes_end(); hole++)
       {
         auto hole_it = hole->end();
         hole_it--;
         hole->erase(hole_it);
+      }
+    }
+  }
+}
+
+/***************** 12. Orientate exterior and interior rings. ****************/
+
+void orientate_exterior_and_interior_rings(std::vector<GeoDiv> &gd_vector) {
+  for (GeoDiv &gd : gd_vector) {
+    for (Polygon_with_holes &pgnwh : *gd.ref_to_polygons_with_holes()) {
+
+      Polygon *ext_ring = &pgnwh.outer_boundary();
+
+      if (ext_ring->is_clockwise_oriented()) {
+        ext_ring->reverse_orientation();
+      }
+
+      for (auto hole = pgnwh.holes_begin(); hole != pgnwh.holes_end(); hole++) {
+        if (hole->is_counterclockwise_oriented()) {
+        hole->reverse_orientation();
+        }
       }
     }
   }
@@ -885,14 +905,16 @@ void simplify_map(InsetState *inset_state)
   /* 3. Create graph and split graph into unique polylines.                  */ 
   /* 4. Store polylines in a CT object from polyline_list.                   */
   /* 5. Store polylines in a vector in the order of CT polylines.            */
-  /* 6. Match and store polylines according to their original inset_state      */
+  /* 6. Match and store polylines according to their original inset_state    */
   /*    positions along with their associated GeoDiv and Polygon_with_hole.  */
   /* 7. Simplify polylines.                                                  */
   /* 8. Store polylines according to their GeoDivs and Polygon_with_holes    */
-  /*    along with their associated original inset_state positions.            */
+  /*    along with their associated original inset_state positions.          */
   /* 9. Set all polylines to not-visited and sort pll_adv_by_gd_pgnwh.       */
   /* 10. Assemble polylines into polygon.                                    */
-  /* 11. Remove the last point                                               */ 
+  /* 11. Remove the last point.                                              */
+  /* 12. Orientate all exterior counterclockwise and interior rings          */
+  /*     clockwise.                                                          */
 
   std::vector<GeoDiv> gd_vector = inset_state->geo_divs();
 
@@ -954,11 +976,11 @@ void simplify_map(InsetState *inset_state)
   PS::simplify(ct, Cost(), Stop(0.5));
 
   /* 8. Store polylines according to their GeoDivs and Polygon_with_holes    */
-  /*    along with their associated original inset_state positions.            */
+  /*    along with their associated original inset_state positions.          */
   std::map<int, std::map<int, std::vector<Polyline_advanced>>>
     plls_adv_by_gd_pgnwh = store_by_gd_pgnwh(gd_vector, ct, plls_adv_by_pos);
 
-  /* 9. Set all polylines to not-visited and sort pll_adv_by_gd_pgnwh.           */
+  /* 9. Set all polylines to not-visited and sort pll_adv_by_gd_pgnwh.       */
   std::unordered_map<int,
                      std::unordered_map<int, std::unordered_map<int, bool>>
                      > visited;
@@ -978,6 +1000,10 @@ void simplify_map(InsetState *inset_state)
 
   /* 11. Remove the last point.                                              */ 
   remove_first_point_as_last_point(gd_vector_simp);
+
+  /* 12. Orientate all exterior rings counterclockwise and interior rings    */
+  /*     clockwise.                                                          */
+  orientate_exterior_and_interior_rings(gd_vector_simp);
 
   /* Set gd_vector_simp as inset_state's gd_vector. */
   inset_state->set_geo_divs(gd_vector_simp);
