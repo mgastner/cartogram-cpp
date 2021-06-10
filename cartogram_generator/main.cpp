@@ -13,8 +13,8 @@
 #include "write_eps.h"
 #include "check_topology.h"
 #include "write_to_json.h"
-#include <boost/program_options.hpp>
 #include "simplify_map.h"
+#include <boost/program_options.hpp>
 #include <iostream>
 
 // Functions that are called if the corresponding command-line options are
@@ -46,7 +46,7 @@ int main(const int argc, const char *argv[])
   bool world;
 
   // Other boolean values that are needed to parse the command line arguments
-  bool polygons_to_eps, density_to_eps, make_csv;
+  bool polygons_to_eps, density_to_eps, make_csv, simplify;
 
   // Parse command-line options. See
   // https://theboostcpplibraries.com/boost.program_options
@@ -72,6 +72,12 @@ int main(const int argc, const char *argv[])
       ->default_value(false)
       ->implicit_value(true),
       "Boolean: create a CSV file from the GeoJSON file passed to the -g flag?"
+      )(
+      "simplify,s",
+      value<bool>(&simplify)
+      ->default_value(false)
+      ->implicit_value(true),
+      "Boolean: simplify the GeoJSON file passed to the -g flag?"
       )(
       "id,i",
       value<std::string>(),
@@ -220,8 +226,8 @@ int main(const int argc, const char *argv[])
                 << inset_state.n_finished_integrations()
                 << std::endl;
 
-      // Simplify inset state
-      simplify_map(&inset_state);
+      // Simplify inset state if -s flag is passed
+      if (simplify) simplify_map(&inset_state);
 
       fill_with_density(&inset_state,
                         cart_info.trigger_write_density_to_eps());
@@ -242,8 +248,8 @@ int main(const int argc, const char *argv[])
       inset_state.set_area_errs();
     }
 
-    // Simplify inset state
-    simplify_map(&inset_state);
+    // Simplify inset state if -s flag is passed
+    if (simplify) simplify_map(&inset_state);
 
     // Printing final cartogram
     json cart_json = cgal_to_json(&inset_state);
