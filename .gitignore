@@ -44,6 +44,7 @@ compile_commands.json
 CTestTestfile.cmake
 _deps
 findFFTW-download
+.cmake
 
 # Added by MTG
 cartogram
