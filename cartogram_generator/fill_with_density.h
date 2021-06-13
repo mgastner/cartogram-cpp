@@ -18,6 +18,6 @@ struct intersection {
   }
 };
 
-void fill_with_density(MapState*, std::string);
+void fill_with_density(InsetState*, bool);
 
 #endif

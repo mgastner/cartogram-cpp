@@ -1,22 +1,23 @@
 #ifndef PROJECT_H_
 #define PROJECT_H_
 
-#include "map_state.h"
+#include "cartogram_info.h"
+#include "inset_state.h"
 
-void project(MapState*);
+void project(InsetState*);
 
-void project_with_triangulation(MapState*);
+void project_with_triangulation(InsetState*);
 
-void choose_diag(MapState*);
+void choose_diag(InsetState*);
 
-void choose_diag_2(MapState*);
+void choose_diag_2(InsetState*);
 
-void choose_diag_3(MapState*);
+void choose_diag_3(InsetState*);
 
-void choose_diag_4(MapState*);
+void choose_diag_4(InsetState*);
 
-void round_points(MapState*);
+void round_points(InsetState*);
 
-void point_search(MapState*, double, double, double, double);
+void point_search(InsetState*, double, double, double, double);
 
 #endif

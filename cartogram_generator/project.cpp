@@ -6,11 +6,11 @@
 #include "densification_points.h"
 #include "project.h"
 
-void project(MapState *map_state)
+void project(InsetState *inset_state)
 {
-  const unsigned int lx = map_state->lx();
-  const unsigned int ly = map_state->ly();
-  boost::multi_array<XYPoint, 2> &proj = *map_state->proj();
+  const unsigned int lx = inset_state->lx();
+  const unsigned int ly = inset_state->ly();
+  boost::multi_array<XYPoint, 2> &proj = *inset_state->proj();
 
   // Calculate displacement from proj array
   boost::multi_array<double, 2> xdisp(boost::extents[lx][ly]);
@@ -22,7 +22,7 @@ void project(MapState *map_state)
     }
   }
   std::vector<GeoDiv> new_geo_divs;
-  for (auto gd : map_state->geo_divs()) {
+  for (auto gd : inset_state->geo_divs()) {
 
     // For each GeoDiv
     GeoDiv new_gd(gd.id());
@@ -73,19 +73,19 @@ void project(MapState *map_state)
     }
     new_geo_divs.push_back(new_gd);
   }
-  map_state->set_geo_divs(new_geo_divs);
+  inset_state->set_geo_divs(new_geo_divs);
   return;
 }
 
-void choose_diag(MapState *map_state){
+void choose_diag(InsetState *inset_state){
 
-  const unsigned int lx = map_state->lx();
-  const unsigned int ly = map_state->ly();
+  const unsigned int lx = inset_state->lx();
+  const unsigned int ly = inset_state->ly();
 
-  boost::multi_array<XYPoint, 2> &proj = *map_state->proj();
-  boost::multi_array<int, 2> &graticule_diagonals = *map_state->graticule_diagonals();
+  boost::multi_array<XYPoint, 2> &proj = *inset_state->proj();
+  boost::multi_array<int, 2> &graticule_diagonals = *inset_state->graticule_diagonals();
 
-  if (map_state->n_finished_integrations() == 0) {
+  if (inset_state->n_finished_integrations() == 0) {
     graticule_diagonals.resize(boost::extents[lx][ly]);
   }
 
@@ -111,15 +111,15 @@ void choose_diag(MapState *map_state){
   return;
 }
 
-void choose_diag_2(MapState *map_state){
+void choose_diag_2(InsetState *inset_state){
 
-  const unsigned int lx = map_state->lx();
-  const unsigned int ly = map_state->ly();
+  const unsigned int lx = inset_state->lx();
+  const unsigned int ly = inset_state->ly();
 
-  boost::multi_array<XYPoint, 2> &proj = *map_state->proj();
-  boost::multi_array<int, 2> &graticule_diagonals = *map_state->graticule_diagonals();
+  boost::multi_array<XYPoint, 2> &proj = *inset_state->proj();
+  boost::multi_array<int, 2> &graticule_diagonals = *inset_state->graticule_diagonals();
 
-  if (map_state->n_finished_integrations() == 0) {
+  if (inset_state->n_finished_integrations() == 0) {
     graticule_diagonals.resize(boost::extents[lx][ly]);
   }
 
@@ -223,15 +223,15 @@ void choose_diag_2(MapState *map_state){
   return;
 }
 
-void choose_diag_3(MapState *map_state)
+void choose_diag_3(InsetState *inset_state)
 {
-  const unsigned int lx = map_state->lx();
-  const unsigned int ly = map_state->ly();
+  const unsigned int lx = inset_state->lx();
+  const unsigned int ly = inset_state->ly();
 
-  boost::multi_array<XYPoint, 2> &proj = *map_state->proj();
-  boost::multi_array<int, 2> &graticule_diagonals = *map_state->graticule_diagonals();
+  boost::multi_array<XYPoint, 2> &proj = *inset_state->proj();
+  boost::multi_array<int, 2> &graticule_diagonals = *inset_state->graticule_diagonals();
 
-  if (map_state->n_finished_integrations() == 0) {
+  if (inset_state->n_finished_integrations() == 0) {
     graticule_diagonals.resize(boost::extents[lx][ly]);
   }
 
@@ -314,15 +314,15 @@ void choose_diag_3(MapState *map_state)
   return;
 }
 
-void choose_diag_4(MapState *map_state)
+void choose_diag_4(InsetState *inset_state)
 {
-  const unsigned int lx = map_state->lx();
-  const unsigned int ly = map_state->ly();
+  const unsigned int lx = inset_state->lx();
+  const unsigned int ly = inset_state->ly();
 
-  boost::multi_array<XYPoint, 2> &proj = *map_state->proj();
-  boost::multi_array<int, 2> &graticule_diagonals = *map_state->graticule_diagonals();
+  boost::multi_array<XYPoint, 2> &proj = *inset_state->proj();
+  boost::multi_array<int, 2> &graticule_diagonals = *inset_state->graticule_diagonals();
 
-  if (map_state->n_finished_integrations() == 0) {
+  if (inset_state->n_finished_integrations() == 0) {
     graticule_diagonals.resize(boost::extents[lx][ly]);
   }
 
@@ -683,11 +683,11 @@ XYPoint affine_trans(std::vector<XYPoint> *tri,
   return post;
 }
 
-void round_points (MapState *map_state)
+void round_points (InsetState *inset_state)
 {
   std::vector<GeoDiv> new_geo_divs;
 
-  for (GeoDiv gd : map_state->geo_divs()) {
+  for (GeoDiv gd : inset_state->geo_divs()) {
 
     // For each GeoDiv
     GeoDiv new_gd(gd.id());
@@ -718,23 +718,23 @@ void round_points (MapState *map_state)
     }
     new_geo_divs.push_back(new_gd);
   }
-  map_state->set_geo_divs(new_geo_divs);
+  inset_state->set_geo_divs(new_geo_divs);
 
   return;
 }
 
-void point_search(MapState *map_state, double x_min, double x_max, double y_min, double y_max)
+void point_search(InsetState *inset_state, double x_min, double x_max, double y_min, double y_max)
 {
-  const unsigned int lx = map_state->lx();
-  const unsigned int ly = map_state->ly();
-  //boost::multi_array<XYPoint, 2> &proj = *map_state->proj();
-  boost::multi_array<int, 2> &graticule_diagonals = *map_state->graticule_diagonals();
+  const unsigned int lx = inset_state->lx();
+  const unsigned int ly = inset_state->ly();
+  //boost::multi_array<XYPoint, 2> &proj = *inset_state->proj();
+  boost::multi_array<int, 2> &graticule_diagonals = *inset_state->graticule_diagonals();
 
   //std::vector<GeoDiv> new_geo_divs;
 
   std::cout << std::setprecision(20);
 
-  for (auto gd : map_state->geo_divs()) {
+  for (auto gd : inset_state->geo_divs()) {
 
     // For each GeoDiv
 
@@ -810,16 +810,16 @@ void point_search(MapState *map_state, double x_min, double x_max, double y_min,
   return;
 }
 
-void project_with_triangulation(MapState *map_state)
+void project_with_triangulation(InsetState *inset_state)
 {
-  const unsigned int lx = map_state->lx();
-  const unsigned int ly = map_state->ly();
-  boost::multi_array<XYPoint, 2> &proj = *map_state->proj();
-  boost::multi_array<int, 2> &graticule_diagonals = *map_state->graticule_diagonals();
+  const unsigned int lx = inset_state->lx();
+  const unsigned int ly = inset_state->ly();
+  boost::multi_array<XYPoint, 2> &proj = *inset_state->proj();
+  boost::multi_array<int, 2> &graticule_diagonals = *inset_state->graticule_diagonals();
 
   std::vector<GeoDiv> new_geo_divs;
 
-  for (auto gd : map_state->geo_divs()) {
+  for (auto gd : inset_state->geo_divs()) {
 
     // For each GeoDiv
     GeoDiv new_gd(gd.id());
@@ -961,6 +961,6 @@ void project_with_triangulation(MapState *map_state)
     }
     new_geo_divs.push_back(new_gd);
   }
-  map_state->set_geo_divs(new_geo_divs);
+  inset_state->set_geo_divs(new_geo_divs);
   return;
 }

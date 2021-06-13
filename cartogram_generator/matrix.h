@@ -2,7 +2,7 @@
 #define MATRIX_H_
 
 #include <iostream>
-#include "map_state.h"
+#include "inset_state.h"
 
 struct Matrix {
 

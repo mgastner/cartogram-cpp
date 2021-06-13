@@ -1,4 +1,4 @@
-#include "map_state.h"
+#include "inset_state.h"
 #include <CGAL/intersections.h>
 
 // Returns ceiling up to nearest 0.5 value, e.g. 2.64 returns 3.5

@@ -1,10 +1,11 @@
 #include "constants.h"
-#include "map_state.h"
+#include "cartogram_info.h"
+#include "inset_state.h"
 #include <fstream>
 
 void write_eps_header_and_definitions(std::ofstream &eps_file,
                                       std::string eps_name,
-                                      MapState *map_state)
+                                      InsetState *inset_state)
 {
   // Current time
   time_t tt;
@@ -20,8 +21,8 @@ void write_eps_header_and_definitions(std::ofstream &eps_file,
   eps_file << "%%CreationDate: " << asctime(ti);
   eps_file << "%%Pages: 1\n";
   eps_file << "%%BoundingBox: 0 0 "
-           << map_state->lx() << " "
-           << map_state->ly() << "\n";
+           << inset_state->lx() << " "
+           << inset_state->ly() << "\n";
   eps_file << "%%Magnification: 1.0000\n";
   eps_file << "%%EndComments\n";
 
@@ -53,11 +54,10 @@ void write_eps_header_and_definitions(std::ofstream &eps_file,
 void write_polygons_to_eps(std::ofstream &eps_file,
                            bool fill_polygons,
                            bool colors,
-                           MapState *map_state)
+                           InsetState *inset_state)
 {
-  // eps_file << 0.001 * std::min(map_state->lx(), map_state->ly()) << " slw\n";
-  eps_file << 0.0000000001 << " slw\n";
-  for (auto gd : map_state->geo_divs()) {
+  eps_file << 0.001 * std::min(inset_state->lx(), inset_state->ly()) << " slw\n";
+  for (auto gd : inset_state->geo_divs()) {
     for (auto pwh : gd.polygons_with_holes()) {
       Polygon ext_ring = pwh.outer_boundary();
 
@@ -84,7 +84,7 @@ void write_polygons_to_eps(std::ofstream &eps_file,
       if (colors) {
 
         // Getting color
-        Color col = map_state->colors_at(gd.id());
+        Color col = inset_state->colors_at(gd.id());
 
         // Save path before filling it
         eps_file << "gsave\n";
@@ -114,14 +114,15 @@ void write_polygons_to_eps(std::ofstream &eps_file,
   return;
 }
 
-void write_map_to_eps(std::string eps_name, MapState *map_state)
+void write_map_to_eps(std::string eps_name, InsetState *inset_state)
 {
   std::ofstream eps_file(eps_name);
-  write_eps_header_and_definitions(eps_file, eps_name, map_state);
+  write_eps_header_and_definitions(eps_file, eps_name, inset_state);
   write_polygons_to_eps(eps_file,
                         true,
-                        !(map_state->colors_empty()),
-                        map_state);
+                        // false,
+                        !(inset_state->colors_empty()),
+                        inset_state);
   eps_file << "showpage\n";
   eps_file << "%%EOF\n";
   eps_file.close();
@@ -196,26 +197,26 @@ void heatmap_color(double dens,
 
 void write_density_to_eps(std::string eps_name,
                           double *density,
-                          MapState *map_state)
+                          InsetState *inset_state)
 {
   std::ofstream eps_file(eps_name);
-  write_eps_header_and_definitions(eps_file, eps_name, map_state);
+  write_eps_header_and_definitions(eps_file, eps_name, inset_state);
 
   // Determine range of density
   double dens_min = density[0];
   double dens_mean = 0.0;
   double dens_max = density[0];
-  unsigned int n_grid_cells = map_state->lx() * map_state->ly();
+  unsigned int n_grid_cells = inset_state->lx() * inset_state->ly();
   for (unsigned int k = 0; k < n_grid_cells; ++k) {
     dens_min = std::min(density[k], dens_min);
     dens_mean += density[k];
     dens_max = std::max(density[k], dens_max);
   }
   dens_mean /= n_grid_cells;
-  for (unsigned int i = 0; i < map_state->lx(); ++i) {
-    for (unsigned int j = 0; j < map_state->ly(); ++j) {
+  for (unsigned int i = 0; i < inset_state->lx(); ++i) {
+    for (unsigned int j = 0; j < inset_state->ly(); ++j) {
       double r, g, b;
-      heatmap_color(density[i*map_state->ly() + j],
+      heatmap_color(density[i*inset_state->ly() + j],
                     dens_min,
                     dens_mean,
                     dens_max,
@@ -224,7 +225,7 @@ void write_density_to_eps(std::string eps_name,
       eps_file << r << " " << g << " " << b << " srgb f\n";
     }
   }
-  write_polygons_to_eps(eps_file, false, false, map_state);
+  write_polygons_to_eps(eps_file, false, false, inset_state);
   eps_file << "showpage\n";
   eps_file << "%%EOF\n";
   eps_file.close();
