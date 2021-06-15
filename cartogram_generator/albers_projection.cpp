@@ -68,32 +68,6 @@ void albers_projection(InsetState *inset_state) {
   CGAL::Bbox_2 bbox = inset_bbox(inset_state);
   print_bbox(bbox);
 
-  double min_lon = (bbox.xmin() * pi) / 180;
-  double min_lat = (bbox.ymin() * pi) / 180;
-  double max_lon = (bbox.xmax() * pi) / 180;
-  double max_lat = (bbox.ymax() * pi) / 180;
-
-  double radius = 1;
-
-  // Reference Longitude and Latitude
-  double lambda_0 = (min_lon + max_lon) / 2;
-  double phi_0 = (min_lat + max_lat) / 2;
-
-  // Standard Parallels
-  double phi_1 = (phi_0 + max_lat) / 2;
-  double phi_2 = (phi_0 + min_lat) / 2;
-
-  // sin
-  double sin_phi_1 = sin(phi_1);
-  double sin_phi_2 = sin(phi_2);
-
-  // cos
-  double cos_phi_1 = cos(phi_1);
-
-  double n = ((double)1 / 2) * (sin_phi_1 + sin_phi_2);
-  double c = pow(cos_phi_1, 2) + (2 * n * sin(phi_1));
-  double rho_0 = (radius / n) * sqrt(c - (2 * n * sin(phi_0)));
-
   // Iterate through GeoDivs
   for (GeoDiv &gd : *(inset_state->ref_to_geo_divs())) {
     // Iterate through Polygon_with_holes
