@@ -1,5 +1,6 @@
 #include <fstream>
 #include <iostream>
+#include <math.h>
 
 #include "cgal_typedef.h"
 #include "inset_state.h"
@@ -39,39 +40,17 @@ CGAL::Bbox_2 inset_bbox(InsetState *inset_state) {
 }
 
 // Declare pi globally for use in albers_formula() and albers_projection()
-  double pi = 3.14159265358979323846;
+double pi = M_PI;
 
 Point albers_formula(CGAL::Bbox_2 bbox, Point coords) {
+  double min_lon = (bbox.xmin() * pi) / 180;
+  double min_lat = (bbox.ymin() * pi) / 180;
+  double max_lon = (bbox.xmax() * pi) / 180;
+  double max_lat = (bbox.ymax() * pi) / 180;
 
-  // Converting from degrees to radians
-  // radians = (degrees * pi) / 180
-  double lon = (coords[0] * pi) / 180;
-  double lat = (coords[1] * pi) / 180;
+  double lon = (coords.x() * pi) / 180;
+  double lat = (coords.y() * pi) / 180;
 
-  double theta = n * (lon - lambda_0);
-  double rho = (radius / n) * sqrt(c - (2 * n * sin(lat)));
-
-  double new_lon = rho * sin(theta);
-  double new_lat = rho_0 - (rho * cos(theta));
-
-  Point coords_converted(coords.x() + 10000, coords.y() + 10000);
-
-  return coords_converted;
-}
-
-void albers_projection(InsetState *inset_state) {
-  // Get inset's bbox
-  CGAL::Bbox_2 bbox = inset_bbox(inset_state);
-  print_bbox(bbox);
-
-  // Declare following constant variables outside for-loop for computational efficiency
-  // Converting from degrees to radians
-  double min_lon = (bbox[0] * pi) / 180;
-  double min_lat = (bbox[1] * pi) / 180;
-  double max_lon = (bbox[2] * pi) / 180;
-  double max_lat = (bbox[3] * pi) / 180;
-
-  // Declaring these variables outside the for loop because they aren't dependent on coords
   double radius = 1;
 
   // Reference Longitude and Latitude
@@ -80,12 +59,34 @@ void albers_projection(InsetState *inset_state) {
 
   // Standard Parallels
   double phi_1 = (phi_0 + max_lat) / 2;
-  double phi_2 = (phi_0 + min_lat) /2;
+  double phi_2 = (phi_0 + min_lat) / 2;
 
-  double n = (1/2) * (sin(phi_1) + sin(phi_2));
+  // sin
+  double sin_phi_1 = sin(phi_1);
+  double sin_phi_2 = sin(phi_2);
 
-  double c = pow(cos(phi_1), 2) + (2 * n * sin(phi_1));
+  // cos
+  double cos_phi_1 = cos(phi_1);
+
+  double n = ((double)1 / 2) * (sin_phi_1 + sin_phi_2);
+
+  double theta = n * (lon - lambda_0);
+  double c = pow(cos_phi_1, 2) + (2 * n * sin(phi_1));
+  double rho = (radius / n) * sqrt(c - (2 * n * sin(lat)));
   double rho_0 = (radius / n) * sqrt(c - (2 * n * sin(phi_0)));
+
+  double new_lon = rho * sin(theta);
+  double new_lat = rho_0 - (rho * cos(theta));
+
+  Point coords_converted(new_lon, new_lat);
+
+  return coords_converted;
+}
+
+void albers_projection(InsetState *inset_state) {
+  // Get inset's bbox
+  CGAL::Bbox_2 bbox = inset_bbox(inset_state);
+  print_bbox(bbox);
 
   // Iterate through GeoDivs
   for (GeoDiv &gd : *(inset_state->ref_to_geo_divs())) {
@@ -97,7 +98,6 @@ void albers_projection(InsetState *inset_state) {
       // Iterate through outer boundary's coordinates
       for (Point &coords_outer : outer_boundary) {
         // Assign outer boundary's coordinates to transformed coordinates
-
         coords_outer = albers_formula(bbox, coords_outer);
       }
 
