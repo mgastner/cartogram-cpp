@@ -9,6 +9,7 @@ class GeoDiv {
   private:
     std::string id_;
     std::vector<Polygon_with_holes> polygons_with_holes_;
+    std::set<std::string> adjacent_geodivs_;
     GeoDiv();
   public:
     explicit GeoDiv(const std::string);
@@ -18,6 +19,8 @@ class GeoDiv {
     std::vector<Polygon_with_holes> *ref_to_polygons_with_holes();
     void push_back(const Polygon_with_holes);
     double area() const;
+    void adjacent_to(const std::string);
+    const std::set<std::string> adjacent_geodivs() const;
 };
 
 #endif

@@ -381,7 +381,7 @@ void read_geojson(const std::string geometry_file_name,
               << cart_info->visual_variable_file()
               << "."
               << std::endl;
-    std::cerr << "The following IDs do not appear in the GeoJSON or CSV:"
+    std::cerr << "The following IDs do not appear in the GeoJSON:"
               << std::endl;
     for (auto id : ids_not_in_geojson) {
       std::cerr << "  " << id << std::endl;
