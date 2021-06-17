@@ -42,14 +42,38 @@ CGAL::Bbox_2 inset_bbox(InsetState *inset_state) {
 // Declare pi globally for use in albers_formula() and albers_projection()
 double pi = M_PI;
 
-Point albers_formula(CGAL::Bbox_2 bbox, Point coords) {
+Point albers_formula(Point coords,
+                     double n,
+                     double c,
+                     double lambda_0,
+                     double radius,
+                     double rho_0) {
+
+  double lon = (coords.x() * pi) / 180;
+  double lat = (coords.y() * pi) / 180;
+
+  double theta = n * (lon - lambda_0);
+  double rho = (radius / n) * sqrt(c - (2 * n * sin(lat)));
+
+  double new_lon = rho * sin(theta);
+  double new_lat = rho_0 - (rho * cos(theta));
+
+  Point coords_converted(new_lon, new_lat);
+
+  return coords_converted;
+}
+
+void albers_projection(InsetState *inset_state) {
+  // Get inset's bbox
+  CGAL::Bbox_2 bbox = inset_bbox(inset_state);
+  print_bbox(bbox);
+
+  // Declarations for albers_formula()
+
   double min_lon = (bbox.xmin() * pi) / 180;
   double min_lat = (bbox.ymin() * pi) / 180;
   double max_lon = (bbox.xmax() * pi) / 180;
   double max_lat = (bbox.ymax() * pi) / 180;
-
-  double lon = (coords.x() * pi) / 180;
-  double lat = (coords.y() * pi) / 180;
 
   double radius = 1;
 
@@ -69,24 +93,8 @@ Point albers_formula(CGAL::Bbox_2 bbox, Point coords) {
   double cos_phi_1 = cos(phi_1);
 
   double n = ((double)1 / 2) * (sin_phi_1 + sin_phi_2);
-
-  double theta = n * (lon - lambda_0);
   double c = pow(cos_phi_1, 2) + (2 * n * sin(phi_1));
-  double rho = (radius / n) * sqrt(c - (2 * n * sin(lat)));
   double rho_0 = (radius / n) * sqrt(c - (2 * n * sin(phi_0)));
-
-  double new_lon = rho * sin(theta);
-  double new_lat = rho_0 - (rho * cos(theta));
-
-  Point coords_converted(new_lon, new_lat);
-
-  return coords_converted;
-}
-
-void albers_projection(InsetState *inset_state) {
-  // Get inset's bbox
-  CGAL::Bbox_2 bbox = inset_bbox(inset_state);
-  print_bbox(bbox);
 
   // Iterate through GeoDivs
   for (GeoDiv &gd : *(inset_state->ref_to_geo_divs())) {
@@ -98,7 +106,12 @@ void albers_projection(InsetState *inset_state) {
       // Iterate through outer boundary's coordinates
       for (Point &coords_outer : outer_boundary) {
         // Assign outer boundary's coordinates to transformed coordinates
-        coords_outer = albers_formula(bbox, coords_outer);
+        coords_outer = albers_formula(coords_outer,
+                                      n,
+                                      c,
+                                      lambda_0,
+                                      radius,
+                                      rho_0);
       }
 
       // Iterate through holes
@@ -109,7 +122,12 @@ void albers_projection(InsetState *inset_state) {
         // Iterate through hole's coordinates
         for (Point &coords_hole : hole) {
           // Assign hole's coordinates to transformed coordinates
-          coords_hole = albers_formula(bbox, coords_hole);
+          coords_hole = albers_formula(coords_hole,
+                                       n,
+                                       c,
+                                       lambda_0,
+                                       radius,
+                                       rho_0);
         }
       }
     }
