@@ -175,6 +175,19 @@ int main(const int argc, const char *argv[])
 
   for (auto &inset_state : *cart_info.ref_to_inset_states()) {
 
+    // Transform map to the Albers projection
+    try {
+      albers_projection(&inset_state);
+    } catch (const std::system_error& e) {
+      std::cerr << "ERROR: "
+                << e.what()
+                << " ("
+                << e.code()
+                << ")"
+                << std::endl;
+      return EXIT_FAILURE;
+    }
+
     // Determining the name of the inset
     std::string inset_name = map_name;
 
@@ -190,7 +203,6 @@ int main(const int argc, const char *argv[])
 
     // Error checking Geometry
     try {
-      // albers_projection(&inset_state);
       holes_inside_polygons(&inset_state);
     } catch (const std::system_error& e) {
       std::cerr << "ERROR: "
