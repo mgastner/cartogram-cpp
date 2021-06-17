@@ -13,6 +13,7 @@
 #include "write_eps.h"
 #include "check_topology.h"
 #include "write_to_json.h"
+#include "auto_color.h"
 #include <boost/program_options.hpp>
 #include <iostream>
 #include "albers_projection.h"
@@ -124,25 +125,27 @@ int main(const int argc, const char *argv[])
   }
 
   CartogramInfo cart_info(visual_file_name,
-                         world,
-                         density_to_eps);
+                          world,
+                          density_to_eps);
 
   if (!make_csv) {
 
     // Read visual variables (e.g. area, color) from CSV
     try {
       read_csv(vm, &cart_info);
-    } catch (const std::runtime_error& e) {
-      std::cerr << "ERROR: "
-                << e.what()
-                << std::endl;
-      return EXIT_FAILURE;
     } catch (const std::system_error& e) {
       std::cerr << "ERROR: "
                 << e.what()
                 << " ("
                 << e.code()
                 << ")"
+                << std::endl;
+      return EXIT_FAILURE;
+    } catch (const std::runtime_error& e) {
+
+      // Likely due to invalid CSV file
+      std::cerr << "ERROR: "
+                << e.what()
                 << std::endl;
       return EXIT_FAILURE;
     }
@@ -204,14 +207,23 @@ int main(const int argc, const char *argv[])
                 &inset_state,
                 cart_info.is_world_map());
 
+    // Setting initial area errors
+    inset_state.set_area_errs();
+
+    // Filling density to fill horizontal adjacency map
+    fill_with_density(&inset_state,
+                      cart_info.trigger_write_density_to_eps());
+
+    // Automatically coloring if no colors provided
+    if (inset_state.colors_empty()) {
+      auto_color(&inset_state);
+    }
+
     // Writing EPS, if requested by command line option
     if (polygons_to_eps) {
       std::cout << "Writing " << inset_name << "_input.eps" << std::endl;
       write_map_to_eps((inset_name + "_input.eps"), &inset_state);
     }
-
-    // Setting initial area errors
-    inset_state.set_area_errs();
 
     // Start map integration
     while (inset_state.n_finished_integrations() < max_integrations &&
@@ -222,8 +234,10 @@ int main(const int argc, const char *argv[])
                 << std::endl;
 
 
-      fill_with_density(&inset_state,
-                        cart_info.trigger_write_density_to_eps());
+      if (inset_state.n_finished_integrations()  >  1) {
+        fill_with_density(&inset_state,
+                          cart_info.trigger_write_density_to_eps());
+      }
       if (inset_state.n_finished_integrations() == 0) {
         blur_density(5.0,
                      &inset_state,
