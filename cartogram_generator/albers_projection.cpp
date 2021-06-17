@@ -88,9 +88,6 @@ void albers_projection(InsetState *inset_state) {
   CGAL::Bbox_2 bbox = inset_bbox(inset_state);
   print_bbox(bbox);
 
-  // Phil's Edit 1
-  // Marc's Edit Again
-
   // Iterate through GeoDivs
   for (GeoDiv &gd : *(inset_state->ref_to_geo_divs())) {
     // Iterate through Polygon_with_holes
