@@ -50,10 +50,24 @@ void InsetState::target_areas_insert(const std::string id, const double area)
 void InsetState::colors_insert(const std::string id, std::string color)
 {
 
+  if (colors.count(id)) {
+    colors.erase(id);
+  }
+
   // From https://stackoverflow.com/questions/313970/how-to-convert-stdstring-
   // to-lower-case
   std::transform(color.begin(), color.end(), color.begin(), ::tolower);
   Color c(color);
+  colors.insert(std::pair<std::string, Color>(id, c));
+  return;
+}
+
+void InsetState::colors_insert(const std::string id, const Color c)
+{
+
+  if (colors.count(id)) {
+    colors.erase(id);
+  }
   colors.insert(std::pair<std::string, Color>(id, c));
   return;
 }
@@ -78,6 +92,16 @@ const Color InsetState::colors_at(const std::string id)
 bool InsetState::colors_empty() const
 {
   return colors.empty();
+}
+
+bool InsetState::color_found(const std::string id) const
+{
+  return colors.count(id);
+}
+
+unsigned int InsetState::colors_size() const
+{
+  return colors.size();
 }
 
 void InsetState::make_grid(const unsigned int x, const unsigned int y)
@@ -242,4 +266,26 @@ void InsetState::set_inset_name(std::string inset_name)
 const std::string InsetState::inset_name() const
 {
   return inset_name_;
+}
+
+void InsetState::set_horizontal_adj(std::vector<std::vector<intersection> > ha)
+{
+  horizontal_adj_.clear();
+  horizontal_adj_ = ha;
+}
+
+void InsetState::set_vertical_adj(std::vector<std::vector<intersection> > va)
+{
+  vertical_adj_.clear();
+  vertical_adj_ = va;
+}
+
+const std::vector<std::vector<intersection> > InsetState::horizontal_adj() const
+{
+  return horizontal_adj_;
+}
+
+const std::vector<std::vector<intersection> > InsetState::vertical_adj() const
+{
+  return vertical_adj_;
 }
