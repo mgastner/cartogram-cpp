@@ -49,7 +49,7 @@ void CartogramInfo::set_map_name(std::string map_name)
   map_name_ = map_name;
 }
 
-int CartogramInfo::n_insets() const
+unsigned int CartogramInfo::n_insets() const
 {
   return inset_states_.size();
 }

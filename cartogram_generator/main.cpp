@@ -40,7 +40,7 @@ int main(const int argc, const char *argv[])
   std::string geo_file_name = "", visual_file_name = ""; // Default values
 
   // Default number of grid cells along longer Cartesian coordinate axis.
-  int long_grid_side_length = default_long_grid_side_length;
+  unsigned int long_grid_side_length = default_long_grid_side_length;
 
   // World maps need special projections. By default, we assume that the
   // input map is not a world map.
@@ -91,7 +91,7 @@ int main(const int argc, const char *argv[])
       "Column name for insets (assumed column name: \"Inset\")"
       )(
       "long_grid_side_length,l",
-      value<int>(&long_grid_side_length),
+      value<unsigned int>(&long_grid_side_length),
       "Number of grid cells along longer Cartesian coordinate axis"
       )(
       "world,w",

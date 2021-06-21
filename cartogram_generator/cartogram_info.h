@@ -24,7 +24,7 @@ public:
   bool is_world_map() const;
   bool trigger_write_density_to_eps() const;
   void set_map_name(std::string map_name);
-  int n_insets() const;
+  unsigned int n_insets() const;
   const std::vector<InsetState> inset_states() const;
   std::vector<InsetState> *ref_to_inset_states();
   void push_back(const InsetState);
