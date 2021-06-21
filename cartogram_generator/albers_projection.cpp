@@ -86,9 +86,6 @@ void adjust_for_dual_hemisphere(InsetState *inset_state, double max_lon_west,
       }
     }
   }
-
-  std::cout << "max west: " << max_lon_west << std::endl;
-  std::cout << "min east: " << min_lon_east << std::endl;
 }
 
 // Declare pi globally for use in albers_formula() and albers_projection()
