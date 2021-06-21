@@ -10,7 +10,7 @@ const std::string GeoDiv::id() const
   return id_;
 }
 
-int GeoDiv::n_polygons_with_holes() const
+unsigned int GeoDiv::n_polygons_with_holes() const
 {
   return polygons_with_holes_.size();
 }
