@@ -40,6 +40,26 @@ CGAL::Bbox_2 inset_bbox(InsetState *inset_state) {
   return inset_bbox;
 }
 
+std::vector<double> max_west_min_east_lon(InsetState inset_state,
+                                          double bbox_xmin, double bbox_xmax) {
+  // Determine the maximum longitude in the western hemisphere and the minimum
+  // longitude in the eastern hemisphere
+  double max_lon_west = bbox_xmin, min_lon_east = bbox_xmax;
+  for (GeoDiv gd : inset_state.geo_divs()) {
+    for (Polygon_with_holes pgnwh : gd.polygons_with_holes()) {
+      max_lon_west =
+          pgnwh.bbox().xmax() < 0 && pgnwh.bbox().xmax() > max_lon_west
+              ? pgnwh.bbox().xmax()
+              : max_lon_west;
+      min_lon_east =
+          pgnwh.bbox().xmin() >= 0 && pgnwh.bbox().xmin() < min_lon_east
+              ? pgnwh.bbox().xmin()
+              : min_lon_east;
+    }
+  }
+  return {max_lon_west, min_lon_east};
+}
+
 void adjust_for_dual_hemisphere(InsetState *inset_state, double max_lon_west,
                                 double min_lon_east) {
   // If min_lon_east == max_lon_west, the whole inset is contained in either
@@ -111,22 +131,7 @@ void albers_projection(InsetState *inset_state) {
   // Get inset's bbox
   CGAL::Bbox_2 bbox = inset_bbox(inset_state);
 
-  // Determine the maximum longitude in the western hemisphere and the minimum
-  // longitude in the eastern hemisphere
-  double max_lon_west = bbox.xmin(), min_lon_east = bbox.xmax();
-  for (GeoDiv gd : inset_state->geo_divs()) {
-    for (Polygon_with_holes pgnwh : gd.polygons_with_holes()) {
-      double pgnwh_bbox_xmax = pgnwh.bbox().xmax();
-      double pgnwh_bbox_xmin = pgnwh.bbox().xmin();
-      max_lon_west = pgnwh_bbox_xmax < 0 && pgnwh_bbox_xmax > max_lon_west
-                         ? pgnwh_bbox_xmax
-                         : max_lon_west;
-      min_lon_east = pgnwh_bbox_xmin >= 0 && pgnwh_bbox_xmin < min_lon_east
-                         ? pgnwh_bbox_xmin
-                         : min_lon_east;
-    }
-  }
-  adjust_for_dual_hemisphere(inset_state, max_lon_west, min_lon_east);
+  // adjust_for_dual_hemisphere(inset_state, max_lon_west, min_lon_east);
 
   // Declarations for albers_formula()
   double min_lon = (bbox.xmin() * pi) / 180;
