@@ -111,6 +111,10 @@ void albers_projection(InsetState *inset_state) {
   // Get inset's bbox
   CGAL::Bbox_2 bbox = inset_bbox(inset_state);
 
+  // Strangely, without this line, it wrongly projects the map rotated 90
+  // degrees counterclockwise
+  std::cout << bbox << std::endl;
+
   // Determine the maximum longitude in the western hemisphere and the minimum
   // longitude in the eastern hemisphere
   double max_lon_west = bbox.xmin(), min_lon_east = bbox.xmax();
@@ -127,6 +131,9 @@ void albers_projection(InsetState *inset_state) {
     }
   }
   adjust_for_dual_hemisphere(inset_state, max_lon_west, min_lon_east);
+
+  // Recalculate the bbox after dual hemisphere adjustment
+  bbox = inset_bbox(inset_state);
 
   // Declarations for albers_formula()
   double min_lon = (bbox.xmin() * pi) / 180;
