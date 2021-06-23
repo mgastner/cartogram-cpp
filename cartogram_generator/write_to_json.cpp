@@ -9,6 +9,16 @@
 json cgal_to_json(InsetState *inset_state){
   
   json container;
+  
+  // Initialize bounding box of map with bounding box of 0-th
+  // Polygon_with_holes in 0-th GeoDiv
+  GeoDiv gd0 = inset_state->geo_divs()[0];
+  std::vector<Polygon_with_holes> pwhs = gd0.polygons_with_holes();
+  CGAL::Bbox_2 bb0 = pwhs[0].bbox();
+  double map_xmin = bb0.xmin();
+  double map_xmax = bb0.xmax();
+  double map_ymin = bb0.ymin();
+  double map_ymax = bb0.ymax();
 
   for (auto gd : inset_state->geo_divs()){
     // For each GeoDiv
@@ -21,6 +31,13 @@ json cgal_to_json(InsetState *inset_state){
       Polygon ext_ring = pwh.outer_boundary();
       json polygon_container;
       json er_container;
+
+      // Get the bounding box values
+      CGAL::Bbox_2 bb = pwh.bbox();
+      map_xmin = (bb.xmin() < map_xmin ? bb.xmin() : map_xmin);
+      map_ymin = (bb.ymin() < map_ymin ? bb.ymin() : map_ymin);
+      map_xmax = (bb.xmax() > map_xmax ? bb.xmax() : map_xmax);
+      map_ymax = (bb.ymax() > map_ymax ? bb.ymax() : map_ymax);
 
       for (unsigned int i = 0; i < ext_ring.size(); i++){
         // Get exterior ring coordinates
@@ -53,6 +70,8 @@ json cgal_to_json(InsetState *inset_state){
 
     container.push_back(gd_container);
   }
+   
+  container.push_back({map_xmin,map_ymin,map_xmax,map_ymax});
 
   return container;
 }
@@ -69,7 +88,7 @@ void write_to_json(json container,
 
   json newJ;
   // For each multipolygon in the container 
-  for (int i = 0; i < (int) container.size(); i++){
+  for (int i = 0; i < (int) container.size() -1; i++){
     newJ["features"][i]["properties"] = old_j["features"][i]["properties"];
     newJ["features"][i]["id"] = old_j["features"][i]["id"];
 
@@ -83,8 +102,16 @@ void write_to_json(json container,
       }
     }
   }
+
+  int bbox_index = (int)container.size() - 1;
+  double bbox_xmin = container[bbox_index][0];
+  double bbox_ymin = container[bbox_index][1];
+  double bbox_xmax = container[bbox_index][2];
+  double bbox_ymax = container[bbox_index][3];
+  
+
   newJ.push_back({"type", old_j["type"]});
-  newJ.push_back({"bbox", old_j["bbox"]});
+  newJ.push_back({"bbox", {bbox_xmin, bbox_ymin, bbox_xmax, bbox_ymax}});
   
   std::ofstream o(new_geo_fn);
   o << newJ << std::endl;
