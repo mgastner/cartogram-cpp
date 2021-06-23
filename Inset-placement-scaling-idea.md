@@ -174,7 +174,7 @@ We need to change the x, y values, and bbox values of the geojson considering ho
 double xMin_A, xMax_A, yMin_A, yMax_A;
 
 //Inset A geojson's x, y values;
-double x_InsetA, y_InsetB;
+double x_InsetA, y_InsetA;
 
 //We have the main Inset's (the one that will stay in the center) bounding box values
 
@@ -185,22 +185,22 @@ double xMin_main, xMax_main, yMin_main, yMax_main;
 //To shift the inset to the "T" (top)
 
 x_InsetA = xInsetA;
-y_InsetB = y_InsetB + (yMax_main + yMax_A)/2;
+y_InsetA = y_InsetA + yMax_main + yMax_A;
 
 //To shift the inset to the "R" (right)
 
-x_InsetA = xInsetA + (xMax_main + xMax_A)/2;
-y_InsetB = y_InsetB;
+x_InsetA = xInsetA + xMax_main + xMax_A;
+y_InsetA = y_InsetA;
 
 //To shift the inset to the "B" (bottom)
 
 x_InsetA = xInsetA;
-y_InsetB = y_InsetB - (yMax_main + yMax_A)/2;
+y_InsetA = y_InsetA + yMin_main + yMin_A;
 
 //To shift the inset to the "L" (left)
 
-x_InsetA = xInsetA - (xMax_main + xMax_A)/2;
-y_InsetB = y_InsetB;
+x_InsetA = xInsetA + xMin_main + xMin_A;
+y_InsetA = y_InsetA;
 ```
 
 
