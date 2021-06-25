@@ -91,7 +91,7 @@ void adjust_for_dual_hemisphere(InsetState *inset_state, double max_lon_west,
 // Declare pi globally for use in albers_formula() and albers_projection()
 double pi = M_PI;
 
-Point albers_formula(Point coords, double n, double c, double lambda_0,
+Point projected_albers_coordinates(Point coords, double n, double c, double lambda_0,
                      double radius, double rho_0) {
   double lon = (coords.x() * pi) / 180;
   double lat = (coords.y() * pi) / 180;
@@ -107,7 +107,7 @@ Point albers_formula(Point coords, double n, double c, double lambda_0,
   return coords_converted;
 }
 
-void albers_projection(InsetState *inset_state) {
+void transform_to_albers_projection(InsetState *inset_state) {
   // Get inset's bbox
   CGAL::Bbox_2 bbox = inset_bbox(inset_state);
 
