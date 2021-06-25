@@ -14,10 +14,10 @@ void print_bbox(CGAL::Bbox_2 bbox) {
   std::cout << "lat_max: " << bbox.ymax() << std::endl << std::endl;
 }
 
-CGAL::Bbox_2 inset_bbox(InsetState inset_state) {
+CGAL::Bbox_2 inset_bbox(InsetState *inset_state) {
   double inset_xmin, inset_ymin, inset_xmax, inset_ymax;
 
-  for (GeoDiv gd : inset_state.geo_divs()) {
+  for (GeoDiv gd : (*inset_state).geo_divs()) {
     for (Polygon_with_holes pgnwh : gd.polygons_with_holes()) {
       CGAL::Bbox_2 pgnwh_bbox = pgnwh.bbox();
       inset_xmin = !inset_xmin || pgnwh_bbox.xmin() < inset_xmin
@@ -36,6 +36,9 @@ CGAL::Bbox_2 inset_bbox(InsetState inset_state) {
   }
 
   CGAL::Bbox_2 inset_bbox(inset_xmin, inset_ymin, inset_xmax, inset_ymax);
+
+  CGAL::set_pretty_mode(std::cout);
+  std::cout << inset_bbox << std::endl;
 
   return inset_bbox;
 }
@@ -138,14 +141,14 @@ Point albers_formula(Point coords, double n, double c, double lambda_0,
 
 void albers_projection(InsetState *inset_state) {
   // Get inset's bbox
-  CGAL::Bbox_2 bbox = inset_bbox(*inset_state);
+  CGAL::Bbox_2 bbox = inset_bbox(inset_state);
 
   // Adjust the longitude coordinates if the inset spans both the eastern and
   // western hemispheres
   adjust_for_dual_hemisphere(inset_state, bbox.xmin(), bbox.xmax());
 
   // Recalculate the bbox after dual hemisphere adjustment
-  bbox = inset_bbox(*inset_state);
+  bbox = inset_bbox(inset_state);
 
   // Declarations for albers_formula()
   double min_lon = (bbox.xmin() * pi) / 180;
