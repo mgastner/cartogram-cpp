@@ -54,6 +54,7 @@ void read_csv(const boost::program_options::variables_map vm,
   if (color_col == csv::CSV_NOT_FOUND) {
     color_col = reader.index_of("Colour");
   }
+  double total_target_area_CSV = 0;
 
   // Reading CSV
   for (auto &row : reader) {
@@ -95,6 +96,10 @@ void read_csv(const boost::program_options::variables_map vm,
       }
     }
 
+
+    //Store it inside cart_info;
+
+
     // Read color
     std::string color = "";
     if (color_col != csv::CSV_NOT_FOUND) {
@@ -110,9 +115,16 @@ void read_csv(const boost::program_options::variables_map vm,
     // Associating GeoDiv ID with Inset Positon
     cart_info->gd_to_inset_insert(id, inset_pos);
 
+    // Get total Area
+    // Store it
+    
+    total_target_area_CSV += area;
+
     // Checking whether inset_state for inset_pos already exists
     bool found = false;
     for (auto &inset_state : *cart_info->ref_to_inset_states()) {
+      //store here
+      
       if (inset_state.pos() == inset_pos) {
         inset_state.target_areas_insert(id, area);
         if (color != "") {
@@ -129,6 +141,9 @@ void read_csv(const boost::program_options::variables_map vm,
       }
       cart_info->push_back(inset_state);
     }
+  }
+  for (auto &inset_state : *cart_info->ref_to_inset_states()) {
+  inset_state.total_target_area_CSV_insert(total_target_area_CSV);
   }
   return;
 }

@@ -30,6 +30,16 @@ const std::vector<GeoDiv> InsetState::geo_divs() const
   return geo_divs_;
 }
 
+void InsetState::total_target_area_CSV_insert(double total_target_area_CSV) //gets total area of CSV
+{
+  total_target_area_CSV_ = total_target_area_CSV;
+}
+
+double InsetState::get_total_target_area_CSV() //returns total target area CSV
+{
+  return total_target_area_CSV_;
+}
+
 std::vector<GeoDiv> *InsetState::ref_to_geo_divs()
 {
   return &geo_divs_;
@@ -45,6 +55,17 @@ void InsetState::target_areas_insert(const std::string id, const double area)
 {
   target_areas.insert(std::pair<std::string, double>(id, area));
   return;
+}
+// Create a function to return the sum target_areas_area;
+
+double InsetState::inset_target_area_sum() //return the total target area within an inset
+{
+  double sum = 0;
+  for(auto& i:target_areas)
+  {
+    sum = sum + i.second;
+  }
+  return sum;
 }
 
 void InsetState::colors_insert(const std::string id, std::string color)

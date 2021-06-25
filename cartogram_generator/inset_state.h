@@ -45,6 +45,7 @@ private:
   fftw_plan fwd_plan_for_rho_, bwd_plan_for_rho_;
   unsigned int n_finished_integrations_;
   boost::multi_array<XYPoint, 2> proj_;
+  double total_target_area_CSV_; ////
 
   // Horizontal and Vertical adjacency graphs
   std::vector<std::vector<intersection> > horizontal_adj_;
@@ -56,6 +57,9 @@ public:
   unsigned int n_geo_divs() const;
   const std::vector<GeoDiv> geo_divs() const;
   std::vector<GeoDiv> *ref_to_geo_divs();
+  void total_target_area_CSV_insert(double total_target_area_CSV); ////
+  double get_total_target_area_CSV(); ////
+  double inset_target_area_sum();
   void set_geo_divs(std::vector<GeoDiv>);
   void target_areas_insert(std::string, double);
   void colors_insert(const std::string, std::string);

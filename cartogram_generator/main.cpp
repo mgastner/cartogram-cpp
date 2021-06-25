@@ -253,6 +253,10 @@ int main(const int argc, const char *argv[])
       inset_state.set_area_errs();
     }
 
+    rescale_map2(long_grid_side_length,
+                &inset_state,
+                cart_info.is_world_map());
+
     // Printing final cartogram
     json cart_json = cgal_to_json(&inset_state);
     write_to_json(cart_json,
