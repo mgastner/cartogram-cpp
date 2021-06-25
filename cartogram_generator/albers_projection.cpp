@@ -40,6 +40,18 @@ CGAL::Bbox_2 inset_bbox(InsetState inset_state) {
   return inset_bbox;
 }
 
+void connect_detached_polygons() {
+  // iterate through each polygon whose boundary is affected
+
+    // iterate through each vertex in the polygon
+
+      // identify which coordinates need to be removed
+    
+      // identify which coordinates need to be reconnected
+
+      // * can't just change the coordinates, but need to add the new coordinates to the older coordinates
+}
+
 void adjust_for_dual_hemisphere(InsetState *inset_state, double bbox_xmin,
                                 double bbox_xmax) {
   // Determine the maximum longitude in the western hemisphere and the minimum
