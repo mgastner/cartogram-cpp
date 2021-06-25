@@ -11,6 +11,7 @@ FTReal2d::FTReal2d(const unsigned int i, const unsigned int j)
   allocate_ft();
 }
 
+// TODO: Remove next function
 FTReal2d::~FTReal2d()
 {
   if (array_) {
