@@ -93,8 +93,6 @@ void rescale_map(unsigned int long_grid_side_length,
 }
 
 
-// 
-
 void unscale_map(InsetState *inset_state)
 {
 
@@ -119,11 +117,9 @@ void unscale_map(InsetState *inset_state)
 }
 
 
-void rescale_map2(unsigned int long_grid_side_length,
-                 InsetState *inset_state,
-                 bool is_world_map)
+void rescale_output_geojson(InsetState *inset_state)
 {
-  double padding = (is_world_map ?  1.0 : padding_unless_world);
+  double padding = padding_unless_world;
 
   // Initialize bounding box of map with bounding box of 0-th
   // Polygon_with_holes in 0-th GeoDiv
@@ -152,47 +148,14 @@ void rescale_map2(unsigned int long_grid_side_length,
   double new_ymin = 0.5 * ((1.0-padding)*map_ymax + (1.0+padding)*map_ymin);
   double new_ymax = 0.5 * ((1.0+padding)*map_ymax + (1.0-padding)*map_ymin);
 
-  // Ensure that the grid dimensions lx and ly are integer powers of 2
-  // if ((long_grid_side_length <= 0) ||
-  //     ((long_grid_side_length &
-  //       (~long_grid_side_length + 1)) != long_grid_side_length)) {
-  //   std::cerr << "ERROR: long_grid_side_length must be an integer"
-  //             << "power of 2." << std::endl;
-  //   _Exit(15);
-  // }
-  // unsigned int lx, ly;
-  // double latt_const;
-  // if (map_xmax-map_xmin > map_ymax-map_ymin) {
-  //   lx = long_grid_side_length;
-  //   latt_const = (new_xmax-new_xmin) / lx;
-  //   ly = 1 << ((int) ceil(log2((new_ymax-new_ymin) / latt_const)));
-  //   new_ymax = 0.5*(map_ymax+map_ymin) + 0.5*ly*latt_const;
-  //   new_ymin = 0.5*(map_ymax+map_ymin) - 0.5*ly*latt_const;
-  // } else {
-  //   ly = long_grid_side_length;
-  //   latt_const = (new_ymax-new_ymin) / ly;
-  //   lx = 1 << ((int) ceil(log2((new_xmax-new_xmin) / latt_const)));
-  //   new_xmax = 0.5*(map_xmax+map_xmin) + 0.5*lx*latt_const;
-  //   new_xmin = 0.5*(map_xmax+map_xmin) - 0.5*lx*latt_const;
-  // }
-  // std::cerr << "Rescaling to " << lx << "-by-" << ly
-  //           << " grid with bounding box" << std::endl;
-  // std::cerr << "\t("
-  //           << new_xmin << ", " << new_ymin << ", "
-  //           << new_xmax << ", " << new_ymax << ")"
-  //           << std::endl;
+  // Get the scale_factor value to make insets proportionate to each other
+  double inset_size_proportion = inset_state->get_inset_total_target_area()/ inset_state->get_CSV_total_target_area();
 
-  // Set grid dimensions in inset_state
-  // inset_state->make_grid(lx, ly);
+  double scale_factor = sqrt(1.0/inset_state -> get_cart_area() * inset_size_proportion);
 
   // Rescale all GeoDiv coordinates
   Transformation translate(CGAL::TRANSLATION,
-                           CGAL::Vector_2<Epick>(-(new_xmin + new_xmax)/2, -(new_ymin + new_ymax)/2));
-  
-  double scale_factor = inset_state->inset_target_area_sum()/ inset_state->get_total_target_area_CSV();
-
-  std::cout << inset_state->inset_target_area_sum() << " " << inset_state->get_total_target_area_CSV() <<std::endl;
-
+                           CGAL::Vector_2<Epick>(-(new_xmin + new_xmax) / 2, -(new_ymin + new_ymax) / 2));
   Transformation scale(CGAL::SCALING, scale_factor);
 
   for (auto &gd : *inset_state->ref_to_geo_divs()) {
@@ -207,10 +170,6 @@ void rescale_map2(unsigned int long_grid_side_length,
     }
   }
 
-  // Storing coordinates to rescale in future
-  // inset_state->set_new_xmin(new_xmin);
-  // inset_state->set_new_ymin(new_ymin);
-  // inset_state->set_map_scale(latt_const);
+return;
 
-  return;
 }

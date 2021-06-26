@@ -30,14 +30,14 @@ const std::vector<GeoDiv> InsetState::geo_divs() const
   return geo_divs_;
 }
 
-void InsetState::total_target_area_CSV_insert(double total_target_area_CSV) //gets total area of CSV
+void InsetState::set_CSV_total_target_area(double CSV_total_target_area_) //gets total area of CSV (i.e total population, GDP)
 {
-  total_target_area_CSV_ = total_target_area_CSV;
+  CSV_total_target_area = CSV_total_target_area_;
 }
 
-double InsetState::get_total_target_area_CSV() //returns total target area CSV
+double InsetState::get_CSV_total_target_area() //returns total target area CSV
 {
-  return total_target_area_CSV_;
+  return CSV_total_target_area;
 }
 
 std::vector<GeoDiv> *InsetState::ref_to_geo_divs()
@@ -56,16 +56,15 @@ void InsetState::target_areas_insert(const std::string id, const double area)
   target_areas.insert(std::pair<std::string, double>(id, area));
   return;
 }
-// Create a function to return the sum target_areas_area;
 
-double InsetState::inset_target_area_sum() //return the total target area within an inset
+double InsetState::get_inset_total_target_area() //return the total target area within an inset
 {
-  double sum = 0;
-  for(auto& i:target_areas)
+  double inset_total_target_area = 0;
+  for(auto& geo_div_target_area:target_areas)
   {
-    sum = sum + i.second;
+    inset_total_target_area += geo_div_target_area.second;
   }
-  return sum;
+  return inset_total_target_area;
 }
 
 void InsetState::colors_insert(const std::string id, std::string color)
@@ -251,6 +250,18 @@ void InsetState::set_area_errs()
     }
   }
 }
+
+double InsetState::get_cart_area() // Calculates total area inside a cartogram
+{
+  double sum_cart_area = 0;
+  for (auto gd : geo_divs_) {
+    if (!target_area_is_missing(gd.id())) {
+      sum_cart_area += gd.area();
+    }
+  }
+  return sum_cart_area;
+}
+
 
 double InsetState::area_errs_at(const std::string id) const
 {

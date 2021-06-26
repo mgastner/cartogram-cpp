@@ -253,9 +253,8 @@ int main(const int argc, const char *argv[])
       inset_state.set_area_errs();
     }
 
-    rescale_map2(long_grid_side_length,
-                &inset_state,
-                cart_info.is_world_map());
+    // Rescale output geojson to make insets proportionate to each other
+    rescale_output_geojson(&inset_state);
 
     // Printing final cartogram
     json cart_json = cgal_to_json(&inset_state);

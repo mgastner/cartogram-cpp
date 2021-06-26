@@ -33,6 +33,7 @@ void read_csv(const boost::program_options::variables_map vm,
   cart_info->set_id_header(id_header);
 
   // Finding index of column with Target Areas
+  double total_target_area_CSV = 0; // to store total Target Areas
   int area_col = 1;
   if (vm.count("area")) {
     area_col = reader.index_of(vm["area"].as<std::string>());
@@ -54,7 +55,6 @@ void read_csv(const boost::program_options::variables_map vm,
   if (color_col == csv::CSV_NOT_FOUND) {
     color_col = reader.index_of("Colour");
   }
-  double total_target_area_CSV = 0;
 
   // Reading CSV
   for (auto &row : reader) {
@@ -96,9 +96,7 @@ void read_csv(const boost::program_options::variables_map vm,
       }
     }
 
-
-    //Store it inside cart_info;
-
+    total_target_area_CSV += area; // Adding target_area (ie. population, GDP) value to the variable total_target_area_CSV
 
     // Read color
     std::string color = "";
@@ -114,11 +112,7 @@ void read_csv(const boost::program_options::variables_map vm,
 
     // Associating GeoDiv ID with Inset Positon
     cart_info->gd_to_inset_insert(id, inset_pos);
-
-    // Get total Area
-    // Store it
     
-    total_target_area_CSV += area;
 
     // Checking whether inset_state for inset_pos already exists
     bool found = false;
@@ -142,8 +136,12 @@ void read_csv(const boost::program_options::variables_map vm,
       cart_info->push_back(inset_state);
     }
   }
-  for (auto &inset_state : *cart_info->ref_to_inset_states()) {
-  inset_state.total_target_area_CSV_insert(total_target_area_CSV);
+
+  // Storing CSV total target area inside every inset object
+  for (auto &inset_state : *cart_info->ref_to_inset_states())
+  {
+  inset_state.set_CSV_total_target_area(total_target_area_CSV);
   }
+
   return;
 }
