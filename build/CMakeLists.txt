@@ -68,7 +68,7 @@ add_executable(
   ../cartogram_generator/fill_with_density.cpp
   ../cartogram_generator/blur_density.cpp
   ../cartogram_generator/flatten_density.cpp
-  ../cartogram_generator/ft_real_2d.cpp
+  ../cartogram_generator/real_2d_array.cpp
   ../cartogram_generator/interpolate_bilinearly.cpp
   ../cartogram_generator/project.cpp
   ../cartogram_generator/write_to_json.cpp)

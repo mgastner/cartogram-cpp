@@ -10,10 +10,10 @@
 // Function to calculate the velocity at the grid points (x, y) with x =
 // 0.5, 1.5, ..., lx-0.5 and y = 0.5, 1.5, ..., ly-0.5 at time t.
 void calculate_velocity(double t,
-                        FTReal2d &grid_fluxx_init,
-                        FTReal2d &grid_fluxy_init,
-                        FTReal2d &rho_ft,
-                        FTReal2d &rho_init,
+                        Real2dArray &grid_fluxx_init,
+                        Real2dArray &grid_fluxy_init,
+                        Real2dArray &rho_ft,
+                        Real2dArray &rho_init,
                         boost::multi_array<double, 2> *grid_vx,
                         boost::multi_array<double, 2> *grid_vy,
                         const unsigned int lx,
@@ -58,23 +58,27 @@ void flatten_density(InsetState *inset_state)
       proj[i][j].y = j + 0.5;
     }
   }
-  FTReal2d &rho_ft = *inset_state->ref_to_rho_ft();
-  FTReal2d &rho_init = *inset_state->ref_to_rho_init();
+  Real2dArray &rho_ft = *inset_state->ref_to_rho_ft();
+  Real2dArray &rho_init = *inset_state->ref_to_rho_init();
 
   // Allocate memory for the velocity grid
   boost::multi_array<double, 2> grid_vx(boost::extents[lx][ly]);
   boost::multi_array<double, 2> grid_vy(boost::extents[lx][ly]);
 
   // Prepare Fourier transforms for the flux
-  FTReal2d grid_fluxx_init(lx, ly);
-  FTReal2d grid_fluxy_init(lx, ly);
+  Real2dArray grid_fluxx_init;
+  Real2dArray grid_fluxy_init;
+  grid_fluxx_init.allocate(lx, ly);
+  grid_fluxy_init.allocate(lx, ly);
   fftw_plan plan_for_grid_fluxx_init =
     fftw_plan_r2r_2d(lx, ly,
-                     grid_fluxx_init.array(), grid_fluxx_init.array(),
+                     grid_fluxx_init.as_1d_array(),
+                     grid_fluxx_init.as_1d_array(),
                      FFTW_RODFT01, FFTW_REDFT01, FFTW_ESTIMATE);
   fftw_plan plan_for_grid_fluxy_init =
     fftw_plan_r2r_2d(lx, ly,
-                     grid_fluxy_init.array(), grid_fluxy_init.array(),
+                     grid_fluxy_init.as_1d_array(),
+                     grid_fluxy_init.as_1d_array(),
                      FFTW_REDFT01, FFTW_RODFT01, FFTW_ESTIMATE);
 
   // eul[i][j] will be the new position of proj[i][j] proposed by a simple
@@ -259,7 +263,9 @@ void flatten_density(InsetState *inset_state)
     proj = mid;
     delta_t *= inc_after_acc;  // Try a larger step next time
   }
-  fftw_destroy_plan(plan_for_grid_fluxx_init);
-  fftw_destroy_plan(plan_for_grid_fluxy_init);
+  grid_fluxx_init.free();
+  grid_fluxy_init.free();
+  grid_fluxx_init.destroy_fftw_plan();
+  grid_fluxy_init.destroy_fftw_plan();
   return;
 }

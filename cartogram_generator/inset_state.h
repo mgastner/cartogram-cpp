@@ -1,10 +1,9 @@
 #ifndef INSET_STATE_H_
 #define INSET_STATE_H_
 
-#include "ft_real_2d.h"
+#include "real_2d_array.h"
 #include "geo_div.h"
 #include "colors.h"
-#include <fftw3.h>
 #include <vector>
 #include <boost/multi_array.hpp>
 
@@ -40,9 +39,8 @@ private:
   unsigned int lx_, ly_;  // Lattice dimensions
   unsigned int new_xmin_, new_ymin_; // To store map translation vector
   double map_scale_; // Double to map scale
-  FTReal2d rho_init_;  // Rasterized density
-  FTReal2d rho_ft_;  // Fourier transform
-  fftw_plan fwd_plan_for_rho_, bwd_plan_for_rho_;
+  Real2dArray rho_init_;  // Rasterized density
+  Real2dArray rho_ft_;  // Fourier transform
   unsigned int n_finished_integrations_;
   boost::multi_array<XYPoint, 2> proj_;
 
@@ -52,7 +50,6 @@ private:
   InsetState();
 public:
   explicit InsetState(const std::string);
-  ~InsetState();
   unsigned int n_geo_divs() const;
   const std::vector<GeoDiv> geo_divs() const;
   std::vector<GeoDiv> *ref_to_geo_divs();
@@ -65,7 +62,6 @@ public:
   const Color colors_at(const std::string);
   bool colors_empty() const;
   bool color_found(const std::string id) const;
-  void make_grid(const unsigned int, const unsigned int);
   unsigned int lx() const;
   unsigned int ly() const;
   unsigned int new_xmin() const;
@@ -74,8 +70,9 @@ public:
   void set_new_ymin(const unsigned int);
   double map_scale() const;
   void set_map_scale(const double);
-  FTReal2d *ref_to_rho_init();
-  FTReal2d *ref_to_rho_ft();
+  Real2dArray rho_init();
+  Real2dArray *ref_to_rho_init();
+  Real2dArray *ref_to_rho_ft();
   void execute_fwd_plan() const;
   void execute_bwd_plan() const;
   void push_back(const GeoDiv);

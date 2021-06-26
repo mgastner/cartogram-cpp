@@ -10,7 +10,7 @@ void blur_density(const double blur_width,
 {
   const unsigned int lx = inset_state->lx();
   const unsigned int ly = inset_state->ly();
-  FTReal2d &rho_ft = *inset_state->ref_to_rho_ft();
+  Real2dArray &rho_ft = *inset_state->ref_to_rho_ft();
   const double prefactor = -0.5 * blur_width * blur_width * pi * pi;
   for (unsigned int i=0; i<lx; ++i) {
     const double scaled_i_squared = ((double) i / lx) * ((double) i / lx);
@@ -28,8 +28,7 @@ void blur_density(const double blur_width,
       std::to_string(inset_state->n_finished_integrations()) +
       ".eps";
     std::cout << "Writing " << file_name << std::endl;
-    FTReal2d &rho_init = *inset_state->ref_to_rho_init();
-    write_density_to_eps(file_name, rho_init.array(), inset_state);
+    write_density_to_eps(file_name, inset_state);
   }
   return;
 }

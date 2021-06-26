@@ -51,7 +51,7 @@ void fill_with_density(InsetState* inset_state,
     }
   }
   double mean_density = total_target_area / total_current_area;
-  FTReal2d &rho_init = *inset_state->ref_to_rho_init();
+  Real2dArray &rho_init = *inset_state->ref_to_rho_init();
 
   // Initially assign 0 to all densities
   for (unsigned int i = 0; i < inset_state->lx(); ++i) {
@@ -316,7 +316,7 @@ void fill_with_density(InsetState* inset_state,
       std::to_string(inset_state->n_finished_integrations()) +
       ".eps";
     std::cout << "Writing " << file_name << std::endl;
-    write_density_to_eps(file_name, rho_init.array(), inset_state);
+    write_density_to_eps(file_name, inset_state);
   }
   inset_state->execute_fwd_plan();
   return;
