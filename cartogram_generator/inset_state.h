@@ -41,6 +41,7 @@ private:
   double map_scale_; // Double to map scale
   Real2dArray rho_init_;  // Rasterized density
   Real2dArray rho_ft_;  // Fourier transform
+  fftw_plan fwd_plan_for_rho_, bwd_plan_for_rho_;
   unsigned int n_finished_integrations_;
   boost::multi_array<XYPoint, 2> proj_;
 
@@ -57,24 +58,27 @@ public:
   void target_areas_insert(std::string, double);
   void colors_insert(const std::string, std::string);
   void colors_insert(const std::string, const Color);
-  double target_areas_at(const std::string);
+  double target_areas_at(const std::string) const;
   bool target_area_is_missing(const std::string) const;
-  const Color colors_at(const std::string);
+  const Color colors_at(const std::string) const;
   bool colors_empty() const;
   bool color_found(const std::string id) const;
   unsigned int lx() const;
   unsigned int ly() const;
+  void set_grid_dimensions(unsigned int, unsigned int);
   unsigned int new_xmin() const;
   unsigned int new_ymin() const;
   void set_new_xmin(const unsigned int);
   void set_new_ymin(const unsigned int);
   double map_scale() const;
   void set_map_scale(const double);
-  Real2dArray rho_init();
+  Real2dArray rho_init() const;
   Real2dArray *ref_to_rho_init();
   Real2dArray *ref_to_rho_ft();
-  void execute_fwd_plan() const;
-  void execute_bwd_plan() const;
+  void make_fftw_plans_for_rho();
+  void execute_fftw_fwd_plan() const;
+  void execute_fftw_bwd_plan() const;
+  void destroy_fftw_plans_for_rho();
   void push_back(const GeoDiv);
   unsigned int n_finished_integrations() const;
   void inc_integration();

@@ -196,13 +196,13 @@ void heatmap_color(double dens,
 }
 
 void write_density_to_eps(std::string eps_name,
+                          Real2dArray density,
                           InsetState *inset_state)
 {
   std::ofstream eps_file(eps_name);
   write_eps_header_and_definitions(eps_file, eps_name, inset_state);
   unsigned int lx = inset_state->lx();
   unsigned int ly = inset_state->ly();
-  Real2dArray density = inset_state->rho_init();
 
   // Determine range of density
   double dens_min = density(0, 0);
@@ -220,6 +220,46 @@ void write_density_to_eps(std::string eps_name,
     for (unsigned int j = 0; j < ly; ++j) {
       double r, g, b;
       heatmap_color(density(i, j),
+                    dens_min,
+                    dens_mean,
+                    dens_max,
+                    &r, &g, &b);
+      eps_file << i - 0.5*sq_overlap << " " << j - 0.5*sq_overlap  << " sq ";
+      eps_file << r << " " << g << " " << b << " srgb f\n";
+    }
+  }
+  write_polygons_to_eps(eps_file, false, false, inset_state);
+  eps_file << "showpage\n";
+  eps_file << "%%EOF\n";
+  eps_file.close();
+  return;
+}
+
+void write_velocity_to_eps(std::string eps_name,
+                           boost::multi_array<double, 2> *grid_v,
+                           InsetState *inset_state)
+{
+  std::ofstream eps_file(eps_name);
+  write_eps_header_and_definitions(eps_file, eps_name, inset_state);
+  unsigned int lx = inset_state->lx();
+  unsigned int ly = inset_state->ly();
+
+  // Determine range of density
+  double dens_min = (*grid_v)[0][0];
+  double dens_mean = 0.0;
+  double dens_max = (*grid_v)[0][0];
+  for (unsigned int i = 0; i < lx; ++i) {
+    for (unsigned int j = 0; j < ly; ++j) {
+      dens_min = std::min((*grid_v)[i][j], dens_min);
+      dens_mean += (*grid_v)[i][j];
+      dens_max = std::max((*grid_v)[i][j], dens_max);
+    }
+  }
+  dens_mean /= lx * ly;
+  for (unsigned int i = 0; i < lx; ++i) {
+    for (unsigned int j = 0; j < ly; ++j) {
+      double r, g, b;
+      heatmap_color((*grid_v)[i][j],
                     dens_min,
                     dens_mean,
                     dens_max,
