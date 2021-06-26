@@ -116,7 +116,6 @@ void unscale_map(InsetState *inset_state)
   return;
 }
 
-
 void rescale_output_geojson(InsetState *inset_state)
 {
   double padding = padding_unless_world;

@@ -117,8 +117,6 @@ void read_csv(const boost::program_options::variables_map vm,
     // Checking whether inset_state for inset_pos already exists
     bool found = false;
     for (auto &inset_state : *cart_info->ref_to_inset_states()) {
-      //store here
-      
       if (inset_state.pos() == inset_pos) {
         inset_state.target_areas_insert(id, area);
         if (color != "") {
