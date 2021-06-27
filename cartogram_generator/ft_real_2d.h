@@ -3,13 +3,13 @@
 // Real2dArray is allocated with fftw_malloc() instead of malloc() so that
 // the object is optimized for Fourier transforms.
 
-#ifndef REAL_2D_ARRAY_H_
-#define REAL_2D_ARRAY_H_
+#ifndef FT_REAL_2D_H_
+#define FT_REAL_2D_H_
 
 #include <cstddef>
 #include <fftw3.h>
 
-class Real2dArray {
+class FTReal2d {
   double *array_ = NULL;
   unsigned int lx_ = 0, ly_ = 0;  // Lattice dimensions
   fftw_plan plan_;
@@ -17,7 +17,7 @@ public:
   double *as_1d_array();
   void allocate(const unsigned int, const unsigned int);
   void free();
-  void make_fftw_plan();
+  void make_fftw_plan(fftw_r2r_kind kind0, fftw_r2r_kind kind1);
   void execute_fftw_plan();
   void destroy_fftw_plan();
 

@@ -1,12 +1,12 @@
-#include "real_2d_array.h"
+#include "ft_real_2d.h"
 #include <iostream>
 
-double *Real2dArray::as_1d_array()
+double *FTReal2d::as_1d_array()
 {
   return array_;
 }
 
-void Real2dArray::allocate(const unsigned int lx, const unsigned int ly)
+void FTReal2d::allocate(const unsigned int lx, const unsigned int ly)
 {
   lx_ = lx;
   ly_ = ly;
@@ -21,40 +21,40 @@ void Real2dArray::allocate(const unsigned int lx, const unsigned int ly)
   return;
 }
 
-void Real2dArray::free()
+void FTReal2d::free()
 {
   fftw_free(array_);
   return;
 }
 
-void Real2dArray::make_fftw_plan()
+void FTReal2d::make_fftw_plan(fftw_r2r_kind kind0, fftw_r2r_kind kind1)
 {
   plan_ = fftw_plan_r2r_2d(lx_, ly_,
                            array_, array_,
-                           FFTW_RODFT01, FFTW_REDFT01, FFTW_ESTIMATE);
+                           kind0, kind1, FFTW_ESTIMATE);
   return;
 }
 
-void Real2dArray::execute_fftw_plan()
+void FTReal2d::execute_fftw_plan()
 {
   fftw_execute(plan_);
   return;
 }
 
-void Real2dArray::destroy_fftw_plan()
+void FTReal2d::destroy_fftw_plan()
 {
   fftw_destroy_plan(plan_);
   return;
 }
 
 // Setter for array elements
-double &Real2dArray::operator() (const unsigned int i, const unsigned int j)
+double &FTReal2d::operator() (const unsigned int i, const unsigned int j)
 {
   return array_[i*ly_ + j];
 }
 
 // Getter for array elements
-double Real2dArray::operator() (const unsigned int i,
+double FTReal2d::operator() (const unsigned int i,
                                 const unsigned int j) const
 {
   return array_[i*ly_ + j];

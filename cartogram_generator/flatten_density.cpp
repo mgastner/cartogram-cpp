@@ -12,10 +12,10 @@
 // Function to calculate the velocity at the grid points (x, y) with x =
 // 0.5, 1.5, ..., lx-0.5 and y = 0.5, 1.5, ..., ly-0.5 at time t.
 void calculate_velocity(double t,
-                        Real2dArray &grid_fluxx_init,
-                        Real2dArray &grid_fluxy_init,
-                        Real2dArray &rho_ft,
-                        Real2dArray &rho_init,
+                        FTReal2d &grid_fluxx_init,
+                        FTReal2d &grid_fluxy_init,
+                        FTReal2d &rho_ft,
+                        FTReal2d &rho_init,
                         boost::multi_array<double, 2> *grid_vx,
                         boost::multi_array<double, 2> *grid_vy,
                         const unsigned int lx,
@@ -60,20 +60,20 @@ void flatten_density(InsetState *inset_state)
       proj[i][j].y = j + 0.5;
     }
   }
-  Real2dArray &rho_ft = *inset_state->ref_to_rho_ft();
-  Real2dArray &rho_init = *inset_state->ref_to_rho_init();
+  FTReal2d  &rho_ft = *inset_state->ref_to_rho_ft();
+  FTReal2d &rho_init = *inset_state->ref_to_rho_init();
 
   // Allocate memory for the velocity grid
   boost::multi_array<double, 2> grid_vx(boost::extents[lx][ly]);
   boost::multi_array<double, 2> grid_vy(boost::extents[lx][ly]);
 
   // Prepare Fourier transforms for the flux
-  Real2dArray grid_fluxx_init;
-  Real2dArray grid_fluxy_init;
+  FTReal2d grid_fluxx_init;
+  FTReal2d grid_fluxy_init;
   grid_fluxx_init.allocate(lx, ly);
   grid_fluxy_init.allocate(lx, ly);
-  grid_fluxx_init.make_fftw_plan();
-  grid_fluxy_init.make_fftw_plan();
+  grid_fluxx_init.make_fftw_plan(FFTW_RODFT01, FFTW_REDFT01);
+  grid_fluxy_init.make_fftw_plan(FFTW_REDFT01, FFTW_RODFT01);
 
   // eul[i][j] will be the new position of proj[i][j] proposed by a simple
   // Euler step: move a full time interval delta_t with the velocity at time t
@@ -131,22 +131,6 @@ void flatten_density(InsetState *inset_state)
   // grid_fluxy_init
   grid_fluxx_init.execute_fftw_plan();
   grid_fluxy_init.execute_fftw_plan();
-
-  std::cout << "grid_flux in the center: ("
-            << grid_fluxx_init(lx/2, ly/2)
-            << ", "
-            << grid_fluxy_init(lx/2, ly/2)
-            << ")"
-            << std::endl;
-  std::cout << "grid_flux in the bottom left: ("
-            << grid_fluxx_init(0, 0)
-            << ", "
-            << grid_fluxy_init(0, 0)
-            << ")"
-            << std::endl;
-  write_density_to_eps("grid_fluxx.eps", grid_fluxx_init, inset_state);
-  write_density_to_eps("grid_fluxy.eps", grid_fluxy_init, inset_state);
-
   double t = 0.0;
   double delta_t = 1e-2;  // Initial time step.
   int iter = 0;
@@ -158,19 +142,6 @@ void flatten_density(InsetState *inset_state)
                        rho_ft, rho_init,
                        &grid_vx, &grid_vy,
                        lx, ly);
-
-    std::cout << "v in the center: ("
-              << grid_vx[lx/2][ly/2]
-              << ", "
-              << grid_vy[lx/2][ly/2]
-              << ")"
-              << std::endl;
-    std::cout << "v in the bottom left: ("
-              << grid_vx[0][0]
-              << ", "
-              << grid_vy[0][0]
-              << ")"
-              << std::endl;
 
 #pragma omp parallel for
     for (unsigned int i = 0; i < lx; i++) {
@@ -226,9 +197,6 @@ void flatten_density(InsetState *inset_state)
               (proj[i][j].y + 0.5*delta_t*v_intp[i][j].y < 0.0) ||
               (proj[i][j].y + 0.5*delta_t*v_intp[i][j].y > ly)) {
             accept = false;
-
-            std::cout << "Passing a point outside the box" << std::endl;
-
             delta_t *= dec_after_not_acc;
             break;
           }
@@ -270,44 +238,6 @@ void flatten_density(InsetState *inset_state)
                 mid[i][j].x < 0.0 || mid[i][j].x > lx ||
                 mid[i][j].y < 0.0 || mid[i][j].y > ly) {
               accept = false;
-
-              std::cout << "Euler and midpoint too different" << std::endl;
-              std::cout << "mid["
-                        << i
-                        << "]["
-                        << j
-                        << "] = ("
-                        << mid[i][j].x
-                        << ", "
-                        << mid[i][j].y
-                        << ")"
-                        << std::endl;
-              std::cout << "eul["
-                        << i
-                        << "]["
-                        << j
-                        << "] = ("
-                        << eul[i][j].x
-                        << ", "
-                        << eul[i][j].y
-                        << ")"
-                        << std::endl;
-              std::cout << "grid_v["
-                        << i
-                        << "]["
-                        << j
-                        << "] = ("
-                        << grid_vx[i][j]
-                        << ", "
-                        << grid_vy[i][j]
-                        << ")"
-                        << std::endl;
-              std::cout << "delta_t = " << delta_t << std::endl;
-              if (j == ly-1 && delta_t < 1e-10) {
-                write_velocity_to_eps("vx.eps", &grid_vx, inset_state);
-                write_velocity_to_eps("vy.eps", &grid_vy, inset_state);
-                exit(1);
-              }
             }
           }
         }

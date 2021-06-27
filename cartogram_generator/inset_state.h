@@ -1,7 +1,7 @@
 #ifndef INSET_STATE_H_
 #define INSET_STATE_H_
 
-#include "real_2d_array.h"
+#include "ft_real_2d.h"
 #include "geo_div.h"
 #include "colors.h"
 #include <vector>
@@ -39,8 +39,8 @@ private:
   unsigned int lx_, ly_;  // Lattice dimensions
   unsigned int new_xmin_, new_ymin_; // To store map translation vector
   double map_scale_; // Double to map scale
-  Real2dArray rho_init_;  // Rasterized density
-  Real2dArray rho_ft_;  // Fourier transform
+  FTReal2d rho_init_;  // Rasterized density
+  FTReal2d rho_ft_;  // Fourier transform
   fftw_plan fwd_plan_for_rho_, bwd_plan_for_rho_;
   unsigned int n_finished_integrations_;
   boost::multi_array<XYPoint, 2> proj_;
@@ -72,9 +72,9 @@ public:
   void set_new_ymin(const unsigned int);
   double map_scale() const;
   void set_map_scale(const double);
-  Real2dArray rho_init() const;
-  Real2dArray *ref_to_rho_init();
-  Real2dArray *ref_to_rho_ft();
+  FTReal2d rho_init() const;
+  FTReal2d *ref_to_rho_init();
+  FTReal2d *ref_to_rho_ft();
   void make_fftw_plans_for_rho();
   void execute_fftw_fwd_plan() const;
   void execute_fftw_bwd_plan() const;
