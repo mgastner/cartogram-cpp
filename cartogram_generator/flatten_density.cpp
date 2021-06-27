@@ -60,7 +60,7 @@ void flatten_density(InsetState *inset_state)
       proj[i][j].y = j + 0.5;
     }
   }
-  FTReal2d  &rho_ft = *inset_state->ref_to_rho_ft();
+  FTReal2d &rho_ft = *inset_state->ref_to_rho_ft();
   FTReal2d &rho_init = *inset_state->ref_to_rho_init();
 
   // Allocate memory for the velocity grid

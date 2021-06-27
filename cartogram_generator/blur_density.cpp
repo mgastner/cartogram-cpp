@@ -28,9 +28,8 @@ void blur_density(const double blur_width,
       std::to_string(inset_state->n_finished_integrations()) +
       ".eps";
     std::cout << "Writing " << file_name << std::endl;
-    write_density_to_eps(file_name,
-                         inset_state->rho_init().as_1d_array(),
-                         inset_state);
+    FTReal2d &rho_init = *inset_state->ref_to_rho_init();
+    write_density_to_eps(file_name, rho_init.as_1d_array(), inset_state);
   }
   return;
 }

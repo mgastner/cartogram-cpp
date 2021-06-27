@@ -75,9 +75,9 @@ void fill_with_density(InsetState* inset_state,
   // cells to not be inside any GeoDiv. Any graticule cell where rho_den is 0
   // will get the mean_density
   std::vector<std::vector<double> >
-  rho_num(inset_state->lx(), std::vector<double> (inset_state->ly(), 0));
+    rho_num(inset_state->lx(), std::vector<double> (inset_state->ly(), 0));
   std::vector<std::vector<double> >
-  rho_den(inset_state->lx(), std::vector<double> (inset_state->ly(), 0));
+    rho_den(inset_state->lx(), std::vector<double> (inset_state->ly(), 0));
 
   // Iterate through GeoDivs in inset_state
   for (auto gd : inset_state->geo_divs()) {
@@ -314,9 +314,7 @@ void fill_with_density(InsetState* inset_state,
       std::to_string(inset_state->n_finished_integrations()) +
       ".eps";
     std::cout << "Writing " << file_name << std::endl;
-    write_density_to_eps(file_name,
-                         inset_state->rho_init().as_1d_array(),
-                         inset_state);
+    write_density_to_eps(file_name, rho_init.as_1d_array(), inset_state);
   }
   inset_state->execute_fftw_fwd_plan();
   return;

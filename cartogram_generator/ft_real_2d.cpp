@@ -55,7 +55,7 @@ double &FTReal2d::operator() (const unsigned int i, const unsigned int j)
 
 // Getter for array elements
 double FTReal2d::operator() (const unsigned int i,
-                                const unsigned int j) const
+                             const unsigned int j) const
 {
   return array_[i*ly_ + j];
 }

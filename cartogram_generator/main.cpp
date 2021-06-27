@@ -233,13 +233,10 @@ int main(const int argc, const char *argv[])
     // Start map integration
     while (inset_state.n_finished_integrations() < max_integrations &&
            inset_state.max_area_err() > max_permitted_area_error) {
-
       std::cout << "Integration number "
                 << inset_state.n_finished_integrations()
                 << std::endl;
-
-
-      if (inset_state.n_finished_integrations()  >  1) {
+      if (inset_state.n_finished_integrations() > 0) {
         fill_with_density(&inset_state,
                           cart_info.trigger_write_density_to_eps());
       }

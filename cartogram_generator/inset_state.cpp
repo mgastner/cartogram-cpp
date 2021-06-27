@@ -139,11 +139,6 @@ void InsetState::set_map_scale(const double map_scale)
   return;
 }
 
-FTReal2d InsetState::rho_init() const
-{
-  return rho_init_;
-}
-
 FTReal2d *InsetState::ref_to_rho_init()
 {
   return &rho_init_;
