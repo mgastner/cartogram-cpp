@@ -7,8 +7,6 @@
 #include <algorithm>
 #include <vector>
 
-#include "write_eps.h"
-
 // Function to calculate the velocity at the grid points (x, y) with x =
 // 0.5, 1.5, ..., lx-0.5 and y = 0.5, 1.5, ..., ly-0.5 at time t.
 void calculate_velocity(double t,

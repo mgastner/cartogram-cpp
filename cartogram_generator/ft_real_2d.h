@@ -1,4 +1,4 @@
-// The class Real2dArray allows input of two-dimensional real-valued
+// The class FTReal2d allows input of two-dimensional real-valued
 // coordinates into a one-dimensional double array. The memory for a
 // Real2dArray is allocated with fftw_malloc() instead of malloc() so that
 // the object is optimized for Fourier transforms.
