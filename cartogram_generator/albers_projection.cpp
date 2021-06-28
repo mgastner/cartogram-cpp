@@ -75,9 +75,7 @@ void adjust_for_dual_hemisphere(InsetState *inset_state, double bbox_xmin,
     }
   }
 
-  // Set transformation (translation) values
-  // Translate western hemisphere +360 to link up with easter
-  // hemisphere coords
+  // Set transformation (translation) values to +360 for longitude
   Transformation translate(CGAL::TRANSLATION, CGAL::Vector_2<Epick>(360, 0));
 
   // If min_lon_east == max_lon_west, the whole inset is contained in either
@@ -85,15 +83,16 @@ void adjust_for_dual_hemisphere(InsetState *inset_state, double bbox_xmin,
 
   // If min_lon_east - max_lon_west < 180, the inset cannot fit in 1
   // hemisphere
-  // What should be the tolerance value here? 180?
   if (min_lon_east - max_lon_west >= 180) {
+
     // Iterate through GeoDivs
     for (auto &gd : *inset_state->ref_to_geo_divs()) {
+      
       // Iterate through Polygon_with_holes
       for (auto &pgnwh : *gd.ref_to_polygons_with_holes()) {
         Polygon *outer_boundary = &pgnwh.outer_boundary();
 
-        // If the pgnwh is in ther western hemisphere
+        // If the pgnwh is in the western hemisphere
         if (pgnwh.bbox().xmin() < 0) {
           *outer_boundary = transform(translate, *outer_boundary);
 
@@ -129,6 +128,7 @@ Point projected_albers_coordinates(Point coords, double n, double c,
 }
 
 void transform_to_albers_projection(InsetState *inset_state) {
+  
   // Get inset's bbox
   CGAL::Bbox_2 bbox = inset_bbox(inset_state);
 
@@ -168,13 +168,16 @@ void transform_to_albers_projection(InsetState *inset_state) {
 
   // Iterate through GeoDivs
   for (GeoDiv &gd : *(inset_state->ref_to_geo_divs())) {
+
     // Iterate through Polygon_with_holes
     for (Polygon_with_holes &pgnwh : *(gd.ref_to_polygons_with_holes())) {
+
       // Get outer boundary
       Polygon &outer_boundary = *(&pgnwh.outer_boundary());
 
       // Iterate through outer boundary's coordinates
       for (Point &coords_outer : outer_boundary) {
+
         // Assign outer boundary's coordinates to transformed coordinates
         coords_outer = projected_albers_coordinates(coords_outer, n, c,
                                                     lambda_0, radius, rho_0);
