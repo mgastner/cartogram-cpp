@@ -177,7 +177,7 @@ int main(const int argc, const char *argv[])
 
     // Transform map to the Albers projection
     try {
-      albers_projection(&inset_state);
+      transform_to_albers_projection(&inset_state);
     } catch (const std::system_error& e) {
       std::cerr << "ERROR: "
                 << e.what()
