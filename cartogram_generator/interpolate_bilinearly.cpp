@@ -49,7 +49,7 @@ double interpolate_bilinearly(double x,
   // On a scale from 0 to 1, how far is x (or y) away from x0 (or y0)?
   // 1 means x = x1.
   double delta_x = (x - x0) / (x1 - x0);
-  double delta_y = (y - y0) / (y1 / y0);
+  double delta_y = (y - y0) / (y1 - y0);
 
   // Function value at (x0, y0).
   double fx0y0;
