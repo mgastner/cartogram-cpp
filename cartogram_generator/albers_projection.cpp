@@ -36,9 +36,6 @@ CGAL::Bbox_2 inset_bbox(InsetState *inset_state) {
 
   CGAL::Bbox_2 inset_bbox(inset_xmin, inset_ymin, inset_xmax, inset_ymax);
 
-  CGAL::set_pretty_mode(std::cout);
-  std::cout << inset_bbox << std::endl;
-
   return inset_bbox;
 }
 
@@ -128,7 +125,7 @@ Point projected_albers_coordinates(Point coords, double n, double c,
 }
 
 void transform_to_albers_projection(InsetState *inset_state) {
-  
+
   // Get inset's bbox
   CGAL::Bbox_2 bbox = inset_bbox(inset_state);
 
