@@ -4,19 +4,6 @@ InsetState::InsetState(std::string pos) :
   pos_(pos)
 {
   n_finished_integrations_ = 0;
-  fwd_plan_for_rho_ = NULL;
-  bwd_plan_for_rho_ = NULL;
-  return;
-}
-
-InsetState::~InsetState()
-{
-  if (fwd_plan_for_rho_) {
-    fftw_destroy_plan(fwd_plan_for_rho_);
-  }
-  if (bwd_plan_for_rho_) {
-    fftw_destroy_plan(bwd_plan_for_rho_);
-  }
   return;
 }
 
@@ -39,6 +26,7 @@ void InsetState::set_geo_divs(std::vector<GeoDiv> geo_divs_new)
 {
   geo_divs_.clear();
   geo_divs_ = geo_divs_new;
+  return;
 }
 
 void InsetState::target_areas_insert(const std::string id, const double area)
@@ -49,7 +37,6 @@ void InsetState::target_areas_insert(const std::string id, const double area)
 
 void InsetState::colors_insert(const std::string id, std::string color)
 {
-
   if (colors.count(id)) {
     colors.erase(id);
   }
@@ -64,7 +51,6 @@ void InsetState::colors_insert(const std::string id, std::string color)
 
 void InsetState::colors_insert(const std::string id, const Color c)
 {
-
   if (colors.count(id)) {
     colors.erase(id);
   }
@@ -72,19 +58,18 @@ void InsetState::colors_insert(const std::string id, const Color c)
   return;
 }
 
-double InsetState::target_areas_at(const std::string id)
+double InsetState::target_areas_at(const std::string id) const
 {
   return target_areas.at(id);
 }
 
 bool InsetState::target_area_is_missing(const std::string id) const
 {
-
   // We use negative area as indication that GeoDiv has no target area
   return target_areas.at(id) < 0.0;
 }
 
-const Color InsetState::colors_at(const std::string id)
+const Color InsetState::colors_at(const std::string id) const
 {
   return colors.at(id);
 }
@@ -104,25 +89,6 @@ unsigned int InsetState::colors_size() const
   return colors.size();
 }
 
-void InsetState::make_grid(const unsigned int x, const unsigned int y)
-{
-  lx_ = x;
-  ly_ = y;
-  rho_init_.set_array_size(lx_, ly_);
-  rho_init_.allocate_ft();
-  rho_ft_.set_array_size(lx_, ly_);
-  rho_ft_.allocate_ft();
-  fwd_plan_for_rho_ =
-    fftw_plan_r2r_2d(lx_, ly_,
-                     rho_init_.array(), rho_ft_.array(),
-                     FFTW_REDFT10, FFTW_REDFT10, FFTW_ESTIMATE);
-  bwd_plan_for_rho_ =
-    fftw_plan_r2r_2d(lx_, ly_,
-                     rho_ft_.array(), rho_init_.array(),
-                     FFTW_REDFT01, FFTW_REDFT01, FFTW_ESTIMATE);
-  return;
-}
-
 unsigned int InsetState::lx() const
 {
   return lx_;
@@ -131,6 +97,13 @@ unsigned int InsetState::lx() const
 unsigned int InsetState::ly() const
 {
   return ly_;
+}
+
+void InsetState::set_grid_dimensions(unsigned int lx, unsigned int ly)
+{
+  lx_ = lx;
+  ly_ = ly;
+  return;
 }
 
 unsigned int InsetState::new_xmin() const
@@ -146,11 +119,13 @@ unsigned int InsetState::new_ymin() const
 void InsetState::set_new_xmin(const unsigned int new_xmin)
 {
   new_xmin_ = new_xmin;
+  return;
 }
 
 void InsetState::set_new_ymin(const unsigned int new_ymin)
 {
   new_ymin_ = new_ymin;
+  return;
 }
 
 double InsetState::map_scale() const
@@ -161,6 +136,7 @@ double InsetState::map_scale() const
 void InsetState::set_map_scale(const double map_scale)
 {
   map_scale_ = map_scale;
+  return;
 }
 
 FTReal2d *InsetState::ref_to_rho_init()
@@ -173,15 +149,35 @@ FTReal2d *InsetState::ref_to_rho_ft()
   return &rho_ft_;
 }
 
-void InsetState::execute_fwd_plan() const
+void InsetState::make_fftw_plans_for_rho()
+{
+  fwd_plan_for_rho_ =
+    fftw_plan_r2r_2d(lx_, ly_,
+                     rho_init_.as_1d_array(), rho_ft_.as_1d_array(),
+                     FFTW_REDFT10, FFTW_REDFT10, FFTW_ESTIMATE);
+  bwd_plan_for_rho_ =
+    fftw_plan_r2r_2d(lx_, ly_,
+                     rho_ft_.as_1d_array(), rho_init_.as_1d_array(),
+                     FFTW_REDFT01, FFTW_REDFT01, FFTW_ESTIMATE);
+  return;
+}
+
+void InsetState::execute_fftw_fwd_plan() const
 {
   fftw_execute(fwd_plan_for_rho_);
   return;
 }
 
-void InsetState::execute_bwd_plan() const
+void InsetState::execute_fftw_bwd_plan() const
 {
   fftw_execute(bwd_plan_for_rho_);
+  return;
+}
+
+void InsetState::destroy_fftw_plans_for_rho()
+{
+  fftw_destroy_plan(fwd_plan_for_rho_);
+  fftw_destroy_plan(bwd_plan_for_rho_);
   return;
 }
 
@@ -199,6 +195,7 @@ unsigned int InsetState::n_finished_integrations() const
 void InsetState::inc_integration()
 {
   n_finished_integrations_ += 1;
+  return;
 }
 
 boost::multi_array<XYPoint, 2> *InsetState::proj()
@@ -208,10 +205,7 @@ boost::multi_array<XYPoint, 2> *InsetState::proj()
 
 void InsetState::set_area_errs()
 {
-
-  // Formula for relative area error:
-  // area_on_cartogram / target_area - 1
-
+  // Formula for relative area error: area_on_cartogram / target_area - 1
   double sum_target_area = 0.0;
   double sum_cart_area = 0.0;
   for (auto gd : geo_divs_) {
@@ -220,7 +214,6 @@ void InsetState::set_area_errs()
       sum_cart_area += gd.area();
     }
   }
-
   for (auto gd : geo_divs_) {
     if (!target_area_is_missing(gd.id())) {
       double obj_area =
@@ -229,6 +222,7 @@ void InsetState::set_area_errs()
       area_errs[gd.id()] = relative_area_error;
     }
   }
+  return;
 }
 
 double InsetState::area_errs_at(const std::string id) const
@@ -239,11 +233,9 @@ double InsetState::area_errs_at(const std::string id) const
 double InsetState::max_area_err() const
 {
   double mae = 0.0;
-
   for (auto const& [gd_id, area_err] : area_errs) {
     mae = std::max(mae, area_err);
   }
-
   std::cout << "max. area err: " << mae << std::endl << std::endl;
   return mae;
 }
@@ -251,6 +243,7 @@ double InsetState::max_area_err() const
 void InsetState::set_pos(std::string pos)
 {
   pos_ = pos;
+  return;
 }
 
 const std::string InsetState::pos() const
@@ -261,6 +254,7 @@ const std::string InsetState::pos() const
 void InsetState::set_inset_name(std::string inset_name)
 {
   inset_name_ = inset_name;
+  return;
 }
 
 const std::string InsetState::inset_name() const
@@ -272,12 +266,14 @@ void InsetState::set_horizontal_adj(std::vector<std::vector<intersection> > ha)
 {
   horizontal_adj_.clear();
   horizontal_adj_ = ha;
+  return;
 }
 
 void InsetState::set_vertical_adj(std::vector<std::vector<intersection> > va)
 {
   vertical_adj_.clear();
   vertical_adj_ = va;
+  return;
 }
 
 const std::vector<std::vector<intersection> > InsetState::horizontal_adj() const

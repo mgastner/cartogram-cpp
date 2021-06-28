@@ -288,6 +288,10 @@ int main(const int argc, const char *argv[])
                   geo_file_name,
                   (inset_name + "_cartogram_unscaled.geojson"));
 
+    // Clean up after finishing all Fourier transforms for this inset
+    inset_state.destroy_fftw_plans_for_rho();
+    inset_state.ref_to_rho_init()->free();
+    inset_state.ref_to_rho_ft()->free();
   }
 
   return EXIT_SUCCESS;

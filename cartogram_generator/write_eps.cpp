@@ -201,22 +201,25 @@ void write_density_to_eps(std::string eps_name,
 {
   std::ofstream eps_file(eps_name);
   write_eps_header_and_definitions(eps_file, eps_name, inset_state);
+  unsigned int lx = inset_state->lx();
+  unsigned int ly = inset_state->ly();
 
   // Determine range of density
   double dens_min = density[0];
   double dens_mean = 0.0;
   double dens_max = density[0];
-  unsigned int n_grid_cells = inset_state->lx() * inset_state->ly();
-  for (unsigned int k = 0; k < n_grid_cells; ++k) {
-    dens_min = std::min(density[k], dens_min);
-    dens_mean += density[k];
-    dens_max = std::max(density[k], dens_max);
+  for (unsigned int i = 0; i < lx; ++i) {
+    for (unsigned int j = 0; j < ly; ++j) {
+      dens_min = std::min(density[i*ly + j], dens_min);
+      dens_mean += density[i*ly + j];
+      dens_max = std::max(density[i*ly + j], dens_max);
+    }
   }
-  dens_mean /= n_grid_cells;
-  for (unsigned int i = 0; i < inset_state->lx(); ++i) {
-    for (unsigned int j = 0; j < inset_state->ly(); ++j) {
+  dens_mean /= lx * ly;
+  for (unsigned int i = 0; i < lx; ++i) {
+    for (unsigned int j = 0; j < ly; ++j) {
       double r, g, b;
-      heatmap_color(density[i*inset_state->ly() + j],
+      heatmap_color(density[i*ly + j],
                     dens_min,
                     dens_mean,
                     dens_max,

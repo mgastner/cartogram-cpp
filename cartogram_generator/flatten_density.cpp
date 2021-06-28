@@ -66,16 +66,12 @@ void flatten_density(InsetState *inset_state)
   boost::multi_array<double, 2> grid_vy(boost::extents[lx][ly]);
 
   // Prepare Fourier transforms for the flux
-  FTReal2d grid_fluxx_init(lx, ly);
-  FTReal2d grid_fluxy_init(lx, ly);
-  fftw_plan plan_for_grid_fluxx_init =
-    fftw_plan_r2r_2d(lx, ly,
-                     grid_fluxx_init.array(), grid_fluxx_init.array(),
-                     FFTW_RODFT01, FFTW_REDFT01, FFTW_ESTIMATE);
-  fftw_plan plan_for_grid_fluxy_init =
-    fftw_plan_r2r_2d(lx, ly,
-                     grid_fluxy_init.array(), grid_fluxy_init.array(),
-                     FFTW_REDFT01, FFTW_RODFT01, FFTW_ESTIMATE);
+  FTReal2d grid_fluxx_init;
+  FTReal2d grid_fluxy_init;
+  grid_fluxx_init.allocate(lx, ly);
+  grid_fluxy_init.allocate(lx, ly);
+  grid_fluxx_init.make_fftw_plan(FFTW_RODFT01, FFTW_REDFT01);
+  grid_fluxy_init.make_fftw_plan(FFTW_REDFT01, FFTW_RODFT01);
 
   // eul[i][j] will be the new position of proj[i][j] proposed by a simple
   // Euler step: move a full time interval delta_t with the velocity at time t
@@ -131,8 +127,8 @@ void flatten_density(InsetState *inset_state)
 
   // Compute the flux vector and store the result in grid_fluxx_init and
   // grid_fluxy_init
-  fftw_execute(plan_for_grid_fluxx_init);
-  fftw_execute(plan_for_grid_fluxy_init);
+  grid_fluxx_init.execute_fftw_plan();
+  grid_fluxy_init.execute_fftw_plan();
   double t = 0.0;
   double delta_t = 1e-2;  // Initial time step.
   int iter = 0;
@@ -144,6 +140,7 @@ void flatten_density(InsetState *inset_state)
                        rho_ft, rho_init,
                        &grid_vx, &grid_vy,
                        lx, ly);
+
 #pragma omp parallel for
     for (unsigned int i = 0; i < lx; i++) {
       for (unsigned int j = 0; j < ly; j++) {
@@ -250,7 +247,13 @@ void flatten_density(InsetState *inset_state)
 
     // Control ouput.
     if (iter % 10 == 0) {
-      std::cout << "iter = " << iter << ", t = " << t << ", delta_t = " << delta_t << "\n";
+      std::cout << "iter = "
+                << iter
+                << ", t = "
+                << t
+                << ", delta_t = "
+                << delta_t
+                << "\n";
     }
 
     // When we get here, the integration step was accepted
@@ -259,7 +262,9 @@ void flatten_density(InsetState *inset_state)
     proj = mid;
     delta_t *= inc_after_acc;  // Try a larger step next time
   }
-  fftw_destroy_plan(plan_for_grid_fluxx_init);
-  fftw_destroy_plan(plan_for_grid_fluxy_init);
+  grid_fluxx_init.destroy_fftw_plan();
+  grid_fluxy_init.destroy_fftw_plan();
+  grid_fluxx_init.free();
+  grid_fluxy_init.free();
   return;
 }
