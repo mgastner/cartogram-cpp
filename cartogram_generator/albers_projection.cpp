@@ -62,18 +62,18 @@ void adjust_for_dual_hemisphere(InsetState *inset_state, double bbox_xmin,
   double max_lon_west = bbox_xmin;
   double min_lon_east = bbox_xmax;
   InsetState inset_state_new = *inset_state; // This line changes inset_state
-  // for (GeoDiv gd : (*inset_state).geo_divs()) {
-  //   for (Polygon_with_holes pgnwh : gd.polygons_with_holes()) {
-  //     double pgnwh_bbox_xmax = pgnwh.bbox().xmax();
-  //     double pgnwh_bbox_xmin = pgnwh.bbox().xmin();
-  //     max_lon_west = pgnwh_bbox_xmax < 0 && pgnwh_bbox_xmax > max_lon_west
-  //                        ? pgnwh_bbox_xmax
-  //                        : max_lon_west;
-  //     min_lon_east = pgnwh_bbox_xmin >= 0 && pgnwh_bbox_xmin < min_lon_east
-  //                        ? pgnwh_bbox_xmin
-  //                        : min_lon_east;
-  //   }
-  // }
+  for (GeoDiv gd : (*inset_state).geo_divs()) {
+    for (Polygon_with_holes pgnwh : gd.polygons_with_holes()) {
+      double pgnwh_bbox_xmax = pgnwh.bbox().xmax();
+      double pgnwh_bbox_xmin = pgnwh.bbox().xmin();
+      max_lon_west = pgnwh_bbox_xmax < 0 && pgnwh_bbox_xmax > max_lon_west
+                         ? pgnwh_bbox_xmax
+                         : max_lon_west;
+      min_lon_east = pgnwh_bbox_xmin >= 0 && pgnwh_bbox_xmin < min_lon_east
+                         ? pgnwh_bbox_xmin
+                         : min_lon_east;
+    }
+  }
 
   // If min_lon_east == max_lon_west, the whole inset is contained in either
   // only the western or only the eastern hemisphere

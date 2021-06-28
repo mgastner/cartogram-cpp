@@ -14,9 +14,9 @@
 #include "check_topology.h"
 #include "write_to_json.h"
 #include "auto_color.h"
+#include "albers_projection.h"
 #include <boost/program_options.hpp>
 #include <iostream>
-#include "albers_projection.h"
 
 // Functions that are called if the corresponding command-line options are
 // present
@@ -214,39 +214,43 @@ int main(const int argc, const char *argv[])
     //   return EXIT_FAILURE;
     // }
 
-    // // Rescale map to fit into a rectangular box [0, lx] * [0, ly].
-    // rescale_map(long_grid_side_length,
-    //             &inset_state,
-    //             cart_info.is_world_map());
+    // Rescale map to fit into a rectangular box [0, lx] * [0, ly].
+    rescale_map(long_grid_side_length,
+                &inset_state,
+                cart_info.is_world_map());
 
-    // // Setting initial area errors
-    // inset_state.set_area_errs();
+    // Set up Fourier transforms
+    unsigned int lx = inset_state.lx();
+    unsigned int ly = inset_state.ly();
+    inset_state.ref_to_rho_init()->allocate(lx, ly);
+    inset_state.ref_to_rho_ft()->allocate(lx, ly);
+    inset_state.make_fftw_plans_for_rho();
 
-    // // Filling density to fill horizontal adjacency map
-    // fill_with_density(&inset_state,
-    //                   cart_info.trigger_write_density_to_eps());
+    // Setting initial area errors
+    inset_state.set_area_errs();
 
-    // // Automatically coloring if no colors provided
-    // if (inset_state.colors_empty()) {
-    //   auto_color(&inset_state);
-    // }
+    // Filling density to fill horizontal adjacency map
+    fill_with_density(&inset_state,
+                      cart_info.trigger_write_density_to_eps());
 
-    // // Writing EPS, if requested by command line option
-    // if (polygons_to_eps) {
-    //   std::cout << "Writing " << inset_name << "_input.eps" << std::endl;
-    //   write_map_to_eps((inset_name + "_input.eps"), &inset_state);
-    // }
+    // Automatically coloring if no colors provided
+    if (inset_state.colors_empty()) {
+      auto_color(&inset_state);
+    }
+
+    // Writing EPS, if requested by command line option
+    if (polygons_to_eps) {
+      std::cout << "Writing " << inset_name << "_input.eps" << std::endl;
+      write_map_to_eps((inset_name + "_input.eps"), &inset_state);
+    }
 
     // // Start map integration
     // while (inset_state.n_finished_integrations() < max_integrations &&
     //        inset_state.max_area_err() > max_permitted_area_error) {
-
     //   std::cout << "Integration number "
     //             << inset_state.n_finished_integrations()
     //             << std::endl;
-
-
-    //   if (inset_state.n_finished_integrations()  >  1) {
+    //   if (inset_state.n_finished_integrations() > 0) {
     //     fill_with_density(&inset_state,
     //                       cart_info.trigger_write_density_to_eps());
     //   }
@@ -279,7 +283,7 @@ int main(const int argc, const char *argv[])
       write_map_to_eps((inset_name + "_output.eps"), &inset_state);
     }
 
-    // // Removing transformations
+    // Removing transformations
     unscale_map(&inset_state);
 
     // Printing unscaled cartogram
