@@ -240,7 +240,7 @@ void fill_with_density(InsetState* inset_state,
             if (ceil(left_x) == ceil(right_x)) {
               double weight =
                 inset_state->area_errs_at(intersections[l].geo_div_id) *
-                (right_x - left_x);
+                                                        (right_x - left_x);
               double target_dens = intersections[l].target_density;
               rho_num[ceil(left_x) - 1][k] += weight * target_dens;
               rho_den[ceil(left_x) - 1][k] += weight;
@@ -253,7 +253,7 @@ void fill_with_density(InsetState* inset_state,
         unsigned int last_x = intersections.back().x;
         double last_weight =
           inset_state->area_errs_at(intersections.back().geo_div_id) *
-          (ceil(last_x) - last_x);
+                    (ceil(last_x) - last_x);
         double last_target_density = intersections.back().target_density;
         rho_num[ceil(last_x) - 1][k] += last_weight * last_target_density;
         rho_den[ceil(last_x) - 1][k] += last_weight;
@@ -292,6 +292,7 @@ void fill_with_density(InsetState* inset_state,
           }
           rho_num[m - 1][k] += weight * target_dens;
           rho_den[m - 1][k] += weight;
+
         }
       }
     }
@@ -307,6 +308,7 @@ void fill_with_density(InsetState* inset_state,
       }
     }
   }
+
   if (trigger_write_density_to_eps) {
     std::string file_name =
       inset_state->inset_name() +
@@ -314,8 +316,8 @@ void fill_with_density(InsetState* inset_state,
       std::to_string(inset_state->n_finished_integrations()) +
       ".eps";
     std::cout << "Writing " << file_name << std::endl;
-    write_density_to_eps(file_name, rho_init.as_1d_array(), inset_state);
+    write_density_to_eps(file_name, rho_init.array(), inset_state);
   }
-  inset_state->execute_fftw_fwd_plan();
+  inset_state->execute_fwd_plan();
   return;
 }

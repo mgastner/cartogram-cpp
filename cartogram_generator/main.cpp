@@ -14,9 +14,9 @@
 #include "check_topology.h"
 #include "write_to_json.h"
 #include "auto_color.h"
-#include "albers_projection.h"
 #include <boost/program_options.hpp>
 #include <iostream>
+#include "albers_projection.h"
 
 // Functions that are called if the corresponding command-line options are
 // present
@@ -177,7 +177,7 @@ int main(const int argc, const char *argv[])
 
     // Transform map to the Albers projection
     try {
-      transform_to_albers_projection(&inset_state);
+      albers_projection(&inset_state);
     } catch (const std::system_error& e) {
       std::cerr << "ERROR: "
                 << e.what()
@@ -201,30 +201,23 @@ int main(const int argc, const char *argv[])
     }
     inset_state.set_inset_name(inset_name);
 
-    // // Error checking Geometry
-    // try {
-    //   holes_inside_polygons(&inset_state);
-    // } catch (const std::system_error& e) {
-    //   std::cerr << "ERROR: "
-    //             << e.what()
-    //             << " ("
-    //             << e.code()
-    //             << ")"
-    //             << std::endl;
-    //   return EXIT_FAILURE;
-    // }
+    // Error checking Geometry
+    try {
+      holes_inside_polygons(&inset_state);
+    } catch (const std::system_error& e) {
+      std::cerr << "ERROR: "
+                << e.what()
+                << " ("
+                << e.code()
+                << ")"
+                << std::endl;
+      return EXIT_FAILURE;
+    }
 
     // Rescale map to fit into a rectangular box [0, lx] * [0, ly].
     rescale_map(long_grid_side_length,
                 &inset_state,
                 cart_info.is_world_map());
-
-    // Set up Fourier transforms
-    unsigned int lx = inset_state.lx();
-    unsigned int ly = inset_state.ly();
-    inset_state.ref_to_rho_init()->allocate(lx, ly);
-    inset_state.ref_to_rho_ft()->allocate(lx, ly);
-    inset_state.make_fftw_plans_for_rho();
 
     // Setting initial area errors
     inset_state.set_area_errs();
@@ -244,32 +237,35 @@ int main(const int argc, const char *argv[])
       write_map_to_eps((inset_name + "_input.eps"), &inset_state);
     }
 
-    // // Start map integration
-    // while (inset_state.n_finished_integrations() < max_integrations &&
-    //        inset_state.max_area_err() > max_permitted_area_error) {
-    //   std::cout << "Integration number "
-    //             << inset_state.n_finished_integrations()
-    //             << std::endl;
-    //   if (inset_state.n_finished_integrations() > 0) {
-    //     fill_with_density(&inset_state,
-    //                       cart_info.trigger_write_density_to_eps());
-    //   }
-    //   if (inset_state.n_finished_integrations() == 0) {
-    //     blur_density(5.0,
-    //                  &inset_state,
-    //                  cart_info.trigger_write_density_to_eps());
-    //   } else {
-    //     blur_density(0.0,
-    //                  &inset_state,
-    //                  cart_info.trigger_write_density_to_eps());
-    //   }
-    //   flatten_density(&inset_state);
-    //   project(&inset_state);
-    //   inset_state.inc_integration();
+    // Start map integration
+    while (inset_state.n_finished_integrations() < max_integrations &&
+           inset_state.max_area_err() > max_permitted_area_error) {
 
-    //   // Updating area errors
-    //   inset_state.set_area_errs();
-    // }
+      std::cout << "Integration number "
+                << inset_state.n_finished_integrations()
+                << std::endl;
+
+
+      if (inset_state.n_finished_integrations()  >  1) {
+        fill_with_density(&inset_state,
+                          cart_info.trigger_write_density_to_eps());
+      }
+      if (inset_state.n_finished_integrations() == 0) {
+        blur_density(5.0,
+                     &inset_state,
+                     cart_info.trigger_write_density_to_eps());
+      } else {
+        blur_density(0.0,
+                     &inset_state,
+                     cart_info.trigger_write_density_to_eps());
+      }
+      flatten_density(&inset_state);
+      project(&inset_state);
+      inset_state.inc_integration();
+
+      // Updating area errors
+      inset_state.set_area_errs();
+    }
 
     // Printing final cartogram
     json cart_json = cgal_to_json(&inset_state);
@@ -283,7 +279,7 @@ int main(const int argc, const char *argv[])
       write_map_to_eps((inset_name + "_output.eps"), &inset_state);
     }
 
-    // Removing transformations
+    // // Removing transformations
     unscale_map(&inset_state);
 
     // Printing unscaled cartogram
@@ -292,10 +288,6 @@ int main(const int argc, const char *argv[])
                   geo_file_name,
                   (inset_name + "_cartogram_unscaled.geojson"));
 
-    // Clean up after finishing all Fourier transforms for this inset
-    inset_state.destroy_fftw_plans_for_rho();
-    inset_state.ref_to_rho_init()->free();
-    inset_state.ref_to_rho_ft()->free();
   }
 
   return EXIT_SUCCESS;

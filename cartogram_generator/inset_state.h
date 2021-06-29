@@ -4,6 +4,7 @@
 #include "ft_real_2d.h"
 #include "geo_div.h"
 #include "colors.h"
+#include <fftw3.h>
 #include <vector>
 #include <boost/multi_array.hpp>
 
@@ -51,6 +52,7 @@ private:
   InsetState();
 public:
   explicit InsetState(const std::string);
+  ~InsetState();
   unsigned int n_geo_divs() const;
   const std::vector<GeoDiv> geo_divs() const;
   std::vector<GeoDiv> *ref_to_geo_divs();
@@ -58,27 +60,24 @@ public:
   void target_areas_insert(std::string, double);
   void colors_insert(const std::string, std::string);
   void colors_insert(const std::string, const Color);
-  double target_areas_at(const std::string) const;
+  double target_areas_at(const std::string);
   bool target_area_is_missing(const std::string) const;
-  const Color colors_at(const std::string) const;
+  const Color colors_at(const std::string);
   bool colors_empty() const;
   bool color_found(const std::string id) const;
+  void make_grid(const unsigned int, const unsigned int);
   unsigned int lx() const;
   unsigned int ly() const;
-  void set_grid_dimensions(unsigned int, unsigned int);
   unsigned int new_xmin() const;
   unsigned int new_ymin() const;
   void set_new_xmin(const unsigned int);
   void set_new_ymin(const unsigned int);
   double map_scale() const;
   void set_map_scale(const double);
-  FTReal2d rho_init() const;
   FTReal2d *ref_to_rho_init();
   FTReal2d *ref_to_rho_ft();
-  void make_fftw_plans_for_rho();
-  void execute_fftw_fwd_plan() const;
-  void execute_fftw_bwd_plan() const;
-  void destroy_fftw_plans_for_rho();
+  void execute_fwd_plan() const;
+  void execute_bwd_plan() const;
   void push_back(const GeoDiv);
   unsigned int n_finished_integrations() const;
   void inc_integration();

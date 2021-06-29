@@ -5,6 +5,6 @@
 
 #include "inset_state.h"
 
-void transform_to_albers_projection(InsetState*);
+void albers_projection(InsetState*);
 
 #endif

@@ -20,7 +20,7 @@ void blur_density(const double blur_width,
         exp(prefactor * (scaled_i_squared + scaled_j_squared)) / (4*lx*ly);
     }
   }
-  inset_state->execute_fftw_bwd_plan();
+  inset_state->execute_bwd_plan();
   if (trigger_write_density_to_eps) {
     std::string file_name =
       inset_state->inset_name() +
@@ -29,7 +29,7 @@ void blur_density(const double blur_width,
       ".eps";
     std::cout << "Writing " << file_name << std::endl;
     FTReal2d &rho_init = *inset_state->ref_to_rho_init();
-    write_density_to_eps(file_name, rho_init.as_1d_array(), inset_state);
+    write_density_to_eps(file_name, rho_init.array(), inset_state);
   }
   return;
 }
