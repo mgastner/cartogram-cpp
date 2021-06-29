@@ -166,7 +166,7 @@ void transform_to_albers_projection(InsetState *inset_state) {
       for (Point &coords_outer : outer_boundary) {
         // Assign outer boundary's coordinates to transformed coordinates
         coords_outer =
-            albers_formula(coords_outer, n, c, lambda_0, radius, rho_0);
+            projected_albers_coordinates(coords_outer, n, c, lambda_0, radius, rho_0);
       }
 
       // Iterate through holes
@@ -178,7 +178,7 @@ void transform_to_albers_projection(InsetState *inset_state) {
         for (Point &coords_hole : hole) {
           // Assign hole's coordinates to transformed coordinates
           coords_hole =
-              albers_formula(coords_hole, n, c, lambda_0, radius, rho_0);
+              projected_albers_coordinates(coords_hole, n, c, lambda_0, radius, rho_0);
         }
       }
     }
