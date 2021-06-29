@@ -96,7 +96,6 @@ void rescale_map(unsigned int long_grid_side_length,
 void unscale_map(InsetState *inset_state)
 {
 
-// For factor ratio: iterate through inset_state.target_areas_insert(id, area); and get total area inside the
   // Rescale all GeoDiv coordinates
   Transformation translate(CGAL::TRANSLATION,
                            CGAL::Vector_2<Epick>(inset_state->new_xmin(),
@@ -116,9 +115,8 @@ void unscale_map(InsetState *inset_state)
   return;
 }
 
-void rescale_output_geojson(InsetState *inset_state)
+void rescale_to_each_other(InsetState *inset_state)
 {
-  double padding = padding_unless_world;
 
   // Initialize bounding box of map with bounding box of 0-th
   // Polygon_with_holes in 0-th GeoDiv
@@ -141,12 +139,6 @@ void rescale_output_geojson(InsetState *inset_state)
     }
   }
 
-  // Expand bounding box to guarantee a minimum padding
-  double new_xmin = 0.5 * ((1.0-padding)*map_xmax + (1.0+padding)*map_xmin);
-  double new_xmax = 0.5 * ((1.0+padding)*map_xmax + (1.0-padding)*map_xmin);
-  double new_ymin = 0.5 * ((1.0-padding)*map_ymax + (1.0+padding)*map_ymin);
-  double new_ymax = 0.5 * ((1.0+padding)*map_ymax + (1.0-padding)*map_ymin);
-
   // Get the scale_factor value to make insets proportionate to each other
   double inset_size_proportion = inset_state->get_inset_total_target_area()/ inset_state->get_CSV_total_target_area();
 
@@ -154,7 +146,7 @@ void rescale_output_geojson(InsetState *inset_state)
 
   // Rescale all GeoDiv coordinates
   Transformation translate(CGAL::TRANSLATION,
-                           CGAL::Vector_2<Epick>(-(new_xmin + new_xmax) / 2, -(new_ymin + new_ymax) / 2));
+                           CGAL::Vector_2<Epick>(-(map_xmin + map_xmax) / 2, -(map_ymin + map_ymax) / 2));
   Transformation scale(CGAL::SCALING, scale_factor);
 
   for (auto &gd : *inset_state->ref_to_geo_divs()) {
@@ -171,4 +163,50 @@ void rescale_output_geojson(InsetState *inset_state)
 
 return;
 
+}
+
+void rescale_to_position(InsetState *inset_state, std::string pos)
+{
+  #define boxes inset_state->get_all_bbox_with_pos()
+  double X, Y;
+  if(pos == "C") { 
+    return;
+  }
+  else if (pos == "R") {
+    X = std::max(boxes["C"][2], boxes["B"][2]);
+    X = std::max(X, boxes["T"][2]);
+    X = X + boxes["R"][2];
+    Y = 0;
+  }
+  else if(pos == "L") {
+    X = std::min(boxes["C"][0], boxes["B"][0]);
+    X = std::min(X, boxes["T"][0]);
+    X = X + boxes["L"][0];
+    Y = 0;
+  }
+  else if(pos == "T") {
+    X = 0;
+    Y = std::max(boxes["C"][3], boxes["R"][3]);
+    Y = std::max(Y, boxes["L"][3]);
+    Y = Y + boxes["T"][3];  
+  }
+  else if(pos == "B"){
+    X = 0;
+    Y = std::min(boxes["C"][1], boxes["R"][1]);
+    Y = std::min(Y, boxes["L"][1]);
+    Y = Y + boxes["B"][1];
+  }
+
+  Transformation translate(CGAL::TRANSLATION,
+                           CGAL::Vector_2<Epick>(X, Y));
+
+  for (auto &gd : *inset_state->ref_to_geo_divs()) {
+    for (auto &pwh : *gd.ref_to_polygons_with_holes()) {
+      Polygon *ext_ring = &pwh.outer_boundary();
+      *ext_ring = transform(translate, *ext_ring);
+      for (auto hi = pwh.holes_begin(); hi != pwh.holes_end(); ++hi) {
+        *hi = transform(translate, *hi);
+      }
+    }
+  }
 }

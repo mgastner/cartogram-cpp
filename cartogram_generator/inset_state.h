@@ -7,6 +7,7 @@
 #include <fftw3.h>
 #include <vector>
 #include <boost/multi_array.hpp>
+#include <map>
 
 // Struct to store the X and Y coordinates of a 2D point
 struct XYPoint{
@@ -46,6 +47,8 @@ private:
   unsigned int n_finished_integrations_;
   boost::multi_array<XYPoint, 2> proj_;
   double CSV_total_target_area;
+  std::vector <double> bbox_values; // Store 4 bbox values
+  std::map <std::string, std::vector<double>> all_bbox_values_with_pos;  // To stores all bbox with position
 
   // Horizontal and Vertical adjacency graphs
   std::vector<std::vector<intersection> > horizontal_adj_;
@@ -61,6 +64,10 @@ public:
   double get_CSV_total_target_area(); // Returns total CSV target area
   double get_inset_total_target_area(); // Retuns total target area within an inset
   double get_cart_area(); // Calculates and returns total area inside a inset cartogram
+  void calculate_bbox(); //Store a vector of bbox values
+  std::vector<double> get_bbox(); //Return a vector of bbox values
+  void set_all_bbox_with_pos(std::map <std::string, std::vector<double>> map_); //Stores all bbox with position
+  std::map <std::string, std::vector<double>> get_all_bbox_with_pos();
   void set_geo_divs(std::vector<GeoDiv>);
   void target_areas_insert(std::string, double);
   void colors_insert(const std::string, std::string);

@@ -16,6 +16,7 @@
 #include "auto_color.h"
 #include <boost/program_options.hpp>
 #include <iostream>
+#include <map>
 
 // Functions that are called if the corresponding command-line options are
 // present
@@ -172,6 +173,17 @@ int main(const int argc, const char *argv[])
     map_name = map_name.substr(0, map_name.find('.'));
   }
 
+  // Map to store all bbox with inset_pos
+  std::map <std::string, std::vector<double> > store_bbox_with_pos;
+  std::map <std::string, std::vector<double> > store_bbox_final_reposition;
+
+  // Initializing each to 0 to facilitate inset repositioning in rescale_map.cpp
+  store_bbox_with_pos["C"] = {0,0,0,0};
+  store_bbox_with_pos["R"] = {0,0,0,0};
+  store_bbox_with_pos["L"] = {0,0,0,0};
+  store_bbox_with_pos["T"] = {0,0,0,0};
+  store_bbox_with_pos["B"] = {0,0,0,0};
+
   for (auto &inset_state : *cart_info.ref_to_inset_states()) {
 
     // Determining the name of the inset
@@ -254,29 +266,66 @@ int main(const int argc, const char *argv[])
     }
 
     // Rescale output geojson to make insets proportionate to each other
-    rescale_output_geojson(&inset_state);
+    rescale_to_each_other(&inset_state);
+
+    // Calculate and store each inset's bbox values to reposition insets in rescale_map.cpp
+    inset_state.calculate_bbox();
+    store_bbox_with_pos[inset_state.pos()] = inset_state.get_bbox();
+  }
+
+  // Running this for loop again because all bbox values must be known before the inset repositioning can take place
+  for (auto &inset_state : *cart_info.ref_to_inset_states()) {
+
+    // Store all bbox values with position inside each inset_state object
+    inset_state.set_all_bbox_with_pos(store_bbox_with_pos);
+
+    // Shifting the insets according to their position
+    if(cart_info.n_insets() > 1) {
+      rescale_to_position(&inset_state, inset_state.pos());
+      // Following part is to help create rectangle inset frames
+        if(inset_state.pos() != "C") {
+          inset_state.calculate_bbox();
+          store_bbox_final_reposition[inset_state.pos()] = inset_state.get_bbox();
+        }
+    }
 
     // Printing final cartogram
     json cart_json = cgal_to_json(&inset_state);
     write_to_json(cart_json,
                   geo_file_name,
-                  (inset_name + "_cartogram_scaled.geojson"));
+                  (inset_state.inset_name() + "_cartogram_scaled.geojson"));
 
     // Printing EPS of output cartogram
     if (polygons_to_eps) {
-      std::cout << "Writing " << inset_name << "_output.eps" << std::endl;
-      write_map_to_eps((inset_name + "_output.eps"), &inset_state);
+      std::cout << "Writing " << inset_state.inset_name() << "_output.eps" << std::endl;
+      write_map_to_eps((inset_state.inset_name() + "_output.eps"), &inset_state);
     }
 
+    // Following is commented out because it is no longer accurate nor maintainable
     // Removing transformations
-    unscale_map(&inset_state);
+    // unscale_map(&inset_state);
 
-    // Printing unscaled cartogram
-    cart_json = cgal_to_json(&inset_state);
-    write_to_json(cart_json,
+    // // Printing unscaled cartogram
+    // cart_json = cgal_to_json(&inset_state);
+    // write_to_json(cart_json,
+    //               geo_file_name,
+    //               (inset_state.inset_name() + "_cartogram_unscaled.geojson"));
+
+  }
+
+  if(cart_info.n_insets() > 1) {
+    // Write all positioned insets into single geojson
+    json cart_json = cgal_to_json_all(&cart_info);
+    write_to_json_all(cart_json,
                   geo_file_name,
-                  (inset_name + "_cartogram_unscaled.geojson"));
+                  (map_name + "_combined_cartogram.geojson"));
 
+    // Generate same combined cartogram with inset frames
+    // Uncomment the following lines to generate geojson with rectangle inset frames
+    // write_to_json_all_frame(cart_json,
+    //               geo_file_name,
+    //               (map_name + "_frame_combined_cartogram.geojson"),
+    //               store_bbox_final_reposition);
   }
 
   return EXIT_SUCCESS;

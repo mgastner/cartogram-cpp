@@ -60,8 +60,7 @@ void InsetState::target_areas_insert(const std::string id, const double area)
 double InsetState::get_inset_total_target_area() //return the total target area within an inset
 {
   double inset_total_target_area = 0;
-  for(auto& geo_div_target_area:target_areas)
-  {
+  for(auto& geo_div_target_area:target_areas) {
     inset_total_target_area += geo_div_target_area.second;
   }
   return inset_total_target_area;
@@ -320,4 +319,47 @@ const std::vector<std::vector<intersection> > InsetState::horizontal_adj() const
 const std::vector<std::vector<intersection> > InsetState::vertical_adj() const
 {
   return vertical_adj_;
+}
+
+void InsetState::calculate_bbox()
+{
+  GeoDiv gd0 = geo_divs()[0];
+  std::vector<Polygon_with_holes> pwhs = gd0.polygons_with_holes();
+  CGAL::Bbox_2 bb0 = pwhs[0].bbox();
+  double map_xmin = bb0.xmin();
+  double map_xmax = bb0.xmax();
+  double map_ymin = bb0.ymin();
+  double map_ymax = bb0.ymax();
+
+  // Expand bounding box to enclose all GeoDivs
+  for (auto gd : geo_divs()) {
+    for (auto pwh : gd.polygons_with_holes()) {
+      CGAL::Bbox_2 bb = pwh.bbox();
+      map_xmin = (bb.xmin() < map_xmin ? bb.xmin() : map_xmin);
+      map_ymin = (bb.ymin() < map_ymin ? bb.ymin() : map_ymin);
+      map_xmax = (bb.xmax() > map_xmax ? bb.xmax() : map_xmax);
+      map_ymax = (bb.ymax() > map_ymax ? bb.ymax() : map_ymax);
+    }
+  }
+
+  bbox_values.clear(); // In case we execute this method again
+  bbox_values.push_back(map_xmin);
+  bbox_values.push_back(map_ymin);
+  bbox_values.push_back(map_xmax);
+  bbox_values.push_back(map_ymax);
+}
+
+std::vector<double> InsetState::get_bbox()
+{
+  return bbox_values;
+}
+
+void InsetState::set_all_bbox_with_pos(std::map <std::string, std::vector<double>> map_)
+{
+  all_bbox_values_with_pos = map_;
+}
+
+std::map <std::string, std::vector<double>> InsetState::get_all_bbox_with_pos()
+{
+  return all_bbox_values_with_pos;
 }

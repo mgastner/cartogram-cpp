@@ -96,7 +96,8 @@ void read_csv(const boost::program_options::variables_map vm,
       }
     }
 
-    total_target_area_CSV += area; // Adding target_area (ie. population, GDP) value to the variable total_target_area_CSV
+    // Adding target_area (ie. population, GDP) value to the variable total_target_area_CSV
+    total_target_area_CSV += area;
 
     // Read color
     std::string color = "";
@@ -108,12 +109,12 @@ void read_csv(const boost::program_options::variables_map vm,
     std::string inset_pos = "C"; // Assuming inset_pos is C
     if (inset_col != csv::CSV_NOT_FOUND) {
       inset_pos = row[inset_col].get();
+      inset_pos = std::toupper(inset_pos[0]); // Now it can process inputs like "center"/"left"/"right"
     }
 
     // Associating GeoDiv ID with Inset Positon
     cart_info->gd_to_inset_insert(id, inset_pos);
     
-
     // Checking whether inset_state for inset_pos already exists
     bool found = false;
     for (auto &inset_state : *cart_info->ref_to_inset_states()) {
@@ -136,9 +137,8 @@ void read_csv(const boost::program_options::variables_map vm,
   }
 
   // Storing CSV total target area inside every inset object
-  for (auto &inset_state : *cart_info->ref_to_inset_states())
-  {
-  inset_state.set_CSV_total_target_area(total_target_area_CSV);
+  for (auto &inset_state : *cart_info->ref_to_inset_states()) {
+    inset_state.set_CSV_total_target_area(total_target_area_CSV);
   }
 
   return;
