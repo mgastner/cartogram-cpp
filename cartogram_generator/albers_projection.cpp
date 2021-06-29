@@ -15,23 +15,22 @@ void print_bbox(CGAL::Bbox_2 bbox) {
 }
 
 CGAL::Bbox_2 inset_bbox(InsetState *inset_state) {
-  double inset_xmin, inset_ymin, inset_xmax, inset_ymax;
+  double inset_xmin = 180;
+  double inset_ymin = 90;
+  double inset_xmax = -180;
+  double inset_ymax = -90;
 
-  for (GeoDiv gd : inset_state->geo_divs()) {
+  for (GeoDiv gd : (*inset_state).geo_divs()) {
     for (Polygon_with_holes pgnwh : gd.polygons_with_holes()) {
       CGAL::Bbox_2 pgnwh_bbox = pgnwh.bbox();
-      inset_xmin = !inset_xmin || pgnwh_bbox.xmin() < inset_xmin
-                       ? pgnwh_bbox.xmin()
-                       : inset_xmin;
-      inset_ymin = !inset_ymin || pgnwh_bbox.ymin() < inset_ymin
-                       ? pgnwh_bbox.ymin()
-                       : inset_ymin;
-      inset_xmax = !inset_xmax || pgnwh_bbox.xmax() > inset_xmax
-                       ? pgnwh_bbox.xmax()
-                       : inset_xmax;
-      inset_ymax = !inset_ymax || pgnwh_bbox.ymax() > inset_ymax
-                       ? pgnwh_bbox.ymax()
-                       : inset_ymax;
+      inset_xmin =
+          pgnwh_bbox.xmin() < inset_xmin ? pgnwh_bbox.xmin() : inset_xmin;
+      inset_ymin =
+          pgnwh_bbox.ymin() < inset_ymin ? pgnwh_bbox.ymin() : inset_ymin;
+      inset_xmax =
+          pgnwh_bbox.xmax() > inset_xmax ? pgnwh_bbox.xmax() : inset_xmax;
+      inset_ymax =
+          pgnwh_bbox.ymax() > inset_ymax ? pgnwh_bbox.ymax() : inset_ymax;
     }
   }
 
@@ -40,47 +39,64 @@ CGAL::Bbox_2 inset_bbox(InsetState *inset_state) {
   return inset_bbox;
 }
 
-void adjust_for_dual_hemisphere(InsetState *inset_state, double max_lon_west,
-                                double min_lon_east) {
+void connect_detached_polygons() {
+  // iterate through each polygon whose boundary is affected
+
+  // iterate through each vertex in the polygon
+
+  // identify which coordinates need to be removed
+
+  // identify which coordinates need to be reconnected
+
+  // * can't just change the coordinates, but need to add the new coordinates
+  // to the older coordinates
+}
+
+void adjust_for_dual_hemisphere(InsetState *inset_state, double bbox_xmin,
+                                double bbox_xmax) {
+  // Determine the maximum longitude in the western hemisphere and the minimum
+  // longitude in the eastern hemisphere
+  double max_lon_west = bbox_xmin;
+  double min_lon_east = bbox_xmax;
+  InsetState inset_state_new = *inset_state;  // This line changes inset_state
+  for (GeoDiv gd : (*inset_state).geo_divs()) {
+    for (Polygon_with_holes pgnwh : gd.polygons_with_holes()) {
+      double pgnwh_bbox_xmax = pgnwh.bbox().xmax();
+      double pgnwh_bbox_xmin = pgnwh.bbox().xmin();
+      max_lon_west = pgnwh_bbox_xmax < 0 && pgnwh_bbox_xmax > max_lon_west
+                         ? pgnwh_bbox_xmax
+                         : max_lon_west;
+      min_lon_east = pgnwh_bbox_xmin >= 0 && pgnwh_bbox_xmin < min_lon_east
+                         ? pgnwh_bbox_xmin
+                         : min_lon_east;
+    }
+  }
+
+  // Set transformation (translation) values to +360 for longitude
+  Transformation translate(CGAL::TRANSLATION, CGAL::Vector_2<Epick>(360, 0));
+
   // If min_lon_east == max_lon_west, the whole inset is contained in either
   // only the western or only the eastern hemisphere
 
   // If min_lon_east - max_lon_west < 180, the inset cannot fit in 1
   // hemisphere
-
-  // What should be the tolerance value here? 180?
   if (min_lon_east - max_lon_west >= 180) {
+
     // Iterate through GeoDivs
-    for (GeoDiv &gd : *(inset_state->ref_to_geo_divs())) {
+    for (auto &gd : *inset_state->ref_to_geo_divs()) {
+      
       // Iterate through Polygon_with_holes
-      for (Polygon_with_holes &pgnwh : *(gd.ref_to_polygons_with_holes())) {
-        // Get outer boundary
-        Polygon &outer_boundary = *(&pgnwh.outer_boundary());
+      for (auto &pgnwh : *gd.ref_to_polygons_with_holes()) {
+        Polygon *outer_boundary = &pgnwh.outer_boundary();
 
-        // Iterate through outer boundary's coordinates
-        for (Point &coords_outer : outer_boundary) {
-          // Assign outer boundary's coordinates to transformed coordinates
+        // If the pgnwh is in the western hemisphere
+        if (pgnwh.bbox().xmin() < 0) {
+          *outer_boundary = transform(translate, *outer_boundary);
 
-          // Translate the min_lon_east to 0 with all remaining coordinates
-          // taking reference from there
-          double translated_lon = coords_outer.x() >= 0
-                                      ? coords_outer.x() - min_lon_east
-                                      : coords_outer.x() - min_lon_east + 360;
-          coords_outer = Point(translated_lon, coords_outer.y());
-        }
-
-        // Iterate through holes
-        for (auto hole_it = pgnwh.holes_begin(); hole_it != pgnwh.holes_end();
-             hole_it++) {
-          Polygon &hole = *hole_it;
-
-          // Iterate through hole's coordinates
-          for (Point &coords_hole : hole) {
-            // Assign hole's coordinates to transformed coordinates
-            double translated_lon = coords_hole.x() >= 0
-                                        ? coords_hole.x() - min_lon_east
-                                        : coords_hole.x() - min_lon_east + 360;
-            coords_hole = Point(translated_lon, coords_hole.y());
+          // Iterate through holes
+          for (auto hole_it = pgnwh.holes_begin();
+               hole_it != pgnwh.holes_end(); hole_it++) {
+            *hole_it = transform(translate, *hole_it);
           }
         }
       }
@@ -91,8 +107,9 @@ void adjust_for_dual_hemisphere(InsetState *inset_state, double max_lon_west,
 // Declare pi globally for use in albers_formula() and albers_projection()
 double pi = M_PI;
 
-Point projected_albers_coordinates(Point coords, double n, double c, double lambda_0,
-                     double radius, double rho_0) {
+Point projected_albers_coordinates(Point coords, double n, double c,
+                                   double lambda_0, double radius,
+                                   double rho_0) {
   double lon = (coords.x() * pi) / 180;
   double lat = (coords.y() * pi) / 180;
 
@@ -108,25 +125,16 @@ Point projected_albers_coordinates(Point coords, double n, double c, double lamb
 }
 
 void transform_to_albers_projection(InsetState *inset_state) {
+
   // Get inset's bbox
   CGAL::Bbox_2 bbox = inset_bbox(inset_state);
 
-  // Determine the maximum longitude in the western hemisphere and the minimum
-  // longitude in the eastern hemisphere
-  double max_lon_west = bbox.xmin(), min_lon_east = bbox.xmax();
-  for (GeoDiv gd : inset_state->geo_divs()) {
-    for (Polygon_with_holes pgnwh : gd.polygons_with_holes()) {
-      double pgnwh_bbox_xmax = pgnwh.bbox().xmax();
-      double pgnwh_bbox_xmin = pgnwh.bbox().xmin();
-      max_lon_west = pgnwh_bbox_xmax < 0 && pgnwh_bbox_xmax > max_lon_west
-                         ? pgnwh_bbox_xmax
-                         : max_lon_west;
-      min_lon_east = pgnwh_bbox_xmin >= 0 && pgnwh_bbox_xmin < min_lon_east
-                         ? pgnwh_bbox_xmin
-                         : min_lon_east;
-    }
-  }
-  adjust_for_dual_hemisphere(inset_state, max_lon_west, min_lon_east);
+  // Adjust the longitude coordinates if the inset spans both the eastern and
+  // western hemispheres
+  adjust_for_dual_hemisphere(inset_state, bbox.xmin(), bbox.xmax());
+
+  // Recalculate the bbox after dual hemisphere adjustment
+  bbox = inset_bbox(inset_state);
 
   // Declarations for albers_formula()
   double min_lon = (bbox.xmin() * pi) / 180;
@@ -157,16 +165,19 @@ void transform_to_albers_projection(InsetState *inset_state) {
 
   // Iterate through GeoDivs
   for (GeoDiv &gd : *(inset_state->ref_to_geo_divs())) {
+
     // Iterate through Polygon_with_holes
     for (Polygon_with_holes &pgnwh : *(gd.ref_to_polygons_with_holes())) {
+
       // Get outer boundary
       Polygon &outer_boundary = *(&pgnwh.outer_boundary());
 
       // Iterate through outer boundary's coordinates
       for (Point &coords_outer : outer_boundary) {
+
         // Assign outer boundary's coordinates to transformed coordinates
-        coords_outer =
-            projected_albers_coordinates(coords_outer, n, c, lambda_0, radius, rho_0);
+        coords_outer = projected_albers_coordinates(coords_outer, n, c,
+                                                    lambda_0, radius, rho_0);
       }
 
       // Iterate through holes
@@ -177,8 +188,8 @@ void transform_to_albers_projection(InsetState *inset_state) {
         // Iterate through hole's coordinates
         for (Point &coords_hole : hole) {
           // Assign hole's coordinates to transformed coordinates
-          coords_hole =
-              projected_albers_coordinates(coords_hole, n, c, lambda_0, radius, rho_0);
+          coords_hole = projected_albers_coordinates(coords_hole, n, c,
+                                                     lambda_0, radius, rho_0);
         }
       }
     }
