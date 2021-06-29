@@ -279,7 +279,7 @@ int main(const int argc, const char *argv[])
       write_map_to_eps((inset_name + "_output.eps"), &inset_state);
     }
 
-    // // Removing transformations
+    // Removing transformations
     unscale_map(&inset_state);
 
     // Printing unscaled cartogram
