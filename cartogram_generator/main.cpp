@@ -201,71 +201,71 @@ int main(const int argc, const char *argv[])
     }
     inset_state.set_inset_name(inset_name);
 
-    // Error checking Geometry
-    try {
-      holes_inside_polygons(&inset_state);
-    } catch (const std::system_error& e) {
-      std::cerr << "ERROR: "
-                << e.what()
-                << " ("
-                << e.code()
-                << ")"
-                << std::endl;
-      return EXIT_FAILURE;
-    }
+    // // Error checking Geometry
+    // try {
+    //   holes_inside_polygons(&inset_state);
+    // } catch (const std::system_error& e) {
+    //   std::cerr << "ERROR: "
+    //             << e.what()
+    //             << " ("
+    //             << e.code()
+    //             << ")"
+    //             << std::endl;
+    //   return EXIT_FAILURE;
+    // }
 
-    // Rescale map to fit into a rectangular box [0, lx] * [0, ly].
-    rescale_map(long_grid_side_length,
-                &inset_state,
-                cart_info.is_world_map());
+    // // Rescale map to fit into a rectangular box [0, lx] * [0, ly].
+    // rescale_map(long_grid_side_length,
+    //             &inset_state,
+    //             cart_info.is_world_map());
 
-    // Setting initial area errors
-    inset_state.set_area_errs();
+    // // Setting initial area errors
+    // inset_state.set_area_errs();
 
-    // Filling density to fill horizontal adjacency map
-    fill_with_density(&inset_state,
-                      cart_info.trigger_write_density_to_eps());
+    // // Filling density to fill horizontal adjacency map
+    // fill_with_density(&inset_state,
+    //                   cart_info.trigger_write_density_to_eps());
 
-    // Automatically coloring if no colors provided
-    if (inset_state.colors_empty()) {
-      auto_color(&inset_state);
-    }
+    // // Automatically coloring if no colors provided
+    // if (inset_state.colors_empty()) {
+    //   auto_color(&inset_state);
+    // }
 
-    // Writing EPS, if requested by command line option
-    if (polygons_to_eps) {
-      std::cout << "Writing " << inset_name << "_input.eps" << std::endl;
-      write_map_to_eps((inset_name + "_input.eps"), &inset_state);
-    }
+    // // Writing EPS, if requested by command line option
+    // if (polygons_to_eps) {
+    //   std::cout << "Writing " << inset_name << "_input.eps" << std::endl;
+    //   write_map_to_eps((inset_name + "_input.eps"), &inset_state);
+    // }
 
-    // Start map integration
-    while (inset_state.n_finished_integrations() < max_integrations &&
-           inset_state.max_area_err() > max_permitted_area_error) {
+    // // Start map integration
+    // while (inset_state.n_finished_integrations() < max_integrations &&
+    //        inset_state.max_area_err() > max_permitted_area_error) {
 
-      std::cout << "Integration number "
-                << inset_state.n_finished_integrations()
-                << std::endl;
+    //   std::cout << "Integration number "
+    //             << inset_state.n_finished_integrations()
+    //             << std::endl;
 
 
-      if (inset_state.n_finished_integrations()  >  1) {
-        fill_with_density(&inset_state,
-                          cart_info.trigger_write_density_to_eps());
-      }
-      if (inset_state.n_finished_integrations() == 0) {
-        blur_density(5.0,
-                     &inset_state,
-                     cart_info.trigger_write_density_to_eps());
-      } else {
-        blur_density(0.0,
-                     &inset_state,
-                     cart_info.trigger_write_density_to_eps());
-      }
-      flatten_density(&inset_state);
-      project(&inset_state);
-      inset_state.inc_integration();
+    //   if (inset_state.n_finished_integrations()  >  1) {
+    //     fill_with_density(&inset_state,
+    //                       cart_info.trigger_write_density_to_eps());
+    //   }
+    //   if (inset_state.n_finished_integrations() == 0) {
+    //     blur_density(5.0,
+    //                  &inset_state,
+    //                  cart_info.trigger_write_density_to_eps());
+    //   } else {
+    //     blur_density(0.0,
+    //                  &inset_state,
+    //                  cart_info.trigger_write_density_to_eps());
+    //   }
+    //   flatten_density(&inset_state);
+    //   project(&inset_state);
+    //   inset_state.inc_integration();
 
-      // Updating area errors
-      inset_state.set_area_errs();
-    }
+    //   // Updating area errors
+    //   inset_state.set_area_errs();
+    // }
 
     // Printing final cartogram
     json cart_json = cgal_to_json(&inset_state);
