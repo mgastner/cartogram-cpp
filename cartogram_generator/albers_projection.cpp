@@ -125,6 +125,7 @@ Point projected_albers_coordinates(Point coords, double n, double c,
 }
 
 void transform_to_albers_projection(InsetState *inset_state) {
+  // Albers projection formula: https://en.wikipedia.org/wiki/Albers_projection
 
   // Get inset's bbox
   CGAL::Bbox_2 bbox = inset_bbox(inset_state);
@@ -187,7 +188,7 @@ void transform_to_albers_projection(InsetState *inset_state) {
 
         // Iterate through hole's coordinates
         for (Point &coords_hole : hole) {
-          
+
           // Assign hole's coordinates to transformed coordinates
           coords_hole = projected_albers_coordinates(coords_hole, n, c,
                                                      lambda_0, radius, rho_0);
