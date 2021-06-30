@@ -147,19 +147,15 @@ void transform_to_albers_projection(InsetState *inset_state) {
   double lambda_0 = (min_lon + max_lon) / 2;
   double phi_0 = (min_lat + max_lat) / 2;
 
-  // Standard Parallels
-  double phi_1 = (phi_0 + max_lat) / 2;
-  double phi_2 = (phi_0 + min_lat) / 2;
+  // sin of standard parallels
+  double sin_phi_1 = sin((phi_0 + max_lat) / 2);
+  double sin_phi_2 = sin((phi_0 + min_lat) / 2);
 
-  // sin
-  double sin_phi_1 = sin(phi_1);
-  double sin_phi_2 = sin(phi_2);
-
-  // cos
-  double cos_phi_1 = cos(phi_1);
+  // cos of standard parallel
+  double cos_phi_1 = cos((phi_0 + max_lat) / 2);
 
   double n = ((double)1 / 2) * (sin_phi_1 + sin_phi_2);
-  double c = pow(cos_phi_1, 2) + (2 * n * sin(phi_1));
+  double c = pow(cos_phi_1, 2) + (2 * n * sin_phi_1);
   double rho_0 = (radius / n) * sqrt(c - (2 * n * sin(phi_0)));
 
   // Iterate through GeoDivs
