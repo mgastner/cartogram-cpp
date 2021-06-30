@@ -16,6 +16,7 @@
 #include "auto_color.h"
 #include <boost/program_options.hpp>
 #include <iostream>
+#include "albers_projection.h"
 
 // Functions that are called if the corresponding command-line options are
 // present
@@ -174,6 +175,38 @@ int main(const int argc, const char *argv[])
 
   for (auto &inset_state : *cart_info.ref_to_inset_states()) {
 
+    // Check for errors in the input topology
+    try {
+      holes_inside_polygons(&inset_state);
+    } catch (const std::system_error& e) {
+      std::cerr << "ERROR: "
+                << e.what()
+                << " ("
+                << e.code()
+                << ")"
+                << std::endl;
+      return EXIT_FAILURE;
+    }
+
+    // Can the coordinates be interpreted as longitude and latitude?
+    CGAL::Bbox_2 bb = inset_state.bbox();
+    if (bb.xmin() >= -180.0 && bb.xmax() <= 180.0 &&
+        bb.ymin() >= -90.0 && bb.ymax() <= 90.0) {
+
+      // If yes, transform the coordinates with the Albers projection
+      try {
+        transform_to_albers_projection(&inset_state);
+      } catch (const std::system_error& e) {
+        std::cerr << "ERROR: "
+                  << e.what()
+                  << " ("
+                  << e.code()
+                  << ")"
+                  << std::endl;
+        return EXIT_FAILURE;
+      }
+    }
+
     // Determining the name of the inset
     std::string inset_name = map_name;
 
@@ -187,26 +220,13 @@ int main(const int argc, const char *argv[])
     }
     inset_state.set_inset_name(inset_name);
 
-    // Error checking Geometry
-    try {
-      holes_inside_polygons(&inset_state);
-    } catch (const std::system_error& e) {
-      std::cerr << "ERROR: "
-                << e.what()
-                << " ("
-                << e.code()
-                << ")"
-                << std::endl;
-      return EXIT_FAILURE;
-    }
-
     // Rescale map to fit into a rectangular box [0, lx] * [0, ly].
     rescale_map(long_grid_side_length,
                 &inset_state,
                 cart_info.is_world_map());
 
     // Setting initial area errors
-    inset_state.set_area_errs();
+    inset_state.set_area_errors();
 
     // Filling density to fill horizontal adjacency map
     fill_with_density(&inset_state,
@@ -225,7 +245,7 @@ int main(const int argc, const char *argv[])
 
     // Start map integration
     while (inset_state.n_finished_integrations() < max_integrations &&
-           inset_state.max_area_err() > max_permitted_area_error) {
+           inset_state.max_area_error() > max_permitted_area_error) {
 
       std::cout << "Integration number "
                 << inset_state.n_finished_integrations()
@@ -247,10 +267,10 @@ int main(const int argc, const char *argv[])
       }
       flatten_density(&inset_state);
       project(&inset_state);
-      inset_state.inc_integration();
+      inset_state.increment_integration();
 
       // Updating area errors
-      inset_state.set_area_errs();
+      inset_state.set_area_errors();
     }
 
     // Printing final cartogram
