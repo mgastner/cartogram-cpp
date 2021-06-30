@@ -4,6 +4,7 @@
 #include <iostream>
 
 #include "cgal_typedef.h"
+#include "constants.h"
 #include "inset_state.h"
 
 void print_bbox(CGAL::Bbox_2 bbox) {
@@ -103,9 +104,6 @@ void adjust_for_dual_hemisphere(InsetState *inset_state, double bbox_xmin,
     }
   }
 }
-
-// Declare pi globally for use in albers_formula() and albers_projection()
-double pi = M_PI;
 
 Point projected_albers_coordinates(Point coords, double n, double c,
                                    double lambda_0, double radius,
