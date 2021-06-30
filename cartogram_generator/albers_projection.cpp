@@ -7,7 +7,7 @@
 #include "inset_state.h"
 
 void print_bbox(CGAL::Bbox_2 bbox) {
-  std::cout << "Bounding box:" << std::endl;
+  std::cout << "Bounding box of Albers-transformed map: " << std::endl;
   std::cout << "lon_min: " << bbox.xmin() << std::endl;
   std::cout << "lat_min: " << bbox.ymin() << std::endl;
   std::cout << "lon_max: " << bbox.xmax() << std::endl;
