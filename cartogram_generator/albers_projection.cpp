@@ -187,6 +187,7 @@ void transform_to_albers_projection(InsetState *inset_state) {
 
         // Iterate through hole's coordinates
         for (Point &coords_hole : hole) {
+          
           // Assign hole's coordinates to transformed coordinates
           coords_hole = projected_albers_coordinates(coords_hole, n, c,
                                                      lambda_0, radius, rho_0);
