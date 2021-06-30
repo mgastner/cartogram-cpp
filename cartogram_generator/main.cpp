@@ -175,9 +175,9 @@ int main(const int argc, const char *argv[])
 
   for (auto &inset_state : *cart_info.ref_to_inset_states()) {
 
-    // Transform map to the Albers projection
+    // Check for errors in the input topology
     try {
-      transform_to_albers_projection(&inset_state);
+      holes_inside_polygons(&inset_state);
     } catch (const std::system_error& e) {
       std::cerr << "ERROR: "
                 << e.what()
@@ -186,6 +186,25 @@ int main(const int argc, const char *argv[])
                 << ")"
                 << std::endl;
       return EXIT_FAILURE;
+    }
+
+    // Can the coordinates be interpreted as longitude and latitude?
+    CGAL::Bbox_2 bb = inset_state.bbox();
+    if (bb.xmin() >= -180.0 && bb.xmax() <= 180.0 &&
+        bb.ymin() >= -90.0 && bb.ymax() <= 90.0) {
+
+      // If yes, transform the coordinates with the Albers projection
+      try {
+        transform_to_albers_projection(&inset_state);
+      } catch (const std::system_error& e) {
+        std::cerr << "ERROR: "
+                  << e.what()
+                  << " ("
+                  << e.code()
+                  << ")"
+                  << std::endl;
+        return EXIT_FAILURE;
+      }
     }
 
     // Determining the name of the inset
@@ -200,19 +219,6 @@ int main(const int argc, const char *argv[])
                 << std::endl;
     }
     inset_state.set_inset_name(inset_name);
-
-    // Error checking Geometry
-    try {
-      holes_inside_polygons(&inset_state);
-    } catch (const std::system_error& e) {
-      std::cerr << "ERROR: "
-                << e.what()
-                << " ("
-                << e.code()
-                << ")"
-                << std::endl;
-      return EXIT_FAILURE;
-    }
 
     // Rescale map to fit into a rectangular box [0, lx] * [0, ly].
     rescale_map(long_grid_side_length,
