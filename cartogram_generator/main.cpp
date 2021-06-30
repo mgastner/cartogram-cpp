@@ -220,7 +220,7 @@ int main(const int argc, const char *argv[])
                 cart_info.is_world_map());
 
     // Setting initial area errors
-    inset_state.set_area_errs();
+    inset_state.set_area_errors();
 
     // Filling density to fill horizontal adjacency map
     fill_with_density(&inset_state,
@@ -239,7 +239,7 @@ int main(const int argc, const char *argv[])
 
     // Start map integration
     while (inset_state.n_finished_integrations() < max_integrations &&
-           inset_state.max_area_err() > max_permitted_area_error) {
+           inset_state.max_area_error() > max_permitted_area_error) {
 
       std::cout << "Integration number "
                 << inset_state.n_finished_integrations()
@@ -261,10 +261,10 @@ int main(const int argc, const char *argv[])
       }
       flatten_density(&inset_state);
       project(&inset_state);
-      inset_state.inc_integration();
+      inset_state.increment_integration();
 
       // Updating area errors
-      inset_state.set_area_errs();
+      inset_state.set_area_errors();
     }
 
     // Printing final cartogram
