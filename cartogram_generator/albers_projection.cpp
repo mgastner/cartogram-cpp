@@ -24,14 +24,10 @@ CGAL::Bbox_2 inset_bbox(InsetState *inset_state) {
   for (GeoDiv gd : (*inset_state).geo_divs()) {
     for (Polygon_with_holes pgnwh : gd.polygons_with_holes()) {
       CGAL::Bbox_2 pgnwh_bbox = pgnwh.bbox();
-      inset_xmin =
-          pgnwh_bbox.xmin() < inset_xmin ? pgnwh_bbox.xmin() : inset_xmin;
-      inset_ymin =
-          pgnwh_bbox.ymin() < inset_ymin ? pgnwh_bbox.ymin() : inset_ymin;
-      inset_xmax =
-          pgnwh_bbox.xmax() > inset_xmax ? pgnwh_bbox.xmax() : inset_xmax;
-      inset_ymax =
-          pgnwh_bbox.ymax() > inset_ymax ? pgnwh_bbox.ymax() : inset_ymax;
+      inset_xmin = std::min(pgnwh_bbox.xmin(), inset_xmin);
+      inset_ymin = std::min(pgnwh_bbox.ymin(), inset_ymin);
+      inset_xmax = std::max(pgnwh_bbox.xmax(), inset_xmax);
+      inset_ymax = std::max(pgnwh_bbox.ymax(), inset_ymax);
     }
   }
 
