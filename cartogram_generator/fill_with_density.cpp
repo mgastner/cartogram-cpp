@@ -75,9 +75,9 @@ void fill_with_density(InsetState* inset_state,
   // cells to not be inside any GeoDiv. Any graticule cell where rho_den is 0
   // will get the mean_density
   std::vector<std::vector<double> >
-    rho_num(inset_state->lx(), std::vector<double> (inset_state->ly(), 0));
+  rho_num(inset_state->lx(), std::vector<double> (inset_state->ly(), 0));
   std::vector<std::vector<double> >
-    rho_den(inset_state->lx(), std::vector<double> (inset_state->ly(), 0));
+  rho_den(inset_state->lx(), std::vector<double> (inset_state->ly(), 0));
 
   // Iterate through GeoDivs in inset_state
   for (auto gd : inset_state->geo_divs()) {
@@ -239,8 +239,8 @@ void fill_with_density(InsetState* inset_state,
             // inside the graticule cell is inside the GeoDiv
             if (ceil(left_x) == ceil(right_x)) {
               double weight =
-                inset_state->area_errs_at(intersections[l].geo_div_id) *
-                                                        (right_x - left_x);
+                inset_state->area_errors_at(intersections[l].geo_div_id) *
+                (right_x - left_x);
               double target_dens = intersections[l].target_density;
               rho_num[ceil(left_x) - 1][k] += weight * target_dens;
               rho_den[ceil(left_x) - 1][k] += weight;
@@ -252,8 +252,8 @@ void fill_with_density(InsetState* inset_state,
         // the graticule cell is inside the GeoDiv
         unsigned int last_x = intersections.back().x;
         double last_weight =
-          inset_state->area_errs_at(intersections.back().geo_div_id) *
-                    (ceil(last_x) - last_x);
+          inset_state->area_errors_at(intersections.back().geo_div_id) *
+          (ceil(last_x) - last_x);
         double last_target_density = intersections.back().target_density;
         rho_num[ceil(last_x) - 1][k] += last_weight * last_target_density;
         rho_den[ceil(last_x) - 1][k] += last_weight;
@@ -281,7 +281,7 @@ void fill_with_density(InsetState* inset_state,
         for (unsigned int m = ceil(left_x); m <= ceil(right_x); ++m) {
 
           double weight =
-            inset_state->area_errs_at(intersections.back().geo_div_id);
+            inset_state->area_errors_at(intersections.back().geo_div_id);
           double target_dens = intersections[l].target_density;
           if (ceil(left_x) == ceil(right_x)) {
             weight *= (right_x - left_x);

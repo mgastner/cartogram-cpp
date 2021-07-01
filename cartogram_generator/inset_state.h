@@ -10,7 +10,7 @@
 #include <map>
 
 // Struct to store the X and Y coordinates of a 2D point
-struct XYPoint{
+struct XYPoint {
   double x;
   double y;
 };
@@ -19,7 +19,7 @@ struct XYPoint{
 struct intersection {
   double x;  // x-coordinate of intersection
   double target_density;  // GeoDiv's target_density
-  std::string geo_div_id; // GeoDIv's ID
+  std::string geo_div_id;  // GeoDIv's ID
   bool direction;  // Does intersection enter (true) or exit (false)?
 
   // Overload "<" operator for this data type. Idea from
@@ -32,71 +32,75 @@ struct intersection {
 
 class InsetState {
 private:
-  std::string pos_; // Position of inset ("C", "TR" etc.)
-  std::string inset_name_; // Map name, appended with Position if n_insets > 2
-  std::vector<GeoDiv> geo_divs_;
-  std::unordered_map<std::string, double> target_areas;
-  std::unordered_map<std::string, double> area_errs;
-  std::unordered_map<std::string, Color> colors;
-  unsigned int lx_, ly_;  // Lattice dimensions
-  unsigned int new_xmin_, new_ymin_; // To store map translation vector
-  double map_scale_; // Double to map scale
-  FTReal2d rho_init_;  // Rasterized density
-  FTReal2d rho_ft_;  // Fourier transform
-  fftw_plan fwd_plan_for_rho_, bwd_plan_for_rho_;
-  unsigned int n_finished_integrations_;
-  boost::multi_array<XYPoint, 2> proj_;
-  CGAL::Bbox_2 bbox_; // Store 4 bbox values
+  std::unordered_map<std::string, double> area_errors_;
+  std::unordered_map<std::string, Color> colors_;
+  fftw_plan fwd_plan_for_rho_, bwd_plan_for_rho_;  // Plans for FFTW3
+  std::vector<GeoDiv> geo_divs_;  // Geographic divisions in this inset
 
-  // Horizontal and Vertical adjacency graphs
-  std::vector<std::vector<intersection> > horizontal_adj_;
-  std::vector<std::vector<intersection> > vertical_adj_;
+  // Horizontal and vertical adjacency graphs
+  std::vector<std::vector<intersection> > horizontal_adj_, vertical_adj_;
+  std::string inset_name_; // Map name, appended with Position if n_insets > 2
+  unsigned int lx_, ly_;  // Lattice dimensions
+  double map_scale_; // Double to map scale
+  unsigned int new_xmin_, new_ymin_; // To store map translation vector
+  unsigned int n_finished_integrations_;
+  std::string pos_;  // Position of inset ("C", "TR" etc.)
+  boost::multi_array<XYPoint, 2> proj_;  // Cartogram projection
+  CGAL::Bbox_2 bbox_; // Store 4 bbox values
+  
+  // Rasterized density and its Fourier transform
+  FTReal2d rho_init_, rho_ft_;
+  std::unordered_map<std::string, double> target_areas_;
+
+  // Make default contructor so that only InsetState(const std::string) can be
+  // called as constructor
   InsetState();
 public:
-  explicit InsetState(const std::string);
-  ~InsetState();
-  unsigned int n_geo_divs() const;
-  const std::vector<GeoDiv> geo_divs() const;
-  std::vector<GeoDiv> *ref_to_geo_divs();
-  void set_geo_divs(std::vector<GeoDiv>);
-  void target_areas_insert(std::string, double);
-  void colors_insert(const std::string, std::string);
-  void colors_insert(const std::string, const Color);
-  double target_areas_at(const std::string);
-  bool target_area_is_missing(const std::string) const;
+  explicit InsetState(const std::string);  // Constructor
+  ~InsetState();  // Destructor
+  double area_errors_at(const std::string) const;
+  CGAL::Bbox_2 bbox() const;
+  bool color_found(const std::string id) const;
   const Color colors_at(const std::string);
   bool colors_empty() const;
-  bool color_found(const std::string id) const;
-  void make_grid(const unsigned int, const unsigned int);
+  void colors_insert(const std::string, const Color);
+  void colors_insert(const std::string, std::string);
+  unsigned int colors_size() const;
+  void execute_bwd_plan() const;
+  void execute_fwd_plan() const;
+  const std::vector<GeoDiv> geo_divs() const;
+  const std::vector<std::vector<intersection> > horizontal_adj() const;
+  void increment_integration();
+  const std::string inset_name() const;
   unsigned int lx() const;
   unsigned int ly() const;
+  void make_grid(const unsigned int, const unsigned int);
+  double map_scale() const;
+  double max_area_error() const;
   unsigned int new_xmin() const;
   unsigned int new_ymin() const;
-  void set_new_xmin(const unsigned int);
-  void set_new_ymin(const unsigned int);
-  double map_scale() const;
-  void set_map_scale(const double);
-  FTReal2d *ref_to_rho_init();
-  FTReal2d *ref_to_rho_ft();
-  void execute_fwd_plan() const;
-  void execute_bwd_plan() const;
-  void push_back(const GeoDiv);
   unsigned int n_finished_integrations() const;
-  void inc_integration();
-  boost::multi_array<XYPoint, 2> *proj();
-  void set_area_errs();
-  double area_errs_at(const std::string) const;
-  double max_area_err() const;
-  void set_pos(std::string);
+  unsigned int n_geo_divs() const;
   const std::string pos() const;
-  void set_inset_name(std::string);
-  const std::string inset_name() const;
+  boost::multi_array<XYPoint, 2> *proj();
+  void push_back(const GeoDiv);
+  std::vector<GeoDiv> *ref_to_geo_divs();
+  FTReal2d *ref_to_rho_ft();
+  FTReal2d *ref_to_rho_init();
+  void set_area_errors();
+  void set_geo_divs(std::vector<GeoDiv>);
   void set_horizontal_adj(std::vector<std::vector<intersection> >);
+  void set_inset_name(std::string);
+  void set_map_scale(const double);
+  void set_pos(std::string);
   void set_vertical_adj(std::vector<std::vector<intersection> >);
-  const std::vector<std::vector<intersection> > horizontal_adj() const;
+  void set_xmin(const unsigned int);
+  void set_ymin(const unsigned int);
+  bool target_area_is_missing(const std::string) const;
+  double target_areas_at(const std::string);
+  void target_areas_insert(std::string, double);
   const std::vector<std::vector<intersection> > vertical_adj() const;
-  unsigned int colors_size() const;
-
+  
   // Retuns total target area within an inset
   double inset_total_target_area();
 

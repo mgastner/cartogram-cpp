@@ -26,6 +26,10 @@ json cgal_to_json(InsetState *inset_state)
         arr[1] = ext_ring[i][1];
         er_container.push_back(arr);
       }
+
+      /* Repeat first point as last point as per GeoJSON standards. */
+      er_container.push_back({ext_ring[0][0], ext_ring[0][1]});
+
       polygon_container.push_back(er_container);
 
       // Get holes of Polygon_with_holes
@@ -40,6 +44,10 @@ json cgal_to_json(InsetState *inset_state)
           arr[1] = hole[i][1];
           hole_container.push_back(arr);
         }
+
+        /* Repeat first point as last point as per GeoJSON standards. */
+        hole_container.push_back({hole[0][0], hole[0][1]});
+
         polygon_container.push_back(hole_container);
       }
       gd_container.push_back(polygon_container);

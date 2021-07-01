@@ -85,8 +85,8 @@ void rescale_map(unsigned int long_grid_side_length,
   }
 
   // Storing coordinates to rescale in future
-  inset_state->set_new_xmin(new_xmin);
-  inset_state->set_new_ymin(new_ymin);
+  inset_state->set_xmin(new_xmin);
+  inset_state->set_ymin(new_ymin);
   inset_state->set_map_scale(latt_const);
 
   return;
