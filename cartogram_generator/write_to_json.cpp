@@ -9,15 +9,6 @@ json cgal_to_json(InsetState *inset_state)
 {
   json container;
 
-  // Initialize bounding box of map with bounding box of 0-th
-  // Polygon_with_holes in 0-th GeoDiv
-  GeoDiv gd0 = inset_state->geo_divs()[0];
-  std::vector<Polygon_with_holes> pwhs = gd0.polygons_with_holes();
-  CGAL::Bbox_2 bb0 = pwhs[0].bbox();
-  double map_xmin = bb0.xmin();
-  double map_xmax = bb0.xmax();
-  double map_ymin = bb0.ymin();
-  double map_ymax = bb0.ymax();
   for (auto gd : inset_state->geo_divs()) {
     json gd_container;
     for (auto pwh : gd.polygons_with_holes()) {
@@ -26,13 +17,6 @@ json cgal_to_json(InsetState *inset_state)
       Polygon ext_ring = pwh.outer_boundary();
       json polygon_container;
       json er_container;
-
-      // Get the bounding box coordinates
-      CGAL::Bbox_2 bb = pwh.bbox();
-      map_xmin = (bb.xmin() < map_xmin ? bb.xmin() : map_xmin);
-      map_ymin = (bb.ymin() < map_ymin ? bb.ymin() : map_ymin);
-      map_xmax = (bb.xmax() > map_xmax ? bb.xmax() : map_xmax);
-      map_ymax = (bb.ymax() > map_ymax ? bb.ymax() : map_ymax);
 
       for (unsigned int i = 0; i < ext_ring.size(); i++) {
 
@@ -62,13 +46,14 @@ json cgal_to_json(InsetState *inset_state)
     }
     container.push_back(gd_container);
   }
-  container.push_back({map_xmin,map_ymin,map_xmax,map_ymax});
+
   return container;
 }
 
 void write_to_json(json container,
                    std::string old_geo_fn,
-                   std::string new_geo_fn)
+                   std::string new_geo_fn,
+                   CGAL::Bbox_2 bb)
 {
   // TODO Add properties back to newJ
   std::ifstream i(old_geo_fn);
@@ -77,7 +62,7 @@ void write_to_json(json container,
   json newJ;
 
   // For each multipolygon in the container
-  for (int i = 0; i < (int) container.size() - 1; i++) {
+  for (int i = 0; i < (int) container.size(); i++) {
     newJ["features"][i]["properties"] = old_j["features"][i]["properties"];
     newJ["features"][i]["id"] = old_j["features"][i]["id"];
     newJ["features"][i]["type"] = "Feature";
@@ -94,21 +79,15 @@ void write_to_json(json container,
     }
   }
 
-  int bbox_index = (int)container.size() - 1;
-  double bbox_xmin = container[bbox_index][0];
-  double bbox_ymin = container[bbox_index][1];
-  double bbox_xmax = container[bbox_index][2];
-  double bbox_ymax = container[bbox_index][3];
-
   newJ.push_back({"type", old_j["type"]});
-  newJ.push_back({"bbox", {bbox_xmin, bbox_ymin, bbox_xmax, bbox_ymax}});
+  newJ.push_back({"bbox", {bb.xmin(), bb.ymin(), bb.xmax(), bb.ymax()}});
   
   std::ofstream o(new_geo_fn);
   o << newJ << std::endl;
   return;
 }
 
-json cgal_to_json_all (CartogramInfo *cart_info) {
+json cgal_to_json_all_insets(CartogramInfo *cart_info) {
 
   json container;
 
@@ -154,9 +133,9 @@ json cgal_to_json_all (CartogramInfo *cart_info) {
   return container;
 }
 
-void write_to_json_all(json container,
-                   std::string old_geo_fn,
-                   std::string new_geo_fn)
+void write_to_json_all_insets(json container,
+                              std::string old_geo_fn,
+                              std::string new_geo_fn)
 {
   std::ifstream i(old_geo_fn);
   json old_j;
@@ -189,10 +168,10 @@ void write_to_json_all(json container,
   return;
 }
 
-void write_to_json_all_frame(json container,
-                   std::string old_geo_fn,
-                   std::string new_geo_fn,
-                   std::map <std::string, std::vector<double>> bbox)
+void write_to_json_all_frames(json container,
+                              std::string old_geo_fn,
+                              std::string new_geo_fn,
+                              std::map <std::string, CGAL::Bbox_2> bbox)
 {
   std::ifstream i(old_geo_fn);
   json old_j;
@@ -220,10 +199,14 @@ void write_to_json_all_frame(json container,
   int start_frame = container.size();
   
   #define b element.second
-  for(auto element: bbox) {
+  for(auto element : bbox) {
     newJ["features"][start_frame]["type"] = "Feature";
     newJ["features"][start_frame]["geometry"]["type"] = "Polygon";
-    newJ["features"][start_frame]["geometry"]["coordinates"] = {{{b[0],b[1]},{b[2],b[1]},{b[2],b[3]},{b[0],b[3]},{b[0],b[1]}}};
+    newJ["features"][start_frame]["geometry"]["coordinates"] = {{{b.xmin(),b.ymin()},
+                                                                 {b.xmax(),b.ymin()},
+                                                                 {b.xmax(),b.ymax()},
+                                                                 {b.xmin(),b.ymax()},
+                                                                 {b.xmin(),b.ymin()}}};
     start_frame++;
   }
 

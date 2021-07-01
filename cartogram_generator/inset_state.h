@@ -46,9 +46,7 @@ private:
   fftw_plan fwd_plan_for_rho_, bwd_plan_for_rho_;
   unsigned int n_finished_integrations_;
   boost::multi_array<XYPoint, 2> proj_;
-  double CSV_total_target_area;
-  std::vector <double> bbox_values; // Store 4 bbox values
-  std::map <std::string, std::vector<double>> all_bbox_values_with_pos;  // To stores all bbox with position
+  CGAL::Bbox_2 bbox_; // Store 4 bbox values
 
   // Horizontal and Vertical adjacency graphs
   std::vector<std::vector<intersection> > horizontal_adj_;
@@ -60,14 +58,6 @@ public:
   unsigned int n_geo_divs() const;
   const std::vector<GeoDiv> geo_divs() const;
   std::vector<GeoDiv> *ref_to_geo_divs();
-  void set_CSV_total_target_area(double CSV_total_target_area_); // Stores total CSV target area
-  double get_CSV_total_target_area(); // Returns total CSV target area
-  double get_inset_total_target_area(); // Retuns total target area within an inset
-  double get_cart_area(); // Calculates and returns total area inside a inset cartogram
-  void calculate_bbox(); //Store a vector of bbox values
-  std::vector<double> get_bbox(); //Return a vector of bbox values
-  void set_all_bbox_with_pos(std::map <std::string, std::vector<double>> map_); //Stores all bbox with position
-  std::map <std::string, std::vector<double>> get_all_bbox_with_pos();
   void set_geo_divs(std::vector<GeoDiv>);
   void target_areas_insert(std::string, double);
   void colors_insert(const std::string, std::string);
@@ -106,6 +96,14 @@ public:
   const std::vector<std::vector<intersection> > horizontal_adj() const;
   const std::vector<std::vector<intersection> > vertical_adj() const;
   unsigned int colors_size() const;
+
+  // Retuns total target area within an inset
+  double inset_total_target_area();
+
+  // Calculates and returns total area inside a inset cartogram
+  double cart_area();
+  void calculate_bbox(); // Store bbox values
+  CGAL::Bbox_2 bbox(); // Return bbox values
 };
 
 #endif

@@ -22,10 +22,10 @@ void rescale_map(unsigned int long_grid_side_length,
   for (auto gd : inset_state->geo_divs()) {
     for (auto pwh : gd.polygons_with_holes()) {
       CGAL::Bbox_2 bb = pwh.bbox();
-      map_xmin = (bb.xmin() < map_xmin ? bb.xmin() : map_xmin);
-      map_ymin = (bb.ymin() < map_ymin ? bb.ymin() : map_ymin);
-      map_xmax = (bb.xmax() > map_xmax ? bb.xmax() : map_xmax);
-      map_ymax = (bb.ymax() > map_ymax ? bb.ymax() : map_ymax);
+      map_xmin = std::min(map_xmin, bb.xmin());
+      map_ymin = std::min(map_ymin, bb.ymin());
+      map_xmax = std::max(map_xmax, bb.xmax());
+      map_ymax = std::max(map_ymax, bb.ymax());
     }
   }
 
@@ -115,7 +115,7 @@ void unscale_map(InsetState *inset_state)
   return;
 }
 
-void rescale_to_each_other(InsetState *inset_state)
+void normalize_inset_area(InsetState *inset_state, double total_target_area)
 {
 
   // Initialize bounding box of map with bounding box of 0-th
@@ -132,21 +132,24 @@ void rescale_to_each_other(InsetState *inset_state)
   for (auto gd : inset_state->geo_divs()) {
     for (auto pwh : gd.polygons_with_holes()) {
       CGAL::Bbox_2 bb = pwh.bbox();
-      map_xmin = (bb.xmin() < map_xmin ? bb.xmin() : map_xmin);
-      map_ymin = (bb.ymin() < map_ymin ? bb.ymin() : map_ymin);
-      map_xmax = (bb.xmax() > map_xmax ? bb.xmax() : map_xmax);
-      map_ymax = (bb.ymax() > map_ymax ? bb.ymax() : map_ymax);
+      map_xmin = std::min(map_xmin, bb.xmin());
+      map_ymin = std::min(map_ymin, bb.ymin());
+      map_xmax = std::max(map_xmax, bb.xmax());
+      map_ymax = std::max(map_ymax, bb.ymax());
     }
   }
 
-  // Get the scale_factor value to make insets proportionate to each other
-  double inset_size_proportion = inset_state->get_inset_total_target_area()/ inset_state->get_CSV_total_target_area();
+  // Calculates scale_factor value to make insets proportionate to each other
+  double inset_size_proportion = inset_state->inset_total_target_area()
+                                 / total_target_area;
 
-  double scale_factor = sqrt(1.0/inset_state -> get_cart_area() * inset_size_proportion);
+  double scale_factor = sqrt(1.0/inset_state -> cart_area() 
+                             * inset_size_proportion);
 
   // Rescale all GeoDiv coordinates
   Transformation translate(CGAL::TRANSLATION,
-                           CGAL::Vector_2<Epick>(-(map_xmin + map_xmax) / 2, -(map_ymin + map_ymax) / 2));
+                           CGAL::Vector_2<Epick>(-(map_xmin + map_xmax) / 2,
+                                                 -(map_ymin + map_ymax) / 2));
   Transformation scale(CGAL::SCALING, scale_factor);
 
   for (auto &gd : *inset_state->ref_to_geo_divs()) {
@@ -162,43 +165,40 @@ void rescale_to_each_other(InsetState *inset_state)
   }
 
 return;
-
 }
 
-void rescale_to_position(InsetState *inset_state, std::string pos)
+void shift_inset_to_target_position(InsetState *inset_state,
+                                    std::string pos,
+                                    std::map <std::string, CGAL::Bbox_2> bb)
 {
-  #define boxes inset_state->get_all_bbox_with_pos()
-  double X, Y;
-  if(pos == "C") { 
+  double x = 0, y = 0;
+
+  if (pos == "C") { 
     return;
-  }
-  else if (pos == "R") {
-    X = std::max(boxes["C"][2], boxes["B"][2]);
-    X = std::max(X, boxes["T"][2]);
-    X = X + boxes["R"][2];
-    Y = 0;
-  }
-  else if(pos == "L") {
-    X = std::min(boxes["C"][0], boxes["B"][0]);
-    X = std::min(X, boxes["T"][0]);
-    X = X + boxes["L"][0];
-    Y = 0;
-  }
-  else if(pos == "T") {
-    X = 0;
-    Y = std::max(boxes["C"][3], boxes["R"][3]);
-    Y = std::max(Y, boxes["L"][3]);
-    Y = Y + boxes["T"][3];  
-  }
-  else if(pos == "B"){
-    X = 0;
-    Y = std::min(boxes["C"][1], boxes["R"][1]);
-    Y = std::min(Y, boxes["L"][1]);
-    Y = Y + boxes["B"][1];
+  } else if (pos == "R") {
+    x = std::max(bb["C"].xmax(), bb["B"].xmax());
+    x = std::max(x, bb["T"].xmax());
+    x += bb["R"].xmax();
+    y = 0;
+  } else if (pos == "L") {
+    x = std::min(bb["C"].xmin(), bb["B"].xmin());
+    x = std::min(x, bb["T"].xmin());
+    x += bb["L"].xmin();
+    y = 0;
+  } else if (pos == "T") {
+    x = 0;
+    y = std::max(bb["C"].ymax(), bb["R"].ymax());
+    y = std::max(y, bb["L"].ymax());
+    y += bb["T"].ymax();  
+  } else if (pos == "B") {
+    x = 0;
+    y = std::min(bb["C"].ymin(), bb["R"].ymin());
+    y = std::min(y, bb["L"].ymin());
+    y += bb["B"].ymin();
   }
 
   Transformation translate(CGAL::TRANSLATION,
-                           CGAL::Vector_2<Epick>(X, Y));
+                           CGAL::Vector_2<Epick>(x, y));
 
   for (auto &gd : *inset_state->ref_to_geo_divs()) {
     for (auto &pwh : *gd.ref_to_polygons_with_holes()) {
@@ -209,4 +209,6 @@ void rescale_to_position(InsetState *inset_state, std::string pos)
       }
     }
   }
+
+  return;
 }

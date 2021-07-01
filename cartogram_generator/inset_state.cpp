@@ -30,16 +30,6 @@ const std::vector<GeoDiv> InsetState::geo_divs() const
   return geo_divs_;
 }
 
-void InsetState::set_CSV_total_target_area(double CSV_total_target_area_) //gets total area of CSV (i.e total population, GDP)
-{
-  CSV_total_target_area = CSV_total_target_area_;
-}
-
-double InsetState::get_CSV_total_target_area() //returns total target area CSV
-{
-  return CSV_total_target_area;
-}
-
 std::vector<GeoDiv> *InsetState::ref_to_geo_divs()
 {
   return &geo_divs_;
@@ -57,10 +47,10 @@ void InsetState::target_areas_insert(const std::string id, const double area)
   return;
 }
 
-double InsetState::get_inset_total_target_area() //return the total target area within an inset
+double InsetState::inset_total_target_area()
 {
   double inset_total_target_area = 0;
-  for(auto& geo_div_target_area:target_areas) {
+  for(auto &geo_div_target_area : target_areas) {
     inset_total_target_area += geo_div_target_area.second;
   }
   return inset_total_target_area;
@@ -250,7 +240,7 @@ void InsetState::set_area_errs()
   }
 }
 
-double InsetState::get_cart_area() // Calculates total area inside a cartogram
+double InsetState::cart_area()
 {
   double sum_cart_area = 0;
   for (auto gd : geo_divs_) {
@@ -321,7 +311,7 @@ const std::vector<std::vector<intersection> > InsetState::vertical_adj() const
   return vertical_adj_;
 }
 
-void InsetState::calculate_bbox()
+void InsetState::calculate_bbox() 
 {
   GeoDiv gd0 = geo_divs()[0];
   std::vector<Polygon_with_holes> pwhs = gd0.polygons_with_holes();
@@ -335,31 +325,17 @@ void InsetState::calculate_bbox()
   for (auto gd : geo_divs()) {
     for (auto pwh : gd.polygons_with_holes()) {
       CGAL::Bbox_2 bb = pwh.bbox();
-      map_xmin = (bb.xmin() < map_xmin ? bb.xmin() : map_xmin);
-      map_ymin = (bb.ymin() < map_ymin ? bb.ymin() : map_ymin);
-      map_xmax = (bb.xmax() > map_xmax ? bb.xmax() : map_xmax);
-      map_ymax = (bb.ymax() > map_ymax ? bb.ymax() : map_ymax);
+      map_xmin = std::min(map_xmin, bb.xmin());
+      map_ymin = std::min(map_ymin, bb.ymin());
+      map_xmax = std::max(map_xmax, bb.xmax());
+      map_ymax = std::max(map_ymax, bb.ymax());
     }
   }
 
-  bbox_values.clear(); // In case we execute this method again
-  bbox_values.push_back(map_xmin);
-  bbox_values.push_back(map_ymin);
-  bbox_values.push_back(map_xmax);
-  bbox_values.push_back(map_ymax);
+  bbox_ = {map_xmin, map_ymin, map_xmax, map_ymax};
 }
 
-std::vector<double> InsetState::get_bbox()
+CGAL::Bbox_2 InsetState::bbox()
 {
-  return bbox_values;
-}
-
-void InsetState::set_all_bbox_with_pos(std::map <std::string, std::vector<double>> map_)
-{
-  all_bbox_values_with_pos = map_;
-}
-
-std::map <std::string, std::vector<double>> InsetState::get_all_bbox_with_pos()
-{
-  return all_bbox_values_with_pos;
+  return bbox_;
 }

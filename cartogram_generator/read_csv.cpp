@@ -32,8 +32,8 @@ void read_csv(const boost::program_options::variables_map vm,
   // Store header name of identifiers to read GeoJSON
   cart_info->set_id_header(id_header);
 
-  // Finding index of column with Target Areas
-  double total_target_area_CSV = 0; // to store total Target Areas
+  // Finding index of column with target areas
+  double store_total_cart_target_area = 0; // To store total target areas of all GeoDivs
   int area_col = 1;
   if (vm.count("area")) {
     area_col = reader.index_of(vm["area"].as<std::string>());
@@ -96,8 +96,9 @@ void read_csv(const boost::program_options::variables_map vm,
       }
     }
 
-    // Adding target_area (ie. population, GDP) value to the variable total_target_area_CSV
-    total_target_area_CSV += area;
+    // Adding target_area (i.e. population, GDP) value 
+    // to store target area of all GeoDivs
+    store_total_cart_target_area += area;
 
     // Read color
     std::string color = "";
@@ -109,7 +110,17 @@ void read_csv(const boost::program_options::variables_map vm,
     std::string inset_pos = "C"; // Assuming inset_pos is C
     if (inset_col != csv::CSV_NOT_FOUND) {
       inset_pos = row[inset_col].get();
-      inset_pos = std::toupper(inset_pos[0]); // Now it can process inputs like "center"/"left"/"right"
+
+      // Now it can process inputs like "center"/"left"/"right"
+      inset_pos = std::toupper(inset_pos[0]); 
+
+      // Enables user to give inset position "up"/"down" for Top and Bottom inset
+      if(inset_pos == "U") {
+        inset_pos = "T";
+      } else if (inset_pos == "D") {
+        inset_pos = "B";
+      }
+      
     }
 
     // Associating GeoDiv ID with Inset Positon
@@ -136,10 +147,8 @@ void read_csv(const boost::program_options::variables_map vm,
     }
   }
 
-  // Storing CSV total target area inside every inset object
-  for (auto &inset_state : *cart_info->ref_to_inset_states()) {
-    inset_state.set_CSV_total_target_area(total_target_area_CSV);
-  }
-
+  // Storing total target area
+  cart_info->set_total_cart_target_area(store_total_cart_target_area);
+ 
   return;
 }
