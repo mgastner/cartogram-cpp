@@ -70,7 +70,7 @@ void InsetState::colors_insert(const std::string id, const Color c)
 double InsetState::inset_total_target_area()
 {
   double inset_total_target_area = 0;
-  for(auto &geo_div_target_area : target_areas) {
+  for(auto &geo_div_target_area : target_areas_) {
     inset_total_target_area += geo_div_target_area.second;
   }
   return inset_total_target_area;
