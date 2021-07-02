@@ -176,17 +176,17 @@ int main(const int argc, const char *argv[])
   for (auto &inset_state : *cart_info.ref_to_inset_states()) {
 
     // Check for errors in the input topology
-    try {
-      holes_inside_polygons(&inset_state);
-    } catch (const std::system_error& e) {
-      std::cerr << "ERROR: "
-                << e.what()
-                << " ("
-                << e.code()
-                << ")"
-                << std::endl;
-      return EXIT_FAILURE;
-    }
+    // try {
+    //   holes_inside_polygons(&inset_state);
+    // } catch (const std::system_error& e) {
+    //   std::cerr << "ERROR: "
+    //             << e.what()
+    //             << " ("
+    //             << e.code()
+    //             << ")"
+    //             << std::endl;
+    //   return EXIT_FAILURE;
+    // }
 
     // Can the coordinates be interpreted as longitude and latitude?
     CGAL::Bbox_2 bb = inset_state.bbox();
