@@ -3,19 +3,6 @@
 InsetState::InsetState(std::string pos) : pos_(pos)
 {
   n_finished_integrations_ = 0;
-  fwd_plan_for_rho_ = NULL;
-  bwd_plan_for_rho_ = NULL;
-  return;
-}
-
-InsetState::~InsetState()
-{
-  if (fwd_plan_for_rho_) {
-    fftw_destroy_plan(fwd_plan_for_rho_);
-  }
-  if (bwd_plan_for_rho_) {
-    fftw_destroy_plan(bwd_plan_for_rho_);
-  }
   return;
 }
 
@@ -48,7 +35,7 @@ bool InsetState::color_found(const std::string id) const
   return colors_.count(id);
 }
 
-const Color InsetState::colors_at(const std::string id)
+const Color InsetState::colors_at(const std::string id) const
 {
   return colors_.at(id);
 }
@@ -86,13 +73,21 @@ unsigned int InsetState::colors_size() const
   return colors_.size();
 }
 
-void InsetState::execute_bwd_plan() const
+
+void InsetState::destroy_fftw_plans_for_rho()
+{
+  fftw_destroy_plan(fwd_plan_for_rho_);
+  fftw_destroy_plan(bwd_plan_for_rho_);
+  return;
+}
+
+void InsetState::execute_fftw_bwd_plan() const
 {
   fftw_execute(bwd_plan_for_rho_);
   return;
 }
 
-void InsetState::execute_fwd_plan() const
+void InsetState::execute_fftw_fwd_plan() const
 {
   fftw_execute(fwd_plan_for_rho_);
   return;
@@ -130,21 +125,15 @@ unsigned int InsetState::ly() const
   return ly_;
 }
 
-void InsetState::make_grid(const unsigned int x, const unsigned int y)
+void InsetState::make_fftw_plans_for_rho()
 {
-  lx_ = x;
-  ly_ = y;
-  rho_init_.set_array_size(lx_, ly_);
-  rho_init_.allocate_ft();
-  rho_ft_.set_array_size(lx_, ly_);
-  rho_ft_.allocate_ft();
   fwd_plan_for_rho_ =
     fftw_plan_r2r_2d(lx_, ly_,
-                     rho_init_.array(), rho_ft_.array(),
+                     rho_init_.as_1d_array(), rho_ft_.as_1d_array(),
                      FFTW_REDFT10, FFTW_REDFT10, FFTW_ESTIMATE);
   bwd_plan_for_rho_ =
     fftw_plan_r2r_2d(lx_, ly_,
-                     rho_ft_.array(), rho_init_.array(),
+                     rho_ft_.as_1d_array(), rho_init_.as_1d_array(),
                      FFTW_REDFT01, FFTW_REDFT01, FFTW_ESTIMATE);
   return;
 }
@@ -247,6 +236,13 @@ void InsetState::set_geo_divs(std::vector<GeoDiv> geo_divs_new)
   return;
 }
 
+void InsetState::set_grid_dimensions(unsigned int lx, unsigned int ly)
+{
+  lx_ = lx;
+  ly_ = ly;
+  return;
+}
+
 void InsetState::set_horizontal_adj(std::vector<std::vector<intersection> > ha)
 {
   horizontal_adj_.clear();
@@ -297,7 +293,7 @@ bool InsetState::target_area_is_missing(const std::string id) const
   return target_areas_.at(id) < 0.0;
 }
 
-double InsetState::target_areas_at(const std::string id)
+double InsetState::target_areas_at(const std::string id) const
 {
   return target_areas_.at(id);
 }

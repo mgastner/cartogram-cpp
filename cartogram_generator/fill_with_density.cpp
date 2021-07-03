@@ -292,7 +292,6 @@ void fill_with_density(InsetState* inset_state,
           }
           rho_num[m - 1][k] += weight * target_dens;
           rho_den[m - 1][k] += weight;
-
         }
       }
     }
@@ -316,8 +315,8 @@ void fill_with_density(InsetState* inset_state,
       std::to_string(inset_state->n_finished_integrations()) +
       ".eps";
     std::cout << "Writing " << file_name << std::endl;
-    write_density_to_eps(file_name, rho_init.array(), inset_state);
+    write_density_to_eps(file_name, rho_init.as_1d_array(), inset_state);
   }
-  inset_state->execute_fwd_plan();
+  inset_state->execute_fftw_fwd_plan();
   return;
 }

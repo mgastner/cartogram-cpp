@@ -225,6 +225,13 @@ int main(const int argc, const char *argv[])
                 &inset_state,
                 cart_info.is_world_map());
 
+    // Set up Fourier transforms
+    unsigned int lx = inset_state.lx();
+    unsigned int ly = inset_state.ly();
+    inset_state.ref_to_rho_init()->allocate(lx, ly);
+    inset_state.ref_to_rho_ft()->allocate(lx, ly);
+    inset_state.make_fftw_plans_for_rho();
+
     // Setting initial area errors
     inset_state.set_area_errors();
 
@@ -252,7 +259,7 @@ int main(const int argc, const char *argv[])
                 << std::endl;
 
 
-      if (inset_state.n_finished_integrations()  >  1) {
+      if (inset_state.n_finished_integrations()  >  0) {
         fill_with_density(&inset_state,
                           cart_info.trigger_write_density_to_eps());
       }
@@ -293,6 +300,11 @@ int main(const int argc, const char *argv[])
     write_to_json(cart_json,
                   geo_file_name,
                   (inset_name + "_cartogram_unscaled.geojson"));
+
+    // Clean up after finishing all Fourier transforms for this inset
+    inset_state.destroy_fftw_plans_for_rho();
+    inset_state.ref_to_rho_init()->free();
+    inset_state.ref_to_rho_ft()->free();
 
   }
 
