@@ -110,16 +110,28 @@ void read_csv(const boost::program_options::variables_map vm,
     std::string inset_pos = "C"; // Assuming inset_pos is C
     if (inset_col != csv::CSV_NOT_FOUND) {
       inset_pos = row[inset_col].get();
+      std::string inset_pos_original = inset_pos;
 
       // Now it can process inputs like "center"/"left"/"right"
       inset_pos = std::toupper(inset_pos[0]); 
 
       // Enables user to give inset position "up"/"down" for Top and Bottom inset
-      if(inset_pos == "U") {
+      if (inset_pos == "U") {
         inset_pos = "T";
       } else if (inset_pos == "D") {
         inset_pos = "B";
       }
+
+      // If unrecongnized, set inset pos to "C". Unrecongnized inset pos
+      // will lead to miscalculation in inset placement
+      if (inset_pos != "L" && inset_pos != "R" &&
+          inset_pos != "T" && inset_pos != "B") {
+            std::cout << "Unrecongnized inset position : " << inset_pos_original
+                      << " for Region: " << id
+                      << std::endl << "Setting " << id << "\'s inset position to Center (C)."
+                      << std::endl;
+            inset_pos = "C";
+          }
       
     }
 
