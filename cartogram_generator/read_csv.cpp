@@ -124,8 +124,8 @@ void read_csv(const boost::program_options::variables_map vm,
 
       // If unrecongnized, set inset pos to "C". Unrecongnized inset pos
       // will lead to miscalculation in inset placement
-      if (inset_pos != "L" && inset_pos != "R" &&
-          inset_pos != "T" && inset_pos != "B") {
+      if (inset_pos != "C" && inset_pos != "L" && 
+          inset_pos != "R" && inset_pos != "T" && inset_pos != "B") {
             std::cout << "Unrecongnized inset position : " << inset_pos_original
                       << " for Region: " << id
                       << std::endl << "Setting " << id << "\'s inset position to Center (C)."
