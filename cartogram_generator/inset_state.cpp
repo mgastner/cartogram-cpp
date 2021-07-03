@@ -24,7 +24,7 @@ double InsetState::area_errors_at(const std::string id) const
   return area_errors_.at(id);
 }
 
-CGAL::Bbox_2 InsetState::bbox() const
+CGAL::Bbox_2 InsetState::albers_bbox() const
 {
   double inset_xmin = 180;
   double inset_ymin = 90;

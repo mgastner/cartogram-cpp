@@ -59,7 +59,7 @@ public:
   explicit InsetState(const std::string);  // Constructor
   ~InsetState();  // Destructor
   double area_errors_at(const std::string) const;
-  CGAL::Bbox_2 bbox() const;
+  CGAL::Bbox_2 albers_bbox() const;
   bool color_found(const std::string id) const;
   const Color colors_at(const std::string);
   bool colors_empty() const;

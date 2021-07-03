@@ -200,7 +200,7 @@ int main(const int argc, const char *argv[])
     }
 
     // Can the coordinates be interpreted as longitude and latitude?
-    CGAL::Bbox_2 bb = inset_state.bbox();
+    CGAL::Bbox_2 bb = inset_state.albers_bbox();
     if (bb.xmin() >= -180.0 && bb.xmax() <= 180.0 &&
         bb.ymin() >= -90.0 && bb.ymax() <= 90.0) {
 
