@@ -3,7 +3,10 @@
 #include "constants.h"
 #include "cartogram_info.h"
 #include "inset_state.h"
+#include "albers_projection.h"
+#include "auto_color.h"
 #include "blur_density.h"
+#include "check_topology.h"
 #include "fill_with_density.h"
 #include "flatten_density.h"
 #include "project.h"
@@ -11,12 +14,9 @@
 #include "read_geojson.h"
 #include "rescale_map.h"
 #include "write_eps.h"
-#include "check_topology.h"
 #include "write_to_json.h"
-#include "auto_color.h"
 #include <boost/program_options.hpp>
 #include <iostream>
-#include "albers_projection.h"
 
 // Functions that are called if the corresponding command-line options are
 // present
@@ -124,9 +124,7 @@ int main(const int argc, const char *argv[])
     return EXIT_FAILURE;
   }
 
-  CartogramInfo cart_info(visual_file_name,
-                          world,
-                          density_to_eps);
+  CartogramInfo cart_info(world, visual_file_name, density_to_eps);
 
   if (!make_csv) {
 
@@ -280,26 +278,42 @@ int main(const int argc, const char *argv[])
       inset_state.set_area_errors();
     }
 
+    // Printing EPS of cartogram
+    if (polygons_to_eps) {
+      std::cout << "Writing "
+                << inset_state.inset_name()
+                << "_output.eps" << std::endl;
+      write_map_to_eps((inset_state.inset_name() + "_output.eps"),
+                       &inset_state);
+    }
+
+    // Rescale insets in correct proportion to each other
+    normalize_inset_area(&inset_state,
+                         cart_info.total_cart_target_area());
+  }
+
+  if (cart_info.n_insets() > 1) {
+    shift_insets_to_target_position(&cart_info);
+  }
+
+  for (auto &inset_state : *cart_info.ref_to_inset_states()) {
+
     // Printing final cartogram
     json cart_json = cgal_to_json(&inset_state);
     write_to_json(cart_json,
                   geo_file_name,
-                  (inset_name + "_cartogram_scaled.geojson"));
+                  (inset_state.inset_name() + "_cartogram_scaled.geojson"),
+                  inset_state.bbox());
 
-    // Printing EPS of output cartogram
-    if (polygons_to_eps) {
-      std::cout << "Writing " << inset_name << "_output.eps" << std::endl;
-      write_map_to_eps((inset_name + "_output.eps"), &inset_state);
-    }
+    // Following is commented out because unscaled_map() is no longer accurate nor maintainable
+    // // Removing transformations
+    // unscale_map(&inset_state);
 
-    // Removing transformations
-    unscale_map(&inset_state);
-
-    // Printing unscaled cartogram
-    cart_json = cgal_to_json(&inset_state);
-    write_to_json(cart_json,
-                  geo_file_name,
-                  (inset_name + "_cartogram_unscaled.geojson"));
+    // // Printing unscaled cartogram
+    // cart_json = cgal_to_json(&inset_state);
+    // write_to_json(cart_json,
+    //               geo_file_name,
+    //               (inset_state.inset_name() + "_cartogram_unscaled.geojson"));
 
     // Clean up after finishing all Fourier transforms for this inset
     inset_state.destroy_fftw_plans_for_rho();
@@ -308,5 +322,22 @@ int main(const int argc, const char *argv[])
 
   }
 
+  if (cart_info.n_insets() > 1) {
+
+    // Write all positioned insets into a single geojson
+    json cart_json = cgal_to_json_all_insets(&cart_info);
+    write_to_json_all_insets(cart_json,
+                             geo_file_name,
+                             (map_name + "_combined_cartogram.geojson"));
+
+    // Generate same combined cartogram with inset frames
+    // Uncomment the following lines to generate geojson with rectangle inset frames
+    // write_to_json_all_frames(cart_json,
+    //                          geo_file_name,
+    //                          (map_name + "_frame_combined_cartogram.geojson"),
+    //                          cart_info.all_frame_bbox_with_pos());
+  }
+
   return EXIT_SUCCESS;
+
 }

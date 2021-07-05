@@ -32,7 +32,8 @@ void read_csv(const boost::program_options::variables_map vm,
   // Store header name of identifiers to read GeoJSON
   cart_info->set_id_header(id_header);
 
-  // Finding index of column with Target Areas
+  // Finding index of column with target areas
+  double total_cart_target_area = 0;  // Total of all GeoDivs
   int area_col = 1;
   if (vm.count("area")) {
     area_col = reader.index_of(vm["area"].as<std::string>());
@@ -95,6 +96,10 @@ void read_csv(const boost::program_options::variables_map vm,
       }
     }
 
+    // Adding target_area (i.e. population, GDP) value
+    // to store target area of all GeoDivs
+    total_cart_target_area += area;
+
     // Read color
     std::string color = "";
     if (color_col != csv::CSV_NOT_FOUND) {
@@ -105,6 +110,31 @@ void read_csv(const boost::program_options::variables_map vm,
     std::string inset_pos = "C"; // Assuming inset_pos is C
     if (inset_col != csv::CSV_NOT_FOUND) {
       inset_pos = row[inset_col].get();
+      std::string inset_pos_original = inset_pos;
+
+      // Now it can process inputs like "center"/"left"/"right"
+      inset_pos = std::toupper(inset_pos[0]);
+
+      // Enables user to give inset position "U"/"D" for top and bottom inset
+      if (inset_pos == "U") {
+        inset_pos = "T";
+      } else if (inset_pos == "D") {
+        inset_pos = "B";
+      }
+
+      // If unrecognized, set inset position to "C"
+      if (inset_pos != "C" && inset_pos != "L" &&
+          inset_pos != "R" && inset_pos != "T" && inset_pos != "B") {
+        std::cout << "Unrecongnized inset position : "
+                  << inset_pos_original
+                  << " for Region: "
+                  << id
+                  << "\nSetting "
+                  << id
+                  << "\'s inset position to Center (C)."
+                  << std::endl;
+        inset_pos = "C";
+      }
     }
 
     // Associating GeoDiv ID with Inset Positon
