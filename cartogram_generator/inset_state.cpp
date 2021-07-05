@@ -30,6 +30,17 @@ CGAL::Bbox_2 InsetState::bbox() const
   return inset_bbox;
 }
 
+double InsetState::cart_area() const
+{
+  double sum_cart_area = 0;
+  for (auto gd : geo_divs_) {
+    if (!target_area_is_missing(gd.id())) {
+      sum_cart_area += gd.area();
+    }
+  }
+  return sum_cart_area;
+}
+
 bool InsetState::color_found(const std::string id) const
 {
   return colors_.count(id);
@@ -54,15 +65,6 @@ void InsetState::colors_insert(const std::string id, const Color c)
   return;
 }
 
-double InsetState::inset_total_target_area()
-{
-  double inset_total_target_area = 0;
-  for(auto &geo_div_target_area : target_areas_) {
-    inset_total_target_area += geo_div_target_area.second;
-  }
-  return inset_total_target_area;
-}
-
 void InsetState::colors_insert(const std::string id, std::string color)
 {
   if (colors_.count(id)) {
@@ -81,7 +83,6 @@ unsigned int InsetState::colors_size() const
 {
   return colors_.size();
 }
-
 
 void InsetState::destroy_fftw_plans_for_rho()
 {
@@ -238,17 +239,6 @@ void InsetState::set_area_errors()
   return;
 }
 
-double InsetState::cart_area()
-{
-  double sum_cart_area = 0;
-  for (auto gd : geo_divs_) {
-    if (!target_area_is_missing(gd.id())) {
-      sum_cart_area += gd.area();
-    }
-  }
-  return sum_cart_area;
-}
-
 void InsetState::set_geo_divs(std::vector<GeoDiv> geo_divs_new)
 {
   geo_divs_.clear();
@@ -322,6 +312,15 @@ void InsetState::target_areas_insert(const std::string id, const double area)
 {
   target_areas_.insert(std::pair<std::string, double>(id, area));
   return;
+}
+
+double InsetState::total_target_area() const
+{
+  double inset_total_target_area = 0;
+  for(auto &geo_div_target_area : target_areas_) {
+    inset_total_target_area += geo_div_target_area.second;
+  }
+  return inset_total_target_area;
 }
 
 const std::vector<std::vector<intersection> > InsetState::vertical_adj() const

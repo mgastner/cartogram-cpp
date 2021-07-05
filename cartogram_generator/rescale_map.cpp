@@ -138,9 +138,8 @@ void normalize_inset_area(InsetState *inset_state, double total_target_area)
   }
 
   // Calculates scale_factor value to make insets proportionate to each other
-  double inset_size_proportion = inset_state->inset_total_target_area()
-                                 / total_target_area;
-
+  double inset_size_proportion =
+    inset_state->total_target_area() / total_target_area;
   double scale_factor = sqrt(1.0/inset_state->cart_area()
                              * inset_size_proportion);
 
