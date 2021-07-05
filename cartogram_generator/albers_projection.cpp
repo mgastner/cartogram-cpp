@@ -153,6 +153,5 @@ void transform_to_albers_projection(InsetState *inset_state)
       }
     }
   }
-  print_albers_bbox(bbox);
   return;
 }

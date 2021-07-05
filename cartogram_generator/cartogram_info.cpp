@@ -8,9 +8,10 @@ CartogramInfo::CartogramInfo(std::string v, const bool w, const bool wd2eps) :
   return;
 }
 
-void CartogramInfo::set_id_header(const std::string id)
+void CartogramInfo::gd_to_inset_insert(const std::string id,
+                                       std::string inset)
 {
-  id_header_ = id;
+  gd_to_inset_.insert(std::pair<std::string, std::string>(id, inset));
   return;
 }
 
@@ -19,9 +20,10 @@ const std::string CartogramInfo::id_header() const
   return id_header_;
 }
 
-const std::string CartogramInfo::visual_variable_file() const
+const std::set<std::string> CartogramInfo::ids_in_visual_variables_file()
+const
 {
-  return visual_variable_file_;
+  return ids_in_visual_variables_file_;
 }
 
 void CartogramInfo::insert_id_in_visual_variables_file(const std::string id)
@@ -29,29 +31,9 @@ void CartogramInfo::insert_id_in_visual_variables_file(const std::string id)
   ids_in_visual_variables_file_.insert(id);
 }
 
-const std::set<std::string> CartogramInfo::ids_in_visual_variables_file() const
+const std::string CartogramInfo::inset_at_gd(const std::string id)
 {
-  return ids_in_visual_variables_file_;
-}
-
-bool CartogramInfo::is_world_map() const
-{
-  return is_world_map_;
-}
-
-bool CartogramInfo::trigger_write_density_to_eps() const
-{
-  return write_density_to_eps_;
-}
-
-void CartogramInfo::set_map_name(std::string map_name)
-{
-  map_name_ = map_name;
-}
-
-unsigned int CartogramInfo::n_insets() const
-{
-  return inset_states_.size();
+  return gd_to_inset_.at(id);
 }
 
 const std::vector<InsetState> CartogramInfo::inset_states() const
@@ -59,9 +41,14 @@ const std::vector<InsetState> CartogramInfo::inset_states() const
   return inset_states_;
 }
 
-std::vector<InsetState> *CartogramInfo::ref_to_inset_states()
+bool CartogramInfo::is_world_map() const
 {
-  return &inset_states_;
+  return is_world_map_;
+}
+
+unsigned int CartogramInfo::n_insets() const
+{
+  return inset_states_.size();
 }
 
 void CartogramInfo::push_back(const InsetState is)
@@ -70,15 +57,15 @@ void CartogramInfo::push_back(const InsetState is)
   return;
 }
 
-void CartogramInfo::gd_to_inset_insert(const std::string id, std::string inset)
+std::vector<InsetState> *CartogramInfo::ref_to_inset_states()
 {
-  gd_to_inset_.insert(std::pair<std::string, std::string>(id, inset));
-  return;
+  return &inset_states_;
 }
 
-const std::string CartogramInfo::inset_at_gd(const std::string id)
+void CartogramInfo::set_id_header(const std::string id)
 {
-  return gd_to_inset_.at(id);
+  id_header_ = id;
+  return;
 }
 
 void CartogramInfo::set_total_cart_target_area(double total_cart_target_area)
@@ -89,4 +76,14 @@ void CartogramInfo::set_total_cart_target_area(double total_cart_target_area)
 double CartogramInfo::total_cart_target_area()
 {
   return total_cart_target_area_;
+}
+
+bool CartogramInfo::trigger_write_density_to_eps() const
+{
+  return write_density_to_eps_;
+}
+
+const std::string CartogramInfo::visual_variable_file() const
+{
+  return visual_variable_file_;
 }
