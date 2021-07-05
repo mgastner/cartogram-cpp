@@ -278,7 +278,16 @@ int main(const int argc, const char *argv[])
       inset_state.set_area_errors();
     }
 
-    // Rescale output geojson to make insets proportionate to each other
+    // Printing EPS of cartogram
+    if (polygons_to_eps) {
+      std::cout << "Writing "
+                << inset_state.inset_name()
+                << "_output.eps" << std::endl;
+      write_map_to_eps((inset_state.inset_name() + "_output.eps"),
+                       &inset_state);
+    }
+
+    // Rescale insets in correct proportion to each other
     normalize_inset_area(&inset_state,
                          cart_info.total_cart_target_area());
   }
@@ -295,16 +304,6 @@ int main(const int argc, const char *argv[])
                   geo_file_name,
                   (inset_state.inset_name() + "_cartogram_scaled.geojson"),
                   inset_state.bbox());
-
-    // Printing EPS of output cartogram
-    if (polygons_to_eps) {
-      std::cout << "Writing "
-                << inset_state.inset_name()
-                << "_output.eps" << std::endl;
-
-      write_map_to_eps((inset_state.inset_name() + "_output.eps"),
-                       &inset_state);
-    }
 
     // Following is commented out because unscaled_map() is no longer accurate nor maintainable
     // // Removing transformations

@@ -115,14 +115,14 @@ void read_csv(const boost::program_options::variables_map vm,
       // Now it can process inputs like "center"/"left"/"right"
       inset_pos = std::toupper(inset_pos[0]);
 
-      // Enables user to give inset position "U"/"D" for Top and Bottom inset
+      // Enables user to give inset position "U"/"D" for top and bottom inset
       if (inset_pos == "U") {
         inset_pos = "T";
       } else if (inset_pos == "D") {
         inset_pos = "B";
       }
 
-      // If unrecognized, set inset pos to "C"
+      // If unrecognized, set inset position to "C"
       if (inset_pos != "C" && inset_pos != "L" &&
           inset_pos != "R" && inset_pos != "T" && inset_pos != "B") {
         std::cout << "Unrecongnized inset position : "
@@ -135,7 +135,6 @@ void read_csv(const boost::program_options::variables_map vm,
                   << std::endl;
         inset_pos = "C";
       }
-
     }
 
     // Associating GeoDiv ID with Inset Positon
@@ -161,8 +160,5 @@ void read_csv(const boost::program_options::variables_map vm,
       cart_info->push_back(inset_state);
     }
   }
-
-  // Storing total target area
-  cart_info->set_total_cart_target_area(total_cart_target_area);
   return;
 }

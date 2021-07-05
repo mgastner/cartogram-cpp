@@ -9,15 +9,11 @@ using json = nlohmann::json;
 #include "inset_state.h"
 
 json cgal_to_json(InsetState*);
-
 void write_to_json(json, std::string, std::string, CGAL::Bbox_2);
-
+json cgal_to_json_all_insets(CartogramInfo *cart_info);
 void write_to_json_all_insets(json, std::string, std::string);
-
 // void write_to_json_all_frames(json, std::string,
 //                               std::string,
 //                               std::map <std::string, CGAL::Bbox_2>);
-
-json cgal_to_json_all_insets(CartogramInfo *cart_info);
 
 #endif

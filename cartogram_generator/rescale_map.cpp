@@ -148,7 +148,6 @@ void normalize_inset_area(InsetState *inset_state, double total_target_area)
                            CGAL::Vector_2<Epick>(-(map_xmin + map_xmax) / 2,
                                                  -(map_ymin + map_ymax) / 2));
   Transformation scale(CGAL::SCALING, scale_factor);
-
   for (auto &gd : *inset_state->ref_to_geo_divs()) {
     for (auto &pwh : *gd.ref_to_polygons_with_holes()) {
       Polygon *ext_ring = &pwh.outer_boundary();
@@ -160,7 +159,6 @@ void normalize_inset_area(InsetState *inset_state, double total_target_area)
       }
     }
   }
-
   return;
 }
 
@@ -203,10 +201,8 @@ void shift_insets_to_target_position(CartogramInfo *cart_info)
       y = std::min(y, bboxes.at("L").ymin());
       y += bboxes.at("B").ymin();
     }
-
     Transformation translate(CGAL::TRANSLATION,
                              CGAL::Vector_2<Epick>(x, y));
-
     for (auto &gd : *inset_state.ref_to_geo_divs()) {
       for (auto &pwh : *gd.ref_to_polygons_with_holes()) {
         Polygon *ext_ring = &pwh.outer_boundary();

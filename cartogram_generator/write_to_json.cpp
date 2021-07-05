@@ -54,7 +54,6 @@ json cgal_to_json(InsetState *inset_state)
     }
     container.push_back(gd_container);
   }
-
   return container;
 }
 
@@ -86,19 +85,16 @@ void write_to_json(json container,
       }
     }
   }
-
   newJ.push_back({"type", old_j["type"]});
   newJ.push_back({"bbox", {bb.xmin(), bb.ymin(), bb.xmax(), bb.ymax()}});
-
   std::ofstream o(new_geo_fn);
   o << newJ << std::endl;
   return;
 }
 
-json cgal_to_json_all_insets(CartogramInfo *cart_info) {
-
+json cgal_to_json_all_insets(CartogramInfo *cart_info)
+{
   json container;
-
   for (auto &inset_state : *cart_info->ref_to_inset_states()) {
     for (auto gd : inset_state.geo_divs()) {
       json gd_container;
@@ -108,7 +104,6 @@ json cgal_to_json_all_insets(CartogramInfo *cart_info) {
         Polygon ext_ring = pwh.outer_boundary();
         json polygon_container;
         json er_container;
-
         for (unsigned int i = 0; i < ext_ring.size(); i++) {
 
           // Get exterior ring coordinates
@@ -167,12 +162,9 @@ void write_to_json_all_insets(json container,
       }
     }
   }
-
   newJ.push_back({"type", old_j["type"]});
-
   std::ofstream o(new_geo_fn);
   o << newJ << std::endl;
-
   return;
 }
 

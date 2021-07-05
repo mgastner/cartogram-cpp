@@ -70,14 +70,15 @@ void CartogramInfo::set_id_header(const std::string id)
   return;
 }
 
-void CartogramInfo::set_total_cart_target_area(double total_cart_target_area)
+double CartogramInfo::total_cart_target_area() const
 {
-  total_cart_target_area_ = total_cart_target_area;
-}
-
-double CartogramInfo::total_cart_target_area()
-{
-  return total_cart_target_area_;
+  double area = 0.0;
+  for (auto inset : inset_states_) {
+    for (auto gd : inset.geo_divs()) {
+      area += inset.target_areas_at(gd.id());
+    }
+  }
+  return area;
 }
 
 bool CartogramInfo::trigger_write_density_to_eps() const

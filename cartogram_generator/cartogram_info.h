@@ -11,7 +11,6 @@ private:
   std::set<std::string> ids_in_visual_variables_file_;
   std::vector<InsetState> inset_states_;
   bool is_world_map_;
-  double total_cart_target_area_;
   std::string visual_variable_file_;
   bool write_density_to_eps_;
 public:
@@ -27,8 +26,7 @@ public:
   void push_back(const InsetState);
   std::vector<InsetState> *ref_to_inset_states();
   void set_id_header(const std::string);
-  void set_total_cart_target_area(double);
-  double total_cart_target_area();
+  double total_cart_target_area() const;
   bool trigger_write_density_to_eps() const;
   const std::string visual_variable_file() const;
 };
