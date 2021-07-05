@@ -4,7 +4,6 @@
 #include "ft_real_2d.h"
 #include "geo_div.h"
 #include "colors.h"
-#include <fftw3.h>
 #include <vector>
 #include <boost/multi_array.hpp>
 #include <map>
@@ -34,7 +33,7 @@ class InsetState {
 private:
   std::unordered_map<std::string, double> area_errors_;
   std::unordered_map<std::string, Color> colors_;
-  fftw_plan fwd_plan_for_rho_, bwd_plan_for_rho_;  // Plans for FFTW3
+  fftw_plan fwd_plan_for_rho_, bwd_plan_for_rho_;
   std::vector<GeoDiv> geo_divs_;  // Geographic divisions in this inset
 
   // Horizontal and vertical adjacency graphs
@@ -57,24 +56,24 @@ private:
   InsetState();
 public:
   explicit InsetState(const std::string);  // Constructor
-  ~InsetState();  // Destructor
   double area_errors_at(const std::string) const;
   CGAL::Bbox_2 albers_bbox() const;
   bool color_found(const std::string id) const;
-  const Color colors_at(const std::string);
+  const Color colors_at(const std::string) const;
   bool colors_empty() const;
   void colors_insert(const std::string, const Color);
   void colors_insert(const std::string, std::string);
   unsigned int colors_size() const;
-  void execute_bwd_plan() const;
-  void execute_fwd_plan() const;
+  void destroy_fftw_plans_for_rho();
+  void execute_fftw_bwd_plan() const;
+  void execute_fftw_fwd_plan() const;
   const std::vector<GeoDiv> geo_divs() const;
   const std::vector<std::vector<intersection> > horizontal_adj() const;
   void increment_integration();
   const std::string inset_name() const;
   unsigned int lx() const;
   unsigned int ly() const;
-  void make_grid(const unsigned int, const unsigned int);
+  void make_fftw_plans_for_rho();
   double map_scale() const;
   double max_area_error() const;
   unsigned int new_xmin() const;
@@ -89,6 +88,7 @@ public:
   FTReal2d *ref_to_rho_init();
   void set_area_errors();
   void set_geo_divs(std::vector<GeoDiv>);
+  void set_grid_dimensions(unsigned int lx, unsigned int ly);
   void set_horizontal_adj(std::vector<std::vector<intersection> >);
   void set_inset_name(std::string);
   void set_map_scale(const double);
@@ -97,7 +97,7 @@ public:
   void set_xmin(const unsigned int);
   void set_ymin(const unsigned int);
   bool target_area_is_missing(const std::string) const;
-  double target_areas_at(const std::string);
+  double target_areas_at(const std::string) const;
   void target_areas_insert(std::string, double);
   const std::vector<std::vector<intersection> > vertical_adj() const;
   
