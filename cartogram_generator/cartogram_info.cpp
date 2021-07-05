@@ -1,8 +1,10 @@
 #include "cartogram_info.h"
 
-CartogramInfo::CartogramInfo(std::string v, const bool w, const bool wd2eps) :
-  visual_variable_file_(v),
+CartogramInfo::CartogramInfo(const bool w,
+                             const std::string v,
+                             const bool wd2eps) :
   is_world_map_(w),
+  visual_variable_file_(v),
   write_density_to_eps_(wd2eps)
 {
   return;

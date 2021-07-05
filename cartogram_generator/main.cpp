@@ -125,9 +125,7 @@ int main(const int argc, const char *argv[])
     return EXIT_FAILURE;
   }
 
-  CartogramInfo cart_info(visual_file_name,
-                          world,
-                          density_to_eps);
+  CartogramInfo cart_info(world, visual_file_name, density_to_eps);
 
   if (!make_csv) {
 

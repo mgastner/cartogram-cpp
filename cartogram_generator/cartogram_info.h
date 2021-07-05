@@ -15,7 +15,7 @@ private:
   std::string visual_variable_file_;
   bool write_density_to_eps_;
 public:
-  explicit CartogramInfo(const std::string, const bool, const bool);
+  explicit CartogramInfo(const bool, const std::string, const bool);
   void gd_to_inset_insert(std::string, std::string);
   const std::string id_header() const;
   const std::set<std::string> ids_in_visual_variables_file() const;
