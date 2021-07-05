@@ -3,7 +3,10 @@
 #include "constants.h"
 #include "cartogram_info.h"
 #include "inset_state.h"
+#include "albers_projection.h"
+#include "auto_color.h"
 #include "blur_density.h"
+#include "check_topology.h"
 #include "fill_with_density.h"
 #include "flatten_density.h"
 #include "project.h"
@@ -11,13 +14,9 @@
 #include "read_geojson.h"
 #include "rescale_map.h"
 #include "write_eps.h"
-#include "check_topology.h"
 #include "write_to_json.h"
-#include "auto_color.h"
 #include <boost/program_options.hpp>
 #include <iostream>
-#include "albers_projection.h"
-#include <map>
 
 // Functions that are called if the corresponding command-line options are
 // present
