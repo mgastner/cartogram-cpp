@@ -89,7 +89,7 @@ void write_to_json(json container,
 
   newJ.push_back({"type", old_j["type"]});
   newJ.push_back({"bbox", {bb.xmin(), bb.ymin(), bb.xmax(), bb.ymax()}});
-  
+
   std::ofstream o(new_geo_fn);
   o << newJ << std::endl;
   return;
@@ -176,52 +176,52 @@ void write_to_json_all_insets(json container,
   return;
 }
 
-void write_to_json_all_frames(json container,
-                              std::string old_geo_fn,
-                              std::string new_geo_fn,
-                              std::map <std::string, CGAL::Bbox_2> bbox)
-{
-  std::ifstream i(old_geo_fn);
-  json old_j;
-  i >> old_j;
-  json newJ;
-
-  // For each multipolygon in the container
-  for (int i = 0; i < (int) container.size(); i++) {
-    newJ["features"][i]["properties"] = old_j["features"][i]["properties"];
-    newJ["features"][i]["id"] = old_j["features"][i]["id"];
-    newJ["features"][i]["type"] = "Feature";
-    newJ["features"][i]["geometry"]["type"] = "MultiPolygon";
-
-    // For each Polygon_with_holes in the multipolygon
-    for (int j = 0; j < (int) container[i].size(); j++) {
-
-      // For each polygon or hole in the pgnWH
-      for (int k = 0; k < (int) container[i][j].size(); k++) {
-        newJ["features"][i]["geometry"]["coordinates"][j][k] =
-          container[i][j][k];
-      }
-    }
-  }
-
-  int start_frame = container.size();
-  
-  #define b element.second
-  for(auto element : bbox) {
-    newJ["features"][start_frame]["type"] = "Feature";
-    newJ["features"][start_frame]["geometry"]["type"] = "Polygon";
-    newJ["features"][start_frame]["geometry"]["coordinates"] = {{{b.xmin(),b.ymin()},
-                                                                 {b.xmax(),b.ymin()},
-                                                                 {b.xmax(),b.ymax()},
-                                                                 {b.xmin(),b.ymax()},
-                                                                 {b.xmin(),b.ymin()}}};
-    start_frame++;
-  }
-
-  newJ.push_back({"type", old_j["type"]});
-
-  std::ofstream o(new_geo_fn);
-  o << newJ << std::endl;
-
-  return;
-}
+// void write_to_json_all_frames(json container,
+//                               std::string old_geo_fn,
+//                               std::string new_geo_fn,
+//                               std::map <std::string, CGAL::Bbox_2> bbox)
+// {
+//   std::ifstream i(old_geo_fn);
+//   json old_j;
+//   i >> old_j;
+//   json newJ;
+//
+//   // For each multipolygon in the container
+//   for (int i = 0; i < (int) container.size(); i++) {
+//     newJ["features"][i]["properties"] = old_j["features"][i]["properties"];
+//     newJ["features"][i]["id"] = old_j["features"][i]["id"];
+//     newJ["features"][i]["type"] = "Feature";
+//     newJ["features"][i]["geometry"]["type"] = "MultiPolygon";
+//
+//     // For each Polygon_with_holes in the multipolygon
+//     for (int j = 0; j < (int) container[i].size(); j++) {
+//
+//       // For each polygon or hole in the pgnWH
+//       for (int k = 0; k < (int) container[i][j].size(); k++) {
+//         newJ["features"][i]["geometry"]["coordinates"][j][k] =
+//           container[i][j][k];
+//       }
+//     }
+//   }
+//
+//   int start_frame = container.size();
+//
+//   #define b element.second
+//   for(auto element : bbox) {
+//     newJ["features"][start_frame]["type"] = "Feature";
+//     newJ["features"][start_frame]["geometry"]["type"] = "Polygon";
+//     newJ["features"][start_frame]["geometry"]["coordinates"] = {{{b.xmin(),b.ymin()},
+//                                                                  {b.xmax(),b.ymin()},
+//                                                                  {b.xmax(),b.ymax()},
+//                                                                  {b.xmin(),b.ymax()},
+//                                                                  {b.xmin(),b.ymin()}}};
+//     start_frame++;
+//   }
+//
+//   newJ.push_back({"type", old_j["type"]});
+//
+//   std::ofstream o(new_geo_fn);
+//   o << newJ << std::endl;
+//
+//   return;
+// }

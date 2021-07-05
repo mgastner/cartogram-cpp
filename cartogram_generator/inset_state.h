@@ -43,10 +43,10 @@ private:
   double map_scale_; // Double to map scale
   unsigned int new_xmin_, new_ymin_; // To store map translation vector
   unsigned int n_finished_integrations_;
-  std::string pos_;  // Position of inset ("C", "TR" etc.)
+  std::string pos_;  // Position of inset ("C", "T" etc.)
   boost::multi_array<XYPoint, 2> proj_;  // Cartogram projection
   CGAL::Bbox_2 bbox_; // Store 4 bbox values
-  
+
   // Rasterized density and its Fourier transform
   FTReal2d rho_init_, rho_ft_;
   std::unordered_map<std::string, double> target_areas_;
@@ -57,7 +57,7 @@ private:
 public:
   explicit InsetState(const std::string);  // Constructor
   double area_errors_at(const std::string) const;
-  CGAL::Bbox_2 albers_bbox() const;
+  CGAL::Bbox_2 bbox() const;
   bool color_found(const std::string id) const;
   const Color colors_at(const std::string) const;
   bool colors_empty() const;
@@ -100,14 +100,12 @@ public:
   double target_areas_at(const std::string) const;
   void target_areas_insert(std::string, double);
   const std::vector<std::vector<intersection> > vertical_adj() const;
-  
+
   // Retuns total target area within an inset
   double inset_total_target_area();
 
   // Calculates and returns total area inside a inset cartogram
   double cart_area();
-  void calculate_bbox(); // Store bbox values
-  CGAL::Bbox_2 bbox(); // Return bbox values
 };
 
 #endif

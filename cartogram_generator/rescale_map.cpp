@@ -141,7 +141,7 @@ void normalize_inset_area(InsetState *inset_state, double total_target_area)
   double inset_size_proportion = inset_state->inset_total_target_area()
                                  / total_target_area;
 
-  double scale_factor = sqrt(1.0/inset_state -> cart_area() 
+  double scale_factor = sqrt(1.0/inset_state->cart_area()
                              * inset_size_proportion);
 
   // Rescale all GeoDiv coordinates
@@ -162,48 +162,59 @@ void normalize_inset_area(InsetState *inset_state, double total_target_area)
     }
   }
 
-return;
+  return;
 }
 
-void shift_inset_to_target_position(InsetState *inset_state,
-                                    std::string pos,
-                                    std::map <std::string, CGAL::Bbox_2> bb)
+void shift_insets_to_target_position(CartogramInfo *cart_info)
 {
-  double x = 0, y = 0;
-
-  if (pos == "C") { 
-    return;
-  } else if (pos == "R") {
-    x = std::max(bb["C"].xmax(), bb["B"].xmax());
-    x = std::max(x, bb["T"].xmax());
-    x += bb["R"].xmax();
-    y = 0;
-  } else if (pos == "L") {
-    x = std::min(bb["C"].xmin(), bb["B"].xmin());
-    x = std::min(x, bb["T"].xmin());
-    x += bb["L"].xmin();
-    y = 0;
-  } else if (pos == "T") {
-    x = 0;
-    y = std::max(bb["C"].ymax(), bb["R"].ymax());
-    y = std::max(y, bb["L"].ymax());
-    y += bb["T"].ymax();  
-  } else if (pos == "B") {
-    x = 0;
-    y = std::min(bb["C"].ymin(), bb["R"].ymin());
-    y = std::min(y, bb["L"].ymin());
-    y += bb["B"].ymin();
+  // For simplicity's sake, let us formally insert bounding boxes for
+  // all conceivable inset positions
+  std::map<std::string, CGAL::Bbox_2> bboxes;
+  std::string possible_inset_positions[5] = {"C", "B", "L", "T", "R"};
+  for (auto pos : possible_inset_positions) {
+    bboxes.insert(std::pair<std::string, CGAL::Bbox_2>(pos, {0, 0, 0, 0}));
   }
 
-  Transformation translate(CGAL::TRANSLATION,
-                           CGAL::Vector_2<Epick>(x, y));
+  // If the inset actually exists, we get its current bounding box
+  for (auto &inset_state : *cart_info->ref_to_inset_states()) {
+    bboxes.at(inset_state.pos()) = inset_state.bbox();
+  }
+  double x = 0;
+  double y = 0;
+  for (auto &inset_state : *cart_info->ref_to_inset_states()) {
+    const std::string pos = inset_state.pos();
+    if (pos == "R") {
+      x = std::max(bboxes.at("C").xmax(), bboxes.at("B").xmax());
+      x = std::max(x, bboxes.at("T").xmax());
+      x += bboxes.at("R").xmax();
+      y = 0;
+    } else if (pos == "L") {
+      x = std::min(bboxes.at("C").xmin(), bboxes.at("B").xmin());
+      x = std::min(x, bboxes.at("T").xmin());
+      x += bboxes.at("L").xmin();
+      y = 0;
+    } else if (pos == "T") {
+      x = 0;
+      y = std::max(bboxes.at("C").ymax(), bboxes.at("R").ymax());
+      y = std::max(y, bboxes.at("L").ymax());
+      y += bboxes.at("T").ymax();
+    } else if (pos == "B") {
+      x = 0;
+      y = std::min(bboxes.at("C").ymin(), bboxes.at("R").ymin());
+      y = std::min(y, bboxes.at("L").ymin());
+      y += bboxes.at("B").ymin();
+    }
 
-  for (auto &gd : *inset_state->ref_to_geo_divs()) {
-    for (auto &pwh : *gd.ref_to_polygons_with_holes()) {
-      Polygon *ext_ring = &pwh.outer_boundary();
-      *ext_ring = transform(translate, *ext_ring);
-      for (auto hi = pwh.holes_begin(); hi != pwh.holes_end(); ++hi) {
-        *hi = transform(translate, *hi);
+    Transformation translate(CGAL::TRANSLATION,
+                             CGAL::Vector_2<Epick>(x, y));
+
+    for (auto &gd : *inset_state.ref_to_geo_divs()) {
+      for (auto &pwh : *gd.ref_to_polygons_with_holes()) {
+        Polygon *ext_ring = &pwh.outer_boundary();
+        *ext_ring = transform(translate, *ext_ring);
+        for (auto hi = pwh.holes_begin(); hi != pwh.holes_end(); ++hi) {
+          *hi = transform(translate, *hi);
+        }
       }
     }
   }

@@ -11,7 +11,7 @@ double InsetState::area_errors_at(const std::string id) const
   return area_errors_.at(id);
 }
 
-CGAL::Bbox_2 InsetState::albers_bbox() const
+CGAL::Bbox_2 InsetState::bbox() const
 {
   double inset_xmin = 180;
   double inset_ymin = 90;
@@ -327,33 +327,4 @@ void InsetState::target_areas_insert(const std::string id, const double area)
 const std::vector<std::vector<intersection> > InsetState::vertical_adj() const
 {
   return vertical_adj_;
-}
-
-void InsetState::calculate_bbox() 
-{
-  GeoDiv gd0 = geo_divs()[0];
-  std::vector<Polygon_with_holes> pwhs = gd0.polygons_with_holes();
-  CGAL::Bbox_2 bb0 = pwhs[0].bbox();
-  double map_xmin = bb0.xmin();
-  double map_xmax = bb0.xmax();
-  double map_ymin = bb0.ymin();
-  double map_ymax = bb0.ymax();
-
-  // Expand bounding box to enclose all GeoDivs
-  for (auto gd : geo_divs()) {
-    for (auto pwh : gd.polygons_with_holes()) {
-      CGAL::Bbox_2 bb = pwh.bbox();
-      map_xmin = std::min(map_xmin, bb.xmin());
-      map_ymin = std::min(map_ymin, bb.ymin());
-      map_xmax = std::max(map_xmax, bb.xmax());
-      map_ymax = std::max(map_ymax, bb.ymax());
-    }
-  }
-
-  bbox_ = {map_xmin, map_ymin, map_xmax, map_ymax};
-}
-
-CGAL::Bbox_2 InsetState::bbox()
-{
-  return bbox_;
 }

@@ -33,7 +33,7 @@ void read_csv(const boost::program_options::variables_map vm,
   cart_info->set_id_header(id_header);
 
   // Finding index of column with target areas
-  double store_total_cart_target_area = 0; // To store total target areas of all GeoDivs
+  double total_cart_target_area = 0;  // Total of all GeoDivs
   int area_col = 1;
   if (vm.count("area")) {
     area_col = reader.index_of(vm["area"].as<std::string>());
@@ -96,9 +96,9 @@ void read_csv(const boost::program_options::variables_map vm,
       }
     }
 
-    // Adding target_area (i.e. population, GDP) value 
+    // Adding target_area (i.e. population, GDP) value
     // to store target area of all GeoDivs
-    store_total_cart_target_area += area;
+    total_cart_target_area += area;
 
     // Read color
     std::string color = "";
@@ -113,31 +113,34 @@ void read_csv(const boost::program_options::variables_map vm,
       std::string inset_pos_original = inset_pos;
 
       // Now it can process inputs like "center"/"left"/"right"
-      inset_pos = std::toupper(inset_pos[0]); 
+      inset_pos = std::toupper(inset_pos[0]);
 
-      // Enables user to give inset position "up"/"down" for Top and Bottom inset
+      // Enables user to give inset position "U"/"D" for Top and Bottom inset
       if (inset_pos == "U") {
         inset_pos = "T";
       } else if (inset_pos == "D") {
         inset_pos = "B";
       }
 
-      // If unrecongnized, set inset pos to "C". Unrecongnized inset pos
-      // will lead to miscalculation in inset placement
-      if (inset_pos != "C" && inset_pos != "L" && 
+      // If unrecognized, set inset pos to "C"
+      if (inset_pos != "C" && inset_pos != "L" &&
           inset_pos != "R" && inset_pos != "T" && inset_pos != "B") {
-            std::cout << "Unrecongnized inset position : " << inset_pos_original
-                      << " for Region: " << id
-                      << std::endl << "Setting " << id << "\'s inset position to Center (C)."
-                      << std::endl;
-            inset_pos = "C";
-          }
-      
+        std::cout << "Unrecongnized inset position : "
+                  << inset_pos_original
+                  << " for Region: "
+                  << id
+                  << "\nSetting "
+                  << id
+                  << "\'s inset position to Center (C)."
+                  << std::endl;
+        inset_pos = "C";
+      }
+
     }
 
     // Associating GeoDiv ID with Inset Positon
     cart_info->gd_to_inset_insert(id, inset_pos);
-    
+
     // Checking whether inset_state for inset_pos already exists
     bool found = false;
     for (auto &inset_state : *cart_info->ref_to_inset_states()) {
@@ -160,7 +163,6 @@ void read_csv(const boost::program_options::variables_map vm,
   }
 
   // Storing total target area
-  cart_info->set_total_cart_target_area(store_total_cart_target_area);
- 
+  cart_info->set_total_cart_target_area(total_cart_target_area);
   return;
 }

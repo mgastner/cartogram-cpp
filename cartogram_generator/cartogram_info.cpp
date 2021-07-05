@@ -90,23 +90,3 @@ double CartogramInfo::total_cart_target_area()
 {
   return total_cart_target_area_;
 }
-
-void CartogramInfo::set_bbox_at_pos(std::string pos, CGAL::Bbox_2 bbox)
-{
-  all_bbox_with_pos_[pos] = bbox;
-}
-
-std::map <std::string, CGAL::Bbox_2> CartogramInfo::all_bbox_with_pos()
-{
-  return all_bbox_with_pos_;
-}
-
-void CartogramInfo::set_frame_bbox_at_pos(std::string pos, CGAL::Bbox_2 bbox)
-{
-  all_frame_bbox_with_pos_[pos] = bbox;
-}
-
-std::map <std::string, CGAL::Bbox_2> CartogramInfo::all_frame_bbox_with_pos()
-{
-  return all_frame_bbox_with_pos_;
-}
