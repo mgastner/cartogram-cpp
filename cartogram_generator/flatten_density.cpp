@@ -36,7 +36,7 @@ void calculate_velocity(double t,
 // method.
 void flatten_density(InsetState *inset_state)
 {
-  std::cout << "In flatten_density()" << std::endl;
+  std::cerr << "In flatten_density()" << std::endl;
   const unsigned int lx = inset_state->lx();
   const unsigned int ly = inset_state->ly();
 
@@ -246,7 +246,7 @@ void flatten_density(InsetState *inset_state)
 
     // Control ouput.
     if (iter % 10 == 0) {
-      std::cout << "iter = "
+      std::cerr << "iter = "
                 << iter
                 << ", t = "
                 << t

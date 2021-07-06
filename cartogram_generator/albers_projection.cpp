@@ -7,8 +7,8 @@
 
 void print_albers_bbox(CGAL::Bbox_2 bbox)
 {
-  std::cout << "Bounding box of Albers-transformed map:\n";
-  std::cout << "\tx_min = "
+  std::cerr << "Bounding box of Albers-transformed map:\n";
+  std::cerr << "\tx_min = "
             << bbox.xmin()
             << ", y_min = "
             << bbox.ymin()

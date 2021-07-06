@@ -81,7 +81,7 @@ void read_csv(const boost::program_options::variables_map vm,
     csv::CSVField area_field = row[area_col];
     double area;
     if (!area_field.is_num()) {
-      std::cout << "area_field: " << area_field.get() << std::endl;
+      std::cerr << "area_field: " << area_field.get() << std::endl;
       if (area_field.get().compare("NA") == 0) {
         area = -1.0;  // Use negative area as sign of a missing value
       } else {
@@ -125,7 +125,7 @@ void read_csv(const boost::program_options::variables_map vm,
       // If unrecognized, set inset position to "C"
       if (inset_pos != "C" && inset_pos != "L" &&
           inset_pos != "R" && inset_pos != "T" && inset_pos != "B") {
-        std::cout << "Unrecongnized inset position : "
+        std::cerr << "Unrecongnized inset position : "
                   << inset_pos_original
                   << " for Region: "
                   << id

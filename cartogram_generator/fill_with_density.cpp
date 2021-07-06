@@ -314,7 +314,7 @@ void fill_with_density(InsetState* inset_state,
       "_unblurred_density_" +
       std::to_string(inset_state->n_finished_integrations()) +
       ".eps";
-    std::cout << "Writing " << file_name << std::endl;
+    std::cerr << "Writing " << file_name << std::endl;
     write_density_to_eps(file_name, rho_init.as_1d_array(), inset_state);
   }
   inset_state->execute_fftw_fwd_plan();

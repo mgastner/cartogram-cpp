@@ -211,8 +211,7 @@ int main(const int argc, const char *argv[])
     // Printing Inset Position if multiple insets present
     if (cart_info.n_insets() > 1) {
       inset_name = inset_name + "_" + inset_state.pos();
-      std::cout << std::endl << std::endl
-                << "Working on Inset with position: "
+      std::cerr << "\nWorking on Inset with position: "
                 << inset_state.pos()
                 << std::endl;
     }
@@ -244,7 +243,7 @@ int main(const int argc, const char *argv[])
 
     // Writing EPS, if requested by command line option
     if (polygons_to_eps) {
-      std::cout << "Writing " << inset_name << "_input.eps" << std::endl;
+      std::cerr << "Writing " << inset_name << "_input.eps" << std::endl;
       write_map_to_eps((inset_name + "_input.eps"), &inset_state);
     }
 
@@ -252,7 +251,7 @@ int main(const int argc, const char *argv[])
     while (inset_state.n_finished_integrations() < max_integrations &&
            inset_state.max_area_error() > max_permitted_area_error) {
 
-      std::cout << "Integration number "
+      std::cerr << "Integration number "
                 << inset_state.n_finished_integrations()
                 << std::endl;
 
@@ -280,7 +279,7 @@ int main(const int argc, const char *argv[])
 
     // Printing EPS of cartogram
     if (polygons_to_eps) {
-      std::cout << "Writing "
+      std::cerr << "Writing "
                 << inset_state.inset_name()
                 << "_output.eps" << std::endl;
       write_map_to_eps((inset_state.inset_name() + "_output.eps"),

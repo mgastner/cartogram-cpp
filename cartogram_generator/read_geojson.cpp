@@ -138,21 +138,21 @@ void print_properties_map(std::map<std::string, std::vector<std::string>>
   for (auto [key, value_vec] : properties_map) {
     i++;
     if (chosen_number == i || chosen_number == properties_map.size() + 1) {
-      std::cout << i << ". " << key << ": { ";
+      std::cerr << i << ". " << key << ": { ";
       for (long unsigned int j = 0; j < value_vec.size(); j++) {
-          std::cout << value_vec[j];
+          std::cerr << value_vec[j];
         if (j < value_vec.size() - 1 && j < 5) {
-          std::cout << ", ";
+          std::cerr << ", ";
         } else {
           if (j < value_vec.size() - 1) {
-            std::cout << " ...";
+            std::cerr << " ...";
           } else {
-            std::cout << " }";
+            std::cerr << " }";
           }
           break;
         }
       }
-      std::cout << std::endl;
+      std::cerr << std::endl;
     }
   }
 }
@@ -191,7 +191,7 @@ void read_geojson(const std::string geometry_file_name,
       const nlohmann::json geometry = feature["geometry"];
       is_polygon = (geometry["type"] == "Polygon");
       if (is_polygon && !polygon_warning_has_been_issued) {
-        std::cout << "Warning: support for Polygon geometry experimental, "
+        std::cerr << "Warning: support for Polygon geometry experimental, "
                   << "for best results use MultiPolygon" << "\n";
         polygon_warning_has_been_issued = true;
       }
@@ -272,40 +272,40 @@ void read_geojson(const std::string geometry_file_name,
         viable_properties_map.erase(key);
       }
     }
-    std::cout << std::endl;
+    std::cerr << std::endl;
 
     // Present user with all possible identifiers and a few examples
-    std::cout << "These are the unique identifiers and their values: ";
-    std::cout << std::endl;
+    std::cerr << "These are the unique identifiers and their values: ";
+    std::cerr << std::endl;
     print_properties_map(
       viable_properties_map, viable_properties_map.size() + 1);
-    std::cout << viable_properties_map.size() + 1 << ". All";
-    std::cout << std::endl << std::endl;
+    std::cerr << viable_properties_map.size() + 1 << ". All";
+    std::cerr << std::endl << std::endl;
 
     // Have the user choose which key(s) they want to use as the identifier(s)
-    std::cout << "Please enter your number here: ";
+    std::cerr << "Please enter your number here: ";
     unsigned long chosen_number = 0;
     while (std::cin.fail()
            || chosen_number < 1
            || chosen_number > viable_properties_map.size() + 1) {
 
       // Prompting User for Input
-      std::cout << "Please enter your number here: ";
+      std::cerr << "Please enter your number here: ";
       std::cin >> chosen_number;
       if (std::cin.fail()) {
-        std::cout << "Invalid input! Try again." << std::endl;
+        std::cerr << "Invalid input! Try again." << std::endl;
 
         // Clearing std::cin buffer
         std::cin.clear();
         std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
       } else if (chosen_number < 1
                  || chosen_number > viable_properties_map.size() + 1) {
-        std::cout << "Please enter a number between 1 and "
+        std::cerr << "Please enter a number between 1 and "
                   << viable_properties_map.size() + 1
                   << std::endl;
       }
     }
-    std::cout << std::endl;
+    std::cerr << std::endl;
 
     // Declare chosen identifier(s)
     std::map<std::string, std::vector<std::string>> chosen_identifiers;
@@ -319,9 +319,9 @@ void read_geojson(const std::string geometry_file_name,
     }
 
     // Printing chosen identifiers
-    std::cout << "Chosen identifiers: " << std::endl;
+    std::cerr << "Chosen identifiers: " << std::endl;
     print_properties_map(viable_properties_map, chosen_number);
-    std::cout << std::endl;
+    std::cerr << std::endl;
 
     // Writing CSV
     std::ofstream out_file_csv;

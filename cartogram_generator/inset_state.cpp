@@ -160,7 +160,7 @@ double InsetState::max_area_error() const
   for (auto const& [gd_id, area_error] : area_errors_) {
     mae = std::max(mae, area_error);
   }
-  std::cout << "max. area err: " << mae << std::endl << std::endl;
+  std::cerr << "max. area err: " << mae << std::endl << std::endl;
   return mae;
 }
 
