@@ -47,7 +47,7 @@ int main(const int argc, const char *argv[])
   bool world;
 
   // Other boolean values that are needed to parse the command line arguments
-  bool polygons_to_eps, density_to_eps, make_csv;
+  bool polygons_to_eps, density_to_eps, make_csv, output_to_stdout;
 
   // Parse command-line options. See
   // https://theboostcpplibraries.com/boost.program_options
@@ -67,6 +67,12 @@ int main(const int argc, const char *argv[])
       value<std::string>(&visual_file_name)
       ->notifier(on_visual_variable_file),
       "CSV file with ID, area, and (optionally) colour"
+      )(
+      "output_to_stdout,s",
+      value<bool>(&output_to_stdout)
+      ->default_value(false)
+      ->implicit_value(true),
+      "Output GeoJSON to stdout"
       )(
       "make_csv,m",
       value<bool>(&make_csv)
@@ -248,7 +254,7 @@ int main(const int argc, const char *argv[])
     }
 
     // Start map integration
-    while (0 == 1 && inset_state.n_finished_integrations() < max_integrations &&
+    while (inset_state.n_finished_integrations() < max_integrations &&
            inset_state.max_area_error() > max_permitted_area_error) {
 
       std::cerr << "Integration number "
@@ -295,14 +301,22 @@ int main(const int argc, const char *argv[])
     shift_insets_to_target_position(&cart_info);
   }
 
+  bool single_inset_output_to_stdout = false;
+
+  if (cart_info.n_insets() == 1 && output_to_stdout) {
+    single_inset_output_to_stdout = true;
+  }
+
   for (auto &inset_state : *cart_info.ref_to_inset_states()) {
 
-    // Printing final cartogram
+    // Printing final inset cartograms
     json cart_json = cgal_to_json(&inset_state);
     write_to_json(cart_json,
                   geo_file_name,
                   (inset_state.inset_name() + "_cartogram_scaled.geojson"),
-                  inset_state.bbox());
+                  inset_state.bbox(),
+                  std::cout,
+                  single_inset_output_to_stdout);
 
     // Following is commented out because unscaled_map() is no longer accurate nor maintainable
     // // Removing transformations
@@ -325,12 +339,13 @@ int main(const int argc, const char *argv[])
 
     // Write all positioned insets into a single geojson
     json cart_json = cgal_to_json_all_insets(&cart_info);
-    // write_to_json_all_insets(cart_json,
-    //                          geo_file_name,
-    //                          (map_name + "_combined_cartogram.geojson"));
+  
     write_to_json_all_insets(cart_json,
                              geo_file_name,
-                             std::cout);
+                             (map_name + "_combined_cartogram.geojson"),
+                             std::cout,
+                             output_to_stdout);
+
     // Generate same combined cartogram with inset frames
     // Uncomment the following lines to generate geojson with rectangle inset frames
     // write_to_json_all_frames(cart_json,

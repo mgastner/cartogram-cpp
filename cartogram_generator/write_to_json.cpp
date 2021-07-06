@@ -60,7 +60,9 @@ json cgal_to_json(InsetState *inset_state)
 void write_to_json(json container,
                    std::string old_geo_fn,
                    std::string new_geo_fn,
-                   CGAL::Bbox_2 bb)
+                   CGAL::Bbox_2 bb,
+                   std::ostream &new_geo_stream,
+                   bool output_to_stdout)
 {
   // TODO Add properties back to newJ
   std::ifstream i(old_geo_fn);
@@ -87,8 +89,13 @@ void write_to_json(json container,
   }
   newJ.push_back({"type", old_j["type"]});
   newJ.push_back({"bbox", {bb.xmin(), bb.ymin(), bb.xmax(), bb.ymax()}});
-  std::ofstream o(new_geo_fn);
-  o << newJ << std::endl;
+
+  if (!output_to_stdout) {
+    std::ofstream o(new_geo_fn);
+    o << newJ << std::endl;
+  } else {
+    new_geo_stream << newJ << std::endl;
+  }
   return;
 }
 
@@ -138,7 +145,9 @@ json cgal_to_json_all_insets(CartogramInfo *cart_info)
 
 void write_to_json_all_insets(json container,
                               std::string old_geo_fn,
-                              std::ostream &new_geo_stream)
+                              std::string new_geo_fn,
+                              std::ostream &new_geo_stream,
+                              bool output_to_stdout)
 {
   std::ifstream i(old_geo_fn);
   json old_j;
@@ -163,8 +172,13 @@ void write_to_json_all_insets(json container,
     }
   }
   newJ.push_back({"type", old_j["type"]});
-  //std::ofstream o(new_geo_stream);
-  new_geo_stream << newJ << std::endl;
+
+  if (!output_to_stdout) {
+    std::ofstream o(new_geo_fn);
+    o << newJ << std::endl;
+  } else {
+    new_geo_stream << newJ << std::endl;
+  }
   return;
 }
 
