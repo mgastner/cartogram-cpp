@@ -248,7 +248,7 @@ int main(const int argc, const char *argv[])
     }
 
     // Start map integration
-    while (inset_state.n_finished_integrations() < max_integrations &&
+    while (0 == 1 && inset_state.n_finished_integrations() < max_integrations &&
            inset_state.max_area_error() > max_permitted_area_error) {
 
       std::cerr << "Integration number "
@@ -325,10 +325,12 @@ int main(const int argc, const char *argv[])
 
     // Write all positioned insets into a single geojson
     json cart_json = cgal_to_json_all_insets(&cart_info);
+    // write_to_json_all_insets(cart_json,
+    //                          geo_file_name,
+    //                          (map_name + "_combined_cartogram.geojson"));
     write_to_json_all_insets(cart_json,
                              geo_file_name,
-                             (map_name + "_combined_cartogram.geojson"));
-
+                             std::cout);
     // Generate same combined cartogram with inset frames
     // Uncomment the following lines to generate geojson with rectangle inset frames
     // write_to_json_all_frames(cart_json,
