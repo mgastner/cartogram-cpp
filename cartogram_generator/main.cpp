@@ -130,8 +130,9 @@ int main(const int argc, const char *argv[])
     return EXIT_FAILURE;
   }
 
+  // Initialize cart_info. It contains all information about the cartogram
+  // that needs to be handled by functions called from main().
   CartogramInfo cart_info(world, visual_file_name, density_to_eps);
-
   if (!make_csv) {
 
     // Read visual variables (e.g. area, color) from CSV
@@ -177,6 +178,7 @@ int main(const int argc, const char *argv[])
     map_name = map_name.substr(0, map_name.find('.'));
   }
 
+  // Loop over insets
   for (auto &inset_state : *cart_info.ref_to_inset_states()) {
 
     // Check for errors in the input topology
@@ -213,11 +215,9 @@ int main(const int argc, const char *argv[])
 
     // Determining the name of the inset
     std::string inset_name = map_name;
-
-    // Printing Inset Position if multiple insets present
     if (cart_info.n_insets() > 1) {
       inset_name = inset_name + "_" + inset_state.pos();
-      std::cerr << "\nWorking on Inset with position: "
+      std::cerr << "\nWorking on inset at position: "
                 << inset_state.pos()
                 << std::endl;
     }
@@ -242,12 +242,12 @@ int main(const int argc, const char *argv[])
     fill_with_density(&inset_state,
                       cart_info.trigger_write_density_to_eps());
 
-    // Automatically coloring if no colors provided
+    // Automatically color GeoDivs if no colors are provided
     if (inset_state.colors_empty()) {
       auto_color(&inset_state);
     }
 
-    // Writing EPS, if requested by command line option
+    // Write EPS if requested by command-line option
     if (polygons_to_eps) {
       std::cerr << "Writing " << inset_name << "_input.eps" << std::endl;
       write_map_to_eps((inset_name + "_input.eps"), &inset_state);
@@ -256,12 +256,11 @@ int main(const int argc, const char *argv[])
     // Start map integration
     while (inset_state.n_finished_integrations() < max_integrations &&
            inset_state.max_area_error() > max_permitted_area_error) {
-
       std::cerr << "Integration number "
                 << inset_state.n_finished_integrations()
                 << std::endl;
 
-
+      // TODO: THIS IF-CONDITION IS INELEGANT
       if (inset_state.n_finished_integrations()  >  0) {
         fill_with_density(&inset_state,
                           cart_info.trigger_write_density_to_eps());
@@ -279,7 +278,7 @@ int main(const int argc, const char *argv[])
       project(&inset_state);
       inset_state.increment_integration();
 
-      // Updating area errors
+      // Update area errors
       inset_state.set_area_errors();
     }
 
@@ -295,65 +294,22 @@ int main(const int argc, const char *argv[])
     // Rescale insets in correct proportion to each other
     normalize_inset_area(&inset_state,
                          cart_info.total_cart_target_area());
-  }
-
-  if (cart_info.n_insets() > 1) {
-    shift_insets_to_target_position(&cart_info);
-  }
-
-  bool single_inset_output_to_stdout = false;
-
-  if (cart_info.n_insets() == 1 && output_to_stdout) {
-    single_inset_output_to_stdout = true;
-  }
-
-  for (auto &inset_state : *cart_info.ref_to_inset_states()) {
-
-    // Printing final inset cartograms
-    json cart_json = cgal_to_json(&inset_state);
-    write_to_json(cart_json,
-                  geo_file_name,
-                  (inset_state.inset_name() + "_cartogram_scaled.geojson"),
-                  inset_state.bbox(),
-                  std::cout,
-                  single_inset_output_to_stdout);
-
-    // Following is commented out because unscaled_map() is no longer accurate nor maintainable
-    // // Removing transformations
-    // unscale_map(&inset_state);
-
-    // // Printing unscaled cartogram
-    // cart_json = cgal_to_json(&inset_state);
-    // write_to_json(cart_json,
-    //               geo_file_name,
-    //               (inset_state.inset_name() + "_cartogram_unscaled.geojson"));
 
     // Clean up after finishing all Fourier transforms for this inset
     inset_state.destroy_fftw_plans_for_rho();
     inset_state.ref_to_rho_init()->free();
     inset_state.ref_to_rho_ft()->free();
+  }  // End of loop over insets
 
-  }
+  // Shift insets so that they do not overlap
+  shift_insets_to_target_position(&cart_info);
 
-  if (cart_info.n_insets() > 1) {
-
-    // Write all positioned insets into a single geojson
-    json cart_json = cgal_to_json_all_insets(&cart_info);
-  
-    write_to_json_all_insets(cart_json,
-                             geo_file_name,
-                             (map_name + "_combined_cartogram.geojson"),
-                             std::cout,
-                             output_to_stdout);
-
-    // Generate same combined cartogram with inset frames
-    // Uncomment the following lines to generate geojson with rectangle inset frames
-    // write_to_json_all_frames(cart_json,
-    //                          geo_file_name,
-    //                          (map_name + "_frame_combined_cartogram.geojson"),
-    //                          cart_info.all_frame_bbox_with_pos());
-  }
-
+  // Output to GeoJSON
+  nlohmann::json cart_json = cgal_to_json(&cart_info);
+  write_to_json(cart_json,
+                geo_file_name,
+                (map_name + "_cartogram.geojson"),
+                std::cout,
+                output_to_stdout);
   return EXIT_SUCCESS;
-
 }
