@@ -86,30 +86,6 @@ void rescale_map(unsigned int long_grid_side_length,
   inset_state->set_xmin(new_xmin);
   inset_state->set_ymin(new_ymin);
   inset_state->set_map_scale(latt_const);
-
-  return;
-}
-
-
-void unscale_map(InsetState *inset_state)
-{
-
-  // Rescale all GeoDiv coordinates
-  Transformation translate(CGAL::TRANSLATION,
-                           CGAL::Vector_2<Epick>(inset_state->new_xmin(),
-                                                 inset_state->new_ymin()));
-  Transformation scale(CGAL::SCALING, inset_state->map_scale());
-  for (auto &gd : *inset_state->ref_to_geo_divs()) {
-    for (auto &pwh : *gd.ref_to_polygons_with_holes()) {
-      Polygon *ext_ring = &pwh.outer_boundary();
-      *ext_ring = transform(scale, *ext_ring);
-      *ext_ring = transform(translate, *ext_ring);
-      for (auto hi = pwh.holes_begin(); hi != pwh.holes_end(); ++hi) {
-        *hi = transform(scale, *hi);
-        *hi = transform(translate, *hi);
-      }
-    }
-  }
   return;
 }
 
@@ -213,6 +189,5 @@ void shift_insets_to_target_position(CartogramInfo *cart_info)
       }
     }
   }
-
   return;
 }
