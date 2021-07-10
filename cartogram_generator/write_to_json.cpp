@@ -50,8 +50,8 @@ nlohmann::json cgal_to_json(CartogramInfo *cart_info)
   return container;
 }
 
-void get_cartogram_id_from_csv(const boost::program_options::variables_map vm)
-{
+int cartogram_id_from_csv(const boost::program_options::variables_map vm,
+                                  nlohmann::json geo_div_properties) {
   // Get name of CSV file from vm
   std::string csv_name;
   if (vm.count("visual_variable_file")) {
@@ -76,12 +76,19 @@ void get_cartogram_id_from_csv(const boost::program_options::variables_map vm)
     id_header = reader.get_col_names()[0];
   }
 
-  // assign cartogram_ids
+  // Iterate through CSV rows
   int row_num = 1; // To be used as cartogram_id
   for (auto row : reader) {
-    std::cout << row[id_col].get() << std::endl;
+    std::string csv_id = row[id_col].get();
+    std::string json_id = geo_div_properties[id_header];
+
+    // Return cartogram_id
+    if (csv_id == json_id) {
+      return row_num;
+    }
+
+    row_num++;
   }
-  return;
 }
 
 void write_to_json(nlohmann::json container,
@@ -95,9 +102,6 @@ void write_to_json(nlohmann::json container,
   nlohmann::json old_j;
   i >> old_j;
   nlohmann::json newJ;
-
-  // Get cartogram_id based on CSV file row numbers
-  get_cartogram_id_from_csv(vm);
 
   // Loop over multipolygons in the container
   for (int i = 0; i < (int) container.size(); i++) {
@@ -115,6 +119,10 @@ void write_to_json(nlohmann::json container,
           container[i][j][k];
       }
     }
+
+    // Get cartogram_id for current GeoDiv based on CSV row numbers
+    newJ["features"][i]["properties"]["cartogram_id"] =
+      cartogram_id_from_csv(vm, newJ["features"][i]["properties"]);
   }
   newJ.push_back({"type", old_j["type"]});
   if (output_to_stdout) {
