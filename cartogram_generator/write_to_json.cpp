@@ -2,6 +2,7 @@
 #include "write_to_json.h"
 #include "cartogram_info.h"
 #include "inset_state.h"
+#include "csv.hpp"
 #include <iostream>
 #include <fstream>
 
@@ -49,18 +50,54 @@ nlohmann::json cgal_to_json(CartogramInfo *cart_info)
   return container;
 }
 
+void get_cartogram_id_from_csv(const boost::program_options::variables_map vm)
+{
+  // Get name of CSV file from vm
+  std::string csv_name;
+  if (vm.count("visual_variable_file")) {
+    csv_name = vm["visual_variable_file"].as<std::string>();
+  } else {
+    std::cerr << "ERROR: No CSV file given!" << std::endl;
+    _Exit(15);
+  }
+
+  // Do we need to run try/catch checks like we did in read_csv()?
+
+  // Opening CSV Reader
+  csv::CSVReader reader(csv_name);
+
+  // Finding index of column with IDs
+  std::string id_header;
+  int id_col = 0;
+  if (vm.count("id")) {
+    id_header = vm["id"].as<std::string>();
+    id_col = reader.index_of(id_header);
+  } else {
+    id_header = reader.get_col_names()[0];
+  }
+
+  // assign cartogram_ids
+  int row_num = 1; // To be used as cartogram_id
+  for (auto row : reader) {
+    std::cout << row[id_col].get() << std::endl;
+  }
+  return;
+}
+
 void write_to_json(nlohmann::json container,
                    std::string old_geo_fn,
                    std::string new_geo_fn,
                    std::ostream &new_geo_stream,
                    bool output_to_stdout,
-                   const boost::program_options::variables_map vm,
-                   CartogramInfo cart_info)
+                   const boost::program_options::variables_map vm)
 {
   std::ifstream i(old_geo_fn);
   nlohmann::json old_j;
   i >> old_j;
   nlohmann::json newJ;
+
+  // Get cartogram_id based on CSV file row numbers
+  get_cartogram_id_from_csv(vm);
 
   // Loop over multipolygons in the container
   for (int i = 0; i < (int) container.size(); i++) {

@@ -14,6 +14,5 @@ void write_to_json(nlohmann::json,
                    std::string,
                    std::ostream&,
                    bool,
-                   const boost::program_options::variables_map,
-                   CartogramInfo);
+                   const boost::program_options::variables_map);
 #endif
