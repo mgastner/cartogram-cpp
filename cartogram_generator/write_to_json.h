@@ -6,6 +6,7 @@
 #include <nlohmann/json.hpp>
 #include <string>
 #include <iostream>
+#include <boost/program_options.hpp>
 
 nlohmann::json cgal_to_json(CartogramInfo *cart_info);
 void write_to_json(nlohmann::json,
@@ -13,5 +14,6 @@ void write_to_json(nlohmann::json,
                    std::string,
                    std::ostream&,
                    bool,
-                   std::string);
+                   const boost::program_options::variables_map,
+                   CartogramInfo);
 #endif

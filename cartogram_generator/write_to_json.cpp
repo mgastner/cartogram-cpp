@@ -54,7 +54,8 @@ void write_to_json(nlohmann::json container,
                    std::string new_geo_fn,
                    std::ostream &new_geo_stream,
                    bool output_to_stdout,
-                   std::string visual_file_name)
+                   const boost::program_options::variables_map vm,
+                   CartogramInfo cart_info)
 {
   std::ifstream i(old_geo_fn);
   nlohmann::json old_j;

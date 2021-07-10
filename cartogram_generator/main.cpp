@@ -311,6 +311,7 @@ int main(const int argc, const char *argv[])
                 (map_name + "_cartogram.geojson"),
                 std::cout,
                 output_to_stdout,
-                visual_file_name);
+                vm,
+                cart_info);
   return EXIT_SUCCESS;
 }
