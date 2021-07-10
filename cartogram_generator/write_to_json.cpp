@@ -53,7 +53,8 @@ void write_to_json(nlohmann::json container,
                    std::string old_geo_fn,
                    std::string new_geo_fn,
                    std::ostream &new_geo_stream,
-                   bool output_to_stdout)
+                   bool output_to_stdout,
+                   std::string visual_file_name)
 {
   std::ifstream i(old_geo_fn);
   nlohmann::json old_j;

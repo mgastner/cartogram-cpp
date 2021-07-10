@@ -310,6 +310,7 @@ int main(const int argc, const char *argv[])
                 geo_file_name,
                 (map_name + "_cartogram.geojson"),
                 std::cout,
-                output_to_stdout);
+                output_to_stdout,
+                visual_file_name);
   return EXIT_SUCCESS;
 }
