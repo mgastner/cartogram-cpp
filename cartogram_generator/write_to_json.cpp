@@ -121,8 +121,10 @@ void write_to_json(nlohmann::json container,
     }
 
     // Get cartogram_id for current GeoDiv based on CSV row numbers
-    newJ["features"][i]["properties"]["cartogram_id"] =
-      cartogram_id_from_csv(vm, newJ["features"][i]["properties"]);
+    if (!newJ["features"][i]["properties"]["cartogram_id"]) {
+      newJ["features"][i]["properties"]["cartogram_id"] =
+        cartogram_id_from_csv(vm, newJ["features"][i]["properties"]);
+    }
   }
   newJ.push_back({"type", old_j["type"]});
   if (output_to_stdout) {
