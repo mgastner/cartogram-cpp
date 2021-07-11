@@ -89,6 +89,8 @@ int cartogram_id_from_csv(const boost::program_options::variables_map vm,
 
     row_num++;
   }
+  
+  return -1;
 }
 
 void write_to_json(nlohmann::json container,
