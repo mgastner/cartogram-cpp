@@ -50,7 +50,7 @@ nlohmann::json cgal_to_json(CartogramInfo *cart_info)
   return container;
 }
 
-int cartogram_id_from_csv(const boost::program_options::variables_map vm,
+std::string cartogram_id_from_csv(const boost::program_options::variables_map vm,
                                   nlohmann::json geo_div_properties) {
   // Get name of CSV file from vm
   std::string csv_name;
@@ -84,13 +84,13 @@ int cartogram_id_from_csv(const boost::program_options::variables_map vm,
 
     // Return cartogram_id
     if (csv_id == json_id) {
-      return row_num;
+      return std::to_string(row_num);
     }
 
     row_num++;
   }
   
-  return -1;
+  return "-1";
 }
 
 void write_to_json(nlohmann::json container,
