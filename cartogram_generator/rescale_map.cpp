@@ -152,9 +152,9 @@ void shift_insets_to_target_position(CartogramInfo *cart_info)
   for (auto &inset_state : *cart_info->ref_to_inset_states()) {
     bboxes.at(inset_state.pos()) = inset_state.bbox();
   }
-  double x = 0;
-  double y = 0;
   for (auto &inset_state : *cart_info->ref_to_inset_states()) {
+    double x = 0;
+    double y = 0;
     const std::string pos = inset_state.pos();
     if (pos == "R") {
       x = std::max(bboxes.at("C").xmax(), bboxes.at("B").xmax());
