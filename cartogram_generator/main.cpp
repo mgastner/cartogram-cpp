@@ -300,7 +300,7 @@ int main(const int argc, const char *argv[])
         inset_state.set_geo_divs(densify(inset_state.geo_divs()));
 
         // Choosing diaganols that are inside graticule cells
-        choose_diag_4(&inset_state);
+        choose_diag(&inset_state);
 
         // Projecting with Triangulation
         project_with_triangulation(&inset_state);
