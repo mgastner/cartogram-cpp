@@ -62,6 +62,7 @@ add_executable(
   ../cartogram_generator/rescale_map.cpp
   ../cartogram_generator/write_eps.cpp
   ../cartogram_generator/colors.cpp
+  ../cartogram_generator/auto_color.cpp
   ../cartogram_generator/check_topology.cpp
   ../cartogram_generator/matrix.cpp
   ../cartogram_generator/densify.cpp
@@ -73,7 +74,8 @@ add_executable(
   ../cartogram_generator/ft_real_2d.cpp
   ../cartogram_generator/interpolate_bilinearly.cpp
   ../cartogram_generator/project.cpp
-  ../cartogram_generator/write_to_json.cpp)
+  ../cartogram_generator/write_to_json.cpp
+  ../cartogram_generator/albers_projection.cpp)
 
 # Linking appropriate libraries required
 target_link_libraries(

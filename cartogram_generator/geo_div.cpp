@@ -10,7 +10,7 @@ const std::string GeoDiv::id() const
   return id_;
 }
 
-int GeoDiv::n_polygons_with_holes() const
+unsigned int GeoDiv::n_polygons_with_holes() const
 {
   return polygons_with_holes_.size();
 }
@@ -43,4 +43,14 @@ double GeoDiv::area() const
     }
   }
   return a;
+}
+
+void GeoDiv::adjacent_to(const std::string id)
+{
+  adjacent_geodivs_.insert(id);
+}
+
+const std::set<std::string> GeoDiv::adjacent_geodivs() const
+{
+  return adjacent_geodivs_;
 }

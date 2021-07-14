@@ -1,4 +1,5 @@
 #include "inset_state.h"
+// #include "cgal_typedef.h"
 #include <CGAL/intersections.h>
 
 // Returns ceiling up to nearest 0.5 value, e.g. 2.64 returns 3.5
@@ -298,7 +299,7 @@ std::vector<Point> densification_points(Point a, Point b)
     Segment seg_diaganol(top_left, bottom_right);
     Segment seg_intersec(a, b);
 
-    auto result = intersection(seg_diaganol, seg_intersec);
+    auto result = CGAL::intersection(seg_diaganol, seg_intersec);
     if (result) {
       if (const Point *s = boost::get<Point>(&*result)) {
         if (!point_almost_equal(a, (*s)) && !point_almost_equal(b, (*s))) {
@@ -342,7 +343,7 @@ std::vector<Point> densification_points(Point a, Point b)
     Segment seg_diaganol(top_right, bottom_left);
     Segment seg_intersec(a, b);
 
-    auto result = intersection(seg_diaganol, seg_intersec);
+    auto result = CGAL::intersection(seg_diaganol, seg_intersec);
     if (result) {
       if (const Point *s = boost::get<Point>(&*result)) {
 
