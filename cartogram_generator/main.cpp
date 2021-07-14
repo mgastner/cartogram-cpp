@@ -275,20 +275,24 @@ int main(const int argc, const char *argv[])
                 << inset_state.n_finished_integrations()
                 << std::endl;
 
+      double blur_width;
+      if (inset_state.n_finished_integrations() == 0){
+        blur_width = 5.0;
+      } else if (inset_state.n_finished_integrations() < 7){
+        blur_width =
+          std::pow(2.0, 3 - int(inset_state.n_finished_integrations()));
+      } else {
+        blur_width = 0.0;
+      }
+      
       // TODO: THIS IF-CONDITION IS INELEGANT
       if (inset_state.n_finished_integrations()  >  0) {
         fill_with_density(&inset_state,
                           cart_info.trigger_write_density_to_eps());
       }
-      if (inset_state.n_finished_integrations() == 0) {
-        blur_density(5.0,
-                     &inset_state,
-                     cart_info.trigger_write_density_to_eps());
-      } else {
-        blur_density(0.0,
-                     &inset_state,
-                     cart_info.trigger_write_density_to_eps());
-      }
+      blur_density(blur_width,
+                   &inset_state,
+                   cart_info.trigger_write_density_to_eps());
       flatten_density(&inset_state);
 
       if (triangulation){
