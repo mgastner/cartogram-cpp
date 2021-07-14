@@ -51,6 +51,10 @@ int main(const int argc, const char *argv[])
   // input map is not a world map.
   bool world;
 
+  // Another cartogram projection method making use of triangulation. Can reduce or
+  // even eliminate intersections that occur when projecting "normally".
+  bool triangulation;
+
   // Other boolean values that are needed to parse the command line arguments
   bool polygons_to_eps, density_to_eps, make_csv, output_to_stdout;
 
@@ -110,6 +114,12 @@ int main(const int argc, const char *argv[])
       ->default_value(false)
       ->implicit_value(true),
       "Boolean: is input a world map in longitude-latitude format?"
+      )(
+      "triangulation,t",
+      value<bool>(&triangulation)
+      ->default_value(false)
+      ->implicit_value(true),
+      "Project the cartogram using the triangulation method"
       )(
       "polygons_to_eps,e",
       value<bool>(&polygons_to_eps)
@@ -280,7 +290,20 @@ int main(const int argc, const char *argv[])
                      cart_info.trigger_write_density_to_eps());
       }
       flatten_density(&inset_state);
-      project(&inset_state);
+
+      if (triangulation){
+        // Densify map
+        inset_state.set_geo_divs(densify(inset_state.geo_divs()));
+
+        // Choosing diaganols that are inside graticule cells
+        choose_diag_4(&inset_state);
+
+        // Projecting with Triangulation
+        project_with_triangulation(&inset_state);
+      } else {
+        project(&inset_state);
+      }
+      
       inset_state.increment_integration();
 
       // Update area errors
