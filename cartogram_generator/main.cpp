@@ -47,7 +47,7 @@ int main(const int argc, const char *argv[])
   bool world;
 
   // Other boolean values that are needed to parse the command line arguments
-  bool polygons_to_eps, density_to_eps, make_csv, output_to_stdout;
+  bool polygons_to_eps, density_to_eps, make_csv, output_to_stdout, equal_area;
 
   // Parse command-line options. See
   // https://theboostcpplibraries.com/boost.program_options
@@ -73,6 +73,12 @@ int main(const int argc, const char *argv[])
       ->default_value(false)
       ->implicit_value(true),
       "Output GeoJSON to stdout"
+      )(
+      "output_equal_area,p",
+      value<bool>(&equal_area)
+      ->default_value(false)
+      ->implicit_value(true),
+      "Output equal area GeoJSON"
       )(
       "make_csv,m",
       value<bool>(&make_csv)
@@ -196,8 +202,8 @@ int main(const int argc, const char *argv[])
 
     // Can the coordinates be interpreted as longitude and latitude?
     CGAL::Bbox_2 bb = inset_state.bbox();
-    if (bb.xmin() >= -180.0 && bb.xmax() <= 180.0 &&
-        bb.ymin() >= -90.0 && bb.ymax() <= 90.0) {
+    if ((bb.xmin() >= -180.0 && bb.xmax() <= 180.0 &&
+        bb.ymin() >= -90.0 && bb.ymax() <= 90.0) || equal_area) {
 
       // If yes, transform the coordinates with the Albers projection
       try {
@@ -222,6 +228,14 @@ int main(const int argc, const char *argv[])
                 << std::endl;
     }
     inset_state.set_inset_name(inset_name);
+
+    if (equal_area)
+    {
+      normalize_inset_area(&inset_state,
+                           cart_info.total_cart_target_area(),
+                           equal_area);
+      continue;
+    }
 
     // Rescale map to fit into a rectangular box [0, lx] * [0, ly].
     rescale_map(long_grid_side_length,
@@ -305,10 +319,16 @@ int main(const int argc, const char *argv[])
   shift_insets_to_target_position(&cart_info);
 
   // Output to GeoJSON
+  std::string output_file_name;
+  if (equal_area) {
+    output_file_name = map_name + "_equal_area.geojson";
+  } else {
+    output_file_name = map_name + "_cartogram.geojson";
+  }
   nlohmann::json cart_json = cgal_to_json(&cart_info);
   write_to_json(cart_json,
                 geo_file_name,
-                (map_name + "_cartogram.geojson"),
+                output_file_name,
                 std::cout,
                 output_to_stdout);
   return EXIT_SUCCESS;
