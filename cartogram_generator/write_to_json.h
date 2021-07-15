@@ -7,6 +7,7 @@
 #include <string>
 #include <iostream>
 
+nlohmann::json inset_to_json(InsetState*);
 nlohmann::json cgal_to_json(CartogramInfo *cart_info);
 void write_to_json(nlohmann::json,
                    std::string,

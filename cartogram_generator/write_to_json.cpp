@@ -5,44 +5,54 @@
 #include <iostream>
 #include <fstream>
 
+nlohmann::json inset_to_json(InsetState *inset_state)
+{
+  nlohmann::json container;
+
+  for (auto gd : inset_state->geo_divs()) {
+    nlohmann::json gd_container;
+    for (auto pwh : gd.polygons_with_holes()) {
+
+      // Get exterior ring of Polygon_with_holes
+      Polygon ext_ring = pwh.outer_boundary();
+      nlohmann::json polygon_container;
+      nlohmann::json er_container;
+      for (unsigned int i = 0; i < ext_ring.size(); i++) {
+
+        // Get exterior ring coordinates
+        double arr[2];
+        arr[0] = ext_ring[i][0];
+        arr[1] = ext_ring[i][1];
+        er_container.push_back(arr);
+      }
+      polygon_container.push_back(er_container);
+
+      // Get holes of Polygon_with_holes
+      for (auto hci = pwh.holes_begin(); hci != pwh.holes_end(); hci++) {
+        Polygon hole = *hci;
+        nlohmann::json hole_container;
+        for (unsigned int i = 0; i < hole.size(); i++) {
+
+          // Get hole coordinates
+          double arr[2];
+          arr[0] = hole[i][0];
+          arr[1] = hole[i][1];
+          hole_container.push_back(arr);
+        }
+        polygon_container.push_back(hole_container);
+      }
+      gd_container.push_back(polygon_container);
+    }
+    container.push_back(gd_container);
+  }
+  return container;
+}
+
 nlohmann::json cgal_to_json(CartogramInfo *cart_info)
 {
   nlohmann::json container;
   for (auto &inset_state : *cart_info->ref_to_inset_states()) {
-    for (auto gd : inset_state.geo_divs()) {
-      nlohmann::json gd_container;
-      for (auto pwh : gd.polygons_with_holes()) {
-
-        // Get exterior ring of Polygon_with_holes
-        Polygon ext_ring = pwh.outer_boundary();
-        nlohmann::json polygon_container;
-        nlohmann::json er_container;
-        for (unsigned int i = 0; i < ext_ring.size(); i++) {
-
-          // Get exterior ring coordinates
-          double arr[2];
-          arr[0] = ext_ring[i][0];
-          arr[1] = ext_ring[i][1];
-          er_container.push_back(arr);
-        }
-        polygon_container.push_back(er_container);
-
-        // Get holes of Polygon_with_holes
-        for (auto hci = pwh.holes_begin(); hci != pwh.holes_end(); hci++) {
-          Polygon hole = *hci;
-          nlohmann::json hole_container;
-          for (unsigned int i = 0; i < hole.size(); i++) {
-
-            // Get hole coordinates
-            double arr[2];
-            arr[0] = hole[i][0];
-            arr[1] = hole[i][1];
-            hole_container.push_back(arr);
-          }
-          polygon_container.push_back(hole_container);
-        }
-        gd_container.push_back(polygon_container);
-      }
+    for (auto gd_container : inset_to_json(&inset_state)){
       container.push_back(gd_container);
     }
   }
