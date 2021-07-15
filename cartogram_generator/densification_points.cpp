@@ -37,16 +37,15 @@ bool point_almost_equal(Point a, Point b) {
   return (almost_equal(a[0], b[0]) && almost_equal(a[1], b[1]));
 }
 
-// Truncate a double down to round_digits digits after decimal point.
-// round_digits is defined in constants.h
-double round_down(double value) {
-  return floor(value * round_digits) / round_digits;
+// Round a double down to round_digits digits after decimal point.
+double round_coordinate(double value){
+  return round(value * round_digits) / round_digits;
 }
 
 // Truncate the coordinates of a point
 Point round_point(Point p1) {
-  double x1 = round_down(p1[0]);
-  double y1 = round_down(p1[1]);
+  double x1 = round_coordinate(p1[0]);
+  double y1 = round_coordinate(p1[1]);
   Point rounded_point(x1, y1);
   return rounded_point;
 }
