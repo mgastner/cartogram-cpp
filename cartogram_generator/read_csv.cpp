@@ -33,7 +33,6 @@ void read_csv(const boost::program_options::variables_map vm,
   cart_info->set_id_header(id_header);
 
   // Finding index of column with target areas
-  double total_cart_target_area = 0;  // Total of all GeoDivs
   int area_col = 1;
   if (vm.count("area")) {
     area_col = reader.index_of(vm["area"].as<std::string>());
@@ -95,10 +94,6 @@ void read_csv(const boost::program_options::variables_map vm,
         _Exit(101);
       }
     }
-
-    // Adding target_area (i.e. population, GDP) value
-    // to store target area of all GeoDivs
-    total_cart_target_area += area;
 
     // Read color
     std::string color = "";

@@ -7,8 +7,21 @@
 
 nlohmann::json cgal_to_json(CartogramInfo *cart_info)
 {
-  nlohmann::json container;
+  nlohmann::json container, frame_container;
+  double bbox_xmin = 0;
+  double bbox_ymin = 0;
+  double bbox_xmax = 0;
+  double bbox_ymax = 0;
   for (auto &inset_state : *cart_info->ref_to_inset_states()) {
+    CGAL::Bbox_2 inset_bbox = inset_state.bbox();
+    bbox_xmin = std::min(bbox_xmin, inset_bbox.xmin());
+    bbox_ymin = std::min(bbox_ymin, inset_bbox.ymin());
+    bbox_xmax = std::max(bbox_xmax, inset_bbox.xmax());
+    bbox_ymax = std::max(bbox_ymax, inset_bbox.ymax());
+    if (inset_state.pos() != "C") {
+      frame_container.push_back({inset_bbox.xmin(), inset_bbox.ymin(),
+                                 inset_bbox.xmax(), inset_bbox.ymax()});
+    }
     for (auto gd : inset_state.geo_divs()) {
       nlohmann::json gd_container;
       for (auto pwh : gd.polygons_with_holes()) {
@@ -46,6 +59,8 @@ nlohmann::json cgal_to_json(CartogramInfo *cart_info)
       container.push_back(gd_container);
     }
   }
+  container.push_back({bbox_xmin, bbox_ymin, bbox_xmax, bbox_ymax});
+  container.push_back(frame_container);
   return container;
 }
 
@@ -61,7 +76,7 @@ void write_to_json(nlohmann::json container,
   nlohmann::json newJ;
 
   // Loop over multipolygons in the container
-  for (int i = 0; i < (int) container.size(); i++) {
+  for (int i = 0; i < (int) container.size() -2; i++) {
     newJ["features"][i]["properties"] = old_j["features"][i]["properties"];
     newJ["features"][i]["id"] = old_j["features"][i]["id"];
     newJ["features"][i]["type"] = "Feature";
@@ -78,6 +93,8 @@ void write_to_json(nlohmann::json container,
     }
   }
   newJ.push_back({"type", old_j["type"]});
+  newJ.push_back({"bbox", container[(container.size() - 2)]});
+  newJ.push_back({"frame", container[(container.size() - 1)]});
   if (output_to_stdout) {
     new_geo_stream << newJ << std::endl;
   } else {
