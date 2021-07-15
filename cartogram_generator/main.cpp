@@ -268,6 +268,12 @@ int main(const int argc, const char *argv[])
       write_map_to_eps((inset_name + "_input.eps"), &inset_state);
     }
 
+    // Round all points to the number digits defined in constants.h
+    // if projecting cartogram with triangulation
+    if (triangulation){
+      round_points(&inset_state);
+    }
+    
     // Start map integration
     while (inset_state.n_finished_integrations() < max_integrations &&
            inset_state.max_area_error() > max_permitted_area_error) {
