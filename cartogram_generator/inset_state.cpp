@@ -215,16 +215,6 @@ FTReal2d *InsetState::ref_to_rho_init()
   return &rho_init_;
 }
 
-boost::multi_array<XYPoint, 2> *InsetState::graticule_points()
-{
-  return &graticule_points_;
-}
-
-boost::multi_array<XYPoint, 2> *InsetState::graticule_centroids()
-{
-  return &graticule_centroids_;
-}
-
 boost::multi_array<int, 2> *InsetState::graticule_diagonals()
 {
   return &graticule_diagonals_;
@@ -287,13 +277,6 @@ void InsetState::set_map_scale(const double map_scale)
   return;
 }
 
-std::map<std::string, std::vector<double>> *InsetState::debug_population(){
-  return &debug_population_;
-}
-
-std::map<std::string, std::vector<double>> *InsetState::debug_area_error(){
-  return &debug_area_error_;
-}
 void InsetState::set_pos(std::string pos)
 {
   pos_ = pos;

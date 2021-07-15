@@ -37,6 +37,8 @@ private:
   fftw_plan fwd_plan_for_rho_, bwd_plan_for_rho_;
   std::vector<GeoDiv> geo_divs_;  // Geographic divisions in this inset
 
+  // Chosen diagonal for each graticule cell
+  boost::multi_array<int, 2> graticule_diagonals_;
   // Horizontal and vertical adjacency graphs
   std::vector<std::vector<intersection> > horizontal_adj_, vertical_adj_;
   std::string inset_name_; // Map name, appended with Position if n_insets > 2
@@ -44,11 +46,6 @@ private:
   double map_scale_; // Double to map scale
   unsigned int new_xmin_, new_ymin_; // To store map translation vector
   unsigned int n_finished_integrations_;
-  boost::multi_array<XYPoint, 2> graticule_points_;
-  boost::multi_array<XYPoint, 2> graticule_centroids_;
-  boost::multi_array<int, 2> graticule_diagonals_;
-  std::map<std::string, std::vector<double>> debug_population_;
-  std::map<std::string, std::vector<double>> debug_area_error_;
   std::string pos_;  // Position of inset ("C", "T" etc.)
   boost::multi_array<XYPoint, 2> proj_;  // Cartogram projection
 
@@ -74,6 +71,7 @@ public:
   void execute_fftw_bwd_plan() const;
   void execute_fftw_fwd_plan() const;
   const std::vector<GeoDiv> geo_divs() const;
+  boost::multi_array<int, 2> *graticule_diagonals();
   const std::vector<std::vector<intersection> > horizontal_adj() const;
   void increment_integration();
   const std::string inset_name() const;
@@ -85,11 +83,6 @@ public:
   unsigned int new_xmin() const;
   unsigned int new_ymin() const;
   unsigned int n_finished_integrations() const;
-  boost::multi_array<XYPoint, 2> *graticule_points();
-  boost::multi_array<XYPoint, 2> *graticule_centroids();
-  boost::multi_array<int, 2> *graticule_diagonals();
-  std::map<std::string, std::vector<double>> *debug_population();
-  std::map<std::string, std::vector<double>> *debug_area_error();
   unsigned int n_geo_divs() const;
   const std::string pos() const;
   boost::multi_array<XYPoint, 2> *proj();
