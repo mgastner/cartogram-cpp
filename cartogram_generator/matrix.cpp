@@ -16,27 +16,6 @@ Matrix::Matrix() {
   p33 = 1;
 }
 
-// Matrix from a triangle
-// Matrix::Matrix (Triangle triangle) {
-//
-//   // first vertex
-//   p11 = triangle[0][0];
-//   p21 = triangle[0][1];
-//
-//   // second vertex
-//   p12 = triangle[1][0];
-//   p22 = triangle[1][1];
-//
-//   // third vertex
-//   p13 = triangle[2][0];
-//   p23 = triangle[2][1];
-//
-//   // to make it a 3x3 matrix
-//   p31 = 1;
-//   p32 = 1;
-//   p33 = 1;
-// }
-
 // Matrix from three XYPoints
 Matrix::Matrix (XYPoint a, XYPoint b, XYPoint c) {
 
