@@ -29,7 +29,7 @@ double half_floor(double num){
 
 // Very similar doubles
 bool almost_equal(double a, double b) {
-  return abs(a - b) <= 1e-10;
+  return abs(a - b) <= (1/round_digits);
 }
 
 // Very similar points
