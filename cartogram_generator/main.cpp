@@ -221,14 +221,11 @@ int main(const int argc, const char *argv[])
                   << std::endl;
         return EXIT_FAILURE;
       }
-    } else if ((bb.xmin() < -180.0 || bb.xmax() > 180.0 ||
-                bb.ymin() < -90.0 || bb.ymax() > 90.0) &&
-                output_equal_area) {
-        std::cerr << "ERROR: Given GeoJSON is not a longitude-latitude map."
-                  << std::endl;
-        return EXIT_FAILURE;
+    } else if (output_equal_area) {
+      std::cerr << "ERROR: Input GeoJSON is not a longitude-latitude map."
+                << std::endl;
+      return EXIT_FAILURE;
     }
-
 
     // Determine the name of the inset
     std::string inset_name = map_name;
@@ -239,7 +236,6 @@ int main(const int argc, const char *argv[])
                 << std::endl;
     }
     inset_state.set_inset_name(inset_name);
-
     if (output_equal_area) {
       normalize_inset_area(&inset_state,
                            cart_info.total_cart_target_area(),
