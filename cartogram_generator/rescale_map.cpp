@@ -90,7 +90,7 @@ void rescale_map(unsigned int long_grid_side_length,
 }
 
 void normalize_inset_area(InsetState *inset_state,
-                          double total_target_area, 
+                          double total_target_area,
                           bool equal_area)
 {
 
@@ -118,11 +118,11 @@ void normalize_inset_area(InsetState *inset_state,
   // Calculates scale_factor value to make insets proportionate to each other
   double inset_size_proportion =
     inset_state->total_target_area() / total_target_area;
-  double scale_factor = sqrt(1.0/inset_state->cart_area()
-                             * inset_size_proportion);
-  if (equal_area) {
-    scale_factor = 1;
-  }
+  double scale_factor =
+    equal_area ?
+    1.0 :
+    sqrt(1.0/inset_state->cart_area()
+         * inset_size_proportion);
 
   // Rescale all GeoDiv coordinates
   Transformation translate(CGAL::TRANSLATION,
@@ -157,9 +157,9 @@ void shift_insets_to_target_position(CartogramInfo *cart_info)
   for (auto &inset_state : *cart_info->ref_to_inset_states()) {
     bboxes.at(inset_state.pos()) = inset_state.bbox();
   }
-  double x = 0;
-  double y = 0;
   for (auto &inset_state : *cart_info->ref_to_inset_states()) {
+    double x = 0;
+    double y = 0;
     const std::string pos = inset_state.pos();
     if (pos == "R") {
       x = std::max(bboxes.at("C").xmax(), bboxes.at("B").xmax());

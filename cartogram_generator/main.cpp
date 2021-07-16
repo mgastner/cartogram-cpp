@@ -240,86 +240,86 @@ int main(const int argc, const char *argv[])
       normalize_inset_area(&inset_state,
                            cart_info.total_cart_target_area(),
                            output_equal_area);
-      continue;
-    }
+    } else {
 
-    // Rescale map to fit into a rectangular box [0, lx] * [0, ly].
-    rescale_map(long_grid_side_length,
-                &inset_state,
-                cart_info.is_world_map());
+      // Rescale map to fit into a rectangular box [0, lx] * [0, ly].
+      rescale_map(long_grid_side_length,
+                  &inset_state,
+                  cart_info.is_world_map());
 
-    // Set up Fourier transforms
-    unsigned int lx = inset_state.lx();
-    unsigned int ly = inset_state.ly();
-    inset_state.ref_to_rho_init()->allocate(lx, ly);
-    inset_state.ref_to_rho_ft()->allocate(lx, ly);
-    inset_state.make_fftw_plans_for_rho();
+      // Set up Fourier transforms
+      unsigned int lx = inset_state.lx();
+      unsigned int ly = inset_state.ly();
+      inset_state.ref_to_rho_init()->allocate(lx, ly);
+      inset_state.ref_to_rho_ft()->allocate(lx, ly);
+      inset_state.make_fftw_plans_for_rho();
 
-    // Set initial area errors
-    inset_state.set_area_errors();
-
-    // Fill density to fill horizontal adjacency map
-    fill_with_density(&inset_state,
-                      cart_info.trigger_write_density_to_eps());
-
-    // Automatically color GeoDivs if no colors are provided
-    if (inset_state.colors_empty()) {
-      auto_color(&inset_state);
-    }
-
-    // Write EPS if requested by command-line option
-    if (make_polygon_eps) {
-      std::cerr << "Writing " << inset_name << "_input.eps" << std::endl;
-      write_map_to_eps((inset_name + "_input.eps"), &inset_state);
-    }
-
-    // Start map integration
-    while (inset_state.n_finished_integrations() < max_integrations &&
-           inset_state.max_area_error() > max_permitted_area_error) {
-      std::cerr << "Integration number "
-                << inset_state.n_finished_integrations()
-                << std::endl;
-
-      // TODO: THIS IF-CONDITION IS INELEGANT
-      if (inset_state.n_finished_integrations()  >  0) {
-        fill_with_density(&inset_state,
-                          cart_info.trigger_write_density_to_eps());
-      }
-      if (inset_state.n_finished_integrations() == 0) {
-        blur_density(5.0,
-                     &inset_state,
-                     cart_info.trigger_write_density_to_eps());
-      } else {
-        blur_density(0.0,
-                     &inset_state,
-                     cart_info.trigger_write_density_to_eps());
-      }
-      flatten_density(&inset_state);
-      project(&inset_state);
-      inset_state.increment_integration();
-
-      // Update area errors
+      // Set initial area errors
       inset_state.set_area_errors();
-    }
 
-    // Print EPS of cartogram
-    if (make_polygon_eps) {
-      std::cerr << "Writing "
-                << inset_state.inset_name()
-                << "_output.eps" << std::endl;
-      write_map_to_eps((inset_state.inset_name() + "_output.eps"),
-                       &inset_state);
-    }
+      // Fill density to fill horizontal adjacency map
+      fill_with_density(&inset_state,
+                        cart_info.trigger_write_density_to_eps());
 
-    // Rescale insets in correct proportion to each other
-    normalize_inset_area(&inset_state,
-                         cart_info.total_cart_target_area());
+      // Automatically color GeoDivs if no colors are provided
+      if (inset_state.colors_empty()) {
+        auto_color(&inset_state);
+      }
 
-    // Clean up after finishing all Fourier transforms for this inset
-    inset_state.destroy_fftw_plans_for_rho();
-    inset_state.ref_to_rho_init()->free();
-    inset_state.ref_to_rho_ft()->free();
-  }  // End of loop over insets
+      // Write EPS if requested by command-line option
+      if (make_polygon_eps) {
+        std::cerr << "Writing " << inset_name << "_input.eps" << std::endl;
+        write_map_to_eps((inset_name + "_input.eps"), &inset_state);
+      }
+
+      // Start map integration
+      while (inset_state.n_finished_integrations() < max_integrations &&
+             inset_state.max_area_error() > max_permitted_area_error) {
+        std::cerr << "Integration number "
+                  << inset_state.n_finished_integrations()
+                  << std::endl;
+
+        // TODO: THIS IF-CONDITION IS INELEGANT
+        if (inset_state.n_finished_integrations()  >  0) {
+          fill_with_density(&inset_state,
+                            cart_info.trigger_write_density_to_eps());
+        }
+        if (inset_state.n_finished_integrations() == 0) {
+          blur_density(5.0,
+                       &inset_state,
+                       cart_info.trigger_write_density_to_eps());
+        } else {
+          blur_density(0.0,
+                       &inset_state,
+                       cart_info.trigger_write_density_to_eps());
+        }
+        flatten_density(&inset_state);
+        project(&inset_state);
+        inset_state.increment_integration();
+
+        // Update area errors
+        inset_state.set_area_errors();
+      }
+
+      // Print EPS of cartogram
+      if (make_polygon_eps) {
+        std::cerr << "Writing "
+                  << inset_state.inset_name()
+                  << "_output.eps" << std::endl;
+        write_map_to_eps((inset_state.inset_name() + "_output.eps"),
+                         &inset_state);
+      }
+
+      // Rescale insets in correct proportion to each other
+      normalize_inset_area(&inset_state,
+                           cart_info.total_cart_target_area());
+
+      // Clean up after finishing all Fourier transforms for this inset
+      inset_state.destroy_fftw_plans_for_rho();
+      inset_state.ref_to_rho_init()->free();
+      inset_state.ref_to_rho_ft()->free();
+    } // End of loop over insets
+  }
 
   // Shift insets so that they do not overlap
   shift_insets_to_target_position(&cart_info);
