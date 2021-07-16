@@ -206,8 +206,8 @@ int main(const int argc, const char *argv[])
 
     // Can the coordinates be interpreted as longitude and latitude?
     CGAL::Bbox_2 bb = inset_state.bbox();
-    if ((bb.xmin() >= -180.0 && bb.xmax() <= 180.0 &&
-         bb.ymin() >= -90.0 && bb.ymax() <= 90.0) || output_equal_area) {
+    if (bb.xmin() >= -180.0 && bb.xmax() <= 180.0 &&
+        bb.ymin() >= -90.0 && bb.ymax() <= 90.0){
 
       // If yes, transform the coordinates with the Albers projection
       try {
@@ -221,7 +221,14 @@ int main(const int argc, const char *argv[])
                   << std::endl;
         return EXIT_FAILURE;
       }
+    } else if ((bb.xmin() < -180.0 || bb.xmax() > 180.0 ||
+                bb.ymin() < -90.0 || bb.ymax() > 90.0) &&
+                output_equal_area) {
+        std::cerr << "ERROR: Given GeoJSON is not a longitude-latitude map."
+                  << std::endl;
+        return EXIT_FAILURE;        
     }
+
 
     // Determining the name of the inset
     std::string inset_name = map_name;
