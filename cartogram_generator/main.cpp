@@ -78,7 +78,7 @@ int main(const int argc, const char *argv[])
       ->implicit_value(true),
       "Output GeoJSON to stdout"
       )(
-      "output_equal_area,p",
+      "output_equal_area,q",
       value<bool>(&output_equal_area)
       ->default_value(false)
       ->implicit_value(true),
@@ -179,7 +179,7 @@ int main(const int argc, const char *argv[])
     return EXIT_FAILURE;
   }
 
-  // Determining name of input map
+  // Determine name of input map
   std::string map_name = geo_file_name;
   if (map_name.find_last_of("/\\") != std::string::npos) {
     map_name = map_name.substr(map_name.find_last_of("/\\") + 1);
@@ -226,11 +226,11 @@ int main(const int argc, const char *argv[])
                 output_equal_area) {
         std::cerr << "ERROR: Given GeoJSON is not a longitude-latitude map."
                   << std::endl;
-        return EXIT_FAILURE;        
+        return EXIT_FAILURE;
     }
 
 
-    // Determining the name of the inset
+    // Determine the name of the inset
     std::string inset_name = map_name;
     if (cart_info.n_insets() > 1) {
       inset_name = inset_name + "_" + inset_state.pos();
@@ -259,10 +259,10 @@ int main(const int argc, const char *argv[])
     inset_state.ref_to_rho_ft()->allocate(lx, ly);
     inset_state.make_fftw_plans_for_rho();
 
-    // Setting initial area errors
+    // Set initial area errors
     inset_state.set_area_errors();
 
-    // Filling density to fill horizontal adjacency map
+    // Fill density to fill horizontal adjacency map
     fill_with_density(&inset_state,
                       cart_info.trigger_write_density_to_eps());
 
@@ -306,7 +306,7 @@ int main(const int argc, const char *argv[])
       inset_state.set_area_errors();
     }
 
-    // Printing EPS of cartogram
+    // Print EPS of cartogram
     if (make_polygon_eps) {
       std::cerr << "Writing "
                 << inset_state.inset_name()
