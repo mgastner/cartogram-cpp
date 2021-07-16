@@ -47,7 +47,11 @@ int main(const int argc, const char *argv[])
   bool world;
 
   // Other boolean values that are needed to parse the command line arguments
-  bool polygons_to_eps, density_to_eps, make_csv, output_to_stdout, equal_area;
+  bool make_csv,
+       make_density_eps,
+       make_polygon_eps,
+       output_equal_area,
+       output_to_stdout;
 
   // Parse command-line options. See
   // https://theboostcpplibraries.com/boost.program_options
@@ -75,7 +79,7 @@ int main(const int argc, const char *argv[])
       "Output GeoJSON to stdout"
       )(
       "output_equal_area,p",
-      value<bool>(&equal_area)
+      value<bool>(&output_equal_area)
       ->default_value(false)
       ->implicit_value(true),
       "Output equal area GeoJSON"
@@ -113,13 +117,13 @@ int main(const int argc, const char *argv[])
       "Boolean: is input a world map in longitude-latitude format?"
       )(
       "polygons_to_eps,e",
-      value<bool>(&polygons_to_eps)
+      value<bool>(&make_polygon_eps)
       ->default_value(false)
       ->implicit_value(true),
       "Boolean: make EPS image of input and output?"
       )(
       "density_to_eps,d",
-      value<bool>(&density_to_eps)
+      value<bool>(&make_density_eps)
       ->default_value(false)
       ->implicit_value(true),
       "Boolean: make EPS images *_density_*.eps?"
@@ -138,7 +142,7 @@ int main(const int argc, const char *argv[])
 
   // Initialize cart_info. It contains all information about the cartogram
   // that needs to be handled by functions called from main().
-  CartogramInfo cart_info(world, visual_file_name, density_to_eps);
+  CartogramInfo cart_info(world, visual_file_name, make_density_eps);
   if (!make_csv) {
 
     // Read visual variables (e.g. area, color) from CSV
@@ -203,7 +207,7 @@ int main(const int argc, const char *argv[])
     // Can the coordinates be interpreted as longitude and latitude?
     CGAL::Bbox_2 bb = inset_state.bbox();
     if ((bb.xmin() >= -180.0 && bb.xmax() <= 180.0 &&
-        bb.ymin() >= -90.0 && bb.ymax() <= 90.0) || equal_area) {
+         bb.ymin() >= -90.0 && bb.ymax() <= 90.0) || output_equal_area) {
 
       // If yes, transform the coordinates with the Albers projection
       try {
@@ -229,11 +233,10 @@ int main(const int argc, const char *argv[])
     }
     inset_state.set_inset_name(inset_name);
 
-    if (equal_area)
-    {
+    if (output_equal_area) {
       normalize_inset_area(&inset_state,
                            cart_info.total_cart_target_area(),
-                           equal_area);
+                           output_equal_area);
       continue;
     }
 
@@ -262,7 +265,7 @@ int main(const int argc, const char *argv[])
     }
 
     // Write EPS if requested by command-line option
-    if (polygons_to_eps) {
+    if (make_polygon_eps) {
       std::cerr << "Writing " << inset_name << "_input.eps" << std::endl;
       write_map_to_eps((inset_name + "_input.eps"), &inset_state);
     }
@@ -297,7 +300,7 @@ int main(const int argc, const char *argv[])
     }
 
     // Printing EPS of cartogram
-    if (polygons_to_eps) {
+    if (make_polygon_eps) {
       std::cerr << "Writing "
                 << inset_state.inset_name()
                 << "_output.eps" << std::endl;
@@ -320,7 +323,7 @@ int main(const int argc, const char *argv[])
 
   // Output to GeoJSON
   std::string output_file_name;
-  if (equal_area) {
+  if (output_equal_area) {
     output_file_name = map_name + "_equal_area.geojson";
   } else {
     output_file_name = map_name + "_cartogram.geojson";
