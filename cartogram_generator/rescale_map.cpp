@@ -7,27 +7,11 @@ void rescale_map(unsigned int long_grid_side_length,
                  bool is_world_map)
 {
   double padding = (is_world_map ?  1.0 : padding_unless_world);
-
-  // Initialize bounding box of map with bounding box of 0-th
-  // Polygon_with_holes in 0-th GeoDiv
-  GeoDiv gd0 = inset_state->geo_divs()[0];
-  std::vector<Polygon_with_holes> pwhs = gd0.polygons_with_holes();
-  CGAL::Bbox_2 bb0 = pwhs[0].bbox();
-  double map_xmin = bb0.xmin();
-  double map_xmax = bb0.xmax();
-  double map_ymin = bb0.ymin();
-  double map_ymax = bb0.ymax();
-
-  // Expand bounding box to enclose all GeoDivs
-  for (auto gd : inset_state->geo_divs()) {
-    for (auto pwh : gd.polygons_with_holes()) {
-      CGAL::Bbox_2 bb = pwh.bbox();
-      map_xmin = std::min(map_xmin, bb.xmin());
-      map_ymin = std::min(map_ymin, bb.ymin());
-      map_xmax = std::max(map_xmax, bb.xmax());
-      map_ymax = std::max(map_ymax, bb.ymax());
-    }
-  }
+  CGAL::Bbox_2 bbox = inset_state->bbox();
+  double map_xmin = bbox.xmin();
+  double map_xmax = bbox.xmax();
+  double map_ymin = bbox.ymin();
+  double map_ymax = bbox.ymax();
 
   // Expand bounding box to guarantee a minimum padding
   double new_xmin = 0.5 * ((1.0-padding)*map_xmax + (1.0+padding)*map_xmin);
@@ -93,27 +77,11 @@ void normalize_inset_area(InsetState *inset_state,
                           double total_target_area,
                           bool equal_area)
 {
-
-  // Initialize bounding box of map with bounding box of 0-th
-  // Polygon_with_holes in 0-th GeoDiv
-  GeoDiv gd0 = inset_state->geo_divs()[0];
-  std::vector<Polygon_with_holes> pwhs = gd0.polygons_with_holes();
-  CGAL::Bbox_2 bb0 = pwhs[0].bbox();
-  double map_xmin = bb0.xmin();
-  double map_xmax = bb0.xmax();
-  double map_ymin = bb0.ymin();
-  double map_ymax = bb0.ymax();
-
-  // Expand bounding box to enclose all GeoDivs
-  for (auto gd : inset_state->geo_divs()) {
-    for (auto pwh : gd.polygons_with_holes()) {
-      CGAL::Bbox_2 bb = pwh.bbox();
-      map_xmin = std::min(map_xmin, bb.xmin());
-      map_ymin = std::min(map_ymin, bb.ymin());
-      map_xmax = std::max(map_xmax, bb.xmax());
-      map_ymax = std::max(map_ymax, bb.ymax());
-    }
-  }
+  CGAL::Bbox_2 bbox = inset_state->bbox();
+  double map_xmin = bbox.xmin();
+  double map_xmax = bbox.xmax();
+  double map_ymin = bbox.ymin();
+  double map_ymax = bbox.ymax();
 
   // Calculates scale_factor value to make insets proportionate to each other
   double inset_size_proportion =

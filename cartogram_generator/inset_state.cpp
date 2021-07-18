@@ -13,10 +13,16 @@ double InsetState::area_errors_at(const std::string id) const
 
 CGAL::Bbox_2 InsetState::bbox() const
 {
-  double inset_xmin = 180;
-  double inset_ymin = 90;
-  double inset_xmax = -180;
-  double inset_ymax = -90;
+  // Initialize bounding box of map with bounding box of 0-th
+  // Polygon_with_holes in 0-th GeoDiv
+  GeoDiv gd0 = geo_divs()[0];
+  std::vector<Polygon_with_holes> pwhs = gd0.polygons_with_holes();
+  CGAL::Bbox_2 bb0 = pwhs[0].bbox();
+  double inset_xmin = bb0.xmin();
+  double inset_xmax = bb0.xmax();
+  double inset_ymin = bb0.ymin();
+  double inset_ymax = bb0.ymax();
+
   for (GeoDiv gd : geo_divs_) {
     for (Polygon_with_holes pgnwh : gd.polygons_with_holes()) {
       CGAL::Bbox_2 pgnwh_bbox = pgnwh.bbox();
