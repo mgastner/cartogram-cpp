@@ -7,6 +7,8 @@
 #include <string>
 #include <iostream>
 
+std::vector<double> divider_points(double, double, 
+                                   double, double);
 nlohmann::json cgal_to_json(CartogramInfo *cart_info);
 void write_to_json(nlohmann::json,
                    std::string,

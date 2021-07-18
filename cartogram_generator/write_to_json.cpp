@@ -5,9 +5,28 @@
 #include <iostream>
 #include <fstream>
 
+std::vector<double> divider_points(double x1, double y1, double x2, double y2)
+{
+  double divider_length = 0.8;
+
+  // Ratio between first divider point to (x2, y2) distance and
+  // (x1, y1) : (x2, y2) distance
+  double ratio = divider_length + (1 - divider_length)/2;
+
+  //Calculate divider points
+  double x1D = ratio * x1 + (1- ratio) * x2;
+  double x2D = ratio * x2 + (1- ratio) * x1;
+  double y1D = ratio * y1 + (1- ratio) * y2;
+  double y2D = ratio * y2 + (1- ratio) * y1;
+
+  std::vector<double> points{x1D, y1D, x2D, y2D};
+
+  return points;
+}
+
 nlohmann::json cgal_to_json(CartogramInfo *cart_info)
 {
-  nlohmann::json container, frame_container;
+  nlohmann::json container, divider_container;
   double bbox_xmin = 0;
   double bbox_ymin = 0;
   double bbox_xmax = 0;
@@ -18,9 +37,26 @@ nlohmann::json cgal_to_json(CartogramInfo *cart_info)
     bbox_ymin = std::min(bbox_ymin, inset_bbox.ymin());
     bbox_xmax = std::max(bbox_xmax, inset_bbox.xmax());
     bbox_ymax = std::max(bbox_ymax, inset_bbox.ymax());
-    if (inset_state.pos() != "C") {
-      frame_container.push_back({inset_bbox.xmin(), inset_bbox.ymin(),
-                                 inset_bbox.xmax(), inset_bbox.ymax()});
+    if (inset_state.pos() == "R") {
+      divider_container.push_back(divider_points(inset_bbox.xmin(),
+                                                 inset_bbox.ymax(),
+                                                 inset_bbox.xmin(),
+                                                 inset_bbox.ymin()));
+    } else if (inset_state.pos() == "L") {
+      divider_container.push_back(divider_points(inset_bbox.xmax(),
+                                                 inset_bbox.ymax(),
+                                                 inset_bbox.xmax(),
+                                                 inset_bbox.ymin()));
+    } else if (inset_state.pos() == "T") {
+      divider_container.push_back(divider_points(inset_bbox.xmin(),
+                                                 inset_bbox.ymin(),
+                                                 inset_bbox.xmax(),
+                                                 inset_bbox.ymin()));
+    } else if (inset_state.pos() == "B") {
+      divider_container.push_back(divider_points(inset_bbox.xmin(),
+                                                 inset_bbox.ymax(),
+                                                 inset_bbox.xmax(),
+                                                 inset_bbox.ymax()));
     }
     for (auto gd : inset_state.geo_divs()) {
       nlohmann::json gd_container;
@@ -60,7 +96,7 @@ nlohmann::json cgal_to_json(CartogramInfo *cart_info)
     }
   }
   container.push_back({bbox_xmin, bbox_ymin, bbox_xmax, bbox_ymax});
-  container.push_back(frame_container);
+  container.push_back(divider_container);
   return container;
 }
 
@@ -94,7 +130,7 @@ void write_to_json(nlohmann::json container,
   }
   newJ.push_back({"type", old_j["type"]});
   newJ.push_back({"bbox", container[(container.size() - 2)]});
-  newJ.push_back({"frame", container[(container.size() - 1)]});
+  newJ.push_back({"divider_points", container[(container.size() - 1)]});
   if (output_to_stdout) {
     new_geo_stream << newJ << std::endl;
   } else {
