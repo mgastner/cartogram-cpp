@@ -60,7 +60,8 @@ void check_geojson_validity(const nlohmann::json j)
 
 GeoDiv json_to_cgal(const std::string id,
                     const nlohmann::json json_coords_raw,
-                    bool is_polygon)
+                    bool is_polygon,
+                    CartogramInfo *cart_info)
 {
   GeoDiv gd(id);
   nlohmann::json json_coords;
@@ -96,6 +97,7 @@ GeoDiv json_to_cgal(const std::string id,
     // oriented, interior rings clockwise oriented. If the orientation in the
     // GeoJSON does not match our convention, we reverse the polygon.
     if (ext_ring.is_clockwise_oriented()) {
+      cart_info->set_is_original_ext_ring_clockwise(true);
       ext_ring.reverse_orientation();
     }
 
@@ -233,7 +235,7 @@ void read_geojson(const std::string geometry_file_name,
             _Exit(18);
           }
           ids_in_geojson.insert(id);
-          const GeoDiv gd = json_to_cgal(id, geometry["coordinates"], is_polygon);
+          const GeoDiv gd = json_to_cgal(id, geometry["coordinates"], is_polygon, cart_info);
           inset_state.push_back(gd);
         }
       }

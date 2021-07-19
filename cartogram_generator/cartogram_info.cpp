@@ -97,3 +97,10 @@ bool CartogramInfo::is_original_ext_ring_clockwise()
 {
   return is_original_ext_ring_clockwise_;
 }
+
+void CartogramInfo::set_is_original_ext_ring_clockwise(
+                                          bool is_original_ext_ring_clockwise)
+{
+  is_original_ext_ring_clockwise_ = is_original_ext_ring_clockwise;
+  return;
+}

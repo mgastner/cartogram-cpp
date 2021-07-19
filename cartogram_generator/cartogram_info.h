@@ -31,5 +31,6 @@ public:
   bool trigger_write_density_to_eps() const;
   const std::string visual_variable_file() const;
   bool is_original_ext_ring_clockwise();
+  void set_is_original_ext_ring_clockwise(bool);
 };
 #endif
