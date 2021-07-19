@@ -13,8 +13,9 @@ private:
   bool is_world_map_;
   std::string visual_variable_file_;
   bool write_density_to_eps_;
+  bool is_original_ext_ring_clockwise_;
 public:
-  explicit CartogramInfo(const bool, const std::string, const bool);
+  explicit CartogramInfo(const bool, const std::string, const bool, bool);
   void gd_to_inset_insert(std::string, std::string);
   const std::string id_header() const;
   const std::set<std::string> ids_in_visual_variables_file() const;
@@ -29,5 +30,6 @@ public:
   double total_cart_target_area() const;
   bool trigger_write_density_to_eps() const;
   const std::string visual_variable_file() const;
+  bool is_original_ext_ring_clockwise();
 };
 #endif

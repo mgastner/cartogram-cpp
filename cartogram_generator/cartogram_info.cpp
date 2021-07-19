@@ -2,10 +2,12 @@
 
 CartogramInfo::CartogramInfo(const bool w,
                              const std::string v,
-                             const bool wd2eps) :
+                             const bool wd2eps,
+                             bool ext_ring_clockwise) :
   is_world_map_(w),
   visual_variable_file_(v),
-  write_density_to_eps_(wd2eps)
+  write_density_to_eps_(wd2eps),
+  is_original_ext_ring_clockwise_(ext_ring_clockwise)
 {
   return;
 }
@@ -89,4 +91,9 @@ bool CartogramInfo::trigger_write_density_to_eps() const
 const std::string CartogramInfo::visual_variable_file() const
 {
   return visual_variable_file_;
+}
+
+bool CartogramInfo::is_original_ext_ring_clockwise()
+{
+  return is_original_ext_ring_clockwise_;
 }

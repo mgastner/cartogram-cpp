@@ -142,7 +142,7 @@ int main(const int argc, const char *argv[])
 
   // Initialize cart_info. It contains all information about the cartogram
   // that needs to be handled by functions called from main().
-  CartogramInfo cart_info(world, visual_file_name, make_density_eps);
+  CartogramInfo cart_info(world, visual_file_name, make_density_eps, false);
   if (!make_csv) {
 
     // Read visual variables (e.g. area, color) from CSV
