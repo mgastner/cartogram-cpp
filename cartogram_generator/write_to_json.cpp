@@ -18,6 +18,7 @@ nlohmann::json cgal_to_json(CartogramInfo *cart_info)
         
         /* Set exterior ring to clockwise if it was originally like that */
         if (cart_info->is_original_ext_ring_clockwise()) {
+          // std::cout << cart_info->is_original_ext_ring_clockwise() << std::endl;
           ext_ring.reverse_orientation();
         }
 
