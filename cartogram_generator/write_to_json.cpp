@@ -15,6 +15,7 @@ nlohmann::json cgal_to_json(CartogramInfo *cart_info)
 
         // Get exterior ring of Polygon_with_holes
         Polygon ext_ring = pwh.outer_boundary();
+        ext_ring.reverse_orientation();
         nlohmann::json polygon_container;
         nlohmann::json er_container;
         for (unsigned int i = 0; i < ext_ring.size(); i++) {
@@ -25,11 +26,16 @@ nlohmann::json cgal_to_json(CartogramInfo *cart_info)
           arr[1] = ext_ring[i][1];
           er_container.push_back(arr);
         }
+
+         /* Repeat first point as last point as per GeoJSON standards. */
+        er_container.push_back({ext_ring[0][0], ext_ring[0][1]});
+
         polygon_container.push_back(er_container);
 
         // Get holes of Polygon_with_holes
         for (auto hci = pwh.holes_begin(); hci != pwh.holes_end(); hci++) {
           Polygon hole = *hci;
+          hole.reverse_orientation();
           nlohmann::json hole_container;
           for (unsigned int i = 0; i < hole.size(); i++) {
 
@@ -39,6 +45,9 @@ nlohmann::json cgal_to_json(CartogramInfo *cart_info)
             arr[1] = hole[i][1];
             hole_container.push_back(arr);
           }
+          /* Repeat first point as last point as per GeoJSON standards. */
+          hole_container.push_back({hole[0][0], hole[0][1]});
+
           polygon_container.push_back(hole_container);
         }
         gd_container.push_back(polygon_container);
