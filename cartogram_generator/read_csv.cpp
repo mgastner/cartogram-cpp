@@ -63,6 +63,7 @@ void read_csv(const boost::program_options::variables_map vm,
   }
 
   // Read CSV
+  std::set<std::string> inset_pos_set;
   for (auto &row : reader) {
     if (row.size() < 2) {
       std::cerr << "ERROR: CSV with >= 2 columns (IDs, target areas) required"
@@ -152,25 +153,20 @@ void read_csv(const boost::program_options::variables_map vm,
     // Associate GeoDiv ID with inset positon
     cart_info->gd_to_inset_insert(id, inset_pos);
 
-    // Check whether inset_state for inset_pos already exists
-    bool found = false;
-    for (auto &[existing_inset_pos, existing_inset_state] :
-         *cart_info->ref_to_inset_states()) {
-      if (existing_inset_pos == inset_pos) {
-        existing_inset_state.target_areas_insert(id, area);
-        if (color != "") {
-          existing_inset_state.colors_insert(id, color);
-        }
-        found = true;
-      }
-    }
-    if (!found) {
+    // Create inset_state for inset_pos unless it already exists
+    if (!inset_pos_set.contains(inset_pos)) {
       InsetState inset_state(inset_pos);
-      inset_state.target_areas_insert(id, area);
-      if (color != "") {
-        inset_state.colors_insert(id, color);
-      }
       cart_info->insert_inset_state(inset_pos, inset_state);
+      inset_pos_set.insert(inset_pos);
+    }
+
+    // Insert target area and color
+    std::map<std::string, InsetState> *inset_states =
+      cart_info->ref_to_inset_states();
+    InsetState *inset_state = &inset_states->at(inset_pos);
+    inset_state->target_areas_insert(id, area);
+    if (color != "") {
+      inset_state->colors_insert(id, color);
     }
   }
   return;
