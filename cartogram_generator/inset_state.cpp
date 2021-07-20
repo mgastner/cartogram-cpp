@@ -23,6 +23,7 @@ CGAL::Bbox_2 InsetState::bbox() const
   double inset_ymin = bb0.ymin();
   double inset_ymax = bb0.ymax();
 
+  // Loop over the bounding boxes of all polygons with holes
   for (GeoDiv gd : geo_divs_) {
     for (Polygon_with_holes pgnwh : gd.polygons_with_holes()) {
       CGAL::Bbox_2 pgnwh_bbox = pgnwh.bbox();
