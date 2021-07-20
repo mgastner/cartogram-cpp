@@ -37,22 +37,22 @@ nlohmann::json cgal_to_json(CartogramInfo *cart_info)
     bbox_ymin = std::min(bbox_ymin, inset_bbox.ymin());
     bbox_xmax = std::max(bbox_xmax, inset_bbox.xmax());
     bbox_ymax = std::max(bbox_ymax, inset_bbox.ymax());
-    if (inset_state.pos() == "R") {
+    if (inset_pos == "R") {
       divider_container.push_back(divider_points(inset_bbox.xmin(),
                                                  inset_bbox.ymax(),
                                                  inset_bbox.xmin(),
                                                  inset_bbox.ymin()));
-    } else if (inset_state.pos() == "L") {
+    } else if (inset_pos == "L") {
       divider_container.push_back(divider_points(inset_bbox.xmax(),
                                                  inset_bbox.ymax(),
                                                  inset_bbox.xmax(),
                                                  inset_bbox.ymin()));
-    } else if (inset_state.pos() == "T") {
+    } else if (inset_pos == "T") {
       divider_container.push_back(divider_points(inset_bbox.xmin(),
                                                  inset_bbox.ymin(),
                                                  inset_bbox.xmax(),
                                                  inset_bbox.ymin()));
-    } else if (inset_state.pos() == "B") {
+    } else if (inset_pos == "B") {
       divider_container.push_back(divider_points(inset_bbox.xmin(),
                                                  inset_bbox.ymax(),
                                                  inset_bbox.xmax(),

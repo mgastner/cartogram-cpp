@@ -63,6 +63,7 @@ unsigned int CartogramInfo::n_insets() const
 
 std::map<std::string, InsetState> *CartogramInfo::ref_to_inset_states()
 {
+
   return &inset_states_;
 }
 
@@ -75,9 +76,13 @@ void CartogramInfo::set_id_header(const std::string id)
 double CartogramInfo::total_cart_target_area() const
 {
   double area = 0.0;
-  for (auto [inset_pos, inset] : inset_states_) {
-    for (auto gd : inset.geo_divs()) {
-      area += inset.target_areas_at(gd.id());
+
+  // Loop over inset states. Syntax from:
+  // https://stackoverflow.com/questions/13087028/can-i-easily-iterate-over-
+  // the-values-of-a-map-using-a-range-based-for-loop
+  for (auto const &inset_state : inset_states_ | std::views::values) {
+    for (auto gd : inset_state.geo_divs()) {
+      area += inset_state.target_areas_at(gd.id());
     }
   }
   return area;
