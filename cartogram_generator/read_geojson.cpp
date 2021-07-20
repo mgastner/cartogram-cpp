@@ -186,7 +186,7 @@ void read_geojson(const std::string geometry_file_name,
   std::set<std::string> ids_in_geojson;
 
   // Iterate through each inset
-  for (auto &[key, inset_state] : *cart_info->ref_to_inset_states()) {
+  for (auto &[inset_pos, inset_state] : *cart_info->ref_to_inset_states()) {
     for (auto feature : j["features"]) {
       const nlohmann::json geometry = feature["geometry"];
       is_polygon = (geometry["type"] == "Polygon");

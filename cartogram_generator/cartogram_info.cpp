@@ -75,7 +75,7 @@ void CartogramInfo::set_id_header(const std::string id)
 double CartogramInfo::total_cart_target_area() const
 {
   double area = 0.0;
-  for (auto [key, inset] : inset_states_) {
+  for (auto [inset_pos, inset] : inset_states_) {
     for (auto gd : inset.geo_divs()) {
       area += inset.target_areas_at(gd.id());
     }

@@ -189,7 +189,7 @@ int main(const int argc, const char *argv[])
   }
 
   // Loop over insets
-  for (auto &[key, inset_state] : *cart_info.ref_to_inset_states()) {
+  for (auto &[inset_pos, inset_state] : *cart_info.ref_to_inset_states()) {
 
     // Check for errors in the input topology
     try {

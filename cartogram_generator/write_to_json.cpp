@@ -31,7 +31,7 @@ nlohmann::json cgal_to_json(CartogramInfo *cart_info)
   double bbox_ymin = 0;
   double bbox_xmax = 0;
   double bbox_ymax = 0;
-  for (auto &[key, inset_state] : *cart_info->ref_to_inset_states()) {
+  for (auto &[inset_pos, inset_state] : *cart_info->ref_to_inset_states()) {
     CGAL::Bbox_2 inset_bbox = inset_state.bbox();
     bbox_xmin = std::min(bbox_xmin, inset_bbox.xmin());
     bbox_ymin = std::min(bbox_ymin, inset_bbox.ymin());

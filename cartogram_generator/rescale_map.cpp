@@ -122,10 +122,10 @@ void shift_insets_to_target_position(CartogramInfo *cart_info)
   }
 
   // If the inset actually exists, we get its current bounding box
-  for (auto &[key, inset_state] : *cart_info->ref_to_inset_states()) {
+  for (auto &[inset_pos, inset_state] : *cart_info->ref_to_inset_states()) {
     bboxes.at(inset_state.pos()) = inset_state.bbox();
   }
-  for (auto &[key, inset_state] : *cart_info->ref_to_inset_states()) {
+  for (auto &[inset_pos, inset_state] : *cart_info->ref_to_inset_states()) {
     double x = 0;
     double y = 0;
     const std::string pos = inset_state.pos();
