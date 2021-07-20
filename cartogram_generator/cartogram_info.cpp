@@ -33,12 +33,20 @@ void CartogramInfo::insert_id_in_visual_variables_file(const std::string id)
   ids_in_visual_variables_file_.insert(id);
 }
 
+void CartogramInfo::insert_inset_state(const std::string inset_pos,
+                                       const InsetState inset_state)
+{
+  inset_states_.insert(std::pair<std::string, InsetState>(inset_pos,
+                                                          inset_state));
+  return;
+}
+
 const std::string CartogramInfo::inset_at_gd(const std::string id)
 {
   return gd_to_inset_.at(id);
 }
 
-const std::vector<InsetState> CartogramInfo::inset_states() const
+const std::map<std::string, InsetState> CartogramInfo::inset_states() const
 {
   return inset_states_;
 }
@@ -53,13 +61,7 @@ unsigned int CartogramInfo::n_insets() const
   return inset_states_.size();
 }
 
-void CartogramInfo::push_back(const InsetState is)
-{
-  inset_states_.push_back(is);
-  return;
-}
-
-std::vector<InsetState> *CartogramInfo::ref_to_inset_states()
+std::map<std::string, InsetState> *CartogramInfo::ref_to_inset_states()
 {
   return &inset_states_;
 }
@@ -73,7 +75,7 @@ void CartogramInfo::set_id_header(const std::string id)
 double CartogramInfo::total_cart_target_area() const
 {
   double area = 0.0;
-  for (auto inset : inset_states_) {
+  for (auto [key, inset] : inset_states_) {
     for (auto gd : inset.geo_divs()) {
       area += inset.target_areas_at(gd.id());
     }

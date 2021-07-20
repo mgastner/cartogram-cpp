@@ -154,7 +154,7 @@ void read_csv(const boost::program_options::variables_map vm,
 
     // Check whether inset_state for inset_pos already exists
     bool found = false;
-    for (auto &inset_state : *cart_info->ref_to_inset_states()) {
+    for (auto &[key, inset_state] : *cart_info->ref_to_inset_states()) {
       if (inset_state.pos() == inset_pos) {
         inset_state.target_areas_insert(id, area);
         if (color != "") {
@@ -169,7 +169,7 @@ void read_csv(const boost::program_options::variables_map vm,
       if (color != "") {
         inset_state.colors_insert(id, color);
       }
-      cart_info->push_back(inset_state);
+      cart_info->insert_inset_state(inset_pos, inset_state);
     }
   }
   return;
