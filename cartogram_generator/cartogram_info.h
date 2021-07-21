@@ -9,7 +9,7 @@ private:
   std::map<std::string, std::string> gd_to_inset_;
   std::string id_header_;
   std::set<std::string> ids_in_visual_variables_file_;
-  std::vector<InsetState> inset_states_;
+  std::map<std::string, InsetState> inset_states_;
   bool is_world_map_;
   std::string visual_variable_file_;
   bool write_density_to_eps_;
@@ -19,12 +19,12 @@ public:
   const std::string id_header() const;
   const std::set<std::string> ids_in_visual_variables_file() const;
   void insert_id_in_visual_variables_file(const std::string);
+  void insert_inset_state(const std::string, const InsetState);
   const std::string inset_at_gd(const std::string);
-  const std::vector<InsetState> inset_states() const;
+  const std::map<std::string, InsetState> inset_states() const;
   bool is_world_map() const;
   unsigned int n_insets() const;
-  void push_back(const InsetState);
-  std::vector<InsetState> *ref_to_inset_states();
+  std::map<std::string, InsetState> *ref_to_inset_states();
   void set_id_header(const std::string);
   double total_cart_target_area() const;
   bool trigger_write_density_to_eps() const;

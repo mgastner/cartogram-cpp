@@ -88,7 +88,7 @@ int main(const int argc, const char *argv[])
       value<bool>(&make_csv)
       ->default_value(false)
       ->implicit_value(true),
-      "Boolean: create a CSV file from the GeoJSON file passed to the -g flag?"
+      "Boolean: create CSV file from the GeoJSON passed to the -g flag?"
       )(
       "id,i",
       value<std::string>(),
@@ -100,11 +100,11 @@ int main(const int argc, const char *argv[])
       )(
       "color,c",
       value<std::string>(),
-      "Column name for colors (assumed column name: \"Color\" or \"Colour\")"
+      "Column name for colors (default: \"Color\" or \"Colour\")"
       )(
-      "inset,i",
+      "inset,n",
       value<std::string>(),
-      "Column name for insets (assumed column name: \"Inset\")"
+      "Column name for insets (default: \"Inset\")"
       )(
       "long_grid_side_length,l",
       value<unsigned int>(&long_grid_side_length),
@@ -189,7 +189,7 @@ int main(const int argc, const char *argv[])
   }
 
   // Loop over insets
-  for (auto &inset_state : *cart_info.ref_to_inset_states()) {
+  for (auto &[inset_pos, inset_state] : *cart_info.ref_to_inset_states()) {
 
     // Check for errors in the input topology
     try {
@@ -230,9 +230,9 @@ int main(const int argc, const char *argv[])
     // Determine the name of the inset
     std::string inset_name = map_name;
     if (cart_info.n_insets() > 1) {
-      inset_name = inset_name + "_" + inset_state.pos();
+      inset_name = inset_name + "_" + inset_pos;
       std::cerr << "\nWorking on inset at position: "
-                << inset_state.pos()
+                << inset_pos
                 << std::endl;
     }
     inset_state.set_inset_name(inset_name);

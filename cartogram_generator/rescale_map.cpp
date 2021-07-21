@@ -7,33 +7,17 @@ void rescale_map(unsigned int long_grid_side_length,
                  bool is_world_map)
 {
   double padding = (is_world_map ?  1.0 : padding_unless_world);
-
-  // Initialize bounding box of map with bounding box of 0-th
-  // Polygon_with_holes in 0-th GeoDiv
-  GeoDiv gd0 = inset_state->geo_divs()[0];
-  std::vector<Polygon_with_holes> pwhs = gd0.polygons_with_holes();
-  CGAL::Bbox_2 bb0 = pwhs[0].bbox();
-  double map_xmin = bb0.xmin();
-  double map_xmax = bb0.xmax();
-  double map_ymin = bb0.ymin();
-  double map_ymax = bb0.ymax();
-
-  // Expand bounding box to enclose all GeoDivs
-  for (auto gd : inset_state->geo_divs()) {
-    for (auto pwh : gd.polygons_with_holes()) {
-      CGAL::Bbox_2 bb = pwh.bbox();
-      map_xmin = std::min(map_xmin, bb.xmin());
-      map_ymin = std::min(map_ymin, bb.ymin());
-      map_xmax = std::max(map_xmax, bb.xmax());
-      map_ymax = std::max(map_ymax, bb.ymax());
-    }
-  }
+  CGAL::Bbox_2 bbox = inset_state->bbox();
 
   // Expand bounding box to guarantee a minimum padding
-  double new_xmin = 0.5 * ((1.0-padding)*map_xmax + (1.0+padding)*map_xmin);
-  double new_xmax = 0.5 * ((1.0+padding)*map_xmax + (1.0-padding)*map_xmin);
-  double new_ymin = 0.5 * ((1.0-padding)*map_ymax + (1.0+padding)*map_ymin);
-  double new_ymax = 0.5 * ((1.0+padding)*map_ymax + (1.0-padding)*map_ymin);
+  double new_xmin =
+    0.5 * ((1.0-padding)*bbox.xmax() + (1.0+padding)*bbox.xmin());
+  double new_xmax =
+    0.5 * ((1.0+padding)*bbox.xmax() + (1.0-padding)*bbox.xmin());
+  double new_ymin =
+    0.5 * ((1.0-padding)*bbox.ymax() + (1.0+padding)*bbox.ymin());
+  double new_ymax =
+    0.5 * ((1.0+padding)*bbox.ymax() + (1.0-padding)*bbox.ymin());
 
   // Ensure that the grid dimensions lx and ly are integer powers of 2
   if ((long_grid_side_length <= 0) ||
@@ -45,18 +29,18 @@ void rescale_map(unsigned int long_grid_side_length,
   }
   unsigned int lx, ly;
   double latt_const;
-  if (map_xmax-map_xmin > map_ymax-map_ymin) {
+  if (bbox.xmax()-bbox.xmin() > bbox.ymax()-bbox.ymin()) {
     lx = long_grid_side_length;
     latt_const = (new_xmax-new_xmin) / lx;
     ly = 1 << ((int) ceil(log2((new_ymax-new_ymin) / latt_const)));
-    new_ymax = 0.5*(map_ymax+map_ymin) + 0.5*ly*latt_const;
-    new_ymin = 0.5*(map_ymax+map_ymin) - 0.5*ly*latt_const;
+    new_ymax = 0.5*(bbox.ymax()+bbox.ymin()) + 0.5*ly*latt_const;
+    new_ymin = 0.5*(bbox.ymax()+bbox.ymin()) - 0.5*ly*latt_const;
   } else {
     ly = long_grid_side_length;
     latt_const = (new_ymax-new_ymin) / ly;
     lx = 1 << ((int) ceil(log2((new_xmax-new_xmin) / latt_const)));
-    new_xmax = 0.5*(map_xmax+map_xmin) + 0.5*lx*latt_const;
-    new_xmin = 0.5*(map_xmax+map_xmin) - 0.5*lx*latt_const;
+    new_xmax = 0.5*(bbox.xmax()+bbox.xmin()) + 0.5*lx*latt_const;
+    new_xmin = 0.5*(bbox.xmax()+bbox.xmin()) - 0.5*lx*latt_const;
   }
   std::cerr << "Rescaling to " << lx << "-by-" << ly
             << " grid with bounding box" << std::endl;
@@ -93,41 +77,22 @@ void normalize_inset_area(InsetState *inset_state,
                           double total_target_area,
                           bool equal_area)
 {
+  CGAL::Bbox_2 bbox = inset_state->bbox();
 
-  // Initialize bounding box of map with bounding box of 0-th
-  // Polygon_with_holes in 0-th GeoDiv
-  GeoDiv gd0 = inset_state->geo_divs()[0];
-  std::vector<Polygon_with_holes> pwhs = gd0.polygons_with_holes();
-  CGAL::Bbox_2 bb0 = pwhs[0].bbox();
-  double map_xmin = bb0.xmin();
-  double map_xmax = bb0.xmax();
-  double map_ymin = bb0.ymin();
-  double map_ymax = bb0.ymax();
-
-  // Expand bounding box to enclose all GeoDivs
-  for (auto gd : inset_state->geo_divs()) {
-    for (auto pwh : gd.polygons_with_holes()) {
-      CGAL::Bbox_2 bb = pwh.bbox();
-      map_xmin = std::min(map_xmin, bb.xmin());
-      map_ymin = std::min(map_ymin, bb.ymin());
-      map_xmax = std::max(map_xmax, bb.xmax());
-      map_ymax = std::max(map_ymax, bb.ymax());
-    }
-  }
-
-  // Calculates scale_factor value to make insets proportionate to each other
+  // Calculate scale_factor value to make insets proportional to each other
   double inset_size_proportion =
     inset_state->total_target_area() / total_target_area;
   double scale_factor =
     equal_area ?
-    1.0 :
-    sqrt(1.0/inset_state->cart_area()
-         * inset_size_proportion);
+    100.0 :
+    100.0 * sqrt(inset_size_proportion / inset_state->cart_area());
 
   // Rescale all GeoDiv coordinates
-  Transformation translate(CGAL::TRANSLATION,
-                           CGAL::Vector_2<Epick>(-(map_xmin + map_xmax) / 2,
-                                                 -(map_ymin + map_ymax) / 2));
+  Transformation translate(
+    CGAL::TRANSLATION,
+    CGAL::Vector_2<Epick>(-(bbox.xmin() + bbox.xmax()) / 2,
+                          -(bbox.ymin() + bbox.ymax()) / 2)
+    );
   Transformation scale(CGAL::SCALING, scale_factor);
   for (auto &gd : *inset_state->ref_to_geo_divs()) {
     for (auto &pwh : *gd.ref_to_polygons_with_holes()) {
@@ -154,13 +119,13 @@ void shift_insets_to_target_position(CartogramInfo *cart_info)
   }
 
   // If the inset actually exists, we get its current bounding box
-  for (auto &inset_state : *cart_info->ref_to_inset_states()) {
-    bboxes.at(inset_state.pos()) = inset_state.bbox();
+  for (auto &[inset_pos, inset_state] : *cart_info->ref_to_inset_states()) {
+    bboxes.at(inset_pos) = inset_state.bbox();
   }
-  for (auto &inset_state : *cart_info->ref_to_inset_states()) {
+  for (auto &[inset_pos, inset_state] : *cart_info->ref_to_inset_states()) {
     double x = 0;
     double y = 0;
-    const std::string pos = inset_state.pos();
+    const std::string pos = inset_pos;
     if (pos == "R") {
       x = std::max(bboxes.at("C").xmax(), bboxes.at("B").xmax());
       x = std::max(x, bboxes.at("T").xmax());

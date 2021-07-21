@@ -5,10 +5,31 @@
 #include <iostream>
 #include <fstream>
 
+std::vector<double> divider_points(double x1, double y1, double x2, double y2)
+{
+  double divider_length = 0.8;
+
+  // Ratio between first divider point to (x2, y2) distance and
+  // (x1, y1) : (x2, y2) distance
+  double ratio = divider_length + (1.0 - divider_length) / 2;
+
+  //Calculate divider points
+  double x1D = ratio * x1 + (1.0 - ratio) * x2;
+  double x2D = ratio * x2 + (1.0 - ratio) * x1;
+  double y1D = ratio * y1 + (1.0 - ratio) * y2;
+  double y2D = ratio * y2 + (1.0 - ratio) * y1;
+
+  // Return the two divider points (i.e., four coordinates) as a vector
+  std::vector<double> points {x1D, y1D, x2D, y2D};
+  return points;
+}
+
 nlohmann::json cgal_to_json(CartogramInfo *cart_info)
 {
-  nlohmann::json container;
-  for (auto &inset_state : *cart_info->ref_to_inset_states()) {
+  nlohmann::json container, divider_container;
+
+  // Insert GeoDiv coordinates into the container
+  for (auto &[inset_pos, inset_state] : *cart_info->ref_to_inset_states()) {
     for (auto gd : inset_state.geo_divs()) {
       nlohmann::json gd_container;
       for (auto pwh : gd.polygons_with_holes()) {
@@ -46,6 +67,54 @@ nlohmann::json cgal_to_json(CartogramInfo *cart_info)
       container.push_back(gd_container);
     }
   }
+
+  // Get joint bounding box for all insets. Initialize the bounding box with
+  // the bounding box of an arbitrary inset.
+  auto some_inset_state = cart_info->ref_to_inset_states()->begin()->second;
+  CGAL::Bbox_2 some_inset_bbox = some_inset_state.bbox();
+  double bbox_xmin = some_inset_bbox.xmin();
+  double bbox_ymin = some_inset_bbox.ymin();
+  double bbox_xmax = some_inset_bbox.xmax();
+  double bbox_ymax = some_inset_bbox.ymax();
+
+  // Loop over all insets to find joint bounding box
+  for (auto &[inset_pos, inset_state] : *cart_info->ref_to_inset_states()) {
+    CGAL::Bbox_2 inset_bbox = inset_state.bbox();
+    bbox_xmin = std::min(bbox_xmin, inset_bbox.xmin());
+    bbox_ymin = std::min(bbox_ymin, inset_bbox.ymin());
+    bbox_xmax = std::max(bbox_xmax, inset_bbox.xmax());
+    bbox_ymax = std::max(bbox_ymax, inset_bbox.ymax());
+  }
+
+  // Insert join bounding box into the container
+  container.push_back({bbox_xmin, bbox_ymin, bbox_xmax, bbox_ymax});
+
+  // Insert divider lines between all inset
+  for (auto &[inset_pos, inset_state] : *cart_info->ref_to_inset_states()) {
+    CGAL::Bbox_2 inset_bbox = inset_state.bbox();
+    if (inset_pos == "R") {
+      divider_container.push_back(divider_points(inset_bbox.xmin(),
+                                                 inset_bbox.ymax(),
+                                                 inset_bbox.xmin(),
+                                                 inset_bbox.ymin()));
+    } else if (inset_pos == "L") {
+      divider_container.push_back(divider_points(inset_bbox.xmax(),
+                                                 inset_bbox.ymax(),
+                                                 inset_bbox.xmax(),
+                                                 inset_bbox.ymin()));
+    } else if (inset_pos == "T") {
+      divider_container.push_back(divider_points(inset_bbox.xmin(),
+                                                 inset_bbox.ymin(),
+                                                 inset_bbox.xmax(),
+                                                 inset_bbox.ymin()));
+    } else if (inset_pos == "B") {
+      divider_container.push_back(divider_points(inset_bbox.xmin(),
+                                                 inset_bbox.ymax(),
+                                                 inset_bbox.xmax(),
+                                                 inset_bbox.ymax()));
+    }
+  }
+  container.push_back(divider_container);
   return container;
 }
 
@@ -61,7 +130,7 @@ void write_to_json(nlohmann::json container,
   nlohmann::json newJ;
 
   // Loop over multipolygons in the container
-  for (int i = 0; i < (int) container.size(); i++) {
+  for (int i = 0; i < (int) container.size() - 2; i++) {
     newJ["features"][i]["properties"] = old_j["features"][i]["properties"];
     newJ["features"][i]["id"] = old_j["features"][i]["id"];
     newJ["features"][i]["type"] = "Feature";
@@ -78,6 +147,8 @@ void write_to_json(nlohmann::json container,
     }
   }
   newJ.push_back({"type", old_j["type"]});
+  newJ.push_back({"bbox", container[(container.size() - 2)]});
+  newJ.push_back({"divider_points", container[(container.size() - 1)]});
   if (output_to_stdout) {
     new_geo_stream << newJ << std::endl;
   } else {
