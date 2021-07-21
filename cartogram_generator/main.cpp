@@ -189,8 +189,7 @@ int main(const int argc, const char *argv[])
   }
 
   // Loop over insets
-  for (auto &inset_state : *cart_info.ref_to_inset_states() |
-       std::views::values) {
+  for (auto &[inset_pos, inset_state] : *cart_info.ref_to_inset_states()) {
 
     // Check for errors in the input topology
     try {
@@ -231,9 +230,9 @@ int main(const int argc, const char *argv[])
     // Determine the name of the inset
     std::string inset_name = map_name;
     if (cart_info.n_insets() > 1) {
-      inset_name = inset_name + "_" + inset_state.pos();
+      inset_name = inset_name + "_" + inset_pos;
       std::cerr << "\nWorking on inset at position: "
-                << inset_state.pos()
+                << inset_pos
                 << std::endl;
     }
     inset_state.set_inset_name(inset_name);
