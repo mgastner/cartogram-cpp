@@ -11,13 +11,13 @@ std::vector<double> divider_points(double x1, double y1, double x2, double y2)
 
   // Ratio between first divider point to (x2, y2) distance and
   // (x1, y1) : (x2, y2) distance
-  double ratio = divider_length + (1 - divider_length)/2;
+  double ratio = divider_length + (1.0 - divider_length) / 2;
 
   //Calculate divider points
-  double x1D = ratio * x1 + (1- ratio) * x2;
-  double x2D = ratio * x2 + (1- ratio) * x1;
-  double y1D = ratio * y1 + (1- ratio) * y2;
-  double y2D = ratio * y2 + (1- ratio) * y1;
+  double x1D = ratio * x1 + (1.0 - ratio) * x2;
+  double x2D = ratio * x2 + (1.0 - ratio) * x1;
+  double y1D = ratio * y1 + (1.0 - ratio) * y2;
+  double y2D = ratio * y2 + (1.0 - ratio) * y1;
 
   // Return the two divider points (i.e., four coordinates) as a vector
   std::vector<double> points {x1D, y1D, x2D, y2D};
