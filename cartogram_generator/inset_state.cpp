@@ -1,3 +1,4 @@
+#include <cfloat>
 #include "inset_state.h"
 
 InsetState::InsetState(std::string pos) : pos_(pos)
@@ -13,15 +14,12 @@ double InsetState::area_errors_at(const std::string id) const
 
 CGAL::Bbox_2 InsetState::bbox() const
 {
-  // Initialize bounding box of map with bounding box of 0-th
-  // Polygon_with_holes in 0-th GeoDiv
-  GeoDiv gd0 = geo_divs()[0];
-  std::vector<Polygon_with_holes> pwhs = gd0.polygons_with_holes();
-  CGAL::Bbox_2 bb0 = pwhs[0].bbox();
-  double inset_xmin = bb0.xmin();
-  double inset_xmax = bb0.xmax();
-  double inset_ymin = bb0.ymin();
-  double inset_ymax = bb0.ymax();
+  // Initialize bounding box of map with maximum and minimum of
+  // double value
+  double inset_xmin = DBL_MAX;
+  double inset_xmax = DBL_MIN;
+  double inset_ymin = DBL_MAX;
+  double inset_ymax = DBL_MIN;
 
   // Loop over the bounding boxes of all polygons with holes
   for (GeoDiv gd : geo_divs_) {
