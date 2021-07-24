@@ -10,11 +10,16 @@ private:
   std::string id_header_;
   std::set<std::string> ids_in_visual_variables_file_;
   std::map<std::string, InsetState> inset_states_;
+
+  // TODO: We assume that either all external rings are counterclockwise or
+  // all are clockwise. This dichotomy covers most geospatial boundary files
+  // in the wild, but it would still be sensible to allow cases where there
+  // are external rings with opposite winding directions.
+  bool original_ext_ring_is_clockwise_;
   bool is_world_map_;
   std::string visual_variable_file_;
-  bool write_density_to_eps_;
 public:
-  explicit CartogramInfo(const bool, const std::string, const bool);
+  explicit CartogramInfo(const bool, const std::string);
   void gd_to_inset_insert(std::string, std::string);
   const std::string id_header() const;
   const std::set<std::string> ids_in_visual_variables_file() const;
@@ -24,10 +29,11 @@ public:
   const std::map<std::string, InsetState> inset_states() const;
   bool is_world_map() const;
   unsigned int n_insets() const;
+  bool original_ext_ring_is_clockwise();
   std::map<std::string, InsetState> *ref_to_inset_states();
   void set_id_header(const std::string);
+  void set_original_ext_ring_is_clockwise(bool);
   double total_cart_target_area() const;
-  bool trigger_write_density_to_eps() const;
   const std::string visual_variable_file() const;
 };
 #endif

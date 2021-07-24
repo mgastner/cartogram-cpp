@@ -1,11 +1,9 @@
 #include "cartogram_info.h"
 
 CartogramInfo::CartogramInfo(const bool w,
-                             const std::string v,
-                             const bool wd2eps) :
+                             const std::string v) :
   is_world_map_(w),
-  visual_variable_file_(v),
-  write_density_to_eps_(wd2eps)
+  visual_variable_file_(v)
 {
   return;
 }
@@ -61,6 +59,11 @@ unsigned int CartogramInfo::n_insets() const
   return inset_states_.size();
 }
 
+bool CartogramInfo::original_ext_ring_is_clockwise()
+{
+  return original_ext_ring_is_clockwise_;
+}
+
 std::map<std::string, InsetState> *CartogramInfo::ref_to_inset_states()
 {
 
@@ -88,12 +91,14 @@ double CartogramInfo::total_cart_target_area() const
   return area;
 }
 
-bool CartogramInfo::trigger_write_density_to_eps() const
-{
-  return write_density_to_eps_;
-}
-
 const std::string CartogramInfo::visual_variable_file() const
 {
   return visual_variable_file_;
+}
+
+void CartogramInfo::set_original_ext_ring_is_clockwise(
+  bool original_ext_ring_is_clockwise)
+{
+  original_ext_ring_is_clockwise_ = original_ext_ring_is_clockwise;
+  return;
 }

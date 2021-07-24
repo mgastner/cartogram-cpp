@@ -64,7 +64,8 @@ void adjust_for_dual_hemisphere(InsetState *inset_state)
 
           // Iterate through holes
           for (auto hole_it = pgnwh.holes_begin();
-               hole_it != pgnwh.holes_end(); hole_it++) {
+               hole_it != pgnwh.holes_end();
+               ++hole_it) {
             *hole_it = transform(translate, *hole_it);
           }
         }
@@ -140,7 +141,7 @@ void transform_to_albers_projection(InsetState *inset_state)
       // Iterate through holes
       for (auto hole_it = pgnwh.holes_begin();
            hole_it != pgnwh.holes_end();
-           hole_it++) {
+           ++hole_it) {
         Polygon &hole = *hole_it;
 
         // Iterate through hole's coordinates

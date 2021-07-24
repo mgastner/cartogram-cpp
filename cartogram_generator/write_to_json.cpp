@@ -36,9 +36,15 @@ nlohmann::json cgal_to_json(CartogramInfo *cart_info)
 
         // Get exterior ring of Polygon_with_holes
         Polygon ext_ring = pwh.outer_boundary();
+
+        // Set exterior ring to clockwise if it was originally like that
+        if (cart_info->original_ext_ring_is_clockwise()) {
+          ext_ring.reverse_orientation();
+        }
+
         nlohmann::json polygon_container;
         nlohmann::json er_container;
-        for (unsigned int i = 0; i < ext_ring.size(); i++) {
+        for (unsigned int i = 0; i < ext_ring.size(); ++i) {
 
           // Get exterior ring coordinates
           double arr[2];
@@ -46,13 +52,23 @@ nlohmann::json cgal_to_json(CartogramInfo *cart_info)
           arr[1] = ext_ring[i][1];
           er_container.push_back(arr);
         }
+
+        // Repeat first point as last point as per GeoJSON standards
+        er_container.push_back({ext_ring[0][0], ext_ring[0][1]});
+
         polygon_container.push_back(er_container);
 
         // Get holes of Polygon_with_holes
-        for (auto hci = pwh.holes_begin(); hci != pwh.holes_end(); hci++) {
+        for (auto hci = pwh.holes_begin(); hci != pwh.holes_end(); ++hci) {
           Polygon hole = *hci;
+
+          // Set hole to counter-clockwise if it was originally like that
+          if (cart_info->original_ext_ring_is_clockwise()) {
+            hole.reverse_orientation();
+          }
+
           nlohmann::json hole_container;
-          for (unsigned int i = 0; i < hole.size(); i++) {
+          for (unsigned int i = 0; i < hole.size(); ++i) {
 
             // Get hole coordinates
             double arr[2];
@@ -60,6 +76,8 @@ nlohmann::json cgal_to_json(CartogramInfo *cart_info)
             arr[1] = hole[i][1];
             hole_container.push_back(arr);
           }
+          // Repeat first point as last point as per GeoJSON standards
+          hole_container.push_back({hole[0][0], hole[0][1]});
           polygon_container.push_back(hole_container);
         }
         gd_container.push_back(polygon_container);
@@ -130,17 +148,17 @@ void write_to_json(nlohmann::json container,
   nlohmann::json newJ;
 
   // Loop over multipolygons in the container
-  for (int i = 0; i < (int) container.size() - 2; i++) {
+  for (int i = 0; i < (int) container.size() - 2; ++i) {
     newJ["features"][i]["properties"] = old_j["features"][i]["properties"];
     newJ["features"][i]["id"] = old_j["features"][i]["id"];
     newJ["features"][i]["type"] = "Feature";
     newJ["features"][i]["geometry"]["type"] = "MultiPolygon";
 
     // loop over Polygon_with_holes in the multipolygon
-    for (int j = 0; j < (int) container[i].size(); j++) {
+    for (int j = 0; j < (int) container[i].size(); ++j) {
 
       // Loop over exterior ring and holes in the Polygon_with_holes
-      for (int k = 0; k < (int) container[i][j].size(); k++) {
+      for (int k = 0; k < (int) container[i][j].size(); ++k) {
         newJ["features"][i]["geometry"]["coordinates"][j][k] =
           container[i][j][k];
       }

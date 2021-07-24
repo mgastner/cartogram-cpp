@@ -48,10 +48,10 @@ int main(const int argc, const char *argv[])
 
   // Other boolean values that are needed to parse the command line arguments
   bool make_csv,
-       make_density_eps,
        make_polygon_eps,
        output_equal_area,
-       output_to_stdout;
+       output_to_stdout,
+       plot_density;
 
   // Parse command-line options. See
   // https://theboostcpplibraries.com/boost.program_options
@@ -123,7 +123,7 @@ int main(const int argc, const char *argv[])
       "Boolean: make EPS image of input and output?"
       )(
       "density_to_eps,d",
-      value<bool>(&make_density_eps)
+      value<bool>(&plot_density)
       ->default_value(false)
       ->implicit_value(true),
       "Boolean: make EPS images *_density_*.eps?"
@@ -142,7 +142,7 @@ int main(const int argc, const char *argv[])
 
   // Initialize cart_info. It contains all information about the cartogram
   // that needs to be handled by functions called from main().
-  CartogramInfo cart_info(world, visual_file_name, make_density_eps);
+  CartogramInfo cart_info(world, visual_file_name);
   if (!make_csv) {
 
     // Read visual variables (e.g. area, color) from CSV
@@ -168,7 +168,7 @@ int main(const int argc, const char *argv[])
 
   // Read geometry
   try {
-    read_geojson(geo_file_name, &cart_info, make_csv);
+    read_geojson(geo_file_name, make_csv, &cart_info);
   } catch (const std::system_error& e) {
     std::cerr << "ERROR: "
               << e.what()
@@ -258,8 +258,7 @@ int main(const int argc, const char *argv[])
       inset_state.set_area_errors();
 
       // Fill density to fill horizontal adjacency map
-      fill_with_density(&inset_state,
-                        cart_info.trigger_write_density_to_eps());
+      fill_with_density(plot_density, &inset_state);
 
       // Automatically color GeoDivs if no colors are provided
       if (inset_state.colors_empty()) {
@@ -281,17 +280,12 @@ int main(const int argc, const char *argv[])
 
         // TODO: THIS IF-CONDITION IS INELEGANT
         if (inset_state.n_finished_integrations()  >  0) {
-          fill_with_density(&inset_state,
-                            cart_info.trigger_write_density_to_eps());
+          fill_with_density(plot_density, &inset_state);
         }
         if (inset_state.n_finished_integrations() == 0) {
-          blur_density(5.0,
-                       &inset_state,
-                       cart_info.trigger_write_density_to_eps());
+          blur_density(5.0, plot_density, &inset_state);
         } else {
-          blur_density(0.0,
-                       &inset_state,
-                       cart_info.trigger_write_density_to_eps());
+          blur_density(0.0, plot_density, &inset_state);
         }
         flatten_density(&inset_state);
         project(&inset_state);

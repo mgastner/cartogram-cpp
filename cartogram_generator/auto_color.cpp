@@ -247,7 +247,7 @@ void auto_color(InsetState* inset_state)
     for (auto &gd : *inset_state->ref_to_geo_divs()) {
 
       // Iterating through all possible colors
-      for (size_t i = (count % max_i); i < palette.size(); i++) {
+      for (size_t i = (count % max_i); i < palette.size(); ++i) {
         Color c = palette[i];
         bool shared_color = false;
 
