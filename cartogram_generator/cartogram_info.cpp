@@ -1,13 +1,9 @@
 #include "cartogram_info.h"
 
 CartogramInfo::CartogramInfo(const bool w,
-                             const std::string v,
-                             const bool wd2eps,
-                             bool ext_ring_clockwise) :
+                             const std::string v) :
   is_world_map_(w),
-  visual_variable_file_(v),
-  write_density_to_eps_(wd2eps),
-  is_original_ext_ring_clockwise_(ext_ring_clockwise)
+  visual_variable_file_(v)
 {
   return;
 }
@@ -88,11 +84,6 @@ double CartogramInfo::total_cart_target_area() const
     }
   }
   return area;
-}
-
-bool CartogramInfo::trigger_write_density_to_eps() const
-{
-  return write_density_to_eps_;
 }
 
 const std::string CartogramInfo::visual_variable_file() const

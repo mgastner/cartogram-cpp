@@ -32,10 +32,8 @@ bool ray_y_intersects(XYPoint a,
   return false;
 }
 
-void fill_with_density(InsetState* inset_state,
-                       bool trigger_write_density_to_eps)
+void fill_with_density(bool plot_density, InsetState* inset_state)
 {
-
   // Calculate the total current area and total target area, excluding any
   // missing values
   double total_current_area = 0.0;
@@ -308,7 +306,7 @@ void fill_with_density(InsetState* inset_state,
     }
   }
 
-  if (trigger_write_density_to_eps) {
+  if (plot_density) {
     std::string file_name =
       inset_state->pos() +
       "_unblurred_density_" +
