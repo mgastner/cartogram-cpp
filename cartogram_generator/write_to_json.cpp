@@ -45,7 +45,7 @@ nlohmann::json cgal_to_json(CartogramInfo *cart_info)
 
         nlohmann::json polygon_container;
         nlohmann::json er_container;
-        for (unsigned int i = 0; i < ext_ring.size(); i++) {
+        for (unsigned int i = 0; i < ext_ring.size(); ++i) {
 
           /* Get exterior ring coordinates */
           double arr[2];
@@ -60,7 +60,7 @@ nlohmann::json cgal_to_json(CartogramInfo *cart_info)
         polygon_container.push_back(er_container);
 
         /* Get holes of Polygon_with_holes */
-        for (auto hci = pwh.holes_begin(); hci != pwh.holes_end(); hci++) {
+        for (auto hci = pwh.holes_begin(); hci != pwh.holes_end(); ++hci) {
           Polygon hole = *hci;
 
           /* Set hole to counter-clockwise if it was originally like that */
@@ -69,7 +69,7 @@ nlohmann::json cgal_to_json(CartogramInfo *cart_info)
           }
 
           nlohmann::json hole_container;
-          for (unsigned int i = 0; i < hole.size(); i++) {
+          for (unsigned int i = 0; i < hole.size(); ++i) {
 
             /* Get hole coordinates */
             double arr[2];
@@ -150,17 +150,17 @@ void write_to_json(nlohmann::json container,
   nlohmann::json newJ;
 
   // Loop over multipolygons in the container
-  for (int i = 0; i < (int) container.size() - 2; i++) {
+  for (int i = 0; i < (int) container.size() - 2; ++i) {
     newJ["features"][i]["properties"] = old_j["features"][i]["properties"];
     newJ["features"][i]["id"] = old_j["features"][i]["id"];
     newJ["features"][i]["type"] = "Feature";
     newJ["features"][i]["geometry"]["type"] = "MultiPolygon";
 
     // loop over Polygon_with_holes in the multipolygon
-    for (int j = 0; j < (int) container[i].size(); j++) {
+    for (int j = 0; j < (int) container[i].size(); ++j) {
 
       // Loop over exterior ring and holes in the Polygon_with_holes
-      for (int k = 0; k < (int) container[i][j].size(); k++) {
+      for (int k = 0; k < (int) container[i][j].size(); ++k) {
         newJ["features"][i]["geometry"]["coordinates"][j][k] =
           container[i][j][k];
       }

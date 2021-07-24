@@ -168,7 +168,7 @@ int main(const int argc, const char *argv[])
 
   // Read geometry
   try {
-    read_geojson(geo_file_name, &cart_info, make_csv);
+    read_geojson(geo_file_name, make_csv, &cart_info);
   } catch (const std::system_error& e) {
     std::cerr << "ERROR: "
               << e.what()
