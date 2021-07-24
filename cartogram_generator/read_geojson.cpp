@@ -331,12 +331,12 @@ void read_geojson(const std::string geometry_file_name,
       }
     }
 
-    // Printing chosen identifiers
+    // Print chosen identifiers
     std::cerr << "Chosen identifiers: " << std::endl;
     print_properties_map(viable_properties_map, chosen_number);
     std::cerr << std::endl;
 
-    // Writing CSV
+    // Write CSV
     std::ofstream out_file_csv;
     out_file_csv.open ("template_from_geojson.csv");
     if (!out_file_csv) {
@@ -370,13 +370,13 @@ void read_geojson(const std::string geometry_file_name,
       ++column;
     }
 
-    // Writing to CSV writer object
+    // Write to CSV object
     auto writer = csv::make_csv_writer(out_file_csv);
     for (auto row : csv_rows) {
       writer << row;
     }
 
-    // Closing out_file and exiting
+    // Close out_file and exit
     out_file_csv.close();
     _Exit(19);
   }
@@ -406,8 +406,7 @@ void read_geojson(const std::string geometry_file_name,
   std::set<std::string> ids_not_in_vv;
   std::set_difference(ids_in_geojson.begin(), ids_in_geojson.end(),
                       ids_in_vv_file.begin(), ids_in_vv_file.end(),
-                      std::inserter(ids_not_in_vv,
-                                    ids_not_in_vv.end()));
+                      std::inserter(ids_not_in_vv, ids_not_in_vv.end()));
   if (!ids_not_in_vv.empty()) {
     std::cerr << "ERROR: Mismatch between GeoJSON and "
               << cart_info->visual_variable_file()

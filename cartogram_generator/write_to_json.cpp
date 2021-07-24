@@ -34,12 +34,11 @@ nlohmann::json cgal_to_json(CartogramInfo *cart_info)
       nlohmann::json gd_container;
       for (auto pwh : gd.polygons_with_holes()) {
 
-        /* Get exterior ring of Polygon_with_holes */
+        // Get exterior ring of Polygon_with_holes
         Polygon ext_ring = pwh.outer_boundary();
 
-        /* Set exterior ring to clockwise if it was originally like that */
+        // Set exterior ring to clockwise if it was originally like that
         if (cart_info->original_ext_ring_is_clockwise()) {
-          // std::cout << cart_info->is_original_ext_ring_clockwise() << std::endl;
           ext_ring.reverse_orientation();
         }
 
@@ -47,23 +46,23 @@ nlohmann::json cgal_to_json(CartogramInfo *cart_info)
         nlohmann::json er_container;
         for (unsigned int i = 0; i < ext_ring.size(); ++i) {
 
-          /* Get exterior ring coordinates */
+          // Get exterior ring coordinates
           double arr[2];
           arr[0] = ext_ring[i][0];
           arr[1] = ext_ring[i][1];
           er_container.push_back(arr);
         }
 
-        /* Repeat first point as last point as per GeoJSON standards. */
+        // Repeat first point as last point as per GeoJSON standards.
         er_container.push_back({ext_ring[0][0], ext_ring[0][1]});
 
         polygon_container.push_back(er_container);
 
-        /* Get holes of Polygon_with_holes */
+        // Get holes of Polygon_with_holes
         for (auto hci = pwh.holes_begin(); hci != pwh.holes_end(); ++hci) {
           Polygon hole = *hci;
 
-          /* Set hole to counter-clockwise if it was originally like that */
+          // Set hole to counter-clockwise if it was originally like that
           if (cart_info->original_ext_ring_is_clockwise()) {
             hole.reverse_orientation();
           }
@@ -71,15 +70,14 @@ nlohmann::json cgal_to_json(CartogramInfo *cart_info)
           nlohmann::json hole_container;
           for (unsigned int i = 0; i < hole.size(); ++i) {
 
-            /* Get hole coordinates */
+            // Get hole coordinates
             double arr[2];
             arr[0] = hole[i][0];
             arr[1] = hole[i][1];
             hole_container.push_back(arr);
           }
-          /* Repeat first point as last point as per GeoJSON standards. */
+          // Repeat first point as last point as per GeoJSON standards.
           hole_container.push_back({hole[0][0], hole[0][1]});
-
           polygon_container.push_back(hole_container);
         }
         gd_container.push_back(polygon_container);
