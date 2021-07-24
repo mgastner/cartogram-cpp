@@ -16,10 +16,11 @@ void read_csv(const boost::program_options::variables_map vm,
     _Exit(15);
   }
 
-  // Opening CSV Reader
+  // Open CSV Reader
   csv::CSVReader reader(csv_name);
 
-  // Finding index of column with IDs
+  // Find index of column with IDs. If no ID column header was passed with the
+  // command-line flag --id, the ID column is assumed to have index 0.
   std::string id_header;
   int id_col = 0;
   if (vm.count("id")) {
@@ -32,21 +33,26 @@ void read_csv(const boost::program_options::variables_map vm,
   // Store header name of identifiers to read GeoJSON
   cart_info->set_id_header(id_header);
 
-  // Finding index of column with target areas
-  double total_cart_target_area = 0;  // Total of all GeoDivs
+  // Find index of column with target areas. If no area column header was
+  // passed with the command-line flag --area, the area column is assumed to
+  // have index 1.
   int area_col = 1;
   if (vm.count("area")) {
     area_col = reader.index_of(vm["area"].as<std::string>());
   }
 
-  // Finding index of column with header name "Inset"
+  // Find index of column with inset specifiers. If no inset column header was
+  // passed with the command-line flag --inset, the header is assumed to be
+  // "Inset".
   std::string inset_header = "Inset";
   if (vm.count("inset")) {
     inset_header = vm["inset"].as<std::string>();
   }
   int inset_col = reader.index_of(inset_header);
 
-  // Finding index of column with header name "Color/Colour"
+  // Find index of column with color specifiers. If no color column header was
+  // passed with the command-line flag --color, the header is assumed to be
+  // "Color" or "Colour".
   std::string color_header = "Color";
   if (vm.count("color")) {
     color_header = vm["color"].as<std::string>();
@@ -56,7 +62,8 @@ void read_csv(const boost::program_options::variables_map vm,
     color_col = reader.index_of("Colour");
   }
 
-  // Reading CSV
+  // Read CSV
+  std::set<std::string> inset_pos_set;
   for (auto &row : reader) {
     if (row.size() < 2) {
       std::cerr << "ERROR: CSV with >= 2 columns (IDs, target areas) required"
@@ -80,7 +87,13 @@ void read_csv(const boost::program_options::variables_map vm,
     // Get target area
     csv::CSVField area_field = row[area_col];
     double area;
-    if (!area_field.is_num()) {
+    if (area_field.is_num()) {
+      area = area_field.get<double>();
+      if (area < 0.0) {
+        std::cerr << "ERROR: negative area in CSV" << std::endl;
+        _Exit(101);
+      }
+    } else {  // We get here if one of the areas is missing ("NA")
       std::cerr << "area_field: " << area_field.get() << std::endl;
       if (area_field.get().compare("NA") == 0) {
         area = -1.0;  // Use negative area as sign of a missing value
@@ -88,17 +101,7 @@ void read_csv(const boost::program_options::variables_map vm,
         std::cerr << "ERROR: Areas must be numeric or NA" << std::endl;
         _Exit(201);
       }
-    } else {
-      area = area_field.get<double>();
-      if (area < 0.0) {
-        std::cerr << "ERROR: negative area in CSV" << std::endl;
-        _Exit(101);
-      }
     }
-
-    // Adding target_area (i.e. population, GDP) value
-    // to store target area of all GeoDivs
-    total_cart_target_area += area;
 
     // Read color
     std::string color = "";
@@ -106,26 +109,36 @@ void read_csv(const boost::program_options::variables_map vm,
       color = row[color_col].get();
     }
 
-    // Read inset
-    std::string inset_pos = "C"; // Assuming inset_pos is C
+    // Read inset. Assume inset_pos is "C" if there is no inset column.
+    std::string inset_pos = "C";
     if (inset_col != csv::CSV_NOT_FOUND) {
       inset_pos = row[inset_col].get();
       std::string inset_pos_original = inset_pos;
 
-      // Now it can process inputs like "center"/"left"/"right"
+      // Set to "C" if inset position is blank
+      if (inset_pos == "") {
+        inset_pos = "C";
+      }
+
+      // Now we can process inputs like "center"/"left"/"right"
       inset_pos = std::toupper(inset_pos[0]);
 
-      // Enables user to give inset position "U"/"D" for top and bottom inset
+      // Enable user to give inset position "U"/"D" for top and bottom inset
       if (inset_pos == "U") {
         inset_pos = "T";
-      } else if (inset_pos == "D") {
+      }
+      if (inset_pos == "D") {
         inset_pos = "B";
       }
 
       // If unrecognized, set inset position to "C"
-      if (inset_pos != "C" && inset_pos != "L" &&
-          inset_pos != "R" && inset_pos != "T" && inset_pos != "B") {
-        std::cerr << "Unrecongnized inset position : "
+      std::unordered_set<std::string> permitted_inset_pos {"C",
+                                                           "L",
+                                                           "R",
+                                                           "T",
+                                                           "B"};
+      if (!permitted_inset_pos.contains(inset_pos)) {
+        std::cerr << "Unrecognized inset position : "
                   << inset_pos_original
                   << " for Region: "
                   << id
@@ -137,27 +150,23 @@ void read_csv(const boost::program_options::variables_map vm,
       }
     }
 
-    // Associating GeoDiv ID with Inset Positon
+    // Associate GeoDiv ID with inset positon
     cart_info->gd_to_inset_insert(id, inset_pos);
 
-    // Checking whether inset_state for inset_pos already exists
-    bool found = false;
-    for (auto &inset_state : *cart_info->ref_to_inset_states()) {
-      if (inset_state.pos() == inset_pos) {
-        inset_state.target_areas_insert(id, area);
-        if (color != "") {
-          inset_state.colors_insert(id, color);
-        }
-        found = true;
-      }
-    }
-    if (!found) {
+    // Create inset_state for inset_pos unless it already exists
+    if (!inset_pos_set.contains(inset_pos)) {
       InsetState inset_state(inset_pos);
-      inset_state.target_areas_insert(id, area);
-      if (color != "") {
-        inset_state.colors_insert(id, color);
-      }
-      cart_info->push_back(inset_state);
+      cart_info->insert_inset_state(inset_pos, inset_state);
+      inset_pos_set.insert(inset_pos);
+    }
+
+    // Insert target area and color
+    std::map<std::string, InsetState> *inset_states =
+      cart_info->ref_to_inset_states();
+    InsetState *inset_state = &inset_states->at(inset_pos);
+    inset_state->target_areas_insert(id, area);
+    if (color != "") {
+      inset_state->colors_insert(id, color);
     }
   }
   return;

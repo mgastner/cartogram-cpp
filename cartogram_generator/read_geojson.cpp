@@ -188,7 +188,7 @@ void read_geojson(const std::string geometry_file_name,
   std::set<std::string> ids_in_geojson;
 
   // Iterate through each inset
-  for (auto &inset_state : *cart_info->ref_to_inset_states()) {
+  for (auto &[inset_pos, inset_state] : *cart_info->ref_to_inset_states()) {
     for (auto feature : j["features"]) {
       const nlohmann::json geometry = feature["geometry"];
       is_polygon = (geometry["type"] == "Polygon");
@@ -222,7 +222,7 @@ void read_geojson(const std::string geometry_file_name,
         if (id.front() == '"') {
           id = id.substr(1, id.length() - 2);
         }
-        if (inset_state.pos() == cart_info->inset_at_gd(id)) {
+        if (inset_pos == cart_info->inset_at_gd(id)) {
           if (ids_in_geojson.contains(id)) {
             std::cerr << "ERROR: ID "
                       << id
