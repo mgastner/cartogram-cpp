@@ -36,9 +36,9 @@ nlohmann::json cgal_to_json(CartogramInfo *cart_info)
 
         /* Get exterior ring of Polygon_with_holes */
         Polygon ext_ring = pwh.outer_boundary();
-        
+
         /* Set exterior ring to clockwise if it was originally like that */
-        if (cart_info->is_original_ext_ring_clockwise()) {
+        if (cart_info->original_ext_ring_is_clockwise()) {
           // std::cout << cart_info->is_original_ext_ring_clockwise() << std::endl;
           ext_ring.reverse_orientation();
         }
@@ -64,7 +64,7 @@ nlohmann::json cgal_to_json(CartogramInfo *cart_info)
           Polygon hole = *hci;
 
           /* Set hole to counter-clockwise if it was originally like that */
-          if (cart_info->is_original_ext_ring_clockwise()) {
+          if (cart_info->original_ext_ring_is_clockwise()) {
             hole.reverse_orientation();
           }
 

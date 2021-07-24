@@ -15,7 +15,7 @@ private:
   // all are clockwise. This dichotomy covers most geospatial boundary files
   // in the wild, but it would still be sensible to allow cases where there
   // are external rings with opposite winding directions.
-  bool is_original_ext_ring_clockwise_;
+  bool original_ext_ring_is_clockwise_;
   bool is_world_map_;
   std::string visual_variable_file_;
 public:
@@ -29,11 +29,11 @@ public:
   const std::map<std::string, InsetState> inset_states() const;
   bool is_world_map() const;
   unsigned int n_insets() const;
+  bool original_ext_ring_is_clockwise();
   std::map<std::string, InsetState> *ref_to_inset_states();
   void set_id_header(const std::string);
+  void set_original_ext_ring_is_clockwise(bool);
   double total_cart_target_area() const;
   const std::string visual_variable_file() const;
-  bool is_original_ext_ring_clockwise();
-  void set_is_original_ext_ring_clockwise(bool);
 };
 #endif

@@ -98,12 +98,12 @@ GeoDiv json_to_cgal(const std::string id,
     // GeoJSON does not match our convention, we reverse the polygon.
 
     // TODO: Currently, only the last exterior ring in the GeoJSON determines
-    // whether cart_info->is_original_ext_ring_clockwise() is true. This
+    // whether cart_info->original_ext_ring_is_clockwise() is true. This
     // strategy works for most geospatial boundary files in the wild, but it
     // would still be sensible to allow cases where there are external rings
     // with opposite winding directions.
     bool erico = ext_ring.is_clockwise_oriented();
-    cart_info->set_is_original_ext_ring_clockwise(erico);
+    cart_info->set_original_ext_ring_is_clockwise(erico);
     if (erico) {
       ext_ring.reverse_orientation();
     }

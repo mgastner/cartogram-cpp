@@ -59,6 +59,11 @@ unsigned int CartogramInfo::n_insets() const
   return inset_states_.size();
 }
 
+bool CartogramInfo::original_ext_ring_is_clockwise()
+{
+  return original_ext_ring_is_clockwise_;
+}
+
 std::map<std::string, InsetState> *CartogramInfo::ref_to_inset_states()
 {
 
@@ -91,14 +96,9 @@ const std::string CartogramInfo::visual_variable_file() const
   return visual_variable_file_;
 }
 
-bool CartogramInfo::is_original_ext_ring_clockwise()
+void CartogramInfo::set_original_ext_ring_is_clockwise(
+  bool original_ext_ring_is_clockwise)
 {
-  return is_original_ext_ring_clockwise_;
-}
-
-void CartogramInfo::set_is_original_ext_ring_clockwise(
-                                          bool is_original_ext_ring_clockwise)
-{
-  is_original_ext_ring_clockwise_ = is_original_ext_ring_clockwise;
+  original_ext_ring_is_clockwise_ = original_ext_ring_is_clockwise;
   return;
 }
