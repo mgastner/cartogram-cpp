@@ -1,4 +1,5 @@
 #include "cartogram_info.h"
+#include "constants.h"
 #include "inset_state.h"
 #include "csv.hpp"
 #include <boost/program_options.hpp>

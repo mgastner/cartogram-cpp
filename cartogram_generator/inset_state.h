@@ -100,6 +100,7 @@ public:
   bool target_area_is_missing(const std::string) const;
   double target_areas_at(const std::string) const;
   void target_areas_insert(std::string, double);
+  void target_areas_replace(std::string, double);
   double total_target_area() const;
   const std::vector<std::vector<intersection> > vertical_adj() const;
 };

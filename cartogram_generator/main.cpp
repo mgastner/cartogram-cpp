@@ -179,6 +179,35 @@ int main(const int argc, const char *argv[])
     return EXIT_FAILURE;
   }
 
+  // Find smallest positive target area
+  double min_positive_area = dbl_inf;
+  for (auto &inset_state :
+       *cart_info.ref_to_inset_states() | std::views::values) {
+    for (auto gd : inset_state.geo_divs()) {
+      double target_area = inset_state.target_areas_at(gd.id());
+      if (target_area > 0.0) {
+        min_positive_area = std::min(min_positive_area, target_area);
+      }
+    }
+  }
+
+  // Replace non-positive target areas with a fraction of the smallest
+  // positive target area
+  double replacement_for_nonpositive_area = 0.1 * min_positive_area;
+  std::cerr << "Replacing zero target area with "
+            << replacement_for_nonpositive_area
+            << std::endl;
+  for (auto &inset_state :
+       *cart_info.ref_to_inset_states() | std::views::values) {
+    for (auto gd : inset_state.geo_divs()) {
+      double target_area = inset_state.target_areas_at(gd.id());
+      if (target_area <= 0.0) {
+        inset_state.target_areas_replace(gd.id(),
+                                         replacement_for_nonpositive_area);
+      }
+    }
+  }
+
   // Determine name of input map
   std::string map_name = geo_file_name;
   if (map_name.find_last_of("/\\") != std::string::npos) {
