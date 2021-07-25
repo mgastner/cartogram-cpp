@@ -1,4 +1,5 @@
 #include "cgal_typedef.h"
+#include "constants.h"
 #include "write_to_json.h"
 #include "cartogram_info.h"
 #include "inset_state.h"
@@ -68,16 +69,11 @@ nlohmann::json cgal_to_json(CartogramInfo *cart_info)
     }
   }
 
-  // Get joint bounding box for all insets. Initialize the bounding box with
-  // the bounding box of an arbitrary inset.
-  auto some_inset_state = cart_info->ref_to_inset_states()->begin()->second;
-  CGAL::Bbox_2 some_inset_bbox = some_inset_state.bbox();
-  double bbox_xmin = some_inset_bbox.xmin();
-  double bbox_ymin = some_inset_bbox.ymin();
-  double bbox_xmax = some_inset_bbox.xmax();
-  double bbox_ymax = some_inset_bbox.ymax();
-
-  // Loop over all insets to find joint bounding box
+  // Get joint bounding box for all insets.
+  double bbox_xmin = dbl_inf;
+  double bbox_ymin = dbl_inf;
+  double bbox_xmax = -dbl_inf;
+  double bbox_ymax = -dbl_inf;
   for (auto &[inset_pos, inset_state] : *cart_info->ref_to_inset_states()) {
     CGAL::Bbox_2 inset_bbox = inset_state.bbox();
     bbox_xmin = std::min(bbox_xmin, inset_bbox.xmin());
