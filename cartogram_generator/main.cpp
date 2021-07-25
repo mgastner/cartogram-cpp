@@ -180,24 +180,25 @@ int main(const int argc, const char *argv[])
   }
 
   // Find smallest positive target area
-  double area_min = dbl_inf;
+  double min_positive_area = dbl_inf;
   for (auto &inset_state :
        *cart_info.ref_to_inset_states() | std::views::values) {
     for (auto gd : inset_state.geo_divs()) {
       double target_area = inset_state.target_areas_at(gd.id());
       if (target_area > 0.0) {
-        area_min = std::min(area_min, target_area);
+        min_positive_area = std::min(min_positive_area, target_area);
       }
     }
   }
 
   // Replace non-positive target areas with a fraction of the smallest
   // positive target area
-  double replacement_for_nonpositive_area = 0.1 * area_min;
+  double replacement_for_nonpositive_area = 0.1 * min_positive_area;
   std::cerr << "Replacing zero target area with "
             << replacement_for_nonpositive_area
             << std::endl;
-  for (auto &[inset_pos, inset_state] : *cart_info.ref_to_inset_states()) {
+  for (auto &inset_state :
+       *cart_info.ref_to_inset_states() | std::views::values) {
     for (auto gd : inset_state.geo_divs()) {
       double target_area = inset_state.target_areas_at(gd.id());
       if (target_area <= 0.0) {
