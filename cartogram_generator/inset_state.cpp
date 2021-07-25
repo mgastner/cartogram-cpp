@@ -324,6 +324,12 @@ void InsetState::target_areas_insert(const std::string id, const double area)
   return;
 }
 
+void InsetState::target_areas_replace(const std::string id, const double area)
+{
+  target_areas_[id] = area;
+  return;
+}
+
 double InsetState::total_target_area() const
 {
   double inset_total_target_area = 0;

@@ -20,11 +20,6 @@ void read_csv(const boost::program_options::variables_map vm,
   // Open CSV Reader
   csv::CSVReader reader(csv_name);
 
-  // Since it is not allowed to iterate over same csv twice, we initialize
-  // two CSVReader;
-  // To calculate minimum target area
-  csv::CSVReader reader_area_min(csv_name);
-
   // Find index of column with IDs. If no ID column header was passed with the
   // command-line flag --id, the ID column is assumed to have index 0.
   std::string id_header;
@@ -68,15 +63,6 @@ void read_csv(const boost::program_options::variables_map vm,
     color_col = reader.index_of("Colour");
   }
 
-  // Find minimum target area
-  double area_min = dbl_inf;
-  for (auto row : reader_area_min) {
-    csv::CSVField area_field = row[area_col];
-    if (area_field.get<double>() != 0) {
-      area_min = std::min(area_min, area_field.get<double>());
-    }
-  }
-
   // Read CSV
   std::set<std::string> inset_pos_set;
   for (auto &row : reader) {
@@ -104,9 +90,7 @@ void read_csv(const boost::program_options::variables_map vm,
     double area;
     if (area_field.is_num()) {
       area = area_field.get<double>();
-      if (area == 0.0) {
-        area = area_min * 0.5;
-      } else if (area < 0.0) {
+      if (area < 0.0) {
         std::cerr << "ERROR: negative area in CSV" << std::endl;
         _Exit(101);
       }
