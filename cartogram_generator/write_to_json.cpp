@@ -169,6 +169,8 @@ void write_to_json(nlohmann::json container,
               container[i]["coordinates"][k][l];
           }
         }
+
+        break;
       }
     }
   }
