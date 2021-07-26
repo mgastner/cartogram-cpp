@@ -43,7 +43,10 @@ nlohmann::json cgal_to_json(CartogramInfo *cart_info)
         }
         gd_container.push_back(polygon_container);
       }
-      container.push_back(gd_container);
+      nlohmann::json gd_id_and_coords;
+      gd_id_and_coords["gd_id"] = gd.id();
+      gd_id_and_coords["coords"] = gd_container;
+      container.push_back(gd_id_and_coords);
     }
   }
   return container;
