@@ -74,7 +74,7 @@ void write_to_json(nlohmann::json container,
         newJ["features"][i]["geometry"]["type"] = "MultiPolygon";
 
         // loop over Polygon_with_holes in the multipolygon
-        for (int j = 0; j < (int) container[i].size(); j++) {
+        for (int j = 0; j < (int) container[i]["coordinates"].size(); j++) {
 
           // Loop over exterior ring and holes in the Polygon_with_holes
           for (int k = 0; k < (int) container[i]["coordinates"][j].size(); k++) {
