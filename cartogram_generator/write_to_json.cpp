@@ -164,7 +164,7 @@ void write_to_json(nlohmann::json container,
         for (int k = 0; k < (int) container[i]["coordinates"].size(); ++k) {
 
           // Iterate over exterior ring and holes in the Polygon_with_holes
-          for (int l = 0; l < (int) container[i]["coordinates"][k].size(); l++) {
+          for (int l = 0; l < (int) container[i]["coordinates"][k].size(); ++l) {
             newJ["features"][i]["geometry"]["coordinates"][k][l] =
               container[i]["coordinates"][k][l];
           }
