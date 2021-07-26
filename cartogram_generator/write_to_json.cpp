@@ -154,8 +154,13 @@ void write_to_json(nlohmann::json container,
 
     // Iterate over the features (GeoDivs) in the original GeoJSON
     for (int j = 0; j < (int) old_j["features"].size(); ++j) {
-      if (container[i]["gd_id"] == old_j["features"][j]["properties"][cart_info->id_header()]) {
-        newJ["features"][i]["properties"] = old_j["features"][j]["properties"];
+
+      // Check if the current container's gd_id is equal the current original
+      // GeoJSON's gd_id
+      if (container[i]["gd_id"] ==
+          old_j["features"][j]["properties"][cart_info->id_header()]) {
+        newJ["features"][i]["properties"] =
+          old_j["features"][j]["properties"];
         newJ["features"][i]["id"] = old_j["features"][j]["id"];
         newJ["features"][i]["type"] = "Feature";
         newJ["features"][i]["geometry"]["type"] = "MultiPolygon";
@@ -164,7 +169,8 @@ void write_to_json(nlohmann::json container,
         for (int k = 0; k < (int) container[i]["coordinates"].size(); ++k) {
 
           // Iterate over exterior ring and holes in the Polygon_with_holes
-          for (int l = 0; l < (int) container[i]["coordinates"][k].size(); ++l) {
+          for (int l = 0; l < (int) container[i]["coordinates"][k].size();
+              ++l) {
             newJ["features"][i]["geometry"]["coordinates"][k][l] =
               container[i]["coordinates"][k][l];
           }
