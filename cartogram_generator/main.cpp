@@ -48,10 +48,10 @@ int main(const int argc, const char *argv[])
 
   // Other boolean values that are needed to parse the command line arguments
   bool make_csv,
-       make_density_eps,
        make_polygon_eps,
        output_equal_area,
-       output_to_stdout;
+       output_to_stdout,
+       plot_density;
 
   // Parse command-line options. See
   // https://theboostcpplibraries.com/boost.program_options
@@ -88,7 +88,7 @@ int main(const int argc, const char *argv[])
       value<bool>(&make_csv)
       ->default_value(false)
       ->implicit_value(true),
-      "Boolean: create a CSV file from the GeoJSON file passed to the -g flag?"
+      "Boolean: create CSV file from the GeoJSON passed to the -g flag?"
       )(
       "id,i",
       value<std::string>(),
@@ -100,11 +100,11 @@ int main(const int argc, const char *argv[])
       )(
       "color,c",
       value<std::string>(),
-      "Column name for colors (assumed column name: \"Color\" or \"Colour\")"
+      "Column name for colors (default: \"Color\" or \"Colour\")"
       )(
-      "inset,i",
+      "inset,n",
       value<std::string>(),
-      "Column name for insets (assumed column name: \"Inset\")"
+      "Column name for insets (default: \"Inset\")"
       )(
       "long_grid_side_length,l",
       value<unsigned int>(&long_grid_side_length),
@@ -123,7 +123,7 @@ int main(const int argc, const char *argv[])
       "Boolean: make EPS image of input and output?"
       )(
       "density_to_eps,d",
-      value<bool>(&make_density_eps)
+      value<bool>(&plot_density)
       ->default_value(false)
       ->implicit_value(true),
       "Boolean: make EPS images *_density_*.eps?"
@@ -142,7 +142,7 @@ int main(const int argc, const char *argv[])
 
   // Initialize cart_info. It contains all information about the cartogram
   // that needs to be handled by functions called from main().
-  CartogramInfo cart_info(world, visual_file_name, make_density_eps);
+  CartogramInfo cart_info(world, visual_file_name);
   if (!make_csv) {
 
     // Read visual variables (e.g. area, color) from CSV
@@ -168,7 +168,7 @@ int main(const int argc, const char *argv[])
 
   // Read geometry
   try {
-    read_geojson(geo_file_name, &cart_info, make_csv);
+    read_geojson(geo_file_name, make_csv, &cart_info);
   } catch (const std::system_error& e) {
     std::cerr << "ERROR: "
               << e.what()
@@ -177,6 +177,35 @@ int main(const int argc, const char *argv[])
               << ")"
               << std::endl;
     return EXIT_FAILURE;
+  }
+
+  // Find smallest positive target area
+  double min_positive_area = dbl_inf;
+  for (auto &inset_state :
+       *cart_info.ref_to_inset_states() | std::views::values) {
+    for (auto gd : inset_state.geo_divs()) {
+      double target_area = inset_state.target_areas_at(gd.id());
+      if (target_area > 0.0) {
+        min_positive_area = std::min(min_positive_area, target_area);
+      }
+    }
+  }
+
+  // Replace non-positive target areas with a fraction of the smallest
+  // positive target area
+  double replacement_for_nonpositive_area = 0.1 * min_positive_area;
+  std::cerr << "Replacing zero target area with "
+            << replacement_for_nonpositive_area
+            << std::endl;
+  for (auto &inset_state :
+       *cart_info.ref_to_inset_states() | std::views::values) {
+    for (auto gd : inset_state.geo_divs()) {
+      double target_area = inset_state.target_areas_at(gd.id());
+      if (target_area <= 0.0) {
+        inset_state.target_areas_replace(gd.id(),
+                                         replacement_for_nonpositive_area);
+      }
+    }
   }
 
   // Determine name of input map
@@ -189,7 +218,7 @@ int main(const int argc, const char *argv[])
   }
 
   // Loop over insets
-  for (auto &inset_state : *cart_info.ref_to_inset_states()) {
+  for (auto &[inset_pos, inset_state] : *cart_info.ref_to_inset_states()) {
 
     // Check for errors in the input topology
     try {
@@ -230,9 +259,9 @@ int main(const int argc, const char *argv[])
     // Determine the name of the inset
     std::string inset_name = map_name;
     if (cart_info.n_insets() > 1) {
-      inset_name = inset_name + "_" + inset_state.pos();
+      inset_name = inset_name + "_" + inset_pos;
       std::cerr << "\nWorking on inset at position: "
-                << inset_state.pos()
+                << inset_pos
                 << std::endl;
     }
     inset_state.set_inset_name(inset_name);
@@ -258,8 +287,7 @@ int main(const int argc, const char *argv[])
       inset_state.set_area_errors();
 
       // Fill density to fill horizontal adjacency map
-      fill_with_density(&inset_state,
-                        cart_info.trigger_write_density_to_eps());
+      fill_with_density(plot_density, &inset_state);
 
       // Automatically color GeoDivs if no colors are provided
       if (inset_state.colors_empty()) {
@@ -281,17 +309,12 @@ int main(const int argc, const char *argv[])
 
         // TODO: THIS IF-CONDITION IS INELEGANT
         if (inset_state.n_finished_integrations()  >  0) {
-          fill_with_density(&inset_state,
-                            cart_info.trigger_write_density_to_eps());
+          fill_with_density(plot_density, &inset_state);
         }
         if (inset_state.n_finished_integrations() == 0) {
-          blur_density(5.0,
-                       &inset_state,
-                       cart_info.trigger_write_density_to_eps());
+          blur_density(5.0, plot_density, &inset_state);
         } else {
-          blur_density(0.0,
-                       &inset_state,
-                       cart_info.trigger_write_density_to_eps());
+          blur_density(0.0, plot_density, &inset_state);
         }
         flatten_density(&inset_state);
         project(&inset_state);

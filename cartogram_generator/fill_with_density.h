@@ -3,6 +3,6 @@
 
 #include <string.h>
 
-void fill_with_density(InsetState*, bool);
+void fill_with_density(bool, InsetState*);
 
 #endif

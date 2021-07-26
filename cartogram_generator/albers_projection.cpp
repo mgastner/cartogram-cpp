@@ -24,10 +24,8 @@ void adjust_for_dual_hemisphere(InsetState *inset_state)
 {
   // Determine the maximum longitude in the western hemisphere and the minimum
   // longitude in the eastern hemisphere
-  CGAL::Bbox_2 inset_bbox = inset_state->bbox();
-  double max_lon_west = inset_bbox.xmin();
-  double min_lon_east = inset_bbox.xmax();
-  InsetState inset_state_new = *inset_state;  // This line changes inset_state
+  double max_lon_west = -dbl_inf;
+  double min_lon_east = dbl_inf;
   for (GeoDiv gd : (*inset_state).geo_divs()) {
     for (Polygon_with_holes pgnwh : gd.polygons_with_holes()) {
       CGAL::Bbox_2 pgnwh_bbox = pgnwh.bbox();
@@ -64,7 +62,8 @@ void adjust_for_dual_hemisphere(InsetState *inset_state)
 
           // Iterate through holes
           for (auto hole_it = pgnwh.holes_begin();
-               hole_it != pgnwh.holes_end(); hole_it++) {
+               hole_it != pgnwh.holes_end();
+               ++hole_it) {
             *hole_it = transform(translate, *hole_it);
           }
         }
@@ -140,7 +139,7 @@ void transform_to_albers_projection(InsetState *inset_state)
       // Iterate through holes
       for (auto hole_it = pgnwh.holes_begin();
            hole_it != pgnwh.holes_end();
-           hole_it++) {
+           ++hole_it) {
         Polygon &hole = *hole_it;
 
         // Iterate through hole's coordinates

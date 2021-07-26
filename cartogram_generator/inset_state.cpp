@@ -1,3 +1,4 @@
+#include "constants.h"
 #include "inset_state.h"
 
 InsetState::InsetState(std::string pos) : pos_(pos)
@@ -13,10 +14,11 @@ double InsetState::area_errors_at(const std::string id) const
 
 CGAL::Bbox_2 InsetState::bbox() const
 {
-  double inset_xmin = 180;
-  double inset_ymin = 90;
-  double inset_xmax = -180;
-  double inset_ymax = -90;
+  // Find joint bounding for all polygons with holes in this inset
+  double inset_xmin = dbl_inf;
+  double inset_xmax = -dbl_inf;
+  double inset_ymin = dbl_inf;
+  double inset_ymax = -dbl_inf;
   for (GeoDiv gd : geo_divs_) {
     for (Polygon_with_holes pgnwh : gd.polygons_with_holes()) {
       CGAL::Bbox_2 pgnwh_bbox = pgnwh.bbox();
@@ -155,12 +157,20 @@ double InsetState::map_scale() const
 
 double InsetState::max_area_error() const
 {
-  double mae = 0.0;
-
-  for (auto const& [gd_id, area_error] : area_errors_) {
-    mae = std::max(mae, area_error);
+  double mae = -dbl_inf;
+  std::string worst_gd = "";
+  for (auto const &[gd_id, area_error] : area_errors_) {
+    if (area_error > mae) {
+      worst_gd = gd_id;
+      mae = area_error;
+    }
   }
-  std::cerr << "max. area err: " << mae << std::endl << std::endl;
+  std::cerr << "max. area err: "
+            << mae
+            << ", GeoDiv: "
+            << worst_gd
+            << std::endl
+            << std::endl;
   return mae;
 }
 
@@ -311,6 +321,12 @@ double InsetState::target_areas_at(const std::string id) const
 void InsetState::target_areas_insert(const std::string id, const double area)
 {
   target_areas_.insert(std::pair<std::string, double>(id, area));
+  return;
+}
+
+void InsetState::target_areas_replace(const std::string id, const double area)
+{
+  target_areas_[id] = area;
   return;
 }
 
