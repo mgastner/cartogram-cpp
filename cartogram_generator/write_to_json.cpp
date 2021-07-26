@@ -45,7 +45,7 @@ nlohmann::json cgal_to_json(CartogramInfo *cart_info)
       }
       nlohmann::json gd_id_and_coords;
       gd_id_and_coords["gd_id"] = gd.id();
-      gd_id_and_coords["coords"] = gd_container;
+      gd_id_and_coords["coordinates"] = gd_container;
       container.push_back(gd_id_and_coords);
     }
   }
@@ -56,7 +56,8 @@ void write_to_json(nlohmann::json container,
                    std::string old_geo_fn,
                    std::string new_geo_fn,
                    std::ostream &new_geo_stream,
-                   bool output_to_stdout)
+                   bool output_to_stdout,
+                   CartogramInfo *cart_info)
 {
   std::ifstream i(old_geo_fn);
   nlohmann::json old_j;
@@ -65,22 +66,27 @@ void write_to_json(nlohmann::json container,
 
   // Loop over multipolygons in the container
   for (int i = 0; i < (int) container.size(); i++) {
-    newJ["features"][i]["properties"] = old_j["features"][i]["properties"];
-    newJ["features"][i]["id"] = old_j["features"][i]["id"];
-    newJ["features"][i]["type"] = "Feature";
-    newJ["features"][i]["geometry"]["type"] = "MultiPolygon";
+    for (int a = 0; a < (int) old_j["features"].size(); a++) {
+      if (container[i]["gd_id"] == old_j["features"][a]["properties"][cart_info->id_header()]) {
+        newJ["features"][i]["properties"] = old_j["features"][a]["properties"];
+        newJ["features"][i]["id"] = old_j["features"][a]["id"];
+        newJ["features"][i]["type"] = "Feature";
+        newJ["features"][i]["geometry"]["type"] = "MultiPolygon";
 
-    // loop over Polygon_with_holes in the multipolygon
-    for (int j = 0; j < (int) container[i].size(); j++) {
+        // loop over Polygon_with_holes in the multipolygon
+        for (int j = 0; j < (int) container[i].size(); j++) {
 
-      // Loop over exterior ring and holes in the Polygon_with_holes
-      for (int k = 0; k < (int) container[i][j].size(); k++) {
-        newJ["features"][i]["geometry"]["coordinates"][j][k] =
-          container[i][j][k];
+          // Loop over exterior ring and holes in the Polygon_with_holes
+          for (int k = 0; k < (int) container[i]["coordinates"][j].size(); k++) {
+            newJ["features"][i]["geometry"]["coordinates"][j][k] =
+              container[i]["coordinates"][j][k];
+          }
+        }
       }
     }
   }
   newJ.push_back({"type", old_j["type"]});
+
   if (output_to_stdout) {
     new_geo_stream << newJ << std::endl;
   } else {

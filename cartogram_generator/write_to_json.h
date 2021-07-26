@@ -12,5 +12,6 @@ void write_to_json(nlohmann::json,
                    std::string,
                    std::string,
                    std::ostream&,
-                   bool);
+                   bool,
+                   CartogramInfo *cart_info);
 #endif
