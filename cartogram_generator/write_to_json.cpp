@@ -150,23 +150,23 @@ void write_to_json(nlohmann::json container,
   nlohmann::json newJ;
 
   // Iterate over GeoDivs and gd_ids in the container
-  for (int i = 0; i < (int) container.size() - 2; i++) {
+  for (int i = 0; i < (int) container.size() - 2; ++i) {
 
     // Iterate over the features (GeoDivs) in the original GeoJSON
-    for (int a = 0; a < (int) old_j["features"].size(); a++) {
-      if (container[i]["gd_id"] == old_j["features"][a]["properties"][cart_info->id_header()]) {
-        newJ["features"][i]["properties"] = old_j["features"][a]["properties"];
-        newJ["features"][i]["id"] = old_j["features"][a]["id"];
+    for (int j = 0; j < (int) old_j["features"].size(); ++j) {
+      if (container[i]["gd_id"] == old_j["features"][j]["properties"][cart_info->id_header()]) {
+        newJ["features"][i]["properties"] = old_j["features"][j]["properties"];
+        newJ["features"][i]["id"] = old_j["features"][j]["id"];
         newJ["features"][i]["type"] = "Feature";
         newJ["features"][i]["geometry"]["type"] = "MultiPolygon";
 
         // Iterate over Polygon_with_holes in the GeoDiv
-        for (int j = 0; j < (int) container[i]["coordinates"].size(); j++) {
+        for (int k = 0; k < (int) container[i]["coordinates"].size(); ++k) {
 
           // Iterate over exterior ring and holes in the Polygon_with_holes
-          for (int k = 0; k < (int) container[i]["coordinates"][j].size(); k++) {
-            newJ["features"][i]["geometry"]["coordinates"][j][k] =
-              container[i]["coordinates"][j][k];
+          for (int l = 0; l < (int) container[i]["coordinates"][k].size(); l++) {
+            newJ["features"][i]["geometry"]["coordinates"][k][l] =
+              container[i]["coordinates"][k][l];
           }
         }
       }
@@ -175,7 +175,7 @@ void write_to_json(nlohmann::json container,
   newJ.push_back({"type", old_j["type"]});
   newJ.push_back({"bbox", container[(container.size() - 2)]});
   newJ.push_back({"divider_points", container[(container.size() - 1)]});
-  
+
   if (output_to_stdout) {
     new_geo_stream << newJ << std::endl;
   } else {
