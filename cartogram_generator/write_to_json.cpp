@@ -83,6 +83,8 @@ nlohmann::json cgal_to_json(CartogramInfo *cart_info)
         }
         gd_container.push_back(polygon_container);
       }
+
+      // Insert gd.id() for correct matching in write_to_json()
       nlohmann::json gd_id_and_coords;
       gd_id_and_coords["gd_id"] = gd.id();
       gd_id_and_coords["coordinates"] = gd_container;
@@ -147,8 +149,10 @@ void write_to_json(nlohmann::json container,
   i >> old_j;
   nlohmann::json newJ;
 
-  // Loop over multipolygons in the container
+  // Iterate over GeoDivs and gd_ids in the container
   for (int i = 0; i < (int) container.size() - 2; i++) {
+
+    // Iterate over the features (GeoDivs) in the original GeoJSON
     for (int a = 0; a < (int) old_j["features"].size(); a++) {
       if (container[i]["gd_id"] == old_j["features"][a]["properties"][cart_info->id_header()]) {
         newJ["features"][i]["properties"] = old_j["features"][a]["properties"];
@@ -156,10 +160,10 @@ void write_to_json(nlohmann::json container,
         newJ["features"][i]["type"] = "Feature";
         newJ["features"][i]["geometry"]["type"] = "MultiPolygon";
 
-        // loop over Polygon_with_holes in the multipolygon
+        // Iterate over Polygon_with_holes in the GeoDiv
         for (int j = 0; j < (int) container[i]["coordinates"].size(); j++) {
 
-          // Loop over exterior ring and holes in the Polygon_with_holes
+          // Iterate over exterior ring and holes in the Polygon_with_holes
           for (int k = 0; k < (int) container[i]["coordinates"][j].size(); k++) {
             newJ["features"][i]["geometry"]["coordinates"][j][k] =
               container[i]["coordinates"][j][k];
@@ -171,6 +175,7 @@ void write_to_json(nlohmann::json container,
   newJ.push_back({"type", old_j["type"]});
   newJ.push_back({"bbox", container[(container.size() - 2)]});
   newJ.push_back({"divider_points", container[(container.size() - 1)]});
+  
   if (output_to_stdout) {
     new_geo_stream << newJ << std::endl;
   } else {
