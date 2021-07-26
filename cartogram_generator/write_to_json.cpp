@@ -148,7 +148,7 @@ void write_to_json(nlohmann::json container,
   nlohmann::json newJ;
 
   // Loop over multipolygons in the container
-  for (int i = 0; i < (int) container.size(); i++) {
+  for (int i = 0; i < (int) container.size() - 2; i++) {
     for (int a = 0; a < (int) old_j["features"].size(); a++) {
       if (container[i]["gd_id"] == old_j["features"][a]["properties"][cart_info->id_header()]) {
         newJ["features"][i]["properties"] = old_j["features"][a]["properties"];
