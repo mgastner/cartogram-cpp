@@ -156,7 +156,7 @@ void write_to_json(nlohmann::json container,
     for (int j = 0; j < (int) old_j["features"].size(); ++j) {
 
       // Check if the current container's gd_id is equal the current original
-      // GeoJSON's gd_id
+      // GeoJSON's id_header (e.g. NAME_1)
       if (container[i]["gd_id"] ==
           old_j["features"][j]["properties"][cart_info->id_header()]) {
         newJ["features"][i]["properties"] =
