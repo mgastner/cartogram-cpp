@@ -104,7 +104,8 @@ nlohmann::json cgal_to_json(CartogramInfo *cart_info)
     bbox_ymax = std::max(bbox_ymax, inset_bbox.ymax());
   }
 
-  // Insert join bounding box into the container as a vector with four numbers
+  // Insert joint bounding box into the container as a vector with four
+  // numbers
   container.push_back({bbox_xmin, bbox_ymin, bbox_xmax, bbox_ymax});
 
   // Insert divider lines between all inset
