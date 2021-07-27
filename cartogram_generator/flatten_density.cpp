@@ -131,7 +131,7 @@ void flatten_density(InsetState *inset_state)
   grid_fluxy_init.execute_fftw_plan();
   double t = 0.0;
   double delta_t = 1e-2;  // Initial time step.
-  int iter = 0;
+  unsigned int iter = 0;
 
   // Integrate
   while (t < 1.0) {

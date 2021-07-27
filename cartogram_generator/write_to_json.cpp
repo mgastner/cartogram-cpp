@@ -1,9 +1,5 @@
-#include "cgal_typedef.h"
 #include "constants.h"
 #include "write_to_json.h"
-#include "cartogram_info.h"
-#include "inset_state.h"
-#include <iostream>
 #include <fstream>
 
 std::vector<double> divider_points(double x1, double y1, double x2, double y2)
@@ -15,14 +11,13 @@ std::vector<double> divider_points(double x1, double y1, double x2, double y2)
   double ratio = divider_length + (1.0 - divider_length) / 2;
 
   //Calculate divider points
-  double x1D = ratio * x1 + (1.0 - ratio) * x2;
-  double x2D = ratio * x2 + (1.0 - ratio) * x1;
-  double y1D = ratio * y1 + (1.0 - ratio) * y2;
-  double y2D = ratio * y2 + (1.0 - ratio) * y1;
+  double x1d = ratio * x1 + (1.0 - ratio) * x2;
+  double x2d = ratio * x2 + (1.0 - ratio) * x1;
+  double y1d = ratio * y1 + (1.0 - ratio) * y2;
+  double y2d = ratio * y2 + (1.0 - ratio) * y1;
 
   // Return the two divider points (i.e., four coordinates) as a vector
-  std::vector<double> points {x1D, y1D, x2D, y2D};
-  return points;
+  return {x1d, y1d, x2d, y2d};
 }
 
 nlohmann::json cgal_to_json(CartogramInfo *cart_info)
@@ -35,7 +30,7 @@ nlohmann::json cgal_to_json(CartogramInfo *cart_info)
       nlohmann::json gd_container;
       for (auto pwh : gd.polygons_with_holes()) {
 
-        // Get exterior ring of Polygon_with_holes
+        // Get exterior ring of polygon with holes
         Polygon ext_ring = pwh.outer_boundary();
 
         // Set exterior ring to clockwise if it was originally like that
@@ -43,11 +38,9 @@ nlohmann::json cgal_to_json(CartogramInfo *cart_info)
           ext_ring.reverse_orientation();
         }
 
-        nlohmann::json polygon_container;
+        // Get exterior ring coordinates
         nlohmann::json er_container;
         for (unsigned int i = 0; i < ext_ring.size(); ++i) {
-
-          // Get exterior ring coordinates
           double arr[2];
           arr[0] = ext_ring[i][0];
           arr[1] = ext_ring[i][1];
@@ -57,9 +50,12 @@ nlohmann::json cgal_to_json(CartogramInfo *cart_info)
         // Repeat first point as last point as per GeoJSON standards
         er_container.push_back({ext_ring[0][0], ext_ring[0][1]});
 
+        // Insert exterior ring into a container that stores all exterior and
+        // interior rings for this polygon with holes
+        nlohmann::json polygon_container;
         polygon_container.push_back(er_container);
 
-        // Get holes of Polygon_with_holes
+        // Get holes of polygon with holes
         for (auto hci = pwh.holes_begin(); hci != pwh.holes_end(); ++hci) {
           Polygon hole = *hci;
 
@@ -68,22 +64,30 @@ nlohmann::json cgal_to_json(CartogramInfo *cart_info)
             hole.reverse_orientation();
           }
 
+          // Get hole coordinates
           nlohmann::json hole_container;
           for (unsigned int i = 0; i < hole.size(); ++i) {
-
-            // Get hole coordinates
             double arr[2];
             arr[0] = hole[i][0];
             arr[1] = hole[i][1];
             hole_container.push_back(arr);
           }
+
           // Repeat first point as last point as per GeoJSON standards
           hole_container.push_back({hole[0][0], hole[0][1]});
           polygon_container.push_back(hole_container);
         }
+
+        // Insert all polygons with holes for this GeoDiv into gd_container
         gd_container.push_back(polygon_container);
       }
-      container.push_back(gd_container);
+
+      // Insert gd.id() so that we can match IDs with the coordinates when we
+      // call write_to_json()
+      nlohmann::json gd_id_and_coords;
+      gd_id_and_coords["gd_id"] = gd.id();
+      gd_id_and_coords["coordinates"] = gd_container;
+      container.push_back(gd_id_and_coords);
     }
   }
 
@@ -100,7 +104,8 @@ nlohmann::json cgal_to_json(CartogramInfo *cart_info)
     bbox_ymax = std::max(bbox_ymax, inset_bbox.ymax());
   }
 
-  // Insert join bounding box into the container
+  // Insert joint bounding box into the container as a vector with four
+  // numbers
   container.push_back({bbox_xmin, bbox_ymin, bbox_xmax, bbox_ymax});
 
   // Insert divider lines between all inset
@@ -133,41 +138,67 @@ nlohmann::json cgal_to_json(CartogramInfo *cart_info)
 }
 
 void write_to_json(nlohmann::json container,
-                   std::string old_geo_fn,
-                   std::string new_geo_fn,
+                   std::string old_geo_file_name,
+                   std::string new_geo_file_name,
                    std::ostream &new_geo_stream,
-                   bool output_to_stdout)
+                   bool output_to_stdout,
+                   CartogramInfo *cart_info)
 {
-  std::ifstream i(old_geo_fn);
-  nlohmann::json old_j;
-  i >> old_j;
-  nlohmann::json newJ;
+  std::ifstream old_file(old_geo_file_name);
+  nlohmann::json old_json;
+  old_file >> old_json;
+  nlohmann::json new_json;
 
-  // Loop over multipolygons in the container
-  for (int i = 0; i < (int) container.size() - 2; ++i) {
-    newJ["features"][i]["properties"] = old_j["features"][i]["properties"];
-    newJ["features"][i]["id"] = old_j["features"][i]["id"];
-    newJ["features"][i]["type"] = "Feature";
-    newJ["features"][i]["geometry"]["type"] = "MultiPolygon";
+  // We must match the GeoDiv IDs in the container with the IDs in the input
+  // GeoJSON. For later convenience, we store the numeric indices for an ID
+  // in an std::map.
+  std::map<std::string, unsigned int> index_of_id_in_old_json;
+  for (unsigned int index = 0; index < old_json["features"].size(); ++index) {
+    std::string id =
+      old_json["features"][index]["properties"][cart_info->id_header()];
+    std::pair<std::string, unsigned int> pair(id, index);
+    index_of_id_in_old_json.insert(pair);
+  }
 
-    // loop over Polygon_with_holes in the multipolygon
-    for (int j = 0; j < (int) container[i].size(); ++j) {
+  // Iterate over GeoDivs and gd_ids in the container. The index
+  // container.size()-2 is reserved for the bounding box, and the index
+  // container.size()-1 is reserved for the divider lines. Thus, we must
+  // exclude these two indices in the next loop.
+  for (unsigned int i = 0; i < container.size() - 2; ++i) {
+    unsigned int index = index_of_id_in_old_json.at(container[i]["gd_id"]);
+    new_json["features"][i]["properties"] =
+      old_json["features"][index]["properties"];
 
-      // Loop over exterior ring and holes in the Polygon_with_holes
-      for (int k = 0; k < (int) container[i][j].size(); ++k) {
-        newJ["features"][i]["geometry"]["coordinates"][j][k] =
-          container[i][j][k];
+    // TODO: THE NEXT LINE CREATES A FIELD WITH VALUE null UNLESS THE
+    // INPUT GEOJSON CONTAINED A FIELD CALLED id. THIS MAY BE NEEDED BY
+    // cartogram_web, BUT, IN THE LONG RUN, WE WANT TO GET RID OF IT.
+    new_json["features"][i]["id"] = old_json["features"][index]["id"];
+    new_json["features"][i]["type"] = "Feature";
+    new_json["features"][i]["geometry"]["type"] = "MultiPolygon";
+
+    // Iterate over Polygon_with_holes in the GeoDiv
+    for (unsigned int j = 0;
+         j < container[i]["coordinates"].size();
+         ++j) {
+
+      // Iterate over exterior ring and holes in the Polygon_with_holes
+      for (unsigned int k = 0;
+           k < container[i]["coordinates"][j].size();
+           ++k) {
+        new_json["features"][i]["geometry"]["coordinates"][j][k] =
+          container[i]["coordinates"][j][k];
       }
     }
   }
-  newJ.push_back({"type", old_j["type"]});
-  newJ.push_back({"bbox", container[(container.size() - 2)]});
-  newJ.push_back({"divider_points", container[(container.size() - 1)]});
+  new_json.push_back({"type", old_json["type"]});
+  new_json.push_back({"bbox", container[(container.size() - 2)]});
+  new_json.push_back({"divider_points", container[(container.size() - 1)]});
+
   if (output_to_stdout) {
-    new_geo_stream << newJ << std::endl;
+    new_geo_stream << new_json << std::endl;
   } else {
-    std::ofstream o(new_geo_fn);
-    o << newJ << std::endl;
+    std::ofstream o(new_geo_file_name);
+    o << new_json << std::endl;
   }
   return;
 }
