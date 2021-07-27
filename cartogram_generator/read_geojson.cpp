@@ -322,7 +322,7 @@ void read_geojson(const std::string geometry_file_name,
 
     // Declare chosen identifier(s)
     std::map<std::string, std::vector<std::string> > chosen_identifiers;
-    size_t i = 0;
+    unsigned int i = 0;
     for (auto [key, value_vec] : viable_properties_map) {
       ++i;
       if (chosen_number == i ||
