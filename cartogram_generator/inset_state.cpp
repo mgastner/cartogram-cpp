@@ -155,7 +155,7 @@ double InsetState::map_scale() const
   return map_scale_;
 }
 
-double InsetState::max_area_error() const
+double InsetState::max_area_error_stdcerr() const
 {
   double mae = -dbl_inf;
   std::string worst_gd = "";
@@ -171,6 +171,19 @@ double InsetState::max_area_error() const
             << worst_gd
             << std::endl
             << std::endl;
+  return mae;
+}
+
+double InsetState::max_area_error() const
+{
+  double mae = -dbl_inf;
+  std::string worst_gd = "";
+  for (auto const &[gd_id, area_error] : area_errors_) {
+    if (area_error > mae) {
+      worst_gd = gd_id;
+      mae = area_error;
+    }
+  }
   return mae;
 }
 

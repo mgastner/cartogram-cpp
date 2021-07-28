@@ -76,6 +76,7 @@ public:
   unsigned int ly() const;
   void make_fftw_plans_for_rho();
   double map_scale() const;
+  double max_area_error_stdcerr() const;
   double max_area_error() const;
   unsigned int new_xmin() const;
   unsigned int new_ymin() const;
