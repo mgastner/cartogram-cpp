@@ -84,7 +84,7 @@ void normalize_inset_area(InsetState *inset_state,
     inset_state->total_target_area() / total_target_area;
   double scale_factor =
     equal_area ?
-    100.0 :
+    10000.0 :
     10000.0 * sqrt(inset_size_proportion / inset_state->cart_area());
 
   // Rescale all GeoDiv coordinates
