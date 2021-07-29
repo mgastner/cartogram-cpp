@@ -53,9 +53,6 @@ int main(const int argc, const char *argv[])
        output_to_stdout,
        plot_density;
 
-  // Progress percentage
-  double progress = 0.0;
-
   // Parse command-line options. See
   // https://theboostcpplibraries.com/boost.program_options
   variables_map vm;
@@ -194,7 +191,10 @@ int main(const int argc, const char *argv[])
     }
   }
 
-  // Store total number of GeoDivs for Progress Percentage
+  // Progress percentage
+  double progress = 0.0;
+
+  // Store total number of GeoDivs to monitor progress
   double total_geo_divs = 0;
 
   // Replace non-positive target areas with a fraction of the smallest
@@ -202,11 +202,12 @@ int main(const int argc, const char *argv[])
   double replacement_for_nonpositive_area = 0.1 * min_positive_area;
   std::cerr << "Replacing zero target area with "
             << replacement_for_nonpositive_area
+            << " times the minimum non-positive area"
             << std::endl;
   for (auto &inset_state :
        *cart_info.ref_to_inset_states() | std::views::values) {
+    total_geo_divs += inset_state.n_geo_divs();
     for (auto gd : inset_state.geo_divs()) {
-      total_geo_divs++;
       double target_area = inset_state.target_areas_at(gd.id());
       if (target_area <= 0.0) {
         inset_state.target_areas_replace(gd.id(),
@@ -307,16 +308,24 @@ int main(const int argc, const char *argv[])
         write_map_to_eps((inset_name + "_input.eps"), &inset_state);
       }
 
-      // Declare outside since some insets might not even enter the following map
-      // integration loop
-      double inset_max_percentage = inset_state.n_geo_divs() / total_geo_divs;
+      // We make the approximation that the progress towards generating the
+      // cartogram is proportional to the number of GeoDivs that are in the
+      // finished insets
+      double inset_max_frac = inset_state.n_geo_divs() / total_geo_divs;
 
       // Start map integration
       while (inset_state.n_finished_integrations() < max_integrations &&
-             inset_state.max_area_error_stdcerr() > max_permitted_area_error) {
+             inset_state.max_area_error().value > max_permitted_area_error) {
         std::cerr << "Integration number "
                   << inset_state.n_finished_integrations()
                   << std::endl;
+
+        // Calculate progress percentage. We assume that the maximum area
+        // error is typically reduced to 1/5 of the previous value.
+        double ratio_actual_to_permitted_max_area_error =
+          inset_state.max_area_error().value / max_permitted_area_error;
+        double n_predicted_integrations =
+          ceil(log(ratio_actual_to_permitted_max_area_error) / log(5));
 
         // TODO: THIS IF-CONDITION IS INELEGANT
         if (inset_state.n_finished_integrations()  >  0) {
@@ -333,22 +342,22 @@ int main(const int argc, const char *argv[])
 
         // Update area errors
         inset_state.set_area_errors();
-
-        // Calculate progress percentage
-        if (inset_state.max_area_error() > 0.01) {
-        double n_predicted_integrations = ceil(log(inset_state.max_area_error() / 0.01)
-                                          / log(5)); 
-        std::cerr << "Progress: "
-                  << progress + (inset_max_percentage / n_predicted_integrations)
+        std::cerr << "max. area err: "
+                  << inset_state.max_area_error().value
+                  << ", GeoDiv: "
+                  << inset_state.max_area_error().geo_div
                   << std::endl;
-        }
+        std::cerr << "Progress: "
+                  << progress + (inset_max_frac / n_predicted_integrations)
+                  << std::endl
+                  << std::endl;
       }
-
-      progress += inset_max_percentage;
-      std::cerr << "Progress: " 
+      progress += inset_max_frac;
+      std::cerr << "Finished inset "
+                << inset_pos
+                << "\nProgress: "
                 << progress
                 << std::endl;
-    
 
       // Print EPS of cartogram
       if (make_polygon_eps) {
