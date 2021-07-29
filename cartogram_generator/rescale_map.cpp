@@ -122,6 +122,28 @@ void shift_insets_to_target_position(CartogramInfo *cart_info)
   for (auto &[inset_pos, inset_state] : *cart_info->ref_to_inset_states()) {
     bboxes.at(inset_pos) = inset_state.bbox();
   }
+
+  // Calculate the width and height of all positioned insets without spacing
+  double width = bboxes.at("C").xmax() - bboxes.at("C").xmin() +
+                 bboxes.at("L").xmax() - bboxes.at("L").xmin() +
+                 bboxes.at("R").xmax() - bboxes.at("R").xmin();
+  double max_width_T_B_insets = std::max(bboxes.at("T").xmax() - bboxes.at("T").xmin(),
+                                         bboxes.at("B").xmax() - bboxes.at("B").xmin());
+  width = std::max(width, max_width_T_B_insets);
+
+  double height = bboxes.at("C").ymax() - bboxes.at("C").ymin() +
+                  bboxes.at("T").ymax() - bboxes.at("T").ymin() +
+                  bboxes.at("B").ymax() - bboxes.at("B").ymin();
+  double max_height_L_R_insets = std::max(bboxes.at("R").ymax() - bboxes.at("R").ymin(),
+                                          bboxes.at("L").ymax() - bboxes.at("L").ymin());
+  height = std::max(height, max_height_L_R_insets);
+
+  double spacing_length = 0.1;
+
+  double inset_spacing = std::max(width, height) * spacing_length;
+
+  cart_info->set_inset_spacing(inset_spacing);
+
   for (auto &[inset_pos, inset_state] : *cart_info->ref_to_inset_states()) {
     double x = 0;
     double y = 0;
@@ -130,22 +152,26 @@ void shift_insets_to_target_position(CartogramInfo *cart_info)
       x = std::max(bboxes.at("C").xmax(), bboxes.at("B").xmax());
       x = std::max(x, bboxes.at("T").xmax());
       x += bboxes.at("R").xmax();
+      x += inset_spacing;
       y = 0;
     } else if (pos == "L") {
       x = std::min(bboxes.at("C").xmin(), bboxes.at("B").xmin());
       x = std::min(x, bboxes.at("T").xmin());
       x += bboxes.at("L").xmin();
+      x -= inset_spacing;
       y = 0;
     } else if (pos == "T") {
       x = 0;
       y = std::max(bboxes.at("C").ymax(), bboxes.at("R").ymax());
       y = std::max(y, bboxes.at("L").ymax());
       y += bboxes.at("T").ymax();
+      y += inset_spacing;
     } else if (pos == "B") {
       x = 0;
       y = std::min(bboxes.at("C").ymin(), bboxes.at("R").ymin());
       y = std::min(y, bboxes.at("L").ymin());
       y += bboxes.at("B").ymin();
+      y -= inset_spacing;
     }
     Transformation translate(CGAL::TRANSLATION,
                              CGAL::Vector_2<Epick>(x, y));
