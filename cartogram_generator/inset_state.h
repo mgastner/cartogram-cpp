@@ -29,6 +29,11 @@ struct intersection {
   }
 };
 
+struct max_area_error_info {
+  double value;
+  std::string geo_div;
+};
+
 class InsetState {
 private:
   std::unordered_map<std::string, double> area_errors_;
@@ -76,7 +81,8 @@ public:
   unsigned int ly() const;
   void make_fftw_plans_for_rho();
   double map_scale() const;
-  double max_area_error() const;
+  double max_area_error_stdcerr() const;
+  struct max_area_error_info max_area_error() const;
   unsigned int new_xmin() const;
   unsigned int new_ymin() const;
   unsigned int n_finished_integrations() const;
