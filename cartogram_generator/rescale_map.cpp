@@ -84,8 +84,8 @@ void normalize_inset_area(InsetState *inset_state,
     inset_state->total_target_area() / total_target_area;
   double scale_factor =
     equal_area ?
-    100.0 :
-    100.0 * sqrt(inset_size_proportion / inset_state->cart_area());
+    10000.0 :
+    10000.0 * sqrt(inset_size_proportion / inset_state->cart_area());
 
   // Rescale all GeoDiv coordinates
   Transformation translate(
@@ -127,22 +127,26 @@ void shift_insets_to_target_position(CartogramInfo *cart_info)
   double width = bboxes.at("C").xmax() - bboxes.at("C").xmin() +
                  bboxes.at("L").xmax() - bboxes.at("L").xmin() +
                  bboxes.at("R").xmax() - bboxes.at("R").xmin();
-  double max_width_T_B_insets = std::max(bboxes.at("T").xmax() - bboxes.at("T").xmin(),
+  
+  // Considering edge cases where width of "T" or "B" inset might be greater
+  // than width of "C", "L", "R" insets combined
+  double max_width_t_b_insets = std::max(bboxes.at("T").xmax() - bboxes.at("T").xmin(),
                                          bboxes.at("B").xmax() - bboxes.at("B").xmin());
-  width = std::max(width, max_width_T_B_insets);
+  width = std::max(width, max_width_t_b_insets);
 
   double height = bboxes.at("C").ymax() - bboxes.at("C").ymin() +
                   bboxes.at("T").ymax() - bboxes.at("T").ymin() +
                   bboxes.at("B").ymax() - bboxes.at("B").ymin();
-  double max_height_L_R_insets = std::max(bboxes.at("R").ymax() - bboxes.at("R").ymin(),
+  
+  // Considering edge cases where height of "L" or "R" inset might be greater
+  // than height of "T", "C", "R" insets combined
+  double max_height_l_r_insets = std::max(bboxes.at("R").ymax() - bboxes.at("R").ymin(),
                                           bboxes.at("L").ymax() - bboxes.at("L").ymin());
-  height = std::max(height, max_height_L_R_insets);
+  height = std::max(height, max_height_l_r_insets);
 
   double spacing_length = 0.1;
 
   double inset_spacing = std::max(width, height) * spacing_length;
-
-  cart_info->set_inset_spacing(inset_spacing);
 
   for (auto &[inset_pos, inset_state] : *cart_info->ref_to_inset_states()) {
     double x = 0;
