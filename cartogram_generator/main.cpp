@@ -202,7 +202,7 @@ int main(const int argc, const char *argv[])
   double replacement_for_nonpositive_area = 0.1 * min_positive_area;
   std::cerr << "Replacing zero target area with "
             << replacement_for_nonpositive_area
-            << " times the minimum non-positive area"
+            << " (0.1 times the minimum positive area)."
             << std::endl;
   for (auto &inset_state :
        *cart_info.ref_to_inset_states() | std::views::values) {
