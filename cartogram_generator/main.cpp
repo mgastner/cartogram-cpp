@@ -209,7 +209,7 @@ int main(const int argc, const char *argv[])
     total_geo_divs += inset_state.n_geo_divs();
     for (auto gd : inset_state.geo_divs()) {
       double target_area = inset_state.target_areas_at(gd.id());
-      if (target_area <= 0.0) {
+      if (target_area == 0.0) {
         inset_state.target_areas_replace(gd.id(),
                                          replacement_for_nonpositive_area);
       }

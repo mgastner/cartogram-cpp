@@ -279,7 +279,7 @@ void fill_with_density(bool plot_density, InsetState* inset_state)
         for (unsigned int m = ceil(left_x); m <= ceil(right_x); ++m) {
 
           double weight =
-            inset_state->area_errors_at(intersections.back().geo_div_id);
+            inset_state->area_errors_at(intersections[l].geo_div_id);
           double target_dens = intersections[l].target_density;
           if (ceil(left_x) == ceil(right_x)) {
             weight *= (right_x - left_x);
