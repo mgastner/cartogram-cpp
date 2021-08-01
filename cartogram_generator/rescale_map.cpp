@@ -50,7 +50,7 @@ void rescale_map(unsigned int long_grid_side_length,
             << std::endl;
   inset_state->set_grid_dimensions(lx, ly);
 
-  // Rescale all GeoDiv coordinates
+  // Rescale and translate all GeoDiv coordinates
   Transformation translate(CGAL::TRANSLATION,
                            CGAL::Vector_2<Epick>(-new_xmin, -new_ymin));
   Transformation scale(CGAL::SCALING, (1.0/latt_const));
@@ -87,7 +87,7 @@ void normalize_inset_area(InsetState *inset_state,
     10000.0 :
     10000.0 * sqrt(inset_size_proportion / inset_state->cart_area());
 
-  // Rescale all GeoDiv coordinates
+  // Rescale and translate all GeoDiv coordinates
   Transformation translate(
     CGAL::TRANSLATION,
     CGAL::Vector_2<Epick>(-(bbox.xmin() + bbox.xmax()) / 2,
@@ -127,56 +127,64 @@ void shift_insets_to_target_position(CartogramInfo *cart_info)
   double width = bboxes.at("C").xmax() - bboxes.at("C").xmin() +
                  bboxes.at("L").xmax() - bboxes.at("L").xmin() +
                  bboxes.at("R").xmax() - bboxes.at("R").xmin();
-  
+
   // Considering edge cases where width of "T" or "B" inset might be greater
   // than width of "C", "L", "R" insets combined
-  double max_width_t_b_insets = std::max(bboxes.at("T").xmax() - bboxes.at("T").xmin(),
-                                         bboxes.at("B").xmax() - bboxes.at("B").xmin());
-  width = std::max(width, max_width_t_b_insets);
+  width = std::max({
+     bboxes.at("T").xmax() - bboxes.at("T").xmin(), // width of inset T
+     bboxes.at("B").xmax() - bboxes.at("B").xmin(), // width of inset B
+     width // width of inset C + L + R
+   });
 
   double height = bboxes.at("C").ymax() - bboxes.at("C").ymin() +
                   bboxes.at("T").ymax() - bboxes.at("T").ymin() +
                   bboxes.at("B").ymax() - bboxes.at("B").ymin();
-  
+
   // Considering edge cases where height of "L" or "R" inset might be greater
   // than height of "T", "C", "R" insets combined
-  double max_height_l_r_insets = std::max(bboxes.at("R").ymax() - bboxes.at("R").ymin(),
-                                          bboxes.at("L").ymax() - bboxes.at("L").ymin());
-  height = std::max(height, max_height_l_r_insets);
+  height = std::max({
+    bboxes.at("R").ymax() - bboxes.at("R").ymin(), // height of inset R
+    bboxes.at("L").ymax() - bboxes.at("L").ymin(), // height of inset L
+    height // height of inset C + T + B
+  });
 
-  double spacing_length = 0.1;
-
-  double inset_spacing = std::max(width, height) * spacing_length;
-
+  // Spacing between insets
+  double inset_spacing = std::max(width, height) * inset_spacing_factor;
   for (auto &[inset_pos, inset_state] : *cart_info->ref_to_inset_states()) {
+
+    // Assuming X and Y value of translation vector to be 0 to begin with
     double x = 0;
     double y = 0;
     const std::string pos = inset_pos;
+
+    // We only need to modify either X or Y, depening on the inset_pos
     if (pos == "R") {
-      x = std::max(bboxes.at("C").xmax(), bboxes.at("B").xmax());
-      x = std::max(x, bboxes.at("T").xmax());
+      x = std::max({bboxes.at("C").xmax(),
+                    bboxes.at("B").xmax(),
+                    bboxes.at("T").xmax()});
       x += bboxes.at("R").xmax();
       x += inset_spacing;
-      y = 0;
     } else if (pos == "L") {
-      x = std::min(bboxes.at("C").xmin(), bboxes.at("B").xmin());
-      x = std::min(x, bboxes.at("T").xmin());
+      x = std::min({bboxes.at("C").xmin(),
+                    bboxes.at("B").xmin(),
+                    bboxes.at("T").xmin()});
       x += bboxes.at("L").xmin();
       x -= inset_spacing;
-      y = 0;
     } else if (pos == "T") {
-      x = 0;
-      y = std::max(bboxes.at("C").ymax(), bboxes.at("R").ymax());
-      y = std::max(y, bboxes.at("L").ymax());
+      y = std::max({bboxes.at("C").ymax(),
+                    bboxes.at("R").ymax(),
+                    bboxes.at("L").ymax()});
       y += bboxes.at("T").ymax();
       y += inset_spacing;
     } else if (pos == "B") {
-      x = 0;
-      y = std::min(bboxes.at("C").ymin(), bboxes.at("R").ymin());
-      y = std::min(y, bboxes.at("L").ymin());
+      y = std::min({bboxes.at("C").ymin(),
+                    bboxes.at("R").ymin(),
+                    bboxes.at("L").ymin()});
       y += bboxes.at("B").ymin();
       y -= inset_spacing;
     }
+
+    // Translating inset according to translation vector calculated above
     Transformation translate(CGAL::TRANSLATION,
                              CGAL::Vector_2<Epick>(x, y));
     for (auto &gd : *inset_state.ref_to_geo_divs()) {

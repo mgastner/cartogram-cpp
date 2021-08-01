@@ -4,7 +4,6 @@
 
 std::vector<double> divider_points(double x1, double y1, double x2, double y2)
 {
-  double divider_length = 0.8;
 
   // Ratio between first divider point to (x2, y2) distance and
   // (x1, y1) : (x2, y2) distance
@@ -22,7 +21,7 @@ std::vector<double> divider_points(double x1, double y1, double x2, double y2)
 
 nlohmann::json cgal_to_json(CartogramInfo *cart_info)
 {
-  nlohmann::json container, divider_container;
+  nlohmann::json container;
 
   // Insert GeoDiv coordinates into the container
   for (auto &[inset_pos, inset_state] : *cart_info->ref_to_inset_states()) {
@@ -130,14 +129,17 @@ nlohmann::json cgal_to_json(CartogramInfo *cart_info)
   // numbers
   container.push_back({bbox_xmin, bbox_ymin, bbox_xmax, bbox_ymax});
 
-  // Insert divider lines between all inset
+  // Container to store divider lines for go-cart.io
+  nlohmann::json divider_container;
+
+  // Insert divider lines between all insets
   for (auto &[inset_pos, inset_state] : *cart_info->ref_to_inset_states()) {
     CGAL::Bbox_2 inset_bbox = inset_state.bbox();
     if (inset_pos == "R") {
-      divider_container.push_back(divider_points((inset_bbox.xmin() 
+      divider_container.push_back(divider_points((inset_bbox.xmin()
                                                  + inset_c_bbox.xmax()) / 2,
                                                  max_ymax_lcr,
-                                                 (inset_bbox.xmin() 
+                                                 (inset_bbox.xmin()
                                                  + inset_c_bbox.xmax()) / 2,
                                                  min_ymin_lcr));
     } else if (inset_pos == "L") {

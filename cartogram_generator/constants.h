@@ -14,4 +14,11 @@ constexpr double pi = std::numbers::pi;
 // Fraction of square side length by which squares on heatmap overlap
 constexpr double sq_overlap = 0.2;
 
+// Percent of total width/height (whichever is greater) of all insets that
+// should be empty space
+constexpr double inset_spacing_factor = 0.1;
+
+// Percent of height/width of tallest/widest inset that divider should be
+constexpr double divider_length = 0.8;
+
 #endif
