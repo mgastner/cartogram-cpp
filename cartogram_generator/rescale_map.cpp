@@ -110,6 +110,7 @@ void normalize_inset_area(InsetState *inset_state,
 
 void shift_insets_to_target_position(CartogramInfo *cart_info)
 {
+
   // For simplicity's sake, let us formally insert bounding boxes for
   // all conceivable inset positions
   std::map<std::string, CGAL::Bbox_2> bboxes;
@@ -168,6 +169,8 @@ void shift_insets_to_target_position(CartogramInfo *cart_info)
       x = std::min({bboxes.at("C").xmin(),
                     bboxes.at("B").xmin(),
                     bboxes.at("T").xmin()});
+
+      // Over here, xmin is negative and lies in the 2nd and 3rd quadrant
       x += bboxes.at("L").xmin();
       x -= inset_spacing;
     } else if (pos == "T") {
@@ -180,6 +183,8 @@ void shift_insets_to_target_position(CartogramInfo *cart_info)
       y = std::min({bboxes.at("C").ymin(),
                     bboxes.at("R").ymin(),
                     bboxes.at("L").ymin()});
+
+      // Over here, ymin is negative and lies in the 3th and 4th quadrant
       y += bboxes.at("B").ymin();
       y -= inset_spacing;
     }
