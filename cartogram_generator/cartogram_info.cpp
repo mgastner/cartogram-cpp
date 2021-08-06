@@ -85,7 +85,9 @@ double CartogramInfo::total_cart_target_area() const
   // the-values-of-a-map-using-a-range-based-for-loop
   for (auto const &inset_state : inset_states_ | std::views::values) {
     for (auto gd : inset_state.geo_divs()) {
-      area += inset_state.target_areas_at(gd.id());
+      if (!inset_state.target_area_is_missing(gd.id())) {
+        area += inset_state.target_areas_at(gd.id());
+      }
     }
   }
   return area;
@@ -101,4 +103,72 @@ void CartogramInfo::set_original_ext_ring_is_clockwise(
 {
   original_ext_ring_is_clockwise_ = original_ext_ring_is_clockwise;
   return;
+}
+
+void CartogramInfo::set_ta_NA_flag()
+{
+ is_ta_na_ = true;
+ return;
+}
+
+void CartogramInfo::set_ta_zero_flag()
+{
+ is_ta_zero_ = true;
+ return;
+}
+
+void CartogramInfo::assign_ta_to_na_and_zero()
+{
+  if (is_ta_na_) {
+    double total_non_na_area = 0;
+    double total_non_na_ta = total_cart_target_area();
+
+    // Finding total area of non na geodivs
+    for (auto const &inset_state : inset_states_ | std::views::values) {
+      total_non_na_area += inset_state.cart_area();
+    }
+
+    // Assigning GeoDivs new target areas
+    for (auto &inset_state : inset_states_ | std::views::values) {
+      for (auto const gd : inset_state.geo_divs()) {
+        if (inset_state.target_area_is_missing(gd.id())) {
+
+          // Replace target_area
+          double new_target_area =
+            (total_non_na_ta / total_non_na_area) * gd.area();
+          inset_state.target_areas_replace(gd.id(), new_target_area);
+        }
+      }
+    }
+  }
+  if (is_ta_zero_) {
+
+    // Find smallest positive target area
+    double min_positive_area = dbl_inf;
+    for (auto const &inset_state : inset_states_ | std::views::values) {
+      for (auto const gd : inset_state.geo_divs()) {
+        double target_area = inset_state.target_areas_at(gd.id());
+        if (target_area > 0.0) {
+          min_positive_area = std::min(min_positive_area, target_area);
+        }
+      }
+    }
+
+    // Replace non-positive target areas with a fraction of the smallest
+    // positive target area
+    double replacement_for_nonpositive_area = 0.1 * min_positive_area;
+    std::cerr << "Replacing zero target area with "
+              << replacement_for_nonpositive_area
+              << " (0.1 times the minimum positive area)."
+              << std::endl;
+    for (auto &inset_state : inset_states_ | std::views::values) {
+      for (auto const gd : inset_state.geo_divs()) {
+        double target_area = inset_state.target_areas_at(gd.id());
+        if (target_area == 0.0) {
+          inset_state.target_areas_replace(gd.id(),
+                                           replacement_for_nonpositive_area);
+        }
+      }
+    }
+  }
 }

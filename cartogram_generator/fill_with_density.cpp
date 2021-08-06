@@ -38,15 +38,11 @@ void fill_with_density(bool plot_density, InsetState* inset_state)
   // missing values
   double total_current_area = 0.0;
   for (auto gd : inset_state->geo_divs()) {
-    if (!inset_state->target_area_is_missing(gd.id())) {
-      total_current_area += gd.area();
-    }
+    total_current_area += gd.area();
   }
   double total_target_area = 0.0;
   for (auto gd : inset_state->geo_divs()) {
-    if (!inset_state->target_area_is_missing(gd.id())) {
-      total_target_area += inset_state->target_areas_at(gd.id());
-    }
+    total_target_area += inset_state->target_areas_at(gd.id());
   }
   double mean_density = total_target_area / total_current_area;
   FTReal2d &rho_init = *inset_state->ref_to_rho_init();
@@ -83,11 +79,7 @@ void fill_with_density(bool plot_density, InsetState* inset_state)
     // Associative area. It is only called once to find out the target
     // density.
     double target_density;
-    if (!inset_state->target_area_is_missing(gd.id())) {
-      target_density = inset_state->target_areas_at(gd.id()) / gd.area();
-    } else {
-      target_density = mean_density;
-    }
+    target_density = inset_state->target_areas_at(gd.id()) / gd.area();
 
     // Iterate through "polygons with holes" in inset_state
     for (unsigned int j = 0; j < gd.n_polygons_with_holes(); ++j) {

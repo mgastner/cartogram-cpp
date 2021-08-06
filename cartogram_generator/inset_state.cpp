@@ -227,20 +227,14 @@ void InsetState::set_area_errors()
   double sum_target_area = 0.0;
   double sum_cart_area = 0.0;
   for (auto gd : geo_divs_) {
-    if (!target_area_is_missing(gd.id())) {
-      sum_target_area += target_areas_at(gd.id());
-      sum_cart_area += gd.area();
-    }
+    sum_target_area += target_areas_at(gd.id());
+    sum_cart_area += gd.area();
   }
   for (auto gd : geo_divs_) {
-    if (!target_area_is_missing(gd.id())) {
-      double obj_area =
-        target_areas_at(gd.id()) * sum_cart_area / sum_target_area;
-      double relative_area_error = std::abs( (gd.area() / obj_area) - 1);
-      area_errors_[gd.id()] = relative_area_error;
-    } else {
-      area_errors_[gd.id()] = 0;
-    }
+    double obj_area =
+      target_areas_at(gd.id()) * sum_cart_area / sum_target_area;
+    double relative_area_error = std::abs( (gd.area() / obj_area) - 1);
+    area_errors_[gd.id()] = relative_area_error;
   }
   return;
 }
