@@ -52,8 +52,8 @@ void flatten_density(InsetState *inset_state)
   if (inset_state->n_finished_integrations() == 0) {
     proj.resize(boost::extents[lx][ly]);
   }
-  for (unsigned int i = 0; i < lx; i++) {
-    for (unsigned int j = 0; j < ly; j++) {
+  for (unsigned int i = 0; i < lx; ++i) {
+    for (unsigned int j = 0; j < ly; ++j) {
       proj[i][j].x = i + 0.5;
       proj[i][j].y = j + 0.5;
     }
@@ -102,26 +102,26 @@ void flatten_density(InsetState *inset_state)
 
   // We temporarily insert the Fourier coefficients for the x- and
   // y-components of the flux vector in grid_fluxx_init and grid_fluxy_init
-  for (unsigned int i = 0; i < lx-1; i++) {
+  for (unsigned int i = 0; i < lx-1; ++i) {
     double di = i;
-    for (unsigned int j = 0; j < ly; j++) {
+    for (unsigned int j = 0; j < ly; ++j) {
       double denom = pi * ((di+1)/dlx + (j/(di+1)) * (j/dly) * (dlx/dly));
       grid_fluxx_init(i, j) =
         -rho_ft(i+1, j) / denom;
     }
   }
-  for (unsigned int j = 0; j < ly; j++) {
+  for (unsigned int j = 0; j < ly; ++j) {
     grid_fluxx_init(lx-1, j) = 0.0;
   }
-  for (unsigned int i=0; i<lx; i++) {
+  for (unsigned int i=0; i<lx; ++i) {
     double di = i;
-    for (unsigned int j = 0; j < ly-1; j++) {
+    for (unsigned int j = 0; j < ly-1; ++j) {
       double denom = pi * ((di/(j+1)) * (di/dlx) * (dly/dlx) + (j+1)/dly);
       grid_fluxy_init(i, j) =
         -rho_ft(i, j+1) / denom;
     }
   }
-  for (unsigned int i=0; i<lx; i++) {
+  for (unsigned int i=0; i<lx; ++i) {
     grid_fluxy_init(i, ly-1) = 0.0;
   }
 
@@ -131,7 +131,7 @@ void flatten_density(InsetState *inset_state)
   grid_fluxy_init.execute_fftw_plan();
   double t = 0.0;
   double delta_t = 1e-2;  // Initial time step.
-  int iter = 0;
+  unsigned int iter = 0;
 
   // Integrate
   while (t < 1.0) {
@@ -141,8 +141,8 @@ void flatten_density(InsetState *inset_state)
                        &grid_vx, &grid_vy,
                        lx, ly);
 #pragma omp parallel for
-    for (unsigned int i = 0; i < lx; i++) {
-      for (unsigned int j = 0; j < ly; j++) {
+    for (unsigned int i = 0; i < lx; ++i) {
+      for (unsigned int j = 0; j < ly; ++j) {
 
         // We know, either because of the initialization or because of the
         // check at the end of the last iteration, that (proj.x, proj.y)
@@ -165,8 +165,8 @@ void flatten_density(InsetState *inset_state)
       // Simple Euler step.
 
 #pragma omp parallel for
-      for (unsigned int i = 0; i < lx; i++) {
-        for (unsigned int j = 0; j < ly; j++) {
+      for (unsigned int i = 0; i < lx; ++i) {
+        for (unsigned int j = 0; j < ly; ++j) {
           eul[i][j].x = proj[i][j].x + v_intp[i][j].x * delta_t;
           eul[i][j].y = proj[i][j].y + v_intp[i][j].y * delta_t;
         }
@@ -187,8 +187,8 @@ void flatten_density(InsetState *inset_state)
       // interpolate_bilinearly(). Otherwise decrease the time step below and
       // try again.
       accept = true;
-      for (unsigned int i = 0; i < lx; i++) {
-        for (unsigned int j = 0; j < ly; j++) {
+      for (unsigned int i = 0; i < lx; ++i) {
+        for (unsigned int j = 0; j < ly; ++j) {
           if ((proj[i][j].x + 0.5*delta_t*v_intp[i][j].x < 0.0) ||
               (proj[i][j].x + 0.5*delta_t*v_intp[i][j].x > lx) ||
               (proj[i][j].y + 0.5*delta_t*v_intp[i][j].y < 0.0) ||
@@ -205,8 +205,8 @@ void flatten_density(InsetState *inset_state)
         // OK, we can run interpolate_bilinearly().
 
 #pragma omp parallel for
-        for (unsigned int i = 0; i < lx; i++) {
-          for (unsigned int j = 0; j < ly; j++) {
+        for (unsigned int i = 0; i < lx; ++i) {
+          for (unsigned int j = 0; j < ly; ++j) {
             v_intp_half[i][j].x =
               interpolate_bilinearly(
                 proj[i][j].x + 0.5*delta_t*v_intp[i][j].x,
@@ -257,7 +257,7 @@ void flatten_density(InsetState *inset_state)
 
     // When we get here, the integration step was accepted
     t += delta_t;
-    iter++;
+    ++iter;
     proj = mid;
     delta_t *= inc_after_acc;  // Try a larger step next time
   }

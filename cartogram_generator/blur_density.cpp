@@ -5,23 +5,23 @@
 #include <iostream>
 
 void blur_density(const double blur_width,
-                  InsetState *inset_state,
-                  bool trigger_write_density_to_eps)
+                  bool plot_density,
+                  InsetState *inset_state)
 {
   const unsigned int lx = inset_state->lx();
   const unsigned int ly = inset_state->ly();
   FTReal2d &rho_ft = *inset_state->ref_to_rho_ft();
   const double prefactor = -0.5 * blur_width * blur_width * pi * pi;
-  for (unsigned int i=0; i<lx; ++i) {
+  for (unsigned int i = 0; i<lx; ++i) {
     const double scaled_i_squared = ((double) i / lx) * ((double) i / lx);
-    for (unsigned int j=0; j<ly; ++j) {
+    for (unsigned int j = 0; j<ly; ++j) {
       const double scaled_j_squared = ((double) j / ly) * ((double) j / ly);
       rho_ft(i, j) *=
         exp(prefactor * (scaled_i_squared + scaled_j_squared)) / (4*lx*ly);
     }
   }
   inset_state->execute_fftw_bwd_plan();
-  if (trigger_write_density_to_eps) {
+  if (plot_density) {
     std::string file_name =
       inset_state->pos() +
       "_blurred_density_" +

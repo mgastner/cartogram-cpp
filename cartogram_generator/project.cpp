@@ -15,8 +15,8 @@ void project(InsetState *inset_state)
   // Calculate displacement from proj array
   boost::multi_array<double, 2> xdisp(boost::extents[lx][ly]);
   boost::multi_array<double, 2> ydisp(boost::extents[lx][ly]);
-  for (unsigned int i = 0; i < lx; i++) {
-    for (unsigned int j=0; j<ly; j++) {
+  for (unsigned int i = 0; i < lx; ++i) {
+    for (unsigned int j=0; j<ly; ++j) {
       xdisp[i][j] = proj[i][j].x - i - 0.5;
       ydisp[i][j] = proj[i][j].y - j - 0.5;
     }
@@ -33,7 +33,7 @@ void project(InsetState *inset_state)
       Polygon old_ext_ring = pwh.outer_boundary();
       Polygon new_ext_ring;
 
-      for (unsigned int i = 0; i < old_ext_ring.size(); i++) {
+      for (unsigned int i = 0; i < old_ext_ring.size(); ++i) {
 
         // Update exterior ring coordinates
         double old_ext_intp_x =
@@ -48,10 +48,10 @@ void project(InsetState *inset_state)
                                      old_ext_intp_y + old_ext_ring[i][1]));
       }
       std::vector<Polygon> hole_v;
-      for (auto hci = pwh.holes_begin(); hci != pwh.holes_end(); hci++) {
+      for (auto hci = pwh.holes_begin(); hci != pwh.holes_end(); ++hci) {
         Polygon old_hole = *hci;
         Polygon new_hole;
-        for (unsigned int i = 0; i < old_hole.size(); i++) {
+        for (unsigned int i = 0; i < old_hole.size(); ++i) {
 
           // Update hole coordinates
           double old_hole_intp_x =
