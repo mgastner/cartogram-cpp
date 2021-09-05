@@ -12,6 +12,17 @@
 struct XYPoint {
   double x;
   double y;
+
+  // Overload "<" operator for this data type. Idea from
+  // https://stackoverflow.com/questions/4892680/sorting-a-vector-of-structs
+  // To be able to sort XYPoint
+  bool operator < (const XYPoint &rhs) const
+  {
+    if (x != rhs.x) {
+      return (x < rhs.x);
+    }
+    return y < rhs.y;
+  }
 };
 
 // Struct to store intersection data
@@ -21,8 +32,7 @@ struct intersection {
   std::string geo_div_id;  // GeoDIv's ID
   bool direction;  // Does intersection enter (true) or exit (false)?
 
-  // Overload "<" operator for this data type. Idea from
-  // https://stackoverflow.com/questions/4892680/sorting-a-vector-of-structs
+  // Overloading "<" operator, similar to above
   bool operator < (const intersection &rhs) const
   {
     return (x < rhs.x || (x == rhs.x && direction < rhs.direction));
