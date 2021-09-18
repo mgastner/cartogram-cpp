@@ -166,9 +166,11 @@ int main(const int argc, const char *argv[])
     }
   }
 
-  // Read geometry
+  // Read geometry. If the GeoJSON does not explicitly contain a "crs" field,
+  // assume that the coordinates are in longitude and latitude.
+  std::string crs = "+proj=longlat";
   try {
-    read_geojson(geo_file_name, make_csv, &cart_info);
+    read_geojson(geo_file_name, make_csv, &crs, &cart_info);
   } catch (const std::system_error& e) {
     std::cerr << "ERROR: "
               << e.what()
@@ -178,6 +180,7 @@ int main(const int argc, const char *argv[])
               << std::endl;
     return EXIT_FAILURE;
   }
+  std::cout << "Coordinate reference system: " << crs << std::endl;
 
   // Find smallest positive target area
   double min_positive_area = dbl_inf;
@@ -244,20 +247,11 @@ int main(const int argc, const char *argv[])
     // Can the coordinates be interpreted as longitude and latitude?
     CGAL::Bbox_2 bb = inset_state.bbox();
     if (bb.xmin() >= -180.0 && bb.xmax() <= 180.0 &&
-        bb.ymin() >= -90.0 && bb.ymax() <= 90.0) {
+        bb.ymin() >= -90.0 && bb.ymax() <= 90.0 &&
+        crs == "+proj=longlat") {
 
       // If yes, transform the coordinates with the Albers projection
-      try {
-        transform_to_albers_projection(&inset_state);
-      } catch (const std::system_error& e) {
-        std::cerr << "ERROR: "
-                  << e.what()
-                  << " ("
-                  << e.code()
-                  << ")"
-                  << std::endl;
-        return EXIT_FAILURE;
-      }
+      transform_to_albers_projection(&inset_state);
     } else if (output_equal_area) {
       std::cerr << "ERROR: Input GeoJSON is not a longitude-latitude map."
                 << std::endl;
