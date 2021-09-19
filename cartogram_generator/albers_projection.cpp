@@ -40,9 +40,6 @@ void adjust_for_dual_hemisphere(InsetState *inset_state)
     }
   }
 
-  std::cout << "max_lon_west = " << max_lon_west << std::endl;
-  std::cout << "min_lon_east = " << min_lon_east << std::endl;
-
   // Set transformation (translation) values to +360 for longitude
   Transformation translate(CGAL::TRANSLATION, CGAL::Vector_2<Epick>(360, 0));
 
@@ -88,7 +85,6 @@ Point projected_albers_coordinates(Point coords,
                                    double phi_1,
                                    double phi_2)
 {
-
   double lon_in_radians = (coords.x() * pi) / 180;
   double lat_in_radians = (coords.y() * pi) / 180;
   double x, y;
@@ -130,9 +126,6 @@ void transform_to_albers_projection(InsetState *inset_state)
   double min_lat = (bbox.ymin() * pi) / 180;
   double max_lon = (bbox.xmax() * pi) / 180;
   double max_lat = (bbox.ymax() * pi) / 180;
-
-  std::cerr << "Input bbox: [" << min_lon << ", " << min_lat << ", "
-            << max_lon << ", " << max_lat << "]" << std::endl;
 
   // Reference Longitude and Latitude
   double lambda_0 = 0.5 * (min_lon + max_lon);

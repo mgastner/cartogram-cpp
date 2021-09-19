@@ -14,7 +14,7 @@
 #include "read_geojson.h"
 #include "rescale_map.h"
 #include "write_eps.h"
-#include "write_to_json.h"
+#include "write_geojson.h"
 #include <boost/program_options.hpp>
 #include <iostream>
 
