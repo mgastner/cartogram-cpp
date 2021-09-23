@@ -389,8 +389,8 @@ void project_with_triangulation(InsetState *inset_state)
                                              old_ext_ring[i][0], old_ext_ring[i][1]);
 
         // Update exterior ring coordinates
-        new_ext_ring.push_back(round_point(Point(old_ext_ring_intp.x,
-                                                 old_ext_ring_intp.y)));
+        new_ext_ring.push_back(Point(old_ext_ring_intp.x,
+                                     old_ext_ring_intp.y));
       }
       std::vector<Polygon> hole_v;
       for (auto hci = pwh.holes_begin(); hci != pwh.holes_end(); hci++) {
@@ -430,8 +430,8 @@ void project_with_triangulation(InsetState *inset_state)
                                                &hole_triangle,
                                                old_hole[i][0], old_hole[i][1]);
 
-          new_hole.push_back(round_point(Point(old_hole_intp.x,
-                                               old_hole_intp.y)));
+          new_hole.push_back(Point(old_hole_intp.x,
+                                   old_hole_intp.y));
         }
         hole_v.push_back(new_hole);
       }

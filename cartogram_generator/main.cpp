@@ -330,9 +330,9 @@ int main(const int argc, const char *argv[])
 
       // Round all points to the number digits defined in constants.h
       // if projecting cartogram with triangulation
-      if (triangulation){
-        round_points(&inset_state);
-      }
+      // if (triangulation){
+      //   round_points(&inset_state);
+      // }
       
       // Start map integration
       while (inset_state.n_finished_integrations() < max_integrations &&
@@ -368,11 +368,11 @@ int main(const int argc, const char *argv[])
         flatten_density(&inset_state);
         
         if (triangulation){
-          // Densify map
-          inset_state.set_geo_divs(densify(inset_state.geo_divs()));
-
           // Choosing diaganols that are inside graticule cells
           choose_diag(&inset_state);
+          
+          // Densify map
+          inset_state.set_geo_divs(densify(inset_state.geo_divs()));
 
           // Projecting with Triangulation
           project_with_triangulation(&inset_state);
