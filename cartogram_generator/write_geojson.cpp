@@ -169,7 +169,7 @@ nlohmann::json cgal_to_json(CartogramInfo *cart_info)
   return container;
 }
 
-void write_to_json(nlohmann::json container,
+void write_geojson(nlohmann::json container,
                    std::string old_geo_file_name,
                    std::string new_geo_file_name,
                    std::ostream &new_geo_stream,

@@ -180,7 +180,7 @@ int main(const int argc, const char *argv[])
               << std::endl;
     return EXIT_FAILURE;
   }
-  std::cout << "Coordinate reference system: " << crs << std::endl;
+  std::cerr << "Coordinate reference system: " << crs << std::endl;
 
   // Find smallest positive target area
   double min_positive_area = dbl_inf;
@@ -384,7 +384,7 @@ int main(const int argc, const char *argv[])
     output_file_name = map_name + "_cartogram.geojson";
   }
   nlohmann::json cart_json = cgal_to_json(&cart_info);
-  write_to_json(cart_json,
+  write_geojson(cart_json,
                 geo_file_name,
                 output_file_name,
                 std::cout,
