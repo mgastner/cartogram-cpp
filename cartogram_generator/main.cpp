@@ -319,7 +319,7 @@ int main(const int argc, const char *argv[])
         double ratio_actual_to_permitted_max_area_error =
           inset_state.max_area_error().value / max_permitted_area_error;
         double n_predicted_integrations =
-          ceil(log(ratio_actual_to_permitted_max_area_error) / log(5));
+          std::max((log(ratio_actual_to_permitted_max_area_error) / log(5)), 1.0);
 
         // TODO: THIS IF-CONDITION IS INELEGANT
         if (inset_state.n_finished_integrations()  >  0) {
