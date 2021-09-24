@@ -169,7 +169,8 @@ void print_properties_map(std::map<std::string, std::vector<std::string> >
 }
 
 void read_geojson(const std::string geometry_file_name,
-                  bool make_csv,
+                  const bool make_csv,
+                  std::string *crs,
                   CartogramInfo *cart_info)
 {
   bool is_polygon;
@@ -195,6 +196,11 @@ void read_geojson(const std::string geometry_file_name,
   }
   check_geojson_validity(j);
   std::set<std::string> ids_in_geojson;
+
+  // Read coordinate reference system if it is included in the GeoJSON
+  if (j.contains(std::string{"crs"})) {
+    *crs = j["crs"];
+  }
 
   // Iterate through each inset
   for (auto &[inset_pos, inset_state] : *cart_info->ref_to_inset_states()) {

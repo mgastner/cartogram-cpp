@@ -2,6 +2,9 @@
 #define READ_GEOJSON_H_
 
 #include <string>
-void read_geojson(const std::string, bool, CartogramInfo*);
+void read_geojson(const std::string,
+                  const bool,
+                  std::string*,
+                  CartogramInfo*);
 
 #endif

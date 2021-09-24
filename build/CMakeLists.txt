@@ -71,7 +71,7 @@ add_executable(
   ../cartogram_generator/ft_real_2d.cpp
   ../cartogram_generator/interpolate_bilinearly.cpp
   ../cartogram_generator/project.cpp
-  ../cartogram_generator/write_to_json.cpp
+  ../cartogram_generator/write_geojson.cpp
   ../cartogram_generator/albers_projection.cpp)
 
 # Linking appropriate libraries required
