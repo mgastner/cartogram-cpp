@@ -56,7 +56,8 @@ void write_polygons_to_eps(std::ofstream &eps_file,
                            bool colors,
                            InsetState *inset_state)
 {
-  eps_file << 0.001 * std::min(inset_state->lx(), inset_state->ly()) << " slw\n";
+  eps_file << 0.001 * std::min(inset_state->lx(), inset_state->ly())
+           << " slw\n";
   for (auto gd : inset_state->geo_divs()) {
     for (auto pwh : gd.polygons_with_holes()) {
       Polygon ext_ring = pwh.outer_boundary();
@@ -202,10 +203,10 @@ void write_density_to_eps(std::string eps_name,
   std::ofstream eps_file(eps_name);
   write_eps_header_and_definitions(eps_file, eps_name, inset_state);
 
-  // Determine range of density
-  double dens_min = density[0];
+  // Determine range of densities
+  double dens_min = dbl_inf;
   double dens_mean = 0.0;
-  double dens_max = density[0];
+  double dens_max = -dbl_inf;
   unsigned int n_grid_cells = inset_state->lx() * inset_state->ly();
   for (unsigned int k = 0; k < n_grid_cells; ++k) {
     dens_min = std::min(density[k], dens_min);

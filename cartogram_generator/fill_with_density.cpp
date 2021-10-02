@@ -4,11 +4,11 @@
 #include "fill_with_density.h"
 
 bool ray_y_intersects(XYPoint a,
-                       XYPoint b,
-                       double ray_y,
-                       intersection *temp,
-                       double target_density,
-                       double epsilon)
+                      XYPoint b,
+                      double ray_y,
+                      intersection *temp,
+                      double target_density,
+                      double epsilon)
 {
   // Check if intersection is present
   if (((a.y <= ray_y && b.y >= ray_y) ||
@@ -32,10 +32,8 @@ bool ray_y_intersects(XYPoint a,
   return false;
 }
 
-void fill_with_density(InsetState* inset_state,
-                       bool trigger_write_density_to_eps)
+void fill_with_density(bool plot_density, InsetState* inset_state)
 {
-
   // Calculate the total current area and total target area, excluding any
   // missing values
   double total_current_area = 0.0;
@@ -75,9 +73,9 @@ void fill_with_density(InsetState* inset_state,
   // cells to not be inside any GeoDiv. Any graticule cell where rho_den is 0
   // will get the mean_density
   std::vector<std::vector<double> >
-    rho_num(inset_state->lx(), std::vector<double> (inset_state->ly(), 0));
+  rho_num(inset_state->lx(), std::vector<double> (inset_state->ly(), 0));
   std::vector<std::vector<double> >
-    rho_den(inset_state->lx(), std::vector<double> (inset_state->ly(), 0));
+  rho_den(inset_state->lx(), std::vector<double> (inset_state->ly(), 0));
 
   // Iterate through GeoDivs in inset_state
   for (auto gd : inset_state->geo_divs()) {
@@ -92,7 +90,7 @@ void fill_with_density(InsetState* inset_state,
     }
 
     // Iterate through "polygons with holes" in inset_state
-    for (int j = 0; j < gd.n_polygons_with_holes(); ++j) {
+    for (unsigned int j = 0; j < gd.n_polygons_with_holes(); ++j) {
       Polygon_with_holes pwh = gd.polygons_with_holes()[j];
       CGAL::Bbox_2 bb = pwh.bbox();
 
@@ -134,11 +132,11 @@ void fill_with_density(InsetState* inset_state,
             curr_point.y = ext_ring[l][1];
             intersection temp;
             if (ray_y_intersects(curr_point,
-                                  prev_point,
-                                  ray_y,
-                                  &temp,
-                                  target_density,
-                                  epsilon)) {
+                                 prev_point,
+                                 ray_y,
+                                 &temp,
+                                 target_density,
+                                 epsilon)) {
               temp.geo_div_id = gd.id();
               intersections.push_back(temp);
             }
@@ -157,11 +155,11 @@ void fill_with_density(InsetState* inset_state,
               curr_point.y = hole[l][1];
               intersection temp;
               if (ray_y_intersects(curr_point,
-                                    prev_point,
-                                    ray_y,
-                                    &temp,
-                                    target_density,
-                                    epsilon)) {
+                                   prev_point,
+                                   ray_y,
+                                   &temp,
+                                   target_density,
+                                   epsilon)) {
 
                 temp.geo_div_id = gd.id();
                 intersections.push_back(temp);
@@ -196,6 +194,9 @@ void fill_with_density(InsetState* inset_state,
       }
     }
   }
+
+  // Setting Horizontal Adjacency graph for automatic coloring
+  inset_state->set_horizontal_adj(map_intersections);
 
   // Filling rho_num and rho_den (rho numerator and denominator)
   // rho_num is the sum of the weight * target_density for each segment of a
@@ -236,8 +237,8 @@ void fill_with_density(InsetState* inset_state,
             // inside the graticule cell is inside the GeoDiv
             if (ceil(left_x) == ceil(right_x)) {
               double weight =
-                inset_state->area_errs_at(intersections[l].geo_div_id) *
-                                                        (right_x - left_x);
+                inset_state->area_errors_at(intersections[l].geo_div_id) *
+                (right_x - left_x);
               double target_dens = intersections[l].target_density;
               rho_num[ceil(left_x) - 1][k] += weight * target_dens;
               rho_den[ceil(left_x) - 1][k] += weight;
@@ -249,8 +250,8 @@ void fill_with_density(InsetState* inset_state,
         // the graticule cell is inside the GeoDiv
         unsigned int last_x = intersections.back().x;
         double last_weight =
-          inset_state->area_errs_at(intersections.back().geo_div_id) *
-                    (ceil(last_x) - last_x);
+          inset_state->area_errors_at(intersections.back().geo_div_id) *
+          (ceil(last_x) - last_x);
         double last_target_density = intersections.back().target_density;
         rho_num[ceil(last_x) - 1][k] += last_weight * last_target_density;
         rho_den[ceil(last_x) - 1][k] += last_weight;
@@ -278,7 +279,7 @@ void fill_with_density(InsetState* inset_state,
         for (unsigned int m = ceil(left_x); m <= ceil(right_x); ++m) {
 
           double weight =
-            inset_state->area_errs_at(intersections.back().geo_div_id);
+            inset_state->area_errors_at(intersections.back().geo_div_id);
           double target_dens = intersections[l].target_density;
           if (ceil(left_x) == ceil(right_x)) {
             weight *= (right_x - left_x);
@@ -289,7 +290,6 @@ void fill_with_density(InsetState* inset_state,
           }
           rho_num[m - 1][k] += weight * target_dens;
           rho_den[m - 1][k] += weight;
-
         }
       }
     }
@@ -306,15 +306,15 @@ void fill_with_density(InsetState* inset_state,
     }
   }
 
-  if (trigger_write_density_to_eps) {
+  if (plot_density) {
     std::string file_name =
-      inset_state->inset_name() +
+      inset_state->pos() +
       "_unblurred_density_" +
       std::to_string(inset_state->n_finished_integrations()) +
       ".eps";
-    std::cout << "Writing " << file_name << std::endl;
-    write_density_to_eps(file_name, rho_init.array(), inset_state);
+    std::cerr << "Writing " << file_name << std::endl;
+    write_density_to_eps(file_name, rho_init.as_1d_array(), inset_state);
   }
-  inset_state->execute_fwd_plan();
+  inset_state->execute_fftw_fwd_plan();
   return;
 }

@@ -1,28 +1,108 @@
+#include "constants.h"
 #include "inset_state.h"
 
-InsetState::InsetState(std::string pos) :
-  pos_(pos)
+InsetState::InsetState(std::string pos) : pos_(pos)
 {
   n_finished_integrations_ = 0;
-  fwd_plan_for_rho_ = NULL;
-  bwd_plan_for_rho_ = NULL;
   return;
 }
 
-InsetState::~InsetState()
+double InsetState::area_errors_at(const std::string id) const
 {
-  if (fwd_plan_for_rho_) {
-    fftw_destroy_plan(fwd_plan_for_rho_);
+  return area_errors_.at(id);
+}
+
+CGAL::Bbox_2 InsetState::bbox() const
+{
+  // Find joint bounding for all polygons with holes in this inset
+  double inset_xmin = dbl_inf;
+  double inset_xmax = -dbl_inf;
+  double inset_ymin = dbl_inf;
+  double inset_ymax = -dbl_inf;
+  for (GeoDiv gd : geo_divs_) {
+    for (Polygon_with_holes pgnwh : gd.polygons_with_holes()) {
+      CGAL::Bbox_2 pgnwh_bbox = pgnwh.bbox();
+      inset_xmin = std::min(pgnwh_bbox.xmin(), inset_xmin);
+      inset_ymin = std::min(pgnwh_bbox.ymin(), inset_ymin);
+      inset_xmax = std::max(pgnwh_bbox.xmax(), inset_xmax);
+      inset_ymax = std::max(pgnwh_bbox.ymax(), inset_ymax);
+    }
   }
-  if (bwd_plan_for_rho_) {
-    fftw_destroy_plan(bwd_plan_for_rho_);
+  CGAL::Bbox_2 inset_bbox(inset_xmin, inset_ymin, inset_xmax, inset_ymax);
+  return inset_bbox;
+}
+
+double InsetState::cart_area() const
+{
+  double sum_cart_area = 0;
+  for (auto gd : geo_divs_) {
+    if (!target_area_is_missing(gd.id())) {
+      sum_cart_area += gd.area();
+    }
   }
+  return sum_cart_area;
+}
+
+bool InsetState::color_found(const std::string id) const
+{
+  return colors_.count(id);
+}
+
+const Color InsetState::colors_at(const std::string id) const
+{
+  return colors_.at(id);
+}
+
+bool InsetState::colors_empty() const
+{
+  return colors_.empty();
+}
+
+void InsetState::colors_insert(const std::string id, const Color c)
+{
+  if (colors_.count(id)) {
+    colors_.erase(id);
+  }
+  colors_.insert(std::pair<std::string, Color>(id, c));
   return;
 }
 
-unsigned int InsetState::n_geo_divs() const
+void InsetState::colors_insert(const std::string id, std::string color)
 {
-  return geo_divs_.size();
+  if (colors_.count(id)) {
+    colors_.erase(id);
+  }
+
+  // From https://stackoverflow.com/questions/313970/how-to-convert-stdstring-
+  // to-lower-case
+  std::transform(color.begin(), color.end(), color.begin(), ::tolower);
+  Color c(color);
+  colors_.insert(std::pair<std::string, Color>(id, c));
+  return;
+}
+
+unsigned int InsetState::colors_size() const
+{
+  return colors_.size();
+}
+
+void InsetState::destroy_fftw_plans_for_rho()
+{
+  fftw_destroy_plan(fwd_plan_for_rho_);
+  fftw_destroy_plan(bwd_plan_for_rho_);
+  return;
+}
+
+void InsetState::execute_fftw_bwd_plan() const
+{
+  fftw_execute(bwd_plan_for_rho_);
+  return;
+}
+
+void InsetState::execute_fftw_fwd_plan() const
+{
+  fftw_execute(fwd_plan_for_rho_);
+  return;
 }
 
 const std::vector<GeoDiv> InsetState::geo_divs() const
@@ -30,73 +110,21 @@ const std::vector<GeoDiv> InsetState::geo_divs() const
   return geo_divs_;
 }
 
-std::vector<GeoDiv> *InsetState::ref_to_geo_divs()
+const std::vector<std::vector<intersection> > InsetState::horizontal_adj()
+const
 {
-  return &geo_divs_;
+  return horizontal_adj_;
 }
 
-void InsetState::set_geo_divs(std::vector<GeoDiv> geo_divs_new)
+void InsetState::increment_integration()
 {
-  geo_divs_.clear();
-  geo_divs_ = geo_divs_new;
-}
-
-void InsetState::target_areas_insert(const std::string id, const double area)
-{
-  target_areas.insert(std::pair<std::string, double>(id, area));
+  n_finished_integrations_ += 1;
   return;
 }
 
-void InsetState::colors_insert(const std::string id, std::string color)
+const std::string InsetState::inset_name() const
 {
-
-  // From https://stackoverflow.com/questions/313970/how-to-convert-stdstring-
-  // to-lower-case
-  std::transform(color.begin(), color.end(), color.begin(), ::tolower);
-  Color c(color);
-  colors.insert(std::pair<std::string, Color>(id, c));
-  return;
-}
-
-double InsetState::target_areas_at(const std::string id)
-{
-  return target_areas.at(id);
-}
-
-bool InsetState::target_area_is_missing(const std::string id) const
-{
-
-  // We use negative area as indication that GeoDiv has no target area
-  return target_areas.at(id) < 0.0;
-}
-
-const Color InsetState::colors_at(const std::string id)
-{
-  return colors.at(id);
-}
-
-bool InsetState::colors_empty() const
-{
-  return colors.empty();
-}
-
-void InsetState::make_grid(const unsigned int x, const unsigned int y)
-{
-  lx_ = x;
-  ly_ = y;
-  rho_init_.set_array_size(lx_, ly_);
-  rho_init_.allocate_ft();
-  rho_ft_.set_array_size(lx_, ly_);
-  rho_ft_.allocate_ft();
-  fwd_plan_for_rho_ =
-    fftw_plan_r2r_2d(lx_, ly_,
-                     rho_init_.array(), rho_ft_.array(),
-                     FFTW_REDFT10, FFTW_REDFT10, FFTW_ESTIMATE);
-  bwd_plan_for_rho_ =
-    fftw_plan_r2r_2d(lx_, ly_,
-                     rho_ft_.array(), rho_init_.array(),
-                     FFTW_REDFT01, FFTW_REDFT01, FFTW_ESTIMATE);
-  return;
+  return inset_name_;
 }
 
 unsigned int InsetState::lx() const
@@ -109,6 +137,37 @@ unsigned int InsetState::ly() const
   return ly_;
 }
 
+void InsetState::make_fftw_plans_for_rho()
+{
+  fwd_plan_for_rho_ =
+    fftw_plan_r2r_2d(lx_, ly_,
+                     rho_init_.as_1d_array(), rho_ft_.as_1d_array(),
+                     FFTW_REDFT10, FFTW_REDFT10, FFTW_ESTIMATE);
+  bwd_plan_for_rho_ =
+    fftw_plan_r2r_2d(lx_, ly_,
+                     rho_ft_.as_1d_array(), rho_init_.as_1d_array(),
+                     FFTW_REDFT01, FFTW_REDFT01, FFTW_ESTIMATE);
+  return;
+}
+
+double InsetState::map_scale() const
+{
+  return map_scale_;
+}
+
+struct max_area_error_info InsetState::max_area_error() const
+{
+  double value = -dbl_inf;
+  std::string worst_gd = "";
+  for (auto const &[gd_id, area_error] : area_errors_) {
+    if (area_error > value) {
+      value = area_error;
+      worst_gd = gd_id;
+    }
+  }
+  return {value, worst_gd};
+}
+
 unsigned int InsetState::new_xmin() const
 {
   return new_xmin_;
@@ -119,46 +178,24 @@ unsigned int InsetState::new_ymin() const
   return new_ymin_;
 }
 
-void InsetState::set_new_xmin(const unsigned int new_xmin)
+unsigned int InsetState::n_finished_integrations() const
 {
-  new_xmin_ = new_xmin;
+  return n_finished_integrations_;
 }
 
-void InsetState::set_new_ymin(const unsigned int new_ymin)
+unsigned int InsetState::n_geo_divs() const
 {
-  new_ymin_ = new_ymin;
+  return geo_divs_.size();
 }
 
-double InsetState::map_scale() const
+const std::string InsetState::pos() const
 {
-  return map_scale_;
+  return pos_;
 }
 
-void InsetState::set_map_scale(const double map_scale)
+boost::multi_array<XYPoint, 2> *InsetState::proj()
 {
-  map_scale_ = map_scale;
-}
-
-FTReal2d *InsetState::ref_to_rho_init()
-{
-  return &rho_init_;
-}
-
-FTReal2d *InsetState::ref_to_rho_ft()
-{
-  return &rho_ft_;
-}
-
-void InsetState::execute_fwd_plan() const
-{
-  fftw_execute(fwd_plan_for_rho_);
-  return;
-}
-
-void InsetState::execute_bwd_plan() const
-{
-  fftw_execute(bwd_plan_for_rho_);
-  return;
+  return &proj_;
 }
 
 void InsetState::push_back(const GeoDiv gd)
@@ -167,24 +204,23 @@ void InsetState::push_back(const GeoDiv gd)
   return;
 }
 
-unsigned int InsetState::n_finished_integrations() const
+std::vector<GeoDiv> *InsetState::ref_to_geo_divs()
 {
-  return n_finished_integrations_;
+  return &geo_divs_;
 }
 
-void InsetState::inc_integration()
+FTReal2d *InsetState::ref_to_rho_ft()
 {
-  n_finished_integrations_ += 1;
+  return &rho_ft_;
 }
 
-boost::multi_array<XYPoint, 2> *InsetState::proj()
+FTReal2d *InsetState::ref_to_rho_init()
 {
-  return &proj_;
+  return &rho_init_;
 }
 
-void InsetState::set_area_errs()
+void InsetState::set_area_errors()
 {
-
   // Formula for relative area error:
   // area_on_cartogram / target_area - 1
 
@@ -196,50 +232,108 @@ void InsetState::set_area_errs()
       sum_cart_area += gd.area();
     }
   }
-
   for (auto gd : geo_divs_) {
     if (!target_area_is_missing(gd.id())) {
       double obj_area =
         target_areas_at(gd.id()) * sum_cart_area / sum_target_area;
       double relative_area_error = std::abs( (gd.area() / obj_area) - 1);
-      area_errs[gd.id()] = relative_area_error;
+      area_errors_[gd.id()] = relative_area_error;
     }
   }
+  return;
 }
 
-double InsetState::area_errs_at(const std::string id) const
+void InsetState::set_geo_divs(std::vector<GeoDiv> geo_divs_new)
 {
-  return area_errs.at(id);
+  geo_divs_.clear();
+  geo_divs_ = geo_divs_new;
+  return;
 }
 
-double InsetState::max_area_err() const
+void InsetState::set_grid_dimensions(unsigned int lx, unsigned int ly)
 {
-  double mae = 0.0;
-
-  for (auto const& [gd_id, area_err] : area_errs) {
-    mae = std::max(mae, area_err);
-  }
-
-  std::cout << "max. area err: " << mae << std::endl << std::endl;
-  return mae;
+  lx_ = lx;
+  ly_ = ly;
+  return;
 }
 
-void InsetState::set_pos(std::string pos)
+void InsetState::set_horizontal_adj(std::vector<std::vector<intersection> > ha)
 {
-  pos_ = pos;
-}
-
-const std::string InsetState::pos() const
-{
-  return pos_;
+  horizontal_adj_.clear();
+  horizontal_adj_ = ha;
+  return;
 }
 
 void InsetState::set_inset_name(std::string inset_name)
 {
   inset_name_ = inset_name;
+  return;
 }
 
-const std::string InsetState::inset_name() const
+void InsetState::set_map_scale(const double map_scale)
 {
-  return inset_name_;
+  map_scale_ = map_scale;
+  return;
+}
+
+void InsetState::set_pos(std::string pos)
+{
+  pos_ = pos;
+  return;
+}
+
+void InsetState::set_vertical_adj(std::vector<std::vector<intersection> > va)
+{
+  vertical_adj_.clear();
+  vertical_adj_ = va;
+  return;
+}
+void InsetState::set_xmin(const unsigned int new_xmin)
+{
+  new_xmin_ = new_xmin;
+  return;
+}
+
+void InsetState::set_ymin(const unsigned int new_ymin)
+{
+  new_ymin_ = new_ymin;
+  return;
+}
+
+bool InsetState::target_area_is_missing(const std::string id) const
+{
+
+  // We use negative area as indication that GeoDiv has no target area
+  return target_areas_.at(id) < 0.0;
+}
+
+double InsetState::target_areas_at(const std::string id) const
+{
+  return target_areas_.at(id);
+}
+
+void InsetState::target_areas_insert(const std::string id, const double area)
+{
+  target_areas_.insert(std::pair<std::string, double>(id, area));
+  return;
+}
+
+void InsetState::target_areas_replace(const std::string id, const double area)
+{
+  target_areas_[id] = area;
+  return;
+}
+
+double InsetState::total_target_area() const
+{
+  double inset_total_target_area = 0;
+  for(auto &geo_div_target_area : target_areas_) {
+    inset_total_target_area += geo_div_target_area.second;
+  }
+  return inset_total_target_area;
+}
+
+const std::vector<std::vector<intersection> > InsetState::vertical_adj() const
+{
+  return vertical_adj_;
 }

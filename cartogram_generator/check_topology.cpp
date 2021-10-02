@@ -16,8 +16,8 @@ void holes_inside_polygons(InsetState *inset_state)
           // point in each hole is on the bounded side of the exterior ring.
           // Next, check whether the hole intersects the polygon at any point.
           // For this, the function "do_intersect(Polygon, Polygon)" may help.
-          if (ext_ring.bounded_side(hole[i]) != CGAL::ON_BOUNDED_SIDE) {
-            CGAL::set_pretty_mode(std::cout);
+          if (ext_ring.bounded_side(hole[i]) == CGAL::ON_UNBOUNDED_SIDE) {
+            CGAL::set_pretty_mode(std::cerr);
             std::cerr << "Hole detected outside polygon!" << std::endl;
             std::cerr << "Hole: " << hole << std::endl;
             std::cerr << "Polygon: " << ext_ring << std::endl;

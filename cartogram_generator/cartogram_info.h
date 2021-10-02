@@ -6,29 +6,34 @@
 
 class CartogramInfo {
 private:
-  std::vector<InsetState> inset_states_;
   std::map<std::string, std::string> gd_to_inset_;
   std::string id_header_;
-  std::string visual_variable_file_;
   std::set<std::string> ids_in_visual_variables_file_;
+  std::map<std::string, InsetState> inset_states_;
+
+  // TODO: We assume that either all external rings are counterclockwise or
+  // all are clockwise. This dichotomy covers most geospatial boundary files
+  // in the wild, but it would still be sensible to allow cases where there
+  // are external rings with opposite winding directions.
+  bool original_ext_ring_is_clockwise_;
   bool is_world_map_;
-  bool write_density_to_eps_;
-  std::string map_name_;
+  std::string visual_variable_file_;
 public:
-  explicit CartogramInfo(const std::string, const bool, const bool);
-  void set_id_header(const std::string);
-  void insert_id_in_visual_variables_file(const std::string);
-  const std::set<std::string> ids_in_visual_variables_file() const;
-  const std::string id_header() const;
-  const std::string visual_variable_file() const;
-  bool is_world_map() const;
-  bool trigger_write_density_to_eps() const;
-  void set_map_name(std::string map_name);
-  int n_insets() const;
-  const std::vector<InsetState> inset_states() const;
-  std::vector<InsetState> *ref_to_inset_states();
-  void push_back(const InsetState);
+  explicit CartogramInfo(const bool, const std::string);
   void gd_to_inset_insert(std::string, std::string);
+  const std::string id_header() const;
+  const std::set<std::string> ids_in_visual_variables_file() const;
+  void insert_id_in_visual_variables_file(const std::string);
+  void insert_inset_state(const std::string, const InsetState);
   const std::string inset_at_gd(const std::string);
+  const std::map<std::string, InsetState> inset_states() const;
+  bool is_world_map() const;
+  unsigned int n_insets() const;
+  bool original_ext_ring_is_clockwise();
+  std::map<std::string, InsetState> *ref_to_inset_states();
+  void set_id_header(const std::string);
+  void set_original_ext_ring_is_clockwise(bool);
+  double total_cart_target_area() const;
+  const std::string visual_variable_file() const;
 };
 #endif

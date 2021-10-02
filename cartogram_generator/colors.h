@@ -11,9 +11,15 @@ struct Color {
   int r;
   int g;
   int b;
+  Color();
   Color(int, int, int);
   Color(std::string);
   std::string eps();
+
+  bool operator == (const Color& rhs)
+  {
+      return (r == rhs.r && g == rhs.g && b == rhs.b);
+  }
 };
 
 static std::unordered_map<std::string, std::string> html_colors =

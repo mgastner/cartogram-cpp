@@ -3,17 +3,19 @@
 #include "constants.h"
 #include "cartogram_info.h"
 #include "inset_state.h"
+#include "albers_projection.h"
+#include "auto_color.h"
 #include "blur_density.h"
+#include "check_topology.h"
 #include "fill_with_density.h"
 #include "flatten_density.h"
 #include "project.h"
 #include "read_csv.h"
 #include "read_geojson.h"
 #include "rescale_map.h"
-#include "write_eps.h"
-#include "check_topology.h"
-#include "write_to_json.h"
 #include "simplify_map.h"
+#include "write_eps.h"
+#include "write_geojson.h"
 #include <boost/program_options.hpp>
 #include <iostream>
 
@@ -39,14 +41,19 @@ int main(const int argc, const char *argv[])
   std::string geo_file_name = "", visual_file_name = ""; // Default values
 
   // Default number of grid cells along longer Cartesian coordinate axis.
-  int long_grid_side_length = default_long_grid_side_length;
+  unsigned int long_grid_side_length = default_long_grid_side_length;
 
   // World maps need special projections. By default, we assume that the
   // input map is not a world map.
   bool world;
 
   // Other boolean values that are needed to parse the command line arguments
-  bool polygons_to_eps, density_to_eps, make_csv, simplify;
+  bool make_csv,
+       make_polygon_eps,
+       output_equal_area,
+       output_to_stdout,
+       plot_density,
+       simplify;
 
   // Parse command-line options. See
   // https://theboostcpplibraries.com/boost.program_options
@@ -67,11 +74,23 @@ int main(const int argc, const char *argv[])
       ->notifier(on_visual_variable_file),
       "CSV file with ID, area, and (optionally) colour"
       )(
+      "output_to_stdout,s",
+      value<bool>(&output_to_stdout)
+      ->default_value(false)
+      ->implicit_value(true),
+      "Output GeoJSON to stdout"
+      )(
+      "output_equal_area,q",
+      value<bool>(&output_equal_area)
+      ->default_value(false)
+      ->implicit_value(true),
+      "Output equal area GeoJSON"
+      )(
       "make_csv,m",
       value<bool>(&make_csv)
       ->default_value(false)
       ->implicit_value(true),
-      "Boolean: create a CSV file from the GeoJSON file passed to the -g flag?"
+      "Boolean: create CSV file from the GeoJSON passed to the -g flag?"
       )(
       "simplify,s",
       value<bool>(&simplify)
@@ -89,14 +108,14 @@ int main(const int argc, const char *argv[])
       )(
       "color,c",
       value<std::string>(),
-      "Column name for colors (assumed column name: \"Color\" or \"Colour\")"
+      "Column name for colors (default: \"Color\" or \"Colour\")"
       )(
-      "inset,i",
+      "inset,n",
       value<std::string>(),
-      "Column name for insets (assumed column name: \"Inset\")"
+      "Column name for insets (default: \"Inset\")"
       )(
       "long_grid_side_length,l",
-      value<int>(&long_grid_side_length),
+      value<unsigned int>(&long_grid_side_length),
       "Number of grid cells along longer Cartesian coordinate axis"
       )(
       "world,w",
@@ -106,13 +125,13 @@ int main(const int argc, const char *argv[])
       "Boolean: is input a world map in longitude-latitude format?"
       )(
       "polygons_to_eps,e",
-      value<bool>(&polygons_to_eps)
+      value<bool>(&make_polygon_eps)
       ->default_value(false)
       ->implicit_value(true),
       "Boolean: make EPS image of input and output?"
       )(
       "density_to_eps,d",
-      value<bool>(&density_to_eps)
+      value<bool>(&plot_density)
       ->default_value(false)
       ->implicit_value(true),
       "Boolean: make EPS images *_density_*.eps?"
@@ -129,10 +148,9 @@ int main(const int argc, const char *argv[])
     return EXIT_FAILURE;
   }
 
-  CartogramInfo cart_info(visual_file_name,
-                          world,
-                          density_to_eps);
-
+  // Initialize cart_info. It contains all information about the cartogram
+  // that needs to be handled by functions called from main().
+  CartogramInfo cart_info(world, visual_file_name);
   if (!make_csv) {
 
     // Read visual variables (e.g. area, color) from CSV
@@ -147,6 +165,8 @@ int main(const int argc, const char *argv[])
                 << std::endl;
       return EXIT_FAILURE;
     } catch (const std::runtime_error& e) {
+
+      // Likely due to invalid CSV file
       std::cerr << "ERROR: "
                 << e.what()
                 << std::endl;
@@ -154,9 +174,11 @@ int main(const int argc, const char *argv[])
     }
   }
 
-  // Read geometry
+  // Read geometry. If the GeoJSON does not explicitly contain a "crs" field,
+  // assume that the coordinates are in longitude and latitude.
+  std::string crs = "+proj=longlat";
   try {
-    read_geojson(geo_file_name, &cart_info, make_csv);
+    read_geojson(geo_file_name, make_csv, &crs, &cart_info);
   } catch (const std::system_error& e) {
     std::cerr << "ERROR: "
               << e.what()
@@ -166,8 +188,46 @@ int main(const int argc, const char *argv[])
               << std::endl;
     return EXIT_FAILURE;
   }
+  std::cerr << "Coordinate reference system: " << crs << std::endl;
 
-  // Determining name of input map
+  // Find smallest positive target area
+  double min_positive_area = dbl_inf;
+  for (auto &inset_state :
+       *cart_info.ref_to_inset_states() | std::views::values) {
+    for (auto gd : inset_state.geo_divs()) {
+      double target_area = inset_state.target_areas_at(gd.id());
+      if (target_area > 0.0) {
+        min_positive_area = std::min(min_positive_area, target_area);
+      }
+    }
+  }
+
+  // Progress percentage
+  double progress = 0.0;
+
+  // Store total number of GeoDivs to monitor progress
+  double total_geo_divs = 0;
+
+  // Replace non-positive target areas with a fraction of the smallest
+  // positive target area
+  double replacement_for_nonpositive_area = 0.1 * min_positive_area;
+  std::cerr << "Replacing zero target area with "
+            << replacement_for_nonpositive_area
+            << " times the minimum non-positive area"
+            << std::endl;
+  for (auto &inset_state :
+       *cart_info.ref_to_inset_states() | std::views::values) {
+    total_geo_divs += inset_state.n_geo_divs();
+    for (auto gd : inset_state.geo_divs()) {
+      double target_area = inset_state.target_areas_at(gd.id());
+      if (target_area <= 0.0) {
+        inset_state.target_areas_replace(gd.id(),
+                                         replacement_for_nonpositive_area);
+      }
+    }
+  }
+
+  // Determine name of input map
   std::string map_name = geo_file_name;
   if (map_name.find_last_of("/\\") != std::string::npos) {
     map_name = map_name.substr(map_name.find_last_of("/\\") + 1);
@@ -176,22 +236,10 @@ int main(const int argc, const char *argv[])
     map_name = map_name.substr(0, map_name.find('.'));
   }
 
-  for (auto &inset_state : *cart_info.ref_to_inset_states()) {
+  // Loop over insets
+  for (auto &[inset_pos, inset_state] : *cart_info.ref_to_inset_states()) {
 
-    // Determining the name of the inset
-    std::string inset_name = map_name;
-
-    // Printing Inset Position if multiple insets present
-    if (cart_info.n_insets() > 1) {
-      inset_name = inset_name + "_" + inset_state.pos();
-      std::cout << std::endl << std::endl
-                << "Working on Inset with position: "
-                << inset_state.pos()
-                << std::endl;
-    }
-    inset_state.set_inset_name(inset_name);
-
-    // Error checking Geometry
+    // Check for errors in the input topology
     try {
       holes_inside_polygons(&inset_state);
     } catch (const std::system_error& e) {
@@ -204,75 +252,158 @@ int main(const int argc, const char *argv[])
       return EXIT_FAILURE;
     }
 
-    // Rescale map to fit into a rectangular box [0, lx] * [0, ly].
-    rescale_map(long_grid_side_length,
-                &inset_state,
-                cart_info.is_world_map());
+    // Can the coordinates be interpreted as longitude and latitude?
+    CGAL::Bbox_2 bb = inset_state.bbox();
+    if (bb.xmin() >= -180.0 && bb.xmax() <= 180.0 &&
+        bb.ymin() >= -90.0 && bb.ymax() <= 90.0 &&
+        crs == "+proj=longlat") {
 
-    // Writing EPS, if requested by command line option
-    if (polygons_to_eps) {
-      std::cout << "Writing " << inset_name << "_input.eps" << std::endl;
-      write_map_to_eps((inset_name + "_input.eps"), &inset_state);
+      // If yes, transform the coordinates with the Albers projection
+      transform_to_albers_projection(&inset_state);
+    } else if (output_equal_area) {
+      std::cerr << "ERROR: Input GeoJSON is not a longitude-latitude map."
+                << std::endl;
+      return EXIT_FAILURE;
     }
 
-    // Setting initial area errors
-    inset_state.set_area_errs();
-
-    // Start map integration
-    while (inset_state.n_finished_integrations() < max_integrations &&
-           inset_state.max_area_err() > max_permitted_area_error) {
-
-      std::cout << "Integration number "
-                << inset_state.n_finished_integrations()
+    // Determine the name of the inset
+    std::string inset_name = map_name;
+    if (cart_info.n_insets() > 1) {
+      inset_name = inset_name + "_" + inset_pos;
+      std::cerr << "\nWorking on inset at position: "
+                << inset_pos
                 << std::endl;
+    }
+    inset_state.set_inset_name(inset_name);
+    if (output_equal_area) {
+      normalize_inset_area(&inset_state,
+                           cart_info.total_cart_target_area(),
+                           output_equal_area);
+    } else {
+
+      // Rescale map to fit into a rectangular box [0, lx] * [0, ly].
+      rescale_map(long_grid_side_length,
+                  &inset_state,
+                  cart_info.is_world_map());
+
+      // Set up Fourier transforms
+      unsigned int lx = inset_state.lx();
+      unsigned int ly = inset_state.ly();
+      inset_state.ref_to_rho_init()->allocate(lx, ly);
+      inset_state.ref_to_rho_ft()->allocate(lx, ly);
+      inset_state.make_fftw_plans_for_rho();
 
       // Simplify inset state if -s flag is passed
       if (simplify) simplify_map(&inset_state);
 
-      fill_with_density(&inset_state,
-                        cart_info.trigger_write_density_to_eps());
-      if (inset_state.n_finished_integrations() == 0) {
-        blur_density(5.0,
-                     &inset_state,
-                     cart_info.trigger_write_density_to_eps());
-      } else {
-        blur_density(0.0,
-                     &inset_state,
-                     cart_info.trigger_write_density_to_eps());
+      // Set initial area errors
+      inset_state.set_area_errors();
+
+      // Fill density to fill horizontal adjacency map
+      fill_with_density(plot_density, &inset_state);
+
+      // Automatically color GeoDivs if no colors are provided
+      if (inset_state.colors_empty()) {
+        auto_color(&inset_state);
       }
-      flatten_density(&inset_state);
-      project(&inset_state);
-      inset_state.inc_integration();
 
-      // Updating area errors
-      inset_state.set_area_errs();
-    }
+      // Write EPS if requested by command-line option
+      if (make_polygon_eps) {
+        std::cerr << "Writing " << inset_name << "_input.eps" << std::endl;
+        write_map_to_eps((inset_name + "_input.eps"), &inset_state);
+      }
 
-    // Simplify inset state if -s flag is passed
-    if (simplify) simplify_map(&inset_state);
+      // Simplify inset state if -s flag is passed
+      if (simplify) simplify_map(&inset_state);
 
-    // Printing final cartogram
-    json cart_json = cgal_to_json(&inset_state);
-    write_to_json(cart_json,
-                  geo_file_name,
-                  (inset_name + "_cartogram_scaled.geojson"));
+      // We make the approximation that the progress towards generating the
+      // cartogram is proportional to the number of GeoDivs that are in the
+      // finished insets
+      double inset_max_frac = inset_state.n_geo_divs() / total_geo_divs;
 
-    // Printing EPS of output cartogram
-    if (polygons_to_eps) {
-      std::cout << "Writing " << inset_name << "_output.eps" << std::endl;
-      write_map_to_eps((inset_name + "_output.eps"), &inset_state);
-    }
 
-    // Removing transformations
-    unscale_map(&inset_state);
+      // Start map integration
+      while (inset_state.n_finished_integrations() < max_integrations &&
+             inset_state.max_area_error().value > max_permitted_area_error) {
+        std::cerr << "Integration number "
+                  << inset_state.n_finished_integrations()
+                  << std::endl;
 
-    // Printing unscaled cartogram
-    cart_json = cgal_to_json(&inset_state);
-    write_to_json(cart_json,
-                  geo_file_name,
-                  (inset_name + "_cartogram_unscaled.geojson"));
+        // Calculate progress percentage. We assume that the maximum area
+        // error is typically reduced to 1/5 of the previous value.
+        double ratio_actual_to_permitted_max_area_error =
+          inset_state.max_area_error().value / max_permitted_area_error;
+        double n_predicted_integrations =
+          std::max((log(ratio_actual_to_permitted_max_area_error) / log(5)), 1.0);
 
+        // TODO: THIS IF-CONDITION IS INELEGANT
+        if (inset_state.n_finished_integrations()  >  0) {
+          fill_with_density(plot_density, &inset_state);
+        }
+        if (inset_state.n_finished_integrations() == 0) {
+          blur_density(5.0, plot_density, &inset_state);
+        } else {
+          blur_density(0.0, plot_density, &inset_state);
+        }
+        flatten_density(&inset_state);
+        project(&inset_state);
+        inset_state.increment_integration();
+
+        // Update area errors
+        inset_state.set_area_errors();
+        std::cerr << "max. area err: "
+                  << inset_state.max_area_error().value
+                  << ", GeoDiv: "
+                  << inset_state.max_area_error().geo_div
+                  << std::endl;
+        std::cerr << "Progress: "
+                  << progress + (inset_max_frac / n_predicted_integrations)
+                  << std::endl
+                  << std::endl;
+      }
+      progress += inset_max_frac;
+      std::cerr << "Finished inset "
+                << inset_pos
+                << "\nProgress: "
+                << progress
+                << std::endl;
+
+      // Print EPS of cartogram
+      if (make_polygon_eps) {
+        std::cerr << "Writing "
+                  << inset_state.inset_name()
+                  << "_output.eps" << std::endl;
+        write_map_to_eps((inset_state.inset_name() + "_output.eps"),
+                         &inset_state);
+      }
+
+      // Rescale insets in correct proportion to each other
+      normalize_inset_area(&inset_state,
+                           cart_info.total_cart_target_area());
+
+      // Clean up after finishing all Fourier transforms for this inset
+      inset_state.destroy_fftw_plans_for_rho();
+      inset_state.ref_to_rho_init()->free();
+      inset_state.ref_to_rho_ft()->free();
+    } // End of loop over insets
   }
 
+  // Shift insets so that they do not overlap
+  shift_insets_to_target_position(&cart_info);
+
+  // Output to GeoJSON
+  std::string output_file_name;
+  if (output_equal_area) {
+    output_file_name = map_name + "_equal_area.geojson";
+  } else {
+    output_file_name = map_name + "_cartogram.geojson";
+  }
+  nlohmann::json cart_json = cgal_to_json(&cart_info);
+  write_geojson(cart_json,
+                geo_file_name,
+                output_file_name,
+                std::cout,
+                output_to_stdout,
+                &cart_info);
   return EXIT_SUCCESS;
 }

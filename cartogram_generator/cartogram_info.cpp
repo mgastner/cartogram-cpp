@@ -1,16 +1,17 @@
 #include "cartogram_info.h"
 
-CartogramInfo::CartogramInfo(std::string v, const bool w, const bool wd2eps) :
-  visual_variable_file_(v),
+CartogramInfo::CartogramInfo(const bool w,
+                             const std::string v) :
   is_world_map_(w),
-  write_density_to_eps_(wd2eps)
+  visual_variable_file_(v)
 {
   return;
 }
 
-void CartogramInfo::set_id_header(const std::string id)
+void CartogramInfo::gd_to_inset_insert(const std::string id,
+                                       std::string inset)
 {
-  id_header_ = id;
+  gd_to_inset_.insert(std::pair<std::string, std::string>(id, inset));
   return;
 }
 
@@ -19,9 +20,10 @@ const std::string CartogramInfo::id_header() const
   return id_header_;
 }
 
-const std::string CartogramInfo::visual_variable_file() const
+const std::set<std::string> CartogramInfo::ids_in_visual_variables_file()
+const
 {
-  return visual_variable_file_;
+  return ids_in_visual_variables_file_;
 }
 
 void CartogramInfo::insert_id_in_visual_variables_file(const std::string id)
@@ -29,9 +31,22 @@ void CartogramInfo::insert_id_in_visual_variables_file(const std::string id)
   ids_in_visual_variables_file_.insert(id);
 }
 
-const std::set<std::string> CartogramInfo::ids_in_visual_variables_file() const
+void CartogramInfo::insert_inset_state(const std::string inset_pos,
+                                       const InsetState inset_state)
 {
-  return ids_in_visual_variables_file_;
+  inset_states_.insert(std::pair<std::string, InsetState>(inset_pos,
+                                                          inset_state));
+  return;
+}
+
+const std::string CartogramInfo::inset_at_gd(const std::string id)
+{
+  return gd_to_inset_.at(id);
+}
+
+const std::map<std::string, InsetState> CartogramInfo::inset_states() const
+{
+  return inset_states_;
 }
 
 bool CartogramInfo::is_world_map() const
@@ -39,44 +54,51 @@ bool CartogramInfo::is_world_map() const
   return is_world_map_;
 }
 
-bool CartogramInfo::trigger_write_density_to_eps() const
-{
-  return write_density_to_eps_;
-}
-
-void CartogramInfo::set_map_name(std::string map_name)
-{
-  map_name_ = map_name;
-}
-
-int CartogramInfo::n_insets() const
+unsigned int CartogramInfo::n_insets() const
 {
   return inset_states_.size();
 }
 
-const std::vector<InsetState> CartogramInfo::inset_states() const
+bool CartogramInfo::original_ext_ring_is_clockwise()
 {
-  return inset_states_;
+  return original_ext_ring_is_clockwise_;
 }
 
-std::vector<InsetState> *CartogramInfo::ref_to_inset_states()
+std::map<std::string, InsetState> *CartogramInfo::ref_to_inset_states()
 {
+
   return &inset_states_;
 }
 
-void CartogramInfo::push_back(const InsetState is)
+void CartogramInfo::set_id_header(const std::string id)
 {
-  inset_states_.push_back(is);
+  id_header_ = id;
   return;
 }
 
-void CartogramInfo::gd_to_inset_insert(const std::string id, std::string inset)
+double CartogramInfo::total_cart_target_area() const
 {
-  gd_to_inset_.insert(std::pair<std::string, std::string>(id, inset));
-  return;
+  double area = 0.0;
+
+  // Loop over inset states. Syntax from:
+  // https://stackoverflow.com/questions/13087028/can-i-easily-iterate-over-
+  // the-values-of-a-map-using-a-range-based-for-loop
+  for (auto const &inset_state : inset_states_ | std::views::values) {
+    for (auto gd : inset_state.geo_divs()) {
+      area += inset_state.target_areas_at(gd.id());
+    }
+  }
+  return area;
 }
 
-const std::string CartogramInfo::inset_at_gd(const std::string id)
+const std::string CartogramInfo::visual_variable_file() const
 {
-  return gd_to_inset_.at(id);
+  return visual_variable_file_;
+}
+
+void CartogramInfo::set_original_ext_ring_is_clockwise(
+  bool original_ext_ring_is_clockwise)
+{
+  original_ext_ring_is_clockwise_ = original_ext_ring_is_clockwise;
+  return;
 }
