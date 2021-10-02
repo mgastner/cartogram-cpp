@@ -74,7 +74,7 @@ int main(const int argc, const char *argv[])
       ->notifier(on_visual_variable_file),
       "CSV file with ID, area, and (optionally) colour"
       )(
-      "output_to_stdout,s",
+      "output_to_stdout,o",
       value<bool>(&output_to_stdout)
       ->default_value(false)
       ->implicit_value(true),
@@ -294,7 +294,9 @@ int main(const int argc, const char *argv[])
       inset_state.make_fftw_plans_for_rho();
 
       // Simplify inset state if -s flag is passed
-      if (simplify) simplify_map(&inset_state);
+      if (simplify) {
+        simplify_map(&inset_state);
+      }
 
       // Set initial area errors
       inset_state.set_area_errors();
@@ -314,7 +316,9 @@ int main(const int argc, const char *argv[])
       }
 
       // Simplify inset state if -s flag is passed
-      if (simplify) simplify_map(&inset_state);
+      if (simplify) {
+        simplify_map(&inset_state);
+      }
 
       // We make the approximation that the progress towards generating the
       // cartogram is proportional to the number of GeoDivs that are in the
