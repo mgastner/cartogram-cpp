@@ -1,3 +1,6 @@
+// TODO: What happens if two polygons have touching lines but the corner
+// points are not identical in both lines?
+
 /******************************** Inclusions. ********************************/
 
 #include <iostream>
@@ -47,20 +50,27 @@ void repeat_first_point_as_last_point(std::vector<GeoDiv> &gd_vector)
   return;
 }
 
-bool bboxes_overlap(Polygon pgn1, Polygon pgn2)
+bool bboxes_overlap_or_touch(Polygon pgn1, Polygon pgn2)
 {
   CGAL::Bbox_2 bbox1 = pgn1.bbox();
   CGAL::Bbox_2 bbox2 = pgn2.bbox();
 
-  /* Formula to check if two sets of bboxes overlap. */
+  // Formula to check if two sets of bboxes overlap. See
+  // https://stackoverflow.com/questions/325933/determine-whether-two-date-
+  // ranges-overlap/325964#325964 (accessed on 2021-10-05).
   return bbox1.xmax() >= bbox2.xmin() && bbox2.xmax() >= bbox1.xmin()
          && bbox1.ymax() >= bbox2.ymin() && bbox2.ymax() >= bbox1.ymin();
 }
 
-// TODO: change from "are_not" to "are" and negate the outcome
-bool pgns_are_not_contiguous(Polygon pgn1, Polygon pgn2)
+bool pgns_are_separated_and_not_identical(Polygon pgn1, Polygon pgn2)
 {
   for (Point pt : pgn2) {
+
+    // Test for equality: two polygons are equal if and only if there exists
+    // a cyclic permutation of the vertices of pgn2 such that they are equal
+    // to the vertices of pgn1. See https://doc.cgal.org/latest/Polygon/
+    // classCGAL_1_1Polygon__2.html#a0defc827866d4985ea6f4e6335f8c9a0
+    // (accessed on 2021-10-05).
     bool identical = (pgn1 == pgn2);
     auto bounded_side = CGAL::bounded_side_2(pgn1.begin(), pgn1.end(), pt);
     bool inside_of_pgn = bounded_side == CGAL::ON_BOUNDED_SIDE;
@@ -84,19 +94,19 @@ bool check_for_neighbours(std::vector<GeoDiv> gd_vector, Polygon pgn)
       Polygon outer_pgn = pgnwh.outer_boundary();
 
       /* If bboxes don't overlap, pgns are not neighbours. Continue. */
-      if (!bboxes_overlap(pgn, outer_pgn)) continue;
+      if (!bboxes_overlap_or_touch(pgn, outer_pgn)) continue;
 
       /* If pgns are contiguous, pgn is not an island. */
-      if (!pgns_are_not_contiguous(pgn, outer_pgn)) return false;
+      if (!pgns_are_separated_and_not_identical(pgn, outer_pgn)) return false;
 
       std::vector<Polygon> holes_v(pgnwh.holes_begin(), pgnwh.holes_end());
       for (Polygon hole : holes_v) {
 
         /* If bboxes don't overlap, pgns are not neighbours. Continue. */
-        if (!bboxes_overlap(pgn, hole)) continue;
+        if (!bboxes_overlap_or_touch(pgn, hole)) continue;
 
         /* If pgns are contiguous, pgn is not an island. */
-        if (!pgns_are_not_contiguous(pgn, hole)) return false;
+        if (!pgns_are_separated_and_not_identical(pgn, hole)) return false;
       }
     }
   }
@@ -148,9 +158,6 @@ std::vector<std::vector<bool> > pgn_is_island(std::vector<GeoDiv> gd_vector)
   }
   std::cout << "Number of islands: " << num_islands << std::endl;
   std::cout << "Number of non-islands: " << num_non_islands << std::endl;
-
-  exit(1);
-
   return pgn_bool_island;
 }
 
@@ -158,10 +165,13 @@ void insert_pll_into_graph(Polyline &pll,
                            Graph &graph,
                            Point_vertex_map &pv_map)
 {
-  vertex_descriptor u, v;
-  for (int i = 0; i < (int) pll.size(); i++) {
+  for (unsigned int i = 0; i < pll.size(); ++i) {
+    vertex_descriptor u, v;
 
     /* If the point is not yet in the graph. */
+
+    // TODO: pv_map.contains(pll[i]) should work and would be more elegant.
+    // See https://en.cppreference.com/w/cpp/container/map/contains
     if (pv_map.find(pll[i]) == pv_map.end()) {
       v = add_vertex(graph);
       pv_map[pll[i]] = v;
@@ -171,6 +181,9 @@ void insert_pll_into_graph(Polyline &pll,
 
     /* Associate the point to the vertex. */
     graph[v] = pll[i];
+
+    // TODO: This if-condition would better be handled outside the for-loop.
+    // Instead, the loop should start at 1.
     if (i != 0) {
       add_edge(u, v, graph);
     }
