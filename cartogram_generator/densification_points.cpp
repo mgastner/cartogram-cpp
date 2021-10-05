@@ -6,34 +6,40 @@
 // the point (-1, -1) that is always outside of the graticule grid cell.
 XYPoint calc_intersection(XYPoint a1, XYPoint a2, XYPoint b1, XYPoint b2){
   
+  // Check if any segment is undefined, i.e. defined by identical points
+  if (a1 == a2 || b1 == b2) {
+    std::cerr << "ERROR: End points of line segment are identical" << std::endl;
+    _Exit(EXIT_FAILURE);
+  }
+  
   // Get line equations
   double a = (a1.y - a2.y) / (a1.x - a2.x);
-  double a_intercept = a1.y - a1.x * a;
+  double a_intercept = a1.y - (a1.x * a);
   double b = (b1.y - b2.y) / (b1.x - b2.x);
-  double b_intercept = b1.y - b1.x * b;
+  double b_intercept = b1.y - (b1.x * b);
 
   XYPoint intersection;
 
-  if (!isnan(a) && isnan(b)){
+  if (isfinite(a) && isfinite(b) && a != b){
+
+    // No vertical line.
+    intersection.x = (b_intercept - a_intercept) / (a - b);
+    intersection.y = a * intersection.x + a_intercept;
+
+  } else if (isfinite(a) && isinf(b)){
 
     // Case where only line b is vertical.
     intersection.x = b1.x;
     intersection.y = a * b1.x + a_intercept;
 
-  } else if (isnan(a) && !isnan(b)){
+  } else if (isfinite(b) && isinf(a)){
 
     // Case where only line a is vertical.
     intersection.x = a1.x;
     intersection.y = b * a1.x + b_intercept;
 
-  } else if ((!isnan(a) && !isnan(a)) || (a == b)){
-    
-    // No vertical line.
-    intersection.x = (b_intercept - a_intercept) / (a - b);
-    intersection.y = a * intersection.x + a_intercept;
+  } else {
 
-  } else{
-    
     // Set negative intersection coordinates if there is no solution or
     // infinitely many solutions.
     intersection.x = -1;
@@ -46,8 +52,8 @@ XYPoint calc_intersection(XYPoint a1, XYPoint a2, XYPoint b1, XYPoint b2){
 
 // This function takes two points, "a" and "b", and returns all horizontal and
 // vertical intersections with a graticule with graticule lines placed
-// 1 unit apart. Further, it returns all points that collide with the diaganol
-// of grid cells. Assumes grid cells to start at 0.5, 0.5
+// 1 unit apart. It also returns all intersections with the diagonals of these
+// graticule cells. Assumes graticule cells to start at 0.5, 0.5.
 std::vector<Point> densification_points(Point a_, Point b_)
 {
   
@@ -69,17 +75,17 @@ std::vector<Point> densification_points(Point a_, Point b_)
   temp_intersections.push_back(a);
   temp_intersections.push_back(b);
 
-  // Get graticule coordinates for a.
+  // Get bottom-left point of graticule cell containing a.
   XYPoint av0;
   av0.x = floor(a.x + 0.5) - 0.5;
   av0.y = floor(a.y + 0.5) - 0.5;
 
-  // Get graticule coordinates for b.
+  // Get bottom-left point of graticule cell containing b.
   XYPoint bv0;
   bv0.x = floor(b.x + 0.5) - 0.5;
   bv0.y = floor(b.y + 0.5) - 0.5;
 
-  // Get bottom-left (start_v) and top-right (end_v) corners of
+  // Get bottom-left (start_v) and top-right (end_v) graticule cells of
   // the graticule cell rectangle (the smallest rectangular section
   // of the graticule grid cell containing both points)
   XYPoint start_v;
@@ -121,10 +127,13 @@ std::vector<Point> densification_points(Point a_, Point b_)
       graticule_intersections.push_back(calc_intersection(a, b, v0, v2));
       graticule_intersections.push_back(calc_intersection(a, b, v3, v1));
 
-      // Add segment intersections only
+      // Add segment intersections only. Usually, it is enough to check that the x
+      // coordinate of the intersection is within bounds, but in some edge cases,
+      // it is possible that the x-coordinate is without bounds but the y coordinate
+      // is outside, i.e. when (ab) is vertical.
       for (XYPoint inter : graticule_intersections){
-        if ((a.x <= inter.x && inter.x <= b.x) ||
-            (b.x <= inter.x && inter.x <= a.x)){
+        if (((a.x <= inter.x && inter.x <= b.x) || (b.x <= inter.x && inter.x <= a.x)) &&
+            ((a.y <= inter.y && inter.y <= b.y) || (b.y <= inter.y && inter.y <= a.y))){
           temp_intersections.push_back(inter);
         }
       }
@@ -145,8 +154,7 @@ std::vector<Point> densification_points(Point a_, Point b_)
     Point(temp_intersections[0].x, temp_intersections[0].y)
   );
   for (unsigned int i = 1; i < temp_intersections.size(); ++i){
-    if ((temp_intersections[i - 1].x != temp_intersections[i].x) ||
-        (temp_intersections[i - 1].y != temp_intersections[i].y)){
+    if (temp_intersections[i - 1] != temp_intersections[i]){
       intersections.push_back(
         Point(temp_intersections[i].x, temp_intersections[i].y)
       );
@@ -156,16 +164,16 @@ std::vector<Point> densification_points(Point a_, Point b_)
 }
 
 // Round a double down to round_digits digits after decimal point.
-double round_coordinate(double value){
+double rounded_coordinate(double value){
   return round(value * round_digits) / round_digits;
 }
 
 // Truncate the coordinates of a point
-Point round_point(Point p1) {
-  double x1 = round_coordinate(p1[0]);
-  double y1 = round_coordinate(p1[1]);
-  Point rounded_point(x1, y1);
-  return rounded_point;
+Point rounded_point(Point p1) {
+  double x1 = rounded_coordinate(p1[0]);
+  double y1 = rounded_coordinate(p1[1]);
+  Point rounded(x1, y1);
+  return rounded;
 }
 
 // Very similar doubles

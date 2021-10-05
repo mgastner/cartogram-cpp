@@ -86,7 +86,7 @@ void choose_diag(InsetState *inset_state)
   boost::multi_array<int, 2> &graticule_diagonals = *inset_state->graticule_diagonals();
 
   // Initialize array if running for the first time
-  if (inset_state->n_finished_integrations() == 0) {
+  if (graticule_diagonals.shape()[0] != lx || graticule_diagonals.shape()[1] != ly) {
     graticule_diagonals.resize(boost::extents[lx][ly]);
   }
 
@@ -130,23 +130,23 @@ void choose_diag(InsetState *inset_state)
       } else if (trans_graticule.bounded_side(Point(midpoint1.x, midpoint1.y)) == CGAL::ON_BOUNDED_SIDE){
         graticule_diagonals[i][j] = 1;
       } else {
-        std::cout << "Invalid graticule cell! At\n";
-        std::cout << "(" << v0x << ", " << v0y << ")\n";
-        std::cout << "(" << v1x << ", " << v1y << ")\n";
-        std::cout << "(" << v2x << ", " << v2y << ")\n";
-        std::cout << "(" << v3x << ", " << v3y << ")\n";
-        std::cout << "i: " << i << "j: " << j << "\n";
+        std::cerr << "Invalid graticule cell! At\n";
+        std::cerr << "(" << v0x << ", " << v0y << ")\n";
+        std::cerr << "(" << v1x << ", " << v1y << ")\n";
+        std::cerr << "(" << v2x << ", " << v2y << ")\n";
+        std::cerr << "(" << v3x << ", " << v3y << ")\n";
+        std::cerr << "i: " << i << "j: " << j << "\n";
         exit(1);
       }
 
       if (trans_graticule.is_convex() == false){
         num_concave += 1;
-        // std::cout << "Concave graticule cell " << i << " by " << j << "\n";
-        // std::cout << "V0: " << v0x << " " << v0y << "\n";
-        // std::cout << "V1: " << v1x << " " << v1y << "\n";
-        // std::cout << "V2: " << v2x << " " << v2y << "\n";
-        // std::cout << "V3: " << v3x << " " << v3y << "\n";
-        // std::cout << "Diagonal chosen: " << graticule_diagonals[i][j] << "\n";
+        // std::cerr << "Concave graticule cell " << i << " by " << j << "\n";
+        // std::cerr << "V0: " << v0x << " " << v0y << "\n";
+        // std::cerr << "V1: " << v1x << " " << v1y << "\n";
+        // std::cerr << "V2: " << v2x << " " << v2y << "\n";
+        // std::cerr << "V3: " << v3x << " " << v3y << "\n";
+        // std::cerr << "Diagonal chosen: " << graticule_diagonals[i][j] << "\n";
       }
     }
   }
@@ -182,8 +182,9 @@ std::vector<XYPoint> find_triangle(const double x,
   double v3x = v0x;
   double v3y = v0y + 1.0;
 
-  // There are always two triangles in a graticule cell. The coordinates
-  // of these triangles differ based on the chosen diagonal.
+  // Assuming that the transformed graticule does not have self-intersections, at least
+  // one of the diagonals must be completely inside the graticule. We use that diagonal
+  // to split the graticule into two triangles.
   Polygon triangle1;
   Polygon triangle2;
 
@@ -239,7 +240,7 @@ std::vector<XYPoint> find_triangle(const double x,
     }
 
   } else {
-    std::cout << "Point not in graticule cell!\n";
+    std::cerr << "Point not in graticule cell!\n";
     exit(1);
   }
 
@@ -306,7 +307,7 @@ void round_points (InsetState *inset_state)
       Polygon new_ext_ring;
 
       for (unsigned int i = 0; i < old_ext_ring.size(); i++) {
-        new_ext_ring.push_back(round_point(old_ext_ring[i]));
+        new_ext_ring.push_back(rounded_point(old_ext_ring[i]));
       }
 
       std::vector<Polygon> hole_v;
@@ -314,7 +315,7 @@ void round_points (InsetState *inset_state)
         Polygon old_hole = *hci;
         Polygon new_hole;
         for (unsigned int i = 0; i < old_hole.size(); i++) {
-          new_hole.push_back(round_point(old_hole[i]));
+          new_hole.push_back(rounded_point(old_hole[i]));
         }
         hole_v.push_back(new_hole);
       }
