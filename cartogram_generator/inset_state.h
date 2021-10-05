@@ -23,6 +23,12 @@ struct XYPoint {
     }
     return y < rhs.y;
   }
+
+  // Overload "==" and "!=" operators for XYPoint type.
+  bool operator == (const XYPoint &rhs) const
+  {
+    return (x == rhs.x && y == rhs.y);
+  }
 };
 
 // Struct to store intersection data
