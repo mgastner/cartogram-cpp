@@ -148,6 +148,8 @@ void heatmap_color(double dens,
                    double *g,
                    double *b)
 {
+
+  // Assigning possible categories for red, green, blue
   double red[] = {
     0.33, 0.55, 0.75, 0.87, 0.96, 0.99, 0.78, 0.50, 0.21, 0.00, 0.00
   };
@@ -159,6 +161,8 @@ void heatmap_color(double dens,
   };
   double xmin, xmax;
   int color_category;
+
+  // Choosing color cateogry
   if (dens > dens_max) {
     *r = red[0];
     *g = green[0];
@@ -173,6 +177,15 @@ void heatmap_color(double dens,
     xmax = dens_mean - 0.2 * (color_category - 5) * (dens_mean - dens_min);
     xmin = xmax - 0.2 * (dens_mean - dens_min);
   } else {
+    *r = red[10];
+    *g = green[10];
+    *b = blue[10];
+    return;
+  }
+
+  // If color_category out of bounds
+  // TODO: Find cause of bug, add 12th color?
+  if (color_category >= 10) {
     *r = red[10];
     *g = green[10];
     *b = blue[10];
