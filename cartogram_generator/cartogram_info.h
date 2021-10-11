@@ -21,8 +21,8 @@ private:
   std::string visual_variable_file_;
 
   // Boolean to check whether NA values and Zero vaues exist
-  bool is_ta_na_ = false;
-  bool is_ta_zero_ = false;
+  bool ta_na_exists_ = false;
+  bool ta_zero_exists_ = false;
 public:
   explicit CartogramInfo(const bool, const std::string);
   void gd_to_inset_insert(std::string, std::string);

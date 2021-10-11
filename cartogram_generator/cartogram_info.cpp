@@ -107,41 +107,21 @@ void CartogramInfo::set_original_ext_ring_is_clockwise(
 
 void CartogramInfo::set_ta_NA_flag()
 {
- is_ta_na_ = true;
+ ta_na_exists_ = true;
  return;
 }
 
 void CartogramInfo::set_ta_zero_flag()
 {
- is_ta_zero_ = true;
+ ta_zero_exists_ = true;
  return;
 }
 
 void CartogramInfo::assign_ta_to_na_and_zero()
 {
-  if (is_ta_na_) {
-    double total_non_na_area = 0;
-    double total_non_na_ta = total_cart_target_area();
 
-    // Finding total area of non na geodivs
-    for (auto const &inset_state : inset_states_ | std::views::values) {
-      total_non_na_area += inset_state.cart_area();
-    }
-
-    // Assigning GeoDivs new target areas
-    for (auto &inset_state : inset_states_ | std::views::values) {
-      for (auto const gd : inset_state.geo_divs()) {
-        if (inset_state.target_area_is_missing(gd.id())) {
-
-          // Replace target_area
-          double new_target_area =
-            (total_non_na_ta / total_non_na_area) * gd.area();
-          inset_state.target_areas_replace(gd.id(), new_target_area);
-        }
-      }
-    }
-  }
-  if (is_ta_zero_) {
+  // Dealing with Zero Target Areas
+  if (ta_zero_exists_) {
 
     // Find smallest positive target area
     double min_positive_area = dbl_inf;
@@ -150,6 +130,15 @@ void CartogramInfo::assign_ta_to_na_and_zero()
         double target_area = inset_state.target_areas_at(gd.id());
         if (target_area > 0.0) {
           min_positive_area = std::min(min_positive_area, target_area);
+        }
+      }
+    }
+
+    // If everything is Zero, or NA, minimum GeoDiv area taken (not target area) 
+    if (min_positive_area == dbl_inf) {
+      for (auto const &inset_state : inset_states_ | std::views::values) {
+        for (auto const gd : inset_state.geo_divs()) {
+          min_positive_area = std::min(min_positive_area, gd.area());
         }
       }
     }
@@ -167,6 +156,37 @@ void CartogramInfo::assign_ta_to_na_and_zero()
         if (target_area == 0.0) {
           inset_state.target_areas_replace(gd.id(),
                                            replacement_for_nonpositive_area);
+        }
+      }
+    }
+  }
+
+  // Dealing with NA Target Areas
+  if (ta_na_exists_) {
+    double total_non_na_area = 0.0;
+    double total_non_na_ta = total_cart_target_area();
+
+    // Finding total area of non na geodivs
+    for (auto const &inset_state : inset_states_ | std::views::values) {
+      total_non_na_area += inset_state.cart_area();
+    }
+
+    // Assigning GeoDivs new target areas
+    for (auto &inset_state : inset_states_ | std::views::values) {
+      for (auto const gd : inset_state.geo_divs()) {
+        if (inset_state.target_area_is_missing(gd.id())) {
+          double new_target_area;
+
+          // If everything is NA, make all GeoDivs their actual area
+          if (total_non_na_ta == 0.0) {
+            new_target_area = gd.area();
+          } else {
+
+            // Replace target_area
+            new_target_area = (total_non_na_ta / total_non_na_area) * gd.area();
+          }
+
+          inset_state.target_areas_replace(gd.id(), new_target_area);
         }
       }
     }
