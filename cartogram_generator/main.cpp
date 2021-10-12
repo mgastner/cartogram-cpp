@@ -368,8 +368,8 @@ int main(const int argc, const char *argv[])
         flatten_density(&inset_state);
         
         if (triangulation){
-          // Choosing diaganols that are inside graticule cells
-          choose_diag(&inset_state);
+          // Choosing diagonals that are inside graticule cells
+          fill_graticule_diagonals(&inset_state);
           
           // Densify map
           inset_state.set_geo_divs(densify(inset_state.geo_divs()));

@@ -8,7 +8,7 @@ void project(InsetState*);
 
 void project_with_triangulation(InsetState*);
 
-void choose_diag(InsetState*);
+void fill_graticule_diagonals(InsetState*);
 
 void round_points(InsetState*);
 
