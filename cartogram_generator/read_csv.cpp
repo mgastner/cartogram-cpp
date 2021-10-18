@@ -93,14 +93,11 @@ void read_csv(const boost::program_options::variables_map vm,
       if (area < 0.0) {
         std::cerr << "ERROR: negative area in CSV" << std::endl;
         _Exit(101);
-      } else if (area == 0) {
-        cart_info->set_ta_zero_flag();
       }
     } else {  // We get here if one of the areas is missing ("NA")
       std::cerr << "area_field: " << area_field.get() << std::endl;
       if (area_field.get().compare("NA") == 0) {
         area = -1.0;  // Use negative area as sign of a missing value
-        cart_info->set_ta_NA_flag();
       } else {
         std::cerr << "ERROR: Areas must be numeric or NA" << std::endl;
         _Exit(201);

@@ -189,8 +189,8 @@ int main(const int argc, const char *argv[])
     total_geo_divs += inset_state.n_geo_divs();
   }
 
-  // Fixing NA and Zero vaues
-  cart_info.assign_ta_to_na_and_zero();
+  // Replacing missing and zero target areas with absolute values
+  cart_info.replace_missing_and_zero_target_areas();
 
   // Determine name of input map
   std::string map_name = geo_file_name;
@@ -251,7 +251,7 @@ int main(const int argc, const char *argv[])
     inset_state.set_inset_name(inset_name);
     if (output_equal_area) {
       normalize_inset_area(&inset_state,
-                           cart_info.total_cart_target_area(),
+                           cart_info.cart_non_missing_target_area(),
                            output_equal_area);
     } else {
 
@@ -346,7 +346,7 @@ int main(const int argc, const char *argv[])
 
       // Rescale insets in correct proportion to each other
       normalize_inset_area(&inset_state,
-                           cart_info.total_cart_target_area());
+                           cart_info.cart_non_missing_target_area());
 
       // Clean up after finishing all Fourier transforms for this inset
       inset_state.destroy_fftw_plans_for_rho();

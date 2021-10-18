@@ -182,15 +182,6 @@ void heatmap_color(double dens,
     *b = blue[10];
     return;
   }
-
-  // If color_category out of bounds
-  // TODO: Find cause of bug, add 12th color?
-  if (color_category >= 10) {
-    *r = red[10];
-    *g = green[10];
-    *b = blue[10];
-    return;
-  }
   *r = interpolate_for_heatmap(dens,
                                xmin,
                                xmax,

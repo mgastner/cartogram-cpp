@@ -20,9 +20,6 @@ private:
   bool is_world_map_;
   std::string visual_variable_file_;
 
-  // Boolean to check whether NA values and Zero vaues exist
-  bool ta_na_exists_ = false;
-  bool ta_zero_exists_ = false;
 public:
   explicit CartogramInfo(const bool, const std::string);
   void gd_to_inset_insert(std::string, std::string);
@@ -38,10 +35,8 @@ public:
   std::map<std::string, InsetState> *ref_to_inset_states();
   void set_id_header(const std::string);
   void set_original_ext_ring_is_clockwise(bool);
-  double total_cart_target_area() const;
+  double cart_non_missing_target_area() const;
   const std::string visual_variable_file() const;
-  void set_ta_NA_flag();
-  void set_ta_zero_flag();
-  void assign_ta_to_na_and_zero();
+  void replace_missing_and_zero_target_areas();
 };
 #endif

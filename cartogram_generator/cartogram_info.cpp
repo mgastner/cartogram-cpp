@@ -76,7 +76,7 @@ void CartogramInfo::set_id_header(const std::string id)
   return;
 }
 
-double CartogramInfo::total_cart_target_area() const
+double CartogramInfo::cart_non_missing_target_area() const
 {
   double area = 0.0;
 
@@ -105,36 +105,41 @@ void CartogramInfo::set_original_ext_ring_is_clockwise(
   return;
 }
 
-void CartogramInfo::set_ta_NA_flag()
-{
- ta_na_exists_ = true;
- return;
-}
-
-void CartogramInfo::set_ta_zero_flag()
-{
- ta_zero_exists_ = true;
- return;
-}
-
-void CartogramInfo::assign_ta_to_na_and_zero()
+void CartogramInfo::replace_missing_and_zero_target_areas()
 {
 
-  // Dealing with Zero Target Areas
-  if (ta_zero_exists_) {
+
+  // Checking whether target areas that are equal to zero or NA exist
+  bool ta_zero_exists = false, ta_na_exists = false;
+  for (auto const &inset_state : inset_states_ | std::views::values) {
+    for (auto const gd : inset_state.geo_divs()) {
+      double target_area = inset_state.target_areas_at(gd.id());
+      if (target_area == 0.0) {
+        ta_zero_exists = true;
+      } else if (target_area < 0) {
+        ta_na_exists = true;
+      }
+    }
+  }
+
+  // Dealing with target areas that are equal to zero
+  if (ta_zero_exists) {
 
     // Find smallest positive target area
     double min_positive_area = dbl_inf;
     for (auto const &inset_state : inset_states_ | std::views::values) {
       for (auto const gd : inset_state.geo_divs()) {
         double target_area = inset_state.target_areas_at(gd.id());
+
+        // Target area not equal to zero and not missing
         if (target_area > 0.0) {
           min_positive_area = std::min(min_positive_area, target_area);
         }
       }
     }
 
-    // If everything is Zero, or NA, minimum GeoDiv area taken (not target area) 
+    // If all target areas are zero or missing, we assign the minimum GeoDiv
+    // area (instead of the minimum target area) to min_positive_area
     if (min_positive_area == dbl_inf) {
       for (auto const &inset_state : inset_states_ | std::views::values) {
         for (auto const gd : inset_state.geo_divs()) {
@@ -161,10 +166,10 @@ void CartogramInfo::assign_ta_to_na_and_zero()
     }
   }
 
-  // Dealing with NA Target Areas
-  if (ta_na_exists_) {
+  // Dealing with missing target areas
+  if (ta_na_exists) {
     double total_non_na_area = 0.0;
-    double total_non_na_ta = total_cart_target_area();
+    double total_non_na_ta = cart_non_missing_target_area();
 
     // Finding total area of non na geodivs
     for (auto const &inset_state : inset_states_ | std::views::values) {
@@ -177,7 +182,8 @@ void CartogramInfo::assign_ta_to_na_and_zero()
         if (inset_state.target_area_is_missing(gd.id())) {
           double new_target_area;
 
-          // If everything is NA, make all GeoDivs their actual area
+          // If all target areas are missing, make all GeoDivs equal to their
+          // geographic area
           if (total_non_na_ta == 0.0) {
             new_target_area = gd.area();
           } else {
