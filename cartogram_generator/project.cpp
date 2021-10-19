@@ -345,52 +345,12 @@ XYPoint affine_trans(std::vector<XYPoint> *tri,
   Matrix pqr_mP((*tri)[0], (*tri)[1], (*tri)[2]);
 
   // Calculating transformation matrix
-  Matrix mT = pqr_mP.multiply(abc_mA.inverse());
+  Matrix mT = pqr_mP.multiplied_with(abc_mA.inverse());
 
   // Transforming point and pushing back to temporary_ext_boundary
   XYPoint post = mT.transform_XYPoint(pre);
 
   return post;
-}
-
-void round_points (InsetState *inset_state)
-{
-  std::vector<GeoDiv> new_geo_divs;
-
-  for (GeoDiv gd : inset_state->geo_divs()) {
-
-    // For each GeoDiv
-    GeoDiv new_gd(gd.id());
-
-    for (auto pwh : gd.polygons_with_holes()) {
-
-      // For each polygon with holes
-      Polygon old_ext_ring = pwh.outer_boundary();
-      Polygon new_ext_ring;
-
-      for (unsigned int i = 0; i < old_ext_ring.size(); i++) {
-        new_ext_ring.push_back(rounded_point(old_ext_ring[i]));
-      }
-
-      std::vector<Polygon> hole_v;
-      for (auto hci = pwh.holes_begin(); hci != pwh.holes_end(); hci++) {
-        Polygon old_hole = *hci;
-        Polygon new_hole;
-        for (unsigned int i = 0; i < old_hole.size(); i++) {
-          new_hole.push_back(rounded_point(old_hole[i]));
-        }
-        hole_v.push_back(new_hole);
-      }
-      const Polygon_with_holes new_pwh(new_ext_ring,
-                                       hole_v.begin(),
-                                       hole_v.end());
-      new_gd.push_back(new_pwh);
-    }
-    new_geo_divs.push_back(new_gd);
-  }
-  inset_state->set_geo_divs(new_geo_divs);
-
-  return;
 }
 
 void project_with_triangulation(InsetState *inset_state)

@@ -88,13 +88,13 @@ Matrix Matrix::inverse() {
   Matrix inv = adjugate();
 
   // dividing by determinant
-  inv.scale(1 / det());
+  inv.scale(1.0 / det());
 
   // returning resultant matrix
   return inv;
 }
 
-Matrix Matrix::multiply(Matrix m1) {
+Matrix Matrix::multiplied_with(Matrix m1) {
 
   Matrix result;
 
@@ -110,16 +110,6 @@ Matrix Matrix::multiply(Matrix m1) {
 
   return result;
 
-}
-
-// transforms point based on a transformation matrix
-Point Matrix::transform_point(Point point) {
-
-  double x = p11 * (point[0]) + p12 * (point[1]) + p13;
-  double y = p21 * (point[0]) + p22 * (point[1]) + p23;
-
-  Point transformed(x, y);
-  return transformed;
 }
 
 // transforms XYPoint based on a transformation matrix

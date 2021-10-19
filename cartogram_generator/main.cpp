@@ -327,12 +327,6 @@ int main(const int argc, const char *argv[])
       // cartogram is proportional to the number of GeoDivs that are in the
       // finished insets
       double inset_max_frac = inset_state.n_geo_divs() / total_geo_divs;
-
-      // Round all points to the number digits defined in constants.h
-      // if projecting cartogram with triangulation
-      // if (triangulation){
-      //   round_points(&inset_state);
-      // }
       
       // Start map integration
       while (inset_state.n_finished_integrations() < max_integrations &&
@@ -372,7 +366,9 @@ int main(const int argc, const char *argv[])
           fill_graticule_diagonals(&inset_state);
           
           // Densify map
-          inset_state.set_geo_divs(densify(inset_state.geo_divs()));
+          inset_state.set_geo_divs(
+            densified_geo_divs(inset_state.geo_divs())
+          );
 
           // Projecting with Triangulation
           project_with_triangulation(&inset_state);
