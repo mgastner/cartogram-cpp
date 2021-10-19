@@ -223,6 +223,8 @@ Graph create_pll_graph(std::vector<GeoDiv> gd_vector)
 
 /* Struct template using Graph internally. */
 template <typename Graph>
+
+// TODO: WE USE UPPER CAMEL CASE FOR STRUCTS: PolylineVisitor
 struct Polyline_visitor
 {
   std::list<Polyline>& pll_list;
@@ -241,10 +243,16 @@ struct Polyline_visitor
   }
 
   void add_node(typename boost::graph_traits<Graph>::vertex_descriptor vd) {
+
+    // TODO: WOULD IT BE POSSIBLE TO SIMPLIFY THE NEXT TWO LINES TO:
+    // pll_list.push_back(points_pmap[vd]);
     Polyline& pll = pll_list.back();
     pll.push_back(points_pmap[vd]);
   }
 
+  // TODO: COULD WE DO SOMETHING MEANINGFUL IN end_polyline()? FOR EXAMPLE,
+  // DETERMINE WHETHER THE END POINT IS EQUAL TO THE STARTING POINT AND, HENCE
+  // THE POLYLINE COMES FROM AN ISLAND OR A HOLE?
   void end_polyline() {
   }
 };
@@ -264,6 +272,8 @@ void print_pll_adv(Polyline_advanced pll_adv) {
  */
 class PgnProg {
 private:
+
+// Can endpts be a simple fixed-size array "Point enpts[2]"?
 std::vector<Point> endpts;
 int island = false;
 int num_holes = 0;
@@ -311,14 +321,18 @@ void update_prog() {
 }
 
 /**
+   // TODO: BRUSSELS IS NOT ENCLOSED BY A HOLE?
  * lone_pgn includes islands and polygons enclosed by a hole.
  * e.g. Brussels
  *
+   // TODO: I DO NOT UNDERSTAND THE NEXT COMMENT
  * So, if the current pgnwh has 0 holes, then the pll that it is
  * matched to is an island, otherwise, it is not an island.
  */
+
+// TODO: WHY DO WE NEED THIS FUNCTION? IT HARDLY DOES ANYTHING.
 void set_lone_pgn() {
-  island = num_holes == 0 ? true : false;
+  island = (num_holes == 0);
 }
 
 /**
@@ -352,6 +366,9 @@ std::map<int, std::map<int, PgnProg> > create_pgnprog_map(
  * Check if pll_adv is on the boundary of pgn and return the
  * number of pll_adv vertices on the boundary of the pgn.
  */
+// TODO: THE FUNCTION NAME DOES NOT REVEAL WHAT THE RETURN VALUE IS. THE
+// FUNCTION RETURNS WHETHER A POLYLINE HAS 0, 1, 2 OR >=3 POINTS ON THE
+// BOUNDARY OF A GIVEN POLYGON.
 int check_if_pll_adv_on_pgn_boundary(Polyline_advanced pll_adv, Polygon pgn)
 {
   /* Iterate through all vertices (points) inside the polyline. */
@@ -966,6 +983,15 @@ void simplify_map(InsetState *inset_state)
   std::list<Polyline> polyline_list;
   Polyline_visitor<Graph> polyline_visitor(polyline_list, graph);
   CGAL::split_graph_into_polylines(graph, polyline_visitor);
+
+  for (auto const &pll : polyline_list) {
+    std::cerr << "A new polyline:" << std::endl;
+    for (auto pt : pll) {
+      std::cerr << "\t" << pt << std::endl;
+    }
+  }
+
+  exit(1);
 
   /* 4. Store polylines from polyline_list in a CT object.                   */
   CT ct;

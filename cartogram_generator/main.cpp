@@ -281,6 +281,11 @@ int main(const int argc, const char *argv[])
                            output_equal_area);
     } else {
 
+      // Simplify inset state if -s flag is passed
+      if (simplify) {
+        simplify_map(&inset_state);
+      }
+      
       // Rescale map to fit into a rectangular box [0, lx] * [0, ly].
       rescale_map(long_grid_side_length,
                   &inset_state,
@@ -292,11 +297,6 @@ int main(const int argc, const char *argv[])
       inset_state.ref_to_rho_init()->allocate(lx, ly);
       inset_state.ref_to_rho_ft()->allocate(lx, ly);
       inset_state.make_fftw_plans_for_rho();
-
-      // Simplify inset state if -s flag is passed
-      if (simplify) {
-        simplify_map(&inset_state);
-      }
 
       // Set initial area errors
       inset_state.set_area_errors();
