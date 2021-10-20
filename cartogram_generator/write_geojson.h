@@ -7,7 +7,7 @@
 nlohmann::json inset_to_json(InsetState*);
 std::vector<double> divider_points(double, double, double, double);
 nlohmann::json cgal_to_json(CartogramInfo *cart_info);
-void write_to_json(nlohmann::json,
+void write_geojson(nlohmann::json,
                    std::string,
                    std::string,
                    std::ostream&,

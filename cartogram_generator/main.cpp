@@ -15,9 +15,9 @@
 #include "read_geojson.h"
 #include "rescale_map.h"
 #include "write_eps.h"
-#include "write_to_json.h"
 #include "geo_div.h"
 #include "densification_points.h"
+#include "write_geojson.h"
 #include <boost/program_options.hpp>
 #include <iostream>
 #include <cmath>
@@ -181,9 +181,11 @@ int main(const int argc, const char *argv[])
     }
   }
 
-  // Read geometry
+  // Read geometry. If the GeoJSON does not explicitly contain a "crs" field,
+  // assume that the coordinates are in longitude and latitude.
+  std::string crs = "+proj=longlat";
   try {
-    read_geojson(geo_file_name, make_csv, &cart_info);
+    read_geojson(geo_file_name, make_csv, &crs, &cart_info);
   } catch (const std::system_error& e) {
     std::cerr << "ERROR: "
               << e.what()
@@ -193,6 +195,7 @@ int main(const int argc, const char *argv[])
               << std::endl;
     return EXIT_FAILURE;
   }
+  std::cerr << "Coordinate reference system: " << crs << std::endl;
 
   // Find smallest positive target area
   double min_positive_area = dbl_inf;
@@ -259,20 +262,11 @@ int main(const int argc, const char *argv[])
     // Can the coordinates be interpreted as longitude and latitude?
     CGAL::Bbox_2 bb = inset_state.bbox();
     if (bb.xmin() >= -180.0 && bb.xmax() <= 180.0 &&
-        bb.ymin() >= -90.0 && bb.ymax() <= 90.0) {
+        bb.ymin() >= -90.0 && bb.ymax() <= 90.0 &&
+        crs == "+proj=longlat") {
 
       // If yes, transform the coordinates with the Albers projection
-      try {
-        transform_to_albers_projection(&inset_state);
-      } catch (const std::system_error& e) {
-        std::cerr << "ERROR: "
-                  << e.what()
-                  << " ("
-                  << e.code()
-                  << ")"
-                  << std::endl;
-        return EXIT_FAILURE;
-      }
+      transform_to_albers_projection(&inset_state);
     } else if (output_equal_area) {
       std::cerr << "ERROR: Input GeoJSON is not a longitude-latitude map."
                 << std::endl;
@@ -340,7 +334,7 @@ int main(const int argc, const char *argv[])
         double ratio_actual_to_permitted_max_area_error =
           inset_state.max_area_error().value / max_permitted_area_error;
         double n_predicted_integrations =
-          ceil(log(ratio_actual_to_permitted_max_area_error) / log(5));
+          std::max((log(ratio_actual_to_permitted_max_area_error) / log(5)), 1.0);
 
         double blur_width;
         if (inset_state.n_finished_integrations() == 0){
@@ -428,7 +422,7 @@ int main(const int argc, const char *argv[])
     output_file_name = map_name + "_cartogram.geojson";
   }
   nlohmann::json cart_json = cgal_to_json(&cart_info);
-  write_to_json(cart_json,
+  write_geojson(cart_json,
                 geo_file_name,
                 output_file_name,
                 std::cout,
