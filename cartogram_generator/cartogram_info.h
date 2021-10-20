@@ -2,6 +2,7 @@
 #define CARTOGRAM_INFO_H_
 
 #include "inset_state.h"
+#include "colors.h"
 #include "constants.h"
 #include <vector>
 

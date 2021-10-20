@@ -111,14 +111,21 @@ void CartogramInfo::replace_missing_and_zero_target_areas()
 
   // Checking whether target areas that are equal to zero or NA exist
   bool ta_zero_exists = false, ta_na_exists = false;
-  for (auto const &inset_state : inset_states_ | std::views::values) {
+  for (auto &inset_state : inset_states_ | std::views::values) {
     for (auto const gd : inset_state.geo_divs()) {
       double target_area = inset_state.target_areas_at(gd.id());
-      if (target_area == 0.0) {
-        ta_zero_exists = true;
-      } else if (target_area < 0) {
+      if (target_area < 0.0) {
         ta_na_exists = true;
+
+        // Inserting true into map which stores whether a GeoDivs has target
+        // area missing
+        inset_state.is_target_area_missing_insert(gd.id(), true);
+      } else if (target_area == 0) {
+        ta_zero_exists = true;
       }
+
+      // Will only insert false if the value does not already exist in the map
+      inset_state.is_target_area_missing_insert(gd.id(), false);
     }
   }
 

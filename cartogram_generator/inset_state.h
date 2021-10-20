@@ -41,6 +41,7 @@ private:
   std::unordered_map<std::string, Color> colors_;
   fftw_plan fwd_plan_for_rho_, bwd_plan_for_rho_;
   std::vector<GeoDiv> geo_divs_;  // Geographic divisions in this inset
+  std::unordered_map<std::string, bool> is_target_area_missing_;
 
   // Horizontal and vertical adjacency graphs
   std::vector<std::vector<intersection> > horizontal_adj_, vertical_adj_;
@@ -108,6 +109,8 @@ public:
   void target_areas_insert(std::string, double);
   void target_areas_replace(std::string, double);
   double total_target_area() const;
+  bool is_target_area_missing(const std::string) const;
+  void is_target_area_missing_insert(const std::string, const bool);
   const std::vector<std::vector<intersection> > vertical_adj() const;
 };
 

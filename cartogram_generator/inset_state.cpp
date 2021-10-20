@@ -333,3 +333,15 @@ const std::vector<std::vector<intersection> > InsetState::vertical_adj() const
 {
   return vertical_adj_;
 }
+
+bool InsetState::is_target_area_missing(const std::string id) const
+{
+  return is_target_area_missing_.at(id);
+}
+
+void InsetState::is_target_area_missing_insert(const std::string id,
+                                               const bool is_missing)
+{
+  is_target_area_missing_.insert(std::pair<std::string, bool>(id, is_missing));
+  return;
+}
