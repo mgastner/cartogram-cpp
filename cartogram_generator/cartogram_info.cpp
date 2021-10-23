@@ -178,12 +178,12 @@ void CartogramInfo::replace_missing_and_zero_target_areas()
     double total_non_na_area = 0.0;
     double total_non_na_ta = cart_non_missing_target_area();
 
-    // Finding total area of non na geodivs
+    // Find total area of non-missing GeoDivs
     for (auto const &inset_state : inset_states_ | std::views::values) {
-      total_non_na_area += inset_state.cart_area();
+      total_non_na_area += inset_state.non_missing_target_area();
     }
 
-    // Assigning GeoDivs new target areas
+    // Assign new target areas to GeoDivs
     for (auto &inset_state : inset_states_ | std::views::values) {
       for (auto const gd : inset_state.geo_divs()) {
         if (inset_state.target_area_is_missing(gd.id())) {

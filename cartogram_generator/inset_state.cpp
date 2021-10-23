@@ -32,15 +32,15 @@ CGAL::Bbox_2 InsetState::bbox() const
   return inset_bbox;
 }
 
-double InsetState::cart_area() const
+double InsetState::non_missing_target_area() const
 {
-  double sum_cart_area = 0;
+  double sum_non_missing_target_area = 0;
   for (auto gd : geo_divs_) {
     if (!target_area_is_missing(gd.id())) {
-      sum_cart_area += gd.area();
+      sum_non_missing_target_area += gd.area();
     }
   }
-  return sum_cart_area;
+  return sum_non_missing_target_area;
 }
 
 bool InsetState::color_found(const std::string id) const
@@ -225,14 +225,14 @@ void InsetState::set_area_errors()
   // area_on_cartogram / target_area - 1
 
   double sum_target_area = 0.0;
-  double sum_cart_area = 0.0;
+  double sum_non_missing_target_area = 0.0;
   for (auto gd : geo_divs_) {
     sum_target_area += target_areas_at(gd.id());
-    sum_cart_area += gd.area();
+    sum_non_missing_target_area += gd.area();
   }
   for (auto gd : geo_divs_) {
     double obj_area =
-      target_areas_at(gd.id()) * sum_cart_area / sum_target_area;
+      target_areas_at(gd.id()) * sum_non_missing_target_area / sum_target_area;
     double relative_area_error = std::abs( (gd.area() / obj_area) - 1);
     area_errors_[gd.id()] = relative_area_error;
   }

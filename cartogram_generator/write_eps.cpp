@@ -167,7 +167,7 @@ void heatmap_color(double dens,
   double xmin, xmax;
   int color_category;
 
-  // Choosing color cateogry
+  // Choose color category 
   if (dens > dens_max) {
     *r = red[0];
     *g = green[0];

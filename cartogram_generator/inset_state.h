@@ -64,7 +64,7 @@ public:
   explicit InsetState(const std::string);  // Constructor
   double area_errors_at(const std::string) const;
   CGAL::Bbox_2 bbox() const;
-  double cart_area() const;
+  double non_missing_target_area() const;
   bool color_found(const std::string id) const;
   const Color colors_at(const std::string) const;
   bool colors_empty() const;
