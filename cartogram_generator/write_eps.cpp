@@ -91,7 +91,7 @@ void write_polygons_to_eps(std::ofstream &eps_file,
         if (inset_state->is_target_area_missing(gd.id())) {
 
           // Fill path with dark-grey
-          eps_file << "0.22 0.22 0.22 srgb f\n";
+          eps_file << "0.9375 0.9375 0.9375 srgb f\n";
 
         } else if (colors) {
 
@@ -167,7 +167,7 @@ void heatmap_color(double dens,
   double xmin, xmax;
   int color_category;
 
-  // Choose color category 
+  // Choose color category
   if (dens > dens_max) {
     *r = red[0];
     *g = green[0];
@@ -177,10 +177,16 @@ void heatmap_color(double dens,
     color_category = 5 * (dens_max - dens) / (dens_max - dens_mean);
     xmax = dens_max - 0.2 * color_category * (dens_max - dens_mean);
     xmin = xmax - 0.2 * (dens_max - dens_mean);
+
+    // Assign color category 0 if dens_max and dens are very close
+    color_category = std::max(color_category, 0);
   } else if (dens > dens_min) {
-    color_category = 5 * (dens_mean - dens) / (dens_mean - dens_min) + 5;
+    color_category = 5 * ((dens_mean - dens) / (dens_mean - dens_min)) + 5;
     xmax = dens_mean - 0.2 * (color_category - 5) * (dens_mean - dens_min);
     xmin = xmax - 0.2 * (dens_mean - dens_min);
+
+    // Assign color category 9 if dens_min and dens are very close
+    color_category = std::min(color_category, 9);
   } else {
     *r = red[10];
     *g = green[10];
