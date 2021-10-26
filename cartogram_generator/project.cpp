@@ -84,19 +84,22 @@ int choose_diag(InsetState *inset_state,
                  double v2x, double v2y,
                  double v3x, double v3y)
 {
-  boost::multi_array<XYPoint, 2> &proj = *inset_state->proj();
-
-  double tv0x = int(v0x) == int(v0x - 0.5) ? proj[int(v0x)][int(v0y)].x : v0x;
-  double tv0y = int(v0y) == int(v0y - 0.5) ? proj[int(v0x)][int(v0y)].y : v0y;
-
-  double tv1x = int(v1x) == int(v1x - 0.5) ? proj[int(v1x)][int(v1y)].x : v1x;
-  double tv1y = int(v1y) == int(v1y - 0.5) ? proj[int(v1x)][int(v1y)].y : v1y;
   
-  double tv2x = int(v2x) == int(v2x - 0.5) ? proj[int(v2x)][int(v2y)].x : v2x;
-  double tv2y = int(v2y) == int(v2y - 0.5) ? proj[int(v2x)][int(v2y)].y : v2y;
+  boost::multi_array<XYPoint, 2> &proj = *inset_state->proj();
+  const unsigned int lx = inset_state->lx();
+  const unsigned int ly = inset_state->ly();
 
-  double tv3x = int(v3x) == int(v3x - 0.5) ? proj[int(v3x)][int(v3y)].x : v3x;
-  double tv3y = int(v3y) == int(v3y - 0.5) ? proj[int(v3x)][int(v3y)].y : v3y;
+  double tv0x = (v0x != 0 && v0x != lx) ? proj[int(v0x)][int(v0y)].x : v0x;
+  double tv0y = (v0y != 0 && v0y != ly) ? proj[int(v0x)][int(v0y)].y : v0y;
+
+  double tv1x = (v1x != 0 && v1x != lx) ? proj[int(v1x)][int(v1y)].x : v1x;
+  double tv1y = (v1y != 0 && v1y != ly) ? proj[int(v1x)][int(v1y)].y : v1y;
+  
+  double tv2x = (v2x != 0 && v2x != lx) ? proj[int(v2x)][int(v2y)].x : v2x;
+  double tv2y = (v2y != 0 && v2y != ly) ? proj[int(v2x)][int(v2y)].y : v2y;
+
+  double tv3x = (v3x != 0 && v3x != lx) ? proj[int(v3x)][int(v3y)].x : v3x;
+  double tv3y = (v3y != 0 && v3y != ly) ? proj[int(v3x)][int(v3y)].y : v3y;
 
   // Get the two possible midpoints
   XYPoint midpoint0;
