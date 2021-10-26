@@ -1,5 +1,17 @@
 #include "densification_points.h"
 
+// Use machine epsilon (defined in constants.h) to get almost equal doubles.
+// From https://en.cppreference.com/w/cpp/types/numeric_limits/epsilon
+bool almost_equal(double a, double b) {
+  return fabs(a - b) <= dbl_epsilon * fabs(a + b) * 2;
+}
+
+// Very similar points
+bool point_almost_equal(Point a, Point b) {
+  return (almost_equal(a[0], b[0]) && almost_equal(a[1], b[1]));
+}
+
+
 // This function takes in two lines a (defined by points a1 and a2) and b
 // (defined by points b1 and b2) and returns the intersection between
 // them, if any. If the two lines are parallel or are the same, return
@@ -161,14 +173,4 @@ std::vector<Point> densification_points(Point a_, Point b_)
     }
   }
   return intersections;
-}
-
-// Very similar doubles
-bool almost_equal(double a, double b) {
-  return abs(a - b) <= (1/round_digits);
-}
-
-// Very similar points
-bool point_almost_equal(Point a, Point b) {
-  return (almost_equal(a[0], b[0]) && almost_equal(a[1], b[1]));
 }
