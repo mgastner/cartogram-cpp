@@ -41,6 +41,7 @@ private:
   std::unordered_map<std::string, Color> colors_;
   fftw_plan fwd_plan_for_rho_, bwd_plan_for_rho_;
   std::vector<GeoDiv> geo_divs_;  // Geographic divisions in this inset
+  std::unordered_map<std::string, bool> is_target_area_missing_;
 
   // Horizontal and vertical adjacency graphs
   std::vector<std::vector<intersection> > horizontal_adj_, vertical_adj_;
@@ -59,11 +60,11 @@ private:
   // Make default contructor private so that only
   // InsetState(const std::string) can be called as constructor
   InsetState();
+
 public:
   explicit InsetState(const std::string);  // Constructor
   double area_errors_at(const std::string) const;
   CGAL::Bbox_2 bbox() const;
-  double cart_area() const;
   bool color_found(const std::string id) const;
   const Color colors_at(const std::string) const;
   bool colors_empty() const;
@@ -77,6 +78,8 @@ public:
   const std::vector<std::vector<intersection> > horizontal_adj() const;
   void increment_integration();
   const std::string inset_name() const;
+  bool is_target_area_missing(const std::string) const;
+  void is_target_area_missing_insert(const std::string, const bool);
   unsigned int lx() const;
   unsigned int ly() const;
   void make_fftw_plans_for_rho();
@@ -87,6 +90,7 @@ public:
   unsigned int new_ymin() const;
   unsigned int n_finished_integrations() const;
   unsigned int n_geo_divs() const;
+  double non_missing_target_area() const;
   const std::string pos() const;
   boost::multi_array<XYPoint, 2> *proj();
   void push_back(const GeoDiv);

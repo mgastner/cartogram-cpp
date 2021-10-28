@@ -182,42 +182,18 @@ int main(const int argc, const char *argv[])
   }
   std::cerr << "Coordinate reference system: " << crs << std::endl;
 
-  // Find smallest positive target area
-  double min_positive_area = dbl_inf;
-  for (auto &inset_state :
-       *cart_info.ref_to_inset_states() | std::views::values) {
-    for (auto gd : inset_state.geo_divs()) {
-      double target_area = inset_state.target_areas_at(gd.id());
-      if (target_area > 0.0) {
-        min_positive_area = std::min(min_positive_area, target_area);
-      }
-    }
-  }
-
   // Progress percentage
   double progress = 0.0;
 
   // Store total number of GeoDivs to monitor progress
   double total_geo_divs = 0;
-
-  // Replace non-positive target areas with a fraction of the smallest
-  // positive target area
-  double replacement_for_nonpositive_area = 0.1 * min_positive_area;
-  std::cerr << "Replacing zero target area with "
-            << replacement_for_nonpositive_area
-            << " times the minimum non-positive area"
-            << std::endl;
-  for (auto &inset_state :
+  for (auto const &inset_state :
        *cart_info.ref_to_inset_states() | std::views::values) {
     total_geo_divs += inset_state.n_geo_divs();
-    for (auto gd : inset_state.geo_divs()) {
-      double target_area = inset_state.target_areas_at(gd.id());
-      if (target_area <= 0.0) {
-        inset_state.target_areas_replace(gd.id(),
-                                         replacement_for_nonpositive_area);
-      }
-    }
   }
+
+  // Replacing missing and zero target areas with absolute values
+  cart_info.replace_missing_and_zero_target_areas();
 
   // Determine name of input map
   std::string map_name = geo_file_name;
@@ -269,7 +245,7 @@ int main(const int argc, const char *argv[])
     inset_state.set_inset_name(inset_name);
     if (output_equal_area) {
       normalize_inset_area(&inset_state,
-                           cart_info.total_cart_target_area(),
+                           cart_info.cart_non_missing_target_area(),
                            output_equal_area);
     } else {
 
@@ -364,7 +340,7 @@ int main(const int argc, const char *argv[])
 
       // Rescale insets in correct proportion to each other
       normalize_inset_area(&inset_state,
-                           cart_info.total_cart_target_area());
+                           cart_info.cart_non_missing_target_area());
 
       // Clean up after finishing all Fourier transforms for this inset
       inset_state.destroy_fftw_plans_for_rho();

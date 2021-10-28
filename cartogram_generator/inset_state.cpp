@@ -32,17 +32,6 @@ CGAL::Bbox_2 InsetState::bbox() const
   return inset_bbox;
 }
 
-double InsetState::cart_area() const
-{
-  double sum_cart_area = 0;
-  for (auto gd : geo_divs_) {
-    if (!target_area_is_missing(gd.id())) {
-      sum_cart_area += gd.area();
-    }
-  }
-  return sum_cart_area;
-}
-
 bool InsetState::color_found(const std::string id) const
 {
   return colors_.count(id);
@@ -127,6 +116,19 @@ const std::string InsetState::inset_name() const
   return inset_name_;
 }
 
+bool InsetState::is_target_area_missing(const std::string id) const
+{
+  return is_target_area_missing_.at(id);
+}
+
+void InsetState::is_target_area_missing_insert(const std::string id,
+                                               const bool is_missing)
+{
+  is_target_area_missing_.insert(std::pair<std::string, bool>(id,
+                                                              is_missing));
+  return;
+}
+
 unsigned int InsetState::lx() const
 {
   return lx_;
@@ -188,6 +190,17 @@ unsigned int InsetState::n_geo_divs() const
   return geo_divs_.size();
 }
 
+double InsetState::non_missing_target_area() const
+{
+  double sum_non_missing_target_area = 0;
+  for (auto gd : geo_divs_) {
+    if (!target_area_is_missing(gd.id())) {
+      sum_non_missing_target_area += gd.area();
+    }
+  }
+  return sum_non_missing_target_area;
+}
+
 const std::string InsetState::pos() const
 {
   return pos_;
@@ -223,22 +236,16 @@ void InsetState::set_area_errors()
 {
   // Formula for relative area error:
   // area_on_cartogram / target_area - 1
-
   double sum_target_area = 0.0;
   double sum_cart_area = 0.0;
   for (auto gd : geo_divs_) {
-    if (!target_area_is_missing(gd.id())) {
-      sum_target_area += target_areas_at(gd.id());
-      sum_cart_area += gd.area();
-    }
+    sum_target_area += target_areas_at(gd.id());
+    sum_cart_area += gd.area();
   }
   for (auto gd : geo_divs_) {
-    if (!target_area_is_missing(gd.id())) {
-      double obj_area =
-        target_areas_at(gd.id()) * sum_cart_area / sum_target_area;
-      double relative_area_error = std::abs( (gd.area() / obj_area) - 1);
-      area_errors_[gd.id()] = relative_area_error;
-    }
+    double obj_area =
+      target_areas_at(gd.id()) * sum_cart_area / sum_target_area;
+    area_errors_[gd.id()] = std::abs((gd.area() / obj_area) - 1);
   }
   return;
 }

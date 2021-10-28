@@ -5,9 +5,11 @@
 #include <cstddef>
 
 class FTReal2d {
+private:
   double *array_ = NULL;
-  unsigned int lx_ = 0, ly_ = 0;    // Lattice dimensions
+  unsigned int lx_ = 0, ly_ = 0;  // Lattice dimensions
   fftw_plan plan_;
+
 public:
   double *as_1d_array() const;
   void set_array_size(const unsigned int, const unsigned int);
