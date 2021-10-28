@@ -2,7 +2,6 @@
 #define CARTOGRAM_INFO_H_
 
 #include "inset_state.h"
-#include "colors.h"
 #include "constants.h"
 #include <vector>
 
@@ -23,6 +22,7 @@ private:
 
 public:
   explicit CartogramInfo(const bool, const std::string);
+  double cart_non_missing_target_area() const;
   void gd_to_inset_insert(std::string, std::string);
   const std::string id_header() const;
   const std::set<std::string> ids_in_visual_variables_file() const;
@@ -34,10 +34,9 @@ public:
   unsigned int n_insets() const;
   bool original_ext_ring_is_clockwise();
   std::map<std::string, InsetState> *ref_to_inset_states();
+  void replace_missing_and_zero_target_areas();
   void set_id_header(const std::string);
   void set_original_ext_ring_is_clockwise(bool);
-  double cart_non_missing_target_area() const;
   const std::string visual_variable_file() const;
-  void replace_missing_and_zero_target_areas();
 };
 #endif

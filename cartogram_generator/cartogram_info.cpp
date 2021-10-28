@@ -8,6 +8,23 @@ CartogramInfo::CartogramInfo(const bool w,
   return;
 }
 
+double CartogramInfo::cart_non_missing_target_area() const
+{
+  double area = 0.0;
+
+  // Loop over inset states. Syntax from:
+  // https://stackoverflow.com/questions/13087028/can-i-easily-iterate-over-
+  // the-values-of-a-map-using-a-range-based-for-loop
+  for (auto const &inset_state : inset_states_ | std::views::values) {
+    for (auto gd : inset_state.geo_divs()) {
+      if (!inset_state.target_area_is_missing(gd.id())) {
+        area += inset_state.target_areas_at(gd.id());
+      }
+    }
+  }
+  return area;
+}
+
 void CartogramInfo::gd_to_inset_insert(const std::string id,
                                        std::string inset)
 {
@@ -70,46 +87,9 @@ std::map<std::string, InsetState> *CartogramInfo::ref_to_inset_states()
   return &inset_states_;
 }
 
-void CartogramInfo::set_id_header(const std::string id)
-{
-  id_header_ = id;
-  return;
-}
-
-double CartogramInfo::cart_non_missing_target_area() const
-{
-  double area = 0.0;
-
-  // Loop over inset states. Syntax from:
-  // https://stackoverflow.com/questions/13087028/can-i-easily-iterate-over-
-  // the-values-of-a-map-using-a-range-based-for-loop
-  for (auto const &inset_state : inset_states_ | std::views::values) {
-    for (auto gd : inset_state.geo_divs()) {
-      if (!inset_state.target_area_is_missing(gd.id())) {
-        area += inset_state.target_areas_at(gd.id());
-      }
-    }
-  }
-  return area;
-}
-
-const std::string CartogramInfo::visual_variable_file() const
-{
-  return visual_variable_file_;
-}
-
-void CartogramInfo::set_original_ext_ring_is_clockwise(
-  bool original_ext_ring_is_clockwise)
-{
-  original_ext_ring_is_clockwise_ = original_ext_ring_is_clockwise;
-  return;
-}
-
 void CartogramInfo::replace_missing_and_zero_target_areas()
 {
-
-
-  // Checking whether target areas that are equal to zero or NA exist
+  // Check whether target areas exist that are missing or equal to zero
   bool ta_zero_exists = false, ta_na_exists = false;
   for (auto &inset_state : inset_states_ | std::views::values) {
     for (auto const gd : inset_state.geo_divs()) {
@@ -117,19 +97,19 @@ void CartogramInfo::replace_missing_and_zero_target_areas()
       if (target_area < 0.0) {
         ta_na_exists = true;
 
-        // Inserting true into map which stores whether a GeoDivs has target
-        // area missing
+        // Insert true into an std::unordered_map that stores whether a
+        // GeoDiv's target area is missing
         inset_state.is_target_area_missing_insert(gd.id(), true);
       } else if (target_area == 0) {
         ta_zero_exists = true;
       }
 
-      // Will only insert false if the value does not already exist in the map
+      // Insert false if the value does not already exist in the map
       inset_state.is_target_area_missing_insert(gd.id(), false);
     }
   }
 
-  // Dealing with target areas that are equal to zero
+  // Deal with target areas that are equal to zero
   if (ta_zero_exists) {
 
     // Find smallest positive target area
@@ -173,7 +153,7 @@ void CartogramInfo::replace_missing_and_zero_target_areas()
     }
   }
 
-  // Dealing with missing target areas
+  // Deal with missing target areas
   if (ta_na_exists) {
     double total_non_na_area = 0.0;
     double total_non_na_ta = cart_non_missing_target_area();
@@ -196,7 +176,8 @@ void CartogramInfo::replace_missing_and_zero_target_areas()
           } else {
 
             // Replace target_area
-            new_target_area = (total_non_na_ta / total_non_na_area) * gd.area();
+            new_target_area =
+              (total_non_na_ta / total_non_na_area) * gd.area();
           }
 
           inset_state.target_areas_replace(gd.id(), new_target_area);
@@ -204,4 +185,22 @@ void CartogramInfo::replace_missing_and_zero_target_areas()
       }
     }
   }
+}
+
+void CartogramInfo::set_id_header(const std::string id)
+{
+  id_header_ = id;
+  return;
+}
+
+const std::string CartogramInfo::visual_variable_file() const
+{
+  return visual_variable_file_;
+}
+
+void CartogramInfo::set_original_ext_ring_is_clockwise(
+  bool original_ext_ring_is_clockwise)
+{
+  original_ext_ring_is_clockwise_ = original_ext_ring_is_clockwise;
+  return;
 }

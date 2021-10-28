@@ -237,12 +237,13 @@ void auto_color(InsetState* inset_state)
   // the algorithm choses for each GeoDiv.
   unsigned int count = 0;
 
-  // In case coloring was unsucesfull, we restrict to a smaller count.
+  // If coloring was unsucesful, we restrict ourselves to a smaller count.
   // We begin by using as many colors as possible.
   int max_i = palette.size();
 
   // Iterating until we are able to color the entire map
-  while (inset_state->colors_size() < inset_state->n_geo_divs() && max_i >= 0) {
+  while (inset_state->colors_size() < inset_state->n_geo_divs() &&
+         max_i >= 0) {
 
     // Iterating through GeoDivs
     for (auto &gd : *inset_state->ref_to_geo_divs()) {

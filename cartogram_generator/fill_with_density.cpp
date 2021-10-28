@@ -34,8 +34,9 @@ bool ray_y_intersects(XYPoint a,
 
 void fill_with_density(bool plot_density, InsetState* inset_state)
 {
-  // Calculate the total current area and total target area, excluding any
-  // missing values
+  // Calculate the total current area and total target area. We assume that
+  // target areas that were zero or missing in the input have already been
+  // replaced by CartogramInfo::replace_missing_and_zero_target_areas().
   double total_current_area = 0.0;
   for (auto gd : inset_state->geo_divs()) {
     total_current_area += gd.area();
@@ -76,8 +77,7 @@ void fill_with_density(bool plot_density, InsetState* inset_state)
   // Iterate through GeoDivs in inset_state
   for (auto gd : inset_state->geo_divs()) {
 
-    // Associative area. It is only called once to find out the target
-    // density.
+    // Find target density
     double target_density;
     target_density = inset_state->target_areas_at(gd.id()) / gd.area();
 
@@ -187,7 +187,7 @@ void fill_with_density(bool plot_density, InsetState* inset_state)
     }
   }
 
-  // Setting Horizontal Adjacency graph for automatic coloring
+  // Set horizontal adjacency graph for automatic coloring
   inset_state->set_horizontal_adj(map_intersections);
 
   // Filling rho_num and rho_den (rho numerator and denominator)
@@ -269,7 +269,6 @@ void fill_with_density(bool plot_density, InsetState* inset_state)
 
         // Fill each cell between intersections
         for (unsigned int m = ceil(left_x); m <= ceil(right_x); ++m) {
-
           double weight =
             inset_state->area_errors_at(intersections[l].geo_div_id);
           double target_dens = intersections[l].target_density;
@@ -287,7 +286,7 @@ void fill_with_density(bool plot_density, InsetState* inset_state)
     }
   }
 
-  // Filling rho_init by dividing rho_num with rho_den
+  // Fill rho_init by dividing rho_num with rho_den
   for (unsigned int i = 0; i < inset_state->lx(); ++i) {
     for (unsigned int j = 0; j < inset_state->ly(); ++j) {
       if (rho_den[i][j] == 0) {
