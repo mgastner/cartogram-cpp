@@ -45,9 +45,15 @@ void adjust_for_dual_hemisphere(InsetState *inset_state)
 
   // - If min_lon_east == max_lon_west, the whole inset is contained in either
   //   only the western or only the eastern hemisphere
+  // - If max_lon_west < -180.0, all polygons that are partly in the western
+  //   hemisphere also are partly in the eastern hemisphere
+  // - If min_lon_east > 180.0, all polygons that are partly in the eastern
+  //   hemisphere also are partly in the western hemisphere
   // - If min_lon_east - max_lon_west < 180, the inset cannot fit in 1
   //   hemisphere
-  if (min_lon_east - max_lon_west >= 180) {
+  if (max_lon_west >= -180.0 &&
+      min_lon_east <= 180.0 &&
+      min_lon_east - max_lon_west >= 180) {
 
     // Iterate through GeoDivs
     for (auto &gd : *inset_state->ref_to_geo_divs()) {
@@ -74,19 +80,34 @@ void adjust_for_dual_hemisphere(InsetState *inset_state)
 }
 
 Point projected_albers_coordinates(Point coords,
-                                   double n,
-                                   double c,
                                    double lambda_0,
-                                   double rho_0)
+                                   double phi_0,
+                                   double phi_1,
+                                   double phi_2)
 {
-  // Albers projection formula:
-  // https://en.wikipedia.org/wiki/Albers_projection
-  double lon = (coords.x() * pi) / 180;
-  double lat = (coords.y() * pi) / 180;
-  double theta = n * (lon - lambda_0);
-  double rho = sqrt(c - (2 * n * sin(lat))) / n;
-  double x = rho * sin(theta);
-  double y = rho_0 - (rho * cos(theta));
+  double lon_in_radians = (coords.x() * pi) / 180;
+  double lat_in_radians = (coords.y() * pi) / 180;
+  double x, y;
+  if (abs(phi_1 + phi_2) < 1e-6) {
+
+    // If n = 0 (i.e., phi_1 = -phi_2), the Albers projection becomes a
+    // cylindrical equal-area projection with standard parallel phi_1. The
+    // formula is at:
+    // https://en.wikipedia.org/wiki/Cylindrical_equal-area_projection
+    x = (lon_in_radians - lambda_0) * cos(phi_1);
+    y = sin(lat_in_radians) / cos(phi_1);
+  } else {
+
+    // Albers projection formula:
+    // https://en.wikipedia.org/wiki/Albers_projection
+    double n = 0.5 * (sin(phi_1) + sin(phi_2));
+    double c = cos(phi_1)*cos(phi_1) + 2*n*sin(phi_1);
+    double rho_0 = sqrt(c - 2*n*sin(phi_0)) / n;
+    double theta = n * (lon_in_radians - lambda_0);
+    double rho = sqrt(c - (2 * n * sin(lat_in_radians))) / n;
+    x = rho * sin(theta);
+    y = rho_0 - (rho * cos(theta));
+  }
   Point coords_converted(x, y);
   return coords_converted;
 }
@@ -114,11 +135,6 @@ void transform_to_albers_projection(InsetState *inset_state)
   double phi_1 = 0.5 * (phi_0 + max_lat);
   double phi_2 = 0.5 * (phi_0 + min_lat);
 
-  // Auxiliary variables
-  double n = 0.5 * (sin(phi_1) + sin(phi_2));
-  double c = pow(cos(phi_1), 2) + (2 * n * sin(phi_1));
-  double rho_0 = sqrt(c - (2 * n * sin(phi_0))) / n;
-
   // Iterate through GeoDivs
   for (GeoDiv &gd : *(inset_state->ref_to_geo_divs())) {
 
@@ -132,8 +148,11 @@ void transform_to_albers_projection(InsetState *inset_state)
       for (Point &coords_outer : outer_boundary) {
 
         // Assign outer boundary's coordinates to transformed coordinates
-        coords_outer =
-          projected_albers_coordinates(coords_outer, n, c, lambda_0, rho_0);
+        coords_outer = projected_albers_coordinates(coords_outer,
+                                                    lambda_0,
+                                                    phi_0,
+                                                    phi_1,
+                                                    phi_2);
       }
 
       // Iterate through holes
@@ -146,8 +165,11 @@ void transform_to_albers_projection(InsetState *inset_state)
         for (Point &coords_hole : hole) {
 
           // Assign hole's coordinates to transformed coordinates
-          coords_hole =
-            projected_albers_coordinates(coords_hole, n, c, lambda_0, rho_0);
+          coords_hole = projected_albers_coordinates(coords_hole,
+                                                     lambda_0,
+                                                     phi_0,
+                                                     phi_1,
+                                                     phi_2);
         }
       }
     }

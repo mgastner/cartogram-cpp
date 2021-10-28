@@ -1,5 +1,5 @@
 #include "constants.h"
-#include "write_to_json.h"
+#include "write_geojson.h"
 #include <fstream>
 
 std::vector<double> divider_points(double x1, double y1, double x2, double y2)
@@ -169,7 +169,7 @@ nlohmann::json cgal_to_json(CartogramInfo *cart_info)
   return container;
 }
 
-void write_to_json(nlohmann::json container,
+void write_geojson(nlohmann::json container,
                    std::string old_geo_file_name,
                    std::string new_geo_file_name,
                    std::ostream &new_geo_stream,
@@ -224,8 +224,8 @@ void write_to_json(nlohmann::json container,
   }
   new_json.push_back({"type", old_json["type"]});
   new_json.push_back({"bbox", container[(container.size() - 2)]});
+  new_json.push_back({"crs", "custom"});
   new_json.push_back({"divider_points", container[(container.size() - 1)]});
-
   if (output_to_stdout) {
     new_geo_stream << new_json << std::endl;
   } else {
