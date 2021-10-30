@@ -5,6 +5,6 @@
 #include "cgal_typedef.h"
 #include "geo_div.h"
 
-std::vector<GeoDiv> densified_geo_divs(std::vector<GeoDiv> container);
+std::vector<GeoDiv> densified_geo_divs(std::vector<GeoDiv>);
 
 #endif
