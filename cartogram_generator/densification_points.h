@@ -7,6 +7,6 @@
 
 std::vector<Point> densification_points(Point, Point);
 
-bool point_almost_equal(Point, Point);
+bool points_almost_equal(Point, Point);
 
 #endif

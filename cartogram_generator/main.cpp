@@ -360,6 +360,9 @@ int main(const int argc, const char *argv[])
           fill_graticule_diagonals(&inset_state);
 
           // Densify map
+          // TODO: It would make sense to turn densified_geo_divs() into a
+          // method of InsetState. Then the next command could be written more
+          // simply as inset_state.densify_geo_divs().
           inset_state.set_geo_divs(
             densified_geo_divs(inset_state.geo_divs())
           );

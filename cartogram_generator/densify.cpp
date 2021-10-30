@@ -1,10 +1,13 @@
 #include "densify.h"
 #include "densification_points.h"
 
+// TODO: This function may be more meaningfully included in
+// check_topology.cpp.
 bool duplicates(std::vector<Point> v) {
   CGAL::set_pretty_mode(std::cerr);
   for (size_t i = 0; i < v.size() - 1; i++) {
-    if (point_almost_equal(v[i], v[i + 1])) {
+    if (points_almost_equal(v[i], v[i + 1])) {
+      std::cerr << "i = " << i << std::endl;
       std::cerr << "Point: " << i << ", v[i]: " << v[i] << std::endl;
       std::cerr << "Point: " << i + 1 << ", v[i + 1]: " << v[i + 1] << std::endl;
       return true;

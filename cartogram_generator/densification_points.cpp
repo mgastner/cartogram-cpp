@@ -6,11 +6,13 @@ bool almost_equal(double a, double b) {
   return fabs(a - b) <= dbl_epsilon * fabs(a + b) * 2;
 }
 
-// Very similar points
-bool point_almost_equal(Point a, Point b) {
+// Determine whether points are indistinguishable
+bool points_almost_equal(Point a, Point b) {
   return (almost_equal(a[0], b[0]) && almost_equal(a[1], b[1]));
 }
-
+bool xypoints_almost_equal(XYPoint a, XYPoint b) {
+  return (almost_equal(a.x, b.x) && almost_equal(a.y, b.y));
+}
 
 // This function takes two lines as input:
 // - line `a`, defined by points a1 and a2.
@@ -191,7 +193,8 @@ std::vector<Point> densification_points(Point pt1, Point pt2)
   intersections.push_back(Point(temp_intersections[0].x,
                                 temp_intersections[0].y));
   for (unsigned int i = 1; i < temp_intersections.size(); ++i) {
-    if (temp_intersections[i - 1] != temp_intersections[i]) {
+    if (!xypoints_almost_equal(temp_intersections[i - 1],
+                               temp_intersections[i])) {
       intersections.push_back(Point(temp_intersections[i].x,
                                     temp_intersections[i].y));
     }
