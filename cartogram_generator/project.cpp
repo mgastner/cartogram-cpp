@@ -354,7 +354,7 @@ XYPoint affine_trans(std::vector<XYPoint> *tri,
   Matrix mT = pqr_mP.multiplied_with(abc_mA.inverse());
 
   // Transforming point and pushing back to temporary_ext_boundary
-  XYPoint post = mT.transform_XYPoint(pre);
+  XYPoint post = mT.transformed_XYPoint(pre);
 
   return post;
 }
