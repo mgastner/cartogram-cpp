@@ -1,10 +1,10 @@
+#include "densification_points.h"
+#include "interpolate_bilinearly.h"
+#include "matrix.h"
+#include "project.h"
 #include <boost/multi_array.hpp>
 #include <iostream>
 #include <vector>
-#include "interpolate_bilinearly.h"
-#include "matrix.h"
-#include "densification_points.h"
-#include "project.h"
 
 void project(InsetState *inset_state)
 {
@@ -26,13 +26,11 @@ void project(InsetState *inset_state)
 
     // For each GeoDiv
     GeoDiv new_gd(gd.id());
-
     for (auto pwh : gd.polygons_with_holes()) {
-      // For each polygon with holes
 
+      // For each polygon with holes
       Polygon old_ext_ring = pwh.outer_boundary();
       Polygon new_ext_ring;
-
       for (unsigned int i = 0; i < old_ext_ring.size(); ++i) {
 
         // Update exterior ring coordinates
@@ -77,73 +75,81 @@ void project(InsetState *inset_state)
   return;
 }
 
-int choose_diag(InsetState *inset_state,
-                int *num_concave,
-                double v0x, double v0y,
-                double v1x, double v1y,
-                double v2x, double v2y,
-                double v3x, double v3y)
+// For a graticule cell with corners stored in the XYPoint array v, determine
+// whether the diagonal from v[0] to v[2] is inside the graticule cell. If
+// yes, return 0. Otherwise, if the diagonal from v[1] to v[3] is inside the
+// graticule cell, return 1. If neither of the two diagonals is inside the
+// graticule cell, then the cell's topology is invalid; thus, we exit with an
+// error message.
+int chosen_diag(InsetState *inset_state, int *num_concave, XYPoint v[4])
 {
-
   boost::multi_array<XYPoint, 2> &proj = *inset_state->proj();
   const unsigned int lx = inset_state->lx();
   const unsigned int ly = inset_state->ly();
 
-  double tv0x = (v0x != 0 && v0x != lx) ? proj[int(v0x)][int(v0y)].x : v0x;
-  double tv0y = (v0y != 0 && v0y != ly) ? proj[int(v0x)][int(v0y)].y : v0y;
+  // The input v[i].x can only be 0, lx, or 0.5, 1.5, ..., lx-0.5.
+  // A similar rule applies to the y-coordinates.
+  for (unsigned int i = 0; i < 4; i++) {
+    if ((v[i].x != 0.0 && v[i].x != lx && v[i].x - int(v[i].x) != 0.5) ||
+        (v[i].y != 0.0 && v[i].y != lx && v[i].y - int(v[i].y) != 0.5)) {
+      std::cerr << "Error: Invalid input coordinate in chosen_diag()\n"
+                << "\tv["
+                << i
+                << "] = ("
+                << v[i].x
+                << ", "
+                << v[i].y
+                << ")"
+                << std::endl;
+      exit(1);
+    }
+  }
 
-  double tv1x = (v1x != 0 && v1x != lx) ? proj[int(v1x)][int(v1y)].x : v1x;
-  double tv1y = (v1y != 0 && v1y != ly) ? proj[int(v1x)][int(v1y)].y : v1y;
-
-  double tv2x = (v2x != 0 && v2x != lx) ? proj[int(v2x)][int(v2y)].x : v2x;
-  double tv2y = (v2y != 0 && v2y != ly) ? proj[int(v2x)][int(v2y)].y : v2y;
-
-  double tv3x = (v3x != 0 && v3x != lx) ? proj[int(v3x)][int(v3y)].x : v3x;
-  double tv3y = (v3y != 0 && v3y != ly) ? proj[int(v3x)][int(v3y)].y : v3y;
+  // Transform the coordinates in v to the corresponding coordinates on the
+  // projected grid. If the x-coordinate is 0 or lx, we keep the input.
+  XYPoint tv[4];
+  for (unsigned int i = 0; i < 4; i++) {
+    tv[i].x = (v[i].x != 0 && v[i].x != lx) ?
+              proj[int(v[i].x)][int(v[i].y)].x :
+              v[i].x;
+    tv[i].y = (v[i].y != 0 && v[i].y != ly) ?
+              proj[int(v[i].x)][int(v[i].y)].y :
+              v[i].y;
+  }
 
   // Get the two possible midpoints
   XYPoint midpoint0;
-  midpoint0.x = (tv0x + tv2x) / 2;
-  midpoint0.y = (tv0y + tv2y) / 2;
-
+  midpoint0.x = (tv[0].x + tv[2].x) / 2;
+  midpoint0.y = (tv[0].y + tv[2].y) / 2;
   XYPoint midpoint1;
-  midpoint1.x = (tv1x + tv3x) / 2;
-  midpoint1.y = (tv1y + tv3y) / 2;
+  midpoint1.x = (tv[1].x + tv[3].x) / 2;
+  midpoint1.y = (tv[1].y + tv[3].y) / 2;
 
   // Get the transformed graticule cell as a polygon
   Polygon trans_graticule;
-  trans_graticule.push_back(Point(tv0x, tv0y));
-  trans_graticule.push_back(Point(tv1x, tv1y));
-  trans_graticule.push_back(Point(tv2x, tv2y));
-  trans_graticule.push_back(Point(tv3x, tv3y));
+  for (unsigned int i = 0; i < 4; i++) {
+    trans_graticule.push_back(Point(tv[i].x, tv[i].y));
+  }
 
   // Check if graticule cell is concave
-  if (trans_graticule.is_convex() == false) {
+  if (!trans_graticule.is_convex()) {
     num_concave += 1;
-    // std::cerr << "Concave graticule cell " << i << " by " << j << "\n";
-    // std::cerr << "V0: " << v0x << " " << v0y << "\n";
-    // std::cerr << "V1: " << v1x << " " << v1y << "\n";
-    // std::cerr << "V2: " << v2x << " " << v2y << "\n";
-    // std::cerr << "V3: " << v3x << " " << v3y << "\n";
   }
-
-  if (trans_graticule.bounded_side(Point(midpoint0.x, midpoint0.y)) == CGAL::ON_BOUNDED_SIDE) {
-
+  if (trans_graticule.bounded_side(Point(midpoint0.x, midpoint0.y)) ==
+      CGAL::ON_BOUNDED_SIDE) {
     return 0;
-
-  } else if (trans_graticule.bounded_side(Point(midpoint1.x, midpoint1.y)) == CGAL::ON_BOUNDED_SIDE) {
-
-    return 1;
-
-  } else {
-    std::cerr << "Invalid graticule cell! At\n";
-    std::cerr << "(" << tv0x << ", " << tv0y << ")\n";
-    std::cerr << "(" << tv1x << ", " << tv1y << ")\n";
-    std::cerr << "(" << tv2x << ", " << tv2y << ")\n";
-    std::cerr << "(" << tv3x << ", " << tv3y << ")\n";
-    std::cerr << "i: " << int(v0x) << "j: " << int(v0y) << "\n";
-    exit(1);
   }
+  if (trans_graticule.bounded_side(Point(midpoint1.x, midpoint1.y)) ==
+      CGAL::ON_BOUNDED_SIDE) {
+    return 1;
+  }
+  std::cerr << "Invalid graticule cell! At\n";
+  std::cerr << "(" << tv[0].x << ", " << tv[0].y << ")\n";
+  std::cerr << "(" << tv[1].x << ", " << tv[1].y << ")\n";
+  std::cerr << "(" << tv[2].x << ", " << tv[2].y << ")\n";
+  std::cerr << "(" << tv[3].x << ", " << tv[3].y << ")\n";
+  std::cerr << "i: " << int(v[0].x) << "j: " << int(v[0].y) << "\n";
+  exit(1);
 }
 
 void fill_graticule_diagonals(InsetState *inset_state)
@@ -177,10 +183,16 @@ void fill_graticule_diagonals(InsetState *inset_state)
       double v3x = double(i) + 0.5;
       double v3y = double(j) + 1.5;
 
-      graticule_diagonals[i][j] = choose_diag(
-        inset_state, &num_concave,
-        v0x, v0y, v1x, v1y, v2x, v2y, v3x, v3y
-        );
+      XYPoint v[4];
+      v[0].x = v0x;
+      v[0].y = v0y;
+      v[1].x = v1x;
+      v[1].y = v1y;
+      v[2].x = v2x;
+      v[2].y = v2y;
+      v[3].x = v3x;
+      v[3].y = v3y;
+      graticule_diagonals[i][j] = chosen_diag(inset_state, &num_concave, v);
     }
   }
 
@@ -237,14 +249,21 @@ std::vector<XYPoint> find_triangle(const double x,
   double v3x = v0x;
   double v3y = std::min(double(ly), floor(y + 0.5) + 0.5);
 
+  XYPoint v[4];
+  v[0].x = v0x;
+  v[0].y = v0y;
+  v[1].x = v1x;
+  v[1].y = v1y;
+  v[2].x = v2x;
+  v[2].y = v2y;
+  v[3].x = v3x;
+  v[3].y = v3y;
+
   int diag;
 
   if (v0x == 0.0 || v0y == 0.0 || v2x == double(lx) || v2y == double(ly)) {
     int concave = 0;
-    diag = choose_diag(
-      inset_state, &concave,
-      v0x, v0y, v1x, v1y, v2x, v2y, v3x, v3y
-      );
+    diag = chosen_diag(inset_state, &concave, v);
   } else {
     diag = graticule_diagonals[int(v0x)][int(v0y)];
   }
