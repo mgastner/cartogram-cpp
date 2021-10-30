@@ -38,6 +38,7 @@ private:
 
   // Chosen diagonal for each graticule cell
   boost::multi_array<int, 2> graticule_diagonals_;
+
   // Horizontal and vertical adjacency graphs
   std::vector<std::vector<intersection> > horizontal_adj_, vertical_adj_;
   std::string inset_name_; // Map name, appended with Position if n_insets > 2

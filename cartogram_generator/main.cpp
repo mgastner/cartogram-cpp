@@ -41,7 +41,6 @@ void on_visual_variable_file(const std::string visual_file_name)
 
 int main(const int argc, const char *argv[])
 {
-
   using namespace boost::program_options;
   std::string geo_file_name = "", visual_file_name = ""; // Default values
 
@@ -52,8 +51,9 @@ int main(const int argc, const char *argv[])
   // input map is not a world map.
   bool world;
 
-  // Another cartogram projection method making use of triangulation. Can reduce or
-  // even eliminate intersections that occur when projecting "normally".
+  // Another cartogram projection method based on triangulation of graticule
+  // cells. It can reduce or even eliminate intersections that occur when
+  // projecting "naively".
   bool triangulation;
 
   // Other boolean values that are needed to parse the command line arguments
@@ -357,6 +357,7 @@ int main(const int argc, const char *argv[])
         flatten_density(&inset_state);
 
         if (triangulation) {
+          
           // Choosing diagonals that are inside graticule cells
           fill_graticule_diagonals(&inset_state);
 
