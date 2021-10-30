@@ -1,23 +1,24 @@
 // TO DO: positional matching of argument flags
 
-#include "constants.h"
-#include "cartogram_info.h"
-#include "inset_state.h"
 #include "albers_projection.h"
 #include "auto_color.h"
 #include "blur_density.h"
+#include "cartogram_info.h"
 #include "check_topology.h"
+#include "constants.h"
+#include "densification_points.h"
+#include "densify.h"
 #include "fill_with_density.h"
 #include "flatten_density.h"
-#include "densify.h"
+#include "geo_div.h"
+#include "inset_state.h"
 #include "project.h"
 #include "read_csv.h"
 #include "read_geojson.h"
 #include "rescale_map.h"
 #include "write_eps.h"
-#include "geo_div.h"
-#include "densification_points.h"
 #include "write_geojson.h"
+#include "xy_point.h"
 #include <boost/program_options.hpp>
 #include <iostream>
 #include <cmath>

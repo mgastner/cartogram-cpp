@@ -1,35 +1,13 @@
 #ifndef INSET_STATE_H_
 #define INSET_STATE_H_
 
+#include "colors.h"
 #include "ft_real_2d.h"
 #include "geo_div.h"
-#include "colors.h"
+#include "xy_point.h"
 #include <vector>
 #include <boost/multi_array.hpp>
 #include <map>
-
-// Struct to store the X and Y coordinates of a 2D point
-struct XYPoint {
-  double x;
-  double y;
-
-  // Overload "<" operator for this data type. Idea from
-  // https://stackoverflow.com/questions/4892680/sorting-a-vector-of-structs
-  // To be able to sort XYPoint
-  bool operator < (const XYPoint &rhs) const
-  {
-    if (x != rhs.x) {
-      return (x < rhs.x);
-    }
-    return y < rhs.y;
-  }
-
-  // Overload "==" and "!=" operators for XYPoint type.
-  bool operator == (const XYPoint &rhs) const
-  {
-    return (x == rhs.x && y == rhs.y);
-  }
-};
 
 // Struct to store intersection data
 struct intersection {
