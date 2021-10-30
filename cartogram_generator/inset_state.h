@@ -92,7 +92,6 @@ public:
   void execute_fftw_bwd_plan() const;
   void execute_fftw_fwd_plan() const;
   const std::vector<GeoDiv> geo_divs() const;
-  boost::multi_array<int, 2> *graticule_diagonals();
   const std::vector<std::vector<intersection> > horizontal_adj() const;
   void increment_integration();
   const std::string inset_name() const;
@@ -110,6 +109,7 @@ public:
   boost::multi_array<XYPoint, 2> *proj();
   void push_back(const GeoDiv);
   std::vector<GeoDiv> *ref_to_geo_divs();
+  boost::multi_array<int, 2> *ref_to_graticule_diagonals();
   FTReal2d *ref_to_rho_ft();
   FTReal2d *ref_to_rho_init();
   void set_area_errors();

@@ -209,6 +209,11 @@ std::vector<GeoDiv> *InsetState::ref_to_geo_divs()
   return &geo_divs_;
 }
 
+boost::multi_array<int, 2> *InsetState::ref_to_graticule_diagonals()
+{
+  return &graticule_diagonals_;
+}
+
 FTReal2d *InsetState::ref_to_rho_ft()
 {
   return &rho_ft_;
@@ -217,11 +222,6 @@ FTReal2d *InsetState::ref_to_rho_ft()
 FTReal2d *InsetState::ref_to_rho_init()
 {
   return &rho_init_;
-}
-
-boost::multi_array<int, 2> *InsetState::graticule_diagonals()
-{
-  return &graticule_diagonals_;
 }
 
 void InsetState::set_area_errors()

@@ -152,7 +152,8 @@ void fill_graticule_diagonals(InsetState *inset_state)
   const unsigned int ly = inset_state->ly();
 
   // boost::multi_array<XYPoint, 2> &proj = *inset_state->proj();
-  boost::multi_array<int, 2> &graticule_diagonals = *inset_state->graticule_diagonals();
+  boost::multi_array<int, 2> &graticule_diagonals =
+    *inset_state->ref_to_graticule_diagonals();
 
   // Initialize array if running for the first time
   if (graticule_diagonals.shape()[0] != lx || graticule_diagonals.shape()[1] != ly) {
@@ -220,7 +221,8 @@ std::vector<XYPoint> find_triangle(const double x,
     exit(1);
   }
 
-  boost::multi_array<int, 2> &graticule_diagonals = *inset_state->graticule_diagonals();
+  boost::multi_array<int, 2> &graticule_diagonals =
+    *inset_state->ref_to_graticule_diagonals();
 
   // Get original graticule coordinates.
   double v0x = std::max(0.0, floor(x + 0.5) - 0.5);
@@ -361,9 +363,6 @@ void project_with_triangulation(InsetState *inset_state)
 {
   const unsigned int lx = inset_state->lx();
   const unsigned int ly = inset_state->ly();
-  // boost::multi_array<XYPoint, 2> &proj = *inset_state->proj();
-  // boost::multi_array<int, 2> &graticule_diagonals = *inset_state->graticule_diagonals();
-
   std::vector<GeoDiv> new_geo_divs;
 
   for (auto gd : inset_state->geo_divs()) {
@@ -482,7 +481,8 @@ void point_search(InsetState *inset_state,
                   double x_min, double x_max,
                   double y_min, double y_max)
 {
-  boost::multi_array<int, 2> &graticule_diagonals = *inset_state->graticule_diagonals();
+  boost::multi_array<int, 2> &graticule_diagonals =
+    *inset_state->ref_to_graticule_diagonals();
 
   std::cerr << std::setprecision(20);
 
