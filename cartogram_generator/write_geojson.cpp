@@ -14,7 +14,7 @@ nlohmann::json inset_to_json(InsetState *inset_state)
       Polygon ext_ring = pwh.outer_boundary();
       nlohmann::json polygon_container;
       nlohmann::json er_container;
-      for (unsigned int i = 0; i < ext_ring.size(); i++) {
+      for (unsigned int i = 0; i < ext_ring.size(); ++i) {
 
         // Get exterior ring coordinates
         double arr[2];
@@ -25,10 +25,10 @@ nlohmann::json inset_to_json(InsetState *inset_state)
       polygon_container.push_back(er_container);
 
       // Get holes of Polygon_with_holes
-      for (auto hci = pwh.holes_begin(); hci != pwh.holes_end(); hci++) {
+      for (auto hci = pwh.holes_begin(); hci != pwh.holes_end(); ++hci) {
         Polygon hole = *hci;
         nlohmann::json hole_container;
-        for (unsigned int i = 0; i < hole.size(); i++) {
+        for (unsigned int i = 0; i < hole.size(); ++i) {
 
           // Get hole coordinates
           double arr[2];

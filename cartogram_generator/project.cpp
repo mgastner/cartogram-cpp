@@ -61,8 +61,8 @@ void project(InsetState *inset_state)
           double old_hole_intp_y =
             interpolate_bilinearly(old_hole[i][0], old_hole[i][1],
                                    &ydisp, 'y', lx, ly);
-            new_hole.push_back(Point(old_hole_intp_x + old_hole[i][0],
-                                     old_hole_intp_y + old_hole[i][1]));
+          new_hole.push_back(Point(old_hole_intp_x + old_hole[i][0],
+                                   old_hole_intp_y + old_hole[i][1]));
         }
         hole_v.push_back(new_hole);
       }
@@ -78,11 +78,11 @@ void project(InsetState *inset_state)
 }
 
 int choose_diag(InsetState *inset_state,
-                 int *num_concave,
-                 double v0x, double v0y,
-                 double v1x, double v1y,
-                 double v2x, double v2y,
-                 double v3x, double v3y)
+                int *num_concave,
+                double v0x, double v0y,
+                double v1x, double v1y,
+                double v2x, double v2y,
+                double v3x, double v3y)
 {
 
   boost::multi_array<XYPoint, 2> &proj = *inset_state->proj();
@@ -118,7 +118,7 @@ int choose_diag(InsetState *inset_state,
   trans_graticule.push_back(Point(tv3x, tv3y));
 
   // Check if graticule cell is concave
-  if (trans_graticule.is_convex() == false){
+  if (trans_graticule.is_convex() == false) {
     num_concave += 1;
     // std::cerr << "Concave graticule cell " << i << " by " << j << "\n";
     // std::cerr << "V0: " << v0x << " " << v0y << "\n";
@@ -127,11 +127,11 @@ int choose_diag(InsetState *inset_state,
     // std::cerr << "V3: " << v3x << " " << v3y << "\n";
   }
 
-  if (trans_graticule.bounded_side(Point(midpoint0.x, midpoint0.y)) == CGAL::ON_BOUNDED_SIDE){
+  if (trans_graticule.bounded_side(Point(midpoint0.x, midpoint0.y)) == CGAL::ON_BOUNDED_SIDE) {
 
     return 0;
 
-  } else if (trans_graticule.bounded_side(Point(midpoint1.x, midpoint1.y)) == CGAL::ON_BOUNDED_SIDE){
+  } else if (trans_graticule.bounded_side(Point(midpoint1.x, midpoint1.y)) == CGAL::ON_BOUNDED_SIDE) {
 
     return 1;
 
@@ -161,8 +161,8 @@ void fill_graticule_diagonals(InsetState *inset_state)
 
   int num_concave = 0;
 
-  for (unsigned int i = 0; i < lx - 1; i++){
-    for (unsigned int j = 0; j < ly - 1; j++){
+  for (unsigned int i = 0; i < lx - 1; ++i) {
+    for (unsigned int j = 0; j < ly - 1; ++j) {
 
       double v0x = double(i) + 0.5;
       double v0y = double(j) + 0.5;
@@ -179,7 +179,7 @@ void fill_graticule_diagonals(InsetState *inset_state)
       graticule_diagonals[i][j] = choose_diag(
         inset_state, &num_concave,
         v0x, v0y, v1x, v1y, v2x, v2y, v3x, v3y
-      );
+        );
     }
   }
 
@@ -194,12 +194,12 @@ std::vector<XYPoint> find_transformed_triangle(std::vector<XYPoint> triangle,
   boost::multi_array<XYPoint, 2> &proj = *inset_state->proj();
   std::vector<XYPoint> transformed_triangle;
 
-  for(XYPoint point : triangle){
+  for(XYPoint point : triangle) {
     XYPoint transformed_point;
     transformed_point.x = int(point.x) == int(point.x - 0.5) ?
-      proj[int(point.x)][int(point.y)].x : point.x;
+                          proj[int(point.x)][int(point.y)].x : point.x;
     transformed_point.y = int(point.y) == int(point.y - 0.5) ?
-      proj[int(point.x)][int(point.y)].y : point.y;
+                          proj[int(point.x)][int(point.y)].y : point.y;
     transformed_triangle.push_back(transformed_point);
   }
 
@@ -237,12 +237,12 @@ std::vector<XYPoint> find_triangle(const double x,
 
   int diag;
 
-  if (v0x == 0.0 || v0y == 0.0 || v2x == double(lx) || v2y == double(ly)){
+  if (v0x == 0.0 || v0y == 0.0 || v2x == double(lx) || v2y == double(ly)) {
     int concave = 0;
     diag = choose_diag(
       inset_state, &concave,
       v0x, v0y, v1x, v1y, v2x, v2y, v3x, v3y
-    );
+      );
   } else {
     diag = graticule_diagonals[int(v0x)][int(v0y)];
   }
@@ -279,9 +279,9 @@ std::vector<XYPoint> find_triangle(const double x,
   // If the point is in neither, an error is raised.
   std::vector<XYPoint> triangle_coordinates;
   if ((triangle1.bounded_side(Point(x, y)) == CGAL::ON_BOUNDED_SIDE) ||
-      (triangle1.bounded_side(Point(x, y)) == CGAL::ON_BOUNDARY)){
+      (triangle1.bounded_side(Point(x, y)) == CGAL::ON_BOUNDARY)) {
 
-    for (unsigned int i = 0; i < triangle1.size(); i++){
+    for (unsigned int i = 0; i < triangle1.size(); ++i) {
 
       XYPoint triangle_point;
       triangle_point.x = triangle1[i][0];
@@ -294,7 +294,7 @@ std::vector<XYPoint> find_triangle(const double x,
   } else if ((triangle2.bounded_side(Point(x, y)) == CGAL::ON_BOUNDED_SIDE) ||
              (triangle2.bounded_side(Point(x, y)) == CGAL::ON_BOUNDARY)) {
 
-    for (unsigned int i = 0; i < triangle2.size(); i++){
+    for (unsigned int i = 0; i < triangle2.size(); ++i) {
 
       XYPoint triangle_point;
       triangle_point.x = triangle2[i][0];
@@ -314,28 +314,29 @@ std::vector<XYPoint> find_triangle(const double x,
 
 XYPoint affine_trans(std::vector<XYPoint> *tri,
                      std::vector<XYPoint> *org_tri,
-                     double x, double y){
+                     double x, double y)
+{
 
   /*
-  For each point, we make the following transformation.
-  Suppose we find that, before the cartogram transformation, a point (x, y)
-  is in the triangle (a, b, c). We want to find its position in
-  the projected triangle (p, q, r). We locally approximate the cartogram
-  transformation by an affine transformation T such that T(a) = p,
-  T(b) = q and T(c) = r. We can think of T as a 3x3 matrix
-   /t11 t12 t13\
-  | t21 t22 t23 |  such that
+     For each point, we make the following transformation.
+     Suppose we find that, before the cartogram transformation, a point (x, y)
+     is in the triangle (a, b, c). We want to find its position in
+     the projected triangle (p, q, r). We locally approximate the cartogram
+     transformation by an affine transformation T such that T(a) = p,
+     T(b) = q and T(c) = r. We can think of T as a 3x3 matrix
+     /t11 t12 t13\
+   | t21 t22 t23 |  such that
    \ 0   0   1 /
-   /t11 t12 t13\   /a1 b1 c1\     /p1 q1 r1\
-  | t21 t22 t23 | | a2 b2 c2 | = | p2 q2 r2 | or TA = P. Hence T = PA^{-1}
+     /t11 t12 t13\   /a1 b1 c1\     /p1 q1 r1\
+   | t21 t22 t23 | | a2 b2 c2 | = | p2 q2 r2 | or TA = P. Hence T = PA^{-1}
    \ 0   0   1 /   \ 1  1  1/     \ 1  1  1/
                                /b2-c2 c1-b1 b1*c2-b2*c1\
-  We have A^{-1} = (1/det(A)) | c2-a2 a1-c1 a2*c1-a1*c2 |. By multiplying
+     We have A^{-1} = (1/det(A)) | c2-a2 a1-c1 a2*c1-a1*c2 |. By multiplying
                                \a2-b2 b1-a1 a1*b2-a2*b1/
-  PA^{-1} we obtain t11, t12, t13, t21, t22, t23. The postimage of (x, y) i
-  the unprojected map is then "pre" with coordinates
-  post.x = t11*x + t12*y + t13, pre.y = t21*x + t22*y + t23.
-  */
+     PA^{-1} we obtain t11, t12, t13, t21, t22, t23. The postimage of (x, y) i
+     the unprojected map is then "pre" with coordinates
+     post.x = t11*x + t12*y + t13, pre.y = t21*x + t22*y + t23.
+   */
 
   XYPoint pre;
   pre.x = x;
@@ -376,7 +377,7 @@ void project_with_triangulation(InsetState *inset_state)
       Polygon old_ext_ring = pwh.outer_boundary();
       Polygon new_ext_ring;
 
-      for (unsigned int i = 0; i < old_ext_ring.size(); i++) {
+      for (unsigned int i = 0; i < old_ext_ring.size(); ++i) {
 
         // Get the untransformed triangle the point is in.
         std::vector<XYPoint> ext_ring_triangle =
@@ -399,10 +400,10 @@ void project_with_triangulation(InsetState *inset_state)
                                      old_ext_ring_intp.y));
       }
       std::vector<Polygon> hole_v;
-      for (auto hci = pwh.holes_begin(); hci != pwh.holes_end(); hci++) {
+      for (auto hci = pwh.holes_begin(); hci != pwh.holes_end(); ++hci) {
         Polygon old_hole = *hci;
         Polygon new_hole;
-        for (unsigned int i = 0; i < old_hole.size(); i++) {
+        for (unsigned int i = 0; i < old_hole.size(); ++i) {
 
           std::vector<XYPoint> hole_triangle =
             find_triangle(old_hole[i][0], old_hole[i][1],
@@ -494,15 +495,15 @@ void point_search(InsetState *inset_state,
 
       Polygon old_ext_ring = pwh.outer_boundary();
 
-      for (unsigned int i = 0; i < old_ext_ring.size(); i++) {
+      for (unsigned int i = 0; i < old_ext_ring.size(); ++i) {
 
         if ((x_min <= old_ext_ring[i][0] && x_max >= old_ext_ring[i][0]) &&
-              (y_min <= old_ext_ring[i][1] && y_max >= old_ext_ring[i][1])){
+            (y_min <= old_ext_ring[i][1] && y_max >= old_ext_ring[i][1])) {
 
-          for (unsigned int a = (i - 1); a < (i + 2); a++){
+          for (unsigned int a = (i - 1); a < (i + 2); ++a) {
 
             std::vector<XYPoint> ext_ring_graticule_cell =
-                find_graticule(old_ext_ring[a][0], old_ext_ring[a][1]);
+              find_graticule(old_ext_ring[a][0], old_ext_ring[a][1]);
 
             std::cerr << "Point at (" << old_ext_ring[a][0] << ", " << old_ext_ring[a][1] << ")\n";
 
@@ -511,7 +512,7 @@ void point_search(InsetState *inset_state,
             std::cerr << "Point " << a << " out of " << old_ext_ring.size() << "\n";
 
             std::cerr << "Graticule cell cordinates: \n";
-            for (unsigned int z = 0; z < 4; z++){
+            for (unsigned int z = 0; z < 4; ++z) {
               std::cerr << "V" << z << ": (" << ext_ring_graticule_cell[z].x << ", " << ext_ring_graticule_cell[z].y << ")\n";
             }
 
@@ -521,26 +522,26 @@ void point_search(InsetState *inset_state,
 
       }
       std::vector<Polygon> hole_v;
-      for (auto hci = pwh.holes_begin(); hci != pwh.holes_end(); hci++) {
+      for (auto hci = pwh.holes_begin(); hci != pwh.holes_end(); ++hci) {
 
         Polygon old_hole = *hci;
 
-        for (unsigned int i = 0; i < old_hole.size(); i++) {
+        for (unsigned int i = 0; i < old_hole.size(); ++i) {
 
           if ((x_min <= old_hole[i][0] && x_max >= old_hole[i][0]) &&
-              (y_min <= old_hole[i][1] && y_max >= old_hole[i][1])){
+              (y_min <= old_hole[i][1] && y_max >= old_hole[i][1])) {
 
-            for (unsigned int a = (i - 1); a < (i + 2); a++){
+            for (unsigned int a = (i - 1); a < (i + 2); ++a) {
 
               std::vector<XYPoint> ext_ring_graticule_cell =
-                  find_graticule(old_hole[a][0], old_hole[a][1]);
+                find_graticule(old_hole[a][0], old_hole[a][1]);
 
               std::cerr << "Point at (" << old_hole[a][0] << ", " << old_hole[a][1] << ")\n";
 
               std::cerr << "On internal boundary of " << gd.id() << "\n";
 
               std::cerr << "Graticule cell cordinates: \n";
-              for (unsigned int z = 0; z < 4; z++){
+              for (unsigned int z = 0; z < 4; ++z) {
                 std::cerr << "V" << z << ": (" << ext_ring_graticule_cell[z].x << ", " << ext_ring_graticule_cell[z].y << ")\n";
               }
 
