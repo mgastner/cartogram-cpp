@@ -1,18 +1,13 @@
 #ifndef INSET_STATE_H_
 #define INSET_STATE_H_
 
+#include "colors.h"
 #include "ft_real_2d.h"
 #include "geo_div.h"
-#include "colors.h"
+#include "xy_point.h"
 #include <vector>
 #include <boost/multi_array.hpp>
 #include <map>
-
-// Struct to store the X and Y coordinates of a 2D point
-struct XYPoint {
-  double x;
-  double y;
-};
 
 // Struct to store intersection data
 struct intersection {
@@ -21,8 +16,7 @@ struct intersection {
   std::string geo_div_id;  // GeoDIv's ID
   bool direction;  // Does intersection enter (true) or exit (false)?
 
-  // Overload "<" operator for this data type. Idea from
-  // https://stackoverflow.com/questions/4892680/sorting-a-vector-of-structs
+  // Overloading "<" operator, similar to above
   bool operator < (const intersection &rhs) const
   {
     return (x < rhs.x || (x == rhs.x && direction < rhs.direction));
@@ -42,6 +36,9 @@ private:
   fftw_plan fwd_plan_for_rho_, bwd_plan_for_rho_;
   std::vector<GeoDiv> geo_divs_;  // Geographic divisions in this inset
   std::unordered_map<std::string, bool> is_target_area_missing_;
+
+  // Chosen diagonal for each graticule cell
+  boost::multi_array<int, 2> graticule_diagonals_;
 
   // Horizontal and vertical adjacency graphs
   std::vector<std::vector<intersection> > horizontal_adj_, vertical_adj_;
@@ -95,6 +92,7 @@ public:
   boost::multi_array<XYPoint, 2> *proj();
   void push_back(const GeoDiv);
   std::vector<GeoDiv> *ref_to_geo_divs();
+  boost::multi_array<int, 2> *ref_to_graticule_diagonals();
   FTReal2d *ref_to_rho_ft();
   FTReal2d *ref_to_rho_init();
   void set_area_errors();

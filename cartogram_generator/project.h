@@ -5,5 +5,7 @@
 #include "inset_state.h"
 
 void project(InsetState*);
+void project_with_triangulation(InsetState*);
+void fill_graticule_diagonals(InsetState*);
 
 #endif

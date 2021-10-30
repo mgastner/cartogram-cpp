@@ -1,22 +1,27 @@
 // TO DO: positional matching of argument flags
 
-#include "constants.h"
-#include "cartogram_info.h"
-#include "inset_state.h"
 #include "albers_projection.h"
 #include "auto_color.h"
 #include "blur_density.h"
+#include "cartogram_info.h"
 #include "check_topology.h"
+#include "constants.h"
+#include "densification_points.h"
+#include "densify.h"
 #include "fill_with_density.h"
 #include "flatten_density.h"
+#include "geo_div.h"
+#include "inset_state.h"
 #include "project.h"
 #include "read_csv.h"
 #include "read_geojson.h"
 #include "rescale_map.h"
 #include "write_eps.h"
 #include "write_geojson.h"
+#include "xy_point.h"
 #include <boost/program_options.hpp>
 #include <iostream>
+#include <cmath>
 
 // Functions that are called if the corresponding command-line options are
 // present
@@ -45,6 +50,11 @@ int main(const int argc, const char *argv[])
   // World maps need special projections. By default, we assume that the
   // input map is not a world map.
   bool world;
+
+  // Another cartogram projection method based on triangulation of graticule
+  // cells. It can reduce or even eliminate intersections that occur when
+  // projecting "naively".
+  bool triangulation;
 
   // Other boolean values that are needed to parse the command line arguments
   bool make_csv,
@@ -115,6 +125,12 @@ int main(const int argc, const char *argv[])
       ->default_value(false)
       ->implicit_value(true),
       "Boolean: is input a world map in longitude-latitude format?"
+      )(
+      "triangulation,t",
+      value<bool>(&triangulation)
+      ->default_value(false)
+      ->implicit_value(true),
+      "Project the cartogram using the triangulation method"
       )(
       "polygons_to_eps,e",
       value<bool>(&make_polygon_eps)
@@ -297,17 +313,44 @@ int main(const int argc, const char *argv[])
         double n_predicted_integrations =
           std::max((log(ratio_actual_to_permitted_max_area_error) / log(5)), 1.0);
 
+        double blur_width;
+        if (inset_state.n_finished_integrations() == 0) {
+          blur_width = 5.0;
+        } else if (inset_state.n_finished_integrations() < 7) {
+          blur_width =
+            std::pow(2.0, 3 - int(inset_state.n_finished_integrations()));
+        } else {
+          blur_width = 0.0;
+        }
+
         // TODO: THIS IF-CONDITION IS INELEGANT
-        if (inset_state.n_finished_integrations()  >  0) {
+        if (inset_state.n_finished_integrations() > 0) {
           fill_with_density(plot_density, &inset_state);
         }
-        if (inset_state.n_finished_integrations() == 0) {
-          blur_density(5.0, plot_density, &inset_state);
-        } else {
-          blur_density(0.0, plot_density, &inset_state);
-        }
+        blur_density(blur_width,
+                     plot_density,
+                     &inset_state);
         flatten_density(&inset_state);
-        project(&inset_state);
+
+        if (triangulation) {
+          
+          // Choosing diagonals that are inside graticule cells
+          fill_graticule_diagonals(&inset_state);
+
+          // Densify map
+          // TODO: It would make sense to turn densified_geo_divs() into a
+          // method of InsetState. Then the next command could be written more
+          // simply as inset_state.densify_geo_divs().
+          inset_state.set_geo_divs(
+            densified_geo_divs(inset_state.geo_divs())
+          );
+
+          // Projecting with Triangulation
+          project_with_triangulation(&inset_state);
+        } else {
+          project(&inset_state);
+        }
+
         inset_state.increment_integration();
 
         // Update area errors
@@ -363,7 +406,7 @@ int main(const int argc, const char *argv[])
   write_geojson(cart_json,
                 geo_file_name,
                 output_file_name,
-                std::cout,
+                std::cerr,
                 output_to_stdout,
                 &cart_info);
   return EXIT_SUCCESS;

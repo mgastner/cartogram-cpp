@@ -49,7 +49,7 @@ void flatten_density(InsetState *inset_state)
   boost::multi_array<XYPoint, 2> &proj = *inset_state->proj();
 
   // Resize proj multi array if running for the first time
-  if (inset_state->n_finished_integrations() == 0) {
+  if (proj.shape()[0] != lx || proj.shape()[1] != ly) {
     proj.resize(boost::extents[lx][ly]);
   }
   for (unsigned int i = 0; i < lx; ++i) {
