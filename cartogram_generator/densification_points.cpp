@@ -74,8 +74,6 @@ XYPoint calc_intersection(XYPoint a1, XYPoint a2, XYPoint b1, XYPoint b2) {
 // (0.5, 0.5).
 std::vector<Point> densification_points(Point pt1, Point pt2)
 {
-  std::cerr << "pt1 = " << pt1 << std::endl;
-
   // Vector for storing intersections before removing duplicates
   std::vector<XYPoint> temp_intersections;
 

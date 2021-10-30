@@ -337,9 +337,9 @@ int main(const int argc, const char *argv[])
           std::max((log(ratio_actual_to_permitted_max_area_error) / log(5)), 1.0);
 
         double blur_width;
-        if (inset_state.n_finished_integrations() == 0){
+        if (inset_state.n_finished_integrations() == 0) {
           blur_width = 5.0;
-        } else if (inset_state.n_finished_integrations() < 7){
+        } else if (inset_state.n_finished_integrations() < 7) {
           blur_width =
             std::pow(2.0, 3 - int(inset_state.n_finished_integrations()));
         } else {
@@ -347,7 +347,7 @@ int main(const int argc, const char *argv[])
         }
 
         // TODO: THIS IF-CONDITION IS INELEGANT
-        if (inset_state.n_finished_integrations()  >  0) {
+        if (inset_state.n_finished_integrations() > 0) {
           fill_with_density(plot_density, &inset_state);
         }
         blur_density(blur_width,
@@ -355,7 +355,7 @@ int main(const int argc, const char *argv[])
                      &inset_state);
         flatten_density(&inset_state);
 
-        if (triangulation){
+        if (triangulation) {
           // Choosing diagonals that are inside graticule cells
           fill_graticule_diagonals(&inset_state);
 
@@ -401,8 +401,8 @@ int main(const int argc, const char *argv[])
       }
 
       // Rescale insets in correct proportion to each other
-      //normalize_inset_area(&inset_state,
-        //                   cart_info.total_cart_target_area());
+      normalize_inset_area(&inset_state,
+                           cart_info.total_cart_target_area());
 
       // Clean up after finishing all Fourier transforms for this inset
       inset_state.destroy_fftw_plans_for_rho();

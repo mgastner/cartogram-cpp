@@ -5,8 +5,8 @@
 #include "constants.h"
 #include <CGAL/intersections.h>
 
-std::vector<Point> densification_points(Point a, Point b);
+std::vector<Point> densification_points(Point, Point);
 
-bool point_almost_equal(Point a, Point b);
+bool point_almost_equal(Point, Point);
 
 #endif
