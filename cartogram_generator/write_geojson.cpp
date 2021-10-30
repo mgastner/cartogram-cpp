@@ -5,7 +5,6 @@
 nlohmann::json inset_to_json(InsetState *inset_state)
 {
   nlohmann::json container;
-
   for (auto gd : inset_state->geo_divs()) {
     nlohmann::json gd_container;
     for (auto pwh : gd.polygons_with_holes()) {
@@ -47,7 +46,6 @@ nlohmann::json inset_to_json(InsetState *inset_state)
 
 std::vector<double> divider_points(double x1, double y1, double x2, double y2)
 {
-
   // Ratio between first divider point to (x2, y2) distance and
   // (x1, y1) : (x2, y2) distance
   double ratio = divider_length + (1.0 - divider_length) / 2;
