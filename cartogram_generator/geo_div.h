@@ -11,6 +11,7 @@ class GeoDiv {
     std::vector<Polygon_with_holes> polygons_with_holes_;
     std::set<std::string> adjacent_geodivs_;
     GeoDiv();
+    
   public:
     explicit GeoDiv(const std::string);
     const std::string id() const;

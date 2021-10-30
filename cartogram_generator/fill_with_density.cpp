@@ -34,19 +34,16 @@ bool ray_y_intersects(XYPoint a,
 
 void fill_with_density(bool plot_density, InsetState* inset_state)
 {
-  // Calculate the total current area and total target area, excluding any
-  // missing values
+  // Calculate the total current area and total target area. We assume that
+  // target areas that were zero or missing in the input have already been
+  // replaced by CartogramInfo::replace_missing_and_zero_target_areas().
   double total_current_area = 0.0;
   for (auto gd : inset_state->geo_divs()) {
-    if (!inset_state->target_area_is_missing(gd.id())) {
-      total_current_area += gd.area();
-    }
+    total_current_area += gd.area();
   }
   double total_target_area = 0.0;
   for (auto gd : inset_state->geo_divs()) {
-    if (!inset_state->target_area_is_missing(gd.id())) {
-      total_target_area += inset_state->target_areas_at(gd.id());
-    }
+    total_target_area += inset_state->target_areas_at(gd.id());
   }
   double mean_density = total_target_area / total_current_area;
   FTReal2d &rho_init = *inset_state->ref_to_rho_init();
@@ -79,12 +76,10 @@ void fill_with_density(bool plot_density, InsetState* inset_state)
 
   // Iterate through GeoDivs in inset_state
   for (auto gd : inset_state->geo_divs()) {
+
+    // Find target density
     double target_density;
-    if (!inset_state->target_area_is_missing(gd.id())) {
-      target_density = inset_state->target_areas_at(gd.id()) / gd.area();
-    } else {
-      target_density = mean_density;
-    }
+    target_density = inset_state->target_areas_at(gd.id()) / gd.area();
 
     // Iterate through "polygons with holes" in inset_state
     for (unsigned int j = 0; j < gd.n_polygons_with_holes(); ++j) {
@@ -272,7 +267,7 @@ void fill_with_density(bool plot_density, InsetState* inset_state)
         // Fill each cell between intersections
         for (unsigned int m = ceil(left_x); m <= ceil(right_x); ++m) {
           double weight =
-            inset_state->area_errors_at(intersections.back().geo_div_id);
+            inset_state->area_errors_at(intersections[l].geo_div_id);
           double target_dens = intersections[l].target_density;
           if (ceil(left_x) == ceil(right_x)) {
             weight *= (right_x - left_x);

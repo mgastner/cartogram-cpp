@@ -82,29 +82,32 @@ void write_polygons_to_eps(std::ofstream &eps_file,
         }
         eps_file << "c\n";
       }
-      if (colors) {
-
-        // Getting color
-        Color col = inset_state->colors_at(gd.id());
+      if (colors || fill_polygons) {
 
         // Save path before filling it
         eps_file << "gsave\n";
 
-        // Fill path
-        eps_file << col.eps() << "srgb f\n";
+        // Check if target area was initially was missing
+        if (inset_state->is_target_area_missing(gd.id())) {
 
-        // Restore path.
-        eps_file << "grestore\n";
-      }
-      else if (fill_polygons) {
+          // Fill path with dark-grey
+          eps_file << "0.9375 0.9375 0.9375 srgb f\n";
 
-        // Save path before filling it
-        eps_file << "gsave\n";
+        } else if (colors) {
 
-        // Fill path
-        eps_file << "0.96 0.92 0.70 srgb f\n";
+          // Get color
+          Color col = inset_state->colors_at(gd.id());
 
-        // Restore path.
+          // Fill path
+          eps_file << col.eps() << "srgb f\n";
+
+        } else if (fill_polygons) {
+
+          // Fill path with default color
+          eps_file << "0.96 0.92 0.70 srgb f\n";
+        }
+
+        // Restore path
         eps_file << "grestore\n";
       }
 
@@ -119,10 +122,12 @@ void write_map_to_eps(std::string eps_name, InsetState *inset_state)
 {
   std::ofstream eps_file(eps_name);
   write_eps_header_and_definitions(eps_file, eps_name, inset_state);
+
+  // Check whether the has all GeoDivs colored
+  bool has_colors = (inset_state->colors_size() == inset_state->n_geo_divs());
   write_polygons_to_eps(eps_file,
                         true,
-                        // false,
-                        !(inset_state->colors_empty()),
+                        has_colors,
                         inset_state);
   eps_file << "showpage\n";
   eps_file << "%%EOF\n";
@@ -148,6 +153,8 @@ void heatmap_color(double dens,
                    double *g,
                    double *b)
 {
+
+  // Assign possible categories for red, green, blue
   double red[] = {
     0.33, 0.55, 0.75, 0.87, 0.96, 0.99, 0.78, 0.50, 0.21, 0.00, 0.00
   };
@@ -159,6 +166,8 @@ void heatmap_color(double dens,
   };
   double xmin, xmax;
   int color_category;
+
+  // Choose color category
   if (dens > dens_max) {
     *r = red[0];
     *g = green[0];
@@ -168,10 +177,16 @@ void heatmap_color(double dens,
     color_category = 5 * (dens_max - dens) / (dens_max - dens_mean);
     xmax = dens_max - 0.2 * color_category * (dens_max - dens_mean);
     xmin = xmax - 0.2 * (dens_max - dens_mean);
+
+    // Assign color category 0 if dens_max and dens are very close
+    color_category = std::max(color_category, 0);
   } else if (dens > dens_min) {
     color_category = 5 * (dens_mean - dens) / (dens_mean - dens_min) + 5;
     xmax = dens_mean - 0.2 * (color_category - 5) * (dens_mean - dens_min);
     xmin = xmax - 0.2 * (dens_mean - dens_min);
+
+    // Assign color category 9 if dens_min and dens are very close
+    color_category = std::min(color_category, 9);
   } else {
     *r = red[10];
     *g = green[10];
