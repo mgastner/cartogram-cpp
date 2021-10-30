@@ -177,7 +177,7 @@ void fill_with_density(bool plot_density, InsetState* inset_state)
             std::cerr << "Y-coordinate: " << ray_y << std::endl;
             std::cerr << "Intersection points: " << std::endl;
             for (unsigned int l = 0; l < intersections.size(); ++l) {
-              std::cout << intersections[l].x << std::endl;
+              std::cerr << intersections[l].x << std::endl;
             }
             std::cerr << std::endl << std::endl;
             _Exit(932875);

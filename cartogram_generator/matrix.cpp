@@ -54,9 +54,9 @@ void Matrix::scale(double multiplier) {
 
 // For debugging
 void Matrix::print() {
-  std::cout << p11 << " " << p12 << " " << p13 << "\n\n";
-  std::cout << p21 << " " << p22 << " " << p23 << "\n\n";
-  std::cout << p31 << " " << p32 << " " << p33 << "\n\n";
+  std::cerr << p11 << " " << p12 << " " << p13 << "\n\n";
+  std::cerr << p21 << " " << p22 << " " << p23 << "\n\n";
+  std::cerr << p31 << " " << p32 << " " << p33 << "\n\n";
 }
 
 // calculate determinant

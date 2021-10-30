@@ -84,7 +84,7 @@ int choose_diag(InsetState *inset_state,
                  double v2x, double v2y,
                  double v3x, double v3y)
 {
-  
+
   boost::multi_array<XYPoint, 2> &proj = *inset_state->proj();
   const unsigned int lx = inset_state->lx();
   const unsigned int ly = inset_state->ly();
@@ -94,7 +94,7 @@ int choose_diag(InsetState *inset_state,
 
   double tv1x = (v1x != 0 && v1x != lx) ? proj[int(v1x)][int(v1y)].x : v1x;
   double tv1y = (v1y != 0 && v1y != ly) ? proj[int(v1x)][int(v1y)].y : v1y;
-  
+
   double tv2x = (v2x != 0 && v2x != lx) ? proj[int(v2x)][int(v2y)].x : v2x;
   double tv2y = (v2y != 0 && v2y != ly) ? proj[int(v2x)][int(v2y)].y : v2y;
 
@@ -130,11 +130,11 @@ int choose_diag(InsetState *inset_state,
   if (trans_graticule.bounded_side(Point(midpoint0.x, midpoint0.y)) == CGAL::ON_BOUNDED_SIDE){
 
     return 0;
-  
+
   } else if (trans_graticule.bounded_side(Point(midpoint1.x, midpoint1.y)) == CGAL::ON_BOUNDED_SIDE){
-    
+
     return 1;
-  
+
   } else {
     std::cerr << "Invalid graticule cell! At\n";
     std::cerr << "(" << tv0x << ", " << tv0y << ")\n";
@@ -183,14 +183,14 @@ void fill_graticule_diagonals(InsetState *inset_state)
     }
   }
 
-  std::cout << "Number of concave graticule cells: " << num_concave << "\n";
+  std::cerr << "Number of concave graticule cells: " << num_concave << "\n";
   return;
 }
 
 std::vector<XYPoint> find_transformed_triangle(std::vector<XYPoint> triangle,
                                                InsetState *inset_state)
 {
-  
+
   boost::multi_array<XYPoint, 2> &proj = *inset_state->proj();
   std::vector<XYPoint> transformed_triangle;
 
@@ -236,7 +236,7 @@ std::vector<XYPoint> find_triangle(const double x,
   double v3y = std::min(double(ly), floor(y + 0.5) + 0.5);
 
   int diag;
-  
+
   if (v0x == 0.0 || v0y == 0.0 || v2x == double(lx) || v2y == double(ly)){
     int concave = 0;
     diag = choose_diag(
@@ -323,13 +323,13 @@ XYPoint affine_trans(std::vector<XYPoint> *tri,
   the projected triangle (p, q, r). We locally approximate the cartogram
   transformation by an affine transformation T such that T(a) = p,
   T(b) = q and T(c) = r. We can think of T as a 3x3 matrix
-   /t11 t12 t13\ 
+   /t11 t12 t13\
   | t21 t22 t23 |  such that
    \ 0   0   1 /
-   /t11 t12 t13\   /a1 b1 c1\     /p1 q1 r1\ 
+   /t11 t12 t13\   /a1 b1 c1\     /p1 q1 r1\
   | t21 t22 t23 | | a2 b2 c2 | = | p2 q2 r2 | or TA = P. Hence T = PA^{-1}
    \ 0   0   1 /   \ 1  1  1/     \ 1  1  1/
-                               /b2-c2 c1-b1 b1*c2-b2*c1\ 
+                               /b2-c2 c1-b1 b1*c2-b2*c1\
   We have A^{-1} = (1/det(A)) | c2-a2 a1-c1 a2*c1-a1*c2 |. By multiplying
                                \a2-b2 b1-a1 a1*b2-a2*b1/
   PA^{-1} we obtain t11, t12, t13, t21, t22, t23. The postimage of (x, y) i
@@ -483,7 +483,7 @@ void point_search(InsetState *inset_state,
 {
   boost::multi_array<int, 2> &graticule_diagonals = *inset_state->graticule_diagonals();
 
-  std::cout << std::setprecision(20);
+  std::cerr << std::setprecision(20);
 
   for (auto gd : inset_state->geo_divs()) {
 
@@ -504,18 +504,18 @@ void point_search(InsetState *inset_state,
             std::vector<XYPoint> ext_ring_graticule_cell =
                 find_graticule(old_ext_ring[a][0], old_ext_ring[a][1]);
 
-            std::cout << "Point at (" << old_ext_ring[a][0] << ", " << old_ext_ring[a][1] << ")\n";
+            std::cerr << "Point at (" << old_ext_ring[a][0] << ", " << old_ext_ring[a][1] << ")\n";
 
-            std::cout << "On external boundary of " << gd.id() << "\n";
+            std::cerr << "On external boundary of " << gd.id() << "\n";
 
-            std::cout << "Point " << a << " out of " << old_ext_ring.size() << "\n";
+            std::cerr << "Point " << a << " out of " << old_ext_ring.size() << "\n";
 
-            std::cout << "Graticule cell cordinates: \n";
+            std::cerr << "Graticule cell cordinates: \n";
             for (unsigned int z = 0; z < 4; z++){
-              std::cout << "V" << z << ": (" << ext_ring_graticule_cell[z].x << ", " << ext_ring_graticule_cell[z].y << ")\n";
+              std::cerr << "V" << z << ": (" << ext_ring_graticule_cell[z].x << ", " << ext_ring_graticule_cell[z].y << ")\n";
             }
 
-            std::cout << "Diagonal chosen: " << graticule_diagonals[int(ext_ring_graticule_cell[0].x)][int(ext_ring_graticule_cell[0].y)] << "\n";
+            std::cerr << "Diagonal chosen: " << graticule_diagonals[int(ext_ring_graticule_cell[0].x)][int(ext_ring_graticule_cell[0].y)] << "\n";
           }
         }
 
@@ -535,16 +535,16 @@ void point_search(InsetState *inset_state,
               std::vector<XYPoint> ext_ring_graticule_cell =
                   find_graticule(old_hole[a][0], old_hole[a][1]);
 
-              std::cout << "Point at (" << old_hole[a][0] << ", " << old_hole[a][1] << ")\n";
+              std::cerr << "Point at (" << old_hole[a][0] << ", " << old_hole[a][1] << ")\n";
 
-              std::cout << "On internal boundary of " << gd.id() << "\n";
+              std::cerr << "On internal boundary of " << gd.id() << "\n";
 
-              std::cout << "Graticule cell cordinates: \n";
+              std::cerr << "Graticule cell cordinates: \n";
               for (unsigned int z = 0; z < 4; z++){
-                std::cout << "V" << z << ": (" << ext_ring_graticule_cell[z].x << ", " << ext_ring_graticule_cell[z].y << ")\n";
+                std::cerr << "V" << z << ": (" << ext_ring_graticule_cell[z].x << ", " << ext_ring_graticule_cell[z].y << ")\n";
               }
 
-              std::cout << "Diagonal chosen: " << graticule_diagonals[int(ext_ring_graticule_cell[0].x)][int(ext_ring_graticule_cell[0].y)] << "\n";
+              std::cerr << "Diagonal chosen: " << graticule_diagonals[int(ext_ring_graticule_cell[0].x)][int(ext_ring_graticule_cell[0].y)] << "\n";
             }
           }
         }

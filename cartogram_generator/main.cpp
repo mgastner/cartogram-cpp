@@ -321,7 +321,7 @@ int main(const int argc, const char *argv[])
       // cartogram is proportional to the number of GeoDivs that are in the
       // finished insets
       double inset_max_frac = inset_state.n_geo_divs() / total_geo_divs;
-      
+
       // Start map integration
       while (inset_state.n_finished_integrations() < max_integrations &&
              inset_state.max_area_error().value > max_permitted_area_error) {
@@ -345,7 +345,7 @@ int main(const int argc, const char *argv[])
         } else {
           blur_width = 0.0;
         }
-        
+
         // TODO: THIS IF-CONDITION IS INELEGANT
         if (inset_state.n_finished_integrations()  >  0) {
           fill_with_density(plot_density, &inset_state);
@@ -354,11 +354,11 @@ int main(const int argc, const char *argv[])
                      plot_density,
                      &inset_state);
         flatten_density(&inset_state);
-        
+
         if (triangulation){
           // Choosing diagonals that are inside graticule cells
           fill_graticule_diagonals(&inset_state);
-          
+
           // Densify map
           inset_state.set_geo_divs(
             densified_geo_divs(inset_state.geo_divs())
@@ -369,7 +369,7 @@ int main(const int argc, const char *argv[])
         } else {
           project(&inset_state);
         }
-        
+
         inset_state.increment_integration();
 
         // Update area errors
@@ -401,8 +401,8 @@ int main(const int argc, const char *argv[])
       }
 
       // Rescale insets in correct proportion to each other
-      normalize_inset_area(&inset_state,
-                           cart_info.total_cart_target_area());
+      //normalize_inset_area(&inset_state,
+        //                   cart_info.total_cart_target_area());
 
       // Clean up after finishing all Fourier transforms for this inset
       inset_state.destroy_fftw_plans_for_rho();
@@ -425,7 +425,7 @@ int main(const int argc, const char *argv[])
   write_geojson(cart_json,
                 geo_file_name,
                 output_file_name,
-                std::cout,
+                std::cerr,
                 output_to_stdout,
                 &cart_info);
   return EXIT_SUCCESS;

@@ -2,11 +2,11 @@
 #include "densification_points.h"
 
 bool duplicates(std::vector<Point> v) {
-  CGAL::set_pretty_mode(std::cout);
+  CGAL::set_pretty_mode(std::cerr);
   for (size_t i = 0; i < v.size() - 1; i++) {
     if (point_almost_equal(v[i], v[i + 1])) {
-      std::cout << "Point: " << i << ", v[i]: " << v[i] << std::endl;
-      std::cout << "Point: " << i + 1 << ", v[i + 1]: " << v[i + 1] << std::endl;
+      std::cerr << "Point: " << i << ", v[i]: " << v[i] << std::endl;
+      std::cerr << "Point: " << i + 1 << ", v[i + 1]: " << v[i + 1] << std::endl;
       return true;
     }
   }
@@ -15,7 +15,7 @@ bool duplicates(std::vector<Point> v) {
 
 std::vector<GeoDiv> densified_geo_divs(std::vector<GeoDiv> geodivs) {
 
-  std::cout << "Densifying" << std::endl;
+  std::cerr << "Densifying" << std::endl;
   std::vector<GeoDiv> geodivs_dens;
   for (GeoDiv gd : geodivs) {
     GeoDiv gd_dens(gd.id());
@@ -27,7 +27,7 @@ std::vector<GeoDiv> densified_geo_divs(std::vector<GeoDiv> geodivs) {
 
       // Iterate over each point in the outer boundary of the polygon
       for (size_t i = 0; i < outer_size; i++) {
-        
+
         // The segment defined by points a and b is to be densified.
         // b should be the point immediately after a, unless a is the final
         // point of the boundary, in which case b should be the first point.
@@ -49,7 +49,7 @@ std::vector<GeoDiv> densified_geo_divs(std::vector<GeoDiv> geodivs) {
       //   temp_out.push_back(outer_dens[i]);
       // }
       // if (duplicates(temp_out)) {
-      //   std::cout << "Duplicates found in outer boundary!" << std::endl;
+      //   std::cerr << "Duplicates found in outer boundary!" << std::endl;
       // }
 
       std::vector<Polygon> holes_v_dens;
@@ -59,7 +59,7 @@ std::vector<GeoDiv> densified_geo_divs(std::vector<GeoDiv> geodivs) {
       for (Polygon hole : holes_v) {
         Polygon hole_dens;
         for (size_t j = 0; j < hole.size(); j++) {
-          
+
           // c and d are determined the same way as a and b above
           Point c = hole[j];
           Point d = (j == hole.size() - 1) ? hole[0] : hole[j + 1];
@@ -77,7 +77,7 @@ std::vector<GeoDiv> densified_geo_divs(std::vector<GeoDiv> geodivs) {
         //   temp_holes.push_back(hole_dens[i]);
         // }
         // if (duplicates(temp_holes)) {
-        //   std::cout << "Duplicates found in hole!" << std::endl;
+        //   std::cerr << "Duplicates found in hole!" << std::endl;
         // }
 
         holes_v_dens.push_back(hole_dens);
