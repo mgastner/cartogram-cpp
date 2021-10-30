@@ -86,11 +86,11 @@ std::vector<GeoDiv> densified_geo_divs(std::vector<GeoDiv> geodivs)
 
         holes_v_dens.push_back(hole_dens);
       }
-      Polygon_with_holes pgnwh_dens(outer_dens, holes_v_dens.begin(), holes_v_dens.end());
+      Polygon_with_holes pgnwh_dens(outer_dens, holes_v_dens.begin(),
+                                    holes_v_dens.end());
       gd_dens.push_back(pgnwh_dens);
     }
     geodivs_dens.push_back(gd_dens);
   }
-
   return geodivs_dens;
 }
