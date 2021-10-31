@@ -183,11 +183,6 @@ std::vector<Point> densification_points(Point pt1, Point pt2)
   // Sort intersections
   std::sort(temp_intersections.begin(), temp_intersections.end());
 
-  // Reverse if needed
-  if ((pt1[0] > pt2[0]) || ((pt1[0] == pt2[0]) && (pt1[1] > pt2[1]))) {
-    std::reverse(temp_intersections.begin(), temp_intersections.end());
-  }
-
   // Eliminate duplicates
   std::vector<Point> intersections;
   intersections.push_back(Point(temp_intersections[0].x,
@@ -199,5 +194,11 @@ std::vector<Point> densification_points(Point pt1, Point pt2)
                                     temp_intersections[i].y));
     }
   }
+
+  // Reverse if needed
+  if ((pt1[0] > pt2[0]) || ((pt1[0] == pt2[0]) && (pt1[1] > pt2[1]))) {
+    std::reverse(intersections.begin(), intersections.end());
+  }
+  
   return intersections;
 }
