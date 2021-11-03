@@ -77,9 +77,9 @@ Further, make sure you *skip* step 1, as you would have already installed homebr
 /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
 ```
 
-2. Install gcc-10, icu4c, pkg-config and wget.
+2. Install gcc-10, icu4c, pkg-config, wget, and cmake.
 
-`brew install gcc@10 icu4c pkg-config wget`
+`brew install gcc@10 icu4c pkg-config wget cmake`
 
 4. Build Boost from Source using gcc-10
 
@@ -95,7 +95,7 @@ CC=gcc-10 CXX=g++-10 ./bootstrap.sh --with-icu=/usr/local/opt/icu4c --without-li
 echo "using darwin : : g++-10 ;\n" > user-config.jam
 ./b2 -d2 -j8 --layout=tagged-1.66 --user-config=user-config.jam -sNO_LZMA=1 -sNO_ZSTD=1 install threading=multi,single
 ```
-*Note: This may take up to 15 minutes, depending on your computer.*
+*Note: This may take 10-15 minutes, depending on your computer.*
 
 Thanks to [this page](https://githubmemory.com/repo/Homebrew/homebrew-core/issues/76645).
 
@@ -108,12 +108,14 @@ Navigate to the directory with our modified `fftw.rb` file `build/fftw/fftw.rb`,
 brew install --build-from-source fftw.rb
 ```
 
-*Note: This may take 5-7 minutes, depending on your computer.*
+*Note: This may take 10-15 minutes, depending on your computer.*
 
 2. Install nlohmann's JSON parser and CGAL.
 
 [nlohmann's GitHub Page](https://github.com/nlohmann/json)
+
 [CGAL Homepage](https://www.cgal.org/)
+
 ```
 brew tap nlohmann/json
 brew install nlohmann-json cgal
