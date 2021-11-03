@@ -95,7 +95,7 @@ CC=gcc-10 CXX=g++-10 ./bootstrap.sh --with-icu=/usr/local/opt/icu4c --without-li
 echo "using darwin : : g++-10 ;\n" > user-config.jam
 ./b2 -d2 -j8 --layout=tagged-1.66 --user-config=user-config.jam -sNO_LZMA=1 -sNO_ZSTD=1 install threading=multi,single
 ```
-*Note: This may take a few minutes, depening on your computer.*
+*Note: This may take up to 15 minutes, depending on your computer.*
 
 Thanks to [this page](https://githubmemory.com/repo/Homebrew/homebrew-core/issues/76645).
 
