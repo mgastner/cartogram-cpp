@@ -35,197 +35,87 @@ Cartogram generator in C++
 6. `make`
 7. `sudo make install`
 
-<a name="docker_on_mac"></a>
-## Setting up a Docker Ubuntu Container (Mac instructions)
+## Setting up dependencies on macOS (ARM & x86)
 
-\* **This set up currently only allows for Vim as the text editor.**
+### ARM Only Instructions (M1, M1 Pro, M1 Max, etc.)
 
-1. If you have not already, download Docker Desktop from https://www.docker.com/products/docker-desktop.
+1. Go to your applications folder.
+2. Right-click on your Terminal and duplicate it.
+3. Rename your newly duplicated Terminal to `x86 Terminal` (or something else of your choice).
+4. Right-click on the new Terminal, select Get Info.
+5. On this page, make sure to select `Open using Rosetta`.
+6. You now have a x86 terminal, which you can use to build other x86 binaries as well.
+7. Install [homebrew](brew.sh) using:
+```
+/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+```
+8. Open your zshrc using:
+```
+touch ~/.zshrc
+open -a TextEdit ~/.zshrc
+```
+9. Insert the following line:
+```
+alias brew86='arch -x86_64 /usr/local/Homebrew/bin/brew'
+```
+and save the file.
+10. Make sure your Zsh knows you've updated your zshrc with:
+```
+source ~/.zshrc
+```
+You can confirm executing the above command and then trying `brew86`.
+11. You may now start from step 2 of the General Instructions.
 
-2. Start Docker Desktop.
+##### **Please make sure you replace `brew` with `brew86` in the steps below**. Otherwise, you will NOT be able to build the binary on your ARM machine.
 
-3. Change directories to your desired folder.
+Further, make sure you *skip* step 1, as you would have already installed homebrew at this point.
 
-```
-$ cd ~
-```
+### General Instructions (If you have an Intel processor, start here)
 
-4. Pull the Ubuntu Docker image.
-
+1. Install [homebrew](brew.sh) using:
 ```
-$ docker pull ubuntu
-```
-
-5. View your Docker images.
-```
-$ docker image ls
-```
-
-6. Create a container named `ubuntu-cartogram_cpp` based on the Ubuntu image. The `-i` flag allows for an interactive container while the `-t` flag allows for terminal support within the container.
-```
-$ docker create -it --name=ubuntu-cartogram_cpp ubuntu
-```
-
-7. View your Docker containers and their relevant information.
-```
-$ docker ps -as
-```
-
-8. Start the `ubuntu-cartogram_cpp` container. You will enter the root directory of this Ubuntu container in an environment where you can run your normal terminal commands (e.g., `cd`, `cp`, `mv` `pwd`).
-```
-$ docker start -i ubuntu-cartogram_cpp
-```
-
-9. To start a second (or third, fourth, etc.) terminal window in this container, open a new terminal tab and run the following command.
-```
-$ docker exec -it ubuntu-cartogram_cpp bash
+/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
 ```
 
-10. To exit the container, run the following command.
+2. Install gcc-10, icu4c, pkg-config and wget.
+
+`brew install gcc@10 icu4c pkg-config wget`
+
+4. Build Boost from Source using gcc-10
+
+Please ensure you do not have an existing installation of boost. If you usually use homebrew to install packages, you can ensure that you uninstall it with: `brew uninstall boost`.
+
+Run the following commands, one after another, to build boost from source:
 ```
-root@<number>:/# exit
+wget https://boostorg.jfrog.io/artifactory/main/release/1.75.0/source/boost_1_75_0.tar.gz
+tar -xf boost_1_75_0.tar.gz
+cd boost_1_75_0
+CC=gcc-10 CXX=g++-10 ./bootstrap.sh --with-icu=/usr/local/opt/icu4c --without-libraries=python,mpi
+./b2 headers
+echo "using darwin : : g++-10 ;\n" > user-config.jam
+./b2 -d2 -j8 --layout=tagged-1.66 --user-config=user-config.jam -sNO_LZMA=1 -sNO_ZSTD=1 install threading=multi,single
 ```
-11. Start the container and install the necessary dependencies for cartogram_cpp. You will need to use Vim as your text-editor (basic Vim instructions [here](https://opensource.com/article/19/3/getting-started-vim)).
-```
-$ docker start -i ubuntu-cartogram_cpp
-root@<number>:/#
-root@<number>:/# apt-get update
-root@<number>:/# apt-get install sudo
-root@<number>:/# apt-get install git
-root@<number>:/# apt install vim
-root@<number>:/# apt-get install cmake
-root@<number>:/# apt install build-essential
-root@<number>:/# apt-get install llvm
-root@<number>:/# apt-get install libboost-all-dev
-root@<number>:/# apt install g++-10
-root@<number>:/# apt-get install libcgal-dev
-root@<number>:/# apt-get install libomp-dev
-```
+*Note: This may take a few minutes, depening on your computer.*
 
-12. Download and copy the nlohmann JSON parser library to your Ubuntu container.
-    1. Go to https://github.com/nlohmann/json
-    2. Click on "Code" -> "Download Zip"
-    3. Go to your Downloads folder.
-    4. Move the downloaded file from your Downloads folder to any other desired folder (not in the Ubuntu container) (e.g., root directory: `~`).
-    5. Open a new separate terminal window and navigate to that desired folder.
-    ```
-    $ cd ~
-    ```
-    4. Copy the downloaded file to your Ubuntu container.
-    ```
-    $ docker cp json-develop/ ubuntu-cartogram_cpp:/home/json-develop/
-    ```
+Thanks to [this page](https://githubmemory.com/repo/Homebrew/homebrew-core/issues/76645).
 
-13. To install nlohmann's JSON parser library, go back to your Ubuntu container terminal window and run the following commands.
-```
-root@<number>:/# cd home/json-develop/
-root@<number>:/home/json-develop# cmake .
-root@<number>:/home/json-develop# make
-root@<number>:/home/json-develop# make install
-```
-
-14. Download and copy the FFTW library to your Ubuntu container.
-    1. Go to [FFTW's website](http://www.fftw.org/download.html "FFTW Downloads Page").
-    2. Install the latest version of FFTW (http)
-    3. Go to Downloads folder
-    4. Move the downloaded file from the Downloads folder to any desired folder (e.g., root directory: `~`).
-    5. Open a new separate terminal window and navigate to that desired folder.
-    ```
-    $ cd ~
-    ```
-    4. Copy the downloaded file to your Ubuntu container.
-    ```
-    $ docker cp fftw-3.3.9.tar ubuntu-cartogram_cpp:/home/fftw-3.3.9.tar
-    ```
-
-15. To unarchive and install the fftw3 library, go back to your Ubuntu container terminal window and run the following commands.
-```
-root@<number>:/# cd /home/
-root@<number>:/home# tar -xf fftw-3.3.9.tar
-root@<number>:/home# rm fftw-3.3.9.tar
-root@<number>:/home# cd fftw-3.3.9
-root@<number>:/home/fftw-3.3.9# ./configure
-root@<number>:/home/fftw-3.3.9# make
-root@<number>:/home/fftw-3.3.9# sudo make install
-```
-
-16. In your Ubuntu container, follow the instructions [here](https://docs.github.com/en/github/getting-started-with-github/set-up-git) to set up Git and the Linux instructions [here](https://docs.github.com/en/github/authenticating-to-github/connecting-to-github-with-ssh) to connect to GitHub with SSH. Alternatively, you may use the following steps (though still referencing this GitHub guide).
-
-    1. Set up Git. (Git was already installed in step 11)
-    ```
-    root@<number>:/# git config --global user.name "Your name here"
-    root@<number>:/# git config --global user.email "your_email@example.com"
-    ```
-
-    2. Generate a new SSH key. Refer [here](https://docs.github.com/en/github/authenticating-to-github/generating-a-new-ssh-key-and-adding-it-to-the-ssh-agent) for how to fill in the fields when prompted.
-    ```
-    root@<number>:/# ssh-keygen -t ed25519 -C "your_email@example.com"
-    ```
-    3. Add your SSH key to the ssh-agent.
-    ```
-    root@<number>:/# eval "$(ssh-agent -s)"
-    root@<number>:/# ssh-add ~/.ssh/id_ed25519
-    ```
-
-    4. Adding a new SSH key to your GitHub account.
-        1. Open `.ssh/id_ed25519.pub` using Vim and manually copy its contents.
-        ```
-        root@<number>:/# vim ~/.ssh/id_ed25519.pub
-        ```
-        2. Exit Vim by typing `esc`, `:q` and enter.
-        3. Create a new SSH key on GitHub and paste the contents into the 'key' section.
-
-17. Clone the `cartogram_cpp` repository and begin developing in Vim as per normal.
-```
-root@<number>:/home# git clone git@github.com:mgastner/cartogram_cpp.git
-root@<number>:/home# cd cartogram_cpp/build
-root@<number>:/home/cartogram_cpp/build# cmake .
-root@<number>:/home/cartogram_cpp/build# make
-root@<number>:/home/cartogram_cpp/build# ./cartogram -h
-```
-
-## Installing Dependencies on macOS
-
-**As of 2021-May-21, these instructions do not work on all Macs. We are trying to find the bug. In the meantime, please follow the [instructions for a Docker installation on a Mac](#docker_on_mac).**
-
-**Please ensure you have `Homebrew` installed. You may find instruction on [Homebrew's website](https://brew.sh "Homebrew Home Page") for the same.**
-
-#### Installing nlohmann's JSON parser
-
-[nlohmann's GitHub Page](https://github.com/nlohmann/json)
-
-```
-brew tap nlohmann/json
-brew install nlohmann-json
-```
-
-
-#### Installing CGAL
-
-[CGAL Homepage](https://www.cgal.org/)
-
-`brew install cgal`
-
-#### Installing OpenMP
-
-[OpenMP Homepage](https://www.openmp.org/)
-
-`brew install libomp`
-
-#### Installing LLVM Compilers
-
-[LLVM Homepage](https://llvm.org)
-`brew install llvm`
-
-#### Installing FFTW3
+4. Install FFTW with our settings (without MPI or OpenMP)
 
 [FFTW Homepage](http://www.fftw.org)
 
-`brew install fftw`
+Navigate to the directory with our modified `fftw.rb` file `build/fftw/fftw.rb`, based on the original homebrew ruby script on homebrew-core [here](https://github.com/Homebrew/homebrew-core/blob/master/Formula/fftw.rb). Then, run the following command.
+```
+brew install --build-from-source fftw.rb
+```
 
-#### Alternatively, install all, except nlhomann's JSON parser, at once:
+2. Install nlohmann's JSON parser and CGAL.
 
-`brew install fftw llvm libomp cgal`
+[nlohmann's GitHub Page](https://github.com/nlohmann/json)
+[CGAL Homepage](https://www.cgal.org/)
+```
+brew tap nlohmann/json
+brew install nlohmann-json cgal
+```
 
 ## Compiling and running (Ubuntu or macOS)
 
