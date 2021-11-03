@@ -108,6 +108,8 @@ Navigate to the directory with our modified `fftw.rb` file `build/fftw/fftw.rb`,
 brew install --build-from-source fftw.rb
 ```
 
+*Note: This may take 5-7 minutes, depending on your computer.*
+
 2. Install nlohmann's JSON parser and CGAL.
 
 [nlohmann's GitHub Page](https://github.com/nlohmann/json)
