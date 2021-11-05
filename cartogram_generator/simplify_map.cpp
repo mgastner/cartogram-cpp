@@ -932,6 +932,49 @@
 //   }
 // }
 
+// template <typename Container>
+// bool contains(const Container& cont, const std::vector<double> &s)
+// {
+//   return std::search(cont.begin(), cont.end(), s.begin(), s.end()) != cont.end();
+// }
+
+bool contains_vertices_in_order(Polygon polygon1, Polygon polygon2)
+{
+  // Return true if and only if polygon1 contains all vertices in polygon2 and
+  // the order of the vertices in both polygons match
+  if (polygon1.size() < polygon2.size()) {
+    return false;
+  }
+  std::vector<unsigned int> indices;
+  for (Polygon::Vertex_iterator pit2 = polygon2.vertices_begin();
+       pit2 != polygon2.vertices_end();
+       ++pit2) {
+    auto pit1 =
+      std::find(polygon1.vertices_begin(), polygon1.vertices_end(), *pit2);
+    if (pit1 == polygon1.vertices_end()) {  // No matching vertex in polygon1
+      return false;
+    }
+    indices.push_back(distance(polygon1.vertices_begin(), pit1));
+    if (!std::is_sorted(indices.begin(), indices.end())) {
+      return false;
+    }
+  }
+  return std::is_sorted(indices.begin(), indices.end());
+}
+
+int simplified_polygon_index(Polygon non_simplified,
+                             std::vector<Polygon> *simplified)
+{
+  // Return index of polygon in *simplified that corresponds to a
+  // non-simplified polygon
+  for (unsigned int i = 0; i < simplified->size(); ++i) {
+    if (contains_vertices_in_order(non_simplified, simplified->at(i))) {
+      return i;
+    }
+  }
+  return -1;  // -1 implies that no matching simplified polygon was found
+}
+
 void simplify_map(InsetState *inset_state)
 {
   // TODO: Should steps 1 and 2 be swapped? Currently, the polygons are no
@@ -1006,7 +1049,6 @@ void simplify_map(InsetState *inset_state)
   for (const auto gd : inset_state->geo_divs()) {
     std::cerr << gd.id() << std::endl;
     for (auto pwh : gd.polygons_with_holes()) {
-      //std::cerr << pwh << std::endl;
       Polygon &ext_ring = pwh.outer_boundary();
       ct.insert_constraint(ext_ring);
       for (Polygon_with_holes::Hole_const_iterator it = pwh.holes_begin();
@@ -1056,80 +1098,28 @@ void simplify_map(InsetState *inset_state)
                           --ct.points_in_constraint_end(*cit));
     simplified_polygons.push_back(ct_as_polygon);
   }
+
+  // Match non-simplified polygon to its simplified counterpart
+  std::vector<unsigned int> matching_simplified_polygon;
   for (const auto gd : inset_state->geo_divs()) {
-    std::cerr << "GeoDiv: " << gd.id() << std::endl;
+    std::cerr << "\nGeoDiv: " << gd.id() << std::endl;
+    unsigned int pwh_ctr = 0;
     for (auto pwh : gd.polygons_with_holes()) {
+      std::cerr << "Investigating exterior ring " << pwh_ctr << std::endl;
       Polygon &ext_ring = pwh.outer_boundary();
-
-      std::cerr << "An exterior ring in GeoDiv" << gd.id() << ":" << std::endl;
-      for (Polygon::Vertex_iterator vit = ext_ring.vertices_begin();
-           vit != ext_ring.vertices_end();
-           ++vit) {
-        std::cerr << *vit
-                  << " ("
-                  << (*vit).x() - (int)(*vit).x()
-                  << " "
-                  << (*vit).y() - (int)(*vit).y()
-                  << ")"
-                  << std::endl;
-      }
-
-      for (std::vector<Polygon>::iterator pit = simplified_polygons.begin();
-           pit != simplified_polygons.end();
-           ++pit) {
-        Polygon simplified_polygon = *pit;
-        std::cerr << "A simplified polygon: " << std::endl;
-        for (Polygon::Vertex_iterator spit = simplified_polygon.vertices_begin();
-             spit != simplified_polygon.vertices_end();
-             ++spit) {
-          std::cerr << *spit
-                    << " ("
-                    << (*spit).x() - (int)(*spit).x()
-                    << " "
-                    << (*spit).y() - (int)(*spit).y()
-                    << ")"
-                    << std::endl;
-        }
-        bool simplified_polygon_in_ext_ring =
-          std::includes(ext_ring.vertices_begin(),
-                        ext_ring.vertices_end(),
-                        simplified_polygon.vertices_begin(),
-                        simplified_polygon.vertices_end());
-        if (simplified_polygon_in_ext_ring) {
-          std::cerr << "An exterior ring of "
-                    << gd.id()
-                    << " includes a CT"
-                    << std::endl;
-        }
-        //       std::cerr << "New constraint\n" << std::endl;
-        //       for (Points_in_constraint_iterator vit =
-        //              ct.points_in_constraint_begin(*cit);
-        //            vit != ct.points_in_constraint_end(*cit);
-        //            ++vit) {
-        //         std::cerr << *vit << std::endl;
-        //       }
-      }
+      int spi = simplified_polygon_index(ext_ring, &simplified_polygons);
+      matching_simplified_polygon.push_back(spi);
+      ++pwh_ctr;
     }
   }
 
-  const std::vector<char> v1 = {'x', 'h', 'f', 'b', 'c', 'a'},
-                          v2 = {'a', 'b', 'c'},
-                          v3 = {'a', 'c'},
-                          v4 = {'a', 'a', 'b'},
-                          v5 = {'g'},
-                          v6 = {'x', 'f', 'a'};
-  std::cerr << "v1 includes v6: "
-            << std::boolalpha
-            << std::includes(v1.begin(), v1.end(), v6.begin(), v6.end())
-            << std::endl;
-
-  //std::cerr << v1 << "\nincludes:\n" << std::boolalpha
-  //   << v2 << ": " << std::includes(v1.begstd::includes(v1.begin(), v1.end(), v2.begin(), v2.end())in(), v1.end(), v2.begin(), v2.end()) << '\n'
-  //   << v3 << ": " << std::includes(v1.begin(), v1.end(), v3.begin(), v3.end()) << '\n'
-  //   << v4 << ": " << std::includes(v1.begin(), v1.end(), v4.begin(), v4.end()) << '\n'
-  //   << v5 << ": " << std::includes(v1.begin(), v1.end(), v5.begin(), v5.end()) << '\n'
-  //   << v6 << ": " << std::includes(v1.begin(), v1.end(), v6.begin(), v6.end()) << '\n'
-  //        << std::endl;
+  for (unsigned int i = 0; i < matching_simplified_polygon.size(); ++i) {
+    std::cerr << "i = "
+              << i
+              << ": "
+              << matching_simplified_polygon.at(i)
+              << std::endl;
+  }
 
   exit(1);
 
