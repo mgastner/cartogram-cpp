@@ -24,6 +24,8 @@ typedef CGAL::Constrained_Delaunay_triangulation_2<
     CGAL::Exact_predicates_tag
     > CDT;
 typedef CGAL::Constrained_triangulation_plus_2<CDT> CT;
+typedef CT::Constraint_iterator Constraint_iterator;
+typedef CT::Points_in_constraint_iterator Points_in_constraint_iterator;
 typedef PS::Stop_below_count_ratio_threshold Stop;
 typedef PS::Squared_distance_cost Cost;
 
