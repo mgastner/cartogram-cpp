@@ -11,10 +11,12 @@
 // #include <map>
 // #include <unordered_set>
 // #include <unordered_map>
-// #include <algorithm>
+ #include <algorithm>
 // #include <chrono>
 // #include <cmath>
 // #include <iomanip>
+//
+# include <cctype>
 //
 // #include "cgal_typedef.h"
 #include "inset_state.h"
@@ -1006,12 +1008,6 @@ void simplify_map(InsetState *inset_state)
     for (auto pwh : gd.polygons_with_holes()) {
       //std::cerr << pwh << std::endl;
       Polygon &ext_ring = pwh.outer_boundary();
-      std::cerr << "An exterior ring of "
-                << gd.id()
-                << " starts with ("
-                << ext_ring[0]
-                << ")"
-                << std::endl;
       ct.insert_constraint(ext_ring);
       for (Polygon_with_holes::Hole_const_iterator it = pwh.holes_begin();
            it != pwh.holes_end();
@@ -1044,20 +1040,97 @@ void simplify_map(InsetState *inset_state)
 //   plls_adv_by_pos = store_by_pos(ct_polylines, gd_vector, pgn_bool_island);
 //
 /* 7. Simplify polylines.                                                  */
-  PS::simplify(ct, Cost(), Stop(0.5));
+
+  // Simplify polygons
+  PS::simplify(ct, Cost(), Stop(0.1));
+
+  // Store each constraint in ct as a polygon
+  std::vector<Polygon> simplified_polygons;
   for (Constraint_iterator cit = ct.constraints_begin();
        cit != ct.constraints_end();
        ++cit) {
-    //std::cerr << "simplified polyline" << std::endl;
-    Points_in_constraint_iterator pici = ct.points_in_constraint_begin(*cit);
-    std::cerr << "pici = " << *pici << std::endl;
-    for (Points_in_constraint_iterator vit =
-           ct.points_in_constraint_begin(*cit);
-         vit != ct.points_in_constraint_end(*cit);
-         ++vit) {
-      //std::cerr << *vit << std::endl;
+
+    // First and last point in the constraint are identical. We remove the
+    // last point to make the polygon simple.
+    Polygon ct_as_polygon(ct.points_in_constraint_begin(*cit),
+                          --ct.points_in_constraint_end(*cit));
+    simplified_polygons.push_back(ct_as_polygon);
+  }
+  for (const auto gd : inset_state->geo_divs()) {
+    std::cerr << "GeoDiv: " << gd.id() << std::endl;
+    for (auto pwh : gd.polygons_with_holes()) {
+      Polygon &ext_ring = pwh.outer_boundary();
+
+      std::cerr << "An exterior ring in GeoDiv" << gd.id() << ":" << std::endl;
+      for (Polygon::Vertex_iterator vit = ext_ring.vertices_begin();
+           vit != ext_ring.vertices_end();
+           ++vit) {
+        std::cerr << *vit
+                  << " ("
+                  << (*vit).x() - (int)(*vit).x()
+                  << " "
+                  << (*vit).y() - (int)(*vit).y()
+                  << ")"
+                  << std::endl;
+      }
+
+      for (std::vector<Polygon>::iterator pit = simplified_polygons.begin();
+           pit != simplified_polygons.end();
+           ++pit) {
+        Polygon simplified_polygon = *pit;
+        std::cerr << "A simplified polygon: " << std::endl;
+        for (Polygon::Vertex_iterator spit = simplified_polygon.vertices_begin();
+             spit != simplified_polygon.vertices_end();
+             ++spit) {
+          std::cerr << *spit
+                    << " ("
+                    << (*spit).x() - (int)(*spit).x()
+                    << " "
+                    << (*spit).y() - (int)(*spit).y()
+                    << ")"
+                    << std::endl;
+        }
+        bool simplified_polygon_in_ext_ring =
+          std::includes(ext_ring.vertices_begin(),
+                        ext_ring.vertices_end(),
+                        simplified_polygon.vertices_begin(),
+                        simplified_polygon.vertices_end());
+        if (simplified_polygon_in_ext_ring) {
+          std::cerr << "An exterior ring of "
+                    << gd.id()
+                    << " includes a CT"
+                    << std::endl;
+        }
+        //       std::cerr << "New constraint\n" << std::endl;
+        //       for (Points_in_constraint_iterator vit =
+        //              ct.points_in_constraint_begin(*cit);
+        //            vit != ct.points_in_constraint_end(*cit);
+        //            ++vit) {
+        //         std::cerr << *vit << std::endl;
+        //       }
+      }
     }
   }
+
+  const std::vector<char> v1 = {'x', 'h', 'f', 'b', 'c', 'a'},
+                          v2 = {'a', 'b', 'c'},
+                          v3 = {'a', 'c'},
+                          v4 = {'a', 'a', 'b'},
+                          v5 = {'g'},
+                          v6 = {'x', 'f', 'a'};
+  std::cerr << "v1 includes v6: "
+            << std::boolalpha
+            << std::includes(v1.begin(), v1.end(), v6.begin(), v6.end())
+            << std::endl;
+
+  //std::cerr << v1 << "\nincludes:\n" << std::boolalpha
+  //   << v2 << ": " << std::includes(v1.begstd::includes(v1.begin(), v1.end(), v2.begin(), v2.end())in(), v1.end(), v2.begin(), v2.end()) << '\n'
+  //   << v3 << ": " << std::includes(v1.begin(), v1.end(), v3.begin(), v3.end()) << '\n'
+  //   << v4 << ": " << std::includes(v1.begin(), v1.end(), v4.begin(), v4.end()) << '\n'
+  //   << v5 << ": " << std::includes(v1.begin(), v1.end(), v5.begin(), v5.end()) << '\n'
+  //   << v6 << ": " << std::includes(v1.begin(), v1.end(), v6.begin(), v6.end()) << '\n'
+  //        << std::endl;
+
   exit(1);
 
 //
