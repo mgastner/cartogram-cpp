@@ -16,20 +16,20 @@ Matrix::Matrix()
   p33 = 1;
 }
 
-// Matrix from three XYPoints
-Matrix::Matrix (XYPoint a, XYPoint b, XYPoint c)
+// Matrix from three Points
+Matrix::Matrix (Point a, Point b, Point c)
 {
   // First vertex
-  p11 = a.x;
-  p21 = a.y;
+  p11 = a.x();
+  p21 = a.y();
 
   // Second vertex
-  p12 = b.x;
-  p22 = b.y;
+  p12 = b.x();
+  p22 = b.y();
 
   // Third vertex
-  p13 = c.x;
-  p23 = c.y;
+  p13 = c.x();
+  p23 = c.y();
 
   // Make it a 3x3 matrix
   p31 = 1;
@@ -106,11 +106,15 @@ Matrix Matrix::multiplied_with(Matrix m1)
   return result;
 }
 
-// Transform XYPoint based on a transformation matrix
-XYPoint Matrix::transformed_XYPoint(XYPoint point)
+// Transform Point based on a transformation matrix
+Point Matrix::transformed_point(Point point)
 {
-  XYPoint transformed;
-  transformed.x = p11 * (point.x) + p12 * (point.y) + p13;
-  transformed.y = p21 * (point.x) + p22 * (point.y) + p23;
-  return transformed;
+  // XYPoint transformed;
+  // transformed.x = p11 * (point.x) + p12 * (point.y) + p13;
+  // transformed.y = p21 * (point.x) + p22 * (point.y) + p23;
+  // return transformed;
+  return Point(
+    p11 * (point.x()) + p12 * (point.y()) + p13,
+    p21 * (point.x()) + p22 * (point.y()) + p23
+  );
 }
