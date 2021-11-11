@@ -48,10 +48,21 @@ add_executable(
   ../cartogram_generator/albers_projection.cpp)
 
 # Linking appropriate libraries required
-target_link_libraries(
-  cartogram
-  ${Boost_LIBRARIES}
-  CGAL::CGAL
-  ${CMAKE_THREAD_LIBS_INIT}
-  PkgConfig::FFTW
-)
+if(APPLE)
+  target_link_libraries(
+    cartogram
+    ${Boost_LIBRARIES}
+    CGAL::CGAL
+    ${CMAKE_THREAD_LIBS_INIT}
+    PkgConfig::FFTW
+  )
+elseif(UNIX)
+  target_link_libraries(
+    cartogram
+    ${Boost_LIBRARIES}
+    CGAL::CGAL
+    ${CMAKE_THREAD_LIBS_INIT}
+    PkgConfig::FFTW
+    OpenMP::OpenMP_CXX
+  )
+endif()
