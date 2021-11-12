@@ -101,11 +101,8 @@ Thanks to [this page](https://githubmemory.com/repo/Homebrew/homebrew-core/issue
 
 4. Install FFTW with our settings (without MPI or OpenMP)
 
-[FFTW Homepage](http://www.fftw.org)
-
-Navigate to the directory with our modified `fftw.rb` file `build/fftw/fftw.rb`, based on the original homebrew ruby script on homebrew-core [here](https://github.com/Homebrew/homebrew-core/blob/master/Formula/fftw.rb). Then, run the following command.
 ```
-brew install --build-from-source fftw.rb
+brew install fftw
 ```
 
 *Note: This may take 10-15 minutes, depending on your computer.*
