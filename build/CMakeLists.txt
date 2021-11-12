@@ -13,6 +13,7 @@ set(CMAKE_CXX_COMPILER "g++-10")
 set(CMAKE_C_COMPILER "gcc-10")
 
 # Finding appropriate packages
+find_package(OpenMP REQUIRED)
 find_package(CGAL 5.3 REQUIRED)
 find_package(Boost 1.70 COMPONENTS program_options REQUIRED)
 find_package(Threads REQUIRED)
@@ -20,6 +21,10 @@ find_package(PkgConfig REQUIRED)
 pkg_search_module(FFTW REQUIRED fftw3 IMPORTED_TARGET)
 include_directories(PkgConfig::FFTW)
 link_libraries(PkgConfig::FFTW)
+
+if(OPENMP_FOUND AND APPLE)
+  set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fopenmp")
+endif()
 
 # Adding executables needed
 add_executable(
