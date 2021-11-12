@@ -151,14 +151,14 @@ void CartogramInfo::replace_missing_and_zero_target_areas()
 
   // Deal with missing target areas
   if (ta_na_exists) {
-    double total_non_na_area = 0.0;
-    double total_non_na_ta = 0.0;
+    double total_cart_non_na_area = 0.0;
+    double total_cart_non_na_ta = 0.0;
 
     for (auto const &inset_state : inset_states_ | std::views::values) {
       for (auto gd : inset_state.geo_divs()) {
         if (!inset_state.target_area_is_missing(gd.id())) {
-          total_non_na_area += gd.area();
-          total_non_na_ta += inset_state.target_areas_at(gd.id());
+          total_cart_non_na_area += gd.area();
+          total_cart_non_na_ta += inset_state.target_areas_at(gd.id());
         }
       }
     }
@@ -171,13 +171,13 @@ void CartogramInfo::replace_missing_and_zero_target_areas()
 
           // If all target areas are missing, make all GeoDivs equal to their
           // geographic area
-          if (total_non_na_ta == 0.0) {
+          if (total_cart_non_na_ta == 0.0) {
             new_target_area = gd.area();
           } else {
 
             // Replace target_area
             new_target_area =
-              (total_non_na_ta / total_non_na_area) * gd.area();
+              (total_cart_non_na_ta / total_cart_non_na_area) * gd.area();
           }
 
           inset_state.target_areas_replace(gd.id(), new_target_area);

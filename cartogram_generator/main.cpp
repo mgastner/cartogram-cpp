@@ -208,9 +208,6 @@ int main(const int argc, const char *argv[])
     total_geo_divs += inset_state.n_geo_divs();
   }
 
-  // Replacing missing and zero target areas with absolute values
-  cart_info.replace_missing_and_zero_target_areas();
-
   // Determine name of input map
   std::string map_name = geo_file_name;
   if (map_name.find_last_of("/\\") != std::string::npos) {
@@ -220,9 +217,8 @@ int main(const int argc, const char *argv[])
     map_name = map_name.substr(0, map_name.find('.'));
   }
 
-  // Loop over insets
+  // Projecting map and ensuring all holes are inside polygons.
   for (auto &[inset_pos, inset_state] : *cart_info.ref_to_inset_states()) {
-
     // Check for errors in the input topology
     try {
       holes_inside_polygons(&inset_state);
@@ -249,6 +245,13 @@ int main(const int argc, const char *argv[])
                 << std::endl;
       return EXIT_FAILURE;
     }
+  }
+
+  // Replacing missing and zero target areas with absolute values
+  cart_info.replace_missing_and_zero_target_areas();
+
+  // Loop over insets
+  for (auto &[inset_pos, inset_state] : *cart_info.ref_to_inset_states()) {
 
     // Determine the name of the inset
     std::string inset_name = map_name;
