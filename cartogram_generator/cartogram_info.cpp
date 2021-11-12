@@ -8,7 +8,7 @@ CartogramInfo::CartogramInfo(const bool w,
   return;
 }
 
-double CartogramInfo::cart_non_missing_target_area() const
+double CartogramInfo::cart_total_target_area() const
 {
   double area = 0.0;
 
@@ -16,11 +16,7 @@ double CartogramInfo::cart_non_missing_target_area() const
   // https://stackoverflow.com/questions/13087028/can-i-easily-iterate-over-
   // the-values-of-a-map-using-a-range-based-for-loop
   for (auto const &inset_state : inset_states_ | std::views::values) {
-    for (auto gd : inset_state.geo_divs()) {
-      if (!inset_state.target_area_is_missing(gd.id())) {
-        area += inset_state.target_areas_at(gd.id());
-      }
-    }
+    area += inset_state.total_target_area();
   }
   return area;
 }
@@ -99,13 +95,13 @@ void CartogramInfo::replace_missing_and_zero_target_areas()
 
         // Insert true into an std::unordered_map that stores whether a
         // GeoDiv's target area is missing
-        inset_state.is_target_area_missing_insert(gd.id(), true);
+        inset_state.is_input_target_area_missing_insert(gd.id(), true);
       } else if (target_area == 0) {
         ta_zero_exists = true;
       }
 
       // Insert false if the value does not already exist in the map
-      inset_state.is_target_area_missing_insert(gd.id(), false);
+      inset_state.is_input_target_area_missing_insert(gd.id(), false);
     }
   }
 
@@ -156,11 +152,15 @@ void CartogramInfo::replace_missing_and_zero_target_areas()
   // Deal with missing target areas
   if (ta_na_exists) {
     double total_non_na_area = 0.0;
-    double total_non_na_ta = cart_non_missing_target_area();
+    double total_non_na_ta = 0.0;
 
-    // Find total area of non-missing GeoDivs
     for (auto const &inset_state : inset_states_ | std::views::values) {
-      total_non_na_area += inset_state.non_missing_target_area();
+      for (auto gd : inset_state.geo_divs()) {
+        if (!inset_state.target_area_is_missing(gd.id())) {
+          total_non_na_area += gd.area();
+          total_non_na_ta += inset_state.target_areas_at(gd.id());
+        }
+      }
     }
 
     // Assign new target areas to GeoDivs

@@ -74,18 +74,18 @@ void rescale_map(unsigned int long_grid_side_length,
 }
 
 void normalize_inset_area(InsetState *inset_state,
-                          double total_target_area,
+                          double total_cart_target_area,
                           bool equal_area)
 {
   CGAL::Bbox_2 bbox = inset_state->bbox();
 
   // Calculate scale_factor value to make insets proportional to each other
   double inset_size_proportion =
-    inset_state->total_target_area() / total_target_area;
+    inset_state->total_target_area() / total_cart_target_area;
   double scale_factor =
     equal_area ?
     1.0 :
-    sqrt(inset_size_proportion / inset_state->non_missing_target_area());
+    sqrt(inset_size_proportion / inset_state->total_inset_area());
 
   // Rescale and translate all GeoDiv coordinates
   Transformation translate(

@@ -261,7 +261,7 @@ int main(const int argc, const char *argv[])
     inset_state.set_inset_name(inset_name);
     if (output_equal_area) {
       normalize_inset_area(&inset_state,
-                           cart_info.cart_non_missing_target_area(),
+                           cart_info.cart_total_target_area(),
                            output_equal_area);
     } else {
 
@@ -333,7 +333,7 @@ int main(const int argc, const char *argv[])
         flatten_density(&inset_state);
 
         if (triangulation) {
-          
+
           // Choosing diagonals that are inside graticule cells
           fill_graticule_diagonals(&inset_state);
 
@@ -383,7 +383,7 @@ int main(const int argc, const char *argv[])
 
       // Rescale insets in correct proportion to each other
       normalize_inset_area(&inset_state,
-                           cart_info.cart_non_missing_target_area());
+                           cart_info.cart_total_target_area());
 
       // Clean up after finishing all Fourier transforms for this inset
       inset_state.destroy_fftw_plans_for_rho();

@@ -116,15 +116,15 @@ const std::string InsetState::inset_name() const
   return inset_name_;
 }
 
-bool InsetState::is_target_area_missing(const std::string id) const
+bool InsetState::is_input_target_area_missing(const std::string id) const
 {
-  return is_target_area_missing_.at(id);
+  return is_input_target_area_missing_.at(id);
 }
 
-void InsetState::is_target_area_missing_insert(const std::string id,
+void InsetState::is_input_target_area_missing_insert(const std::string id,
                                                const bool is_missing)
 {
-  is_target_area_missing_.insert(std::pair<std::string, bool>(id,
+  is_input_target_area_missing_.insert(std::pair<std::string, bool>(id,
                                                               is_missing));
   return;
 }
@@ -190,15 +190,13 @@ unsigned int InsetState::n_geo_divs() const
   return geo_divs_.size();
 }
 
-double InsetState::non_missing_target_area() const
+double InsetState::total_inset_area() const
 {
-  double sum_non_missing_target_area = 0;
+  double total_inset_area = 0.0;
   for (auto gd : geo_divs_) {
-    if (!target_area_is_missing(gd.id())) {
-      sum_non_missing_target_area += gd.area();
-    }
+    total_inset_area += gd.area();
   }
-  return sum_non_missing_target_area;
+  return total_inset_area;
 }
 
 const std::string InsetState::pos() const

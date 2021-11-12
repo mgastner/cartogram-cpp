@@ -35,7 +35,7 @@ private:
   std::unordered_map<std::string, Color> colors_;
   fftw_plan fwd_plan_for_rho_, bwd_plan_for_rho_;
   std::vector<GeoDiv> geo_divs_;  // Geographic divisions in this inset
-  std::unordered_map<std::string, bool> is_target_area_missing_;
+  std::unordered_map<std::string, bool> is_input_target_area_missing_;
 
   // Chosen diagonal for each graticule cell
   boost::multi_array<int, 2> graticule_diagonals_;
@@ -75,8 +75,8 @@ public:
   const std::vector<std::vector<intersection> > horizontal_adj() const;
   void increment_integration();
   const std::string inset_name() const;
-  bool is_target_area_missing(const std::string) const;
-  void is_target_area_missing_insert(const std::string, const bool);
+  bool is_input_target_area_missing(const std::string) const;
+  void is_input_target_area_missing_insert(const std::string, const bool);
   unsigned int lx() const;
   unsigned int ly() const;
   void make_fftw_plans_for_rho();
@@ -87,7 +87,7 @@ public:
   unsigned int new_ymin() const;
   unsigned int n_finished_integrations() const;
   unsigned int n_geo_divs() const;
-  double non_missing_target_area() const;
+  double total_inset_area() const;
   const std::string pos() const;
   boost::multi_array<XYPoint, 2> *proj();
   void push_back(const GeoDiv);

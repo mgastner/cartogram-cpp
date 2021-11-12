@@ -22,7 +22,7 @@ private:
 
 public:
   explicit CartogramInfo(const bool, const std::string);
-  double cart_non_missing_target_area() const;
+  double cart_total_target_area() const;
   void gd_to_inset_insert(std::string, std::string);
   const std::string id_header() const;
   const std::set<std::string> ids_in_visual_variables_file() const;
