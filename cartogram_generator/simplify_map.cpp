@@ -1,30 +1,30 @@
 // TODO: What happens if two polygons have touching lines but the corner
 // points are not identical in both lines?
 
-/******************************** Inclusions. ********************************/
 #include <algorithm>
 #include "inset_state.h"
 
-
-
-bool contains_vertices_in_order(Polygon polygon1, Polygon polygon2)
+bool contains_vertices_in_order(Polygon non_simplified_polygon,
+                                Polygon simplified_polygon)
 {
   // Return true if and only if polygon1 contains all vertices in polygon2 and
   // the order of the vertices in both polygons match
-  if (polygon1.size() < polygon2.size()) {
+  if (non_simplified_polygon.size() < simplified_polygon.size()) {
     return false;
   }
   std::vector<unsigned int> indices;
-  for (const auto pt2 : polygon2) {
-    const auto pt1_iterator = std::find(polygon1.vertices_begin(),
-                                        polygon1.vertices_end(),
-                                        pt2);
+  for (const auto simplified_pt : simplified_polygon) {
+    const auto non_simplified_iterator =
+      std::find(non_simplified_polygon.vertices_begin(),
+                non_simplified_polygon.vertices_end(),
+                simplified_pt);
 
     // Return false if there is no matching vertex in polygon1
-    if (pt1_iterator == polygon1.vertices_end()) {
+    if (non_simplified_iterator == non_simplified_polygon.vertices_end()) {
       return false;
     }
-    indices.push_back(distance(polygon1.vertices_begin(), pt1_iterator));
+    indices.push_back(distance(non_simplified_polygon.vertices_begin(),
+                               non_simplified_iterator));
     if (!std::is_sorted(indices.begin(), indices.end())) {
       return false;
     }
@@ -50,7 +50,7 @@ int simplified_polygon_index(Polygon non_simplified,
 void simplify_map(InsetState *inset_state)
 {
 
-  std::cerr << "In simplfy_map()" << std::endl;
+  std::cerr << "In simplify_map()" << std::endl;
 
   // Store Polygons as CT (Constrained Triangulation) objects. Code inspired
   // by https://doc.cgal.org/latest/Polyline_simplification_2/index.html
@@ -109,6 +109,25 @@ void simplify_map(InsetState *inset_state)
     std::cerr << "Unmatched polygon in simplify_map" << std::endl;
     exit(1);
   }
+
+  unsigned long n_pts = 0;
+  for (const auto poly : simplified_polygons) {
+    n_pts += poly.size();
+  }
+  std::cerr << "n_pts = " << n_pts << std::endl;
+
+  n_pts = 0;
+  for (const auto gd : inset_state->geo_divs()) {
+    for (auto pwh : gd.polygons_with_holes()) {
+      const Polygon &ext_ring = pwh.outer_boundary();
+      n_pts += ext_ring.size();
+      for (auto it = pwh.holes_begin(); it != pwh.holes_end(); ++it) {
+        const Polygon &hole = *it;
+        n_pts += hole.size();
+      }
+    }
+  }
+  std::cerr << "n_pts = " << n_pts << std::endl;
   exit(1);
 
 //
