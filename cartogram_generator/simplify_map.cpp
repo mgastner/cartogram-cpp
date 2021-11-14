@@ -1,15 +1,31 @@
 // TODO: What happens if two polygons have touching lines but the corner
 // points are not identical in both lines?
 
+// TODO: typedef CGAL::BBox_2 as Bbox
+
 #include <algorithm>
 #include "inset_state.h"
 
 bool contains_vertices_in_order(Polygon non_simplified_polygon,
-                                Polygon simplified_polygon)
+                                Polygon simplified_polygon,
+                                CGAL::Bbox_2 simplified_bbox)
 {
   // Return true if and only if polygon1 contains all vertices in polygon2 and
   // the order of the vertices in both polygons match
   if (non_simplified_polygon.size() < simplified_polygon.size()) {
+    return false;
+  }
+
+  // If the two bounding boxes neither touch nor overlap, then the
+  // non-simplified polygon does not contain the vertices of the simplified
+  // polygon. For the if-condition, see:
+  // https://stackoverflow.com/questions/325933/determine-whether-two-date-
+  // ranges-overlap/325964#325964 (accessed on 2021-10-05).
+  CGAL::Bbox_2 non_simplified_bbox = non_simplified_polygon.bbox();
+  if (non_simplified_bbox.xmax() < simplified_bbox.xmin()
+      || non_simplified_bbox.xmin() > simplified_bbox.xmax()
+      || non_simplified_bbox.ymax() < simplified_bbox.ymin()
+      || non_simplified_bbox.ymin() > simplified_bbox.ymax()) {
     return false;
   }
   std::vector<unsigned int> indices;
@@ -32,14 +48,17 @@ bool contains_vertices_in_order(Polygon non_simplified_polygon,
   return std::is_sorted(indices.begin(), indices.end());
 }
 
-int simplified_polygon_index(Polygon non_simplified,
-                             std::vector<Polygon> *simplified,
+int simplified_polygon_index(Polygon non_simplified_polygon,
+                             std::vector<Polygon> *simplified_polygons,
+                             std::vector<CGAL::Bbox_2> *simplified_bboxes,
                              std::list<unsigned int> *unmatched)
 {
   // Return index of polygon in *simplified that corresponds to a
   // non-simplified polygon
   for (auto const i : *unmatched) {
-    if (contains_vertices_in_order(non_simplified, simplified->at(i))) {
+    if (contains_vertices_in_order(non_simplified_polygon,
+                                   simplified_polygons->at(i),
+                                   simplified_bboxes->at(i))) {
       unmatched->remove(i);
       return i;
     }
@@ -69,8 +88,12 @@ void simplify_map(InsetState *inset_state)
   // Simplify polygons
   PS::simplify(ct, Cost(), Stop(0.1));
 
-  // Store each constraint in ct as a polygon
+  std::cerr << "Now doing the bookkeeping" << std::endl;
+
+  // Store each constraint in ct as a polygon. Also store bounding box so
+  // that we can match non-simplified and simplified polygons more quickly.
   std::vector<Polygon> simplified_polygons;
+  std::vector<CGAL::Bbox_2> simplified_bboxes;
   for (auto it = ct.constraints_begin(); it != ct.constraints_end(); ++it) {
 
     // First and last point in the constraint are identical. We remove the
@@ -78,6 +101,7 @@ void simplify_map(InsetState *inset_state)
     Polygon ct_as_polygon(ct.points_in_constraint_begin(*it),
                           --ct.points_in_constraint_end(*it));
     simplified_polygons.push_back(ct_as_polygon);
+    simplified_bboxes.push_back(ct_as_polygon.bbox());
   }
 
   // Match non-simplified polygon to its simplified counterpart
@@ -90,12 +114,14 @@ void simplify_map(InsetState *inset_state)
       Polygon &ext_ring = pwh.outer_boundary();
       const int ext_index = simplified_polygon_index(ext_ring,
                                                      &simplified_polygons,
+                                                     &simplified_bboxes,
                                                      &unmatched);
       matching_simplified_polygon.push_back(ext_index);
       for (auto it = pwh.holes_begin(); it != pwh.holes_end(); ++it) {
         const Polygon &hole = *it;
         const int hole_index = simplified_polygon_index(hole,
                                                         &simplified_polygons,
+                                                        &simplified_bboxes,
                                                         &unmatched);
         matching_simplified_polygon.push_back(hole_index);
       }
