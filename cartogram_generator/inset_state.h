@@ -88,6 +88,7 @@ public:
   unsigned int n_finished_integrations() const;
   unsigned int n_geo_divs() const;
   double non_missing_target_area() const;
+  unsigned long n_points() const;
   const std::string pos() const;
   boost::multi_array<XYPoint, 2> *proj();
   void push_back(const GeoDiv);

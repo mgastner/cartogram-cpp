@@ -75,10 +75,12 @@ int simplified_polygon_index(Polygon non_simplified_polygon,
   return no_matching_non_simplified_polygon;
 }
 
-void simplify_map(InsetState *inset_state)
+void simplify_inset(InsetState *inset_state)
 {
-
-  std::cerr << "In simplify_map()" << std::endl;
+  std::cerr << "Simplifying the inset. "
+            << inset_state->n_points()
+            << " points in the inset before simplification."
+            << std::endl;
 
   // Store Polygons as CT (Constrained Triangulation) objects. Code inspired
   // by https://doc.cgal.org/latest/Polyline_simplification_2/index.html
@@ -136,6 +138,8 @@ void simplify_map(InsetState *inset_state)
       }
     }
   }
+
+  // Sanity check
   if (std::find(matching_simplified_polygon.begin(),
                 matching_simplified_polygon.end(),
                 no_matching_non_simplified_polygon) !=
@@ -149,65 +153,6 @@ void simplify_map(InsetState *inset_state)
   for (const auto poly : simplified_polygons) {
     n_pts += poly.size();
   }
-  std::cerr << "n_pts = " << n_pts << std::endl;
-
-  n_pts = 0;
-  for (const auto gd : inset_state->geo_divs()) {
-    for (auto pwh : gd.polygons_with_holes()) {
-      const Polygon &ext_ring = pwh.outer_boundary();
-      n_pts += ext_ring.size();
-      for (auto it = pwh.holes_begin(); it != pwh.holes_end(); ++it) {
-        const Polygon &hole = *it;
-        n_pts += hole.size();
-      }
-    }
-  }
-  std::cerr << "n_pts = " << n_pts << std::endl;
+  std::cerr << n_pts << " points in ct" << std::endl;
   exit(1);
-
-//
-//   /* 8. Store polylines according to their GeoDivs and Polygon_with_holes    */
-//   /*    along with their associated original inset_state positions.          */
-//   std::map<int, std::map<int, std::vector<Polyline_advanced> > >
-//   plls_adv_by_gd_pgnwh = store_by_gd_pgnwh(gd_vector, ct, plls_adv_by_pos);
-//
-//   /* 9. Set all polylines to not-visited and sort pll_adv_by_gd_pgnwh.       */
-//   std::unordered_map<int,
-//                      std::unordered_map<int, std::unordered_map<int, bool> >
-//                      > visited;
-//   set_visited_vals(visited, plls_adv_by_gd_pgnwh);
-//
-//   /* 10. Assemble polylines into polygons.                                   */
-//   std::vector<GeoDiv> gd_vector_simp;
-//   assemble_plls_adv_to_pgn(plls_adv_by_gd_pgnwh, visited, gd_vector_simp, gd_vector);
-//
-//   /* Print number of points before simplifying (gd_vector). */
-//   std::cout << "Number of vertices before simplifying (gd_vector): ";
-//   print_num_pts(gd_vector);
-//
-//   /* Print number of points after simplifying. */
-//   std::cout << "Number of vertices after simplifying: ";
-//   print_num_pts(gd_vector_simp);
-//
-//   /* 11. Remove the last point.                                              */
-//   remove_first_point_as_last_point(gd_vector_simp);
-//
-//   /* 12. Orientate all exterior rings counterclockwise and interior rings    */
-//   /*     clockwise.                                                          */
-//   orientate_exterior_and_interior_rings(gd_vector_simp);
-//
-//   /* Set gd_vector_simp as inset_state's gd_vector. */
-//   inset_state->set_geo_divs(gd_vector_simp);
-//
-//   const std::chrono::duration<double, std::milli>
-//   dur_s311 = std::chrono::system_clock::now() - start_s311;
-//   std::cout << "Remaining simplification steps time elapsed: ";
-//   std::cout << dur_s311.count() << " ms (";
-//   std::cout << dur_s311.count() / 1000 << " s)" << std::endl;
-//   std::cout << std::endl;
-//
-//   double dur_total = dur_s2.count() + dur_s311.count();
-//   std::cout << "Total simplification time elapsed: " << dur_total << " ms (";
-//   std::cout << dur_total / 1000 << " s)" << std::endl;
-//   std::cout << std::endl;
 }

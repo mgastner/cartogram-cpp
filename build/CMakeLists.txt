@@ -46,7 +46,7 @@ add_executable(
   ../cartogram_generator/project.cpp
   ../cartogram_generator/write_geojson.cpp
   ../cartogram_generator/albers_projection.cpp
-  ../cartogram_generator/simplify_map.cpp)
+  ../cartogram_generator/simplify_inset.cpp)
 
 # Linking appropriate libraries required
 target_link_libraries(

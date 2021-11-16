@@ -16,7 +16,7 @@
 #include "read_csv.h"
 #include "read_geojson.h"
 #include "rescale_map.h"
-#include "simplify_map.h"
+#include "simplify_inset.h"
 #include "write_eps.h"
 #include "write_geojson.h"
 #include "xy_point.h"
@@ -275,9 +275,9 @@ int main(const int argc, const char *argv[])
 
       // Simplify inset state if -s flag is passed
       if (simplify) {
-        simplify_map(&inset_state);
+        simplify_inset(&inset_state);
       }
-      
+
       // Rescale map to fit into a rectangular box [0, lx] * [0, ly].
       rescale_map(long_grid_side_length,
                   &inset_state,
@@ -309,7 +309,7 @@ int main(const int argc, const char *argv[])
 
       // Simplify inset state if -s flag is passed
       if (simplify) {
-        simplify_map(&inset_state);
+        simplify_inset(&inset_state);
       }
 
       // We make the approximation that the progress towards generating the
@@ -352,7 +352,7 @@ int main(const int argc, const char *argv[])
         flatten_density(&inset_state);
 
         if (triangulation) {
-          
+
           // Choosing diagonals that are inside graticule cells
           fill_graticule_diagonals(&inset_state);
 

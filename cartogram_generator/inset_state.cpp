@@ -201,6 +201,22 @@ double InsetState::non_missing_target_area() const
   return sum_non_missing_target_area;
 }
 
+unsigned long InsetState::n_points() const
+{
+  unsigned long n_pts = 0;
+  for (const auto gd : geo_divs_) {
+    for (auto pwh : gd.polygons_with_holes()) {
+      const Polygon &ext_ring = pwh.outer_boundary();
+      n_pts += ext_ring.size();
+      for (auto it = pwh.holes_begin(); it != pwh.holes_end(); ++it) {
+        const Polygon &hole = *it;
+        n_pts += hole.size();
+      }
+    }
+  }
+  return n_pts;
+}
+
 const std::string InsetState::pos() const
 {
   return pos_;
