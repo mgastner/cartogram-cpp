@@ -6,14 +6,19 @@
 #include <algorithm>
 #include "inset_state.h"
 
+constexpr int no_matching_non_simplified_polygon = -1;
+
 bool contains_vertices_in_order(Polygon non_simplified_polygon,
                                 Polygon simplified_polygon,
                                 CGAL::Bbox_2 simplified_bbox)
 {
-  // Return true if and only if polygon1 contains all vertices in polygon2 and
-  // the order of the vertices in both polygons match
+  // Return true if and only if the non-simplified polygon contains all
+  // vertices in the simplified polygon and the order of the vertices in
+  // both polygons match. We pass the bounding box of the simplified bounding
+  // box as a parameter so that we do not need to construct it in the function
+  // body.
   if (non_simplified_polygon.size() < simplified_polygon.size()) {
-    return false;
+    return false;  // Simplification cannot create additional vertices
   }
 
   // If the two bounding boxes neither touch nor overlap, then the
@@ -53,8 +58,12 @@ int simplified_polygon_index(Polygon non_simplified_polygon,
                              std::vector<CGAL::Bbox_2> *simplified_bboxes,
                              std::list<unsigned int> *unmatched)
 {
-  // Return index of polygon in *simplified that corresponds to a
-  // non-simplified polygon
+  // Return index of polygon in simplified_polygons that corresponds to a
+  // non-simplified polygon. We pass the bounding boxes of the simplified
+  // polygons as a parameter so that the bounding boxes do not need to be
+  // calculated when calling contains_vertices_in_order(). We maintain a list
+  // of hitherto unmatched polygon indices to avoid unnecessary calls of
+  // contains_vertices_in_order().
   for (auto const i : *unmatched) {
     if (contains_vertices_in_order(non_simplified_polygon,
                                    simplified_polygons->at(i),
@@ -63,7 +72,7 @@ int simplified_polygon_index(Polygon non_simplified_polygon,
       return i;
     }
   }
-  return -1;  // -1 implies that no matching simplified polygon was found
+  return no_matching_non_simplified_polygon;
 }
 
 void simplify_map(InsetState *inset_state)
@@ -129,7 +138,7 @@ void simplify_map(InsetState *inset_state)
   }
   if (std::find(matching_simplified_polygon.begin(),
                 matching_simplified_polygon.end(),
-                -1) !=
+                no_matching_non_simplified_polygon) !=
       matching_simplified_polygon.end() ||
       !unmatched.empty()) {
     std::cerr << "Unmatched polygon in simplify_map" << std::endl;
