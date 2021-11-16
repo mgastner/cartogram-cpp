@@ -87,19 +87,15 @@ void simplify_inset(InsetState *inset_state)
   CT ct;
   for (const auto gd : inset_state->geo_divs()) {
     for (auto pwh : gd.polygons_with_holes()) {
-      const Polygon &ext_ring = pwh.outer_boundary();
-      ct.insert_constraint(ext_ring);
-      for (auto it = pwh.holes_begin(); it != pwh.holes_end(); ++it) {
-        const Polygon &hole = *it;
-        ct.insert_constraint(hole);
+      ct.insert_constraint(pwh.outer_boundary());
+      for (auto hi = pwh.holes_begin(); hi != pwh.holes_end(); ++hi) {
+        ct.insert_constraint(*hi);
       }
     }
   }
 
   // Simplify polygons
   PS::simplify(ct, Cost(), Stop(0.1));
-
-  std::cerr << "Now doing the bookkeeping" << std::endl;
 
   // Store each constraint in ct as a polygon. Also store bounding box so
   // that we can match non-simplified and simplified polygons more quickly.
@@ -122,15 +118,13 @@ void simplify_inset(InsetState *inset_state)
   std::vector<int> matching_simplified_polygon;
   for (const auto gd : inset_state->geo_divs()) {
     for (auto pwh : gd.polygons_with_holes()) {
-      Polygon &ext_ring = pwh.outer_boundary();
-      const int ext_index = simplified_polygon_index(ext_ring,
+      const int ext_index = simplified_polygon_index(pwh.outer_boundary(),
                                                      &simplified_polygons,
                                                      &simplified_bboxes,
                                                      &unmatched);
       matching_simplified_polygon.push_back(ext_index);
-      for (auto it = pwh.holes_begin(); it != pwh.holes_end(); ++it) {
-        const Polygon &hole = *it;
-        const int hole_index = simplified_polygon_index(hole,
+      for (auto hi = pwh.holes_begin(); hi != pwh.holes_end(); ++hi) {
+        const int hole_index = simplified_polygon_index(*hi,
                                                         &simplified_polygons,
                                                         &simplified_bboxes,
                                                         &unmatched);
@@ -149,10 +143,22 @@ void simplify_inset(InsetState *inset_state)
     exit(1);
   }
 
-  unsigned long n_pts = 0;
-  for (const auto poly : simplified_polygons) {
-    n_pts += poly.size();
+  // Replace non-simplified polygons by their simplified counterparts
+  unsigned int polygon_ctr = 0;
+  for (auto &gd : *inset_state->ref_to_geo_divs()) {
+    for (auto &pwh : *gd.ref_to_polygons_with_holes()) {
+      unsigned int matching_index =
+        matching_simplified_polygon[polygon_ctr++];
+      pwh.outer_boundary() = simplified_polygons[matching_index];
+      for (auto hi = pwh.holes_begin(); hi != pwh.holes_end(); ++hi) {
+        unsigned int matching_index =
+          matching_simplified_polygon[polygon_ctr++];
+        *hi = simplified_polygons[matching_index];
+      }
+    }
   }
-  std::cerr << n_pts << " points in ct" << std::endl;
-  exit(1);
+  std::cerr << inset_state->n_points()
+            << " points after simplification."
+            << std::endl;
+  return;
 }

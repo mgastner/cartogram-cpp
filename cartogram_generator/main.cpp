@@ -307,11 +307,6 @@ int main(const int argc, const char *argv[])
         write_map_to_eps((inset_name + "_input.eps"), &inset_state);
       }
 
-      // Simplify inset state if -s flag is passed
-      if (simplify) {
-        simplify_inset(&inset_state);
-      }
-
       // We make the approximation that the progress towards generating the
       // cartogram is proportional to the number of GeoDivs that are in the
       // finished insets
@@ -319,7 +314,7 @@ int main(const int argc, const char *argv[])
 
 
       // Start map integration
-      while (inset_state.n_finished_integrations() < max_integrations &&
+      while (inset_state.n_finished_integrations() < 0 && //max_integrations &&
              inset_state.max_area_error().value > max_permitted_area_error) {
         std::cerr << "Integration number "
                   << inset_state.n_finished_integrations()

@@ -205,12 +205,11 @@ unsigned long InsetState::n_points() const
 {
   unsigned long n_pts = 0;
   for (const auto gd : geo_divs_) {
-    for (auto pwh : gd.polygons_with_holes()) {
+    for (const auto pwh : gd.polygons_with_holes()) {
       const Polygon &ext_ring = pwh.outer_boundary();
       n_pts += ext_ring.size();
-      for (auto it = pwh.holes_begin(); it != pwh.holes_end(); ++it) {
-        const Polygon &hole = *it;
-        n_pts += hole.size();
+      for (auto hi = pwh.holes_begin(); hi != pwh.holes_end(); ++hi) {
+        n_pts += hi->size();
       }
     }
   }
