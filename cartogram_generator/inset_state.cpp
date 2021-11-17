@@ -161,7 +161,7 @@ struct max_area_error_info InsetState::max_area_error() const
 {
   double value = -dbl_inf;
   std::string worst_gd = "";
-  for (auto const &[gd_id, area_error] : area_errors_) {
+  for (const auto &[gd_id, area_error] : area_errors_) {
     if (area_error > value) {
       value = area_error;
       worst_gd = gd_id;
