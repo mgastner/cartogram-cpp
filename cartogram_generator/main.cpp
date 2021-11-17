@@ -267,16 +267,16 @@ int main(const int argc, const char *argv[])
                 << std::endl;
     }
     inset_state.set_inset_name(inset_name);
+
+    // Simplify inset if -s flag is passed
+    if (simplify) {
+      simplify_inset(&inset_state);
+    }
     if (output_equal_area) {
       normalize_inset_area(&inset_state,
                            cart_info.cart_non_missing_target_area(),
                            output_equal_area);
     } else {
-
-      // Simplify inset state if -s flag is passed
-      if (simplify) {
-        simplify_inset(&inset_state);
-      }
 
       // Rescale map to fit into a rectangular box [0, lx] * [0, ly].
       rescale_map(long_grid_side_length,
@@ -314,7 +314,7 @@ int main(const int argc, const char *argv[])
 
 
       // Start map integration
-      while (inset_state.n_finished_integrations() < 0 && //max_integrations &&
+      while (inset_state.n_finished_integrations() < max_integrations &&
              inset_state.max_area_error().value > max_permitted_area_error) {
         std::cerr << "Integration number "
                   << inset_state.n_finished_integrations()
@@ -357,14 +357,16 @@ int main(const int argc, const char *argv[])
           // simply as inset_state.densify_geo_divs().
           inset_state.set_geo_divs(
             densified_geo_divs(inset_state.geo_divs())
-          );
+            );
 
           // Projecting with Triangulation
           project_with_triangulation(&inset_state);
         } else {
           project(&inset_state);
         }
-
+        if (simplify) {
+          simplify_inset(&inset_state);
+        }
         inset_state.increment_integration();
 
         // Update area errors

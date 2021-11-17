@@ -3,8 +3,9 @@
 
 // TODO: typedef CGAL::BBox_2 as Bbox
 
-#include <algorithm>
+#include "constants.h"
 #include "inset_state.h"
+#include <algorithm>
 
 // We use the value no_matching_non_simpl_pgon to signal that there is no
 // simplified polygon that we could match with a non-simplified polygon
@@ -78,8 +79,15 @@ int simplified_polygon_index(const Polygon non_simpl_pgon,
 
 void simplify_inset(InsetState *inset_state)
 {
+  const unsigned int n_pts_before = inset_state->n_points();
+  if (n_pts_before <= target_points_per_inset) {
+    std::cerr << n_pts_before
+              << " points in inset. No need for simplification."
+              << std::endl;
+    return;
+  }
   std::cerr << "Simplifying the inset. "
-            << inset_state->n_points()
+            << n_pts_before
             << " points in the inset before simplification."
             << std::endl;
 
@@ -96,7 +104,8 @@ void simplify_inset(InsetState *inset_state)
   }
 
   // Simplify polygons
-  PS::simplify(ct, Cost(), Stop(0.1));
+  const double ratio = double(target_points_per_inset) / n_pts_before;
+  PS::simplify(ct, Cost(), Stop(ratio));
 
   // Store each constraint in ct as a polygon. Also store bounding box so
   // that we can match non-simplified and simplified polygons more quickly.
@@ -139,7 +148,7 @@ void simplify_inset(InsetState *inset_state)
                 matching_simpl_pgon.end(),
                 no_matching_non_simpl_pgon) != matching_simpl_pgon.end() ||
       !unmatched.empty()) {
-    std::cerr << "Unmatched polygon in simplify_map" << std::endl;
+    std::cerr << "Unmatched polygon in simplify_inset()." << std::endl;
     exit(1);
   }
 
