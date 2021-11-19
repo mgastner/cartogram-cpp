@@ -104,7 +104,7 @@ void simplify_inset(InsetState *inset_state)
   // Simplify polygons
   unsigned long target_pts =
     std::max(target_points_per_inset,
-             min_points_per_polygon * inset_state->n_polygons());
+             min_points_per_ring * inset_state->n_rings());
   const double ratio = double(target_pts) / n_pts_before;
   PS::simplify(ct, Cost(), Stop(ratio));
 

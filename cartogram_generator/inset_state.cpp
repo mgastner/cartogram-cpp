@@ -205,26 +205,18 @@ unsigned long InsetState::n_points() const
 {
   unsigned long n_pts = 0;
   for (const auto gd : geo_divs_) {
-    for (const auto pwh : gd.polygons_with_holes()) {
-      const Polygon &ext_ring = pwh.outer_boundary();
-      n_pts += ext_ring.size();
-      for (auto hi = pwh.holes_begin(); hi != pwh.holes_end(); ++hi) {
-        n_pts += hi->size();
-      }
-    }
+    n_pts += gd.n_points();
   }
   return n_pts;
 }
 
-unsigned int InsetState::n_polygons() const
+unsigned int InsetState::n_rings() const
 {
-  unsigned int n_pgns = 0;
+  unsigned int n_rings = 0;
   for (const auto gd: geo_divs_) {
-    for (const auto pwh : gd.polygons_with_holes()) {
-      n_pgns += pwh.number_of_holes() + 1;  // Add 1 for external ring 
-    }
+    n_rings += gd.n_rings();
   }
-  return n_pgns;
+  return n_rings;
 }
 
 const std::string InsetState::pos() const
