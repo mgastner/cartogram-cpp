@@ -5,18 +5,20 @@
 #include "inset_state.h"
 #include <algorithm>
 
-// We use -1 to signal that there is no simplified polygon that we could
-// match with a given non-simplified polygon
+// We use -1 to signal that there is no simplified polygon that can be matched
+// with a given non-simplified polygon
 constexpr int no_matching_non_simpl_pgn = -1;
 
 bool contains_vertices_in_order(const Polygon non_simpl_pgn,
                                 const Polygon simpl_pgn,
                                 const Bbox simpl_bb)
 {
-  // Return true if and only if the non-simplified polygon contains all
-  // vertices in the simplified polygon and the order of the vertices in
-  // both polygons match. We pass the bounding box of the simplified polygon
-  // as a parameter so that we do not need to construct it in this function.
+  // Return true if and only if
+  // - the non-simplified polygon contains all vertices in the simplified
+  //   polygon and
+  // - the order of the vertices in both polygons match.
+  // We pass the bounding box of the simplified polygon as an argument so that
+  // we do not need to construct the bounding box in this function.
   if (non_simpl_pgn.size() < simpl_pgn.size()) {
     return false;  // Simplification cannot create additional vertices
   }
@@ -44,8 +46,7 @@ bool contains_vertices_in_order(const Polygon non_simpl_pgn,
     if (non_simpl_it == non_simpl_pgn.vertices_end()) {
       return false;
     }
-    indices.push_back(distance(non_simpl_pgn.vertices_begin(),
-                               non_simpl_it));
+    indices.push_back(distance(non_simpl_pgn.vertices_begin(), non_simpl_it));
     if (!std::is_sorted(indices.begin(), indices.end())) {
       return false;
     }
@@ -59,11 +60,10 @@ int simplified_polygon_index(const Polygon non_simpl_pgn,
                              std::list<unsigned int> *unmatched)
 {
   // Return index of simplified polygon that corresponds to a non-simplified
-  // polygon. We pass the bounding boxes of the simplified polygons as a
-  // parameter so that the bounding boxes do not need to be calculated when
-  // calling contains_vertices_in_order(). We maintain a list of hitherto
-  // unmatched polygon indices to avoid unnecessary calls of
-  // contains_vertices_in_order().
+  // polygon. We pass a vector of the bounding boxes of the simplified
+  // polygons as an argument so that the bounding boxes do not need to be
+  // calculated repeatedly. We maintain a list of hitherto unmatched polygon
+  // indices to avoid unnecessary iterations.
   for (const auto i : *unmatched) {
     if (contains_vertices_in_order(non_simpl_pgn,
                                    simpl_pgns->at(i),
@@ -89,7 +89,7 @@ void simplify_inset(InsetState *inset_state)
             << " points in the inset before simplification."
             << std::endl;
 
-  // Store Polygons as CT (Constrained Triangulation) objects. Code inspired
+  // Store Polygons as a CT (Constrained Triangulation) object. Code inspired
   // by https://doc.cgal.org/latest/Polyline_simplification_2/index.html
   CT ct;
   for (const auto gd : inset_state->geo_divs()) {
