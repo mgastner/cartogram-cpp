@@ -334,7 +334,6 @@ int main(const int argc, const char *argv[])
         } else {
           blur_width = 0.0;
         }
-        std::cerr << "blur_width = " << blur_width << std::endl;
 
         // TODO: THIS IF-CONDITION IS INELEGANT
         if (inset_state.n_finished_integrations() > 0) {
