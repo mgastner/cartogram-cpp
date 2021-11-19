@@ -1,8 +1,6 @@
 // TODO: What happens if two polygons have touching lines but the corner
 // points are not identical in both lines?
 
-// TODO: typedef CGAL::BBox_2 as Bbox
-
 #include "constants.h"
 #include "inset_state.h"
 #include <algorithm>
@@ -13,7 +11,7 @@ constexpr int no_matching_non_simpl_pgon = -1;
 
 bool contains_vertices_in_order(const Polygon non_simpl_pgon,
                                 const Polygon simpl_pgon,
-                                const CGAL::Bbox_2 simpl_bbox)
+                                const Bbox simpl_bb)
 {
   // Return true if and only if the non-simplified polygon contains all
   // vertices in the simplified polygon and the order of the vertices in
@@ -29,11 +27,11 @@ bool contains_vertices_in_order(const Polygon non_simpl_pgon,
   // polygon. For the if-condition, see:
   // https://stackoverflow.com/questions/325933/determine-whether-two-date-
   // ranges-overlap/325964#325964 (accessed on 2021-10-05).
-  CGAL::Bbox_2 non_simpl_bbox = non_simpl_pgon.bbox();
-  if (non_simpl_bbox.xmax() < simpl_bbox.xmin()
-      || non_simpl_bbox.xmin() > simpl_bbox.xmax()
-      || non_simpl_bbox.ymax() < simpl_bbox.ymin()
-      || non_simpl_bbox.ymin() > simpl_bbox.ymax()) {
+  Bbox non_simpl_bb = non_simpl_pgon.bbox();
+  if (non_simpl_bb.xmax() < simpl_bb.xmin()
+      || non_simpl_bb.xmin() > simpl_bb.xmax()
+      || non_simpl_bb.ymax() < simpl_bb.ymin()
+      || non_simpl_bb.ymin() > simpl_bb.ymax()) {
     return false;
   }
   std::vector<unsigned int> indices;
@@ -57,7 +55,7 @@ bool contains_vertices_in_order(const Polygon non_simpl_pgon,
 
 int simplified_polygon_index(const Polygon non_simpl_pgon,
                              const std::vector<Polygon> *simpl_pgons,
-                             const std::vector<CGAL::Bbox_2> *simpl_bboxes,
+                             const std::vector<Bbox> *simpl_bboxes,
                              std::list<unsigned int> *unmatched)
 {
   // Return index of polygon in simpl_pgon that corresponds to a
@@ -110,7 +108,7 @@ void simplify_inset(InsetState *inset_state)
   // Store each constraint in ct as a polygon. Also store bounding box so
   // that we can match non-simplified and simplified polygons more quickly.
   std::vector<Polygon> simpl_pgons;
-  std::vector<CGAL::Bbox_2> simpl_bboxes;
+  std::vector<Bbox> simpl_bboxes;
   for (auto it = ct.constraints_begin(); it != ct.constraints_end(); ++it) {
 
     // First and last point in the constraint are identical. We remove the

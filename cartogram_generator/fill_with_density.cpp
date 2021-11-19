@@ -84,7 +84,7 @@ void fill_with_density(bool plot_density, InsetState* inset_state)
     // Iterate through "polygons with holes" in inset_state
     for (unsigned int j = 0; j < gd.n_polygons_with_holes(); ++j) {
       Polygon_with_holes pwh = gd.polygons_with_holes()[j];
-      CGAL::Bbox_2 bb = pwh.bbox();
+      Bbox bb = pwh.bbox();
 
       // Cycle through y-coordinates in bounding box of pwh
       for (unsigned int k = floor(bb.ymin()) - 1;

@@ -10,6 +10,7 @@ typedef CGAL::Polygon_2<Epick> Polygon;
 typedef CGAL::Polygon_with_holes_2<Epick> Polygon_with_holes;
 typedef CGAL::Aff_transformation_2<Epick> Transformation;
 typedef CGAL::Point_2<Epick> Point;
+typedef CGAL::Bbox_2 Bbox;
 
 // Polyline simplification
 namespace PS = CGAL::Polyline_simplification_2;

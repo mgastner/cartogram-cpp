@@ -12,7 +12,7 @@ double InsetState::area_errors_at(const std::string id) const
   return area_errors_.at(id);
 }
 
-CGAL::Bbox_2 InsetState::bbox() const
+Bbox InsetState::bbox() const
 {
   // Find joint bounding for all polygons with holes in this inset
   double inset_xmin = dbl_inf;
@@ -21,15 +21,15 @@ CGAL::Bbox_2 InsetState::bbox() const
   double inset_ymax = -dbl_inf;
   for (GeoDiv gd : geo_divs_) {
     for (Polygon_with_holes pgnwh : gd.polygons_with_holes()) {
-      CGAL::Bbox_2 pgnwh_bbox = pgnwh.bbox();
-      inset_xmin = std::min(pgnwh_bbox.xmin(), inset_xmin);
-      inset_ymin = std::min(pgnwh_bbox.ymin(), inset_ymin);
-      inset_xmax = std::max(pgnwh_bbox.xmax(), inset_xmax);
-      inset_ymax = std::max(pgnwh_bbox.ymax(), inset_ymax);
+      Bbox bb = pgnwh.bbox();
+      inset_xmin = std::min(bb.xmin(), inset_xmin);
+      inset_ymin = std::min(bb.ymin(), inset_ymin);
+      inset_xmax = std::max(bb.xmax(), inset_xmax);
+      inset_ymax = std::max(bb.ymax(), inset_ymax);
     }
   }
-  CGAL::Bbox_2 inset_bbox(inset_xmin, inset_ymin, inset_xmax, inset_ymax);
-  return inset_bbox;
+  Bbox inset_bb(inset_xmin, inset_ymin, inset_xmax, inset_ymax);
+  return inset_bb;
 }
 
 bool InsetState::color_found(const std::string id) const
