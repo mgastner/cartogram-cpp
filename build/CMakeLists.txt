@@ -13,7 +13,7 @@ set(CMAKE_CXX_COMPILER "g++-10")
 set(CMAKE_C_COMPILER "gcc-10")
 
 # Finding appropriate packages
-find_package(CGAL)
+find_package(CGAL 5.3 REQUIRED)
 find_package(Boost 1.70 COMPONENTS program_options REQUIRED)
 find_package(Threads REQUIRED)
 find_package(PkgConfig REQUIRED)
