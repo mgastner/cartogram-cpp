@@ -216,6 +216,17 @@ unsigned long InsetState::n_points() const
   return n_pts;
 }
 
+unsigned int InsetState::n_polygons() const
+{
+  unsigned int n_pgns = 0;
+  for (const auto gd: geo_divs_) {
+    for (const auto pwh : gd.polygons_with_holes()) {
+      n_pgns += pwh.number_of_holes() + 1;  // Add 1 for external ring 
+    }
+  }
+  return n_pgns;
+}
+
 const std::string InsetState::pos() const
 {
   return pos_;

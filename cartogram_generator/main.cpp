@@ -328,14 +328,13 @@ int main(const int argc, const char *argv[])
           std::max((log(ratio_actual_to_permitted_max_area_error) / log(5)), 1.0);
 
         double blur_width;
-        if (inset_state.n_finished_integrations() == 0) {
-          blur_width = 5.0;
-        } else if (inset_state.n_finished_integrations() < 7) {
+        if (inset_state.n_finished_integrations() < 5) {
           blur_width =
             std::pow(2.0, 3 - int(inset_state.n_finished_integrations()));
         } else {
           blur_width = 0.0;
         }
+        std::cerr << "blur_width = " << blur_width << std::endl;
 
         // TODO: THIS IF-CONDITION IS INELEGANT
         if (inset_state.n_finished_integrations() > 0) {
