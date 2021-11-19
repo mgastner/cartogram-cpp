@@ -355,8 +355,7 @@ int main(const int argc, const char *argv[])
           // method of InsetState. Then the next command could be written more
           // simply as inset_state.densify_geo_divs().
           inset_state.set_geo_divs(
-            densified_geo_divs(inset_state.geo_divs())
-            );
+            densified_geo_divs(inset_state.geo_divs()));
 
           // Projecting with Triangulation
           project_with_triangulation(&inset_state);
