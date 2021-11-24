@@ -32,10 +32,9 @@ void calculate_velocity(double t,
   return;
 }
 
-
 bool all_points_are_in_domain(double delta_t,
-                              boost::multi_array<XYPoint, 2> proj,
-                              boost::multi_array<XYPoint, 2> v_intp,
+                              boost::multi_array<XYPoint, 2> *proj,
+                              boost::multi_array<XYPoint, 2> *v_intp,
                               const unsigned int lx,
                               const unsigned int ly)
 {
@@ -43,10 +42,12 @@ bool all_points_are_in_domain(double delta_t,
   // [0, lx] x [0, ly]
   for (unsigned int i = 0; i < lx; ++i) {
     for (unsigned int j = 0; j < ly; ++j) {
-      if ((proj[i][j].x + 0.5*delta_t*v_intp[i][j].x < 0.0) ||
-          (proj[i][j].x + 0.5*delta_t*v_intp[i][j].x > lx) ||
-          (proj[i][j].y + 0.5*delta_t*v_intp[i][j].y < 0.0) ||
-          (proj[i][j].y + 0.5*delta_t*v_intp[i][j].y > ly)) {
+      double px = (*proj)[i][j].x;
+      double py = (*proj)[i][j].y;
+      double vx = (*v_intp)[i][j].x;
+      double vy = (*v_intp)[i][j].y;
+      if ((px + 0.5*delta_t*vx < 0.0) || (px + 0.5*delta_t*vx > lx)
+          || (py + 0.5*delta_t*vy < 0.0) || (py + 0.5*delta_t*vy > ly)) {
         return false;
       }
     }
@@ -204,7 +205,7 @@ void flatten_density(InsetState *inset_state)
       // Make sure we do not pass a point outside [0, lx] x [0, ly] to
       // interpolate_bilinearly(). Otherwise decrease the time step below and
       // try again.
-      accept = all_points_are_in_domain(delta_t, proj, v_intp, lx, ly);
+      accept = all_points_are_in_domain(delta_t, &proj, &v_intp, lx, ly);
       if (accept) {
 
         // Okay, we can run interpolate_bilinearly()
