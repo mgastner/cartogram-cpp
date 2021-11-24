@@ -46,8 +46,9 @@ bool all_points_are_in_domain(double delta_t,
       double py = (*proj)[i][j].y;
       double vx = (*v_intp)[i][j].x;
       double vy = (*v_intp)[i][j].y;
-      if ((px + 0.5*delta_t*vx < 0.0) || (px + 0.5*delta_t*vx > lx)
-          || (py + 0.5*delta_t*vy < 0.0) || (py + 0.5*delta_t*vy > ly)) {
+      double x = px + 0.5*delta_t*vx;
+      double y = py + 0.5*delta_t*vy;
+      if (x < 0.0 || x > lx || y < 0.0 || y > ly) {
         return false;
       }
     }
