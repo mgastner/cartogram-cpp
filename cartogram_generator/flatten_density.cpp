@@ -42,12 +42,8 @@ bool all_points_are_in_domain(double delta_t,
   // [0, lx] x [0, ly]
   for (unsigned int i = 0; i < lx; ++i) {
     for (unsigned int j = 0; j < ly; ++j) {
-      double px = (*proj)[i][j].x;
-      double py = (*proj)[i][j].y;
-      double vx = (*v_intp)[i][j].x;
-      double vy = (*v_intp)[i][j].y;
-      double x = px + 0.5*delta_t*vx;
-      double y = py + 0.5*delta_t*vy;
+      double x = (*proj)[i][j].x + 0.5 * delta_t * (*v_intp)[i][j].x;
+      double y = (*proj)[i][j].y + 0.5 * delta_t * (*v_intp)[i][j].y;
       if (x < 0.0 || x > lx || y < 0.0 || y > ly) {
         return false;
       }
