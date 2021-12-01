@@ -6,6 +6,7 @@
 #include <iostream>
 #include <algorithm>
 #include <vector>
+#include <omp.h>
 
 // Function to calculate the velocity at the grid points (x, y) with x =
 // 0.5, 1.5, ..., lx-0.5 and y = 0.5, 1.5, ..., ly-0.5 at time t
