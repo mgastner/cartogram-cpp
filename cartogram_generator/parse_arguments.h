@@ -4,7 +4,7 @@
 #include <iostream>
 #include "argparse.hpp"
 
-argparse::ArgumentParser parse_arguments(const int argc,
+argparse::ArgumentParser parsed_arguments(const int argc,
                                          const char *argv[],
                                          std::string &geo_file_name,
                                          std::string &visual_file_name,

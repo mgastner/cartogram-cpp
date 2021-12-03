@@ -13,11 +13,18 @@ Cartogram generator in C++
 7. `make`
 8. `sudo make install`
 
+<!-- #### Installing CGAL
+
+[CGAL Homepage](https://www.cgal.org/)
+
+`sudo apt-get install libcgal-dev` -->
+
 #### Installing CGAL
 
 [CGAL Homepage](https://www.cgal.org/)
 
-`sudo apt-get install libcgal-dev`
+CGAL Version 5.3 is currently unavailable from apt.
+Please follow the instructions on the CGAL website to build from source.
 
 #### Installing OpenMP
 
@@ -44,7 +51,7 @@ Cartogram generator in C++
 3. Rename your newly duplicated Terminal to `x86 Terminal` (or something else of your choice).
 4. Right-click on the new Terminal, select Get Info.
 5. On this page, make sure to select `Open using Rosetta`.
-6. You now have a x86 terminal, which you can use to build other x86 binaries as well.
+6. You now have an x86 terminal, which you can use to build other x86 binaries as well.
 7. Install [homebrew](brew.sh) using:
 ```
 /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"

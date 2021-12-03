@@ -2,7 +2,7 @@
 #include "constants.h"
 #include "argparse.hpp"
 
-argparse::ArgumentParser parse_arguments(const int argc,
+argparse::ArgumentParser parsed_arguments(const int argc,
                                          const char *argv[],
                                          std::string &geo_file_name,
                                          std::string &visual_file_name,
@@ -51,7 +51,7 @@ argparse::ArgumentParser parse_arguments(const int argc,
     .default_value(false)
     .implicit_value(true);
 
-  arguments.add_argument("-t", "-- triangulation")
+  arguments.add_argument("-t", "--triangulation")
     .help("Boolean: Project the cartogram using the triangulation?")
     .default_value(false)
     .implicit_value(true);

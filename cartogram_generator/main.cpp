@@ -22,10 +22,11 @@
 #include "parse_arguments.h"
 #include <iostream>
 #include <cmath>
+#include <ranges>
 
 int main(const int argc, const char *argv[])
 {
-  std::string geo_file_name = "", visual_file_name = ""; // Default values
+  std::string geo_file_name, visual_file_name; // Default values
 
   // Default number of grid cells along longer Cartesian coordinate axis.
   unsigned int long_grid_side_length = default_long_grid_side_length;
@@ -47,7 +48,7 @@ int main(const int argc, const char *argv[])
        plot_density;
 
   // Parse command-line arguments.
-  argparse::ArgumentParser arguments = parse_arguments(
+  argparse::ArgumentParser arguments = parsed_arguments(
     argc,
     argv,
     geo_file_name,
