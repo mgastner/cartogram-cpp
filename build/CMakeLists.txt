@@ -9,13 +9,10 @@ set(CMAKE_CXX_STANDARD 20)
 set(THREADS_PREFER_PTHREAD_FLAG ON)
 set(CMAKE_BUILD_TYPE Release)
 
-set(CMAKE_CXX_COMPILER "g++-10")
-set(CMAKE_C_COMPILER "gcc-10")
-
 # Finding appropriate packages
 find_package(OpenMP REQUIRED)
 find_package(CGAL 5.3 REQUIRED)
-find_package(Boost 1.70 COMPONENTS program_options REQUIRED)
+find_package(Boost 1.70 REQUIRED)
 find_package(Threads REQUIRED)
 find_package(PkgConfig REQUIRED)
 pkg_search_module(FFTW REQUIRED fftw3 IMPORTED_TARGET)
@@ -55,6 +52,9 @@ add_executable(
 
 # Linking appropriate libraries required
 if(APPLE)
+  set(CMAKE_CXX_COMPILER "/usr/local/bin/g++-11")
+  set(CMAKE_C_COMPILER "/usr/local/bin/gcc-11")
+
   target_link_libraries(
     cartogram
     ${Boost_LIBRARIES}
@@ -63,6 +63,9 @@ if(APPLE)
     PkgConfig::FFTW
   )
 elseif(UNIX)
+  set(CMAKE_CXX_COMPILER "g++-11")
+  set(CMAKE_C_COMPILER "gcc-11")
+
   target_link_libraries(
     cartogram
     ${Boost_LIBRARIES}
