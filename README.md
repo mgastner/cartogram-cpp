@@ -44,6 +44,18 @@ Please follow the instructions on the CGAL website to build from source.
 
 ## Setting up dependencies on macOS (ARM & x86)
 
+### Intel Only Instructions (x86, Macs released before 2020)
+
+1. Install [homebrew](brew.sh) using:
+```
+/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+```
+
+2. Install gcc-10, icu4c, pkg-config, wget, boost, fftw, cgal, nlohmann-json and cmake.
+```
+brew install gcc@11 icu4c pkg-config wget boost fftw cgal nlohmann-json cmake
+```
+
 ### ARM Only Instructions (M1, M1 Pro, M1 Max, etc.)
 
 1. Go to your applications folder.
@@ -56,7 +68,7 @@ Please follow the instructions on the CGAL website to build from source.
 ```
 /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
 ```
-8. Open your zshrc using:
+8. Open your `zshrc` using:
 ```
 touch ~/.zshrc
 open -a TextEdit ~/.zshrc
@@ -66,27 +78,26 @@ open -a TextEdit ~/.zshrc
 alias brew86='arch -x86_64 /usr/local/Homebrew/bin/brew'
 ```
 and save the file.
-10. Make sure your Zsh knows you've updated your zshrc with:
+
+10. Make sure Zsh knows you've updated your `zshrc` with:
 ```
 source ~/.zshrc
 ```
-You can confirm executing the above command and then trying `brew86`.
-11. You may now start from step 2 of the General Instructions.
+You may confirm that you followed the instructions correctly by executing: `brew86`.
+The above should show you the help page for homebrew.
 
-##### **Please make sure you replace `brew` with `brew86` in the steps below**. Otherwise, you will NOT be able to build the binary on your ARM machine.
-
-Further, make sure you *skip* step 1, as you would have already installed homebrew at this point.
-
-### General Instructions (If you have an Intel processor, start here)
-
-1. Install [homebrew](brew.sh) using:
+You may execute `type brew86` for an additional confirmation.
+The output for the above command should be
 ```
-/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+brew86 is an alias for arch -x86_64 /usr/local/Homebrew/bin/brew
 ```
 
-2. Install gcc-10, icu4c, pkg-config, wget, boost, fftw, cgal, nlohmann-json and cmake.
+10. Finally, install the required dependencies by running:
+```
+brew86 install gcc@11 icu4c pkg-config wget boost fftw cgal nlohmann-json cmake
+```
 
-`brew install gcc@10 icu4c pkg-config wget boost fftw cgal nlohmann-json cmake`
+11. You must use the `x86 Terminal` that you created in steps 1-6 to compile and run the program.
 
 ## Compiling and running (Ubuntu or macOS)
 
@@ -99,10 +110,10 @@ Further, make sure you *skip* step 1, as you would have already installed homebr
 #### To use the cartogram generator:
 
 1. `cd ./build`
-2. `./cartogram -g your-geojson-file.geojson -v your-csv-file.csv`
+2. `./cartogram your-geojson-file.geojson -v your-csv-file.csv`
 
-- The `-g` flag accepts a GeoJSON or JSON file, in the standard GeoJSON format.
-- The `-v` flag accepts a .csv file with your target areas data.
+- The first positional argument's input is a GeoJSON or JSON file, in the standard GeoJSON format.
+- The `-v` flag accepts a `.csv` file with data about target areas.
 
 *Note: use the `-h` flag to display more options*
 
