@@ -50,7 +50,8 @@ add_executable(
   ../cartogram_generator/interpolate_bilinearly.cpp
   ../cartogram_generator/project.cpp
   ../cartogram_generator/write_geojson.cpp
-  ../cartogram_generator/albers_projection.cpp)
+  ../cartogram_generator/albers_projection.cpp
+  ../cartogram_generator/parse_arguments.cpp)
 
 # Linking appropriate libraries required
 if(APPLE)
