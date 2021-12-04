@@ -9,7 +9,7 @@ Cartogram generator in C++
 3. Go to Downloads folder
 4. Unzip the file you just installed (you can use the `unzip` command)
 5. Go into the newly created unzipped folder json-develop (you can use the `cd` command)
-
+6. Run the following commands (you may copy and paste all of them at once):
 ```
 cmake .
 make
@@ -52,10 +52,11 @@ sudo apt-get install libomp-dev
 2. Install the latest version of FFTW
 3. Unarchive the file with: `tar zxvf fftw-3.3.9.tar.gz` (Note: the version number may be different).
 4. Go to the directory with: `cd fftw-3.3.9`
+5. Run the following commands (you may copy and paste all of them at once):
 ```
 ./configure
 make
-7sudo make install
+sudo make install
 ```
 
 ## Setting up dependencies on macOS (ARM & x86)
@@ -136,7 +137,7 @@ make
 ./cartogram your-geojson-file.geojson -v your-csv-file.csv`
 ```
 
-- The first positional argument's input is a GeoJSON or JSON file, in the standard GeoJSON format.
+- The first argument's input is a GeoJSON or JSON file, in the standard GeoJSON format.
 - The `-v` flag accepts a `.csv` file with data about target areas.
 
 *Note: use the `-h` flag to display more options*
