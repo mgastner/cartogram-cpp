@@ -1,15 +1,22 @@
 # cartogram_cpp
+
 Cartogram generator in C++
+
+This program uses the Fast Flow-based method developed by Michael T. Gastner, Vivien Seguy, and Pratyush More. For more information, you may refer to the following [paper](https://www.pnas.org/content/115/10/E2156):
+
+Gastner MT, Seguy V, More P. _Fast flow-based algorithm for creating density-equalizing map projections_. Proc Natl Acad Sci USA 115(10):E2156–E2164 (2018). https://doi.org/10.1073/pnas.0400280101
 
 ## Installing Dependencies on Ubuntu
 
 #### Installing nlohmann's JSON parser
+
 1. Go to https://github.com/nlohmann/json
-2. Click on "Code" -> "Download Zip"
-3. Go to Downloads folder
-4. Unzip the file you just installed (you can use the `unzip` command)
-5. Go into the newly created unzipped folder json-develop (you can use the `cd` command)
+2. Click on "Code" -> "Download Zip".
+3. Go to Downloads folder.
+4. Unzip the file you just installed (you can use the `unzip` command).
+5. Go into the newly created unzipped folder json-develop (you can use the `cd` command).
 6. Run the following commands (you may copy and paste all of them at once):
+
 ```
 cmake .
 make
@@ -21,7 +28,6 @@ sudo make install
 [CGAL Homepage](https://www.cgal.org/)
 
 `sudo apt-get install libcgal-dev` -->
-
 #### Installing CGAL
 
 [CGAL Homepage](https://www.cgal.org/)
@@ -31,7 +37,6 @@ Please follow the instructions on the CGAL website to build from source.
 
 You may download the latest release [here](https://github.com/CGAL/cgal/releases).
 You may find installation instructions [here](https://doc.cgal.org/latest/Manual/usage.html#title4).
-
 
 For posterity: Once version 5.3 is available through apt-get (you may check [here](https://packages.ubuntu.com/search?keywords=libcgal-dev&searchon=names&suite=impish&section=all)), you may run the following command to install it.
 
@@ -48,11 +53,13 @@ sudo apt-get install libomp-dev
 ```
 
 #### Installing FFTW3
+
 1. Go to [FFTW's website](http://www.fftw.org/download.html "FFTW Downloads Page").
-2. Install the latest version of FFTW
+2. Install the latest version of FFTW.
 3. Unarchive the file with: `tar zxvf fftw-3.3.9.tar.gz` (Note: the version number may be different).
-4. Go to the directory with: `cd fftw-3.3.9`
+4. Go to the directory with: `cd fftw-3.3.9`.
 5. Run the following commands (you may copy and paste all of them at once):
+
 ```
 ./configure
 make
@@ -64,11 +71,13 @@ sudo make install
 ### Intel-Only Instructions (x86, Macs released before 2020)
 
 1. Install [homebrew](brew.sh) using:
+
 ```
 /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
 ```
 
 2. Install gcc-10, icu4c, pkg-config, wget, boost, fftw, cgal, nlohmann-json and cmake.
+
 ```
 brew install gcc@11 icu4c pkg-config wget boost fftw cgal nlohmann-json cmake
 ```
@@ -84,25 +93,34 @@ brew install gcc@11 icu4c pkg-config wget boost fftw cgal nlohmann-json cmake
 5. On this page, make sure to select `Open using Rosetta`.
 6. You now have an x86 terminal, which you can use to build other x86 binaries as well.
 7. Install [homebrew](brew.sh) using:
+
 ```
 /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
 ```
+
 8. Open your `zshrc` using:
+
 ```
 touch ~/.zshrc
 open -a TextEdit ~/.zshrc
 ```
+
 9. Insert the following line:
+
 ```
 alias brew86='arch -x86_64 /usr/local/Homebrew/bin/brew'
 ```
+
 and save the file.
 
 10. Make sure Zsh knows you've updated your `zshrc` with:
+
 ```
 source ~/.zshrc
 ```
+
 You may confirm that you followed the instructions correctly by executing.
+
 ```
 type brew86
 ```
@@ -111,6 +129,7 @@ The output for the above command should be:
 > brew86 is an alias for arch -x86_64 /usr/local/Homebrew/bin/brew
 
 10. Finally, install the required dependencies by running:
+
 ```
 brew86 install gcc@11 icu4c pkg-config wget boost fftw cgal nlohmann-json cmake
 ```
