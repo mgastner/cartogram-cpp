@@ -26,12 +26,19 @@ Cartogram generator in C++
 CGAL Version 5.3 is currently unavailable from apt.
 Please follow the instructions on the CGAL website to build from source.
 
+You may download the latest release [here](https://github.com/CGAL/cgal/releases).
+You may find installation instructions [here](https://doc.cgal.org/latest/Manual/usage.html#title4).
+
+
+For posterity: Once version 5.3 is available through apt-get (you may check [here](https://packages.ubuntu.com/search?keywords=libcgal-dev&searchon=names&suite=impish&section=all)), you may run the following command to install it.
+
+`sudo apt-get install libcgal-dev`
+
 #### Installing OpenMP
 
 [OpenMP Homepage](https://www.openmp.org/)
 
 `sudo apt-get install libomp-dev`
-
 
 #### Installing FFTW3
 1. Go to [FFTW's website](http://www.fftw.org/download.html "FFTW Downloads Page").
@@ -55,6 +62,8 @@ Please follow the instructions on the CGAL website to build from source.
 ```
 brew install gcc@11 icu4c pkg-config wget boost fftw cgal nlohmann-json cmake
 ```
+
+---
 
 ### ARM Only Instructions (M1, M1 Pro, M1 Max, etc.)
 
