@@ -9,9 +9,12 @@ Cartogram generator in C++
 3. Go to Downloads folder
 4. Unzip the file you just installed (you can use the `unzip` command)
 5. Go into the newly created unzipped folder json-develop (you can use the `cd` command)
-6. `cmake .`
-7. `make`
-8. `sudo make install`
+
+```
+cmake .
+make
+sudo make install
+```
 
 <!-- #### Installing CGAL
 
@@ -32,26 +35,32 @@ You may find installation instructions [here](https://doc.cgal.org/latest/Manual
 
 For posterity: Once version 5.3 is available through apt-get (you may check [here](https://packages.ubuntu.com/search?keywords=libcgal-dev&searchon=names&suite=impish&section=all)), you may run the following command to install it.
 
-`sudo apt-get install libcgal-dev`
+```
+sudo apt-get install libcgal-dev
+```
 
 #### Installing OpenMP
 
 [OpenMP Homepage](https://www.openmp.org/)
 
-`sudo apt-get install libomp-dev`
+```
+sudo apt-get install libomp-dev
+```
 
 #### Installing FFTW3
 1. Go to [FFTW's website](http://www.fftw.org/download.html "FFTW Downloads Page").
 2. Install the latest version of FFTW
-3. Unarchive the file with: `tar zxvf fftw-3.3.9.tar.gz`
+3. Unarchive the file with: `tar zxvf fftw-3.3.9.tar.gz` (Note: the version number may be different).
 4. Go to the directory with: `cd fftw-3.3.9`
-5. `./configure`
-6. `make`
-7. `sudo make install`
+```
+./configure
+make
+7sudo make install
+```
 
 ## Setting up dependencies on macOS (ARM & x86)
 
-### Intel Only Instructions (x86, Macs released before 2020)
+### Intel-Only Instructions (x86, Macs released before 2020)
 
 1. Install [homebrew](brew.sh) using:
 ```
@@ -65,7 +74,7 @@ brew install gcc@11 icu4c pkg-config wget boost fftw cgal nlohmann-json cmake
 
 ---
 
-### ARM Only Instructions (M1, M1 Pro, M1 Max, etc.)
+### ARM-Only Instructions (M1, M1 Pro, M1 Max, etc.)
 
 1. Go to your applications folder.
 2. Right-click on your Terminal and duplicate it.
@@ -92,14 +101,13 @@ and save the file.
 ```
 source ~/.zshrc
 ```
-You may confirm that you followed the instructions correctly by executing: `brew86`.
-The above should show you the help page for homebrew.
+You may confirm that you followed the instructions correctly by executing.
+```
+type brew86
+```
 
-You may execute `type brew86` for an additional confirmation.
-The output for the above command should be
-```
-brew86 is an alias for arch -x86_64 /usr/local/Homebrew/bin/brew
-```
+The output for the above command should be:
+> brew86 is an alias for arch -x86_64 /usr/local/Homebrew/bin/brew
 
 10. Finally, install the required dependencies by running:
 ```
@@ -108,18 +116,25 @@ brew86 install gcc@11 icu4c pkg-config wget boost fftw cgal nlohmann-json cmake
 
 11. You must use the `x86 Terminal` that you created in steps 1-6 to compile and run the program.
 
-## Compiling and running (Ubuntu or macOS)
+## Compilation and Usage (Ubuntu or macOS)
 
-#### Compile by running:
+#### Compilation
 
-1. `cd ./build`
-2. `cmake .`
-3. `make`
+Go to the `cartogram_cpp` directory and execute the following commands.
 
-#### To use the cartogram generator:
+```
+cd build
+cmake .
+make
+```
 
-1. `cd ./build`
-2. `./cartogram your-geojson-file.geojson -v your-csv-file.csv`
+#### Usage
+
+1. Go to the build directory using `cd build`.
+2. Replace `your-geojson-file.geojson` file with your geographic data and `your-csv-file.csv` with your visual variables file, and run the following command:
+```
+./cartogram your-geojson-file.geojson -v your-csv-file.csv`
+```
 
 - The first positional argument's input is a GeoJSON or JSON file, in the standard GeoJSON format.
 - The `-v` flag accepts a `.csv` file with data about target areas.
