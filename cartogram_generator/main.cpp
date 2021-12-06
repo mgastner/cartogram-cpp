@@ -238,10 +238,17 @@ int main(const int argc, const char *argv[])
     }
 
     // Can the coordinates be interpreted as longitude and latitude?
+    // TODO: the CRS field for GEOJSON files seem to be deprecated, but before
+    // it used to be written in the format specified here:
+    // https://geojson.org/geojson-spec.html#coordinate-reference-system-objects.
+    // It may be a good idea to make a list of possible entries corresponding
+    // to longitude and lattitude projection. "urn:ogc:def:crs:OGC:1.3:CRS84"
+    // is one such entry.
     CGAL::Bbox_2 bb = inset_state.bbox();
     if (bb.xmin() >= -180.0 && bb.xmax() <= 180.0 &&
         bb.ymin() >= -90.0 && bb.ymax() <= 90.0 &&
-        crs == "+proj=longlat") {
+        (crs == "+proj=longlat" ||
+        crs == "urn:ogc:def:crs:OGC:1.3:CRS84")) {
 
       // If yes, transform the coordinates with the Albers projection if the
       // input map is not a world map. Use the Smyth-Craster projection otherwise
