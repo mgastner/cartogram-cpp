@@ -116,11 +116,13 @@ int chosen_diag(XYPoint v[4], int *num_concave, InsetState *inset_state)
   // projected grid. If the x-coordinate is 0 or lx, we keep the input.
   XYPoint tv[4];
   for (unsigned int i = 0; i < 4; i++) {
+    int proj_x = std::min(int(lx) - 1, int(v[i].x));
+    int proj_y = std::min(int(ly) - 1, int(v[i].y));
     tv[i].x = (v[i].x != 0 && v[i].x != lx) ?
-              proj[int(v[i].x)][int(v[i].y)].x :
+              proj[proj_x][proj_y].x :
               v[i].x;
     tv[i].y = (v[i].y != 0 && v[i].y != ly) ?
-              proj[int(v[i].x)][int(v[i].y)].y :
+              proj[proj_x][proj_y].y :
               v[i].y;
   }
 
@@ -155,6 +157,16 @@ int chosen_diag(XYPoint v[4], int *num_concave, InsetState *inset_state)
   std::cerr << "(" << tv[1].x << ", " << tv[1].y << ")\n";
   std::cerr << "(" << tv[2].x << ", " << tv[2].y << ")\n";
   std::cerr << "(" << tv[3].x << ", " << tv[3].y << ")\n";
+  std::cerr << "Original: \n";
+  std::cerr << "(" << v[0].x << ", " << v[0].y << ")\n";
+  std::cerr << "(" << v[1].x << ", " << v[1].y << ")\n";
+  std::cerr << "(" << v[2].x << ", " << v[2].y << ")\n";
+  std::cerr << "(" << v[3].x << ", " << v[3].y << ")\n";
+  std::cerr << "Transformed: \n";
+  std::cerr << "(" << proj[v[0].x][v[0].y].x << ", " << proj[v[0].x][v[0].y].y << ")\n";
+  std::cerr << "(" << proj[v[1].x][v[1].y].x << ", " << proj[v[1].x][v[1].y].y << ")\n";
+  std::cerr << "(" << proj[v[2].x][v[2].y].x << ", " << proj[v[2].x][v[2].y].y << ")\n";
+  std::cerr << "(" << proj[v[3].x][v[3].y].x << ", " << proj[v[3].x][v[3].y].y << ")\n";
   std::cerr << "i: " << int(v[0].x) << "j: " << int(v[0].y) << "\n";
   exit(1);
 }
@@ -196,19 +208,42 @@ std::vector<XYPoint> transformed_triangle(std::vector<XYPoint> triangle,
                                           InsetState *inset_state)
 {
   boost::multi_array<XYPoint, 2> &proj = *inset_state->proj();
+  const unsigned int lx = inset_state->lx();
+  const unsigned int ly = inset_state->ly();
+
   std::vector<XYPoint> transformed_triangle;
   for(XYPoint point : triangle) {
     exit_if_point_not_on_grid_or_edge(point, inset_state);
     XYPoint transformed_point;
-    transformed_point.x = (point.x == 0.0 || point.x == inset_state->lx()) ?
+    int proj_x = std::min(int(lx) - 1, int(point.x));
+    int proj_y = std::min(int(ly) - 1, int(point.y));
+    transformed_point.x = (point.x == 0.0 || point.x == double(inset_state->lx())) ?
                           point.x :
-                          proj[int(point.x)][int(point.y)].x;
-    transformed_point.y = (point.y == 0.0 || point.y == inset_state->ly()) ?
+                          proj[proj_x][proj_y].x;
+    transformed_point.y = (point.y == 0.0 || point.y == double(inset_state->ly())) ?
                           point.y :
-                          proj[int(point.x)][int(point.y)].y;
+                          proj[proj_x][proj_y].y;
     transformed_triangle.push_back(transformed_point);
   }
   return transformed_triangle;
+}
+
+bool is_point_on_triangle_boundary(Polygon triangle,
+                                   const double x,
+                                   const double y)
+{
+  // From: https://stackoverflow.com/questions/7050186/find-if-point-lies-on-line-segment
+  for (unsigned int i = 0; i < triangle.size(); i++){
+    double tx1 = triangle[i].x();
+    double ty1 = triangle[i].y();
+    double tx2 = triangle[(i == triangle.size() - 1) ? 0 : i + 1].x();
+    double ty2 = triangle[(i == triangle.size() - 1) ? 0 : i + 1].y();
+    double seg = std::sqrt((tx1 - tx2) * (tx1 - tx2) + (ty1 - ty2) * (ty1 - ty2));
+    double seg1 = std::sqrt((tx1 - x) * (tx1 - x) + (ty1 - y) * (ty1 - y));
+    double seg2 = std::sqrt((tx2 - x) * (tx2 - x) + (ty2 - y) * (ty2 - y));
+    if (almost_equal(seg, seg1 + seg2)) return true;
+  }
+  return false;
 }
 
 std::vector<XYPoint> triangle_that_contains_point(const double x,
@@ -221,6 +256,7 @@ std::vector<XYPoint> triangle_that_contains_point(const double x,
     std::cerr << "ERROR: coordinate outside bounding box in "
               << "triangle_that_contains_point().\n";
     std::cerr << "x=" << x << ", y=" << y << std::endl;
+    std::cerr << almost_equal(x, 0.0) << "\n";
     exit(1);
   }
   boost::multi_array<int, 2> &graticule_diagonals =
@@ -269,7 +305,9 @@ std::vector<XYPoint> triangle_that_contains_point(const double x,
   // If the point is in neither, an error is raised.
   std::vector<XYPoint> triangle_coordinates;
   if ((triangle1.bounded_side(Point(x, y)) == CGAL::ON_BOUNDED_SIDE) ||
-      (triangle1.bounded_side(Point(x, y)) == CGAL::ON_BOUNDARY)) {
+      (is_point_on_triangle_boundary(triangle1, x, y))) {
+  // if ((triangle1.bounded_side(Point(x, y)) == CGAL::ON_BOUNDED_SIDE) ||
+  //     (triangle1.bounded_side(Point(x, y)) == CGAL::ON_BOUNDARY)) {
     for (unsigned int i = 0; i < triangle1.size(); ++i) {
       XYPoint triangle_point;
       triangle_point.x = triangle1[i][0];
@@ -277,7 +315,9 @@ std::vector<XYPoint> triangle_that_contains_point(const double x,
       triangle_coordinates.push_back(triangle_point);
     }
   } else if ((triangle2.bounded_side(Point(x, y)) == CGAL::ON_BOUNDED_SIDE) ||
-             (triangle2.bounded_side(Point(x, y)) == CGAL::ON_BOUNDARY)) {
+             (is_point_on_triangle_boundary(triangle2, x, y))) {
+    // } else if ((triangle2.bounded_side(Point(x, y)) == CGAL::ON_BOUNDED_SIDE) ||
+    //          (triangle2.bounded_side(Point(x, y)) == CGAL::ON_BOUNDARY)) {
     for (unsigned int i = 0; i < triangle2.size(); ++i) {
       XYPoint triangle_point;
       triangle_point.x = triangle2[i][0];
@@ -286,6 +326,27 @@ std::vector<XYPoint> triangle_that_contains_point(const double x,
     }
   } else {
     std::cerr << "Point not in graticule cell!\n";
+    std::setprecision(20);
+    Point p = Point(x, y);
+    std::cerr << "Point coordinates:\n";
+    std::cerr << "(" << p.x() << ", " << p.y() << ")\n";
+    std::cerr << "Original graticule cell:\n";
+    std::cerr << "(" << v[0].x << ", " << v[0].y << ")\n";
+    std::cerr << "(" << v[1].x << ", " << v[1].y << ")\n";
+    std::cerr << "(" << v[2].x << ", " << v[2].y << ")\n";
+    std::cerr << "(" << v[3].x << ", " << v[3].y << ")\n";
+    std::cerr << "Chosen diagonal: " << diag << "\n";
+    std::cerr << "Triangle 1:\n";
+    for (unsigned int i = 0; i < triangle1.size(); i++){
+      std::cerr << "(" << triangle1[i].x() << ", " << triangle1[i].y() << ")\n";
+    }
+    std::cerr << (triangle1.bounded_side(Point(x, y)) == CGAL::ON_BOUNDARY) << "\n";
+    std::cerr << (triangle1.bounded_side(Point(x, y)) == CGAL::ON_BOUNDED_SIDE) << "\n";
+    std::cerr << (triangle2.bounded_side(Point(x, y)) == CGAL::ON_BOUNDARY) << "\n";
+    std::cerr << (triangle2.bounded_side(Point(x, y)) == CGAL::ON_BOUNDED_SIDE) << "\n";
+    std::cerr << (p.y() == triangle1[0].y()) << "\n";
+    std::cerr << almost_equal(p.y(), triangle1[0].y()) << "\n";
+    std::cerr << is_point_on_triangle_boundary(triangle1, x, y) << "\n";
     exit(1);
   }
   return triangle_coordinates;

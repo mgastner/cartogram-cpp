@@ -16,6 +16,7 @@
 #include "read_csv.h"
 #include "read_geojson.h"
 #include "rescale_map.h"
+#include "smyth_projection.h"
 #include "write_eps.h"
 #include "write_geojson.h"
 #include "xy_point.h"
@@ -242,8 +243,13 @@ int main(const int argc, const char *argv[])
         bb.ymin() >= -90.0 && bb.ymax() <= 90.0 &&
         crs == "+proj=longlat") {
 
-      // If yes, transform the coordinates with the Albers projection
-      transform_to_albers_projection(&inset_state);
+      // If yes, transform the coordinates with the Albers projection if the
+      // input map is not a world map. Use the Smyth-Craster projection otherwise
+      if (world){
+        project_to_smyth_equal_surface(&inset_state);
+      } else {
+        transform_to_albers_projection(&inset_state);
+      }
     } else if (output_equal_area) {
       std::cerr << "ERROR: Input GeoJSON is not a longitude-latitude map."
                 << std::endl;
@@ -342,7 +348,7 @@ int main(const int argc, const char *argv[])
           // method of InsetState. Then the next command could be written more
           // simply as inset_state.densify_geo_divs().
           inset_state.set_geo_divs(
-            densified_geo_divs(inset_state.geo_divs())
+            densified_geo_divs(inset_state.geo_divs(), lx, ly)
           );
 
           // Projecting with Triangulation

@@ -23,11 +23,11 @@ bool xy_points_almost_equal(XYPoint a, XYPoint b) {
 XYPoint calc_intersection(XYPoint a1, XYPoint a2, XYPoint b1, XYPoint b2) {
 
   // Check if any segment is undefined (i.e., defined by identical points)
-  if (a1 == a2 || b1 == b2) {
-    std::cerr << "ERROR: End points of line segment are identical"
-              << std::endl;
-    _Exit(EXIT_FAILURE);
-  }
+  // if (a1 == a2 || b1 == b2) {
+  //   std::cerr << "ERROR: End points of line segment are identical"
+  //             << std::endl;
+  //   _Exit(EXIT_FAILURE);
+  // }
 
   // Get line equations
   double a = (a1.y - a2.y) / (a1.x - a2.x);
@@ -74,7 +74,9 @@ XYPoint calc_intersection(XYPoint a1, XYPoint a2, XYPoint b1, XYPoint b2) {
 // function also returns all intersections with the diagonals of these
 // graticule cells. The function assumes that graticule cells start at
 // (0.5, 0.5).
-std::vector<Point> densification_points(Point pt1, Point pt2)
+std::vector<Point> densification_points(Point pt1, Point pt2,
+                                        const unsigned int lx,
+                                        const unsigned int ly)
 {
   // Vector for storing intersections before removing duplicates
   std::vector<XYPoint> temp_intersections;
@@ -98,13 +100,17 @@ std::vector<Point> densification_points(Point pt1, Point pt2)
 
   // Get bottom-left point of graticule cell containing `a`
   XYPoint av0;
-  av0.x = floor(a.x + 0.5) - 0.5;
-  av0.y = floor(a.y + 0.5) - 0.5;
+  // av0.x = floor(a.x + 0.5) - 0.5;
+  // av0.y = floor(a.y + 0.5) - 0.5;
+  av0.x = std::max(0.0, floor(a.x + 0.5) - 0.5);
+  av0.y = std::max(0.0, floor(a.y + 0.5) - 0.5);
 
   // Get bottom-left point of graticule cell containing `b`
   XYPoint bv0;
-  bv0.x = floor(b.x + 0.5) - 0.5;
-  bv0.y = floor(b.y + 0.5) - 0.5;
+  // bv0.x = floor(b.x + 0.5) - 0.5;
+  // bv0.y = floor(b.y + 0.5) - 0.5;
+  bv0.x = std::max(0.0, floor(b.x + 0.5) - 0.5);
+  bv0.y = std::max(0.0, floor(b.y + 0.5) - 0.5);
 
   // Get bottom-left (start_v) and top-right (end_v) graticule cells of the
   // graticule cell rectangle (the smallest rectangular section of the
@@ -121,30 +127,51 @@ std::vector<Point> densification_points(Point pt1, Point pt2)
     end_v.y = av0.y;
   }
 
+  int dist_x = std::ceil(end_v.x - start_v.x);
+  int dist_y = std::ceil(end_v.y - start_v.y);
+  double cur_x = start_v.x;
+  double cur_y = start_v.y;
+
   // Loop through each row, from bottom to top
-  for (unsigned int int_y = (unsigned int)(start_v.y);
-       int_y <= (unsigned int)(end_v.y);
-       ++int_y) {
+  // for (unsigned int int_y = (unsigned int)(start_v.y);
+  //      int_y <= (unsigned int)(end_v.y);
+  //      ++int_y) {
+  for (int i = 0; i <= dist_y; ++i){
 
     // Loop through each column, from left to right
-    for (unsigned int int_x = (unsigned int)(start_v.x);
-         int_x <= (unsigned int)(end_v.x);
-         ++int_x) {
+    // for (unsigned int int_x = (unsigned int)(start_v.x);
+    //      int_x <= (unsigned int)(end_v.x);
+    //      ++int_x) {
+    for (int j = 0; j <= dist_x; ++j){
 
       // Get points for the current graticule cell, in this order:
       // bottom-left, bottom-right, top-right, top-left
       XYPoint v0;
-      v0.x = double(int_x) + 0.5;
-      v0.y = double(int_y) + 0.5;
+      v0.x = cur_x;
+      v0.y = cur_y;
       XYPoint v1;
-      v1.x = v0.x + 1.0;
+      v1.x = std::min(double(lx), v0.x + 1.0);
       v1.y = v0.y;
       XYPoint v2;
-      v2.x = v0.x + 1.0;
-      v2.y = v0.y + 1.0;
+      v2.x = std::min(double(lx), v0.x + 1.0);
+      v2.y = std::min(double(ly), v0.y + 1.0);
       XYPoint v3;
       v3.x = v0.x;
-      v3.y = v0.y + 1.0;
+      v3.y = std::min(double(ly), v0.y + 1.0);
+
+      // XYPoint v0;
+      // v0.x = double(int_x) + 0.5;
+      // v0.y = double(int_y) + 0.5;
+      // XYPoint v1;
+      // v1.x = v0.x + 1.0;
+      // v1.y = v0.y;
+      // XYPoint v2;
+      // v2.x = v0.x + 1.0;
+      // v2.y = v0.y + 1.0;
+      // XYPoint v3;
+      // v3.x = v0.x;
+      // v3.y = v0.y + 1.0;
+
       std::vector<XYPoint> graticule_intersections;
 
       // Bottom intersection
@@ -177,7 +204,11 @@ std::vector<Point> densification_points(Point pt1, Point pt2)
           temp_intersections.push_back(inter);
         }
       }
+
+      cur_x += (cur_x == 0.0) ? 0.5 : 1.0;
     }
+    cur_x = start_v.x;
+    cur_y += (cur_y == 0.0) ? 0.5 : 1.0;
   }
 
   // Sort intersections

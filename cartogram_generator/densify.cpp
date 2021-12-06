@@ -16,7 +16,9 @@ bool duplicates(std::vector<Point> v) {
   return false;
 }
 
-std::vector<GeoDiv> densified_geo_divs(std::vector<GeoDiv> geodivs)
+std::vector<GeoDiv> densified_geo_divs(std::vector<GeoDiv> geodivs,
+                                       const unsigned int lx,
+                                       const unsigned int ly)
 {
   std::cerr << "Densifying" << std::endl;
   std::vector<GeoDiv> geodivs_dens;
@@ -37,7 +39,7 @@ std::vector<GeoDiv> densified_geo_divs(std::vector<GeoDiv> geodivs)
         Point b = (i == outer.size() - 1) ? outer[0] : outer[i + 1];
 
         // Densify the segment.
-        std::vector<Point> outer_pts_dens = densification_points(a, b);
+        std::vector<Point> outer_pts_dens = densification_points(a, b, lx, ly);
 
         // Push all points. Omit the last point because it will be included
         // in the next iteration. Otherwise, we would have duplicated points
@@ -68,7 +70,7 @@ std::vector<GeoDiv> densified_geo_divs(std::vector<GeoDiv> geodivs)
           Point c = hole[j];
           Point d = (j == hole.size() - 1) ? hole[0] : hole[j + 1];
 
-          std::vector<Point> hole_pts_dens = densification_points(c, d);
+          std::vector<Point> hole_pts_dens = densification_points(c, d, lx, ly);
 
           for (size_t i = 0; i < (hole_pts_dens.size() - 1); ++i) {
             hole_dens.push_back(hole_pts_dens[i]);
