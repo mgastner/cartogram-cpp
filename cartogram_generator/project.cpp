@@ -198,8 +198,6 @@ void fill_graticule_diagonals(InsetState *inset_state)
   return;
 }
 
-// TODO: Using an std::vector seems overkill because we know the size of the
-// vector. Should we implement this function with C arrays instead?
 std::array<Point, 3> transformed_triangle(std::array<Point, 3> triangle,
                                           InsetState *inset_state)
 {
@@ -223,19 +221,27 @@ std::array<Point, 3> transformed_triangle(std::array<Point, 3> triangle,
   return transformed_triangle;
 }
 
+// From https://stackoverflow.com/questions/7050186/find-if-point-lies-on-line-segment
+// Determine if a point A with coordinates (x, y) is on the boundary of a
+// triangle. For each triangle side, calculate the distances between A and
+// each of the two end points of the triangle side. If the sum of these two
+// distances is equal to the length of the side, then the point is on the
+// triangle boundary.
 bool is_point_on_triangle_boundary(Polygon triangle,
                                    const double x,
                                    const double y)
 {
-  // From: https://stackoverflow.com/questions/7050186/find-if-point-lies-on-line-segment
   for (unsigned int i = 0; i < triangle.size(); i++){
     double tx1 = triangle[i].x();
     double ty1 = triangle[i].y();
     double tx2 = triangle[(i == triangle.size() - 1) ? 0 : i + 1].x();
     double ty2 = triangle[(i == triangle.size() - 1) ? 0 : i + 1].y();
-    double seg = std::sqrt((tx1 - tx2) * (tx1 - tx2) + (ty1 - ty2) * (ty1 - ty2));
-    double seg1 = std::sqrt((tx1 - x) * (tx1 - x) + (ty1 - y) * (ty1 - y));
-    double seg2 = std::sqrt((tx2 - x) * (tx2 - x) + (ty2 - y) * (ty2 - y));
+    double seg = std::sqrt((tx1 - tx2) * (tx1 - tx2) +
+                           (ty1 - ty2) * (ty1 - ty2));
+    double seg1 = std::sqrt((tx1 - x) * (tx1 - x) +
+                            (ty1 - y) * (ty1 - y));
+    double seg2 = std::sqrt((tx2 - x) * (tx2 - x) +
+                            (ty2 - y) * (ty2 - y));
     if (almost_equal(seg, seg1 + seg2)) return true;
   }
   return false;
