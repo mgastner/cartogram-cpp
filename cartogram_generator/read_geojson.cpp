@@ -184,6 +184,7 @@ void read_geojson(const std::string geometry_file_name,
                             "failed to open " + geometry_file_name);
   }
 
+  std::cout << "Parsing JSON now\n";
   // Parse JSON
   nlohmann::json j;
   try {
@@ -194,12 +195,19 @@ void read_geojson(const std::string geometry_file_name,
               << "byte position of error: " << e.byte << std::endl;
     _Exit(3);
   }
+  std::cout << "Done parsing JSON, checking validity\n";
   check_geojson_validity(j);
+  std::cout << "Done checking validity\n";
   std::set<std::string> ids_in_geojson;
+
+  std::cout << "Checking CRS\n";
 
   // Read coordinate reference system if it is included in the GeoJSON
   if (j.contains(std::string{"crs"})) {
-    *crs = j["crs"];
+    std::cout << "Has CRS\n";
+    // *crs = j["crs"]["properties"]["name"];
+  } else {
+    std::cout << "Doesn't have CRS\n";
   }
 
   // Iterate through each inset
