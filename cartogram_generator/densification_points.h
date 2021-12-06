@@ -13,4 +13,6 @@ bool points_almost_equal(Point, Point);
 
 bool almost_equal(double, double);
 
+Point rounded_point(Point);
+
 #endif

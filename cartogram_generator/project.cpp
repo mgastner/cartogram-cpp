@@ -399,8 +399,9 @@ Point transformed_point(Point old_point, InsetState *inset_state)
 
   // Get the transformed point and return it.
   Point transformed_point = affine_trans(new_triangle, old_triangle,
-                                         old_point);                                     
-  return transformed_point;
+                                         old_point);
+                           
+  return rounded_point(transformed_point);
 }
 
 void project_with_triangulation(InsetState *inset_state)

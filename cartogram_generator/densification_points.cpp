@@ -14,6 +14,18 @@ bool xy_points_almost_equal(XYPoint a, XYPoint b) {
   return (almost_equal(a.x, b.x) && almost_equal(a.y, b.y));
 }
 
+Point rounded_point(Point a){
+  return Point(std::round(a.x() * round_digits) / round_digits,
+               std::round(a.y() * round_digits) / round_digits);
+}
+
+XYPoint rounded_XYpoint(XYPoint a){
+  XYPoint result;
+  result.x = std::round(a.x * round_digits) / round_digits;
+  result.y = std::round(a.y * round_digits) / round_digits;
+  return result;
+}
+
 // This function takes two lines as input:
 // - line `a`, defined by points a1 and a2.
 // - line `b`, defined by points b1 and b2.
@@ -100,15 +112,11 @@ std::vector<Point> densification_points(Point pt1, Point pt2,
 
   // Get bottom-left point of graticule cell containing `a`
   XYPoint av0;
-  // av0.x = floor(a.x + 0.5) - 0.5;
-  // av0.y = floor(a.y + 0.5) - 0.5;
   av0.x = std::max(0.0, floor(a.x + 0.5) - 0.5);
   av0.y = std::max(0.0, floor(a.y + 0.5) - 0.5);
 
   // Get bottom-left point of graticule cell containing `b`
   XYPoint bv0;
-  // bv0.x = floor(b.x + 0.5) - 0.5;
-  // bv0.y = floor(b.y + 0.5) - 0.5;
   bv0.x = std::max(0.0, floor(b.x + 0.5) - 0.5);
   bv0.y = std::max(0.0, floor(b.y + 0.5) - 0.5);
 
@@ -133,15 +141,9 @@ std::vector<Point> densification_points(Point pt1, Point pt2,
   double cur_y = start_v.y;
 
   // Loop through each row, from bottom to top
-  // for (unsigned int int_y = (unsigned int)(start_v.y);
-  //      int_y <= (unsigned int)(end_v.y);
-  //      ++int_y) {
   for (int i = 0; i <= dist_y; ++i){
 
     // Loop through each column, from left to right
-    // for (unsigned int int_x = (unsigned int)(start_v.x);
-    //      int_x <= (unsigned int)(end_v.x);
-    //      ++int_x) {
     for (int j = 0; j <= dist_x; ++j){
 
       // Get points for the current graticule cell, in this order:
@@ -158,19 +160,6 @@ std::vector<Point> densification_points(Point pt1, Point pt2,
       XYPoint v3;
       v3.x = v0.x;
       v3.y = std::min(double(ly), v0.y + 1.0);
-
-      // XYPoint v0;
-      // v0.x = double(int_x) + 0.5;
-      // v0.y = double(int_y) + 0.5;
-      // XYPoint v1;
-      // v1.x = v0.x + 1.0;
-      // v1.y = v0.y;
-      // XYPoint v2;
-      // v2.x = v0.x + 1.0;
-      // v2.y = v0.y + 1.0;
-      // XYPoint v3;
-      // v3.x = v0.x;
-      // v3.y = v0.y + 1.0;
 
       std::vector<XYPoint> graticule_intersections;
 
@@ -201,7 +190,7 @@ std::vector<Point> densification_points(Point pt1, Point pt2,
              (b.x <= inter.x && inter.x <= a.x)) &&
             ((a.y <= inter.y && inter.y <= b.y) ||
              (b.y <= inter.y && inter.y <= a.y))) {
-          temp_intersections.push_back(inter);
+          temp_intersections.push_back(rounded_XYpoint(inter));
         }
       }
 
