@@ -171,8 +171,8 @@ make
 ./cartogram your-geojson-file.geojson -v your-csv-file.csv
 ```
 
-    - The first argument's input is a GeoJSON or JSON file, in the standard GeoJSON format.
-    - The `-v` flag accepts a `.csv` file with data about target areas.
+- The first argument's input is a GeoJSON or JSON file, in the standard GeoJSON format.
+- The `-v` flag accepts a `.csv` file with data about target areas.
 
 *Note: use the `-h` flag to display more options*
 
