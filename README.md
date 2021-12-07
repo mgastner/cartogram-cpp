@@ -166,9 +166,11 @@ make
 
 1. Go to the build directory using `cd build`.
 2. Replace `your-geojson-file.geojson` file with your geographic data and `your-csv-file.csv` with your visual variables file, and run the following command:
-    ```
+
+```
 ./cartogram your-geojson-file.geojson -v your-csv-file.csv
 ```
+
     - The first argument's input is a GeoJSON or JSON file, in the standard GeoJSON format.
     - The `-v` flag accepts a `.csv` file with data about target areas.
 
