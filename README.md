@@ -11,10 +11,8 @@ Gastner MT, Seguy V, More P. _Fast flow-based algorithm for creating density-equ
 ### Installing GNU gcc-11
 
 GNU gcc-11 is currently unavailable from apt by default.
-
 You may find installation instructions [here](https://lindevs.com/install-gcc-on-ubuntu/).
-
-Alternatively, you may execute the following commands to install it:
+Alternatively, you may run the following commands to install it:
 
 ```
 sudo apt install build-essential manpages-dev software-properties-common
@@ -84,7 +82,7 @@ sudo make install
 
 ### Intel-Only Instructions (x86, Macs released before 2020)
 
-1. Install [homebrew](brew.sh) using:
+1. Install [homebrew](brew.sh) by running the following command:
 
 ```
 /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
@@ -106,13 +104,13 @@ brew install gcc@11 icu4c pkg-config wget boost fftw cgal nlohmann-json cmake
 4. Right-click on the new Terminal and select `Get Info`.
 5. On this page, make sure to select `Open using Rosetta`.
 6. You now have an x86 terminal, which you can use to build other x86 binaries as well.
-7. Install [homebrew](brew.sh) using:
+7. Install [homebrew](brew.sh) by running the following command:
 
 ```
 /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
 ```
 
-8. Open your `zshrc` using:
+8. Open your `zshrc` by running the following commands:
 
 ```
 touch ~/.zshrc
@@ -127,13 +125,13 @@ alias brew86='arch -x86_64 /usr/local/Homebrew/bin/brew'
 
 and save the file.
 
-10. Make sure Zsh knows you've updated your `zshrc` with:
+10. Make sure `zsh` knows you've updated your `zshrc` with:
 
 ```
 source ~/.zshrc
 ```
 
-You may confirm that you followed the instructions correctly by executing.
+You may confirm that you followed the instructions correctly by executing the following command:
 
 ```
 type brew86
@@ -174,7 +172,7 @@ make
 - The first argument's input is a GeoJSON or JSON file, in the standard GeoJSON format.
 - The `-v` flag accepts a `.csv` file with data about target areas.
 
-*Note: use the `-h` flag to display more options*
+*Note: use the `-h` flag to display more options.*
 
 The csv file should be in the following format:
 
@@ -188,5 +186,5 @@ The csv file should be in the following format:
 - `Data` contains the data you would like your cartogram to based on.
 - `Color` is the color you would like the geographic region to be. Colors may be represented in the following manner:
     1. `cornflowerblue`: html color codes supported by `CSS3` (case-insensitive), full list of supported colors may be found in the "Extended colors" section of [web colors](https://en.wikipedia.org/wiki/Web_colors).
-    2. `"rgb(255, 0, 120)"` or `rgb(255 0 120)` or `"255, 0, 120"` or `255 0 120`: red, green and blue values out of 255
-    3. `#e74c3c`: hex code of color, must start with `#`
+    2. `"rgb(255, 0, 120)"` or `rgb(255 0 120)` or `"255, 0, 120"` or `255 0 120`: red, green and blue values out of 255.
+    3. `#e74c3c`: hex code of color, must start with `#`.
