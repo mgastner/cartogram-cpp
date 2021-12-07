@@ -16,7 +16,7 @@ argparse::ArgumentParser parsed_arguments(const int argc,
                                          bool &plot_density)
 {
 
-  // Creating parser for arguments using argparse
+  // Creating parser for arguments using argparse.
   // From: https://github.com/p-ranav/argparse
   argparse::ArgumentParser arguments("./cartogram", "1.0");
 
@@ -37,7 +37,7 @@ argparse::ArgumentParser parsed_arguments(const int argc,
       "Integer: Number of grid cells along longer Cartesian coordinate axis"
     );
 
-  // Optional boolean arguments
+  // Optional boolean arguments.
   arguments.add_argument("-w", "--world")
     .help("Boolean: is input a world map in longitude-latitude format?")
     .default_value(false)
@@ -100,10 +100,10 @@ argparse::ArgumentParser parsed_arguments(const int argc,
     std::exit(1);
   }
 
-  // Setting long grid-side length
+  // Setting long grid-side length.
   long_grid_side_length = arguments.get<unsigned int>("-l");
 
-  // Setting boolean values
+  // Setting boolean values.
   world = arguments.get<bool>("-w");
   triangulation = arguments.get<bool>("-t");
   make_csv = arguments.get<bool>("-m");

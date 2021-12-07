@@ -4,6 +4,7 @@
 #include <iostream>
 #include "argparse.hpp"
 
+// Function to parse arguments and set variables in main.
 argparse::ArgumentParser parsed_arguments(const int argc,
                                          const char *argv[],
                                          std::string &geo_file_name,
