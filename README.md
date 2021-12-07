@@ -16,7 +16,7 @@ You may find installation instructions [here](https://lindevs.com/install-gcc-on
 
 Alternatively, you may execute the following commands to install it:
 
-    ```
+```
 sudo apt install build-essential manpages-dev software-properties-common
 sudo add-apt-repository ppa:ubuntu-toolchain-r/test
 sudo apt update && sudo apt install gcc-11 g++-11
@@ -31,7 +31,7 @@ sudo apt update && sudo apt install gcc-11 g++-11
 5. Go into the newly created unzipped folder json-develop (you can use the `cd` command).
 6. Run the following commands (you may copy and paste all of them at once):
 
-    ```
+```
 cmake .
 make
 sudo make install
@@ -54,7 +54,7 @@ You may find installation instructions [here](https://doc.cgal.org/latest/Manual
 
 For posterity: Once version 5.3 is available through apt-get (you may check [here](https://packages.ubuntu.com/search?keywords=libcgal-dev&searchon=names&suite=impish&section=all)), you may run the following command to install it.
 
-    ```
+```
 sudo apt-get install libcgal-dev
 ```
 
@@ -62,7 +62,7 @@ sudo apt-get install libcgal-dev
 
 [OpenMP Homepage](https://www.openmp.org/)
 
-    ```
+```
 sudo apt-get install libomp-dev
 ```
 
@@ -74,7 +74,7 @@ sudo apt-get install libomp-dev
 4. Go to the directory with: `cd fftw-3.3.9`.
 5. Run the following commands (you may copy and paste all of them at once):
 
-    ```
+```
 ./configure
 make
 sudo make install
@@ -86,13 +86,13 @@ sudo make install
 
 1. Install [homebrew](brew.sh) using:
 
-    ```
+```
 /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
 ```
 
 2. Install gcc-11, icu4c, pkg-config, wget, boost, fftw, cgal, nlohmann-json and cmake.
 
-    ```
+```
 brew install gcc@11 icu4c pkg-config wget boost fftw cgal nlohmann-json cmake
 ```
 
@@ -108,20 +108,20 @@ brew install gcc@11 icu4c pkg-config wget boost fftw cgal nlohmann-json cmake
 6. You now have an x86 terminal, which you can use to build other x86 binaries as well.
 7. Install [homebrew](brew.sh) using:
 
-    ```
+```
 /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
 ```
 
 8. Open your `zshrc` using:
 
-    ```
+```
 touch ~/.zshrc
 open -a TextEdit ~/.zshrc
 ```
 
 9. Insert the following line:
 
-    ```
+```
 alias brew86='arch -x86_64 /usr/local/Homebrew/bin/brew'
 ```
 
@@ -129,13 +129,13 @@ and save the file.
 
 10. Make sure Zsh knows you've updated your `zshrc` with:
 
-    ```
+```
 source ~/.zshrc
 ```
 
 You may confirm that you followed the instructions correctly by executing.
 
-    ```
+```
 type brew86
 ```
 
@@ -144,7 +144,7 @@ The output for the above command should be:
 
 10. Finally, install the required dependencies by running:
 
-    ```
+```
 brew86 install gcc@11 icu4c pkg-config wget boost fftw cgal nlohmann-json cmake
 ```
 
@@ -156,7 +156,7 @@ brew86 install gcc@11 icu4c pkg-config wget boost fftw cgal nlohmann-json cmake
 
 Go to the `cartogram_cpp` directory and execute the following commands.
 
-    ```
+```
 cd build
 cmake .
 make
@@ -166,7 +166,7 @@ make
 
 1. Go to the build directory using `cd build`.
 2. Replace `your-geojson-file.geojson` file with your geographic data and `your-csv-file.csv` with your visual variables file, and run the following command:
-    ```
+```
 ./cartogram your-geojson-file.geojson -v your-csv-file.csv`
 ```
 
@@ -186,7 +186,6 @@ The csv file should be in the following format:
 - `NAME_1` should be the same as the identifying property's name in the GeoJSON. The rows should also have the same data as is present in the identifying property.
 - `Data` contains the data you would like your cartogram to based on.
 - `Color` is the color you would like the geographic region to be.
-
     Colors may be represented in the following manner:
     1. `cornflowerblue`: html color codes supported by `CSS3` (case-insensitive), full list of supported colors may be found in the "Extended colors" section of [web colors](https://en.wikipedia.org/wiki/Web_colors).
     2. `"rgb(255, 0, 120)"` or `rgb(255 0 120)` or `"255, 0, 120"` or `255 0 120`: red, green and blue values out of 255
