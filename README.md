@@ -166,10 +166,9 @@ make
 
 1. Go to the build directory using `cd build`.
 2. Replace `your-geojson-file.geojson` file with your geographic data and `your-csv-file.csv` with your visual variables file, and run the following command:
+    ```
+./cartogram your-geojson-file.geojson -v your-csv-file.csv
 ```
-./cartogram your-geojson-file.geojson -v your-csv-file.csv`
-```
-
     - The first argument's input is a GeoJSON or JSON file, in the standard GeoJSON format.
     - The `-v` flag accepts a `.csv` file with data about target areas.
 
@@ -185,8 +184,7 @@ The csv file should be in the following format:
 
 - `NAME_1` should be the same as the identifying property's name in the GeoJSON. The rows should also have the same data as is present in the identifying property.
 - `Data` contains the data you would like your cartogram to based on.
-- `Color` is the color you would like the geographic region to be.
-    Colors may be represented in the following manner:
+- `Color` is the color you would like the geographic region to be. Colors may be represented in the following manner:
     1. `cornflowerblue`: html color codes supported by `CSS3` (case-insensitive), full list of supported colors may be found in the "Extended colors" section of [web colors](https://en.wikipedia.org/wiki/Web_colors).
     2. `"rgb(255, 0, 120)"` or `rgb(255 0 120)` or `"255, 0, 120"` or `255 0 120`: red, green and blue values out of 255
     3. `#e74c3c`: hex code of color, must start with `#`
