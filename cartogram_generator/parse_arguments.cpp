@@ -16,14 +16,20 @@ argparse::ArgumentParser parsed_arguments(const int argc,
                                          bool &plot_density)
 {
 
+  // Creating parser for arguments using argparse
+  // From: https://github.com/p-ranav/argparse
   argparse::ArgumentParser arguments("./cartogram", "1.0");
 
+  // Positional argument accepting geometry file (GeoJSON, JSON) as input.
   arguments.add_argument("geometry_file")
     .help("File path: GeoJSON file");
 
+  // Optional argument accepting visual variables file (CSV) as input.
   arguments.add_argument("-v", "--visual_variable_file")
     .help("File path: CSV file with ID, area, and (optionally) colour");
 
+  // Optional argument accepting long grid side length (unsigned int) as input.
+  // Default value declared in "constants.h"
   arguments.add_argument("-l", "--long_grid_side_length")
     .default_value(default_long_grid_side_length)
     .scan<'u', unsigned int>()
@@ -31,6 +37,7 @@ argparse::ArgumentParser parsed_arguments(const int argc,
       "Integer: Number of grid cells along longer Cartesian coordinate axis"
     );
 
+  // Optional boolean arguments
   arguments.add_argument("-w", "--world")
     .help("Boolean: is input a world map in longitude-latitude format?")
     .default_value(false)
@@ -66,6 +73,7 @@ argparse::ArgumentParser parsed_arguments(const int argc,
     .default_value(false)
     .implicit_value(true);
 
+  // Arguments regarding column names in provided visual variables file (CSV).
   arguments.add_argument("-i", "--id")
     .help(
       "String: Column name for IDs of geographic divisions (default: 1st CSV column)"
@@ -81,7 +89,6 @@ argparse::ArgumentParser parsed_arguments(const int argc,
   arguments.add_argument("-n", "--inset")
     .default_value(std::string("Inset"))
     .help("String: Column name for insets");
-
 
   // Parsing command line arguments.
   try {
@@ -105,11 +112,11 @@ argparse::ArgumentParser parsed_arguments(const int argc,
   output_to_stdout = arguments.get<bool>("-s");
   plot_density =  arguments.get<bool>("-d");
 
-
   // Printing geometry and visual file used.
   geo_file_name = arguments.get<std::string>("geometry_file");
   std::cerr << "Using geometry from file " << geo_file_name << std::endl;
 
+  // Checking if visual variables file passed, or -m flag passed.
   if (arguments.present<std::string>("-v")) {
     visual_file_name = arguments.get<std::string>("-v");
     std::cerr << "Using visual variables from file "
@@ -122,7 +129,6 @@ argparse::ArgumentParser parsed_arguments(const int argc,
     std::cerr << "To create a CSV, please use the -m flag." << std::endl;
     std::cerr << arguments << std::endl;
     _Exit(15);
-
   }
   return arguments;
 }
