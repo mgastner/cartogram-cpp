@@ -76,7 +76,7 @@ argparse::ArgumentParser parsed_arguments(const int argc,
   // Arguments regarding column names in provided visual variables file (CSV).
   arguments.add_argument("-i", "--id")
     .help(
-      "String: Column name for IDs of geographic divisions (default: 1st CSV column)"
+      "String: Column name for IDs of geographic divisions [default: 1st CSV column]"
     );
 
   arguments.add_argument("-a", "--area")

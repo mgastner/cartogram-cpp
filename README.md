@@ -20,7 +20,7 @@ Alternatively, you may execute the following commands to install it:
 sudo apt install build-essential manpages-dev software-properties-common
 sudo add-apt-repository ppa:ubuntu-toolchain-r/test
 sudo apt update && sudo apt install gcc-11 g++-11
-    ```
+```
 
 ### Installing nlohmann's JSON parser
 
@@ -35,7 +35,7 @@ sudo apt update && sudo apt install gcc-11 g++-11
 cmake .
 make
 sudo make install
-    ```
+```
 
 <!-- #### Installing CGAL
 
@@ -56,7 +56,7 @@ For posterity: Once version 5.3 is available through apt-get (you may check [her
 
     ```
 sudo apt-get install libcgal-dev
-    ```
+```
 
 ### Installing OpenMP
 
@@ -64,7 +64,7 @@ sudo apt-get install libcgal-dev
 
     ```
 sudo apt-get install libomp-dev
-    ```
+```
 
 ### Installing FFTW3
 
@@ -78,7 +78,7 @@ sudo apt-get install libomp-dev
 ./configure
 make
 sudo make install
-    ```
+```
 
 ## Setting up dependencies on macOS (ARM & x86)
 
@@ -88,13 +88,13 @@ sudo make install
 
     ```
 /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
-    ```
+```
 
 2. Install gcc-11, icu4c, pkg-config, wget, boost, fftw, cgal, nlohmann-json and cmake.
 
     ```
 brew install gcc@11 icu4c pkg-config wget boost fftw cgal nlohmann-json cmake
-    ```
+```
 
 ---
 
@@ -110,20 +110,20 @@ brew install gcc@11 icu4c pkg-config wget boost fftw cgal nlohmann-json cmake
 
     ```
 /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
-    ```
+```
 
 8. Open your `zshrc` using:
 
     ```
 touch ~/.zshrc
 open -a TextEdit ~/.zshrc
-    ```
+```
 
 9. Insert the following line:
 
     ```
 alias brew86='arch -x86_64 /usr/local/Homebrew/bin/brew'
-    ```
+```
 
 and save the file.
 
@@ -131,13 +131,13 @@ and save the file.
 
     ```
 source ~/.zshrc
-    ```
+```
 
 You may confirm that you followed the instructions correctly by executing.
 
     ```
 type brew86
-    ```
+```
 
 The output for the above command should be:
 > brew86 is an alias for arch -x86_64 /usr/local/Homebrew/bin/brew
@@ -146,7 +146,7 @@ The output for the above command should be:
 
     ```
 brew86 install gcc@11 icu4c pkg-config wget boost fftw cgal nlohmann-json cmake
-    ```
+```
 
 11. You must use the `x86 Terminal` that you created in steps 1-6 to compile and run the program.
 
@@ -160,7 +160,7 @@ Go to the `cartogram_cpp` directory and execute the following commands.
 cd build
 cmake .
 make
-    ```
+```
 
 #### Usage
 
@@ -168,7 +168,7 @@ make
 2. Replace `your-geojson-file.geojson` file with your geographic data and `your-csv-file.csv` with your visual variables file, and run the following command:
     ```
 ./cartogram your-geojson-file.geojson -v your-csv-file.csv`
-    ```
+```
 
     - The first argument's input is a GeoJSON or JSON file, in the standard GeoJSON format.
     - The `-v` flag accepts a `.csv` file with data about target areas.
