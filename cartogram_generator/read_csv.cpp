@@ -2,30 +2,26 @@
 #include "constants.h"
 #include "inset_state.h"
 #include "csv.hpp"
-#include <boost/program_options.hpp>
+#include "argparse.hpp"
 #include <iostream>
 
-void read_csv(const boost::program_options::variables_map vm,
+void read_csv(argparse::ArgumentParser arguments,
               CartogramInfo *cart_info)
 {
-  // Get name of CSV file from vm
-  std::string csv_name;
-  if (vm.count("visual_variable_file")) {
-    csv_name = vm["visual_variable_file"].as<std::string>();
-  } else {
-    std::cerr << "ERROR: No CSV file given!" << std::endl;
-    _Exit(15);
-  }
 
-  // Open CSV Reader
+  // Retrieve CSV Name.
+  std::string csv_name = arguments.get<std::string>("-v");
+
+  // Open CSV Reader.
   csv::CSVReader reader(csv_name);
 
   // Find index of column with IDs. If no ID column header was passed with the
   // command-line flag --id, the ID column is assumed to have index 0.
+  auto is_id_header = arguments.present<std::string>("-i");
   std::string id_header;
   int id_col = 0;
-  if (vm.count("id")) {
-    id_header = vm["id"].as<std::string>();
+  if (is_id_header) {
+    id_header = *is_id_header;
     id_col = reader.index_of(id_header);
   } else {
     id_header = reader.get_col_names()[0];
@@ -38,30 +34,22 @@ void read_csv(const boost::program_options::variables_map vm,
   // passed with the command-line flag --area, the area column is assumed to
   // have index 1.
   int area_col = 1;
-  if (vm.count("area")) {
-    area_col = reader.index_of(vm["area"].as<std::string>());
+  if (auto area_header = arguments.present<std::string>("-a")) {
+    std::cout << "Area Header: " << *area_header << std::endl;
+    area_col = reader.index_of(*area_header);
   }
 
   // Find index of column with inset specifiers. If no inset column header was
   // passed with the command-line flag --inset, the header is assumed to be
   // "Inset".
-  std::string inset_header = "Inset";
-  if (vm.count("inset")) {
-    inset_header = vm["inset"].as<std::string>();
-  }
+  std::string inset_header = arguments.get<std::string>("-n");
   int inset_col = reader.index_of(inset_header);
 
   // Find index of column with color specifiers. If no color column header was
   // passed with the command-line flag --color, the header is assumed to be
-  // "Color" or "Colour".
-  std::string color_header = "Color";
-  if (vm.count("color")) {
-    color_header = vm["color"].as<std::string>();
-  }
+  // "Color".
+  std::string color_header = arguments.get<std::string>("-c");
   int color_col = reader.index_of(color_header);
-  if (color_col == csv::CSV_NOT_FOUND) {
-    color_col = reader.index_of("Colour");
-  }
 
   // Read CSV
   std::set<std::string> inset_pos_set;

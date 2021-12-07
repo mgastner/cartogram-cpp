@@ -4,6 +4,7 @@
 #include "inset_state.h"
 #include "constants.h"
 #include <vector>
+#include <ranges>
 
 class CartogramInfo {
 private:
