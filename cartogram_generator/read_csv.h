@@ -1,8 +1,9 @@
 #ifndef READ_CSV_H_
 #define READ_CSV_H_
 
-#include <boost/program_options.hpp>
+#include "argparse.hpp"
 
-void read_csv(const boost::program_options::variables_map, CartogramInfo*);
+void read_csv(argparse::ArgumentParser,
+              CartogramInfo*);
 
 #endif
