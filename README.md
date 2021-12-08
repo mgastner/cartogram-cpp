@@ -6,7 +6,9 @@ This program uses the Fast Flow-based method developed by Michael T. Gastner, Vi
 
 Gastner MT, Seguy V, More P. _Fast flow-based algorithm for creating density-equalizing map projections_. Proc Natl Acad Sci USA 115(10):E2156–E2164 (2018). https://doi.org/10.1073/pnas.0400280101
 
+
 ## Installing Dependencies on Ubuntu
+
 
 ### Installing GNU gcc-11
 
@@ -20,6 +22,7 @@ sudo add-apt-repository ppa:ubuntu-toolchain-r/test
 sudo apt update && sudo apt install gcc-11 g++-11
 ```
 
+
 ### Installing nlohmann's JSON parser
 
 1. Go to https://github.com/nlohmann/json
@@ -29,17 +32,19 @@ sudo apt update && sudo apt install gcc-11 g++-11
 5. Go into the newly created unzipped folder json-develop (you can use the `cd` command).
 6. Run the following commands (you may copy and paste all of them at once):
 
-```
-cmake .
-make
-sudo make install
-```
+    ```
+    cmake .
+    make
+    sudo make install
+    ```
 
 <!-- #### Installing CGAL
 
 [CGAL Homepage](https://www.cgal.org/)
 
 `sudo apt-get install libcgal-dev` -->
+
+
 ### Installing CGAL
 
 [CGAL Homepage](https://www.cgal.org/)
@@ -56,6 +61,7 @@ For posterity: Once version 5.3 is available through apt-get (you may check [her
 sudo apt-get install libcgal-dev
 ```
 
+
 ### Installing OpenMP
 
 [OpenMP Homepage](https://www.openmp.org/)
@@ -63,6 +69,7 @@ sudo apt-get install libcgal-dev
 ```
 sudo apt-get install libomp-dev
 ```
+
 
 ### Installing FFTW3
 
@@ -72,29 +79,32 @@ sudo apt-get install libomp-dev
 4. Go to the directory with: `cd fftw-3.3.9`.
 5. Run the following commands (you may copy and paste all of them at once):
 
-```
-./configure
-make
-sudo make install
-```
+    ```
+    ./configure
+    make
+    sudo make install
+    ```
+
 
 ## Setting up dependencies on macOS (ARM & x86)
+
 
 ### Intel-Only Instructions (x86, Macs released before 2020)
 
 1. Install [homebrew](brew.sh) by running the following command:
 
-```
-/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
-```
+    ```
+    /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+    ```
 
 2. Install gcc-11, icu4c, pkg-config, wget, boost, fftw, cgal, nlohmann-json and cmake.
 
-```
-brew install gcc@11 icu4c pkg-config wget boost fftw cgal nlohmann-json cmake
-```
+    ```
+    brew install gcc@11 icu4c pkg-config wget boost fftw cgal nlohmann-json cmake
+    ```
 
 ---
+
 
 ### ARM-Only Instructions (M1, M1 Pro, M1 Max, etc.)
 
@@ -106,49 +116,51 @@ brew install gcc@11 icu4c pkg-config wget boost fftw cgal nlohmann-json cmake
 6. You now have an x86 terminal, which you can use to build other x86 binaries as well.
 7. Install [homebrew](brew.sh) by running the following command:
 
-```
-/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
-```
+    ```
+    /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+    ```
 
 8. Open your `zshrc` by running the following commands:
 
-```
-touch ~/.zshrc
-open -a TextEdit ~/.zshrc
-```
+    ```
+    touch ~/.zshrc
+    open -a TextEdit ~/.zshrc
+    ```
 
 9. Insert the following line:
 
-```
-alias brew86='arch -x86_64 /usr/local/Homebrew/bin/brew'
-```
+    ```
+    alias brew86='arch -x86_64 /usr/local/Homebrew/bin/brew'
+    ```
 
-and save the file.
+    and save the file.
 
 10. Make sure `zsh` knows you've updated your `zshrc` with:
 
-```
-source ~/.zshrc
-```
+    ```
+    source ~/.zshrc
+    ```
 
-You may confirm that you followed the instructions correctly by executing the following command:
+    You may confirm that you followed the instructions correctly by executing the following command:
 
-```
-type brew86
-```
+    ```
+    type brew86
+    ```
 
-The output for the above command should be:
-> brew86 is an alias for arch -x86_64 /usr/local/Homebrew/bin/brew
+    The output for the above command should be:
+    > brew86 is an alias for arch -x86_64 /usr/local/Homebrew/bin/brew
 
-10. Finally, install the required dependencies by running:
+11. Finally, install the required dependencies by running:
 
-```
-brew86 install gcc@11 icu4c pkg-config wget boost fftw cgal nlohmann-json cmake
-```
+    ```
+    brew86 install gcc@11 icu4c pkg-config wget boost fftw cgal nlohmann-json cmake
+    ```
 
-11. You must use the `x86 Terminal` that you created in steps 1-6 to compile and run the program.
+12. You must use the `x86 Terminal` that you created in steps 1-6 to compile and run the program.
+
 
 ## Compilation and Usage (Ubuntu or macOS)
+
 
 #### Compilation
 
@@ -160,21 +172,22 @@ cmake .
 make
 ```
 
+
 #### Usage
 
 1. Go to the build directory using `cd build`.
 2. Replace `your-geojson-file.geojson` file with your geographic data and `your-csv-file.csv` with your visual variables file, and run the following command:
 
-```
-./cartogram your-geojson-file.geojson -v your-csv-file.csv
-```
+    ```
+    ./cartogram your-geojson-file.geojson -v your-csv-file.csv
+    ```
 
-- The first argument's input is a GeoJSON or JSON file, in the standard GeoJSON format.
-- The `-v` flag accepts a `.csv` file with data about target areas.
+    - The first argument's input is a GeoJSON or JSON file, in the standard GeoJSON format.
+    - The `-v` flag accepts a `.csv` file with data about target areas.
 
 *Note: use the `-h` flag to display more options.*
 
-The csv file should be in the following format:
+The CSV file should be in the following format:
 
 | NAME_1        | Data (eg: Population)| Color   |
 | :------------ |:---------------------| :-------|
