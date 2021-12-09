@@ -266,8 +266,8 @@ void fill_with_density(bool plot_density, InsetState* inset_state)
 
         // Fill each cell between intersections
         // TODO: TEMPORARY FIX, FIND UNDERLYING ISSUE AND FIXED
-        for (unsigned int m = std::max(ceil(left_x), 1);
-                          m <= std::max(ceil(right_x), 1);
+        for (unsigned int m = std::max(ceil(left_x), 1.0);
+                          m <= std::max(ceil(right_x), 1.0);
                           ++m) {
           double weight =
             inset_state->area_errors_at(intersections[l].geo_div_id);
