@@ -20,30 +20,14 @@
 #include "write_eps.h"
 #include "write_geojson.h"
 #include "xy_point.h"
-#include <boost/program_options.hpp>
+#include "parse_arguments.h"
 #include <iostream>
 #include <cmath>
-
-// Functions that are called if the corresponding command-line options are
-// present
-void on_geometry(const std::string geometry_file_name)
-{
-  std::cerr << "Using geometry from file " << geometry_file_name << std::endl;
-  return;
-}
-
-void on_visual_variable_file(const std::string visual_file_name)
-{
-  std::cerr << "Using visual variables from file "
-            << visual_file_name
-            << std::endl;
-  return;
-}
+#include <ranges>
 
 int main(const int argc, const char *argv[])
 {
-  using namespace boost::program_options;
-  std::string geo_file_name = "", visual_file_name = ""; // Default values
+  std::string geo_file_name, visual_file_name; // Default values
 
   // Default number of grid cells along longer Cartesian coordinate axis.
   unsigned int long_grid_side_length = default_long_grid_side_length;
@@ -64,98 +48,21 @@ int main(const int argc, const char *argv[])
        output_to_stdout,
        plot_density;
 
-  // Parse command-line options. See
-  // https://theboostcpplibraries.com/boost.program_options
-  variables_map vm;
-  try {
-    options_description desc{"Options"};
-    desc.add_options()(
-      "help,h", "Help screen"
-      )(
-      "geometry,g",
-      value<std::string>(&geo_file_name)
-      ->required()
-      ->notifier(on_geometry),
-      "GeoJSON file"
-      )(
-      "visual_variable_file,v",
-      value<std::string>(&visual_file_name)
-      ->notifier(on_visual_variable_file),
-      "CSV file with ID, area, and (optionally) colour"
-      )(
-      "output_to_stdout,s",
-      value<bool>(&output_to_stdout)
-      ->default_value(false)
-      ->implicit_value(true),
-      "Output GeoJSON to stdout"
-      )(
-      "output_equal_area,q",
-      value<bool>(&output_equal_area)
-      ->default_value(false)
-      ->implicit_value(true),
-      "Output equal area GeoJSON"
-      )(
-      "make_csv,m",
-      value<bool>(&make_csv)
-      ->default_value(false)
-      ->implicit_value(true),
-      "Boolean: create CSV file from the GeoJSON passed to the -g flag?"
-      )(
-      "id,i",
-      value<std::string>(),
-      "Column name for IDs of geographic divisions (default: 1st CSV column)"
-      )(
-      "area,a",
-      value<std::string>(),
-      "Column name for target areas (default: 2nd CSV column)"
-      )(
-      "color,c",
-      value<std::string>(),
-      "Column name for colors (default: \"Color\" or \"Colour\")"
-      )(
-      "inset,n",
-      value<std::string>(),
-      "Column name for insets (default: \"Inset\")"
-      )(
-      "long_grid_side_length,l",
-      value<unsigned int>(&long_grid_side_length),
-      "Number of grid cells along longer Cartesian coordinate axis"
-      )(
-      "world,w",
-      value<bool>(&world)
-      ->default_value(false)
-      ->implicit_value(true),
-      "Boolean: is input a world map in longitude-latitude format?"
-      )(
-      "triangulation,t",
-      value<bool>(&triangulation)
-      ->default_value(false)
-      ->implicit_value(true),
-      "Project the cartogram using the triangulation method"
-      )(
-      "polygons_to_eps,e",
-      value<bool>(&make_polygon_eps)
-      ->default_value(false)
-      ->implicit_value(true),
-      "Boolean: make EPS image of input and output?"
-      )(
-      "density_to_eps,d",
-      value<bool>(&plot_density)
-      ->default_value(false)
-      ->implicit_value(true),
-      "Boolean: make EPS images *_density_*.eps?"
-      );
-    store(parse_command_line(argc, argv, desc), vm);
-    if (vm.count("help") || argc == 1) {
-      std::cerr << desc << '\n';
-      return EXIT_SUCCESS;
-    } else {
-      notify(vm);  // Triggers notifier functions such as on_geometry()
-    }
-  } catch (const error &ex) {
-    std::cerr << "ERROR: " << ex.what() << std::endl;
-    return EXIT_FAILURE;
-  }
+  // Parse command-line arguments.
+  argparse::ArgumentParser arguments = parsed_arguments(
+    argc,
+    argv,
+    geo_file_name,
+    visual_file_name,
+    long_grid_side_length,
+    world,
+    triangulation,
+    make_csv,
+    make_polygon_eps,
+    output_equal_area,
+    output_to_stdout,
+    plot_density
+  );
 
   // Initialize cart_info. It contains all information about the cartogram
   // that needs to be handled by functions called from main().
@@ -164,7 +71,7 @@ int main(const int argc, const char *argv[])
 
     // Read visual variables (e.g. area, color) from CSV
     try {
-      read_csv(vm, &cart_info);
+      read_csv(arguments, &cart_info);
     } catch (const std::system_error& e) {
       std::cerr << "ERROR: "
                 << e.what()
@@ -346,7 +253,7 @@ int main(const int argc, const char *argv[])
         flatten_density(&inset_state);
 
         if (triangulation) {
-          
+
           // Choosing diagonals that are inside graticule cells
           fill_graticule_diagonals(&inset_state);
 

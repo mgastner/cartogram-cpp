@@ -92,7 +92,7 @@ void CartogramInfo::replace_missing_and_zero_target_areas()
   // Check whether target areas exist that are missing or equal to zero
   bool ta_zero_exists = false, ta_na_exists = false;
   for (auto &inset_state : inset_states_ | std::views::values) {
-    for (auto const gd : inset_state.geo_divs()) {
+    for (auto const &gd : inset_state.geo_divs()) {
       double target_area = inset_state.target_areas_at(gd.id());
       if (target_area < 0.0) {
         ta_na_exists = true;
@@ -115,7 +115,7 @@ void CartogramInfo::replace_missing_and_zero_target_areas()
     // Find smallest positive target area
     double min_positive_area = dbl_inf;
     for (auto const &inset_state : inset_states_ | std::views::values) {
-      for (auto const gd : inset_state.geo_divs()) {
+      for (auto const &gd : inset_state.geo_divs()) {
         double target_area = inset_state.target_areas_at(gd.id());
 
         // Target area not equal to zero and not missing
@@ -129,7 +129,7 @@ void CartogramInfo::replace_missing_and_zero_target_areas()
     // area (instead of the minimum target area) to min_positive_area
     if (min_positive_area == dbl_inf) {
       for (auto const &inset_state : inset_states_ | std::views::values) {
-        for (auto const gd : inset_state.geo_divs()) {
+        for (auto const &gd : inset_state.geo_divs()) {
           min_positive_area = std::min(min_positive_area, gd.area());
         }
       }
@@ -143,7 +143,7 @@ void CartogramInfo::replace_missing_and_zero_target_areas()
               << " (0.1 times the minimum positive area)."
               << std::endl;
     for (auto &inset_state : inset_states_ | std::views::values) {
-      for (auto const gd : inset_state.geo_divs()) {
+      for (auto const &gd : inset_state.geo_divs()) {
         double target_area = inset_state.target_areas_at(gd.id());
         if (target_area == 0.0) {
           inset_state.target_areas_replace(gd.id(),
@@ -165,7 +165,7 @@ void CartogramInfo::replace_missing_and_zero_target_areas()
 
     // Assign new target areas to GeoDivs
     for (auto &inset_state : inset_states_ | std::views::values) {
-      for (auto const gd : inset_state.geo_divs()) {
+      for (auto const &gd : inset_state.geo_divs()) {
         if (inset_state.target_area_is_missing(gd.id())) {
           double new_target_area;
 
