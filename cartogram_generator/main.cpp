@@ -301,9 +301,13 @@ int main(const int argc, const char *argv[])
                          &inset_state);
       }
 
-      // Rescale insets in correct proportion to each other
-      normalize_inset_area(&inset_state,
-                           cart_info.cart_non_missing_target_area());
+      if (world){
+        project_from_smyth_equal_surface(&inset_state);
+      } else {
+        // Rescale insets in correct proportion to each other
+        normalize_inset_area(&inset_state,
+                             cart_info.cart_non_missing_target_area());
+      }
 
       // Clean up after finishing all Fourier transforms for this inset
       inset_state.destroy_fftw_plans_for_rho();
