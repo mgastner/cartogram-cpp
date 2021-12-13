@@ -28,14 +28,14 @@ double rounded_to_bicimal(double d, unsigned int n_bicimals)
 }
 
 Point rounded_point(Point a){
-  return Point(rounded_to_bicimal(a.x(), 35),
-               rounded_to_bicimal(a.y(), 35));
+  return Point(rounded_to_bicimal(a.x(), round_bicimal_digits),
+               rounded_to_bicimal(a.y(), round_bicimal_digits));
 }
 
 XYPoint rounded_XYpoint(XYPoint a){
   XYPoint result;
-  result.x = rounded_to_bicimal(a.x, 35);
-  result.y = rounded_to_bicimal(a.y, 35);
+  result.x = rounded_to_bicimal(a.x, round_bicimal_digits);
+  result.y = rounded_to_bicimal(a.y, round_bicimal_digits);
   return result;
 }
 
