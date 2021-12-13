@@ -14,36 +14,29 @@ bool xy_points_almost_equal(XYPoint a, XYPoint b) {
   return (almost_equal(a.x, b.x) && almost_equal(a.y, b.y));
 }
 
-double rounded_to_decimal(double d){
-  return std::round(d * round_digits) / round_digits;
-}
-
-double rounded_to_bicimal(double d, unsigned int n_bicimals){
+// Function to round a double to the nearest n_bicimals bicimals. This is done
+// to provide a more "native" way of rounding numbers, as doubles are represented
+// as powers of 2.
+double rounded_to_bicimal(double d, unsigned int n_bicimals)
+{
   double whole;
   double fractional = std::modf(d, &whole);
-  unsigned int power_of_2 = (1 << n_bicimals);
+  unsigned long int power_of_2 =
+    (static_cast<unsigned long int>(1) << n_bicimals);
   double bicimals = std::round(fractional * power_of_2)  / power_of_2;
   return whole + bicimals;
 }
 
 Point rounded_point(Point a){
-  return Point(rounded_to_decimal(a.x()),
-               rounded_to_decimal(a.y()));
-  // return Point(rounded_to_bicimal(a.x(), 27),
-  //              rounded_to_bicimal(a.y(), 27));
-  // return a;
+  return Point(rounded_to_bicimal(a.x(), 35),
+               rounded_to_bicimal(a.y(), 35));
 }
 
 XYPoint rounded_XYpoint(XYPoint a){
   XYPoint result;
-  result.x = rounded_to_decimal(a.x);
-  result.y = rounded_to_decimal(a.y);
+  result.x = rounded_to_bicimal(a.x, 35);
+  result.y = rounded_to_bicimal(a.y, 35);
   return result;
-  // XYPoint result;
-  // result.x = rounded_to_bicimal(a.x, 27);
-  // result.y = rounded_to_bicimal(a.y, 27);
-  // return result;
-  // return a;
 }
 
 // This function takes two lines as input:
