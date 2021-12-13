@@ -15,4 +15,8 @@ bool almost_equal(double, double);
 
 Point rounded_point(Point);
 
+double rounded_to_bicimal(double, unsigned int);
+
+double rounded_to_decimal(double);
+
 #endif

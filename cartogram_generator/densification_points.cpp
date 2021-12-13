@@ -14,16 +14,36 @@ bool xy_points_almost_equal(XYPoint a, XYPoint b) {
   return (almost_equal(a.x, b.x) && almost_equal(a.y, b.y));
 }
 
+double rounded_to_decimal(double d){
+  return std::round(d * round_digits) / round_digits;
+}
+
+double rounded_to_bicimal(double d, unsigned int n_bicimals){
+  double whole;
+  double fractional = std::modf(d, &whole);
+  unsigned int power_of_2 = (1 << n_bicimals);
+  double bicimals = std::round(fractional * power_of_2)  / power_of_2;
+  return whole + bicimals;
+}
+
 Point rounded_point(Point a){
-  return Point(std::round(a.x() * round_digits) / round_digits,
-               std::round(a.y() * round_digits) / round_digits);
+  return Point(rounded_to_decimal(a.x()),
+               rounded_to_decimal(a.y()));
+  // return Point(rounded_to_bicimal(a.x(), 29),
+  //              rounded_to_bicimal(a.y(), 29));
+  // return a;
 }
 
 XYPoint rounded_XYpoint(XYPoint a){
   XYPoint result;
-  result.x = std::round(a.x * round_digits) / round_digits;
-  result.y = std::round(a.y * round_digits) / round_digits;
+  result.x = rounded_to_decimal(a.x);
+  result.y = rounded_to_decimal(a.y);
   return result;
+  // XYPoint result;
+  // result.x = rounded_to_bicimal(a.x, 29);
+  // result.y = rounded_to_bicimal(a.y, 29);
+  // return result;
+  return a;
 }
 
 // This function takes two lines as input:
