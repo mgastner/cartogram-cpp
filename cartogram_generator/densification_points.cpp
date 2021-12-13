@@ -103,6 +103,15 @@ std::vector<Point> densification_points(Point pt1, Point pt2,
                                         const unsigned int lx,
                                         const unsigned int ly)
 {
+  
+  // If the input points are identical, return them without calculating
+  // intersections.
+  if ((pt1.x() == pt2.x()) && (pt1.y() == pt2.y())){
+    std::vector<Point> points;
+    points.push_back(pt1);
+    points.push_back(pt2);
+    return points;
+  }
   // Vector for storing intersections before removing duplicates
   std::vector<XYPoint> temp_intersections;
 
