@@ -28,14 +28,14 @@ double rounded_to_bicimal(double d, unsigned int n_bicimals)
 }
 
 Point rounded_point(Point a){
-  return Point(rounded_to_bicimal(a.x(), round_bicimal_digits),
-               rounded_to_bicimal(a.y(), round_bicimal_digits));
+  return Point(rounded_to_bicimal(a.x(), bicimals_after_rounding),
+               rounded_to_bicimal(a.y(), bicimals_after_rounding));
 }
 
 XYPoint rounded_XYpoint(XYPoint a){
   XYPoint result;
-  result.x = rounded_to_bicimal(a.x, round_bicimal_digits);
-  result.y = rounded_to_bicimal(a.y, round_bicimal_digits);
+  result.x = rounded_to_bicimal(a.x, bicimals_after_rounding);
+  result.y = rounded_to_bicimal(a.y, bicimals_after_rounding);
   return result;
 }
 
@@ -103,7 +103,7 @@ std::vector<Point> densification_points(Point pt1, Point pt2,
                                         const unsigned int lx,
                                         const unsigned int ly)
 {
-  
+
   // If the input points are identical, return them without calculating
   // intersections.
   if ((pt1.x() == pt2.x()) && (pt1.y() == pt2.y())){
