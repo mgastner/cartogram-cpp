@@ -29,8 +29,8 @@ double rounded_to_bicimal(double d, unsigned int n_bicimals){
 Point rounded_point(Point a){
   return Point(rounded_to_decimal(a.x()),
                rounded_to_decimal(a.y()));
-  // return Point(rounded_to_bicimal(a.x(), 29),
-  //              rounded_to_bicimal(a.y(), 29));
+  // return Point(rounded_to_bicimal(a.x(), 27),
+  //              rounded_to_bicimal(a.y(), 27));
   // return a;
 }
 
@@ -40,10 +40,10 @@ XYPoint rounded_XYpoint(XYPoint a){
   result.y = rounded_to_decimal(a.y);
   return result;
   // XYPoint result;
-  // result.x = rounded_to_bicimal(a.x, 29);
-  // result.y = rounded_to_bicimal(a.y, 29);
+  // result.x = rounded_to_bicimal(a.x, 27);
+  // result.y = rounded_to_bicimal(a.y, 27);
   // return result;
-  return a;
+  // return a;
 }
 
 // This function takes two lines as input:
