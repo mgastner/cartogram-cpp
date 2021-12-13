@@ -106,13 +106,9 @@ Matrix Matrix::multiplied_with(Matrix m1)
   return result;
 }
 
-// Transform Point based on a transformation matrix
+// Transform point based on a transformation matrix
 Point Matrix::transformed_point(Point point)
 {
-  // XYPoint transformed;
-  // transformed.x = p11 * (point.x) + p12 * (point.y) + p13;
-  // transformed.y = p21 * (point.x) + p22 * (point.y) + p23;
-  // return transformed;
   return Point(
     p11 * (point.x()) + p12 * (point.y()) + p13,
     p21 * (point.x()) + p22 * (point.y()) + p23

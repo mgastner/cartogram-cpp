@@ -65,13 +65,11 @@ std::vector<GeoDiv> densified_geo_divs(std::vector<GeoDiv> geodivs,
       for (Polygon hole : holes_v) {
         Polygon hole_dens;
         for (size_t j = 0; j < hole.size(); ++j) {
-
           // `c` and `d` are determined in the same way as `a` and `b` above
           Point c = hole[j];
           Point d = (j == hole.size() - 1) ? hole[0] : hole[j + 1];
-
           std::vector<Point> hole_pts_dens = densification_points(c, d, lx, ly);
-
+          
           for (size_t i = 0; i < (hole_pts_dens.size() - 1); ++i) {
             hole_dens.push_back(hole_pts_dens[i]);
           }

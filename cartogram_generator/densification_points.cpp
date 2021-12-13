@@ -100,12 +100,12 @@ std::vector<Point> densification_points(Point pt1, Point pt2,
   // not necessarily the same because of floating point errors.
   XYPoint a;
   XYPoint b;
-  if ((pt1[0] > pt2[0]) || ((pt1[0] == pt2[0]) && (pt1[1] > pt2[1]))) {
-    a.x = pt2[0]; a.y = pt2[1];
-    b.x = pt1[0]; b.y = pt1[1];
+  if ((pt1.x() > pt2.x()) || ((pt1.x() == pt2.x()) && (pt1.y() > pt2.y()))) {
+    a.x = pt2.x(); a.y = pt2.y();
+    b.x = pt1.x(); b.y = pt1.y();
   } else{
-    a.x = pt1[0]; a.y = pt1[1];
-    b.x = pt2[0]; b.y = pt2[1];
+    a.x = pt1.x(); a.y = pt1.y();
+    b.x = pt2.x(); b.y = pt2.y();
   }
   temp_intersections.push_back(a);
   temp_intersections.push_back(b);
@@ -136,20 +136,20 @@ std::vector<Point> densification_points(Point pt1, Point pt2,
   }
 
   // Distance between left-most and right-most graticule cell
-  int dist_x = std::ceil(end_v.x - start_v.x);
+  unsigned int dist_x = std::ceil(end_v.x - start_v.x);
 
   // Distance between top and bottom graticule cell
-  int dist_y = std::ceil(end_v.y - start_v.y);
+  unsigned int dist_y = std::ceil(end_v.y - start_v.y);
 
   // Iterative variables for tracking current graticule cell
   double current_graticule_x = start_v.x;
   double current_graticule_y = start_v.y;
 
   // Loop through each row, from bottom to top
-  for (int i = 0; i <= dist_y; ++i){
+  for (unsigned int i = 0; i <= dist_y; ++i){
 
     // Loop through each column, from left to right
-    for (int j = 0; j <= dist_x; ++j){
+    for (unsigned int j = 0; j <= dist_x; ++j){
 
       // Get points for the current graticule cell, in this order:
       // bottom-left, bottom-right, top-right, top-left
@@ -166,6 +166,8 @@ std::vector<Point> densification_points(Point pt1, Point pt2,
       v3.x = v0.x;
       v3.y = std::min(double(ly), v0.y + 1.0);
 
+      // Store intersections of line segment from `a` to `b` with graticule
+      // lines and diagonals.
       std::vector<XYPoint> graticule_intersections;
 
       // Bottom intersection
@@ -199,14 +201,14 @@ std::vector<Point> densification_points(Point pt1, Point pt2,
         }
       }
 
-      // If current graticule cell touches the left edge, add 0.5 to
-      // obtain the next graticule cell. Else, add 1.0.
+      // If the current graticule cell touches the left edge, add 0.5 to
+      // obtain the next graticule cell. Otherwise, add 1.0.
       current_graticule_x += (current_graticule_x == 0.0) ? 0.5 : 1.0;
     }
     current_graticule_x = start_v.x;
 
-    // If current row touches the bottom edge, add 0.5 to
-    // obtain the next row. Else, add 1.0.
+    // If the current row touches the bottom edge, add 0.5 to
+    // obtain the next row. Otherwise, add 1.0.
     current_graticule_y += (current_graticule_y == 0.0) ? 0.5 : 1.0;
   }
 
@@ -226,9 +228,8 @@ std::vector<Point> densification_points(Point pt1, Point pt2,
   }
 
   // Reverse if needed
-  if ((pt1[0] > pt2[0]) || ((pt1[0] == pt2[0]) && (pt1[1] > pt2[1]))) {
+  if ((pt1.x() > pt2.x()) || ((pt1.x() == pt2.x()) && (pt1.y() > pt2.y()))) {
     std::reverse(intersections.begin(), intersections.end());
   }
-  
   return intersections;
 }
