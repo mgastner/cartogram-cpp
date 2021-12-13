@@ -33,8 +33,10 @@ void rescale_map(unsigned int long_grid_side_length,
     lx = long_grid_side_length;
     latt_const = (new_xmax-new_xmin) / lx;
     ly = 1 << ((int) ceil(log2((new_ymax-new_ymin) / latt_const)));
-    new_ymax = 0.5*(bbox.ymax()+bbox.ymin()) + 0.5*ly*latt_const;
-    new_ymin = 0.5*(bbox.ymax()+bbox.ymin()) - 0.5*ly*latt_const;
+    if (!is_world_map){
+      new_ymax = 0.5*(bbox.ymax()+bbox.ymin()) + 0.5*ly*latt_const;
+      new_ymin = 0.5*(bbox.ymax()+bbox.ymin()) - 0.5*ly*latt_const;
+    }
   } else {
     ly = long_grid_side_length;
     latt_const = (new_ymax-new_ymin) / ly;
