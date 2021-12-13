@@ -1,6 +1,7 @@
 #include "constants.h"
 #include "cartogram_info.h"
 #include "inset_state.h"
+#include "smyth_projection.h"
 
 void rescale_map(unsigned int long_grid_side_length,
                  InsetState *inset_state,
