@@ -11,11 +11,11 @@ struct Matrix {
   // Convert triangle to matrix
   Matrix(const Point a, const Point b, const Point c);
   void scale(const double);
-  double det();
-  Matrix adjugate();
-  Matrix inverse();
-  Matrix multiplied_with(const Matrix);
-  Point transformed_point(const Point);
+  double det() const;
+  Matrix adjugate() const;
+  Matrix inverse() const;
+  Matrix multiplied_with(Matrix) const;
+  Point transformed_point(const Point) const;
 };
 
 #endif

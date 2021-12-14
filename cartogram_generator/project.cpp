@@ -370,9 +370,9 @@ std::array<Point, 3> untransformed_triangle(const double x,
   return triangle_coordinates;
 }
 
-Point affine_trans(std::array<Point, 3> tri,
-                   std::array<Point, 3> org_tri,
-                   Point pt)
+Point affine_trans(const std::array<Point, 3> tri,
+                   const std::array<Point, 3> org_tri,
+                   const Point pt)
 {
   // For each point, we make the following transformation. Suppose we find
   // that, before the cartogram transformation, a point (x, y) is in the
@@ -400,20 +400,19 @@ Point affine_trans(std::array<Point, 3> tri,
   // coordinates are (x, y) on the unprojected map, then the transformed
   // coordinates are:
   // post.x = t11*x + t12*y + t13, post.y = t21*x + t22*y + t23.
-  Point pre(pt.x(),pt.y());
+  const Point pre(pt.x(),pt.y());
 
   // Old triangle (a, b, c) expressed as matrix A
-  Matrix abc_mA(org_tri[0], org_tri[1], org_tri[2]);
+  const Matrix abc_mA(org_tri[0], org_tri[1], org_tri[2]);
 
   // New triangle (p, q, r) expressed as matrix P
-  Matrix pqr_mP(tri[0], tri[1], tri[2]);
+  const Matrix pqr_mP(tri[0], tri[1], tri[2]);
 
   // Transformation matrix T
-  Matrix mT = pqr_mP.multiplied_with(abc_mA.inverse());
+  const Matrix mT = pqr_mP.multiplied_with(abc_mA.inverse());
 
   // Transformed point
-  Point post = mT.transformed_point(pre);
-  return post;
+  return mT.transformed_point(pre);
 }
 
 Point transformed_point(Point old_point, InsetState *inset_state)

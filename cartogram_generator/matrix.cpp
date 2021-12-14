@@ -52,14 +52,14 @@ void Matrix::scale(const double multiplier)
 }
 
 // Determinant
-double Matrix::det()
+double Matrix::det() const
 {
   return p11 * ((p22 * p33) - (p23 * p32)) -
          p12 * ((p21 * p33) - (p23 * p31)) +
          p13 * ((p21 * p32) - (p22 * p31));
 }
 
-Matrix Matrix::adjugate()
+Matrix Matrix::adjugate() const
 {
   Matrix adj;
   adj.p11 = ((p22 * p33) - (p23 * p32));
@@ -74,7 +74,7 @@ Matrix Matrix::adjugate()
   return adj;
 }
 
-Matrix Matrix::inverse()
+Matrix Matrix::inverse() const
 {
   // Calculate adjugate
   Matrix inv = adjugate();
@@ -91,7 +91,7 @@ Matrix Matrix::inverse()
   return inv;
 }
 
-Matrix Matrix::multiplied_with(const Matrix m1)
+Matrix Matrix::multiplied_with(Matrix m1) const
 {
   Matrix result;
   result.p11 = (p11 * m1.p11) + (p12 * m1.p21) + (p13 * m1.p31);
@@ -107,7 +107,7 @@ Matrix Matrix::multiplied_with(const Matrix m1)
 }
 
 // Transform point based on a transformation matrix
-Point Matrix::transformed_point(const Point point)
+Point Matrix::transformed_point(const Point point) const
 {
   return Point(
     p11 * (point.x()) + p12 * (point.y()) + p13,
