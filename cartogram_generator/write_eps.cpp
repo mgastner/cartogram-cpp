@@ -115,6 +115,29 @@ void write_polygons_to_eps(std::ofstream &eps_file,
       eps_file << "0 sgry s\n";
     }
   }
+
+  // Distorted graticule
+  boost::multi_array<XYPoint, 2> &proj = *inset_state->proj();
+  unsigned int spacing = 20;
+  
+  // Draw vertical lines
+  for(unsigned int i = 0; i <= inset_state->lx(); i += spacing) {
+    eps_file << proj[i][0].x << " " << proj[i][0].y << " m\n";
+    for(unsigned int j = 1; j < inset_state->ly(); j += 1) {
+      eps_file << proj[i][j].x << " " << proj[i][j].y << " l\n";
+    }
+    eps_file << "s\n";
+  }
+  
+  // Draw horizontal lines
+  for(unsigned int j = 0; j <= inset_state->ly(); j += spacing) {
+    eps_file << proj[0][j].x << " " << proj[0][j].y << " m\n";
+    for(unsigned int i = 1; i < inset_state->lx(); i += 1) {
+      eps_file << proj[i][j].x << " " << proj[i][j].y << " l\n";
+    }
+    eps_file << "s\n";
+  }
+  
   return;
 }
 
