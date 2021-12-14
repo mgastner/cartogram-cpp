@@ -415,21 +415,20 @@ Point affine_trans(const std::array<Point, 3> tri,
   return mT.transformed_point(pre);
 }
 
-Point transformed_point(Point old_point, InsetState *inset_state)
+Point transformed_point(const Point old_point, InsetState *inset_state)
 {
   // Get the untransformed triangle the point is in.
-  std::array<Point, 3> old_triangle =
+  const std::array<Point, 3> old_triangle =
     untransformed_triangle(old_point.x(), old_point.y(), inset_state);
 
   // Get the coordinates of the transformed triangle.
-  std::array<Point, 3> new_triangle =
+  const std::array<Point, 3> new_triangle =
     transformed_triangle(old_triangle, inset_state);
 
   // Get the transformed point and return it.
-  Point transformed_point = affine_trans(new_triangle, old_triangle,
-                                         old_point);
-
-  return rounded_point(transformed_point,
+  const Point transformed_pt =
+    affine_trans(new_triangle, old_triangle, old_point);
+  return rounded_point(transformed_pt,
                        inset_state->lx(),
                        inset_state->ly());
 }
@@ -437,14 +436,14 @@ Point transformed_point(Point old_point, InsetState *inset_state)
 void project_with_triangulation(InsetState *inset_state)
 {
   std::vector<GeoDiv> new_geo_divs;
-  for (auto gd : inset_state->geo_divs()) {
+  for (const auto &gd : inset_state->geo_divs()) {
 
     // For each GeoDiv
     GeoDiv new_gd(gd.id());
-    for (auto pwh : gd.polygons_with_holes()) {
+    for (const auto &pwh : gd.polygons_with_holes()) {
 
       // For each polygon with holes
-      Polygon old_ext_ring = pwh.outer_boundary();
+      const Polygon old_ext_ring = pwh.outer_boundary();
       Polygon new_ext_ring;
       for (unsigned int i = 0; i < old_ext_ring.size(); ++i) {
         new_ext_ring.push_back(transformed_point(old_ext_ring[i],
@@ -452,7 +451,7 @@ void project_with_triangulation(InsetState *inset_state)
       }
       std::vector<Polygon> hole_v;
       for (auto hci = pwh.holes_begin(); hci != pwh.holes_end(); ++hci) {
-        Polygon old_hole = *hci;
+        const Polygon old_hole = *hci;
         Polygon new_hole;
         for (unsigned int i = 0; i < old_hole.size(); ++i) {
           new_hole.push_back(transformed_point(old_hole[i], inset_state));
