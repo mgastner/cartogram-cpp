@@ -54,20 +54,23 @@ XYPoint rounded_XYpoint(const XYPoint a,
 // The function returns the intersection between them. If the two lines are
 // parallel or are the same, the function returns the point (-1, -1), which
 // is always outside of any graticule grid cell.
-XYPoint calc_intersection(XYPoint a1, XYPoint a2, XYPoint b1, XYPoint b2) {
-
+XYPoint calc_intersection(const XYPoint a1,
+                          const XYPoint a2,
+                          const XYPoint b1,
+                          const XYPoint b2)
+{
   // Check if any segment is undefined (i.e., defined by identical points)
-  // if (a1 == a2 || b1 == b2) {
-  //   std::cerr << "ERROR: End points of line segment are identical"
-  //             << std::endl;
-  //   _Exit(EXIT_FAILURE);
-  // }
+  if (a1 == a2 || b1 == b2) {
+    std::cerr << "ERROR: End points of line segment are identical"
+              << std::endl;
+    _Exit(EXIT_FAILURE);
+  }
 
   // Get line equations
-  double a = (a1.y - a2.y) / (a1.x - a2.x);
-  double a_intercept = a1.y - (a1.x * a);
-  double b = (b1.y - b2.y) / (b1.x - b2.x);
-  double b_intercept = b1.y - (b1.x * b);
+  const double a = (a1.y - a2.y) / (a1.x - a2.x);
+  const double a_intercept = a1.y - (a1.x * a);
+  const double b = (b1.y - b2.y) / (b1.x - b2.x);
+  const double b_intercept = b1.y - (b1.x * b);
   XYPoint intersection;
   if (isfinite(a) && isfinite(b) && a != b) {
 
