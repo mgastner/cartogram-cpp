@@ -75,13 +75,15 @@ void project(InsetState *inset_state)
   return;
 }
 
-// In some chosen_diag() and transformed_triangle(), input x-coordinates can
-// only be 0, lx, or 0.5, 1.5, ..., lx-0.5. A similar rule applies to the
+// In chosen_diag() and transformed_triangle(), input x-coordinates can only
+// be 0, lx, or 0.5, 1.5, ..., lx-0.5. A similar rule applies to the
 // y-coordinates.
-void exit_if_point_not_on_grid_or_edge(Point pt, InsetState *inset_state)
+void exit_if_not_on_grid_or_edge(const Point pt, InsetState *inset_state)
 {
-  if ((pt.x() != 0.0 && pt.x() != inset_state->lx() && pt.x() - int(pt.x()) != 0.5) ||
-      (pt.y() != 0.0 && pt.y() != inset_state->ly() && pt.y() - int(pt.y()) != 0.5)) {
+  const unsigned int lx = inset_state->lx();
+  const unsigned int ly = inset_state->ly();
+  if ((pt.x() != 0.0 && pt.x() != lx && pt.x() - int(pt.x()) != 0.5) ||
+      (pt.y() != 0.0 && pt.y() != ly && pt.y() - int(pt.y()) != 0.5)) {
     std::cerr << "Error: Invalid input coordinate in triangulation\n"
               << "\tpt = ("
               << pt.x()
@@ -109,7 +111,7 @@ int chosen_diag(Point v[4], int *num_concave, InsetState *inset_state)
   // The input v[i].x can only be 0, lx, or 0.5, 1.5, ..., lx-0.5.
   // A similar rule applies to the y-coordinates.
   for (unsigned int i = 0; i < 4; i++) {
-    exit_if_point_not_on_grid_or_edge(v[i], inset_state);
+    exit_if_not_on_grid_or_edge(v[i], inset_state);
   }
 
   // Transform the coordinates in v to the corresponding coordinates on the
@@ -207,7 +209,7 @@ std::array<Point, 3> transformed_triangle(std::array<Point, 3> triangle,
 
   std::array<Point, 3> transformed_triangle;
   for(unsigned int i = 0; i < 3; ++i) {
-    exit_if_point_not_on_grid_or_edge(triangle[i], inset_state);
+    exit_if_not_on_grid_or_edge(triangle[i], inset_state);
     int proj_x = std::min(int(lx) - 1, int(triangle[i].x()));
     int proj_y = std::min(int(ly) - 1, int(triangle[i].y()));
     Point transformed_point(
