@@ -203,19 +203,19 @@ void fill_graticule_diagonals(InsetState *inset_state)
   return;
 }
 
-std::array<Point, 3> transformed_triangle(std::array<Point, 3> triangle,
+std::array<Point, 3> transformed_triangle(const std::array<Point, 3> triangle,
                                           InsetState *inset_state)
 {
-  boost::multi_array<XYPoint, 2> &proj = *inset_state->proj();
+  const boost::multi_array<XYPoint, 2> &proj = *inset_state->proj();
   const unsigned int lx = inset_state->lx();
   const unsigned int ly = inset_state->ly();
 
   std::array<Point, 3> transformed_triangle;
   for(unsigned int i = 0; i < 3; ++i) {
     exit_if_not_on_grid_or_edge(triangle[i], inset_state);
-    int proj_x = std::min(int(lx) - 1, int(triangle[i].x()));
-    int proj_y = std::min(int(ly) - 1, int(triangle[i].y()));
-    Point transformed_point(
+    const int proj_x = std::min(int(lx) - 1, int(triangle[i].x()));
+    const int proj_y = std::min(int(ly) - 1, int(triangle[i].y()));
+    const Point transformed_point(
       (triangle[i].x() == 0.0 || triangle[i].x() == inset_state->lx()) ?
       triangle[i].x() : proj[proj_x][proj_y].x,
       (triangle[i].y() == 0.0 || triangle[i].y() == inset_state->ly()) ?
@@ -226,28 +226,34 @@ std::array<Point, 3> transformed_triangle(std::array<Point, 3> triangle,
   return transformed_triangle;
 }
 
-// From https://stackoverflow.com/questions/7050186/find-if-point-lies-on-line-segment
+// TODO: Can is_point_on_triangle_boundary() be refactored as
+// is_on_triangle_boundary(const Point pt, const Polygon triangle)?
+
 // Determine if a point A with coordinates (x, y) is on the boundary of a
 // triangle. For each triangle side, calculate the distances between A and
 // each of the two end points of the triangle side. If the sum of these two
 // distances is equal to the length of the side, then the point is on the
 // triangle boundary.
-bool is_point_on_triangle_boundary(Polygon triangle,
+// Idea from https://stackoverflow.com/questions/7050186/find-if-point-lies-
+// on-line-segment
+bool is_point_on_triangle_boundary(const Polygon triangle,
                                    const double x,
                                    const double y)
 {
-  for (unsigned int i = 0; i < triangle.size(); i++) {
-    double tx1 = triangle[i].x();
-    double ty1 = triangle[i].y();
-    double tx2 = triangle[(i == triangle.size() - 1) ? 0 : i + 1].x();
-    double ty2 = triangle[(i == triangle.size() - 1) ? 0 : i + 1].y();
-    double seg = std::sqrt((tx1 - tx2) * (tx1 - tx2) +
-                           (ty1 - ty2) * (ty1 - ty2));
-    double seg1 = std::sqrt((tx1 - x) * (tx1 - x) +
-                            (ty1 - y) * (ty1 - y));
-    double seg2 = std::sqrt((tx2 - x) * (tx2 - x) +
-                            (ty2 - y) * (ty2 - y));
-    if (almost_equal(seg, seg1 + seg2)) return true;
+  for (unsigned int i = 0; i < triangle.size(); ++i) {
+    const double tx1 = triangle[i].x();
+    const double ty1 = triangle[i].y();
+    const double tx2 = triangle[(i == triangle.size() - 1) ? 0 : i + 1].x();
+    const double ty2 = triangle[(i == triangle.size() - 1) ? 0 : i + 1].y();
+    const double seg = std::sqrt((tx1 - tx2) * (tx1 - tx2) +
+                                 (ty1 - ty2) * (ty1 - ty2));
+    const double seg1 = std::sqrt((tx1 - x) * (tx1 - x) +
+                                  (ty1 - y) * (ty1 - y));
+    const double seg2 = std::sqrt((tx2 - x) * (tx2 - x) +
+                                  (ty2 - y) * (ty2 - y));
+    if (almost_equal(seg, seg1 + seg2)) {
+      return true;
+    }
   }
   return false;
 }
