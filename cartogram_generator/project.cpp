@@ -228,6 +228,8 @@ std::array<Point, 3> transformed_triangle(const std::array<Point, 3> triangle,
 
 // TODO: Can is_point_on_triangle_boundary() be refactored as
 // is_on_triangle_boundary(const Point pt, const Polygon triangle)?
+// Why does `triangle.bounded_side(Point(x, y)) == CGAL::ON_BOUNDARY` not do
+// the job?
 
 // Determine if a point A with coordinates (x, y) is on the boundary of a
 // triangle. For each triangle side, calculate the distances between A and
@@ -271,7 +273,7 @@ std::array<Point, 3> untransformed_triangle(const double x,
     std::cerr << almost_equal(x, 0.0) << "\n";
     exit(1);
   }
-  boost::multi_array<int, 2> &graticule_diagonals =
+  const boost::multi_array<int, 2> &graticule_diagonals =
     *inset_state->ref_to_graticule_diagonals();
 
   // Get original graticule coordinates
@@ -333,7 +335,7 @@ std::array<Point, 3> untransformed_triangle(const double x,
   } else {
     std::cerr << "Point not in graticule cell!\n";
     std::setprecision(20);
-    Point p = Point(x, y);
+    const Point p = Point(x, y);
     std::cerr << "Point coordinates:\n";
     std::cerr << "(" << p.x() << ", " << p.y() << ")\n";
     std::cerr << "Original graticule cell:\n";
@@ -344,12 +346,22 @@ std::array<Point, 3> untransformed_triangle(const double x,
     std::cerr << "Chosen diagonal: " << diag << "\n";
     std::cerr << "Triangle 1:\n";
     for (unsigned int i = 0; i < triangle1.size(); i++) {
-      std::cerr << "(" << triangle1[i].x() << ", " << triangle1[i].y() << ")\n";
+      std::cerr << "("
+                << triangle1[i].x()
+                << ", "
+                << triangle1[i].y()
+                << ")\n";
     }
-    std::cerr << (triangle1.bounded_side(Point(x, y)) == CGAL::ON_BOUNDARY) << "\n";
-    std::cerr << (triangle1.bounded_side(Point(x, y)) == CGAL::ON_BOUNDED_SIDE) << "\n";
-    std::cerr << (triangle2.bounded_side(Point(x, y)) == CGAL::ON_BOUNDARY) << "\n";
-    std::cerr << (triangle2.bounded_side(Point(x, y)) == CGAL::ON_BOUNDED_SIDE) << "\n";
+    std::cerr << (triangle1.bounded_side(Point(x, y)) == CGAL::ON_BOUNDARY)
+              << "\n";
+    std::cerr << (triangle1.bounded_side(Point(x, y)) ==
+                  CGAL::ON_BOUNDED_SIDE)
+              << "\n";
+    std::cerr << (triangle2.bounded_side(Point(x, y)) == CGAL::ON_BOUNDARY)
+              << "\n";
+    std::cerr << (triangle2.bounded_side(Point(x, y)) ==
+                  CGAL::ON_BOUNDED_SIDE)
+              << "\n";
     std::cerr << (p.y() == triangle1[0].y()) << "\n";
     std::cerr << almost_equal(p.y(), triangle1[0].y()) << "\n";
     std::cerr << is_point_on_triangle_boundary(triangle1, x, y) << "\n";
