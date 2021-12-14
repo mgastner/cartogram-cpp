@@ -171,10 +171,10 @@ std::vector<Point> densification_points(const Point pt1,
   }
 
   // Distance between left-most and right-most graticule cell
-  unsigned int dist_x = std::ceil(end_v.x - start_v.x);
+  const unsigned int dist_x = std::ceil(end_v.x - start_v.x);
 
   // Distance between top and bottom graticule cell
-  unsigned int dist_y = std::ceil(end_v.y - start_v.y);
+  const unsigned int dist_y = std::ceil(end_v.y - start_v.y);
 
   // Iterative variables for tracking current graticule cell
   double current_graticule_x = start_v.x;
