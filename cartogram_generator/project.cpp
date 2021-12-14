@@ -96,6 +96,9 @@ void exit_if_not_on_grid_or_edge(const Point pt, InsetState *inset_state)
   return;
 }
 
+// TODO: chosen_diag() seems to be more naturally thought of as a boolean
+// than an integer.
+
 // For a graticule cell with corners stored in the XYPoint array v, determine
 // whether the diagonal from v[0] to v[2] is inside the graticule cell. If
 // yes, return 0. Otherwise, if the diagonal from v[1] to v[3] is inside the
@@ -104,22 +107,22 @@ void exit_if_not_on_grid_or_edge(const Point pt, InsetState *inset_state)
 // error message.
 int chosen_diag(Point v[4], int *num_concave, InsetState *inset_state)
 {
-  boost::multi_array<XYPoint, 2> &proj = *inset_state->proj();
+  const boost::multi_array<XYPoint, 2> &proj = *inset_state->proj();
   const unsigned int lx = inset_state->lx();
   const unsigned int ly = inset_state->ly();
 
   // The input v[i].x can only be 0, lx, or 0.5, 1.5, ..., lx-0.5.
   // A similar rule applies to the y-coordinates.
-  for (unsigned int i = 0; i < 4; i++) {
+  for (unsigned int i = 0; i < 4; ++i) {
     exit_if_not_on_grid_or_edge(v[i], inset_state);
   }
 
   // Transform the coordinates in v to the corresponding coordinates on the
   // projected grid. If the x-coordinate is 0 or lx, we keep the input.
   XYPoint tv[4];
-  for (unsigned int i = 0; i < 4; i++) {
-    int proj_x = std::min(int(lx) - 1, int(v[i].x()));
-    int proj_y = std::min(int(ly) - 1, int(v[i].y()));
+  for (unsigned int i = 0; i < 4; ++i) {
+    const int proj_x = std::min(int(lx) - 1, int(v[i].x()));
+    const int proj_y = std::min(int(ly) - 1, int(v[i].y()));
     tv[i].x = (v[i].x() != 0 && v[i].x() != lx) ?
               proj[proj_x][proj_y].x :
               v[i].x();
@@ -138,7 +141,7 @@ int chosen_diag(Point v[4], int *num_concave, InsetState *inset_state)
 
   // Get the transformed graticule cell as a polygon
   Polygon trans_graticule;
-  for (unsigned int i = 0; i < 4; i++) {
+  for (unsigned int i = 0; i < 4; ++i) {
     trans_graticule.push_back(Point(tv[i].x, tv[i].y));
   }
 
