@@ -204,7 +204,7 @@ std::array<Point, 3> transformed_triangle(std::array<Point, 3> triangle,
   boost::multi_array<XYPoint, 2> &proj = *inset_state->proj();
   const unsigned int lx = inset_state->lx();
   const unsigned int ly = inset_state->ly();
-  
+
   std::array<Point, 3> transformed_triangle;
   for(unsigned int i = 0; i < 3; ++i) {
     exit_if_point_not_on_grid_or_edge(triangle[i], inset_state);
@@ -215,7 +215,7 @@ std::array<Point, 3> transformed_triangle(std::array<Point, 3> triangle,
       triangle[i].x() : proj[proj_x][proj_y].x,
       (triangle[i].y() == 0.0 || triangle[i].y() == inset_state->ly()) ?
       triangle[i].y() : proj[proj_x][proj_y].y
-    );
+      );
     transformed_triangle[i] = transformed_point;
   }
   return transformed_triangle;
@@ -231,7 +231,7 @@ bool is_point_on_triangle_boundary(Polygon triangle,
                                    const double x,
                                    const double y)
 {
-  for (unsigned int i = 0; i < triangle.size(); i++){
+  for (unsigned int i = 0; i < triangle.size(); i++) {
     double tx1 = triangle[i].x();
     double ty1 = triangle[i].y();
     double tx2 = triangle[(i == triangle.size() - 1) ? 0 : i + 1].x();
@@ -248,8 +248,8 @@ bool is_point_on_triangle_boundary(Polygon triangle,
 }
 
 std::array<Point, 3> untransformed_triangle(const double x,
-                                   const double y,
-                                   InsetState *inset_state)
+                                            const double y,
+                                            InsetState *inset_state)
 {
   const unsigned int lx = inset_state->lx();
   const unsigned int ly = inset_state->ly();
@@ -307,8 +307,8 @@ std::array<Point, 3> untransformed_triangle(const double x,
   std::array<Point, 3> triangle_coordinates;
   if ((triangle1.bounded_side(Point(x, y)) == CGAL::ON_BOUNDED_SIDE) ||
       (is_point_on_triangle_boundary(triangle1, x, y))) {
-  // if ((triangle1.bounded_side(Point(x, y)) == CGAL::ON_BOUNDED_SIDE) ||
-  //     (triangle1.bounded_side(Point(x, y)) == CGAL::ON_BOUNDARY)) {
+    // if ((triangle1.bounded_side(Point(x, y)) == CGAL::ON_BOUNDED_SIDE) ||
+    //     (triangle1.bounded_side(Point(x, y)) == CGAL::ON_BOUNDARY)) {
     for (unsigned int i = 0; i < triangle1.size(); ++i) {
       triangle_coordinates[i] = triangle1[i];
     }
@@ -332,7 +332,7 @@ std::array<Point, 3> untransformed_triangle(const double x,
     std::cerr << "(" << v[3].x() << ", " << v[3].y() << ")\n";
     std::cerr << "Chosen diagonal: " << diag << "\n";
     std::cerr << "Triangle 1:\n";
-    for (unsigned int i = 0; i < triangle1.size(); i++){
+    for (unsigned int i = 0; i < triangle1.size(); i++) {
       std::cerr << "(" << triangle1[i].x() << ", " << triangle1[i].y() << ")\n";
     }
     std::cerr << (triangle1.bounded_side(Point(x, y)) == CGAL::ON_BOUNDARY) << "\n";
@@ -398,7 +398,7 @@ Point transformed_point(Point old_point, InsetState *inset_state)
   // Get the untransformed triangle the point is in.
   std::array<Point, 3> old_triangle =
     untransformed_triangle(old_point.x(), old_point.y(), inset_state);
-  
+
   // Get the coordinates of the transformed triangle.
   std::array<Point, 3> new_triangle =
     transformed_triangle(old_triangle, inset_state);
@@ -406,8 +406,10 @@ Point transformed_point(Point old_point, InsetState *inset_state)
   // Get the transformed point and return it.
   Point transformed_point = affine_trans(new_triangle, old_triangle,
                                          old_point);
-                           
-  return rounded_point(transformed_point);
+
+  return rounded_point(transformed_point,
+                       inset_state->lx(),
+                       inset_state->ly());
 }
 
 void project_with_triangulation(InsetState *inset_state)

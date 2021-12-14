@@ -35,8 +35,8 @@ std::vector<GeoDiv> densified_geo_divs(std::vector<GeoDiv> geodivs,
         // `b` should be the point immediately after `a`, unless `a` is the
         // final point of the boundary, in which case `b` should be the first
         // point.
-        Point a = outer[i];
-        Point b = (i == outer.size() - 1) ? outer[0] : outer[i + 1];
+        const Point a = outer[i];
+        const Point b = (i == outer.size() - 1) ? outer[0] : outer[i + 1];
 
         // Densify the segment.
         std::vector<Point> outer_pts_dens = densification_points(a, b, lx, ly);
@@ -69,7 +69,7 @@ std::vector<GeoDiv> densified_geo_divs(std::vector<GeoDiv> geodivs,
           Point c = hole[j];
           Point d = (j == hole.size() - 1) ? hole[0] : hole[j + 1];
           std::vector<Point> hole_pts_dens = densification_points(c, d, lx, ly);
-          
+
           for (size_t i = 0; i < (hole_pts_dens.size() - 1); ++i) {
             hole_dens.push_back(hole_pts_dens[i]);
           }

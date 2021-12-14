@@ -2,40 +2,49 @@
 
 // Use machine epsilon (defined in constants.h) to get almost equal doubles.
 // From https://en.cppreference.com/w/cpp/types/numeric_limits/epsilon
-bool almost_equal(double a, double b) {
+bool almost_equal(const double a, const double b) {
   return fabs(a - b) <= dbl_epsilon * fabs(a + b) * 2;
 }
 
 // Determine whether points are indistinguishable
-bool points_almost_equal(Point a, Point b) {
+bool points_almost_equal(const Point a, const Point b) {
   return (almost_equal(a[0], b[0]) && almost_equal(a[1], b[1]));
 }
-bool xy_points_almost_equal(XYPoint a, XYPoint b) {
+bool xy_points_almost_equal(const XYPoint a, const XYPoint b) {
   return (almost_equal(a.x, b.x) && almost_equal(a.y, b.y));
 }
 
-// Function to round a double to the nearest n_bicimals bicimals. This is done
-// to provide a more "native" way of rounding numbers, as doubles are represented
+// Function to round a double to a nearby bicimal. Bicimals are a more
+// "native" way of rounding than decimals because doubles are represented
 // as powers of 2.
-double rounded_to_bicimal(double d, unsigned int n_bicimals)
+double rounded_to_bicimal(const double d,
+                          const unsigned int lx,
+                          const unsigned int ly)
 {
   double whole;
   double fractional = std::modf(d, &whole);
-  unsigned long int power_of_2 =
+  const unsigned int n_bicimals = 50 - std::bit_width(std::max(lx, ly));
+  const unsigned long int power_of_2 =
     (static_cast<unsigned long int>(1) << n_bicimals);
-  double bicimals = std::round(fractional * power_of_2)  / power_of_2;
+  const double bicimals = std::round(fractional * power_of_2)  / power_of_2;
   return whole + bicimals;
 }
 
-Point rounded_point(Point a){
-  return Point(rounded_to_bicimal(a.x(), bicimals_after_rounding),
-               rounded_to_bicimal(a.y(), bicimals_after_rounding));
+Point rounded_point(const Point a,
+                    const unsigned int lx,
+                    const unsigned int ly)
+{
+  return Point(rounded_to_bicimal(a.x(), lx, ly),
+               rounded_to_bicimal(a.y(), lx, ly));
 }
 
-XYPoint rounded_XYpoint(XYPoint a){
+XYPoint rounded_XYpoint(const XYPoint a,
+                        const unsigned int lx,
+                        const unsigned int ly)
+{
   XYPoint result;
-  result.x = rounded_to_bicimal(a.x, bicimals_after_rounding);
-  result.y = rounded_to_bicimal(a.y, bicimals_after_rounding);
+  result.x = rounded_to_bicimal(a.x, lx, ly);
+  result.y = rounded_to_bicimal(a.y, lx, ly);
   return result;
 }
 
@@ -99,14 +108,15 @@ XYPoint calc_intersection(XYPoint a1, XYPoint a2, XYPoint b1, XYPoint b2) {
 // function also returns all intersections with the diagonals of these
 // graticule cells. The function assumes that graticule cells start at
 // (0.5, 0.5).
-std::vector<Point> densification_points(Point pt1, Point pt2,
+std::vector<Point> densification_points(const Point pt1,
+                                        const Point pt2,
                                         const unsigned int lx,
                                         const unsigned int ly)
 {
 
   // If the input points are identical, return them without calculating
   // intersections.
-  if ((pt1.x() == pt2.x()) && (pt1.y() == pt2.y())){
+  if ((pt1.x() == pt2.x()) && (pt1.y() == pt2.y())) {
     std::vector<Point> points;
     points.push_back(pt1);
     points.push_back(pt2);
@@ -168,10 +178,10 @@ std::vector<Point> densification_points(Point pt1, Point pt2,
   double current_graticule_y = start_v.y;
 
   // Loop through each row, from bottom to top
-  for (unsigned int i = 0; i <= dist_y; ++i){
+  for (unsigned int i = 0; i <= dist_y; ++i) {
 
     // Loop through each column, from left to right
-    for (unsigned int j = 0; j <= dist_x; ++j){
+    for (unsigned int j = 0; j <= dist_x; ++j) {
 
       // Get points for the current graticule cell, in this order:
       // bottom-left, bottom-right, top-right, top-left
@@ -219,7 +229,7 @@ std::vector<Point> densification_points(Point pt1, Point pt2,
              (b.x <= inter.x && inter.x <= a.x)) &&
             ((a.y <= inter.y && inter.y <= b.y) ||
              (b.y <= inter.y && inter.y <= a.y))) {
-          temp_intersections.push_back(rounded_XYpoint(inter));
+          temp_intersections.push_back(rounded_XYpoint(inter, lx, ly));
         }
       }
 
@@ -243,7 +253,7 @@ std::vector<Point> densification_points(Point pt1, Point pt2,
                                 temp_intersections[0].y));
   for (unsigned int i = 1; i < temp_intersections.size(); ++i) {
     if (!xy_points_almost_equal(temp_intersections[i - 1],
-                               temp_intersections[i])) {
+                                temp_intersections[i])) {
       intersections.push_back(Point(temp_intersections[i].x,
                                     temp_intersections[i].y));
     }

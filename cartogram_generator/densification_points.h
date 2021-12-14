@@ -5,18 +5,12 @@
 #include "constants.h"
 #include <CGAL/intersections.h>
 
-std::vector<Point> densification_points(Point, Point,
+std::vector<Point> densification_points(const Point,
+                                        const Point,
                                         const unsigned int,
                                         const unsigned int);
-
-bool points_almost_equal(Point, Point);
-
-bool almost_equal(double, double);
-
-Point rounded_point(Point);
-
-double rounded_to_bicimal(double, unsigned int);
-
-double rounded_to_decimal(double);
+bool almost_equal(const double, const double);
+bool points_almost_equal(const Point, const Point);
+Point rounded_point(const Point, const unsigned int, const unsigned int);
 
 #endif
