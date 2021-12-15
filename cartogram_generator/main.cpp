@@ -45,7 +45,8 @@ int main(const int argc, const char *argv[])
        make_polygon_eps,
        output_equal_area,
        output_to_stdout,
-       plot_density;
+       plot_density,
+       plot_graticule;
 
   // Parse command-line arguments.
   argparse::ArgumentParser arguments = parsed_arguments(
@@ -60,7 +61,8 @@ int main(const int argc, const char *argv[])
     make_polygon_eps,
     output_equal_area,
     output_to_stdout,
-    plot_density
+    plot_density,
+    plot_graticule
   );
 
   // Initialize cart_info. It contains all information about the cartogram
@@ -183,6 +185,7 @@ int main(const int argc, const char *argv[])
       inset_state.ref_to_rho_init()->allocate(lx, ly);
       inset_state.ref_to_rho_ft()->allocate(lx, ly);
       inset_state.make_fftw_plans_for_rho();
+      inset_state.initialise_cum_proj();
 
       // Set initial area errors
       inset_state.set_area_errors();
@@ -197,8 +200,14 @@ int main(const int argc, const char *argv[])
 
       // Write EPS if requested by command-line option
       if (make_polygon_eps) {
-        std::cerr << "Writing " << inset_name << "_input.eps" << std::endl;
-        write_map_to_eps((inset_name + "_input.eps"), &inset_state);
+        std::string eps_input_filename = inset_state.inset_name();
+        if (plot_graticule) {
+          eps_input_filename += "_input_graticule.eps";
+        } else {
+          eps_input_filename += "_input.eps";
+        }
+        std::cerr << "Writing " << eps_input_filename << std::endl;
+        write_map_to_eps(eps_input_filename, plot_graticule, &inset_state);
       }
 
       // We make the approximation that the progress towards generating the
@@ -281,10 +290,15 @@ int main(const int argc, const char *argv[])
 
       // Print EPS of cartogram
       if (make_polygon_eps) {
+        std::string eps_output_filename = inset_state.inset_name();
+        if (plot_graticule) {
+          eps_output_filename += "_output_graticule.eps";
+        } else {
+          eps_output_filename += "_output.eps";
+        }
         std::cerr << "Writing "
-                  << inset_state.inset_name()
-                  << "_output.eps" << std::endl;
-        write_map_to_eps((inset_state.inset_name() + "_output.eps"),
+                  << eps_output_filename << std::endl;
+        write_map_to_eps(eps_output_filename, plot_graticule,
                          &inset_state);
       }
 

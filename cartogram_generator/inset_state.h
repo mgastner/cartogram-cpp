@@ -49,6 +49,7 @@ private:
   unsigned int n_finished_integrations_;
   std::string pos_;  // Position of inset ("C", "T" etc.)
   boost::multi_array<XYPoint, 2> proj_;  // Cartogram projection
+  boost::multi_array<XYPoint, 2> cum_proj_;  // Cumulative cartogram projection
 
   // Rasterized density and its Fourier transform
   FTReal2d rho_init_, rho_ft_;
@@ -90,6 +91,8 @@ public:
   double non_missing_target_area() const;
   const std::string pos() const;
   boost::multi_array<XYPoint, 2> *proj();
+  boost::multi_array<XYPoint, 2> *cum_proj();
+  void initialise_cum_proj();
   void push_back(const GeoDiv);
   std::vector<GeoDiv> *ref_to_geo_divs();
   boost::multi_array<int, 2> *ref_to_graticule_diagonals();

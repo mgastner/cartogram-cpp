@@ -16,6 +16,7 @@ argparse::ArgumentParser parsed_arguments(const int argc,
                                          bool &make_polygon_eps,
                                          bool &output_equal_area,
                                          bool &output_to_stdout,
-                                         bool &plot_density);
+                                         bool &plot_density,
+                                         bool &plot_graticule);
 
 #endif

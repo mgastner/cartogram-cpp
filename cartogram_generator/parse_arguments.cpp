@@ -13,7 +13,8 @@ argparse::ArgumentParser parsed_arguments(const int argc,
                                          bool &make_polygon_eps,
                                          bool &output_equal_area,
                                          bool &output_to_stdout,
-                                         bool &plot_density)
+                                         bool &plot_density,
+                                         bool &plot_graticule)
 {
 
   // Creating parser for arguments using argparse.
@@ -50,6 +51,11 @@ argparse::ArgumentParser parsed_arguments(const int argc,
 
   arguments.add_argument("-d", "--density_to_eps")
     .help("Boolean: make EPS images *_density_*.eps?")
+    .default_value(false)
+    .implicit_value(true);
+    
+  arguments.add_argument("-g", "--graticule_to_eps")
+    .help("Boolean: make EPS images with graticule?")
     .default_value(false)
     .implicit_value(true);
 
@@ -111,6 +117,7 @@ argparse::ArgumentParser parsed_arguments(const int argc,
   output_equal_area = arguments.get<bool>("-q");
   output_to_stdout = arguments.get<bool>("-s");
   plot_density =  arguments.get<bool>("-d");
+  plot_graticule = arguments.get<bool>("-g");
 
   // Printing geometry and visual file used.
   geo_file_name = arguments.get<std::string>("geometry_file");

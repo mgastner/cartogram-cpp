@@ -211,6 +211,22 @@ boost::multi_array<XYPoint, 2> *InsetState::proj()
   return &proj_;
 }
 
+boost::multi_array<XYPoint, 2> *InsetState::cum_proj()
+{
+  return &cum_proj_;
+}
+
+void InsetState::initialise_cum_proj()
+{
+  cum_proj_.resize(boost::extents[lx_][ly_]);
+  for (unsigned int i = 0; i < lx_; i++) {
+    for (unsigned int j = 0; j < ly_; j++) {
+      cum_proj_[i][j].x = i + 0.5;
+      cum_proj_[i][j].y = j + 0.5;
+    }
+  }
+}
+
 void InsetState::push_back(const GeoDiv gd)
 {
   geo_divs_.push_back(gd);

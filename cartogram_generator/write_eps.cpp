@@ -54,6 +54,7 @@ void write_eps_header_and_definitions(std::ofstream &eps_file,
 void write_polygons_to_eps(std::ofstream &eps_file,
                            bool fill_polygons,
                            bool colors,
+                           bool plot_graticule,
                            InsetState *inset_state)
 {
   eps_file << 0.001 * std::min(inset_state->lx(), inset_state->ly())
@@ -116,32 +117,41 @@ void write_polygons_to_eps(std::ofstream &eps_file,
     }
   }
 
-  // Distorted graticule
-  boost::multi_array<XYPoint, 2> &proj = *inset_state->proj();
-  unsigned int spacing = 20;
-  
-  // Draw vertical lines
-  for(unsigned int i = 0; i <= inset_state->lx(); i += spacing) {
-    eps_file << proj[i][0].x << " " << proj[i][0].y << " m\n";
-    for(unsigned int j = 1; j < inset_state->ly(); j += 1) {
-      eps_file << proj[i][j].x << " " << proj[i][j].y << " l\n";
+  if (plot_graticule) {
+    boost::multi_array<XYPoint, 2> &cum_proj = *inset_state->cum_proj();
+    unsigned int graticule_line_spacing = 10;
+    
+    // Draw vertical graticule lines
+    for (unsigned int i = 0; i <= inset_state->lx(); i += graticule_line_spacing) {
+      
+      // Set line width 60% of the polygon path width
+      eps_file << 0.001 * 0.6 * std::min(inset_state->lx(), inset_state->ly())
+           << " slw\n";
+      eps_file << cum_proj[i][0].x << " " << cum_proj[i][0].y << " m\n";
+      for (unsigned int j = 1; j < inset_state->ly(); ++j) {
+        eps_file << cum_proj[i][j].x << " " << cum_proj[i][j].y << " l\n";
+      }
+      eps_file << "s\n";
     }
-    eps_file << "s\n";
-  }
-  
-  // Draw horizontal lines
-  for(unsigned int j = 0; j <= inset_state->ly(); j += spacing) {
-    eps_file << proj[0][j].x << " " << proj[0][j].y << " m\n";
-    for(unsigned int i = 1; i < inset_state->lx(); i += 1) {
-      eps_file << proj[i][j].x << " " << proj[i][j].y << " l\n";
+    
+    // Draw horizontal graticule lines
+    for (unsigned int j = 0; j <= inset_state->ly(); j += graticule_line_spacing) {
+      
+      // Set line width 60% of the polygon path width
+      eps_file << 0.001 * 0.6 * std::min(inset_state->lx(), inset_state->ly())
+           << " slw\n";
+      eps_file << cum_proj[0][j].x << " " << cum_proj[0][j].y << " m\n";
+      for (unsigned int i = 1; i < inset_state->lx(); ++i) {
+        eps_file << cum_proj[i][j].x << " " << cum_proj[i][j].y << " l\n";
+      }
+      eps_file << "s\n";
     }
-    eps_file << "s\n";
   }
-  
   return;
 }
 
-void write_map_to_eps(std::string eps_name, InsetState *inset_state)
+void write_map_to_eps(std::string eps_name, bool plot_graticule,
+                      InsetState *inset_state)
 {
   std::ofstream eps_file(eps_name);
   write_eps_header_and_definitions(eps_file, eps_name, inset_state);
@@ -151,6 +161,7 @@ void write_map_to_eps(std::string eps_name, InsetState *inset_state)
   write_polygons_to_eps(eps_file,
                         true,
                         has_colors,
+                        plot_graticule,
                         inset_state);
   eps_file << "showpage\n";
   eps_file << "%%EOF\n";
@@ -264,7 +275,7 @@ void write_density_to_eps(std::string eps_name,
       eps_file << r << " " << g << " " << b << " srgb f\n";
     }
   }
-  write_polygons_to_eps(eps_file, false, false, inset_state);
+  write_polygons_to_eps(eps_file, false, false, false, inset_state);
   eps_file << "showpage\n";
   eps_file << "%%EOF\n";
   eps_file.close();
