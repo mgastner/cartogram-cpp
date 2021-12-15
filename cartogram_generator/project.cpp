@@ -25,7 +25,7 @@ void project(InsetState *inset_state)
   
   // Cumulative projection
   for (unsigned int i = 0; i < lx; ++i) {
-    for (unsigned int j=0; j<ly; ++j) {
+    for (unsigned int j = 0; j < ly; ++j) {
       
       // Calculate displacement for cumulative graticule coordinates
       double graticule_intp_x = interpolate_bilinearly(cum_proj[i][j].x,
