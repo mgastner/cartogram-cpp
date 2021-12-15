@@ -35,7 +35,7 @@ private:
   std::unordered_map<std::string, Color> colors_;
   fftw_plan fwd_plan_for_rho_, bwd_plan_for_rho_;
   std::vector<GeoDiv> geo_divs_;  // Geographic divisions in this inset
-  std::unordered_map<std::string, bool> is_target_area_missing_;
+  std::unordered_map<std::string, bool> is_input_target_area_missing_;
 
   // Chosen diagonal for each graticule cell
   boost::multi_array<int, 2> graticule_diagonals_;
@@ -66,7 +66,7 @@ public:
   const Color colors_at(const std::string) const;
   bool colors_empty() const;
   void colors_insert(const std::string, const Color);
-  void colors_insert(const std::string, std::string);
+  void colors_insert(const std::string, const std::string);
   unsigned int colors_size() const;
   void destroy_fftw_plans_for_rho();
   void execute_fftw_bwd_plan() const;
@@ -75,8 +75,8 @@ public:
   const std::vector<std::vector<intersection> > horizontal_adj() const;
   void increment_integration();
   const std::string inset_name() const;
-  bool is_target_area_missing(const std::string) const;
-  void is_target_area_missing_insert(const std::string, const bool);
+  bool is_input_target_area_missing(const std::string) const;
+  void is_input_target_area_missing_insert(const std::string, const bool);
   unsigned int lx() const;
   unsigned int ly() const;
   void make_fftw_plans_for_rho();
@@ -87,7 +87,7 @@ public:
   unsigned int new_ymin() const;
   unsigned int n_finished_integrations() const;
   unsigned int n_geo_divs() const;
-  double non_missing_target_area() const;
+  double total_inset_area() const;
   const std::string pos() const;
   boost::multi_array<XYPoint, 2> *proj();
   void push_back(const GeoDiv);
@@ -96,19 +96,19 @@ public:
   FTReal2d *ref_to_rho_ft();
   FTReal2d *ref_to_rho_init();
   void set_area_errors();
-  void set_geo_divs(std::vector<GeoDiv>);
-  void set_grid_dimensions(unsigned int lx, unsigned int ly);
-  void set_horizontal_adj(std::vector<std::vector<intersection> >);
-  void set_inset_name(std::string);
+  void set_geo_divs(const std::vector<GeoDiv>);
+  void set_grid_dimensions(const unsigned int lx, const unsigned int ly);
+  void set_horizontal_adj(const std::vector<std::vector<intersection> >);
+  void set_inset_name(const std::string);
   void set_map_scale(const double);
-  void set_pos(std::string);
-  void set_vertical_adj(std::vector<std::vector<intersection> >);
+  void set_pos(const std::string);
+  void set_vertical_adj(const std::vector<std::vector<intersection> >);
   void set_xmin(const unsigned int);
   void set_ymin(const unsigned int);
   bool target_area_is_missing(const std::string) const;
   double target_areas_at(const std::string) const;
-  void target_areas_insert(std::string, double);
-  void target_areas_replace(std::string, double);
+  void target_areas_insert(const std::string, const double);
+  void target_areas_replace(const std::string, const double);
   double total_target_area() const;
   const std::vector<std::vector<intersection> > vertical_adj() const;
 };

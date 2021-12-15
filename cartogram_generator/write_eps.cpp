@@ -88,7 +88,7 @@ void write_polygons_to_eps(std::ofstream &eps_file,
         eps_file << "gsave\n";
 
         // Check if target area was initially was missing
-        if (inset_state->is_target_area_missing(gd.id())) {
+        if (inset_state->is_input_target_area_missing(gd.id())) {
 
           // Fill path with dark-grey
           eps_file << "0.9375 0.9375 0.9375 srgb f\n";
