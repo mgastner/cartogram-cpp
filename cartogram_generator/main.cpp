@@ -1,5 +1,3 @@
-// TO DO: positional matching of argument flags
-
 #include "albers_projection.h"
 #include "auto_color.h"
 #include "blur_density.h"
@@ -48,7 +46,7 @@ int main(const int argc, const char *argv[])
        plot_density,
        plot_graticule;
 
-  // Parse command-line arguments.
+  // Parse command-line arguments
   argparse::ArgumentParser arguments = parsed_arguments(
     argc,
     argv,
@@ -62,8 +60,8 @@ int main(const int argc, const char *argv[])
     output_equal_area,
     output_to_stdout,
     plot_density,
-    plot_graticule
-  );
+    plot_graticule);
+
 
   // Initialize cart_info. It contains all information about the cartogram
   // that needs to be handled by functions called from main().
@@ -112,13 +110,10 @@ int main(const int argc, const char *argv[])
 
   // Store total number of GeoDivs to monitor progress
   double total_geo_divs = 0;
-  for (auto const &inset_state :
+  for (const auto &inset_state :
        *cart_info.ref_to_inset_states() | std::views::values) {
     total_geo_divs += inset_state.n_geo_divs();
   }
-
-  // Replacing missing and zero target areas with absolute values
-  cart_info.replace_missing_and_zero_target_areas();
 
   // Determine name of input map
   std::string map_name = geo_file_name;
@@ -129,7 +124,7 @@ int main(const int argc, const char *argv[])
     map_name = map_name.substr(0, map_name.find('.'));
   }
 
-  // Loop over insets
+  // Project map and ensure that all holes are inside polygons
   for (auto &[inset_pos, inset_state] : *cart_info.ref_to_inset_states()) {
 
     // Check for errors in the input topology
@@ -146,7 +141,7 @@ int main(const int argc, const char *argv[])
     }
 
     // Can the coordinates be interpreted as longitude and latitude?
-    CGAL::Bbox_2 bb = inset_state.bbox();
+    const CGAL::Bbox_2 bb = inset_state.bbox();
     if (bb.xmin() >= -180.0 && bb.xmax() <= 180.0 &&
         bb.ymin() >= -90.0 && bb.ymax() <= 90.0 &&
         crs == "+proj=longlat") {
@@ -158,6 +153,13 @@ int main(const int argc, const char *argv[])
                 << std::endl;
       return EXIT_FAILURE;
     }
+  }
+
+  // Replace missing and zero target areas with absolute values
+  cart_info.replace_missing_and_zero_target_areas();
+
+  // Loop over insets
+  for (auto &[inset_pos, inset_state] : *cart_info.ref_to_inset_states()) {
 
     // Determine the name of the inset
     std::string inset_name = map_name;
@@ -170,7 +172,7 @@ int main(const int argc, const char *argv[])
     inset_state.set_inset_name(inset_name);
     if (output_equal_area) {
       normalize_inset_area(&inset_state,
-                           cart_info.cart_non_missing_target_area(),
+                           cart_info.cart_total_target_area(),
                            output_equal_area);
     } else {
 
@@ -180,8 +182,8 @@ int main(const int argc, const char *argv[])
                   cart_info.is_world_map());
 
       // Set up Fourier transforms
-      unsigned int lx = inset_state.lx();
-      unsigned int ly = inset_state.ly();
+      const unsigned int lx = inset_state.lx();
+      const unsigned int ly = inset_state.ly();
       inset_state.ref_to_rho_init()->allocate(lx, ly);
       inset_state.ref_to_rho_ft()->allocate(lx, ly);
       inset_state.make_fftw_plans_for_rho();
@@ -213,7 +215,7 @@ int main(const int argc, const char *argv[])
       // We make the approximation that the progress towards generating the
       // cartogram is proportional to the number of GeoDivs that are in the
       // finished insets
-      double inset_max_frac = inset_state.n_geo_divs() / total_geo_divs;
+      const double inset_max_frac = inset_state.n_geo_divs() / total_geo_divs;
 
       // Start map integration
       while (inset_state.n_finished_integrations() < max_integrations &&
@@ -224,11 +226,11 @@ int main(const int argc, const char *argv[])
 
         // Calculate progress percentage. We assume that the maximum area
         // error is typically reduced to 1/5 of the previous value.
-        double ratio_actual_to_permitted_max_area_error =
+        const double ratio_actual_to_permitted_max_area_error =
           inset_state.max_area_error().value / max_permitted_area_error;
-        double n_predicted_integrations =
-          std::max((log(ratio_actual_to_permitted_max_area_error) / log(5)), 1.0);
-
+        const double n_predicted_integrations =
+          std::max((log(ratio_actual_to_permitted_max_area_error) / log(5)),
+                   1.0);
         double blur_width;
         if (inset_state.n_finished_integrations() == 0) {
           blur_width = 5.0;
@@ -243,14 +245,11 @@ int main(const int argc, const char *argv[])
         if (inset_state.n_finished_integrations() > 0) {
           fill_with_density(plot_density, &inset_state);
         }
-        blur_density(blur_width,
-                     plot_density,
-                     &inset_state);
+        blur_density(blur_width, plot_density, &inset_state);
         flatten_density(&inset_state);
-
         if (triangulation) {
 
-          // Choosing diagonals that are inside graticule cells
+          // Choose diagonals that are inside graticule cells
           fill_graticule_diagonals(&inset_state);
 
           // Densify map
@@ -258,15 +257,13 @@ int main(const int argc, const char *argv[])
           // method of InsetState. Then the next command could be written more
           // simply as inset_state.densify_geo_divs().
           inset_state.set_geo_divs(
-            densified_geo_divs(inset_state.geo_divs())
-          );
+            densified_geo_divs(inset_state.geo_divs()));
 
-          // Projecting with Triangulation
+          // Project with triangulation
           project_with_triangulation(&inset_state);
         } else {
           project(&inset_state);
         }
-
         inset_state.increment_integration();
 
         // Update area errors
@@ -304,7 +301,7 @@ int main(const int argc, const char *argv[])
 
       // Rescale insets in correct proportion to each other
       normalize_inset_area(&inset_state,
-                           cart_info.cart_non_missing_target_area());
+                           cart_info.cart_total_target_area());
 
       // Clean up after finishing all Fourier transforms for this inset
       inset_state.destroy_fftw_plans_for_rho();
@@ -323,7 +320,7 @@ int main(const int argc, const char *argv[])
   } else {
     output_file_name = map_name + "_cartogram.geojson";
   }
-  nlohmann::json cart_json = cgal_to_json(&cart_info);
+  const nlohmann::json cart_json = cgal_to_json(&cart_info);
   write_geojson(cart_json,
                 geo_file_name,
                 output_file_name,
