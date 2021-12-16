@@ -174,7 +174,7 @@ int chosen_diag(XYPoint v[4], int *num_concave, InsetState *inset_state)
   std::cerr << "(" << tv[1].x << ", " << tv[1].y << ")\n";
   std::cerr << "(" << tv[2].x << ", " << tv[2].y << ")\n";
   std::cerr << "(" << tv[3].x << ", " << tv[3].y << ")\n";
-  std::cerr << "i: " << int(v[0].x) << "j: " << int(v[0].y) << "\n";
+  std::cerr << "i: " << int(v[0].x) << ", j: " << int(v[0].y) << "\n";
   exit(1);
 }
 
@@ -252,10 +252,10 @@ std::vector<XYPoint> triangle_that_contains_point(const Point pt,
   v[0].y = std::max(0.0, floor(y + 0.5) - 0.5);
   v[1].x = std::min(double(lx), floor(x + 0.5) + 0.5);
   v[1].y = v[0].y;
-  v[2].x = std::min(double(lx), floor(x + 0.5) + 0.5);
+  v[2].x = v[1].x;
   v[2].y = std::min(double(ly), floor(y + 0.5) + 0.5);
   v[3].x = v[0].x;
-  v[3].y = std::min(double(ly), floor(y + 0.5) + 0.5);
+  v[3].y = v[2].y;
 
   // Assuming that the transformed graticule does not have self-intersections,
   // at least one of the diagonals must be completely inside the graticule.
@@ -376,6 +376,7 @@ XYPoint project_point_with_triangulation(const Point pt,
 
 void project_with_triangulation(InsetState *inset_state)
 {
+  // Project GeoDivs
   std::vector<GeoDiv> new_geo_divs;
   for (const auto &gd : inset_state->geo_divs()) {
 
@@ -416,5 +417,23 @@ void project_with_triangulation(InsetState *inset_state)
     new_geo_divs.push_back(new_gd);
   }
   inset_state->set_geo_divs(new_geo_divs);
+
+  // Cumulative projection
+  const unsigned int lx = inset_state->lx();
+  const unsigned int ly = inset_state->ly();
+  boost::multi_array<XYPoint, 2> &cum_proj = *inset_state->ref_to_cum_proj();
+
+  // TODO: i = lx-1 OR j = ly-1 CAUSES A SEGMENTATION FAULT. PLEASE CHECK THE
+  // EDGE CASES CAREFULLY.
+
+  //for (unsigned int i = 0; i < lx; ++i) {
+  for (unsigned int i = 0; i < lx - 1; ++i) {
+    //for (unsigned int j = 0; j < ly; ++j) {
+    for (unsigned int j = 0; j < ly - 1; ++j) {
+      const Point old_cum_proj(cum_proj[i][j].x, cum_proj[i][j].y);
+      cum_proj[i][j] =
+        project_point_with_triangulation(old_cum_proj, inset_state);
+    }
+  }
   return;
 }
