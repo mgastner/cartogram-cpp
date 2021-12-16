@@ -187,7 +187,7 @@ int main(const int argc, const char *argv[])
       inset_state.ref_to_rho_init()->allocate(lx, ly);
       inset_state.ref_to_rho_ft()->allocate(lx, ly);
       inset_state.make_fftw_plans_for_rho();
-      inset_state.initialise_cum_proj();
+      inset_state.initialize_cum_proj();
 
       // Set initial area errors
       inset_state.set_area_errors();

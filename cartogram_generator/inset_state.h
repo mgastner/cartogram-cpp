@@ -75,7 +75,7 @@ public:
   const std::vector<GeoDiv> geo_divs() const;
   const std::vector<std::vector<intersection> > horizontal_adj() const;
   void increment_integration();
-  void initialise_cum_proj();
+  void initialize_cum_proj();
   const std::string inset_name() const;
   bool is_input_target_area_missing(const std::string) const;
   void is_input_target_area_missing_insert(const std::string, const bool);

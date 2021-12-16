@@ -111,7 +111,7 @@ void InsetState::increment_integration()
   return;
 }
 
-void InsetState::initialise_cum_proj()
+void InsetState::initialize_cum_proj()
 {
   cum_proj_.resize(boost::extents[lx_][ly_]);
   for (unsigned int i = 0; i < lx_; i++) {
