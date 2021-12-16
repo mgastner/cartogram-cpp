@@ -230,12 +230,13 @@ std::vector<XYPoint> transformed_triangle(std::vector<XYPoint> triangle,
   return transformed_triangle;
 }
 
-std::vector<XYPoint> triangle_that_contains_point(const double x,
-                                                  const double y,
+std::vector<XYPoint> triangle_that_contains_point(const Point pt,
                                                   InsetState *inset_state)
 {
   const unsigned int lx = inset_state->lx();
   const unsigned int ly = inset_state->ly();
+  const double x = pt.x();
+  const double y = pt.y();
   if (x < 0 || x > lx || y < 0 || y > ly) {
     std::cerr << "ERROR: coordinate outside bounding box in "
               << "triangle_that_contains_point().\n";
@@ -312,7 +313,7 @@ std::vector<XYPoint> triangle_that_contains_point(const double x,
 
 XYPoint affine_trans(std::vector<XYPoint> *tri,
                      std::vector<XYPoint> *org_tri,
-                     double x, double y)
+                     const Point pt)
 {
   // For each point, we make the following transformation. Suppose we find
   // that, before the cartogram transformation, a point (x, y) is in the
@@ -341,8 +342,8 @@ XYPoint affine_trans(std::vector<XYPoint> *tri,
   // coordinates are:
   // post.x = t11*x + t12*y + t13, post.y = t21*x + t22*y + t23.
   XYPoint pre;
-  pre.x = x;
-  pre.y = y;
+  pre.x = pt.x();
+  pre.y = pt.y();
 
   // Old triangle (a, b, c) expressed as matrix A
   Matrix abc_mA((*org_tri)[0], (*org_tri)[1], (*org_tri)[2]);
@@ -358,61 +359,50 @@ XYPoint affine_trans(std::vector<XYPoint> *tri,
   return post;
 }
 
+XYPoint project_point_with_triangulation(const Point pt,
+                                         InsetState *inset_state)
+{
+  // Get the untransformed triangle the point is in
+  std::vector<XYPoint> tri = triangle_that_contains_point(pt, inset_state);
+
+  // Get the coordinates of the transformed triangle
+  std::vector<XYPoint> transf_tri =
+    transformed_triangle(tri, inset_state);
+
+  // Compute the projected point from the untransformed and transformed
+  // triangles
+  return affine_trans(&transf_tri, &tri, pt);
+}
+
 void project_with_triangulation(InsetState *inset_state)
 {
   std::vector<GeoDiv> new_geo_divs;
-  for (auto gd : inset_state->geo_divs()) {
+  for (const auto &gd : inset_state->geo_divs()) {
 
     // For each GeoDiv
     GeoDiv new_gd(gd.id());
-    for (auto pwh : gd.polygons_with_holes()) {
+    for (const auto &pwh : gd.polygons_with_holes()) {
 
       // For each polygon with holes
-      Polygon old_ext_ring = pwh.outer_boundary();
+      const Polygon old_ext_ring = pwh.outer_boundary();
       Polygon new_ext_ring;
       for (unsigned int i = 0; i < old_ext_ring.size(); ++i) {
 
-        // Get the untransformed triangle the point is in.
-        // TODO: Should we combine the first two arguments into a Point and
-        // pass it as a single argument?
-        std::vector<XYPoint> ext_ring_triangle =
-          triangle_that_contains_point(old_ext_ring[i][0], old_ext_ring[i][1],
-                                       inset_state);
-
-        // Get the coordinates of the transformed triangle.
-        std::vector<XYPoint> transformed_ext_ring_triangle =
-          transformed_triangle(ext_ring_triangle, inset_state);
-
-        // Compute the projected point from the untransformed and transformed
-        // triangles
-        // TODO: Should we combine the last two arguments into a Point and
-        // pass it as a single argument?
-        XYPoint old_ext_ring_intp =
-          affine_trans(&transformed_ext_ring_triangle,
-                       &ext_ring_triangle,
-                       old_ext_ring[i][0], old_ext_ring[i][1]);
-
         // Update exterior ring coordinates
+        const XYPoint old_ext_ring_intp =
+          project_point_with_triangulation(old_ext_ring[i], inset_state);
         new_ext_ring.push_back(Point(old_ext_ring_intp.x,
                                      old_ext_ring_intp.y));
       }
       std::vector<Polygon> hole_v;
       for (auto hci = pwh.holes_begin(); hci != pwh.holes_end(); ++hci) {
-        Polygon old_hole = *hci;
+        const Polygon old_hole = *hci;
         Polygon new_hole;
         for (unsigned int i = 0; i < old_hole.size(); ++i) {
 
-          // TODO: The code below feels like a near copy of the code for the
-          // exterior ring. Can it be turned into a function?
-          std::vector<XYPoint> hole_triangle =
-            triangle_that_contains_point(old_hole[i][0], old_hole[i][1],
-                                         inset_state);
-          std::vector<XYPoint> transformed_hole_triangle =
-            transformed_triangle(hole_triangle, inset_state);
-          XYPoint old_hole_intp =
-            affine_trans(&transformed_hole_triangle,
-                         &hole_triangle,
-                         old_hole[i][0], old_hole[i][1]);
+          // Update hole coordinates
+          const XYPoint old_hole_intp =
+            project_point_with_triangulation(old_hole[i], inset_state);
           new_hole.push_back(Point(old_hole_intp.x,
                                    old_hole_intp.y));
         }
