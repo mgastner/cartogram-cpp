@@ -75,6 +75,7 @@ public:
   const std::vector<GeoDiv> geo_divs() const;
   const std::vector<std::vector<intersection> > horizontal_adj() const;
   void increment_integration();
+  void initialise_cum_proj();
   const std::string inset_name() const;
   bool is_input_target_area_missing(const std::string) const;
   void is_input_target_area_missing_insert(const std::string, const bool);
@@ -88,14 +89,12 @@ public:
   unsigned int new_ymin() const;
   unsigned int n_finished_integrations() const;
   unsigned int n_geo_divs() const;
-  double total_inset_area() const;
   const std::string pos() const;
-  boost::multi_array<XYPoint, 2> *proj();
-  boost::multi_array<XYPoint, 2> *cum_proj();
-  void initialise_cum_proj();
   void push_back(const GeoDiv);
+  boost::multi_array<XYPoint, 2> *ref_to_cum_proj();
   std::vector<GeoDiv> *ref_to_geo_divs();
   boost::multi_array<int, 2> *ref_to_graticule_diagonals();
+  boost::multi_array<XYPoint, 2> *ref_to_proj();
   FTReal2d *ref_to_rho_ft();
   FTReal2d *ref_to_rho_init();
   void set_area_errors();
@@ -112,6 +111,7 @@ public:
   double target_areas_at(const std::string) const;
   void target_areas_insert(const std::string, const double);
   void target_areas_replace(const std::string, const double);
+  double total_inset_area() const;
   double total_target_area() const;
   const std::vector<std::vector<intersection> > vertical_adj() const;
 };

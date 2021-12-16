@@ -10,8 +10,8 @@ void project(InsetState *inset_state)
 {
   const unsigned int lx = inset_state->lx();
   const unsigned int ly = inset_state->ly();
-  boost::multi_array<XYPoint, 2> &proj = *inset_state->proj();
-  boost::multi_array<XYPoint, 2> &cum_proj = *inset_state->cum_proj();
+  boost::multi_array<XYPoint, 2> &proj = *inset_state->ref_to_proj();
+  boost::multi_array<XYPoint, 2> &cum_proj = *inset_state->ref_to_cum_proj();
 
   // Calculate displacement from proj array
   boost::multi_array<double, 2> xdisp(boost::extents[lx][ly]);
@@ -22,11 +22,11 @@ void project(InsetState *inset_state)
       ydisp[i][j] = proj[i][j].y - j - 0.5;
     }
   }
-  
+
   // Cumulative projection
   for (unsigned int i = 0; i < lx; ++i) {
     for (unsigned int j = 0; j < ly; ++j) {
-      
+
       // Calculate displacement for cumulative graticule coordinates
       double graticule_intp_x = interpolate_bilinearly(cum_proj[i][j].x,
                                                        cum_proj[i][j].y,
@@ -34,7 +34,7 @@ void project(InsetState *inset_state)
       double graticule_intp_y = interpolate_bilinearly(cum_proj[i][j].x,
                                                        cum_proj[i][j].y,
                                                        &ydisp, 'y', lx, ly);
-                         
+
       // Update cumulative graticule coordinates
       cum_proj[i][j].x += graticule_intp_x;
       cum_proj[i][j].y += graticule_intp_y;
@@ -121,7 +121,7 @@ void exit_if_point_not_on_grid_or_edge(XYPoint pt, InsetState *inset_state)
 // error message.
 int chosen_diag(XYPoint v[4], int *num_concave, InsetState *inset_state)
 {
-  boost::multi_array<XYPoint, 2> &proj = *inset_state->proj();
+  boost::multi_array<XYPoint, 2> &proj = *inset_state->ref_to_proj();
   const unsigned int lx = inset_state->lx();
   const unsigned int ly = inset_state->ly();
 
@@ -214,7 +214,7 @@ void fill_graticule_diagonals(InsetState *inset_state)
 std::vector<XYPoint> transformed_triangle(std::vector<XYPoint> triangle,
                                           InsetState *inset_state)
 {
-  boost::multi_array<XYPoint, 2> &proj = *inset_state->proj();
+  boost::multi_array<XYPoint, 2> &proj = *inset_state->ref_to_proj();
   std::vector<XYPoint> transformed_triangle;
   for(XYPoint point : triangle) {
     exit_if_point_not_on_grid_or_edge(point, inset_state);
