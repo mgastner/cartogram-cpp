@@ -192,6 +192,9 @@ int main(const int argc, const char *argv[])
       // Set initial area errors
       inset_state.set_area_errors();
 
+      // TODO: AN UPDATED VERSION OF auto_color() SHOULD AVOID HAVING TO
+      // CALL fill_with_density() TO GET ADJACENCY.
+
       // Fill density to fill horizontal adjacency map
       fill_with_density(plot_density, &inset_state);
 
@@ -241,7 +244,9 @@ int main(const int argc, const char *argv[])
           blur_width = 0.0;
         }
 
-        // TODO: THIS IF-CONDITION IS INELEGANT
+        // TODO: THIS if-CONDITION IS INELEGANT. IN AN UPDATED VERSION OF
+        // auto_color() THE EARLIER fill_with_density() SHOULD BE REMOVED
+        // AND THE if-CONDITION BE DROPPED.
         if (inset_state.n_finished_integrations() > 0) {
           fill_with_density(plot_density, &inset_state);
         }
