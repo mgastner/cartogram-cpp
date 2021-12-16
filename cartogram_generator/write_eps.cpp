@@ -122,14 +122,14 @@ void write_polygons_to_eps(std::ofstream &eps_file,
       *inset_state->ref_to_cum_proj();
     unsigned int graticule_line_spacing = 10;
 
-    // Draw vertical graticule lines
+    // Set line width of graticule lines
+    eps_file << 0.0005 * std::min(inset_state->lx(), inset_state->ly())
+             << " slw\n";
+
+    // Vertical graticule lines
     for (unsigned int i = 0;
          i <= inset_state->lx();
          i += graticule_line_spacing) {
-
-      // Set line width 60% of the polygon path width
-      eps_file << 0.001 * 0.6 * std::min(inset_state->lx(), inset_state->ly())
-               << " slw\n";
       eps_file << cum_proj[i][0].x << " " << cum_proj[i][0].y << " m\n";
       for (unsigned int j = 1; j < inset_state->ly(); ++j) {
         eps_file << cum_proj[i][j].x << " " << cum_proj[i][j].y << " l\n";
@@ -137,14 +137,10 @@ void write_polygons_to_eps(std::ofstream &eps_file,
       eps_file << "s\n";
     }
 
-    // Draw horizontal graticule lines
+    // Horizontal graticule lines
     for (unsigned int j = 0;
          j <= inset_state->ly();
          j += graticule_line_spacing) {
-
-      // Set line width 60% of the polygon path width
-      eps_file << 0.001 * 0.6 * std::min(inset_state->lx(), inset_state->ly())
-               << " slw\n";
       eps_file << cum_proj[0][j].x << " " << cum_proj[0][j].y << " m\n";
       for (unsigned int i = 1; i < inset_state->lx(); ++i) {
         eps_file << cum_proj[i][j].x << " " << cum_proj[i][j].y << " l\n";
