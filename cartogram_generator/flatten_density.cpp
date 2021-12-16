@@ -60,7 +60,7 @@ void flatten_density(InsetState *inset_state)
   std::cerr << "In flatten_density()" << std::endl;
   const unsigned int lx = inset_state->lx();
   const unsigned int ly = inset_state->ly();
-  boost::multi_array<XYPoint, 2> &proj = *inset_state->proj();
+  boost::multi_array<XYPoint, 2> &proj = *inset_state->ref_to_proj();
 
   // Constants for the numerical integrator
   const double inc_after_acc = 1.1;

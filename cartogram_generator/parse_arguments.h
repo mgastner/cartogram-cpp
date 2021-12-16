@@ -4,7 +4,7 @@
 #include <iostream>
 #include "argparse.hpp"
 
-// Function to parse arguments and set variables in main.
+// Function to parse arguments and set variables in main()
 argparse::ArgumentParser parsed_arguments(const int argc,
                                          const char *argv[],
                                          std::string &geo_file_name,
@@ -16,6 +16,7 @@ argparse::ArgumentParser parsed_arguments(const int argc,
                                          bool &make_polygon_eps,
                                          bool &output_equal_area,
                                          bool &output_to_stdout,
-                                         bool &plot_density);
+                                         bool &plot_density,
+                                         bool &plot_graticule);
 
 #endif

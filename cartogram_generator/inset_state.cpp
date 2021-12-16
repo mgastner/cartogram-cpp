@@ -111,6 +111,17 @@ void InsetState::increment_integration()
   return;
 }
 
+void InsetState::initialize_cum_proj()
+{
+  cum_proj_.resize(boost::extents[lx_][ly_]);
+  for (unsigned int i = 0; i < lx_; i++) {
+    for (unsigned int j = 0; j < ly_; j++) {
+      cum_proj_[i][j].x = i + 0.5;
+      cum_proj_[i][j].y = j + 0.5;
+    }
+  }
+}
+
 const std::string InsetState::inset_name() const
 {
   return inset_name_;
@@ -190,29 +201,20 @@ unsigned int InsetState::n_geo_divs() const
   return geo_divs_.size();
 }
 
-double InsetState::total_inset_area() const
-{
-  double total_inset_area = 0.0;
-  for (const auto &gd : geo_divs_) {
-    total_inset_area += gd.area();
-  }
-  return total_inset_area;
-}
-
 const std::string InsetState::pos() const
 {
   return pos_;
-}
-
-boost::multi_array<XYPoint, 2> *InsetState::proj()
-{
-  return &proj_;
 }
 
 void InsetState::push_back(const GeoDiv gd)
 {
   geo_divs_.push_back(gd);
   return;
+}
+
+boost::multi_array<XYPoint, 2> *InsetState::ref_to_cum_proj()
+{
+  return &cum_proj_;
 }
 
 std::vector<GeoDiv> *InsetState::ref_to_geo_divs()
@@ -223,6 +225,11 @@ std::vector<GeoDiv> *InsetState::ref_to_geo_divs()
 boost::multi_array<int, 2> *InsetState::ref_to_graticule_diagonals()
 {
   return &graticule_diagonals_;
+}
+
+boost::multi_array<XYPoint, 2> *InsetState::ref_to_proj()
+{
+  return &proj_;
 }
 
 FTReal2d *InsetState::ref_to_rho_ft()
@@ -333,6 +340,15 @@ void InsetState::target_areas_replace(const std::string id, const double area)
 {
   target_areas_[id] = area;
   return;
+}
+
+double InsetState::total_inset_area() const
+{
+  double total_inset_area = 0.0;
+  for (const auto &gd : geo_divs_) {
+    total_inset_area += gd.area();
+  }
+  return total_inset_area;
 }
 
 double InsetState::total_target_area() const
