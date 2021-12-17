@@ -13,11 +13,11 @@ void blur_density(const double blur_width,
   FTReal2d &rho_ft = *inset_state->ref_to_rho_ft();
   const double prefactor = -0.5 * blur_width * blur_width * pi * pi;
   for (unsigned int i = 0; i<lx; ++i) {
-    const double scaled_i_squared =
-      (static_cast<double>(i) / lx) * (static_cast<double>(i) / lx);
+    const double scaled_i = static_cast<double>(i) / lx;
+    const double scaled_i_squared = scaled_i * scaled_i;
     for (unsigned int j = 0; j<ly; ++j) {
-      const double scaled_j_squared =
-        (static_cast<double>(j) / ly) * (static_cast<double>(j) / ly);
+      const double scaled_j = static_cast<double>(j) / ly;
+      const double scaled_j_squared = scaled_j * scaled_j;
       rho_ft(i, j) *=
         exp(prefactor * (scaled_i_squared + scaled_j_squared)) / (4*lx*ly);
     }
