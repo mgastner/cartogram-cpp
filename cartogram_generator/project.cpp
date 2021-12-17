@@ -437,10 +437,10 @@ void project_with_triangulation(InsetState *inset_state)
   // TODO: i = lx-1 OR j = ly-1 CAUSES A SEGMENTATION FAULT. PLEASE CHECK THE
   // EDGE CASES CAREFULLY.
 
-  for (unsigned int i = 0; i < lx; ++i) {
-    //for (unsigned int i = 0; i < lx - 1; ++i) {
-    for (unsigned int j = 0; j < ly; ++j) {
-      //for (unsigned int j = 0; j < ly - 1; ++j) {
+  //for (unsigned int i = 0; i < lx; ++i) {
+    for (unsigned int i = 0; i < lx - 1; ++i) {
+    //for (unsigned int j = 0; j < ly; ++j) {
+      for (unsigned int j = 0; j < ly - 1; ++j) {
       const Point old_cum_proj(cum_proj[i][j].x, cum_proj[i][j].y);
       cum_proj[i][j] =
         project_point_with_triangulation(old_cum_proj, inset_state);
