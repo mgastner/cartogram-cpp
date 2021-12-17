@@ -61,7 +61,7 @@ void fill_with_density(bool plot_density, InsetState* inset_state)
   unsigned int res = 16;
 
   // A vector (map_intersections) to store vectors of intersections
-  int n_rays = (int) (inset_state->ly() * res);
+  int n_rays = static_cast<int>(inset_state->ly() * res);
   std::vector<std::vector<intersection> > map_intersections(n_rays);
 
   // Density numerator and denominator for each graticule cell
@@ -204,7 +204,7 @@ void fill_with_density(bool plot_density, InsetState* inset_state)
 
       // Intersections for one ray
       std::vector<intersection> intersections =
-        map_intersections[(int) round((ray_y - 0.5/res) * res)];
+        map_intersections[static_cast<int>(round((ray_y - 0.5/res) * res))];
 
       // Sort vector in ascending order of intersection
       sort(intersections.begin(), intersections.end());

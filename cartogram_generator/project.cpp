@@ -99,8 +99,12 @@ void project(InsetState *inset_state)
 // y-coordinates.
 void exit_if_point_not_on_grid_or_edge(XYPoint pt, InsetState *inset_state)
 {
-  if ((pt.x != 0.0 && pt.x != inset_state->lx() && pt.x - int(pt.x) != 0.5) ||
-      (pt.y != 0.0 && pt.y != inset_state->ly() && pt.y - int(pt.y) != 0.5)) {
+  if ((pt.x != 0.0 &&
+       pt.x != inset_state->lx() &&
+       pt.x - static_cast<int>(pt.x) != 0.5) ||
+      (pt.y != 0.0 &&
+       pt.y != inset_state->ly() &&
+       pt.y - static_cast<int>(pt.y) != 0.5)) {
     std::cerr << "Error: Invalid input coordinate in triangulation\n"
               << "\tpt = ("
               << pt.x
@@ -136,10 +140,10 @@ int chosen_diag(XYPoint v[4], int *num_concave, InsetState *inset_state)
   XYPoint tv[4];
   for (unsigned int i = 0; i < 4; i++) {
     tv[i].x = (v[i].x != 0 && v[i].x != lx) ?
-              proj[int(v[i].x)][int(v[i].y)].x :
+              proj[static_cast<int>(v[i].x)][static_cast<int>(v[i].y)].x :
               v[i].x;
     tv[i].y = (v[i].y != 0 && v[i].y != ly) ?
-              proj[int(v[i].x)][int(v[i].y)].y :
+              proj[static_cast<int>(v[i].x)][static_cast<int>(v[i].y)].y :
               v[i].y;
   }
 
@@ -174,7 +178,11 @@ int chosen_diag(XYPoint v[4], int *num_concave, InsetState *inset_state)
   std::cerr << "(" << tv[1].x << ", " << tv[1].y << ")\n";
   std::cerr << "(" << tv[2].x << ", " << tv[2].y << ")\n";
   std::cerr << "(" << tv[3].x << ", " << tv[3].y << ")\n";
-  std::cerr << "i: " << int(v[0].x) << ", j: " << int(v[0].y) << "\n";
+  std::cerr << "i: "
+            << static_cast<int>(v[0].x)
+            << ", j: "
+            << static_cast<int>(v[0].y)
+            << std::endl;
   exit(1);
 }
 
@@ -194,14 +202,14 @@ void fill_graticule_diagonals(InsetState *inset_state)
   for (unsigned int i = 0; i < lx - 1; ++i) {
     for (unsigned int j = 0; j < ly - 1; ++j) {
       XYPoint v[4];
-      v[0].x = double(i) + 0.5;
-      v[0].y = double(j) + 0.5;
-      v[1].x = double(i) + 1.5;
-      v[1].y = double(j) + 0.5;
-      v[2].x = double(i) + 1.5;
-      v[2].y = double(j) + 1.5;
-      v[3].x = double(i) + 0.5;
-      v[3].y = double(j) + 1.5;
+      v[0].x = i + 0.5;
+      v[0].y = j + 0.5;
+      v[1].x = i + 1.5;
+      v[1].y = j + 0.5;
+      v[2].x = i + 1.5;
+      v[2].y = j + 1.5;
+      v[3].x = i + 0.5;
+      v[3].y = j + 1.5;
       graticule_diagonals[i][j] = chosen_diag(v, &num_concave, inset_state);
     }
   }
@@ -219,12 +227,14 @@ std::vector<XYPoint> transformed_triangle(std::vector<XYPoint> triangle,
   for(XYPoint point : triangle) {
     exit_if_point_not_on_grid_or_edge(point, inset_state);
     XYPoint transformed_point;
-    transformed_point.x = (point.x == 0.0 || point.x == inset_state->lx()) ?
-                          point.x :
-                          proj[int(point.x)][int(point.y)].x;
-    transformed_point.y = (point.y == 0.0 || point.y == inset_state->ly()) ?
-                          point.y :
-                          proj[int(point.x)][int(point.y)].y;
+    transformed_point.x =
+      (point.x == 0.0 || point.x == inset_state->lx()) ?
+      point.x :
+      proj[static_cast<int>(point.x)][static_cast<int>(point.y)].x;
+    transformed_point.y =
+      (point.y == 0.0 || point.y == inset_state->ly()) ?
+      point.y :
+      proj[static_cast<int>(point.x)][static_cast<int>(point.y)].y;
     transformed_triangle.push_back(transformed_point);
   }
   return transformed_triangle;
@@ -250,10 +260,10 @@ std::vector<XYPoint> triangle_that_contains_point(const Point pt,
   XYPoint v[4];
   v[0].x = std::max(0.0, floor(x + 0.5) - 0.5);
   v[0].y = std::max(0.0, floor(y + 0.5) - 0.5);
-  v[1].x = std::min(double(lx), floor(x + 0.5) + 0.5);
+  v[1].x = std::min(static_cast<double>(lx), floor(x + 0.5) + 0.5);
   v[1].y = v[0].y;
   v[2].x = v[1].x;
-  v[2].y = std::min(double(ly), floor(y + 0.5) + 0.5);
+  v[2].y = std::min(static_cast<double>(ly), floor(y + 0.5) + 0.5);
   v[3].x = v[0].x;
   v[3].y = v[2].y;
 
@@ -265,7 +275,8 @@ std::vector<XYPoint> triangle_that_contains_point(const Point pt,
     int concave = 0;
     diag = chosen_diag(v, &concave, inset_state);
   } else {
-    diag = graticule_diagonals[int(v[0].x)][int(v[0].y)];
+    diag =
+      graticule_diagonals[static_cast<int>(v[0].x)][static_cast<int>(v[0].y)];
   }
   Polygon triangle1;
   Polygon triangle2;
@@ -426,10 +437,10 @@ void project_with_triangulation(InsetState *inset_state)
   // TODO: i = lx-1 OR j = ly-1 CAUSES A SEGMENTATION FAULT. PLEASE CHECK THE
   // EDGE CASES CAREFULLY.
 
-  //for (unsigned int i = 0; i < lx; ++i) {
-  for (unsigned int i = 0; i < lx - 1; ++i) {
-    //for (unsigned int j = 0; j < ly; ++j) {
-    for (unsigned int j = 0; j < ly - 1; ++j) {
+  for (unsigned int i = 0; i < lx; ++i) {
+    //for (unsigned int i = 0; i < lx - 1; ++i) {
+    for (unsigned int j = 0; j < ly; ++j) {
+      //for (unsigned int j = 0; j < ly - 1; ++j) {
       const Point old_cum_proj(cum_proj[i][j].x, cum_proj[i][j].y);
       cum_proj[i][j] =
         project_point_with_triangulation(old_cum_proj, inset_state);

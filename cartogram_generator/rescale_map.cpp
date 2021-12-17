@@ -32,13 +32,13 @@ void rescale_map(unsigned int long_grid_side_length,
   if (bbox.xmax()-bbox.xmin() > bbox.ymax()-bbox.ymin()) {
     lx = long_grid_side_length;
     latt_const = (new_xmax-new_xmin) / lx;
-    ly = 1 << ((int) ceil(log2((new_ymax-new_ymin) / latt_const)));
+    ly = 1 << static_cast<int>(ceil(log2((new_ymax-new_ymin) / latt_const)));
     new_ymax = 0.5*(bbox.ymax()+bbox.ymin()) + 0.5*ly*latt_const;
     new_ymin = 0.5*(bbox.ymax()+bbox.ymin()) - 0.5*ly*latt_const;
   } else {
     ly = long_grid_side_length;
     latt_const = (new_ymax-new_ymin) / ly;
-    lx = 1 << ((int) ceil(log2((new_xmax-new_xmin) / latt_const)));
+    lx = 1 << static_cast<int>(ceil(log2((new_xmax-new_xmin) / latt_const)));
     new_xmax = 0.5*(bbox.xmax()+bbox.xmin()) + 0.5*lx*latt_const;
     new_xmin = 0.5*(bbox.xmax()+bbox.xmin()) - 0.5*lx*latt_const;
   }

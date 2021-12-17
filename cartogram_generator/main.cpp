@@ -239,7 +239,9 @@ int main(const int argc, const char *argv[])
           blur_width = 5.0;
         } else if (inset_state.n_finished_integrations() < 7) {
           blur_width =
-            std::pow(2.0, 3 - int(inset_state.n_finished_integrations()));
+            std::pow(2.0,
+                     3 -
+                     static_cast<int>(inset_state.n_finished_integrations()));
         } else {
           blur_width = 0.0;
         }

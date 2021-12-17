@@ -40,11 +40,11 @@ double interpolate_bilinearly(double x,
 
   // x1 is the nearest grid point larger than x.
   // Exception: if x > lx-0.5, x1 becomes lx.
-  double x1 = std::min(double(lx), floor(x + 0.5) + 0.5);
+  double x1 = std::min(static_cast<double>(lx), floor(x + 0.5) + 0.5);
 
   // Similarly for y
   double y0 = std::max(0.0, floor(y + 0.5) - 0.5);
-  double y1 = std::min(double(ly), floor(y + 0.5) + 0.5);
+  double y1 = std::min(static_cast<double>(ly), floor(y + 0.5) + 0.5);
 
   // On a scale from 0 to 1, how far is x (or y) away from x0 (or y0)?
   // 1 means x = x1.
@@ -58,7 +58,7 @@ double interpolate_bilinearly(double x,
       (y<0.5 && zero == 'y')) {
     fx0y0 = 0.0;
   } else {
-    fx0y0 = (*grid)[int(x0)][int(y0)];
+    fx0y0 = (*grid)[static_cast<int>(x0)][static_cast<int>(y0)];
   }
 
   // Function value at (x0, y1).
@@ -68,9 +68,9 @@ double interpolate_bilinearly(double x,
       (y>=ly-0.5 && zero == 'y')) {
     fx0y1 = 0.0;
   } else if (x>=0.5 && y>=ly-0.5 && zero == 'x') {
-    fx0y1 = (*grid)[int(x0)][ly - 1];
+    fx0y1 = (*grid)[static_cast<int>(x0)][ly - 1];
   } else {
-    fx0y1 = (*grid)[int(x0)][int(y1)];
+    fx0y1 = (*grid)[static_cast<int>(x0)][static_cast<int>(y1)];
   }
 
   // Function value at (x1, y0).
@@ -80,9 +80,9 @@ double interpolate_bilinearly(double x,
       (y<0.5 && zero == 'y')) {
     fx1y0 = 0.0;
   } else if (x>=lx-0.5 && y>=0.5 && zero == 'y') {
-    fx1y0 = (*grid)[lx - 1][int(y0)];
+    fx1y0 = (*grid)[lx - 1][static_cast<int>(y0)];
   } else {
-    fx1y0 = (*grid)[int(x1)][int(y0)];
+    fx1y0 = (*grid)[static_cast<int>(x1)][static_cast<int>(y0)];
   }
 
   // Function value at (x1, y1).
@@ -92,11 +92,11 @@ double interpolate_bilinearly(double x,
       (y>=ly-0.5 && zero == 'y')) {
     fx1y1 = 0.0;
   } else if (x>=lx-0.5 && y<ly-0.5 && zero == 'y') {
-    fx1y1 = (*grid)[lx - 1][int(y1)];
+    fx1y1 = (*grid)[lx - 1][static_cast<int>(y1)];
   } else if (x<lx-0.5 && y>=ly-0.5 && zero == 'x') {
-    fx1y1 = (*grid)[int(x1)][ly - 1];
+    fx1y1 = (*grid)[static_cast<int>(x1)][ly - 1];
   } else {
-    fx1y1 = (*grid)[int(x1)][int(y1)];
+    fx1y1 = (*grid)[static_cast<int>(x1)][static_cast<int>(y1)];
   }
   return (1-delta_x)*(1-delta_y)*fx0y0 + (1-delta_x)*delta_y*fx0y1 +
          delta_x*(1-delta_y)*fx1y0 + delta_x*delta_y*fx1y1;

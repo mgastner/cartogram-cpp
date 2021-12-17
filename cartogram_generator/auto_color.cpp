@@ -40,7 +40,7 @@ void create_vertical_adjacency_graph(InsetState* inset_state, unsigned int res)
 
   // A vector to store the vertical adjacency graph.
   // Inspired by code for fill_with_density.cpp
-  int n_rays = (int) (inset_state->lx() * res);
+  int n_rays = static_cast<int>(inset_state->lx() * res);
   std::vector<std::vector<intersection> > vertical_adj(n_rays);
 
   // Creating vertical adjacency graph
@@ -172,7 +172,7 @@ void create_adjacency_graph(InsetState* inset_state,
 
       // The intersections for one ray
       std::vector<intersection> intersections =
-        adj_graph[(int) round(((ray - (1.0/res)/2.0) * res))];
+        adj_graph[static_cast<int>(round(((ray - (1.0/res)/2.0) * res)))];
 
       // Sort vector in ascending order of intersection
       sort(intersections.begin(), intersections.end());
