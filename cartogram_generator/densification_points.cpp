@@ -134,8 +134,8 @@ std::vector<Point> densification_points(Point pt1, Point pt2)
       // Get points for the current graticule cell, in this order:
       // bottom-left, bottom-right, top-right, top-left
       XYPoint v0;
-      v0.x = double(int_x) + 0.5;
-      v0.y = double(int_y) + 0.5;
+      v0.x = int_x + 0.5;
+      v0.y = int_y + 0.5;
       XYPoint v1;
       v1.x = v0.x + 1.0;
       v1.y = v0.y;
