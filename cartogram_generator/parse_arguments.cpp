@@ -83,7 +83,7 @@ argparse::ArgumentParser parsed_arguments(const int argc,
   .help(pre + "IDs of geographic divisions [default: 1st CSV column]");
 
   arguments.add_argument("-a", "--area")
-  .help(pre + "target areas (default: 2nd CSV column)");
+  .help(pre + "target areas [default: 2nd CSV column]");
 
   arguments.add_argument("-c", "--color")
   .default_value(std::string("Color"))
