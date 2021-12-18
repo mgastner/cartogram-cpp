@@ -11,24 +11,27 @@ Gastner MT, Seguy V, More P. _Fast flow-based algorithm for creating density-equ
 <!-- code_chunk_output -->
 
 - [cartogram_cpp](#cartogram_cpp)
-  - [Installing Dependencies on Ubuntu](#installing-dependencies-on-ubuntu)
-    - [Installing GNU gcc-11](#installing-gnu-gcc-11)
-    - [Installing nlohmann's JSON parser](#installing-nlohmanns-json-parser)
-    - [Installing CGAL](#installing-cgal)
-    - [Installing OpenMP](#installing-openmp)
-    - [Installing FFTW3](#installing-fftw3)
-  - [Setting up dependencies on macOS (ARM & x86)](#setting-up-dependencies-on-macos-arm-x86)
-    - [Intel-Only Instructions (x86, Macs released before 2020)](#intel-only-instructions-x86-macs-released-before-2020)
-    - [ARM-Only Instructions (M1, M1 Pro, M1 Max, etc.)](#arm-only-instructions-m1-m1-pro-m1-max-etc)
-  - [Compilation and Usage (Ubuntu or macOS)](#compilation-and-usage-ubuntu-or-macos)
+  - [Dependencies](#dependencies)
+    - [Installing Dependencies on Ubuntu](#installing-dependencies-on-ubuntu)
+      - [Installing GNU gcc-11](#installing-gnu-gcc-11)
+      - [Installing nlohmann's JSON parser](#installing-nlohmanns-json-parser)
+      - [Installing CGAL](#installing-cgal)
+      - [Installing OpenMP](#installing-openmp)
+      - [Installing FFTW3](#installing-fftw3)
+    - [macOS](#macos)
+      - [Intel-Only Instructions (x86, Macs released before 2020)](#intel-only-instructions-x86-macs-released-before-2020)
+      - [ARM-Only Instructions (M1, M1 Pro, M1 Max, etc.)](#arm-only-instructions-m1-m1-pro-m1-max-etc)
+  - [Compilation and Usage](#compilation-and-usage)
     - [Compilation](#compilation)
     - [Usage](#usage)
 
 <!-- /code_chunk_output -->
 
-## Installing Dependencies on Ubuntu
+## Dependencies
 
-### Installing GNU gcc-11
+### Ubuntu
+
+#### Installing GNU gcc-11
 
 GNU gcc-11 is currently unavailable from apt by default. You may find installation instructions [here](https://lindevs.com/install-gcc-on-ubuntu/). Alternatively, you may run the following commands to install it:
 
@@ -36,7 +39,7 @@ GNU gcc-11 is currently unavailable from apt by default. You may find installati
     sudo add-apt-repository ppa:ubuntu-toolchain-r/test
     sudo apt update && sudo apt install gcc-11 g++-11
 
-### Installing nlohmann's JSON parser
+#### Installing nlohmann's JSON parser
 
 1.  Go to <https://github.com/nlohmann/json>
 2.  Click on "Code" -> "Download Zip".
@@ -49,9 +52,9 @@ GNU gcc-11 is currently unavailable from apt by default. You may find installati
         make
         sudo make install
 
-<!-- #### Installing CGAL [CGAL Homepage](https://www.cgal.org/) `sudo apt-get install libcgal-dev` -->
+<!-- ##### Installing CGAL [CGAL Homepage](https://www.cgal.org/) `sudo apt-get install libcgal-dev` -->
 
-### Installing CGAL
+#### Installing CGAL
 
 [CGAL Homepage](https://www.cgal.org/)
 
@@ -63,13 +66,13 @@ For posterity: Once version 5.3 is available through apt-get (you may check [her
 
     sudo apt-get install libcgal-dev
 
-### Installing OpenMP
+#### Installing OpenMP
 
 [OpenMP Homepage](https://www.openmp.org/)
 
     sudo apt-get install libomp-dev
 
-### Installing FFTW3
+#### Installing FFTW3
 
 1.  Go to [FFTW's website](http://www.fftw.org/download.html "FFTW Downloads Page").
 2.  Install the latest version of FFTW.
@@ -81,9 +84,9 @@ For posterity: Once version 5.3 is available through apt-get (you may check [her
         make
         sudo make install
 
-## Setting up dependencies on macOS (ARM & x86)
+### macOS
 
-### Intel-Only Instructions (x86, Macs released before 2020)
+#### Intel-Only Instructions (x86, Macs released before 2020)
 
 1.  Install [homebrew](brew.sh) by running the following command:
 
@@ -95,7 +98,7 @@ For posterity: Once version 5.3 is available through apt-get (you may check [her
 
 * * *
 
-### ARM-Only Instructions (M1, M1 Pro, M1 Max, etc.)
+#### ARM-Only Instructions (M1, M1 Pro, M1 Max, etc.)
 
 1.  Go to your applications folder.
 2.  Right-click on your Terminal and duplicate it.
@@ -136,11 +139,13 @@ For posterity: Once version 5.3 is available through apt-get (you may check [her
 
 12. You must use the `x86 Terminal` that you created in steps 1-6 to compile and run the program.
 
-## Compilation and Usage (Ubuntu or macOS)
+## Compilation and Usage
+
+These instructions work on Ubuntu and macOS.
 
 ### Compilation
 
-Go to the `cartogram_cpp` directory and execute the following commands.
+Go to the `cartogram_cpp` directory in your preferred terminal and execute the following commands.
 
     cd build
     cmake .
@@ -148,7 +153,7 @@ Go to the `cartogram_cpp` directory and execute the following commands.
 
 ### Usage
 
-1.  Go to the build directory using `cd build`.
+1.  Ensure that you are in the `cartogram_cpp/build` directory.
 2.  Replace `your-geojson-file.geojson` file with your geographic data and `your-csv-file.csv` with your visual variables file, and run the following command:
 
         ./cartogram your-geojson-file.geojson -V your-csv-file.csv
