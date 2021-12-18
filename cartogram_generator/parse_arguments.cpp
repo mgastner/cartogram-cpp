@@ -25,7 +25,7 @@ argparse::ArgumentParser parsed_arguments(const int argc,
   .help("File path: GeoJSON file");
 
   // Optional argument accepting visual variables file (CSV) as input
-  arguments.add_argument("-v", "--visual_variable_file")
+  arguments.add_argument("-V", "--visual_variable_file")
   .help("File path: CSV file with ID, area, and (optionally) colour");
 
   // Optional argument accepting long grid side length (unsigned int) as
