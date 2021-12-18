@@ -150,13 +150,13 @@ Go to the `cartogram_cpp` directory in your preferred terminal and execute the f
     cd build
     cmake .
     make
+    sudo make install
 
 ### Usage
 
-1.  Ensure that you are in the `cartogram_cpp/build` directory.
-2.  Replace `your-geojson-file.geojson` file with your geographic data and `your-csv-file.csv` with your visual variables file, and run the following command:
+1.  Run the following command (replace `your-geojson-file.geojson` file with your geographic data and `your-csv-file.csv` with your visual variables file, containing target areas for each geographic region):
 
-        ./cartogram your-geojson-file.geojson -V your-csv-file.csv
+        cartogram your-geojson-file.geojson -V your-csv-file.csv
 
 -   The first argument's input is a GeoJSON or JSON file, in the standard GeoJSON format.
 -   The `-V` flag (uppercase, case-sensitive) accepts a `.csv` file with data about target areas.

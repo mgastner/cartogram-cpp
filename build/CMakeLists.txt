@@ -74,3 +74,5 @@ elseif(UNIX)
     OpenMP::OpenMP_CXX
   )
 endif()
+
+install(TARGETS cartogram DESTINATION bin)
