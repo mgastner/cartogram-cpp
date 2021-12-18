@@ -12,7 +12,7 @@ Gastner MT, Seguy V, More P. _Fast flow-based algorithm for creating density-equ
 
 - [cartogram_cpp](#cartogram_cpp)
   - [Dependencies](#dependencies)
-    - [Installing Dependencies on Ubuntu](#installing-dependencies-on-ubuntu)
+    - [Ubuntu](#ubuntu)
       - [Installing GNU gcc-11](#installing-gnu-gcc-11)
       - [Installing nlohmann's JSON parser](#installing-nlohmanns-json-parser)
       - [Installing CGAL](#installing-cgal)
