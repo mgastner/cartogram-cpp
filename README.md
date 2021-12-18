@@ -10,21 +10,21 @@ Gastner MT, Seguy V, More P. _Fast flow-based algorithm for creating density-equ
 
 <!-- code_chunk_output -->
 
--   [cartogram_cpp](#cartogram_cpp)
-    -   [Dependencies](#dependencies)
-        -   [Ubuntu](#ubuntu)
-            -   [Installing GNU gcc-11](#installing-gnu-gcc-11)
-            -   [Installing nlohmann's JSON parser](#installing-nlohmanns-json-parser)
-            -   [Installing CGAL](#installing-cgal)
-            -   [Installing OpenMP](#installing-openmp)
-            -   [Installing FFTW3](#installing-fftw3)
-        -   [macOS](#macos)
-            -   [Intel-Only Instructions (x86, Macs released before 2020)](#intel-only-instructions-x86-macs-released-before-2020)
-            -   [ARM-Only Instructions (M1, M1 Pro, M1 Max, etc.)](#arm-only-instructions-m1-m1-pro-m1-max-etc)
-    -   [Installation and Usage](#installation-and-usage)
-        -   [Installation](#installation)
-        -   [Usage](#usage)
-        -   [Uninstall](#uninstall)
+- [cartogram_cpp](#cartogram_cpp)
+  - [Dependencies](#dependencies)
+    - [Ubuntu](#ubuntu)
+      - [Installing GNU gcc-11](#installing-gnu-gcc-11)
+      - [Installing nlohmann's JSON parser](#installing-nlohmanns-json-parser)
+      - [Installing CGAL](#installing-cgal)
+      - [Installing OpenMP](#installing-openmp)
+      - [Installing FFTW3](#installing-fftw3)
+    - [macOS](#macos)
+      - [Intel-Only Instructions (x86, Macs released before 2020)](#intel-only-instructions-x86-macs-released-before-2020)
+      - [ARM-Only Instructions (M1, M1 Pro, M1 Max, etc.)](#arm-only-instructions-m1-m1-pro-m1-max-etc)
+  - [Installation and Usage](#installation-and-usage)
+    - [Installation](#installation)
+    - [Usage](#usage)
+    - [Uninstallation](#uninstallation)
 
 <!-- /code_chunk_output -->
 
@@ -154,7 +154,7 @@ Go to the `cartogram_cpp/build` directory in your preferred terminal and execute
 
 ### Usage
 
-1.  Run the following command (replace `your-geojson-file.geojson` file with your geographic data and `your-csv-file.csv` with your visual variables file, containing target areas for each geographic region):
+Run the following command (replace `your-geojson-file.geojson` file with your geographic data and `your-csv-file.csv` with your visual variables file, containing target areas for each geographic region):
 
         cartogram your-geojson-file.geojson -V your-csv-file.csv
 
@@ -178,6 +178,8 @@ The CSV file should be in the following format:
     1.  `cornflowerblue`: html color codes supported by `CSS3` (case-insensitive), full list of supported colors may be found in the "Extended colors" section of [web colors](https://en.wikipedia.org/wiki/Web_colors).
     2.  `"rgb(255, 0, 120)"` or `rgb(255 0 120)` or `"255, 0, 120"` or `255 0 120`: red, green and blue values out of 255.
     3.  `#e74c3c`: hex code of color, must start with `#`.
+
+ **You may find sample GeoJSON (containing geographic data) and CSV (containing information about target areas, colors and other visual variables) files in the `cartogram_cpp/sample_data` directory.**
 
 ### Uninstallation
 
