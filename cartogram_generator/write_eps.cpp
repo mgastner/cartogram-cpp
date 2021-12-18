@@ -120,7 +120,7 @@ void write_polygons_to_eps(std::ofstream &eps_file,
   if (plot_graticule) {
     boost::multi_array<XYPoint, 2> &cum_proj =
       *inset_state->ref_to_cum_proj();
-    unsigned int graticule_line_spacing = 10;
+    unsigned int graticule_line_spacing = 7;
 
     // Set line width of graticule lines
     eps_file << 0.0005 * std::min(inset_state->lx(), inset_state->ly())
