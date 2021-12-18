@@ -7,6 +7,7 @@ This program uses the Fast Flow-based method developed by Michael T. Gastner, Vi
 Gastner MT, Seguy V, More P. _Fast flow-based algorithm for creating density-equalizing map projections_. Proc Natl Acad Sci USA 115(10):E2156–E2164 (2018). <https://doi.org/10.1073/pnas.0400280101>
 
 <!-- @import "[TOC]" {cmd="toc" depthFrom=1 depthTo=6 orderedList=false} -->
+
 <!-- code_chunk_output -->
 
 - [cartogram_cpp](#cartogram_cpp)
@@ -26,7 +27,6 @@ Gastner MT, Seguy V, More P. _Fast flow-based algorithm for creating density-equ
 <!-- /code_chunk_output -->
 
 ## Installing Dependencies on Ubuntu
-
 
 ### Installing GNU gcc-11
 
@@ -132,7 +132,7 @@ For posterity: Once version 5.3 is available through apt-get (you may check [her
 
 11. Finally, install the required dependencies by running:
 
-        brew86 install gcc@11 icu4c pkg-config wget boost fftw cgal nlohmann-json cmake
+        brew86 install gcc@11 pkg-config boost fftw cgal nlohmann-json cmake
 
 12. You must use the `x86 Terminal` that you created in steps 1-6 to compile and run the program.
 
