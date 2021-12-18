@@ -86,3 +86,15 @@ endif()
 
 # Providing make with install target.
 install(TARGETS cartogram DESTINATION bin)
+
+# Providing make with uninstall target.
+# TODO: Polish
+# From https://stackoverflow.com/questions/41471620/cmake-support-make-uninstall
+add_custom_target("uninstall")
+add_custom_command(
+    TARGET "uninstall"
+    POST_BUILD
+    COMMENT "Uninstalling cartogram..."
+    COMMAND xargs rm -vf < install_manifest.txt || echo Nothing in
+            install_manifest.txt to be uninstalled!
+)
