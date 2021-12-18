@@ -121,8 +121,8 @@ argparse::ArgumentParser parsed_arguments(const int argc,
   std::cerr << "Using geometry from file " << geo_file_name << std::endl;
 
   // Check if a visual-variables file or -m flag is passed
-  if (arguments.present<std::string>("-v")) {
-    visual_file_name = arguments.get<std::string>("-v");
+  if (arguments.present<std::string>("-V")) {
+    visual_file_name = arguments.get<std::string>("-V");
     std::cerr << "Using visual variables from file "
               << visual_file_name
               << std::endl;

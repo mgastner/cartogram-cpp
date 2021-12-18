@@ -10,7 +10,7 @@ void read_csv(argparse::ArgumentParser arguments,
 {
 
   // Retrieve CSV Name.
-  std::string csv_name = arguments.get<std::string>("-v");
+  std::string csv_name = arguments.get<std::string>("-V");
 
   // Open CSV Reader.
   csv::CSVReader reader(csv_name);
