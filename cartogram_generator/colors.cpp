@@ -75,11 +75,11 @@ Color::Color(std::string color_as_string)
 std::string Color::eps()
 {
   std::string temp;
-  temp.append(std::to_string((double) r / 255.0));
+  temp.append(std::to_string(static_cast<double>(r) / 255.0));
   temp.append(" ");
-  temp.append(std::to_string((double) g / 255.0));
+  temp.append(std::to_string(static_cast<double>(g) / 255.0));
   temp.append(" ");
-  temp.append(std::to_string((double) b / 255.0));
+  temp.append(std::to_string(static_cast<double>(b) / 255.0));
   temp.append(" ");
   return temp;
 }

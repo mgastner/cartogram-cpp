@@ -14,6 +14,7 @@
 #include "read_csv.h"
 #include "read_geojson.h"
 #include "rescale_map.h"
+#include "simplify_inset.h"
 #include "write_eps.h"
 #include "write_geojson.h"
 #include "xy_point.h"
@@ -38,6 +39,9 @@ int main(const int argc, const char *argv[])
   // projecting "naively".
   bool triangulation;
 
+  // Shall the polygons be simplified?
+  bool simplify;
+
   // Other boolean values that are needed to parse the command line arguments
   bool make_csv,
        make_polygon_eps,
@@ -55,6 +59,7 @@ int main(const int argc, const char *argv[])
     long_grid_side_length,
     world,
     triangulation,
+    simplify,
     make_csv,
     make_polygon_eps,
     output_equal_area,
@@ -140,7 +145,7 @@ int main(const int argc, const char *argv[])
     }
 
     // Can the coordinates be interpreted as longitude and latitude?
-    const CGAL::Bbox_2 bb = inset_state.bbox();
+    const Bbox bb = inset_state.bbox();
     if (bb.xmin() >= -180.0 && bb.xmax() <= 180.0 &&
         bb.ymin() >= -90.0 && bb.ymax() <= 90.0 &&
         crs == "+proj=longlat") {
@@ -169,6 +174,11 @@ int main(const int argc, const char *argv[])
                 << std::endl;
     }
     inset_state.set_inset_name(inset_name);
+
+    // Simplify inset if -s flag is passed
+    if (simplify) {
+      simplify_inset(&inset_state);
+    }
     if (output_equal_area) {
       normalize_inset_area(&inset_state,
                            cart_info.cart_total_target_area(),
@@ -219,6 +229,7 @@ int main(const int argc, const char *argv[])
       // finished insets
       const double inset_max_frac = inset_state.n_geo_divs() / total_geo_divs;
 
+
       // Start map integration
       while (inset_state.n_finished_integrations() < max_integrations &&
              inset_state.max_area_error().value > max_permitted_area_error) {
@@ -234,14 +245,13 @@ int main(const int argc, const char *argv[])
           std::max((log(ratio_actual_to_permitted_max_area_error) / log(5)),
                    1.0);
         double blur_width;
-        if (inset_state.n_finished_integrations() == 0) {
-          blur_width = 5.0;
-        } else if (inset_state.n_finished_integrations() < 7) {
+        if (inset_state.n_finished_integrations() < 10) {
           blur_width =
-            std::pow(2.0, 3 - int(inset_state.n_finished_integrations()));
+            std::pow(2.0, 5 - int(inset_state.n_finished_integrations()));
         } else {
           blur_width = 0.0;
         }
+        std::cerr << "blur_width = " << blur_width << std::endl;
 
         // TODO: THIS if-CONDITION IS INELEGANT. IN AN UPDATED VERSION OF
         // auto_color() THE EARLIER fill_with_density() SHOULD BE REMOVED
@@ -249,6 +259,8 @@ int main(const int argc, const char *argv[])
         if (inset_state.n_finished_integrations() > 0) {
           fill_with_density(plot_density, &inset_state);
         }
+
+        // TODO: DO NOT CARRY OUT blur_density() IF blur_width=0.0
         blur_density(blur_width, plot_density, &inset_state);
         flatten_density(&inset_state);
         if (triangulation) {
@@ -267,6 +279,9 @@ int main(const int argc, const char *argv[])
           project_with_triangulation(&inset_state);
         } else {
           project(&inset_state);
+        }
+        if (simplify) {
+          simplify_inset(&inset_state);
         }
         inset_state.increment_integration();
 

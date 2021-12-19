@@ -31,7 +31,7 @@ struct max_area_error_info {
 class InsetState {
 private:
   std::unordered_map<std::string, double> area_errors_;
-  CGAL::Bbox_2 bbox_;  // Bounding box
+  Bbox bbox_;  // Bounding box
   std::unordered_map<std::string, Color> colors_;
   fftw_plan fwd_plan_for_rho_, bwd_plan_for_rho_;
   std::vector<GeoDiv> geo_divs_;  // Geographic divisions in this inset
@@ -62,7 +62,7 @@ private:
 public:
   explicit InsetState(const std::string);  // Constructor
   double area_errors_at(const std::string) const;
-  CGAL::Bbox_2 bbox() const;
+  Bbox bbox() const;
   bool color_found(const std::string id) const;
   const Color colors_at(const std::string) const;
   bool colors_empty() const;
@@ -89,6 +89,8 @@ public:
   unsigned int new_ymin() const;
   unsigned int n_finished_integrations() const;
   unsigned int n_geo_divs() const;
+  unsigned long n_points() const;
+  unsigned int n_rings() const;
   const std::string pos() const;
   void push_back(const GeoDiv);
   boost::multi_array<XYPoint, 2> *ref_to_cum_proj();

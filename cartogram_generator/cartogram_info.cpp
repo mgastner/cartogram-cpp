@@ -126,6 +126,7 @@ void CartogramInfo::replace_missing_and_zero_target_areas()
     if (min_positive_area == dbl_inf) {
       for (const auto &[name, inset_state] : inset_states_) {
         for (auto const &gd : inset_state.geo_divs()) {
+
           min_positive_area = std::min(min_positive_area, gd.area());
         }
       }

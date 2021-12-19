@@ -100,8 +100,12 @@ void project(InsetState *inset_state)
 void exit_if_point_not_on_grid_or_edge(const XYPoint pt,
                                        InsetState *inset_state)
 {
-  if ((pt.x != 0.0 && pt.x != inset_state->lx() && pt.x - int(pt.x) != 0.5) ||
-      (pt.y != 0.0 && pt.y != inset_state->ly() && pt.y - int(pt.y) != 0.5)) {
+  if ((pt.x != 0.0 &&
+       pt.x != inset_state->lx() &&
+       pt.x - static_cast<int>(pt.x) != 0.5) ||
+      (pt.y != 0.0 &&
+       pt.y != inset_state->ly() &&
+       pt.y - static_cast<int>(pt.y) != 0.5)) {
     std::cerr << "Error: Invalid input coordinate in triangulation\n"
               << "\tpt = ("
               << pt.x
@@ -174,7 +178,7 @@ int chosen_diag(const XYPoint v[4],
 
   // Check if graticule cell is concave
   if (!trans_graticule.is_convex()) {
-    n_concave += 1;
+    ++n_concave;
   }
   if (trans_graticule.bounded_side(Point(midpoint0.x, midpoint0.y)) ==
       CGAL::ON_BOUNDED_SIDE) {
@@ -189,7 +193,11 @@ int chosen_diag(const XYPoint v[4],
   std::cerr << "(" << tv[1].x << ", " << tv[1].y << ")\n";
   std::cerr << "(" << tv[2].x << ", " << tv[2].y << ")\n";
   std::cerr << "(" << tv[3].x << ", " << tv[3].y << ")\n";
-  std::cerr << "i: " << int(v[0].x) << ", j: " << int(v[0].y) << std::endl;
+  std::cerr << "i: "
+            << static_cast<int>(v[0].x)
+            << ", j: "
+            << static_cast<int>(v[0].y)
+            << std::endl;
   exit(1);
 }
 
@@ -209,14 +217,14 @@ void fill_graticule_diagonals(InsetState *inset_state)
   for (unsigned int i = 0; i < lx - 1; ++i) {
     for (unsigned int j = 0; j < ly - 1; ++j) {
       XYPoint v[4];
-      v[0].x = double(i) + 0.5;
-      v[0].y = double(j) + 0.5;
-      v[1].x = double(i) + 1.5;
-      v[1].y = double(j) + 0.5;
-      v[2].x = double(i) + 1.5;
-      v[2].y = double(j) + 1.5;
-      v[3].x = double(i) + 0.5;
-      v[3].y = double(j) + 1.5;
+      v[0].x = i + 0.5;
+      v[0].y = j + 0.5;
+      v[1].x = i + 1.5;
+      v[1].y = j + 0.5;
+      v[2].x = i + 1.5;
+      v[2].y = j + 1.5;
+      v[3].x = i + 0.5;
+      v[3].y = j + 1.5;
       graticule_diagonals[i][j] = chosen_diag(v, &n_concave, inset_state);
     }
   }
@@ -259,10 +267,10 @@ std::vector<XYPoint> triangle_that_contains_point(const Point pt,
   XYPoint v[4];
   v[0].x = std::max(0.0, floor(pt.x() + 0.5) - 0.5);
   v[0].y = std::max(0.0, floor(pt.y() + 0.5) - 0.5);
-  v[1].x = std::min(double(lx), floor(pt.x() + 0.5) + 0.5);
+  v[1].x = std::min(static_cast<double>(lx), floor(pt.x() + 0.5) + 0.5);
   v[1].y = v[0].y;
   v[2].x = v[1].x;
-  v[2].y = std::min(double(ly), floor(pt.y() + 0.5) + 0.5);
+  v[2].y = std::min(static_cast<double>(ly), floor(pt.y() + 0.5) + 0.5);
   v[3].x = v[0].x;
   v[3].y = v[2].y;
 
@@ -274,7 +282,8 @@ std::vector<XYPoint> triangle_that_contains_point(const Point pt,
     unsigned int concave = 0;  // Placeholder value
     diag = chosen_diag(v, &concave, inset_state);
   } else {
-    diag = graticule_diagonals[int(v[0].x)][int(v[0].y)];
+    diag =
+      graticule_diagonals[static_cast<int>(v[0].x)][static_cast<int>(v[0].y)];
   }
   Polygon tri1;
   Polygon tri2;

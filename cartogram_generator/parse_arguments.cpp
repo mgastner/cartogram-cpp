@@ -9,6 +9,7 @@ argparse::ArgumentParser parsed_arguments(const int argc,
                                           unsigned int &long_grid_side_length,
                                           bool &world,
                                           bool &triangulation,
+                                          bool &simplify,
                                           bool &make_csv,
                                           bool &make_polygon_eps,
                                           bool &output_equal_area,
@@ -67,12 +68,17 @@ argparse::ArgumentParser parsed_arguments(const int argc,
   .default_value(false)
   .implicit_value(true);
 
+  arguments.add_argument("-s", "--simplify")
+  .help("Boolean: Shall the polygons be simplified?")
+  .default_value(false)
+  .implicit_value(true);
+
   arguments.add_argument("-m", "--make_csv")
   .help("Boolean: create CSV file from given GeoJSON?")
   .default_value(false)
   .implicit_value(true);
 
-  arguments.add_argument("-s", "--output_to_stdout")
+  arguments.add_argument("-o", "--output_to_stdout")
   .help("Boolean: Output GeoJSON to stdout")
   .default_value(false)
   .implicit_value(true);
@@ -109,10 +115,11 @@ argparse::ArgumentParser parsed_arguments(const int argc,
   // Set boolean values
   world = arguments.get<bool>("-w");
   triangulation = arguments.get<bool>("-t");
+  simplify = arguments.get<bool>("-s");
   make_csv = arguments.get<bool>("-m");
   make_polygon_eps = arguments.get<bool>("-e");
   output_equal_area = arguments.get<bool>("-q");
-  output_to_stdout = arguments.get<bool>("-s");
+  output_to_stdout = arguments.get<bool>("-o");
   plot_density =  arguments.get<bool>("-d");
   plot_graticule = arguments.get<bool>("-g");
 

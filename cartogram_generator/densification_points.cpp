@@ -122,20 +122,20 @@ std::vector<Point> densification_points(Point pt1, Point pt2)
   }
 
   // Loop through each row, from bottom to top
-  for (unsigned int int_y = (unsigned int)(start_v.y);
-       int_y <= (unsigned int)(end_v.y);
+  for (unsigned int int_y = static_cast<unsigned int>(start_v.y);
+       int_y <= static_cast<unsigned int>(end_v.y);
        ++int_y) {
 
     // Loop through each column, from left to right
-    for (unsigned int int_x = (unsigned int)(start_v.x);
-         int_x <= (unsigned int)(end_v.x);
+    for (unsigned int int_x = static_cast<unsigned int>(start_v.x);
+         int_x <= static_cast<unsigned int>(end_v.x);
          ++int_x) {
 
       // Get points for the current graticule cell, in this order:
       // bottom-left, bottom-right, top-right, top-left
       XYPoint v0;
-      v0.x = double(int_x) + 0.5;
-      v0.y = double(int_y) + 0.5;
+      v0.x = int_x + 0.5;
+      v0.y = int_y + 0.5;
       XYPoint v1;
       v1.x = v0.x + 1.0;
       v1.y = v0.y;
