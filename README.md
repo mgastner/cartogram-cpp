@@ -114,7 +114,7 @@ For posterity: Once version 5.3 is available through apt (you may check [here](h
 
         brew86 install gcc@11 pkg-config boost fftw cgal nlohmann-json cmake
 
-12. You must use the `x86 Terminal` that you created in steps 1-6 to compile and run the program.
+12. You must use the `x86 Terminal` that you created in steps 1-6 to install the program. Thereafter, you may run the program in any terminal of your preference (opened through Rosetta 2, or not). However, to contribute to the project's development, you must switch back to the `x86 Terminal` to re-compile the program, if you make any changes to the source code.  
 
 ## Installation and Usage
 
