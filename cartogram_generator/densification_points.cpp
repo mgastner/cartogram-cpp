@@ -3,7 +3,7 @@
 // Use machine epsilon (defined in constants.h) to get almost equal doubles.
 // From https://en.cppreference.com/w/cpp/types/numeric_limits/epsilon
 bool almost_equal(double a, double b) {
-  return fabs(a - b) <= dbl_epsilon * fabs(a + b) * 2;
+  return abs(a - b) <= dbl_epsilon * abs(a + b) * 2;
 }
 
 // Determine whether points are indistinguishable
