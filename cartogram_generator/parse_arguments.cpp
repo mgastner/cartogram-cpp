@@ -18,7 +18,7 @@ argparse::ArgumentParser parsed_arguments(const int argc,
                                           bool &plot_graticule)
 {
   // Create parser for arguments using argparse.
-  // From: https://github.com/p-ranav/argparse
+  // From https://github.com/p-ranav/argparse
   argparse::ArgumentParser arguments("./cartogram", "1.0");
 
   // Positional argument accepting geometry file (GeoJSON, JSON) as input
@@ -26,7 +26,7 @@ argparse::ArgumentParser parsed_arguments(const int argc,
   .help("File path: GeoJSON file");
 
   // Optional argument accepting visual variables file (CSV) as input
-  arguments.add_argument("-v", "--visual_variable_file")
+  arguments.add_argument("-V", "--visual_variable_file")
   .help("File path: CSV file with ID, area, and (optionally) colour");
 
   // Optional argument accepting long grid side length (unsigned int) as
@@ -89,7 +89,7 @@ argparse::ArgumentParser parsed_arguments(const int argc,
   .help(pre + "IDs of geographic divisions [default: 1st CSV column]");
 
   arguments.add_argument("-a", "--area")
-  .help(pre + "target areas (default: 2nd CSV column)");
+  .help(pre + "target areas [default: 2nd CSV column]");
 
   arguments.add_argument("-c", "--color")
   .default_value(std::string("Color"))
@@ -128,8 +128,8 @@ argparse::ArgumentParser parsed_arguments(const int argc,
   std::cerr << "Using geometry from file " << geo_file_name << std::endl;
 
   // Check if a visual-variables file or -m flag is passed
-  if (arguments.present<std::string>("-v")) {
-    visual_file_name = arguments.get<std::string>("-v");
+  if (arguments.present<std::string>("-V")) {
+    visual_file_name = arguments.get<std::string>("-V");
     std::cerr << "Using visual variables from file "
               << visual_file_name
               << std::endl;
