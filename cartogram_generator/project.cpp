@@ -120,38 +120,12 @@ XYPoint projected_point_on_grid_or_edge(XYPoint pt, InsetState *inset_state)
   const unsigned int lx = inset_state->lx();
   const unsigned int ly = inset_state->ly();
   XYPoint transf_pt;
-  if ((pt.x == 0.0 && pt.y == 0.0) ||
-      (pt.x == lx && pt.y == 0.0) ||
-      (pt.x == lx && pt.y == ly) ||
-      (pt.x == 0.0 && pt.y == ly)) {
-
-    // Corner points
-    transf_pt = pt;
-  } else if (pt.x == 0.0 && pt.y != 0.0 && pt.y != ly) {
-
-    // Left edge
-    transf_pt.x = 0.0;
-    transf_pt.y = proj[0][static_cast<int>(pt.y)].y;
-  } else if (pt.x == lx && pt.y != 0.0 && pt.y != ly) {
-
-    // Right edge
-    transf_pt.x = lx;
-    transf_pt.y = proj[lx - 1][static_cast<int>(pt.y)].y;
-  } else if (pt.x != 0.0 && pt.x != lx && pt.y == 0.0) {
-
-    // Bottom edge
-    transf_pt.x = proj[static_cast<int>(pt.x)][0].x;
-    transf_pt.y = 0.0;
-  } else if (pt.x != 0.0 && pt.x != lx && pt.y == ly) {
-
-    // Top edge
-    transf_pt.x =  proj[static_cast<int>(pt.x)][ly - 1].x;
-    transf_pt.y = ly;
-  } else {
-
-    // Point on the half-shifted grid
-    transf_pt = proj[int(pt.x)][int(pt.y)];
-  }
+  int proj_x = std::min(static_cast<int>(lx) - 1, static_cast<int>(pt.x));
+  int proj_y = std::min(static_cast<int>(ly) - 1, static_cast<int>(pt.y));
+  transf_pt.x = (pt.x == 0.0 || pt.x == inset_state->lx()) ?
+                pt.x : proj[proj_x][proj_y].x;
+  transf_pt.y = (pt.y == 0.0 || pt.y == inset_state->ly()) ?
+                pt.y : proj[proj_x][proj_y].y;
   return transf_pt;
 }
 
