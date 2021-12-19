@@ -53,8 +53,17 @@ add_executable(
 if(APPLE)
 
   # Using LLVM clang, installed via homebrew, instaed of Apple clang.
-  set(CMAKE_CXX_COMPILER "/opt/homebrew/opt/llvm/bin/clang++")
-  set(CMAKE_C_COMPILER "/opt/homebrew/opt/llvm/bin/clang")
+  if(${CMAKE_HOST_SYSTEM_PROCESSOR} STREQUAL "arm64")
+
+    # Homebrew install path on arm64 (apple silicon, M1 etc.) machines.
+    set(CMAKE_CXX_COMPILER "/opt/homebrew/opt/llvm/bin/clang++")
+    set(CMAKE_C_COMPILER "/opt/homebrew/opt/llvm/bin/clang")
+  else()
+
+    # Homebrew install path on x86 machines (Intel).
+    set(CMAKE_C_COMPILER "/usr/local/opt/llvm/bin/clang")
+    set(CMAKE_CXX_COMPILER "/usr/local/opt/llvm/bin/clang++")
+  endif()
 
   # Linking appropriate libraries to cartogram target.
   target_link_libraries(
