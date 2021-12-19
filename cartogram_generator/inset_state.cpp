@@ -12,7 +12,7 @@ double InsetState::area_errors_at(const std::string id) const
   return area_errors_.at(id);
 }
 
-CGAL::Bbox_2 InsetState::bbox() const
+Bbox InsetState::bbox() const
 {
   // Find joint bounding for all polygons with holes in this inset
   double inset_xmin = dbl_inf;
@@ -21,15 +21,15 @@ CGAL::Bbox_2 InsetState::bbox() const
   double inset_ymax = -dbl_inf;
   for (const auto &gd : geo_divs_) {
     for (const auto &pgnwh : gd.polygons_with_holes()) {
-      const CGAL::Bbox_2 pgnwh_bbox = pgnwh.bbox();
+      const Bbox pgnwh_bbox = pgnwh.bbox();
       inset_xmin = std::min(pgnwh_bbox.xmin(), inset_xmin);
       inset_ymin = std::min(pgnwh_bbox.ymin(), inset_ymin);
       inset_xmax = std::max(pgnwh_bbox.xmax(), inset_xmax);
       inset_ymax = std::max(pgnwh_bbox.ymax(), inset_ymax);
     }
   }
-  CGAL::Bbox_2 inset_bbox(inset_xmin, inset_ymin, inset_xmax, inset_ymax);
-  return inset_bbox;
+  Bbox inset_bb(inset_xmin, inset_ymin, inset_xmax, inset_ymax);
+  return inset_bb;
 }
 
 bool InsetState::color_found(const std::string id) const
@@ -199,6 +199,25 @@ unsigned int InsetState::n_finished_integrations() const
 unsigned int InsetState::n_geo_divs() const
 {
   return geo_divs_.size();
+}
+
+
+unsigned long InsetState::n_points() const
+{
+  unsigned long n_pts = 0;
+  for (const auto &gd : geo_divs_) {
+    n_pts += gd.n_points();
+  }
+  return n_pts;
+}
+
+unsigned int InsetState::n_rings() const
+{
+  unsigned int n_rings = 0;
+  for (const auto &gd: geo_divs_) {
+    n_rings += gd.n_rings();
+  }
+  return n_rings;
 }
 
 const std::string InsetState::pos() const

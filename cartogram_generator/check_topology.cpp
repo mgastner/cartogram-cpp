@@ -12,10 +12,11 @@ void holes_inside_polygons(InsetState *inset_state)
         Polygon hole = *hci;
         for (unsigned int i = 0; i < hole.size(); ++i) {
 
-          // In the future, a better method would be to only check whether one
-          // point in each hole is on the bounded side of the exterior ring.
-          // Next, check whether the hole intersects the polygon at any point.
-          // For this, the function "do_intersect(Polygon, Polygon)" may help.
+          // TODO: In the future, a better method would be to only check
+          // whether one point in each hole is on the bounded side of the
+          // exterior ring. Next, check whether the hole intersects the
+          // polygon at any point. For this, the function
+          // "do_intersect(Polygon, Polygon)" may help.
           if (ext_ring.bounded_side(hole[i]) == CGAL::ON_UNBOUNDED_SIDE) {
             CGAL::set_pretty_mode(std::cerr);
             std::cerr << "Hole detected outside polygon!" << std::endl;
