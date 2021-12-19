@@ -73,7 +73,7 @@ Install [homebrew](brew.sh) by running the following command:
 
 Install gcc-11, pkg-config, boost, fftw, cgal, nlohmann-json, and cmake by running the following command:
 
-    brew install llvm pkg-config boost fftw cgal nlohmann-json cmake
+    brew install llvm libomp pkg-config boost fftw cgal nlohmann-json cmake
 
 ## Installation and Usage
 
@@ -86,6 +86,10 @@ Go to the `cartogram_cpp/build` directory in your preferred terminal and execute
     cmake .
     make
     sudo make install
+
+### Troubleshooting
+
+- In case running `cmake .` gives you an error, it is likely that a dependency was not installed correctly. Rerun the appropriate commands above to install the required dependencies and try again.
 
 ### Usage
 

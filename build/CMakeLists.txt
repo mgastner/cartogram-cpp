@@ -52,12 +52,9 @@ add_executable(
 # Linking appropriate libraries required.
 if(APPLE)
 
-  # Using GNU gcc-11, installed via homebrew, instaed of Apple clang.
-  set(CMAKE_CXX_COMPILER "/usr/local/bin/g++-11")
-  set(CMAKE_C_COMPILER "/usr/local/bin/gcc-11")
-
-  # Adding relevant flag for OpenMP.
-  set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fopenmp")
+  # Using LLVM clang, installed via homebrew, instaed of Apple clang.
+  set(CMAKE_CXX_COMPILER "/opt/homebrew/opt/llvm/bin/clang++")
+  set(CMAKE_C_COMPILER "/opt/homebrew/opt/llvm/bin/clang")
 
   # Linking appropriate libraries to cartogram target.
   target_link_libraries(
@@ -66,6 +63,7 @@ if(APPLE)
     CGAL::CGAL
     ${CMAKE_THREAD_LIBS_INIT}
     PkgConfig::FFTW
+    OpenMP::OpenMP_CXX
   )
 elseif(UNIX)
 
