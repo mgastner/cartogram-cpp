@@ -64,32 +64,22 @@ if(APPLE)
     set(CMAKE_C_COMPILER "/usr/local/opt/llvm/bin/clang")
     set(CMAKE_CXX_COMPILER "/usr/local/opt/llvm/bin/clang++")
   endif()
-
-  # Linking appropriate libraries to cartogram target.
-  target_link_libraries(
-    cartogram
-    ${Boost_LIBRARIES}
-    CGAL::CGAL
-    ${CMAKE_THREAD_LIBS_INIT}
-    PkgConfig::FFTW
-    OpenMP::OpenMP_CXX
-  )
 elseif(UNIX)
 
   # Using GNU gcc-11.
   set(CMAKE_CXX_COMPILER "g++-11")
   set(CMAKE_C_COMPILER "gcc-11")
-
-  # Linking appropriate libraries to cartogram target.
-  target_link_libraries(
-    cartogram
-    ${Boost_LIBRARIES}
-    CGAL::CGAL
-    ${CMAKE_THREAD_LIBS_INIT}
-    PkgConfig::FFTW
-    OpenMP::OpenMP_CXX
-  )
 endif()
+
+# Linking appropriate libraries to cartogram target.
+target_link_libraries(
+  cartogram
+  ${Boost_LIBRARIES}
+  CGAL::CGAL
+  ${CMAKE_THREAD_LIBS_INIT}
+  PkgConfig::FFTW
+  OpenMP::OpenMP_CXX
+)
 
 # Providing make with install target.
 install(TARGETS cartogram DESTINATION bin)
