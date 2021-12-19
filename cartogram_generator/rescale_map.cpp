@@ -7,17 +7,17 @@ void rescale_map(unsigned int long_grid_side_length,
                  bool is_world_map)
 {
   double padding = (is_world_map ?  1.0 : padding_unless_world);
-  CGAL::Bbox_2 bbox = inset_state->bbox();
+  Bbox bb = inset_state->bbox();
 
   // Expand bounding box to guarantee a minimum padding
   double new_xmin =
-    0.5 * ((1.0-padding)*bbox.xmax() + (1.0+padding)*bbox.xmin());
+    0.5 * ((1.0-padding)*bb.xmax() + (1.0+padding)*bb.xmin());
   double new_xmax =
-    0.5 * ((1.0+padding)*bbox.xmax() + (1.0-padding)*bbox.xmin());
+    0.5 * ((1.0+padding)*bb.xmax() + (1.0-padding)*bb.xmin());
   double new_ymin =
-    0.5 * ((1.0-padding)*bbox.ymax() + (1.0+padding)*bbox.ymin());
+    0.5 * ((1.0-padding)*bb.ymax() + (1.0+padding)*bb.ymin());
   double new_ymax =
-    0.5 * ((1.0+padding)*bbox.ymax() + (1.0-padding)*bbox.ymin());
+    0.5 * ((1.0+padding)*bb.ymax() + (1.0-padding)*bb.ymin());
 
   // Ensure that the grid dimensions lx and ly are integer powers of 2
   if ((long_grid_side_length <= 0) ||
@@ -29,18 +29,18 @@ void rescale_map(unsigned int long_grid_side_length,
   }
   unsigned int lx, ly;
   double latt_const;
-  if (bbox.xmax()-bbox.xmin() > bbox.ymax()-bbox.ymin()) {
+  if (bb.xmax()-bb.xmin() > bb.ymax()-bb.ymin()) {
     lx = long_grid_side_length;
     latt_const = (new_xmax-new_xmin) / lx;
     ly = 1 << static_cast<int>(ceil(log2((new_ymax-new_ymin) / latt_const)));
-    new_ymax = 0.5*(bbox.ymax()+bbox.ymin()) + 0.5*ly*latt_const;
-    new_ymin = 0.5*(bbox.ymax()+bbox.ymin()) - 0.5*ly*latt_const;
+    new_ymax = 0.5*(bb.ymax()+bb.ymin()) + 0.5*ly*latt_const;
+    new_ymin = 0.5*(bb.ymax()+bb.ymin()) - 0.5*ly*latt_const;
   } else {
     ly = long_grid_side_length;
     latt_const = (new_ymax-new_ymin) / ly;
     lx = 1 << static_cast<int>(ceil(log2((new_xmax-new_xmin) / latt_const)));
-    new_xmax = 0.5*(bbox.xmax()+bbox.xmin()) + 0.5*lx*latt_const;
-    new_xmin = 0.5*(bbox.xmax()+bbox.xmin()) - 0.5*lx*latt_const;
+    new_xmax = 0.5*(bb.xmax()+bb.xmin()) + 0.5*lx*latt_const;
+    new_xmin = 0.5*(bb.xmax()+bb.xmin()) - 0.5*lx*latt_const;
   }
   std::cerr << "Rescaling to " << lx << "-by-" << ly
             << " grid with bounding box" << std::endl;
@@ -77,7 +77,7 @@ void normalize_inset_area(InsetState *inset_state,
                           double total_cart_target_area,
                           bool equal_area)
 {
-  CGAL::Bbox_2 bbox = inset_state->bbox();
+  Bbox bb = inset_state->bbox();
 
   // Calculate scale_factor value to make insets proportional to each other
   double inset_size_proportion =
@@ -90,8 +90,8 @@ void normalize_inset_area(InsetState *inset_state,
   // Rescale and translate all GeoDiv coordinates
   Transformation translate(
     CGAL::TRANSLATION,
-    CGAL::Vector_2<Epick>(-(bbox.xmin() + bbox.xmax()) / 2,
-                          -(bbox.ymin() + bbox.ymax()) / 2)
+    CGAL::Vector_2<Epick>(-(bb.xmin() + bb.xmax()) / 2,
+                          -(bb.ymin() + bb.ymax()) / 2)
     );
   Transformation scale(CGAL::SCALING, scale_factor);
   for (auto &gd : *inset_state->ref_to_geo_divs()) {
@@ -113,10 +113,10 @@ void shift_insets_to_target_position(CartogramInfo *cart_info)
 
   // For simplicity's sake, let us formally insert bounding boxes for
   // all conceivable inset positions
-  std::map<std::string, CGAL::Bbox_2> bboxes;
+  std::map<std::string, Bbox> bboxes;
   std::string possible_inset_positions[5] = {"C", "B", "L", "T", "R"};
   for (auto pos : possible_inset_positions) {
-    bboxes.insert(std::pair<std::string, CGAL::Bbox_2>(pos, {0, 0, 0, 0}));
+    bboxes.insert(std::pair<std::string, Bbox>(pos, {0, 0, 0, 0}));
   }
 
   // If the inset actually exists, we get its current bounding box

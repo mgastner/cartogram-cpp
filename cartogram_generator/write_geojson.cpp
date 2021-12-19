@@ -132,10 +132,10 @@ nlohmann::json cgal_to_json(CartogramInfo *cart_info)
   }
 
   // Get joint bounding box for all insets.
-  double bbox_xmin = dbl_inf;
-  double bbox_ymin = dbl_inf;
-  double bbox_xmax = -dbl_inf;
-  double bbox_ymax = -dbl_inf;
+  double bb_xmin = dbl_inf;
+  double bb_ymin = dbl_inf;
+  double bb_xmax = -dbl_inf;
+  double bb_ymax = -dbl_inf;
 
   // Get maximum ymax and minimum ymin for "L", "C", "R" &
   // maximum xmax and minimum xmin for "T", "C", "B" insets
@@ -146,64 +146,64 @@ nlohmann::json cgal_to_json(CartogramInfo *cart_info)
   double max_ymax_lcr = -dbl_inf;
 
   // Get central inset bbox for later use on divider lines
-  CGAL::Bbox_2 inset_c_bbox;
+  Bbox inset_c_bb;
   for (auto &[inset_pos, inset_state] : *cart_info->ref_to_inset_states()) {
-    CGAL::Bbox_2 inset_bbox = inset_state.bbox();
-    bbox_xmin = std::min(bbox_xmin, inset_bbox.xmin());
-    bbox_ymin = std::min(bbox_ymin, inset_bbox.ymin());
-    bbox_xmax = std::max(bbox_xmax, inset_bbox.xmax());
-    bbox_ymax = std::max(bbox_ymax, inset_bbox.ymax());
+    Bbox inset_bb = inset_state.bbox();
+    bb_xmin = std::min(bb_xmin, inset_bb.xmin());
+    bb_ymin = std::min(bb_ymin, inset_bb.ymin());
+    bb_xmax = std::max(bb_xmax, inset_bb.xmax());
+    bb_ymax = std::max(bb_ymax, inset_bb.ymax());
     if (inset_pos == "T" || inset_pos == "C" || inset_pos == "B") {
-      max_xmax_tcb = std::max(max_xmax_tcb, inset_bbox.xmax());
-      min_xmin_tcb = std::min(min_xmin_tcb, inset_bbox.xmin());
+      max_xmax_tcb = std::max(max_xmax_tcb, inset_bb.xmax());
+      min_xmin_tcb = std::min(min_xmin_tcb, inset_bb.xmin());
     }
     if (inset_pos == "L" || inset_pos == "C" || inset_pos == "R") {
-      min_ymin_lcr = std::min(min_ymin_lcr, inset_bbox.ymin());
-      max_ymax_lcr = std::max(max_ymax_lcr, inset_bbox.ymax());
+      min_ymin_lcr = std::min(min_ymin_lcr, inset_bb.ymin());
+      max_ymax_lcr = std::max(max_ymax_lcr, inset_bb.ymax());
     }
     if (inset_pos == "C") {
-      inset_c_bbox = inset_bbox;
+      inset_c_bb = inset_bb;
     }
   }
 
   // Insert joint bounding box into the container as a vector with four
   // numbers
-  container.push_back({bbox_xmin, bbox_ymin, bbox_xmax, bbox_ymax});
+  container.push_back({bb_xmin, bb_ymin, bb_xmax, bb_ymax});
 
   // Container to store divider lines for go-cart.io
   nlohmann::json divider_container;
 
   // Insert divider lines between all insets
   for (auto &[inset_pos, inset_state] : *cart_info->ref_to_inset_states()) {
-    CGAL::Bbox_2 inset_bbox = inset_state.bbox();
+    Bbox inset_bb = inset_state.bbox();
     if (inset_pos == "R") {
-      divider_container.push_back(divider_points((inset_bbox.xmin()
-                                                 + inset_c_bbox.xmax()) / 2,
+      divider_container.push_back(divider_points((inset_bb.xmin()
+                                                 + inset_c_bb.xmax()) / 2,
                                                  max_ymax_lcr,
-                                                 (inset_bbox.xmin()
-                                                 + inset_c_bbox.xmax()) / 2,
+                                                 (inset_bb.xmin()
+                                                 + inset_c_bb.xmax()) / 2,
                                                  min_ymin_lcr));
     } else if (inset_pos == "L") {
-      divider_container.push_back(divider_points((inset_bbox.xmax()
-                                                 + inset_c_bbox.xmin()) / 2,
+      divider_container.push_back(divider_points((inset_bb.xmax()
+                                                 + inset_c_bb.xmin()) / 2,
                                                  max_ymax_lcr,
-                                                 (inset_bbox.xmax()
-                                                 + inset_c_bbox.xmin()) / 2,
+                                                 (inset_bb.xmax()
+                                                 + inset_c_bb.xmin()) / 2,
                                                  min_ymin_lcr));
     } else if (inset_pos == "T") {
       divider_container.push_back(divider_points(min_xmin_tcb,
-                                                 (inset_bbox.ymin()
-                                                 + inset_c_bbox.ymax()) / 2,
+                                                 (inset_bb.ymin()
+                                                 + inset_c_bb.ymax()) / 2,
                                                  max_xmax_tcb,
-                                                 (inset_bbox.ymin()
-                                                 + inset_c_bbox.ymax()) / 2));
+                                                 (inset_bb.ymin()
+                                                 + inset_c_bb.ymax()) / 2));
     } else if (inset_pos == "B") {
       divider_container.push_back(divider_points(min_xmin_tcb,
-                                                 (inset_bbox.ymax()
-                                                 + inset_c_bbox.ymin()) / 2,
+                                                 (inset_bb.ymax()
+                                                 + inset_c_bb.ymin()) / 2,
                                                  max_xmax_tcb,
-                                                 (inset_bbox.ymax()
-                                                 + inset_c_bbox.ymin()) / 2));
+                                                 (inset_bb.ymax()
+                                                 + inset_c_bb.ymin()) / 2));
     }
   }
   container.push_back(divider_container);
