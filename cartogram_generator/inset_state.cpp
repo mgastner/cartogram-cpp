@@ -19,13 +19,13 @@ Bbox InsetState::bbox() const
   double inset_xmax = -dbl_inf;
   double inset_ymin = dbl_inf;
   double inset_ymax = -dbl_inf;
-  for (GeoDiv gd : geo_divs_) {
-    for (Polygon_with_holes pgnwh : gd.polygons_with_holes()) {
-      Bbox bb = pgnwh.bbox();
-      inset_xmin = std::min(bb.xmin(), inset_xmin);
-      inset_ymin = std::min(bb.ymin(), inset_ymin);
-      inset_xmax = std::max(bb.xmax(), inset_xmax);
-      inset_ymax = std::max(bb.ymax(), inset_ymax);
+  for (const auto &gd : geo_divs_) {
+    for (const auto &pgnwh : gd.polygons_with_holes()) {
+      const Bbox pgnwh_bbox = pgnwh.bbox();
+      inset_xmin = std::min(pgnwh_bbox.xmin(), inset_xmin);
+      inset_ymin = std::min(pgnwh_bbox.ymin(), inset_ymin);
+      inset_xmax = std::max(pgnwh_bbox.xmax(), inset_xmax);
+      inset_ymax = std::max(pgnwh_bbox.ymax(), inset_ymax);
     }
   }
   Bbox inset_bb(inset_xmin, inset_ymin, inset_xmax, inset_ymax);
@@ -65,7 +65,7 @@ void InsetState::colors_insert(const std::string id, std::string color)
   // From https://stackoverflow.com/questions/313970/how-to-convert-stdstring-
   // to-lower-case
   std::transform(color.begin(), color.end(), color.begin(), ::tolower);
-  Color c(color);
+  const Color c(color);
   colors_.insert(std::pair<std::string, Color>(id, c));
   return;
 }
@@ -111,21 +111,32 @@ void InsetState::increment_integration()
   return;
 }
 
+void InsetState::initialize_cum_proj()
+{
+  cum_proj_.resize(boost::extents[lx_][ly_]);
+  for (unsigned int i = 0; i < lx_; i++) {
+    for (unsigned int j = 0; j < ly_; j++) {
+      cum_proj_[i][j].x = i + 0.5;
+      cum_proj_[i][j].y = j + 0.5;
+    }
+  }
+}
+
 const std::string InsetState::inset_name() const
 {
   return inset_name_;
 }
 
-bool InsetState::is_target_area_missing(const std::string id) const
+bool InsetState::is_input_target_area_missing(const std::string id) const
 {
-  return is_target_area_missing_.at(id);
+  return is_input_target_area_missing_.at(id);
 }
 
-void InsetState::is_target_area_missing_insert(const std::string id,
-                                               const bool is_missing)
+void InsetState::is_input_target_area_missing_insert(const std::string id,
+                                                     const bool is_missing)
 {
-  is_target_area_missing_.insert(std::pair<std::string, bool>(id,
-                                                              is_missing));
+  is_input_target_area_missing_.insert(
+    std::pair<std::string, bool>(id, is_missing));
   return;
 }
 
@@ -190,21 +201,11 @@ unsigned int InsetState::n_geo_divs() const
   return geo_divs_.size();
 }
 
-double InsetState::non_missing_target_area() const
-{
-  double sum_non_missing_target_area = 0;
-  for (auto gd : geo_divs_) {
-    if (!target_area_is_missing(gd.id())) {
-      sum_non_missing_target_area += gd.area();
-    }
-  }
-  return sum_non_missing_target_area;
-}
 
 unsigned long InsetState::n_points() const
 {
   unsigned long n_pts = 0;
-  for (const auto gd : geo_divs_) {
+  for (const auto &gd : geo_divs_) {
     n_pts += gd.n_points();
   }
   return n_pts;
@@ -213,7 +214,7 @@ unsigned long InsetState::n_points() const
 unsigned int InsetState::n_rings() const
 {
   unsigned int n_rings = 0;
-  for (const auto gd: geo_divs_) {
+  for (const auto &gd: geo_divs_) {
     n_rings += gd.n_rings();
   }
   return n_rings;
@@ -224,15 +225,15 @@ const std::string InsetState::pos() const
   return pos_;
 }
 
-boost::multi_array<XYPoint, 2> *InsetState::proj()
-{
-  return &proj_;
-}
-
 void InsetState::push_back(const GeoDiv gd)
 {
   geo_divs_.push_back(gd);
   return;
+}
+
+boost::multi_array<XYPoint, 2> *InsetState::ref_to_cum_proj()
+{
+  return &cum_proj_;
 }
 
 std::vector<GeoDiv> *InsetState::ref_to_geo_divs()
@@ -243,6 +244,11 @@ std::vector<GeoDiv> *InsetState::ref_to_geo_divs()
 boost::multi_array<int, 2> *InsetState::ref_to_graticule_diagonals()
 {
   return &graticule_diagonals_;
+}
+
+boost::multi_array<XYPoint, 2> *InsetState::ref_to_proj()
+{
+  return &proj_;
 }
 
 FTReal2d *InsetState::ref_to_rho_ft()
@@ -261,40 +267,42 @@ void InsetState::set_area_errors()
   // area_on_cartogram / target_area - 1
   double sum_target_area = 0.0;
   double sum_cart_area = 0.0;
-  for (auto gd : geo_divs_) {
+  for (const auto &gd : geo_divs_) {
     sum_target_area += target_areas_at(gd.id());
     sum_cart_area += gd.area();
   }
-  for (auto gd : geo_divs_) {
-    double obj_area =
+  for (const auto &gd : geo_divs_) {
+    const double obj_area =
       target_areas_at(gd.id()) * sum_cart_area / sum_target_area;
     area_errors_[gd.id()] = std::abs((gd.area() / obj_area) - 1);
   }
   return;
 }
 
-void InsetState::set_geo_divs(std::vector<GeoDiv> geo_divs_new)
+void InsetState::set_geo_divs(const std::vector<GeoDiv> geo_divs_new)
 {
   geo_divs_.clear();
   geo_divs_ = geo_divs_new;
   return;
 }
 
-void InsetState::set_grid_dimensions(unsigned int lx, unsigned int ly)
+void InsetState::set_grid_dimensions(
+  const unsigned int lx, const unsigned int ly)
 {
   lx_ = lx;
   ly_ = ly;
   return;
 }
 
-void InsetState::set_horizontal_adj(std::vector<std::vector<intersection> > ha)
+void InsetState::set_horizontal_adj(
+  const std::vector<std::vector<intersection> > ha)
 {
   horizontal_adj_.clear();
   horizontal_adj_ = ha;
   return;
 }
 
-void InsetState::set_inset_name(std::string inset_name)
+void InsetState::set_inset_name(const std::string inset_name)
 {
   inset_name_ = inset_name;
   return;
@@ -306,7 +314,7 @@ void InsetState::set_map_scale(const double map_scale)
   return;
 }
 
-void InsetState::set_pos(std::string pos)
+void InsetState::set_pos(const std::string pos)
 {
   pos_ = pos;
   return;
@@ -332,7 +340,6 @@ void InsetState::set_ymin(const unsigned int new_ymin)
 
 bool InsetState::target_area_is_missing(const std::string id) const
 {
-
   // We use negative area as indication that GeoDiv has no target area
   return target_areas_.at(id) < 0.0;
 }
@@ -354,10 +361,19 @@ void InsetState::target_areas_replace(const std::string id, const double area)
   return;
 }
 
+double InsetState::total_inset_area() const
+{
+  double total_inset_area = 0.0;
+  for (const auto &gd : geo_divs_) {
+    total_inset_area += gd.area();
+  }
+  return total_inset_area;
+}
+
 double InsetState::total_target_area() const
 {
   double inset_total_target_area = 0;
-  for(auto &geo_div_target_area : target_areas_) {
+  for(const auto &geo_div_target_area : target_areas_) {
     inset_total_target_area += geo_div_target_area.second;
   }
   return inset_total_target_area;

@@ -92,8 +92,8 @@ void simplify_inset(InsetState *inset_state)
   // Store Polygons as a CT (Constrained Triangulation) object. Code inspired
   // by https://doc.cgal.org/latest/Polyline_simplification_2/index.html
   CT ct;
-  for (const auto gd : inset_state->geo_divs()) {
-    for (const auto pwh : gd.polygons_with_holes()) {
+  for (const auto &gd : inset_state->geo_divs()) {
+    for (const auto &pwh : gd.polygons_with_holes()) {
       ct.insert_constraint(pwh.outer_boundary());
       for (auto hi = pwh.holes_begin(); hi != pwh.holes_end(); ++hi) {
         ct.insert_constraint(*hi);
@@ -127,8 +127,8 @@ void simplify_inset(InsetState *inset_state)
     boost::counting_iterator<unsigned int>(0U),
     boost::counting_iterator<unsigned int>(simpl_pgns.size()));
   std::vector<int> matching_simpl_pgn;
-  for (const auto gd : inset_state->geo_divs()) {
-    for (const auto pwh : gd.polygons_with_holes()) {
+  for (const auto &gd : inset_state->geo_divs()) {
+    for (const auto &pwh : gd.polygons_with_holes()) {
       const int ext_index = simplified_polygon_index(pwh.outer_boundary(),
                                                      &simpl_pgns,
                                                      &simpl_bboxes,

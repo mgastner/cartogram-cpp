@@ -58,7 +58,7 @@ unsigned int GeoDiv::n_polygons_with_holes() const
 unsigned int GeoDiv::n_rings() const
 {
   unsigned int n_rings = 0;
-  for (const auto pwh : polygons_with_holes_) {
+  for (const auto &pwh : polygons_with_holes_) {
     n_rings += pwh.number_of_holes() + 1;  // Add 1 for external ring
   }
   return n_rings;

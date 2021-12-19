@@ -6,9 +6,10 @@
 #include <iostream>
 #include <algorithm>
 #include <vector>
+#include <omp.h>
 
 // Function to calculate the velocity at the grid points (x, y) with x =
-// 0.5, 1.5, ..., lx-0.5 and y = 0.5, 1.5, ..., ly-0.5 at time t.
+// 0.5, 1.5, ..., lx-0.5 and y = 0.5, 1.5, ..., ly-0.5 at time t
 void calculate_velocity(double t,
                         FTReal2d &grid_fluxx_init,
                         FTReal2d &grid_fluxy_init,
@@ -32,23 +33,41 @@ void calculate_velocity(double t,
   return;
 }
 
+bool all_points_are_in_domain(double delta_t,
+                              boost::multi_array<XYPoint, 2> *proj,
+                              boost::multi_array<XYPoint, 2> *v_intp,
+                              const unsigned int lx,
+                              const unsigned int ly)
+{
+  // Return false if and only if there exists a point that would be outside
+  // [0, lx] x [0, ly]
+  for (unsigned int i = 0; i < lx; ++i) {
+    for (unsigned int j = 0; j < ly; ++j) {
+      double x = (*proj)[i][j].x + 0.5 * delta_t * (*v_intp)[i][j].x;
+      double y = (*proj)[i][j].y + 0.5 * delta_t * (*v_intp)[i][j].y;
+      if (x < 0.0 || x > lx || y < 0.0 || y > ly) {
+        return false;
+      }
+    }
+  }
+  return true;
+}
+
 // Function to integrate the equations of motion with the fast flow-based
-// method.
+// method
 void flatten_density(InsetState *inset_state)
 {
   std::cerr << "In flatten_density()" << std::endl;
   const unsigned int lx = inset_state->lx();
   const unsigned int ly = inset_state->ly();
+  boost::multi_array<XYPoint, 2> &proj = *inset_state->ref_to_proj();
 
   // Constants for the numerical integrator
   const double inc_after_acc = 1.1;
   const double dec_after_not_acc = 0.75;
   const double abs_tol = (std::min(lx, ly) * 1e-6);
 
-  // Define proj and proj2 multi arrays
-  boost::multi_array<XYPoint, 2> &proj = *inset_state->proj();
-
-  // Resize proj multi array if running for the first time
+  // Resize proj multi-array if running for the first time
   if (proj.shape()[0] != lx || proj.shape()[1] != ly) {
     proj.resize(boost::extents[lx][ly]);
   }
@@ -92,16 +111,14 @@ void flatten_density(InsetState *inset_state)
   boost::multi_array<XYPoint, 2> v_intp_half(boost::extents[lx][ly]);
 
   // Initialize the Fourier transforms of gridvx[] and gridvy[] at
-  // every point on the lx-times-ly grid at t = 0. After this has
-  // finished, we do not need to do any further Fourier transforms for this
-  // round of integration.
-  // We must typecast lx as a double. Otherwise the ratios in the denominator
+  // every point on the lx-times-ly grid at t = 0. We must typecast lx and ly
+  // as double-precision numbers. Otherwise the ratios in the denominator
   // will evaluate as zero.
   double dlx = lx;
   double dly = ly;
 
-  // We temporarily insert the Fourier coefficients for the x- and
-  // y-components of the flux vector in grid_fluxx_init and grid_fluxy_init
+  // We temporarily insert the Fourier coefficients for the x-components and
+  // y-components of the flux vector into grid_fluxx_init and grid_fluxy_init
   for (unsigned int i = 0; i < lx-1; ++i) {
     double di = i;
     for (unsigned int j = 0; j < ly; ++j) {
@@ -172,7 +189,7 @@ void flatten_density(InsetState *inset_state)
         }
       }
 
-      // Use "explicit midpoint method".
+      // Use "explicit midpoint method"
       // x <- x + delta_t * v_x(x + 0.5*delta_t*v_x(x,y,t),
       //                        y + 0.5*delta_t*v_y(x,y,t),
       //                        t + 0.5*delta_t)
@@ -186,23 +203,10 @@ void flatten_density(InsetState *inset_state)
       // Make sure we do not pass a point outside [0, lx] x [0, ly] to
       // interpolate_bilinearly(). Otherwise decrease the time step below and
       // try again.
-      accept = true;
-      for (unsigned int i = 0; i < lx; ++i) {
-        for (unsigned int j = 0; j < ly; ++j) {
-          if ((proj[i][j].x + 0.5*delta_t*v_intp[i][j].x < 0.0) ||
-              (proj[i][j].x + 0.5*delta_t*v_intp[i][j].x > lx) ||
-              (proj[i][j].y + 0.5*delta_t*v_intp[i][j].y < 0.0) ||
-              (proj[i][j].y + 0.5*delta_t*v_intp[i][j].y > ly)) {
-            accept = false;
-            delta_t *= dec_after_not_acc;
-            break;
-          }
-        }
-        if (!accept) break;
-      }
+      accept = all_points_are_in_domain(delta_t, &proj, &v_intp, lx, ly);
       if (accept) {
 
-        // OK, we can run interpolate_bilinearly().
+        // Okay, we can run interpolate_bilinearly()
 
 #pragma omp parallel for
         for (unsigned int i = 0; i < lx; ++i) {
@@ -212,23 +216,21 @@ void flatten_density(InsetState *inset_state)
                 proj[i][j].x + 0.5*delta_t*v_intp[i][j].x,
                 proj[i][j].y + 0.5*delta_t*v_intp[i][j].y,
                 &grid_vx, 'x',
-                lx, ly
-                );
+                lx, ly);
             v_intp_half[i][j].y =
               interpolate_bilinearly(
                 proj[i][j].x + 0.5*delta_t*v_intp[i][j].x,
                 proj[i][j].y + 0.5*delta_t*v_intp[i][j].y,
                 &grid_vy, 'y',
-                lx, ly
-                );
+                lx, ly);
             mid[i][j].x = proj[i][j].x + v_intp_half[i][j].x * delta_t;
             mid[i][j].y = proj[i][j].y + v_intp_half[i][j].y * delta_t;
 
             // Do not accept the integration step if the maximum squared
             // difference between the Euler and midpoint proposals exceeds
             // abs_tol. Neither should we accept the integration step if one
-            // of the positions wandered out of the boundaries. If it
-            // happened, decrease the time step.
+            // of the positions wandered out of the domain. If one of these
+            // problems occurred, decrease the time step.
             if ((mid[i][j].x-eul[i][j].x) * (mid[i][j].x-eul[i][j].x) +
                 (mid[i][j].y-eul[i][j].y) * (mid[i][j].y-eul[i][j].y)
                 > abs_tol ||
@@ -244,7 +246,7 @@ void flatten_density(InsetState *inset_state)
       }
     }
 
-    // Control ouput.
+    // Control ouput
     if (iter % 10 == 0) {
       std::cerr << "iter = "
                 << iter

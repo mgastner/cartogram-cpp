@@ -10,7 +10,8 @@ void project(InsetState *inset_state)
 {
   const unsigned int lx = inset_state->lx();
   const unsigned int ly = inset_state->ly();
-  boost::multi_array<XYPoint, 2> &proj = *inset_state->proj();
+  boost::multi_array<XYPoint, 2> &proj = *inset_state->ref_to_proj();
+  boost::multi_array<XYPoint, 2> &cum_proj = *inset_state->ref_to_cum_proj();
 
   // Calculate displacement from proj array
   boost::multi_array<double, 2> xdisp(boost::extents[lx][ly]);
@@ -19,6 +20,24 @@ void project(InsetState *inset_state)
     for (unsigned int j=0; j<ly; ++j) {
       xdisp[i][j] = proj[i][j].x - i - 0.5;
       ydisp[i][j] = proj[i][j].y - j - 0.5;
+    }
+  }
+
+  // Cumulative projection
+  for (unsigned int i = 0; i < lx; ++i) {
+    for (unsigned int j = 0; j < ly; ++j) {
+
+      // Calculate displacement for cumulative graticule coordinates
+      double graticule_intp_x = interpolate_bilinearly(cum_proj[i][j].x,
+                                                       cum_proj[i][j].y,
+                                                       &xdisp, 'x', lx, ly);
+      double graticule_intp_y = interpolate_bilinearly(cum_proj[i][j].x,
+                                                       cum_proj[i][j].y,
+                                                       &ydisp, 'y', lx, ly);
+
+      // Update cumulative graticule coordinates
+      cum_proj[i][j].x += graticule_intp_x;
+      cum_proj[i][j].y += graticule_intp_y;
     }
   }
   std::vector<GeoDiv> new_geo_divs;
@@ -78,7 +97,8 @@ void project(InsetState *inset_state)
 // In some chosen_diag() and transformed_triangle(), input x-coordinates can
 // only be 0, lx, or 0.5, 1.5, ..., lx-0.5. A similar rule applies to the
 // y-coordinates.
-void exit_if_point_not_on_grid_or_edge(XYPoint pt, InsetState *inset_state)
+void exit_if_point_not_on_grid_or_edge(const XYPoint pt,
+                                       InsetState *inset_state)
 {
   if ((pt.x != 0.0 && pt.x != inset_state->lx() && pt.x - int(pt.x) != 0.5) ||
       (pt.y != 0.0 && pt.y != inset_state->ly() && pt.y - int(pt.y) != 0.5)) {
@@ -94,34 +114,48 @@ void exit_if_point_not_on_grid_or_edge(XYPoint pt, InsetState *inset_state)
   return;
 }
 
+XYPoint projected_point_on_grid_or_edge(const XYPoint pt,
+                                        InsetState *inset_state)
+{
+  exit_if_point_not_on_grid_or_edge(pt, inset_state);
+  boost::multi_array<XYPoint, 2> &proj = *inset_state->ref_to_proj();
+  const unsigned int lx = inset_state->lx();
+  const unsigned int ly = inset_state->ly();
+  XYPoint transf_pt;
+  const unsigned int proj_x =
+    std::min(static_cast<int>(lx) - 1, static_cast<int>(pt.x));
+  const unsigned int proj_y =
+    std::min(static_cast<int>(ly) - 1, static_cast<int>(pt.y));
+  transf_pt.x = (pt.x == 0.0 || pt.x == inset_state->lx()) ?
+                pt.x :
+                proj[proj_x][proj_y].x;
+  transf_pt.y = (pt.y == 0.0 || pt.y == inset_state->ly()) ?
+                pt.y :
+                proj[proj_x][proj_y].y;
+  return transf_pt;
+}
+
+// TODO: chosen_diag() seems to be more naturally thought of as a boolean
+// than an integer.
+
 // For a graticule cell with corners stored in the XYPoint array v, determine
 // whether the diagonal from v[0] to v[2] is inside the graticule cell. If
 // yes, return 0. Otherwise, if the diagonal from v[1] to v[3] is inside the
 // graticule cell, return 1. If neither of the two diagonals is inside the
 // graticule cell, then the cell's topology is invalid; thus, we exit with an
 // error message.
-int chosen_diag(XYPoint v[4], int *num_concave, InsetState *inset_state)
+int chosen_diag(const XYPoint v[4],
+                unsigned int *n_concave,
+                InsetState *inset_state)
 {
-  boost::multi_array<XYPoint, 2> &proj = *inset_state->proj();
-  const unsigned int lx = inset_state->lx();
-  const unsigned int ly = inset_state->ly();
-
-  // The input v[i].x can only be 0, lx, or 0.5, 1.5, ..., lx-0.5.
-  // A similar rule applies to the y-coordinates.
-  for (unsigned int i = 0; i < 4; i++) {
-    exit_if_point_not_on_grid_or_edge(v[i], inset_state);
-  }
-
   // Transform the coordinates in v to the corresponding coordinates on the
-  // projected grid. If the x-coordinate is 0 or lx, we keep the input.
+  // projected grid. If the x-coordinate is 0 or lx, we keep the input. The
+  // input v[i].x can only be 0, lx, or 0.5, 1.5, ..., lx-0.5. A similar rule
+  // applies to the y-coordinates. This condition is checked in
+  // projected_point_on_grid_or_edge().
   XYPoint tv[4];
-  for (unsigned int i = 0; i < 4; i++) {
-    tv[i].x = (v[i].x != 0 && v[i].x != lx) ?
-              proj[int(v[i].x)][int(v[i].y)].x :
-              v[i].x;
-    tv[i].y = (v[i].y != 0 && v[i].y != ly) ?
-              proj[int(v[i].x)][int(v[i].y)].y :
-              v[i].y;
+  for (unsigned int i = 0; i < 4; ++i) {
+    tv[i] = projected_point_on_grid_or_edge(v[i], inset_state);
   }
 
   // Get the two possible midpoints
@@ -140,7 +174,7 @@ int chosen_diag(XYPoint v[4], int *num_concave, InsetState *inset_state)
 
   // Check if graticule cell is concave
   if (!trans_graticule.is_convex()) {
-    num_concave += 1;
+    n_concave += 1;
   }
   if (trans_graticule.bounded_side(Point(midpoint0.x, midpoint0.y)) ==
       CGAL::ON_BOUNDED_SIDE) {
@@ -155,7 +189,7 @@ int chosen_diag(XYPoint v[4], int *num_concave, InsetState *inset_state)
   std::cerr << "(" << tv[1].x << ", " << tv[1].y << ")\n";
   std::cerr << "(" << tv[2].x << ", " << tv[2].y << ")\n";
   std::cerr << "(" << tv[3].x << ", " << tv[3].y << ")\n";
-  std::cerr << "i: " << int(v[0].x) << "j: " << int(v[0].y) << "\n";
+  std::cerr << "i: " << int(v[0].x) << ", j: " << int(v[0].y) << std::endl;
   exit(1);
 }
 
@@ -169,9 +203,9 @@ void fill_graticule_diagonals(InsetState *inset_state)
   // Initialize array if running for the first time
   if (graticule_diagonals.shape()[0] != lx ||
       graticule_diagonals.shape()[1] != ly) {
-    graticule_diagonals.resize(boost::extents[lx][ly]);
+    graticule_diagonals.resize(boost::extents[lx - 1][ly - 1]);
   }
-  int num_concave = 0;  // Count concave graticule cells
+  unsigned int n_concave = 0;  // Count concave graticule cells
   for (unsigned int i = 0; i < lx - 1; ++i) {
     for (unsigned int j = 0; j < ly - 1; ++j) {
       XYPoint v[4];
@@ -183,44 +217,39 @@ void fill_graticule_diagonals(InsetState *inset_state)
       v[2].y = double(j) + 1.5;
       v[3].x = double(i) + 0.5;
       v[3].y = double(j) + 1.5;
-      graticule_diagonals[i][j] = chosen_diag(v, &num_concave, inset_state);
+      graticule_diagonals[i][j] = chosen_diag(v, &n_concave, inset_state);
     }
   }
-  std::cerr << "Number of concave graticule cells: " << num_concave << "\n";
+  std::cerr << "Number of concave graticule cells: "
+            << n_concave
+            << std::endl;
   return;
 }
 
 // TODO: Using an std::vector seems overkill because we know the size of the
-// vector. Should we implement this function with C arrays instead?
-std::vector<XYPoint> transformed_triangle(std::vector<XYPoint> triangle,
+// vector. Should we implement this function with C arrays or std::array
+// instead?
+std::vector<XYPoint> transformed_triangle(const std::vector<XYPoint> tri,
                                           InsetState *inset_state)
 {
-  boost::multi_array<XYPoint, 2> &proj = *inset_state->proj();
-  std::vector<XYPoint> transformed_triangle;
-  for(XYPoint point : triangle) {
-    exit_if_point_not_on_grid_or_edge(point, inset_state);
-    XYPoint transformed_point;
-    transformed_point.x = (point.x == 0.0 || point.x == inset_state->lx()) ?
-                          point.x :
-                          proj[int(point.x)][int(point.y)].x;
-    transformed_point.y = (point.y == 0.0 || point.y == inset_state->ly()) ?
-                          point.y :
-                          proj[int(point.x)][int(point.y)].y;
-    transformed_triangle.push_back(transformed_point);
+  std::vector<XYPoint> transf_tri;
+  for(XYPoint pt : tri) {
+    exit_if_point_not_on_grid_or_edge(pt, inset_state);
+    XYPoint transf_pt = projected_point_on_grid_or_edge(pt, inset_state);
+    transf_tri.push_back(transf_pt);
   }
-  return transformed_triangle;
+  return transf_tri;
 }
 
-std::vector<XYPoint> triangle_that_contains_point(const double x,
-                                                  const double y,
+std::vector<XYPoint> triangle_that_contains_point(const Point pt,
                                                   InsetState *inset_state)
 {
   const unsigned int lx = inset_state->lx();
   const unsigned int ly = inset_state->ly();
-  if (x < 0 || x > lx || y < 0 || y > ly) {
+  if (pt.x() < 0 || pt.x() > lx || pt.y() < 0 || pt.y() > ly) {
     std::cerr << "ERROR: coordinate outside bounding box in "
               << "triangle_that_contains_point().\n";
-    std::cerr << "x=" << x << ", y=" << y << std::endl;
+    std::cerr << "pt = " << pt << std::endl;
     exit(1);
   }
   boost::multi_array<int, 2> &graticule_diagonals =
@@ -228,72 +257,72 @@ std::vector<XYPoint> triangle_that_contains_point(const double x,
 
   // Get original graticule coordinates
   XYPoint v[4];
-  v[0].x = std::max(0.0, floor(x + 0.5) - 0.5);
-  v[0].y = std::max(0.0, floor(y + 0.5) - 0.5);
-  v[1].x = std::min(double(lx), floor(x + 0.5) + 0.5);
+  v[0].x = std::max(0.0, floor(pt.x() + 0.5) - 0.5);
+  v[0].y = std::max(0.0, floor(pt.y() + 0.5) - 0.5);
+  v[1].x = std::min(double(lx), floor(pt.x() + 0.5) + 0.5);
   v[1].y = v[0].y;
-  v[2].x = std::min(double(lx), floor(x + 0.5) + 0.5);
-  v[2].y = std::min(double(ly), floor(y + 0.5) + 0.5);
+  v[2].x = v[1].x;
+  v[2].y = std::min(double(ly), floor(pt.y() + 0.5) + 0.5);
   v[3].x = v[0].x;
-  v[3].y = std::min(double(ly), floor(y + 0.5) + 0.5);
+  v[3].y = v[2].y;
 
   // Assuming that the transformed graticule does not have self-intersections,
   // at least one of the diagonals must be completely inside the graticule.
   // We use that diagonal to split the graticule into two triangles.
   int diag;
   if (v[0].x == 0.0 || v[0].y == 0.0 || v[2].x == lx || v[2].y == ly) {
-    int concave = 0;
+    unsigned int concave = 0;  // Placeholder value
     diag = chosen_diag(v, &concave, inset_state);
   } else {
     diag = graticule_diagonals[int(v[0].x)][int(v[0].y)];
   }
-  Polygon triangle1;
-  Polygon triangle2;
+  Polygon tri1;
+  Polygon tri2;
   if (diag == 0) {
-    triangle1.push_back(Point(v[0].x, v[0].y));
-    triangle1.push_back(Point(v[1].x, v[1].y));
-    triangle1.push_back(Point(v[2].x, v[2].y));
-    triangle2.push_back(Point(v[0].x, v[0].y));
-    triangle2.push_back(Point(v[2].x, v[2].y));
-    triangle2.push_back(Point(v[3].x, v[3].y));
+    tri1.push_back(Point(v[0].x, v[0].y));
+    tri1.push_back(Point(v[1].x, v[1].y));
+    tri1.push_back(Point(v[2].x, v[2].y));
+    tri2.push_back(Point(v[0].x, v[0].y));
+    tri2.push_back(Point(v[2].x, v[2].y));
+    tri2.push_back(Point(v[3].x, v[3].y));
   } else {
-    triangle1.push_back(Point(v[0].x, v[0].y));
-    triangle1.push_back(Point(v[1].x, v[1].y));
-    triangle1.push_back(Point(v[3].x, v[3].y));
-    triangle2.push_back(Point(v[1].x, v[1].y));
-    triangle2.push_back(Point(v[2].x, v[2].y));
-    triangle2.push_back(Point(v[3].x, v[3].y));
+    tri1.push_back(Point(v[0].x, v[0].y));
+    tri1.push_back(Point(v[1].x, v[1].y));
+    tri1.push_back(Point(v[3].x, v[3].y));
+    tri2.push_back(Point(v[1].x, v[1].y));
+    tri2.push_back(Point(v[2].x, v[2].y));
+    tri2.push_back(Point(v[3].x, v[3].y));
   }
 
   // Determine which untransformed triangle the given point is in.
   // If the point is in neither, an error is raised.
-  std::vector<XYPoint> triangle_coordinates;
-  if ((triangle1.bounded_side(Point(x, y)) == CGAL::ON_BOUNDED_SIDE) ||
-      (triangle1.bounded_side(Point(x, y)) == CGAL::ON_BOUNDARY)) {
-    for (unsigned int i = 0; i < triangle1.size(); ++i) {
-      XYPoint triangle_point;
-      triangle_point.x = triangle1[i][0];
-      triangle_point.y = triangle1[i][1];
-      triangle_coordinates.push_back(triangle_point);
+  std::vector<XYPoint> tri_coords;
+  if ((tri1.bounded_side(pt) == CGAL::ON_BOUNDED_SIDE) ||
+      (tri1.bounded_side(pt) == CGAL::ON_BOUNDARY)) {
+    for (unsigned int i = 0; i < tri1.size(); ++i) {
+      XYPoint tri_pt;
+      tri_pt.x = tri1[i][0];
+      tri_pt.y = tri1[i][1];
+      tri_coords.push_back(tri_pt);
     }
-  } else if ((triangle2.bounded_side(Point(x, y)) == CGAL::ON_BOUNDED_SIDE) ||
-             (triangle2.bounded_side(Point(x, y)) == CGAL::ON_BOUNDARY)) {
-    for (unsigned int i = 0; i < triangle2.size(); ++i) {
-      XYPoint triangle_point;
-      triangle_point.x = triangle2[i][0];
-      triangle_point.y = triangle2[i][1];
-      triangle_coordinates.push_back(triangle_point);
+  } else if ((tri2.bounded_side(pt) == CGAL::ON_BOUNDED_SIDE) ||
+             (tri2.bounded_side(pt) == CGAL::ON_BOUNDARY)) {
+    for (unsigned int i = 0; i < tri2.size(); ++i) {
+      XYPoint tri_pt;
+      tri_pt.x = tri2[i][0];
+      tri_pt.y = tri2[i][1];
+      tri_coords.push_back(tri_pt);
     }
   } else {
-    std::cerr << "Point not in graticule cell!\n";
+    std::cerr << "Point not in graticule cell!" << std::endl;
     exit(1);
   }
-  return triangle_coordinates;
+  return tri_coords;
 }
 
-XYPoint affine_trans(std::vector<XYPoint> *tri,
-                     std::vector<XYPoint> *org_tri,
-                     double x, double y)
+XYPoint affine_trans(const std::vector<XYPoint> *tri,
+                     const std::vector<XYPoint> *org_tri,
+                     const Point pt)
 {
   // For each point, we make the following transformation. Suppose we find
   // that, before the cartogram transformation, a point (x, y) is in the
@@ -317,85 +346,72 @@ XYPoint affine_trans(std::vector<XYPoint> *tri,
   // We have A^{-1} = (1/det(A)) |c2-a2 a1-c1 a2*c1-a1*c2|. By multiplying
   //                             |a2-b2 b1-a1 a1*b2-a2*b1|
   //                              -----------------------
-  // PA^{-1} we obtain t11, t12, t13, t21, t22, t23. If the original
+  // PA^{-1} we obtain t11, t12, t13, t21, t22, and t23. If the original
   // coordinates are (x, y) on the unprojected map, then the transformed
   // coordinates are:
   // post.x = t11*x + t12*y + t13, post.y = t21*x + t22*y + t23.
   XYPoint pre;
-  pre.x = x;
-  pre.y = y;
+  pre.x = pt.x();
+  pre.y = pt.y();
 
-  // Old triangle (a, b, c) expressed as matrix A
-  Matrix abc_mA((*org_tri)[0], (*org_tri)[1], (*org_tri)[2]);
+  // Old triangle (a, b, c) expressed as matrix (A in the comment above)
+  Matrix abc_m((*org_tri)[0], (*org_tri)[1], (*org_tri)[2]);
 
-  // New triangle (p, q, r) expressed as matrix P
-  Matrix pqr_mP((*tri)[0], (*tri)[1], (*tri)[2]);
+  // New triangle (p, q, r) expressed as matrix (P in the comment above)
+  Matrix pqr_m((*tri)[0], (*tri)[1], (*tri)[2]);
 
   // Transformation matrix T
-  Matrix mT = pqr_mP.multiplied_with(abc_mA.inverse());
+  Matrix t = pqr_m.multiplied_with(abc_m.inverse());
 
   // Transformed point
-  XYPoint post = mT.transformed_XYPoint(pre);
+  XYPoint post = t.transformed_XYPoint(pre);
   return post;
+}
+
+XYPoint projected_point_with_triangulation(const Point pt,
+                                           InsetState *inset_state)
+{
+  // Get the untransformed triangle the point is in
+  std::vector<XYPoint> tri = triangle_that_contains_point(pt, inset_state);
+
+  // Get the coordinates of the transformed triangle
+  std::vector<XYPoint> transf_tri = transformed_triangle(tri, inset_state);
+
+  // Compute the projected point from the untransformed and transformed
+  // triangles
+  return affine_trans(&transf_tri, &tri, pt);
 }
 
 void project_with_triangulation(InsetState *inset_state)
 {
+  // Project GeoDivs
   std::vector<GeoDiv> new_geo_divs;
-  for (auto gd : inset_state->geo_divs()) {
+  for (const auto &gd : inset_state->geo_divs()) {
 
     // For each GeoDiv
     GeoDiv new_gd(gd.id());
-    for (auto pwh : gd.polygons_with_holes()) {
+    for (const auto &pwh : gd.polygons_with_holes()) {
 
       // For each polygon with holes
-      Polygon old_ext_ring = pwh.outer_boundary();
+      const Polygon old_ext_ring = pwh.outer_boundary();
       Polygon new_ext_ring;
       for (unsigned int i = 0; i < old_ext_ring.size(); ++i) {
 
-        // Get the untransformed triangle the point is in.
-        // TODO: Should we combine the first two arguments into a Point and
-        // pass it as a single argument?
-        std::vector<XYPoint> ext_ring_triangle =
-          triangle_that_contains_point(old_ext_ring[i][0], old_ext_ring[i][1],
-                                       inset_state);
-
-        // Get the coordinates of the transformed triangle.
-        std::vector<XYPoint> transformed_ext_ring_triangle =
-          transformed_triangle(ext_ring_triangle, inset_state);
-
-        // Compute the projected point from the untransformed and transformed
-        // triangles
-        // TODO: Should we combine the last two arguments into a Point and
-        // pass it as a single argument?
-        XYPoint old_ext_ring_intp =
-          affine_trans(&transformed_ext_ring_triangle,
-                       &ext_ring_triangle,
-                       old_ext_ring[i][0], old_ext_ring[i][1]);
-
         // Update exterior ring coordinates
-        new_ext_ring.push_back(Point(old_ext_ring_intp.x,
-                                     old_ext_ring_intp.y));
+        const XYPoint new_ext_ring_pt =
+          projected_point_with_triangulation(old_ext_ring[i], inset_state);
+        new_ext_ring.push_back(Point(new_ext_ring_pt.x, new_ext_ring_pt.y));
       }
       std::vector<Polygon> hole_v;
       for (auto hci = pwh.holes_begin(); hci != pwh.holes_end(); ++hci) {
-        Polygon old_hole = *hci;
+        const Polygon old_hole = *hci;
         Polygon new_hole;
         for (unsigned int i = 0; i < old_hole.size(); ++i) {
 
-          // TODO: The code below feels like a near copy of the code for the
-          // exterior ring. Can it be turned into a function?
-          std::vector<XYPoint> hole_triangle =
-            triangle_that_contains_point(old_hole[i][0], old_hole[i][1],
-                                         inset_state);
-          std::vector<XYPoint> transformed_hole_triangle =
-            transformed_triangle(hole_triangle, inset_state);
-          XYPoint old_hole_intp =
-            affine_trans(&transformed_hole_triangle,
-                         &hole_triangle,
-                         old_hole[i][0], old_hole[i][1]);
-          new_hole.push_back(Point(old_hole_intp.x,
-                                   old_hole_intp.y));
+          // Update hole coordinates
+          const XYPoint new_hole_pt =
+            projected_point_with_triangulation(old_hole[i], inset_state);
+          new_hole.push_back(Point(new_hole_pt.x, new_hole_pt.y));
         }
         hole_v.push_back(new_hole);
       }
@@ -407,5 +423,17 @@ void project_with_triangulation(InsetState *inset_state)
     new_geo_divs.push_back(new_gd);
   }
   inset_state->set_geo_divs(new_geo_divs);
+
+  // Cumulative projection
+  const unsigned int lx = inset_state->lx();
+  const unsigned int ly = inset_state->ly();
+  boost::multi_array<XYPoint, 2> &cum_proj = *inset_state->ref_to_cum_proj();
+  for (unsigned int i = 0; i < lx; ++i) {
+    for (unsigned int j = 0; j < ly; ++j) {
+      const Point old_cum_proj(cum_proj[i][j].x, cum_proj[i][j].y);
+      cum_proj[i][j] =
+        projected_point_with_triangulation(old_cum_proj, inset_state);
+    }
+  }
   return;
 }
