@@ -6,28 +6,6 @@ This program uses the Fast Flow-based method developed by Michael T. Gastner, Vi
 
 Gastner MT, Seguy V, More P. _Fast flow-based algorithm for creating density-equalizing map projections_. Proc Natl Acad Sci USA 115(10):E2156–E2164 (2018). <https://doi.org/10.1073/pnas.0400280101>
 
-<!-- @import "[TOC]" {cmd="toc" depthFrom=1 depthTo=6 orderedList=false} -->
-
-<!-- code_chunk_output -->
-
-- [cartogram_cpp](#cartogram_cpp)
-  - [Dependencies](#dependencies)
-    - [Ubuntu](#ubuntu)
-      - [Installing GNU gcc-11](#installing-gnu-gcc-11)
-      - [Installing nlohmann's JSON parser](#installing-nlohmanns-json-parser)
-      - [Installing CGAL](#installing-cgal)
-      - [Installing OpenMP](#installing-openmp)
-      - [Installing FFTW3](#installing-fftw3)
-    - [macOS](#macos)
-      - [Intel-Only Instructions (x86, Macs released before 2020)](#intel-only-instructions-x86-macs-released-before-2020)
-      - [ARM-Only Instructions (M1, M1 Pro, M1 Max, etc.)](#arm-only-instructions-m1-m1-pro-m1-max-etc)
-  - [Installation and Usage](#installation-and-usage)
-    - [Installation](#installation)
-    - [Usage](#usage)
-    - [Uninstallation](#uninstallation)
-
-<!-- /code_chunk_output -->
-
 ## Dependencies
 
 ### Ubuntu
@@ -53,8 +31,6 @@ GNU gcc-11 is currently unavailable from apt by default. You may find installati
         make
         sudo make install
 
-<!-- ##### Installing CGAL [CGAL Homepage](https://www.cgal.org/) `sudo apt-get install libcgal-dev` -->
-
 #### Installing CGAL
 
 [CGAL Homepage](https://www.cgal.org/)
@@ -63,22 +39,22 @@ CGAL Version 5.3 is currently unavailable from apt. Please follow the instructio
 
 You may download the latest release [here](https://github.com/CGAL/cgal/releases). You may find installation instructions [here](https://doc.cgal.org/latest/Manual/usage.html#title4).
 
-For posterity: Once version 5.3 is available through apt-get (you may check [here](https://packages.ubuntu.com/search?keywords=libcgal-dev&searchon=names&suite=impish§ion=all)), you may run the following command to install it.
+For posterity: Once version 5.3 is available through apt (you may check [here](https://packages.ubuntu.com/search?keywords=libcgal-dev&searchon=names&suite=impish§ion=all)), you may run the following command to install it.
 
-    sudo apt-get install libcgal-dev
+    sudo apt install libcgal-dev
 
 #### Installing OpenMP
 
 [OpenMP Homepage](https://www.openmp.org/)
 
-    sudo apt-get install libomp-dev
+    sudo apt install libomp-dev
 
 #### Installing FFTW3
 
 1.  Go to [FFTW's website](http://www.fftw.org/download.html "FFTW Downloads Page").
 2.  Install the latest version of FFTW.
-3.  Unarchive the file with: `tar zxvf fftw-3.3.9.tar.gz` (Note: the version number may be different).
-4.  Go to the directory with: `cd fftw-3.3.9`.
+3.  Unarchive the file with: `tar zxvf fftw-3.3.10.tar.gz` (Note: the version number may be different).
+4.  Go to the directory with: `cd fftw-3.3.10`.
 5.  Run the following commands (you may copy and paste all of them at once):
 
         ./configure
