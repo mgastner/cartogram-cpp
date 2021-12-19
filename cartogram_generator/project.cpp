@@ -97,7 +97,8 @@ void project(InsetState *inset_state)
 // In some chosen_diag() and transformed_triangle(), input x-coordinates can
 // only be 0, lx, or 0.5, 1.5, ..., lx-0.5. A similar rule applies to the
 // y-coordinates.
-void exit_if_point_not_on_grid_or_edge(XYPoint pt, InsetState *inset_state)
+void exit_if_point_not_on_grid_or_edge(const XYPoint pt,
+                                       InsetState *inset_state)
 {
   if ((pt.x != 0.0 && pt.x != inset_state->lx() && pt.x - int(pt.x) != 0.5) ||
       (pt.y != 0.0 && pt.y != inset_state->ly() && pt.y - int(pt.y) != 0.5)) {
@@ -113,19 +114,24 @@ void exit_if_point_not_on_grid_or_edge(XYPoint pt, InsetState *inset_state)
   return;
 }
 
-XYPoint projected_point_on_grid_or_edge(XYPoint pt, InsetState *inset_state)
+XYPoint projected_point_on_grid_or_edge(const XYPoint pt,
+                                        InsetState *inset_state)
 {
   exit_if_point_not_on_grid_or_edge(pt, inset_state);
   boost::multi_array<XYPoint, 2> &proj = *inset_state->ref_to_proj();
   const unsigned int lx = inset_state->lx();
   const unsigned int ly = inset_state->ly();
   XYPoint transf_pt;
-  int proj_x = std::min(static_cast<int>(lx) - 1, static_cast<int>(pt.x));
-  int proj_y = std::min(static_cast<int>(ly) - 1, static_cast<int>(pt.y));
+  const unsigned int proj_x =
+    std::min(static_cast<int>(lx) - 1, static_cast<int>(pt.x));
+  const unsigned int proj_y =
+    std::min(static_cast<int>(ly) - 1, static_cast<int>(pt.y));
   transf_pt.x = (pt.x == 0.0 || pt.x == inset_state->lx()) ?
-                pt.x : proj[proj_x][proj_y].x;
+                pt.x :
+                proj[proj_x][proj_y].x;
   transf_pt.y = (pt.y == 0.0 || pt.y == inset_state->ly()) ?
-                pt.y : proj[proj_x][proj_y].y;
+                pt.y :
+                proj[proj_x][proj_y].y;
   return transf_pt;
 }
 
@@ -138,7 +144,9 @@ XYPoint projected_point_on_grid_or_edge(XYPoint pt, InsetState *inset_state)
 // graticule cell, return 1. If neither of the two diagonals is inside the
 // graticule cell, then the cell's topology is invalid; thus, we exit with an
 // error message.
-int chosen_diag(XYPoint v[4], int *num_concave, InsetState *inset_state)
+int chosen_diag(const XYPoint v[4],
+                unsigned int *n_concave,
+                InsetState *inset_state)
 {
   // Transform the coordinates in v to the corresponding coordinates on the
   // projected grid. If the x-coordinate is 0 or lx, we keep the input. The
@@ -166,7 +174,7 @@ int chosen_diag(XYPoint v[4], int *num_concave, InsetState *inset_state)
 
   // Check if graticule cell is concave
   if (!trans_graticule.is_convex()) {
-    num_concave += 1;
+    n_concave += 1;
   }
   if (trans_graticule.bounded_side(Point(midpoint0.x, midpoint0.y)) ==
       CGAL::ON_BOUNDED_SIDE) {
@@ -197,7 +205,7 @@ void fill_graticule_diagonals(InsetState *inset_state)
       graticule_diagonals.shape()[1] != ly) {
     graticule_diagonals.resize(boost::extents[lx - 1][ly - 1]);
   }
-  int num_concave = 0;  // Count concave graticule cells
+  unsigned int n_concave = 0;  // Count concave graticule cells
   for (unsigned int i = 0; i < lx - 1; ++i) {
     for (unsigned int j = 0; j < ly - 1; ++j) {
       XYPoint v[4];
@@ -209,11 +217,11 @@ void fill_graticule_diagonals(InsetState *inset_state)
       v[2].y = double(j) + 1.5;
       v[3].x = double(i) + 0.5;
       v[3].y = double(j) + 1.5;
-      graticule_diagonals[i][j] = chosen_diag(v, &num_concave, inset_state);
+      graticule_diagonals[i][j] = chosen_diag(v, &n_concave, inset_state);
     }
   }
   std::cerr << "Number of concave graticule cells: "
-            << num_concave
+            << n_concave
             << std::endl;
   return;
 }
@@ -221,7 +229,7 @@ void fill_graticule_diagonals(InsetState *inset_state)
 // TODO: Using an std::vector seems overkill because we know the size of the
 // vector. Should we implement this function with C arrays or std::array
 // instead?
-std::vector<XYPoint> transformed_triangle(std::vector<XYPoint> tri,
+std::vector<XYPoint> transformed_triangle(const std::vector<XYPoint> tri,
                                           InsetState *inset_state)
 {
   std::vector<XYPoint> transf_tri;
@@ -263,7 +271,7 @@ std::vector<XYPoint> triangle_that_contains_point(const Point pt,
   // We use that diagonal to split the graticule into two triangles.
   int diag;
   if (v[0].x == 0.0 || v[0].y == 0.0 || v[2].x == lx || v[2].y == ly) {
-    int concave = 0;
+    unsigned int concave = 0;  // Placeholder value
     diag = chosen_diag(v, &concave, inset_state);
   } else {
     diag = graticule_diagonals[int(v[0].x)][int(v[0].y)];
@@ -312,8 +320,8 @@ std::vector<XYPoint> triangle_that_contains_point(const Point pt,
   return tri_coords;
 }
 
-XYPoint affine_trans(std::vector<XYPoint> *tri,
-                     std::vector<XYPoint> *org_tri,
+XYPoint affine_trans(const std::vector<XYPoint> *tri,
+                     const std::vector<XYPoint> *org_tri,
                      const Point pt)
 {
   // For each point, we make the following transformation. Suppose we find
