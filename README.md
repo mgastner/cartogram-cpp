@@ -63,58 +63,17 @@ For posterity: Once version 5.3 is available through apt (you may check [here](h
 
 ### macOS
 
-#### Intel-Only Instructions (x86, Macs released before 2020)
+#### Installing Homebrew
 
-1.  Install [homebrew](brew.sh) by running the following command:
+Install [homebrew](brew.sh) by running the following command:
 
-        /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+    /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
 
-2.  Install gcc-11, pkg-config, boost, fftw, cgal, nlohmann-json and cmake.
+#### Installing dependencies through Homebrew
 
-        brew install gcc@11 pkg-config boost fftw cgal nlohmann-json cmake
+Install gcc-11, pkg-config, boost, fftw, cgal, nlohmann-json, and cmake by running the following command:
 
-* * *
-
-#### ARM-Only Instructions (M1, M1 Pro, M1 Max, etc.)
-
-1.  Go to your applications folder.
-2.  Right-click on your Terminal and duplicate it.
-3.  Rename your newly duplicated Terminal to `x86 Terminal` (or something else of your choice).
-4.  Right-click on the new Terminal and select `Get Info`.
-5.  On this page, make sure to select `Open using Rosetta`.
-6.  You now have an x86 terminal, which you can use to build other x86 binaries as well.
-7.  Install [homebrew](brew.sh) by running the following command:
-
-        /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
-
-8.  Open your `zshrc` by running the following commands:
-
-        touch ~/.zshrc
-        open -a TextEdit ~/.zshrc
-
-9.  Insert the following line:
-
-        alias brew86='arch -x86_64 /usr/local/Homebrew/bin/brew'
-
-    and save the file.
-
-10. Make sure `zsh` knows you've updated your `zshrc` with:
-
-        source ~/.zshrc
-
-    You may confirm that you followed the instructions correctly by executing the following command:
-
-        type brew86
-
-    The output for the above command should be:
-
-    > brew86 is an alias for arch -x86_64 /usr/local/Homebrew/bin/brew
-
-11. Finally, install the required dependencies by running:
-
-        brew86 install gcc@11 pkg-config boost fftw cgal nlohmann-json cmake
-
-12. You must use the `x86 Terminal` that you created in steps 1-6 to install the program. Thereafter, you may run the program in any terminal of your preference (opened through Rosetta 2, or not). However, to contribute to the project's development, you must switch back to the `x86 Terminal` to re-compile the program, if you make any changes to the source code.  
+    brew install llvm pkg-config boost fftw cgal nlohmann-json cmake
 
 ## Installation and Usage
 
