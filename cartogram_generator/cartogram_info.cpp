@@ -124,8 +124,8 @@ void CartogramInfo::replace_missing_and_zero_target_areas()
     // If all target areas are zero or missing, we assign the minimum GeoDiv
     // area (instead of the minimum target area) to min_positive_area
     if (min_positive_area == dbl_inf) {
-      for (auto const &inset_state : inset_states_ | std::views::values) {
-        for (auto const &gd : inset_state.geo_divs()) {
+      for (const auto &inset_state : inset_states_ | std::views::values) {
+        for (const auto &gd : inset_state.geo_divs()) {
           min_positive_area = std::min(min_positive_area, gd.area());
         }
       }

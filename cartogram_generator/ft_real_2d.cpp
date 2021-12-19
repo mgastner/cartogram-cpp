@@ -23,7 +23,7 @@ void FTReal2d::allocate(const unsigned int lx, const unsigned int ly)
   }
   lx_ = lx;
   ly_ = ly;
-  array_ = (double*) fftw_malloc(lx_ * ly_ * sizeof(double));
+  array_ = static_cast<double*>(fftw_malloc(lx_ * ly_ * sizeof(double)));
   return;
 }
 

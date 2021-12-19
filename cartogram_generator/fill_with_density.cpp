@@ -61,7 +61,7 @@ void fill_with_density(bool plot_density, InsetState* inset_state)
   unsigned int res = 16;
 
   // A vector (map_intersections) to store vectors of intersections
-  int n_rays = (int) (inset_state->ly() * res);
+  int n_rays = static_cast<int>(inset_state->ly() * res);
   std::vector<std::vector<intersection> > map_intersections(n_rays);
 
   // Density numerator and denominator for each graticule cell
@@ -84,7 +84,7 @@ void fill_with_density(bool plot_density, InsetState* inset_state)
     // Iterate through "polygons with holes" in inset_state
     for (unsigned int j = 0; j < gd.n_polygons_with_holes(); ++j) {
       Polygon_with_holes pwh = gd.polygons_with_holes()[j];
-      CGAL::Bbox_2 bb = pwh.bbox();
+      Bbox bb = pwh.bbox();
 
       // Cycle through y-coordinates in bounding box of pwh
       for (unsigned int k = floor(bb.ymin()) - 1;
@@ -204,10 +204,10 @@ void fill_with_density(bool plot_density, InsetState* inset_state)
 
       // Intersections for one ray
       std::vector<intersection> intersections =
-        map_intersections[(int) round((ray_y - 0.5/res) * res)];
+        map_intersections[static_cast<int>(round((ray_y - 0.5/res) * res))];
 
       // Sort vector in ascending order of intersection
-      sort(intersections.begin(), intersections.end());
+      std::sort(intersections.begin(), intersections.end());
 
       // If the ray has intersections, we fill any empty spaces between
       // GeoDivs. Please note that we cannot write the loop condition as:

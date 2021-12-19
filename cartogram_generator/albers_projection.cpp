@@ -5,17 +5,17 @@
 #include <fstream>
 #include <iostream>
 
-void print_albers_bbox(CGAL::Bbox_2 bbox)
+void print_albers_bbox(Bbox bb)
 {
   std::cerr << "Bounding box of Albers-transformed map:\n";
   std::cerr << "\tx_min = "
-            << bbox.xmin()
+            << bb.xmin()
             << ", y_min = "
-            << bbox.ymin()
+            << bb.ymin()
             << ", x_max = "
-            << bbox.xmax()
+            << bb.xmax()
             << ", y_max = "
-            << bbox.ymax()
+            << bb.ymax()
             << std::endl;
   return;
 }
@@ -28,14 +28,14 @@ void adjust_for_dual_hemisphere(InsetState *inset_state)
   double min_lon_east = dbl_inf;
   for (GeoDiv gd : (*inset_state).geo_divs()) {
     for (Polygon_with_holes pgnwh : gd.polygons_with_holes()) {
-      CGAL::Bbox_2 pgnwh_bbox = pgnwh.bbox();
-      double pgnwh_bbox_xmax = pgnwh_bbox.xmax();
-      double pgnwh_bbox_xmin = pgnwh_bbox.xmin();
-      max_lon_west = pgnwh_bbox_xmax < 0
-                     ? std::max(pgnwh_bbox_xmax, max_lon_west)
+      Bbox pgnwh_bb = pgnwh.bbox();
+      double pgnwh_bb_xmax = pgnwh_bb.xmax();
+      double pgnwh_bb_xmin = pgnwh_bb.xmin();
+      max_lon_west = pgnwh_bb_xmax < 0
+                     ? std::max(pgnwh_bb_xmax, max_lon_west)
                      : max_lon_west;
-      min_lon_east = pgnwh_bbox_xmin >= 0
-                     ? std::min(pgnwh_bbox_xmin, min_lon_east)
+      min_lon_east = pgnwh_bb_xmin >= 0
+                     ? std::min(pgnwh_bb_xmin, min_lon_east)
                      : min_lon_east;
     }
   }
@@ -119,13 +119,13 @@ void transform_to_albers_projection(InsetState *inset_state)
   adjust_for_dual_hemisphere(inset_state);
 
   // Recalculate the bbox after dual hemisphere adjustment
-  CGAL::Bbox_2 bbox = inset_state->bbox();
+  Bbox bb = inset_state->bbox();
 
   // Declarations for albers_formula()
-  double min_lon = (bbox.xmin() * pi) / 180;
-  double min_lat = (bbox.ymin() * pi) / 180;
-  double max_lon = (bbox.xmax() * pi) / 180;
-  double max_lat = (bbox.ymax() * pi) / 180;
+  double min_lon = (bb.xmin() * pi) / 180;
+  double min_lat = (bb.ymin() * pi) / 180;
+  double max_lon = (bb.xmax() * pi) / 180;
+  double max_lat = (bb.ymax() * pi) / 180;
 
   // Reference Longitude and Latitude
   double lambda_0 = 0.5 * (min_lon + max_lon);
