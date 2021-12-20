@@ -38,11 +38,11 @@ const std::string GeoDiv::id() const
 unsigned int GeoDiv::n_points() const
 {
   unsigned int n_points = 0;
-  for (Polygon_with_holes pgn_wh : polygons_with_holes_) {
-    Polygon outer = pgn_wh.outer_boundary();
+  for (Polygon_with_holes pgnwh : polygons_with_holes_) {
+    Polygon outer = pgnwh.outer_boundary();
     n_points += outer.size();
 
-    std::vector<Polygon> holes_v(pgn_wh.holes_begin(), pgn_wh.holes_end());
+    std::vector<Polygon> holes_v(pgnwh.holes_begin(), pgnwh.holes_end());
     for (Polygon hole : holes_v) {
       n_points += hole.size();
     }
@@ -69,9 +69,9 @@ const std::vector<Polygon_with_holes> GeoDiv::polygons_with_holes() const
   return polygons_with_holes_;
 }
 
-void GeoDiv::push_back(const Polygon_with_holes pgn_wh)
+void GeoDiv::push_back(const Polygon_with_holes pgnwh)
 {
-  polygons_with_holes_.push_back(pgn_wh);
+  polygons_with_holes_.push_back(pgnwh);
   return;
 }
 
