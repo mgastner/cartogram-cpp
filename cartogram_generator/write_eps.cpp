@@ -54,7 +54,6 @@ void write_eps_header_and_definitions(std::ofstream &eps_file,
 void write_polygons_to_eps(std::ofstream &eps_file,
                            bool fill_polygons,
                            bool colors,
-                           bool plot_graticule,
                            InsetState *inset_state)
 {
   eps_file << 0.001 * std::min(inset_state->lx(), inset_state->ly())
@@ -116,9 +115,12 @@ void write_polygons_to_eps(std::ofstream &eps_file,
       eps_file << "0 sgry s\n";
     }
   }
+  return;
+}
 
-  if (plot_graticule) {
-    boost::multi_array<XYPoint, 2> &cum_proj =
+void write_graticule_to_eps(std::ofstream &eps_file, InsetState *inset_state)
+{
+  boost::multi_array<XYPoint, 2> &cum_proj =
       *inset_state->ref_to_cum_proj();
     unsigned int graticule_line_spacing = 7;
 
@@ -147,9 +149,9 @@ void write_polygons_to_eps(std::ofstream &eps_file,
       }
       eps_file << "s\n";
     }
+    return;
   }
-  return;
-}
+  
 
 void write_map_to_eps(std::string eps_name, bool plot_graticule,
                       InsetState *inset_state)
@@ -162,8 +164,10 @@ void write_map_to_eps(std::string eps_name, bool plot_graticule,
   write_polygons_to_eps(eps_file,
                         true,
                         has_colors,
-                        plot_graticule,
                         inset_state);
+  if (plot_graticule) {
+    write_graticule_to_eps(eps_file, inset_state);
+  }
   eps_file << "showpage\n";
   eps_file << "%%EOF\n";
   eps_file.close();
@@ -276,7 +280,7 @@ void write_density_to_eps(std::string eps_name,
       eps_file << r << " " << g << " " << b << " srgb f\n";
     }
   }
-  write_polygons_to_eps(eps_file, false, false, false, inset_state);
+  write_polygons_to_eps(eps_file, false, false, inset_state);
   eps_file << "showpage\n";
   eps_file << "%%EOF\n";
   eps_file.close();
