@@ -115,7 +115,7 @@ int main(const int argc, const char *argv[])
 
   // Store total number of GeoDivs to monitor progress
   double total_geo_divs = 0;
-  for (const auto &[name, inset_state] : *cart_info.ref_to_inset_states()) {
+  for (const auto &[_, inset_state] : *cart_info.ref_to_inset_states()) {
     total_geo_divs += inset_state.n_geo_divs();
   }
 
