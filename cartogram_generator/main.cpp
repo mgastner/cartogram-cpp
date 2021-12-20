@@ -21,7 +21,6 @@
 #include "parse_arguments.h"
 #include <iostream>
 #include <cmath>
-#include <ranges>
 
 int main(const int argc, const char *argv[])
 {
@@ -115,8 +114,10 @@ int main(const int argc, const char *argv[])
 
   // Store total number of GeoDivs to monitor progress
   double total_geo_divs = 0;
-  for (const auto &inset_state :
-       *cart_info.ref_to_inset_states() | std::views::values) {
+  for (const auto &inset_info : *cart_info.ref_to_inset_states()) {
+
+    // 'auto' will automatically deduce the const qualifier.
+    auto &inset_state = inset_info.second;
     total_geo_divs += inset_state.n_geo_divs();
   }
 

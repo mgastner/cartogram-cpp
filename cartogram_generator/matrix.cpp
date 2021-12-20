@@ -80,7 +80,7 @@ Matrix Matrix::inverse()
   Matrix inv = adjugate();
 
   // Divide by determinant
-  if (abs(det() < dbl_epsilon)) {
+  if (abs(det()) < dbl_epsilon) {
     std::cerr << "ERROR: Matrix inversion for (nearly) singular input"
               << std::endl;
     exit(1);
