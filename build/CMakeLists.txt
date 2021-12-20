@@ -85,6 +85,8 @@ elseif(UNIX)
   )
 endif()
 
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -lcairo")
+
 # Providing make with install target.
 install(TARGETS cartogram DESTINATION bin)
 
