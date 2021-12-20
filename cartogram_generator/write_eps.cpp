@@ -151,6 +151,38 @@ void write_polygons_to_eps(std::ofstream &eps_file,
   return;
 }
 
+void write_intersections_to_eps(std::vector<Polygon_with_holes> intersections,
+                                std::ofstream &eps_file)
+{
+  for (auto pwh : intersections) {
+    Polygon ext_ring = pwh.outer_boundary();
+
+    // Move to starting coordinates
+    eps_file << "n " << ext_ring[0][0] << " " << ext_ring[0][1] << " m\n";
+
+    // Plot each point in exterior ring
+    for (unsigned int i = 1; i < ext_ring.size(); ++i) {
+      eps_file << ext_ring[i][0] << " " << ext_ring[i][1] << " l\n";
+    }
+
+    // Close path
+    eps_file << "c\n";
+
+    // Plot holes
+    for (auto hci = pwh.holes_begin(); hci != pwh.holes_end(); ++hci) {
+      Polygon hole = *hci;
+      eps_file << hole[0][0] << " " << hole[0][1] << " m\n";
+      for (unsigned int i = 1; i < hole.size(); ++i) {
+        eps_file << hole[i][0] << " " << hole[i][1] << " l\n";
+      }
+      eps_file << "c\n";
+    }
+
+    // Fill path with red
+    eps_file << "1 0 0 srgb f\n";
+  }
+}
+
 void write_map_to_eps(std::string eps_name, bool plot_graticule,
                       InsetState *inset_state)
 {
