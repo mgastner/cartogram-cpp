@@ -19,8 +19,9 @@ find_package(PkgConfig REQUIRED)
 
 # Finding and linking FFTW using PkgConfig.
 pkg_search_module(FFTW REQUIRED fftw3 IMPORTED_TARGET)
-include_directories(PkgConfig::FFTW)
-link_libraries(PkgConfig::FFTW)
+pkg_search_module(Cairo REQUIRED cairo IMPORTED_TARGET)
+include_directories(PkgConfig::FFTW PkgConfig::Cairo)
+link_libraries(PkgConfig::FFTW PkgConfig::Cairo)
 
 # Adding C++ files needed for compilation.
 add_executable(
@@ -72,8 +73,6 @@ elseif(UNIX)
   set(CMAKE_C_COMPILER "gcc-11")
 endif()
 
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -lcairo")
-
 # Linking appropriate libraries to cartogram target.
 target_link_libraries(
   cartogram
@@ -81,6 +80,7 @@ target_link_libraries(
   CGAL::CGAL
   ${CMAKE_THREAD_LIBS_INIT}
   PkgConfig::FFTW
+  PkgConfig::Cairo
   OpenMP::OpenMP_CXX
 )
 
