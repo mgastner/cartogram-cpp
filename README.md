@@ -81,9 +81,9 @@ These instructions work on Ubuntu and macOS.
 
 ### Installation
 
-Go to the `cartogram_cpp/build` directory in your preferred terminal and execute the following commands.
+Go to the `cartogram_cpp` directory in your preferred terminal and execute the following commands.
 
-    cmake .
+    cd build && cmake ..
     make
     sudo make install
 
