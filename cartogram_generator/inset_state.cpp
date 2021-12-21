@@ -1,5 +1,6 @@
-#include "constants.h"
 #include "inset_state.h"
+#include "constants.h"
+#include <CGAL/Boolean_set_operations_2.h>
 
 InsetState::InsetState(std::string pos) : pos_(pos)
 {
@@ -382,4 +383,39 @@ double InsetState::total_target_area() const
 const std::vector<std::vector<intersection> > InsetState::vertical_adj() const
 {
   return vertical_adj_;
+}
+
+const std::vector<Polygon_with_holes> InsetState::intersections() const
+{
+  std::vector<Polygon_with_holes> intersections;
+  std::vector<Polygon_with_holes> all_pgwhs_in_inset;
+
+  // Collecting all polygons_with_holes
+  for (const auto &gd : geo_divs_) {
+    for (const auto &pgnwh : gd.polygons_with_holes()) {
+      all_pgwhs_in_inset.push_back(pgnwh);
+    }
+  }
+
+  // Comparing polygons pair-wise and calculating intersections, if any.
+  for (size_t i = 0; i < all_pgwhs_in_inset.size(); ++i) {
+    const Polygon_with_holes pgnwh1 = all_pgwhs_in_inset[i];
+    const Bbox pgnwh1_bb = pgnwh1.bbox();
+    for (size_t j = i + 1; j < all_pgwhs_in_inset.size(); ++j) {
+      const Polygon_with_holes pgnwh2 = all_pgwhs_in_inset[j];
+      const Bbox pgnwh2_bb = pgnwh2.bbox();
+
+      // Calculating intersections only if bounding boxes overlap.
+      // For condition, look at:
+      // https://stackoverflow.com/questions/306316/determine-if-
+      // two-rectangles-overlap-each-other
+      if (pgnwh1_bb.xmin() < pgnwh2_bb.xmax()
+          && pgnwh1_bb.xmax() > pgnwh2_bb.xmin()
+          && pgnwh1_bb.ymin() > pgnwh2_bb.ymax()
+          && pgnwh2_bb.ymax() < pgnwh1_bb.ymin()) {
+        CGAL::intersection(pgnwh1, pgnwh2, std::back_inserter(intersections));
+      }
+    }
+  }
+  return intersections;
 }
