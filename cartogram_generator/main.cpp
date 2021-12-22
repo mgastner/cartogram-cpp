@@ -153,6 +153,8 @@ int main(const int argc, const char *argv[])
         crs == "+proj=longlat") {
 
       // If yes, transform the coordinates with the Albers projection
+      auto inset_t_area = inset_state.total_inset_longlat_area();
+      std::cerr << "Total Inset Surface Area: " << inset_t_area  << std::endl;
       transform_to_albers_projection(&inset_state);
     } else if (output_equal_area) {
       std::cerr << "ERROR: Input GeoJSON is not a longitude-latitude map."

@@ -11,6 +11,7 @@ constexpr unsigned int max_integrations = 100;
 constexpr double max_permitted_area_error = 0.01;
 constexpr double padding_unless_world = 1.5;
 constexpr double pi = std::numbers::pi;
+constexpr double earth_radius = 6378.1370;
 
 // Points after simplification
 constexpr unsigned int target_points_per_inset = 10000;

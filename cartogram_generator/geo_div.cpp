@@ -1,4 +1,7 @@
 #include "geo_div.h"
+#include "cgal_typedef.h"
+#include "constants.h"
+#include <cmath>
 
 GeoDiv::GeoDiv(const std::string i) : id_(i)
 {
@@ -28,6 +31,36 @@ double GeoDiv::area() const
     }
   }
   return a;
+}
+
+double ring_lonlat_area(const Polygon ring)
+{
+  double a = 0.0;
+  for (unsigned long i = 0; i < ring.size() - 1; ++i) {
+      double to_radians = pi / 180.0;
+      Point p1 = Point(ring[i].x() * to_radians,
+                       ring[i].y() * to_radians);
+      Point p2 = Point(ring[i + 1].x() * to_radians,
+                       ring[i + 1].y() * to_radians);
+      
+      a += (p2.x() - p1.x()) * (2 + sin(p1.y()) + sin(p2.y()));
+    }
+  a = a * earth_radius * earth_radius / 2.0;
+  return fabs(a);
+}
+
+double GeoDiv::area_longlat() const
+{
+  double area_gd = 0.0;
+  for (auto pwh : polygons_with_holes()) {
+    Polygon ext_ring = pwh.outer_boundary();
+    area_gd += ring_lonlat_area(ext_ring);
+    for (auto hci = pwh.holes_begin(); hci != pwh.holes_end(); ++hci) {
+      Polygon hole = *hci;
+      area_gd -= ring_lonlat_area(hole);
+    }
+  }
+  return area_gd;
 }
 
 const std::string GeoDiv::id() const

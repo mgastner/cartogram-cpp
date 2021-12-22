@@ -17,6 +17,7 @@ class GeoDiv {
     const std::set<std::string> adjacent_geodivs() const;
     void adjacent_to(const std::string);
     double area() const;
+    double area_longlat() const;
     const std::string id() const;
     unsigned int n_points() const;
     unsigned int n_polygons_with_holes() const;

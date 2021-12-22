@@ -114,6 +114,7 @@ public:
   void target_areas_insert(const std::string, const double);
   void target_areas_replace(const std::string, const double);
   double total_inset_area() const;
+  double total_inset_longlat_area() const;
   double total_target_area() const;
   const std::vector<std::vector<intersection> > vertical_adj() const;
 };

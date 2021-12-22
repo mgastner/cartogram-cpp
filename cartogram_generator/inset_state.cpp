@@ -370,6 +370,17 @@ double InsetState::total_inset_area() const
   return total_inset_area;
 }
 
+double InsetState::total_inset_longlat_area() const
+{
+  double total_inset_area = 0.0;
+  for (const auto &gd : geo_divs_) {
+    auto geodiv_area = gd.area_longlat();
+    total_inset_area += geodiv_area;
+    std::cerr << gd.id() << ": " << geodiv_area << std::endl;
+  }
+  return total_inset_area;
+}
+
 double InsetState::total_target_area() const
 {
   double inset_total_target_area = 0;
