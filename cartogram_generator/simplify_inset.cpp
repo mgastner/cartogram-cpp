@@ -7,7 +7,7 @@
 
 // We use -1 to signal that there is no simplified polygon that can be matched
 // with a given non-simplified polygon
-constexpr int no_matching_non_simpl_pgn = -1;
+constexpr int no_matching_simpl_pgn = -1;
 
 bool contains_vertices_in_order(const Polygon non_simpl_pgn,
                                 const Polygon simpl_pgn,
@@ -72,7 +72,7 @@ int simplified_polygon_index(const Polygon non_simpl_pgn,
       return i;
     }
   }
-  return no_matching_non_simpl_pgn;
+  return no_matching_simpl_pgn;
 }
 
 void simplify_inset(InsetState *inset_state)
@@ -147,7 +147,7 @@ void simplify_inset(InsetState *inset_state)
   // Sanity check
   if (std::find(matching_simpl_pgn.begin(),
                 matching_simpl_pgn.end(),
-                no_matching_non_simpl_pgn) != matching_simpl_pgn.end() ||
+                no_matching_simpl_pgn) != matching_simpl_pgn.end() ||
       !unmatched.empty()) {
     std::cerr << "Unmatched polygon in simplify_inset()." << std::endl;
     exit(1);
