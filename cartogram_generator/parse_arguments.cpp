@@ -116,6 +116,12 @@ argparse::ArgumentParser parsed_arguments(const int argc,
   world = arguments.get<bool>("-w");
   triangulation = arguments.get<bool>("-t");
   simplify = arguments.get<bool>("-s");
+  if (!triangulation && simplify) {
+    std::cerr << "WARNING: simplification needs both -s and -t flags.\n"
+              << "Because -t is not set, the result will not be simplified."
+              << std::endl;
+    simplify = false;
+  }
   make_csv = arguments.get<bool>("-m");
   make_polygon_eps = arguments.get<bool>("-e");
   output_equal_area = arguments.get<bool>("-q");
