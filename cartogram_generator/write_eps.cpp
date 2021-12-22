@@ -151,8 +151,8 @@ void write_polygons_to_eps(std::ofstream &eps_file,
   return;
 }
 
-void write_intersections_to_eps(std::vector<Polygon_with_holes> intersections,
-                                std::ofstream &eps_file)
+void write_intersections_to_eps(std::ofstream &eps_file,
+                                std::vector<Polygon_with_holes> intersections)
 {
   for (auto pwh : intersections) {
     Polygon ext_ring = pwh.outer_boundary();
@@ -196,6 +196,8 @@ void write_map_to_eps(std::string eps_name, bool plot_graticule,
                         has_colors,
                         plot_graticule,
                         inset_state);
+  write_intersections_to_eps(eps_file,
+                             inset_state->intersections());
   eps_file << "showpage\n";
   eps_file << "%%EOF\n";
   eps_file.close();

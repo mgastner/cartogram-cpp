@@ -411,8 +411,8 @@ const std::vector<Polygon_with_holes> InsetState::intersections() const
       // two-rectangles-overlap-each-other
       if (pgnwh1_bb.xmin() < pgnwh2_bb.xmax()
           && pgnwh1_bb.xmax() > pgnwh2_bb.xmin()
-          && pgnwh1_bb.ymin() > pgnwh2_bb.ymax()
-          && pgnwh2_bb.ymax() < pgnwh1_bb.ymin()) {
+          && pgnwh1_bb.ymin() < pgnwh2_bb.ymax()
+          && pgnwh2_bb.ymax() > pgnwh1_bb.ymin()) {
         CGAL::intersection(pgnwh1, pgnwh2, std::back_inserter(intersections));
       }
     }
