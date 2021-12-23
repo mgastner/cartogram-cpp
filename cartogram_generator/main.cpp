@@ -216,7 +216,7 @@ int main(const int argc, const char *argv[])
 
       // Write EPS if requested by command-line option
       if (make_polygon_eps) {
-        std::string eps_input_filename = inset_state.inset_name();
+        std::string eps_input_filename = inset_name;
         if (plot_graticule) {
           eps_input_filename += "_input_graticule.eps";
         } else {
@@ -225,6 +225,10 @@ int main(const int argc, const char *argv[])
         std::cerr << "Writing " << eps_input_filename << std::endl;
         write_map_to_eps(eps_input_filename, plot_graticule, &inset_state);
       }
+
+      // Writing eps of intersections, if present.
+      write_intersections_to_eps(inset_name + "_intersections_input.eps",
+                                 &inset_state);
 
       // We make the approximation that the progress towards generating the
       // cartogram is proportional to the number of GeoDivs that are in the
@@ -286,6 +290,15 @@ int main(const int argc, const char *argv[])
           simplify_inset(&inset_state);
         }
         inset_state.increment_integration();
+        std::string intersection_file_name =
+          inset_name +
+          "_intersections_" +
+          std::to_string(inset_state.n_finished_integrations()) +
+          ".eps";
+
+        // Writing eps of intersections, if present.
+        write_intersections_to_eps(intersection_file_name,
+                                   &inset_state);
 
         // Update area errors
         inset_state.set_area_errors();
@@ -306,9 +319,13 @@ int main(const int argc, const char *argv[])
                 << progress
                 << std::endl;
 
+      // Writing eps of intersections, if present.
+      write_intersections_to_eps(inset_name + "_intersections_output.eps",
+                                 &inset_state);
+
       // Print EPS of cartogram
       if (make_polygon_eps) {
-        std::string eps_output_filename = inset_state.inset_name();
+        std::string eps_output_filename = inset_name;
         if (plot_graticule) {
           eps_output_filename += "_output_graticule.eps";
         } else {

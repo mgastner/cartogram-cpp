@@ -55,9 +55,10 @@ void write_polygons_to_eps(std::ofstream &eps_file,
                            bool fill_polygons,
                            bool colors,
                            bool plot_graticule,
-                           InsetState *inset_state)
+                           InsetState *inset_state,
+                           double line_width)
 {
-  eps_file << 0.001 * std::min(inset_state->lx(), inset_state->ly())
+  eps_file << line_width * std::min(inset_state->lx(), inset_state->ly())
            << " slw\n";
   for (auto gd : inset_state->geo_divs()) {
     for (auto pwh : gd.polygons_with_holes()) {
@@ -151,36 +152,56 @@ void write_polygons_to_eps(std::ofstream &eps_file,
   return;
 }
 
-void write_intersections_to_eps(std::ofstream &eps_file,
-                                std::vector<Polygon_with_holes> intersections)
+void write_intersections_to_eps(std::string eps_name,
+                                InsetState *inset_state)
 {
-  for (auto pwh : intersections) {
-    Polygon ext_ring = pwh.outer_boundary();
+  // Calculating intersections
+  std::vector<Polygon_with_holes> intersections = inset_state->intersections();
 
-    // Move to starting coordinates
-    eps_file << "n " << ext_ring[0][0] << " " << ext_ring[0][1] << " m\n";
+  // Printing intersections to EPS if intersections present
+  if (intersections.size())
+  {
+    std::cerr << "Writing " << eps_name << std::endl;
+    std::ofstream eps_file(eps_name);
+    write_eps_header_and_definitions(eps_file, eps_name, inset_state);
+    write_polygons_to_eps(eps_file,
+                          false, // Whether to fill polygons with default color
+                          false, // Whether to fill polygons with assigned color
+                          false, // Whether to plot graticule lines
+                          inset_state,
+                          0.001); // line width
+    for (auto pwh : intersections) {
+      Polygon ext_ring = pwh.outer_boundary();
 
-    // Plot each point in exterior ring
-    for (unsigned int i = 1; i < ext_ring.size(); ++i) {
-      eps_file << ext_ring[i][0] << " " << ext_ring[i][1] << " l\n";
-    }
+      // Move to starting coordinates
+      eps_file << "n " << ext_ring[0][0] << " " << ext_ring[0][1] << " m\n";
 
-    // Close path
-    eps_file << "c\n";
-
-    // Plot holes
-    for (auto hci = pwh.holes_begin(); hci != pwh.holes_end(); ++hci) {
-      Polygon hole = *hci;
-      eps_file << hole[0][0] << " " << hole[0][1] << " m\n";
-      for (unsigned int i = 1; i < hole.size(); ++i) {
-        eps_file << hole[i][0] << " " << hole[i][1] << " l\n";
+      // Plot each point in exterior ring
+      for (unsigned int i = 1; i < ext_ring.size(); ++i) {
+        eps_file << ext_ring[i][0] << " " << ext_ring[i][1] << " l\n";
       }
-      eps_file << "c\n";
-    }
 
-    // Fill path with red
-    eps_file << "1 0 0 srgb f\n";
+      // Close path
+      eps_file << "c\n";
+
+      // Plot holes
+      for (auto hci = pwh.holes_begin(); hci != pwh.holes_end(); ++hci) {
+        Polygon hole = *hci;
+        eps_file << hole[0][0] << " " << hole[0][1] << " m\n";
+        for (unsigned int i = 1; i < hole.size(); ++i) {
+          eps_file << hole[i][0] << " " << hole[i][1] << " l\n";
+        }
+        eps_file << "c\n";
+      }
+
+      // Fill path with red
+      eps_file << "1 0 0 srgb f\n";
+    }
+    eps_file << "showpage\n";
+    eps_file << "%%EOF\n";
+    eps_file.close();
   }
+  return;
 }
 
 void write_map_to_eps(std::string eps_name, bool plot_graticule,
@@ -192,12 +213,11 @@ void write_map_to_eps(std::string eps_name, bool plot_graticule,
   // Check whether the has all GeoDivs colored
   bool has_colors = (inset_state->colors_size() == inset_state->n_geo_divs());
   write_polygons_to_eps(eps_file,
-                        true,
+                        true, // Whether to fill_polygons (with default color)
                         has_colors,
                         plot_graticule,
-                        inset_state);
-  write_intersections_to_eps(eps_file,
-                             inset_state->intersections());
+                        inset_state,
+                        0.001); // line width
   eps_file << "showpage\n";
   eps_file << "%%EOF\n";
   eps_file.close();
@@ -310,7 +330,12 @@ void write_density_to_eps(std::string eps_name,
       eps_file << r << " " << g << " " << b << " srgb f\n";
     }
   }
-  write_polygons_to_eps(eps_file, false, false, false, inset_state);
+  write_polygons_to_eps(eps_file,
+                        false, // Whether to fill polygons with default color
+                        false, // Whether to fill polygons with assigned color
+                        false, // Whether to plot graticule lines
+                        inset_state,
+                        0.001); // line width
   eps_file << "showpage\n";
   eps_file << "%%EOF\n";
   eps_file.close();
