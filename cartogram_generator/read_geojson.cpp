@@ -120,8 +120,9 @@ GeoDiv json_to_cgal(const std::string id,
       const unsigned int last_index = jphc_int.size() - 1;
       if (jphc_int[0][0] != jphc_int[last_index][0] ||
           jphc_int[0][1] != jphc_int[last_index][1]) {
-        int_ring.push_back(Point(static_cast<double>(jphc_int[last_index][0]),
-                                 static_cast<double>(jphc_int[last_index][1])));
+        int_ring.push_back(
+          Point(static_cast<double>(jphc_int[last_index][0]),
+                static_cast<double>(jphc_int[last_index][1])));
       }
       if (!int_ring.is_simple()) {
         std::cerr << "ERROR: interior ring not a simple polygon" << std::endl;
@@ -149,7 +150,7 @@ void print_properties_map(
     ++i;
     if (chosen_number == i || chosen_number == properties_map.size() + 1) {
       std::cerr << i << ". " << key << ": { ";
-      for (long unsigned int j = 0; j < value_vec.size(); ++j) {
+      for (unsigned int j = 0; j < value_vec.size(); ++j) {
         std::cerr << value_vec[j];
         if (j < value_vec.size() - 1 && j < 5) {
           std::cerr << ", ";
