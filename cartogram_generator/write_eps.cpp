@@ -186,6 +186,7 @@ void write_intersections_to_eps(std::string eps_name,
 
       // Plot holes
       for (auto hci = pwh.holes_begin(); hci != pwh.holes_end(); ++hci) {
+        std::cout << "Plotting intersection holes" << "\n";
         Polygon hole = *hci;
         eps_file << hole[0][0] << " " << hole[0][1] << " m\n";
         for (unsigned int i = 1; i < hole.size(); ++i) {

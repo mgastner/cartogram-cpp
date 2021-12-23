@@ -41,7 +41,7 @@ int main(const int argc, const char *argv[])
   // If the polygons are to be simplified, what shall be the target number of
   // points per inset after simplification?
   unsigned int target_points_per_inset = default_target_points_per_inset;
-  bool simplify; 
+  bool simplify;
 
   // Other boolean values that are needed to parse the command line arguments
   bool make_csv,
@@ -340,8 +340,8 @@ int main(const int argc, const char *argv[])
       }
 
       // Rescale insets in correct proportion to each other
-      normalize_inset_area(&inset_state,
-                           cart_info.cart_total_target_area());
+      // normalize_inset_area(&inset_state,
+      //                      cart_info.cart_total_target_area());
 
       // Clean up after finishing all Fourier transforms for this inset
       inset_state.destroy_fftw_plans_for_rho();
@@ -351,7 +351,7 @@ int main(const int argc, const char *argv[])
   }
 
   // Shift insets so that they do not overlap
-  shift_insets_to_target_position(&cart_info);
+  // shift_insets_to_target_position(&cart_info);
 
   // Output to GeoJSON
   std::string output_file_name;
