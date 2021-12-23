@@ -48,6 +48,8 @@ int main(const int argc, const char *argv[])
        output_to_stdout,
        plot_density,
        plot_graticule;
+       
+  double inset_albers_area, inset_eps_area;
 
   // Parse command-line arguments
   argparse::ArgumentParser arguments = parsed_arguments(
@@ -145,7 +147,7 @@ int main(const int argc, const char *argv[])
                 << std::endl;
       return EXIT_FAILURE;
     }
-
+    
     // Can the coordinates be interpreted as longitude and latitude?
     const Bbox bb = inset_state.bbox();
     if (bb.xmin() >= -180.0 && bb.xmax() <= 180.0 &&
@@ -156,6 +158,8 @@ int main(const int argc, const char *argv[])
       auto inset_t_area = inset_state.total_inset_longlat_area();
       std::cerr << "Total Inset Surface Area: " << inset_t_area  << std::endl;
       transform_to_albers_projection(&inset_state);
+      inset_albers_area = inset_state.total_inset_area() * (510e6/ (4 * pi));
+      std::cerr << "Total Inset Albers Area: " << inset_albers_area << std::endl;
     } else if (output_equal_area) {
       std::cerr << "ERROR: Input GeoJSON is not a longitude-latitude map."
                 << std::endl;
@@ -320,6 +324,9 @@ int main(const int argc, const char *argv[])
                   << eps_output_filename << std::endl;
         write_map_to_eps(eps_output_filename, plot_graticule,
                          &inset_state);
+        inset_eps_area = inset_state.total_inset_area();
+        double eps_one_unit_area = ((inset_albers_area / inset_eps_area) * lx * ly) / (lx + ly)/2;
+        std::cerr << "One unit area of EPS map: " << eps_one_unit_area << std::endl;
       }
 
       // Rescale insets in correct proportion to each other

@@ -1,0 +1,2 @@
+{"type":"FeatureCollection", "features": [
+    {"type":"Feature","geometry":{"type":"Polygon","coordinates":[[ [0, 0], [57.2958, 0], [57.2958, 57.2958], [0, 57.2958], [0, 0]]]},"properties":{"GID_0":"BEL","NAME_0":"Belgium","GID_1":"BEL.1_1","NAME_1":"Bruxelles","VARNAME_1":"Brussel","NL_NAME_1":"","TYPE_1":"Gewest","ENGTYPE_1":"Region","CC_1":"","HASC_1":"","cartogram_id":"1"},"id":0}]}
