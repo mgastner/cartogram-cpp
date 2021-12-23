@@ -172,9 +172,6 @@ void read_geojson(const std::string geometry_file_name,
                   std::string *crs,
                   CartogramInfo *cart_info)
 {
-  bool is_polygon;
-  bool polygon_warning_has_been_issued = false;
-
   // Open file
   std::ifstream in_file(geometry_file_name);
   if (!in_file) {
@@ -205,12 +202,7 @@ void read_geojson(const std::string geometry_file_name,
   for (auto &[inset_pos, inset_state] : *cart_info->ref_to_inset_states()) {
     for (const auto &feature : j["features"]) {
       const nlohmann::json geometry = feature["geometry"];
-      is_polygon = (geometry["type"] == "Polygon");
-      if (is_polygon && !polygon_warning_has_been_issued) {
-        std::cerr << "WARNING: support for Polygon geometry experimental, "
-                  << "for best results use MultiPolygon" << "\n";
-        polygon_warning_has_been_issued = true;
-      }
+      const bool is_polygon = (geometry["type"] == "Polygon");
       if (!make_csv) {
 
         // Store ID from properties
@@ -265,7 +257,7 @@ void read_geojson(const std::string geometry_file_name,
     std::map<std::string, std::vector<std::string> > properties_map;
     for (const auto &feature : j["features"]) {
       for (const auto &property_item : feature["properties"].items()) {
-        const auto key = property_item.key();
+        auto key = property_item.key();
 
         // Handle strings and numbers
         std::string value = property_item.value().dump();
@@ -336,7 +328,7 @@ void read_geojson(const std::string geometry_file_name,
       }
     }
 
-    // Print chosen identifiers
+    // Print chosen identifier(s)
     std::cerr << "Chosen identifier(s): " << std::endl;
     print_properties_map(viable_properties_map, chosen_number);
     std::cerr << std::endl;
