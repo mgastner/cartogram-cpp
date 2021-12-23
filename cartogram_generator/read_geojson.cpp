@@ -145,25 +145,23 @@ void print_properties_map(
   const std::map<std::string, std::vector<std::string> > properties_map,
   const unsigned long chosen_number)
 {
+  const unsigned long max_n_printed_values = 5;
+  auto value_vec = properties_map.begin()->second;
+  const unsigned long n_printed_values = std::min(
+    value_vec.size(), static_cast<unsigned long>(max_n_printed_values));
   unsigned long i = 0;
-  for (const auto &[key, value_vec] : properties_map) {
+  for (const auto &[key, val] : properties_map) {
     ++i;
     if (chosen_number == i || chosen_number == properties_map.size() + 1) {
-      std::cerr << i << ". " << key << ": { ";
-      for (unsigned int j = 0; j < value_vec.size(); ++j) {
-        std::cerr << value_vec[j];
-        if (j < value_vec.size() - 1 && j < 5) {
-          std::cerr << ", ";
-        } else {
-          if (j < value_vec.size() - 1) {
-            std::cerr << " ...";
-          } else {
-            std::cerr << " }";
-          }
-          break;
-        }
+      std::cerr << i << ". " << key << ": {";
+      for (unsigned long j = 0; j < n_printed_values - 1; ++j) {
+        std::cerr << val[j] << ", ";
       }
-      std::cerr << std::endl;
+      std::cerr << val[n_printed_values - 1];
+      if (val.size() > n_printed_values) {
+        std::cerr << " ...";
+      }
+      std::cerr << "}" << std::endl;
     }
   }
   return;
@@ -339,7 +337,7 @@ void read_geojson(const std::string geometry_file_name,
     }
 
     // Print chosen identifiers
-    std::cerr << "Chosen identifiers: " << std::endl;
+    std::cerr << "Chosen identifier(s): " << std::endl;
     print_properties_map(viable_properties_map, chosen_number);
     std::cerr << std::endl;
 
