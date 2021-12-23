@@ -75,7 +75,8 @@ int simplified_polygon_index(const Polygon non_simpl_pgn,
   return no_matching_non_simpl_pgn;
 }
 
-void simplify_inset(InsetState *inset_state)
+void simplify_inset(InsetState *inset_state,
+                    unsigned int target_points_per_inset)
 {
   const unsigned int n_pts_before = inset_state->n_points();
   if (n_pts_before <= target_points_per_inset) {

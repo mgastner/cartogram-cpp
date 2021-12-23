@@ -38,8 +38,10 @@ int main(const int argc, const char *argv[])
   // projecting "naively".
   bool triangulation;
 
-  // Shall the polygons be simplified?
-  bool simplify;
+  // If the polygons are to be simplified, what shall be the target number of
+  // points per inset after simplification?
+  unsigned int target_points_per_inset = default_target_points_per_inset;
+  bool simplify; 
 
   // Other boolean values that are needed to parse the command line arguments
   bool make_csv,
@@ -56,6 +58,7 @@ int main(const int argc, const char *argv[])
     geo_file_name,
     visual_file_name,
     long_grid_side_length,
+    target_points_per_inset,
     world,
     triangulation,
     simplify,
@@ -65,7 +68,6 @@ int main(const int argc, const char *argv[])
     output_to_stdout,
     plot_density,
     plot_graticule);
-
 
   // Initialize cart_info. It contains all information about the cartogram
   // that needs to be handled by functions called from main().
@@ -179,7 +181,7 @@ int main(const int argc, const char *argv[])
 
     // Simplify inset if -s flag is passed
     if (simplify) {
-      simplify_inset(&inset_state);
+      simplify_inset(&inset_state, target_points_per_inset);
     }
     if (output_equal_area) {
       normalize_inset_area(&inset_state,
@@ -287,7 +289,7 @@ int main(const int argc, const char *argv[])
           project(&inset_state);
         }
         if (simplify) {
-          simplify_inset(&inset_state);
+          simplify_inset(&inset_state, target_points_per_inset);
         }
         inset_state.increment_integration();
         std::string intersection_file_name =

@@ -7,6 +7,7 @@ argparse::ArgumentParser parsed_arguments(const int argc,
                                           std::string &geo_file_name,
                                           std::string &visual_file_name,
                                           unsigned int &long_grid_side_length,
+                                          unsigned int &target_points_per_inset,
                                           bool &world,
                                           bool &triangulation,
                                           bool &simplify,
@@ -73,6 +74,11 @@ argparse::ArgumentParser parsed_arguments(const int argc,
   .default_value(false)
   .implicit_value(true);
 
+  arguments.add_argument("-S", "--n_points")
+  .help("Integer: If simplification enabled, number of points per inset to be retained")
+  .default_value(default_long_grid_side_length)
+  .scan<'u', unsigned int>();
+
   arguments.add_argument("-m", "--make_csv")
   .help("Boolean: create CSV file from given GeoJSON?")
   .default_value(false)
@@ -112,6 +118,9 @@ argparse::ArgumentParser parsed_arguments(const int argc,
   // Set long grid-side length
   long_grid_side_length = arguments.get<unsigned int>("-l");
 
+  // Set target_points_per_inset
+  target_points_per_inset = arguments.get<unsigned int>("-S");
+
   // Set boolean values
   world = arguments.get<bool>("-w");
   triangulation = arguments.get<bool>("-t");
@@ -122,6 +131,14 @@ argparse::ArgumentParser parsed_arguments(const int argc,
   output_to_stdout = arguments.get<bool>("-o");
   plot_density =  arguments.get<bool>("-d");
   plot_graticule = arguments.get<bool>("-g");
+
+  // Check if n_polygons specified, but --simplify not passed.
+  if (arguments.is_used("-S") && !arguments.is_used("-s")) {
+    std::cerr << "WARNING: --simplify flag not passed!" << std::endl;
+    std::cerr << "Polygons will not be simplified." << std::endl;
+    std::cerr << "To enable simplification, pass the -s flag." << std::endl;
+    std::cerr << arguments << std::endl;
+  }
 
   // Print geometry and visual-variables file used
   geo_file_name = arguments.get<std::string>("geometry_file");
