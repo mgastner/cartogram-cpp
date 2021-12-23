@@ -117,10 +117,13 @@ argparse::ArgumentParser parsed_arguments(const int argc,
   triangulation = arguments.get<bool>("-t");
   simplify = arguments.get<bool>("-s");
   if (!triangulation && simplify) {
-    std::cerr << "WARNING: simplification needs both -s and -t flags.\n"
-              << "Because -t is not set, the result will not be simplified."
-              << std::endl;
-    simplify = false;
+
+    // Simplification requires triangulation. Otherwise, the cartogram may
+    // contain intersecting lines before simplification. The intersection
+    // coordinates would not be explicit in the non-simplified polygons,
+    // but they would be added to the simplified polygon, making it more
+    // difficult to uniquely match non-simplified and simplified polygons.
+    triangulation = true;
   }
   make_csv = arguments.get<bool>("-m");
   make_polygon_eps = arguments.get<bool>("-e");
