@@ -87,10 +87,10 @@ void write_polygons_to_eps(std::ofstream &eps_file,
         // Save path before filling it
         eps_file << "gsave\n";
 
-        // Check if target area was initially was missing
+        // Check whether target area was initially missing
         if (inset_state->is_input_target_area_missing(gd.id())) {
 
-          // Fill path with dark-grey
+          // Fill path with dark grey
           eps_file << "0.9375 0.9375 0.9375 srgb f\n";
 
         } else if (colors) {
@@ -160,7 +160,7 @@ void write_map_to_eps(const std::string eps_name,
   std::ofstream eps_file(eps_name);
   write_eps_header_and_definitions(eps_file, eps_name, inset_state);
 
-  // Check whether the has all GeoDivs colored
+  // Check whether all GeoDivs are colored
   const bool has_colors =
     (inset_state->colors_size() == inset_state->n_geo_divs());
   write_polygons_to_eps(eps_file,
@@ -194,7 +194,6 @@ void heatmap_color(const double dens,
                    double *g,
                    double *b)
 {
-
   // Assign possible categories for red, green, blue
   const double red[] = {
     0.33, 0.55, 0.75, 0.87, 0.96, 0.99, 0.78, 0.50, 0.21, 0.00, 0.00
