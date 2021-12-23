@@ -176,9 +176,11 @@ int main(const int argc, const char *argv[])
                 << std::endl;
     }
     inset_state.set_inset_name(inset_name);
-
-    // Simplify inset if -s flag is passed
     if (simplify) {
+
+      // Simplify inset if -s flag is passed. This option reduces the number
+      // of points used to represent the GeoDivs in the inset, thereby
+      // reducing the output file sizes and run times.
       simplify_inset(&inset_state);
     }
     if (output_equal_area) {
@@ -246,6 +248,10 @@ int main(const int argc, const char *argv[])
         const double n_predicted_integrations =
           std::max((log(ratio_actual_to_permitted_max_area_error) / log(5)),
                    1.0);
+
+        // Blur density to speed up the numerics in flatten_density() below.
+        // We slowly reduce the blur width so that the areas can reach their
+        // target values.
         double blur_width;
         if (inset_state.n_finished_integrations() < 10) {
           blur_width =
@@ -261,9 +267,9 @@ int main(const int argc, const char *argv[])
         if (inset_state.n_finished_integrations() > 0) {
           fill_with_density(plot_density, &inset_state);
         }
-
-        // TODO: DO NOT CARRY OUT blur_density() IF blur_width=0.0
-        blur_density(blur_width, plot_density, &inset_state);
+        if (blur_width > 0.0) {
+          blur_density(blur_width, plot_density, &inset_state);
+        }
         flatten_density(&inset_state);
         if (triangulation) {
 
@@ -283,6 +289,11 @@ int main(const int argc, const char *argv[])
           project(&inset_state);
         }
         if (simplify) {
+
+          // Triangulation, automatically combined with densification,
+          // increases the number of points. Simplification ensures that the
+          // number of points does not exceed a reasonable limit, resulting
+          // in smaller output and shorter run-times.
           simplify_inset(&inset_state);
         }
         inset_state.increment_integration();
