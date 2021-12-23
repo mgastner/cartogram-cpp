@@ -16,7 +16,7 @@ double CartogramInfo::cart_total_target_area() const
   // https://stackoverflow.com/questions/13087028/can-i-easily-iterate-over-
   // the-values-of-a-map-using-a-range-based-for-loop
   for (const auto &inset_info : inset_states_) {
-       auto &inset_state = inset_info.second;
+    auto &inset_state = inset_info.second;
     area += inset_state.total_target_area();
   }
   return area;
@@ -89,7 +89,7 @@ void CartogramInfo::replace_missing_and_zero_target_areas()
   bool ta_zero_exists = false;
   bool ta_na_exists = false;
   for (auto &inset_info : inset_states_) {
-       auto &inset_state = inset_info.second;
+    auto &inset_state = inset_info.second;
     for (const auto &gd : inset_state.geo_divs()) {
       const double target_area = inset_state.target_areas_at(gd.id());
       if (target_area < 0.0) {
@@ -128,8 +128,8 @@ void CartogramInfo::replace_missing_and_zero_target_areas()
     // area (instead of the minimum target area) to min_positive_area
     if (min_positive_area == dbl_inf) {
       for (const auto &inset_info : inset_states_) {
-           auto &inset_state = inset_info.second;
-        for (auto const &gd : inset_state.geo_divs()) {
+        auto &inset_state = inset_info.second;
+        for (const auto &gd : inset_state.geo_divs()) {
           min_positive_area = std::min(min_positive_area, gd.area());
         }
       }
