@@ -116,6 +116,15 @@ argparse::ArgumentParser parsed_arguments(const int argc,
   world = arguments.get<bool>("-w");
   triangulation = arguments.get<bool>("-t");
   simplify = arguments.get<bool>("-s");
+  if (!triangulation && simplify) {
+
+    // Simplification requires triangulation. Otherwise, the cartogram may
+    // contain intersecting lines before simplification. The intersection
+    // coordinates would not be explicit in the non-simplified polygons,
+    // but they would be added to the simplified polygon, making it more
+    // difficult to uniquely match non-simplified and simplified polygons.
+    triangulation = true;
+  }
   make_csv = arguments.get<bool>("-m");
   make_polygon_eps = arguments.get<bool>("-e");
   output_equal_area = arguments.get<bool>("-q");

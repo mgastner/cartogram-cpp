@@ -41,7 +41,6 @@ unsigned int GeoDiv::n_points() const
   for (Polygon_with_holes pgn_wh : polygons_with_holes_) {
     Polygon outer = pgn_wh.outer_boundary();
     n_points += outer.size();
-
     std::vector<Polygon> holes_v(pgn_wh.holes_begin(), pgn_wh.holes_end());
     for (Polygon hole : holes_v) {
       n_points += hole.size();
