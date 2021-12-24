@@ -71,6 +71,7 @@ void write_cairo_polygons_to_png(const char *filename,
 
         // Set line width of graticule lines
         cairo_set_line_width(cr, 0.0005 * line_width);
+        cairo_set_source_rgb(cr, 0, 0, 0);
 
         // Vertical graticule lines
         for (unsigned int i = 0; i <= inset_state->lx(); i += graticule_line_spacing) {
