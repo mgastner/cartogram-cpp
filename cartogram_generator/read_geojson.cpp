@@ -293,7 +293,6 @@ void read_geojson(const std::string geometry_file_name,
     std::cerr << std::endl << std::endl;
 
     // Have the user choose which key(s) they want to use as the identifier(s)
-    std::cerr << "Please enter your number here: ";
     unsigned long chosen_number = 0;
     while (std::cin.fail() ||
            chosen_number < 1 ||
