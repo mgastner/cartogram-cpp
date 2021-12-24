@@ -83,7 +83,7 @@ For posterity: Once version 5.3 is available through apt (you may check [here](h
 
 Go to the `cartogram_cpp` directory in your preferred terminal and execute the following commands.
 
-    cd build && cmake ..
+    mkdir -p build && cd build && cmake ..
     make
     sudo make install
 
