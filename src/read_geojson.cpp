@@ -208,7 +208,7 @@ void read_geojson(const std::string geometry_file_name,
       const nlohmann::json geometry = feature["geometry"];
       is_polygon = (geometry["type"] == "Polygon");
       if (is_polygon && !polygon_warning_has_been_issued) {
-        std::cerr << "Warning: support for Polygon geometry experimental, "
+        std::cerr << "WARNING: support for Polygon geometry experimental, "
                   << "for best results use MultiPolygon" << "\n";
         polygon_warning_has_been_issued = true;
       }
