@@ -70,6 +70,17 @@ int main(const int argc, const char *argv[])
   // Initialize cart_info. It contains all information about the cartogram
   // that needs to be handled by functions called from main().
   CartogramInfo cart_info(world, visual_file_name);
+
+  // Determine name of input map and store it.
+  std::string map_name = geo_file_name;
+  if (map_name.find_last_of("/\\") != std::string::npos) {
+    map_name = map_name.substr(map_name.find_last_of("/\\") + 1);
+  }
+  if (map_name.find('.') != std::string::npos) {
+    map_name = map_name.substr(0, map_name.find('.'));
+  }
+  cart_info.set_map_name(map_name);
+
   if (!make_csv) {
 
     // Read visual variables (e.g. area, color) from CSV
@@ -119,15 +130,6 @@ int main(const int argc, const char *argv[])
     // 'auto' will automatically deduce the const qualifier.
     auto &inset_state = inset_info.second;
     total_geo_divs += inset_state.n_geo_divs();
-  }
-
-  // Determine name of input map
-  std::string map_name = geo_file_name;
-  if (map_name.find_last_of("/\\") != std::string::npos) {
-    map_name = map_name.substr(map_name.find_last_of("/\\") + 1);
-  }
-  if (map_name.find('.') != std::string::npos) {
-    map_name = map_name.substr(0, map_name.find('.'));
   }
 
   // Project map and ensure that all holes are inside polygons

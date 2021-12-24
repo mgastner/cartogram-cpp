@@ -342,7 +342,8 @@ void read_geojson(const std::string geometry_file_name,
 
     // Write CSV
     std::ofstream out_file_csv;
-    out_file_csv.open ("template_from_geojson.csv");
+    std::string csv_name = cart_info->map_name() + ".csv";
+    out_file_csv.open (csv_name);
     if (!out_file_csv) {
       throw std::system_error(errno,
                               std::system_category(),
