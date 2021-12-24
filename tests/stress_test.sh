@@ -4,7 +4,7 @@
 shopt -s extglob
 
 # Start time, and other metadata
-start_date=$(date '+%Y-%m-%d_%H:%M:%S')
+start_date=$(date '+%Y-%m-%d_%H-%M-%S')
 results="results_${start_date}.txt"
 SECONDS=0
 echo -e "Writing to ${results}\n"
