@@ -118,11 +118,11 @@ void write_polygons_to_eps(std::ofstream &eps_file,
   return;
 }
 
-void write_graticule_to_eps(std::ofstream &eps_file, InsetState *inset_state)
+void write_graticule_to_eps(std::ofstream &eps_file, InsetState *inset_state, unsigned int spacing)
 {
   const boost::multi_array<XYPoint, 2> &cum_proj =
     *inset_state->ref_to_cum_proj();
-  const unsigned int graticule_line_spacing = 7;
+  unsigned int graticule_line_spacing = spacing;
 
   // Set line width of graticule lines
   eps_file << 0.0005 * std::min(inset_state->lx(), inset_state->ly())
@@ -155,7 +155,8 @@ void write_graticule_to_eps(std::ofstream &eps_file, InsetState *inset_state)
 
 void write_map_to_eps(const std::string eps_name,
                       const bool plot_graticule,
-                      InsetState *inset_state)
+                      InsetState *inset_state,
+                      unsigned int spacing)
 {
   std::ofstream eps_file(eps_name);
   write_eps_header_and_definitions(eps_file, eps_name, inset_state);
@@ -168,7 +169,7 @@ void write_map_to_eps(const std::string eps_name,
                         has_colors,
                         inset_state);
   if (plot_graticule) {
-    write_graticule_to_eps(eps_file, inset_state);
+    write_graticule_to_eps(eps_file, inset_state, spacing);
   }
   eps_file << "showpage\n";
   eps_file << "%%EOF\n";

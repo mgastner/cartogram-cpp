@@ -229,7 +229,7 @@ int main(const int argc, const char *argv[])
           eps_input_filename += "_input.eps";
         }
         std::cerr << "Writing " << eps_input_filename << std::endl;
-        write_map_to_eps(eps_input_filename, plot_graticule, &inset_state);
+        write_map_to_eps(eps_input_filename, plot_graticule, &inset_state, 22);
       }
 
       // We make the approximation that the progress towards generating the
@@ -322,11 +322,17 @@ int main(const int argc, const char *argv[])
         }
         std::cerr << "Writing "
                   << eps_output_filename << std::endl;
-        write_map_to_eps(eps_output_filename, plot_graticule,
-                         &inset_state);
+                  
         inset_eps_area = inset_state.total_inset_area();
         double eps_one_unit_area = ((inset_albers_area / inset_eps_area) * lx * ly) / (lx + ly)/2;
         std::cerr << "One unit area of EPS map: " << eps_one_unit_area << std::endl;
+        for (int i = 10; i < 25; i++) {
+          double eps_area = eps_one_unit_area * i;
+          std::cerr << "Area of EPS map " << i << " unit: " << eps_area << std::endl;
+        }
+        
+        write_map_to_eps(eps_output_filename, plot_graticule,
+                         &inset_state, 22);
       }
 
       // Rescale insets in correct proportion to each other
