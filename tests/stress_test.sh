@@ -96,7 +96,7 @@ done
 # Summary report
 echo -e "===== Finished testing all countries. =====\n"  | tee -a "${results}"
 duration="$(($SECONDS / 60))m $(($SECONDS % 60))s"
-echo "Finished ${total_tests} on ${countries} countries in ${duration}. Passed $((total_tests-failed)), failed ${failed}."  | tee -a "${results}"
+echo "Finished ${total_tests} tests on ${countries} countries in ${duration}. Passed $((total_tests-failed)), failed ${failed}."  | tee -a "${results}"
 
 # Checking if any tests failed
 if [[ "${failed}" -gt 0 ]]; then
@@ -112,12 +112,10 @@ fi
 rm tmp.txt
 
 # Prompting for file deletion
-read -p "Clear ALL *.eps and *.geojson files in current directory? [y/n]: " to_clear
+read -p "Clear ALL *.eps and *.geojson files in current directory? [y/N]: " to_clear
 if [[ "$to_clear" == "y" ]]; then
   rm *.eps; rm *.geojson
   echo "All *.eps and *.geojson files deleted."
-elif [[ "$to_clear" == "n" ]]; then
-  echo "Files not cleared."
 else
-  echo "Invalid input. Files not cleared."
+  echo "Files not cleared."
 fi
