@@ -141,9 +141,9 @@ GeoDiv json_to_cgal(const std::string id,
   return gd;
 }
 
-void print_properties_map(
-  const std::map<std::string, std::vector<std::string> > properties_map,
-  const unsigned long chosen_number)
+void print_properties_map(const std::map<std::string,
+                          std::vector<std::string> > properties_map,
+                          const unsigned long chosen_number)
 {
   const unsigned long max_n_printed_values = 5;
   auto value_vec = properties_map.begin()->second;
