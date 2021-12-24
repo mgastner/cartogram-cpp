@@ -213,11 +213,11 @@ const std::string CartogramInfo::visual_variable_file() const
 
 void CartogramInfo::set_map_name(const std::string map_name)
 {
-  map_name = map_name;
+  map_name_ = map_name;
   return;
 }
 
 const std::string CartogramInfo::map_name() const
 {
-  return map_name;
+  return map_name_;
 }
