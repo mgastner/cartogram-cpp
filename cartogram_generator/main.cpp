@@ -215,13 +215,17 @@ int main(const int argc, const char *argv[])
       // Write EPS if requested by command-line option
       if (make_polygon_eps) {
         std::string eps_input_filename = inset_state.inset_name();
+        std::string png_input_fname = inset_state.inset_name();
         if (plot_graticule) {
           eps_input_filename += "_input_graticule.eps";
+          png_input_fname += "_input_graticule.png";
         } else {
           eps_input_filename += "_input.eps";
+          png_input_fname += "_input.png";
         }
         std::cerr << "Writing " << eps_input_filename << std::endl;
         write_map_to_eps(eps_input_filename, plot_graticule, &inset_state);
+        write_cairo_map_to_png(png_input_fname, plot_graticule, &inset_state);
       }
 
       // We make the approximation that the progress towards generating the
@@ -307,16 +311,19 @@ int main(const int argc, const char *argv[])
       // Print EPS of cartogram
       if (make_polygon_eps) {
         std::string eps_output_filename = inset_state.inset_name();
+        std::string png_output_fname = inset_state.inset_name();
         if (plot_graticule) {
           eps_output_filename += "_output_graticule.eps";
+          png_output_fname += "_output_graticule.png";
         } else {
           eps_output_filename += "_output.eps";
+          png_output_fname += "_output.png";
         }
         std::cerr << "Writing "
                   << eps_output_filename << std::endl;
-        // write_map_to_eps(eps_output_filename, plot_graticule,
-        //                  &inset_state);
-        write_cairo_map_to_eps(eps_output_filename, plot_graticule,
+        write_map_to_eps(eps_output_filename, plot_graticule,
+                         &inset_state);
+        write_cairo_map_to_png(png_output_fname, plot_graticule,
                          &inset_state);
       }
 
