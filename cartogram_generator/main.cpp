@@ -314,8 +314,8 @@ int main(const int argc, const char *argv[])
         }
         std::cerr << "Writing "
                   << eps_output_filename << std::endl;
-        write_map_to_eps(eps_output_filename, plot_graticule,
-                         &inset_state);
+        // write_map_to_eps(eps_output_filename, plot_graticule,
+        //                  &inset_state);
         write_cairo_map_to_eps(eps_output_filename, plot_graticule,
                          &inset_state);
       }
