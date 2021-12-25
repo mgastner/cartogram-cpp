@@ -1,5 +1,6 @@
-#include "constants.h"
 #include "inset_state.h"
+#include "constants.h"
+#include "densify.h"
 
 InsetState::InsetState(std::string pos) : pos_(pos)
 {
@@ -382,4 +383,9 @@ double InsetState::total_target_area() const
 const std::vector<std::vector<intersection> > InsetState::vertical_adj() const
 {
   return vertical_adj_;
+}
+
+void InsetState::densify_geo_divs()
+{
+  geo_divs_ = densified_geo_divs(geo_divs_);
 }
