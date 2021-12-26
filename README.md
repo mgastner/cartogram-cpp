@@ -8,7 +8,25 @@ Gastner MT, Seguy V, More P. _Fast flow-based algorithm for creating density-equ
 
 ## Dependencies
 
-### Ubuntu
+### macOS
+
+#### Installing Homebrew
+
+Install [homebrew](brew.sh) by running the following command:
+
+    /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+
+#### Installing dependencies through Homebrew
+
+Install llvm, pkg-config, boost, fftw, cgal, nlohmann-json, and cmake by running the following command:
+
+    brew install llvm libomp pkg-config boost fftw cgal nlohmann-json cmake
+
+## Installation and Usage
+
+The instructions are the same for all systems.
+
+### Debian-based Distributions (Ubuntu, Arch Linux etc.)
 
 #### Installing GNU gcc-11
 
@@ -61,29 +79,11 @@ For posterity: Once version 5.3 is available through apt (you may check [here](h
         make
         sudo make install
 
-### macOS
-
-#### Installing Homebrew
-
-Install [homebrew](brew.sh) by running the following command:
-
-    /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
-
-#### Installing dependencies through Homebrew
-
-Install gcc-11, pkg-config, boost, fftw, cgal, nlohmann-json, and cmake by running the following command:
-
-    brew install llvm libomp pkg-config boost fftw cgal nlohmann-json cmake
-
-## Installation and Usage
-
-These instructions work on Ubuntu and macOS.
-
 ### Installation
 
-Go to the `cartogram_cpp/build` directory in your preferred terminal and execute the following commands.
+Go to the `cartogram_cpp` directory in your preferred terminal and execute the following commands.
 
-    cmake .
+    mkdir -p build && cd build && cmake ..
     make
     sudo make install
 
