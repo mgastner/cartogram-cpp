@@ -95,10 +95,10 @@ Go to the `cartogram_cpp` directory in your preferred terminal and execute the f
 
 Run the following command (replace `your-geojson-file.geojson` file with your geographic data and `your-csv-file.csv` with your visual variables file, containing target areas for each geographic region):
 
-        cartogram your-geojson-file.geojson -V your-csv-file.csv
+        cartogram your-geojson-file.geojson your-csv-file.csv
 
 -   The first argument's input is a GeoJSON or JSON file, in the standard GeoJSON format.
--   The `-V` flag (uppercase, case-sensitive) accepts a `.csv` file with data about target areas.
+-   The second argument's input is a `.csv` file with data about target areas.
 
 _Note: use the `-h` flag to display more options._
 
