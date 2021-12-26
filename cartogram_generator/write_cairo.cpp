@@ -1,4 +1,5 @@
 #include <cairo/cairo.h>
+#include <cairo/cairo-ps.h>
 #include "constants.h"
 #include "cartogram_info.h"
 #include "inset_state.h"
