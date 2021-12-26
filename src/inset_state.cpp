@@ -415,14 +415,6 @@ const std::vector<Polygon_with_holes> InsetState::intersections() const
           && pgnwh2_bb.ymax() > pgnwh1_bb.ymin()) {
         unsigned int size = intersections.size();
         CGAL::intersection(pgnwh1, pgnwh2, std::back_inserter(intersections));
-        if (intersections.size() > size) {
-
-          CGAL::set_pretty_mode(std::cout);
-          std::cout << "pgnwh1: " << "\n";
-          std::cout << pgnwh1 << "\n";
-          std::cout << "pgnwh2: " << "\n";
-          std::cout << pgnwh2 << "\n";
-        }
       }
     }
   }

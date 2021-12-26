@@ -138,7 +138,7 @@ argparse::ArgumentParser parsed_arguments(const int argc,
     // coordinates would not be explicit in the non-simplified polygons,
     // but they would be added to the simplified polygon, making it more
     // difficult to uniquely match non-simplified and simplified polygons.
-    triangulation = true;
+    // triangulation = true;
   }
   make_csv = arguments.get<bool>("-m");
   make_polygon_eps = arguments.get<bool>("-e");
