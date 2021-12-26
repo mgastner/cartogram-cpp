@@ -75,8 +75,8 @@ argparse::ArgumentParser parsed_arguments(const int argc,
   .implicit_value(true);
 
   arguments.add_argument("-S", "--n_points")
-  .help("Integer: If simplification enabled, number of points per inset to be retained")
-  .default_value(default_long_grid_side_length)
+  .help("Integer: If simplification enabled, target number of points per inset")
+  .default_value(default_target_points_per_inset)
   .scan<'u', unsigned int>();
 
   arguments.add_argument("-m", "--make_csv")

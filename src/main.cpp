@@ -29,6 +29,9 @@ int main(const int argc, const char *argv[])
   // Default number of grid cells along longer Cartesian coordinate axis.
   unsigned int long_grid_side_length = default_long_grid_side_length;
 
+  // Target number of points to retain after simplification.
+  unsigned int target_points_per_inset = default_target_points_per_inset;
+
   // World maps need special projections. By default, we assume that the
   // input map is not a world map.
   bool world;
@@ -56,6 +59,7 @@ int main(const int argc, const char *argv[])
     geo_file_name,
     visual_file_name,
     long_grid_side_length,
+    target_points_per_inset,
     world,
     triangulation,
     simplify,
@@ -181,7 +185,8 @@ int main(const int argc, const char *argv[])
       // Simplify inset if -s flag is passed. This option reduces the number
       // of points used to represent the GeoDivs in the inset, thereby
       // reducing the output file sizes and run times.
-      simplify_inset(&inset_state);
+      simplify_inset(&inset_state,
+                     target_points_per_inset);
     }
     if (output_equal_area) {
       normalize_inset_area(&inset_state,
@@ -294,7 +299,8 @@ int main(const int argc, const char *argv[])
           // increases the number of points. Simplification ensures that the
           // number of points does not exceed a reasonable limit, resulting
           // in smaller output and shorter run-times.
-          simplify_inset(&inset_state);
+          simplify_inset(&inset_state,
+                         target_points_per_inset);
         }
         inset_state.increment_integration();
 
