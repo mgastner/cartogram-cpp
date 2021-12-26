@@ -292,9 +292,14 @@ void write_density_to_eps(const std::string eps_name,
   return;
 }
 
-void write_intersections_to_eps(const std::string eps_name,
-                                InsetState *inset_state)
+void write_intersections_to_eps(InsetState *inset_state)
 {
+  std::string eps_name =
+    inset_state->inset_name() +
+    "_intersections_" +
+    std::to_string(inset_state->n_finished_integrations()) +
+    ".eps";
+
   // Calculating intersections
   std::vector<Polygon_with_holes> intersections = inset_state->intersections();
 

@@ -50,7 +50,8 @@ int main(const int argc, const char *argv[])
        output_equal_area,
        output_to_stdout,
        plot_density,
-       plot_graticule;
+       plot_graticule,
+       plot_intersections;
 
   // Parse command-line arguments
   argparse::ArgumentParser arguments = parsed_arguments(
@@ -68,8 +69,8 @@ int main(const int argc, const char *argv[])
     output_equal_area,
     output_to_stdout,
     plot_density,
-    plot_graticule);
-
+    plot_graticule,
+    plot_intersections);
 
   // Initialize cart_info. It contains all information about the cartogram
   // that needs to be handled by functions called from main().
@@ -245,6 +246,11 @@ int main(const int argc, const char *argv[])
         std::cerr << "Integration number "
                   << inset_state.n_finished_integrations()
                   << std::endl;
+
+        // Plotting intersections if requested
+        if (plot_intersections) {
+          write_intersections_to_eps(&inset_state);
+        }
 
         // Calculate progress percentage. We assume that the maximum area
         // error is typically reduced to 1/5 of the previous value.

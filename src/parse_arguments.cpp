@@ -16,7 +16,8 @@ argparse::ArgumentParser parsed_arguments(const int argc,
                                           bool &output_equal_area,
                                           bool &output_to_stdout,
                                           bool &plot_density,
-                                          bool &plot_graticule)
+                                          bool &plot_graticule,
+                                          bool &plot_intersections)
 {
   // Create parser for arguments using argparse.
   // From https://github.com/p-ranav/argparse
@@ -56,6 +57,11 @@ argparse::ArgumentParser parsed_arguments(const int argc,
 
   arguments.add_argument("-g", "--graticule_to_eps")
   .help("Boolean: make EPS images with graticule?")
+  .default_value(false)
+  .implicit_value(true);
+
+  arguments.add_argument("-I", "--intersections_to_eps")
+  .help("Boolean: make EPS images *_intersections_*.eps?")
   .default_value(false)
   .implicit_value(true);
 
@@ -140,6 +146,7 @@ argparse::ArgumentParser parsed_arguments(const int argc,
   output_to_stdout = arguments.get<bool>("-o");
   plot_density =  arguments.get<bool>("-d");
   plot_graticule = arguments.get<bool>("-g");
+  plot_intersections = arguments.get<bool>("-I");
 
   // Check if n_polygons specified, but --simplify not passed.
   if (arguments.is_used("-S") && !arguments.is_used("-s")) {
