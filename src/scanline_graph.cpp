@@ -289,3 +289,60 @@ const std::vector<std::vector<intersection> >
   }
   return vertical_scans;
 }
+
+// Creates an adjacency graph using horizontal and vertical scans above
+void InsetState::create_adjacency_graph(unsigned int res)
+{
+
+  // Getting the chosen graph.
+  for (char graph : {'h', 'v'}) {
+    std::vector<std::vector<intersection> > scan_graph;
+    unsigned int max_k = 0;
+    if (graph == 'h') {
+      scan_graph = this->horizontal_scans(res);
+      max_k = this->ly();
+    } else if (graph == 'v') {
+      scan_graph = this->vertical_scans(res);
+      max_k = this->lx();
+    }
+
+    // Iterating through horizontal adjacency graph
+    for (unsigned int k = 0; k < max_k; ++k) {
+
+      // Cycle through each of the "res" number of rays in one cell
+      for (double ray = k + (1.0/res)/2;
+           ray < k + 1;
+           ray += (1.0/res)) {
+
+        // The intersections for one ray
+        std::vector<intersection> intersections =
+          scan_graph[static_cast<int>(round(((ray - (1.0/res)/2.0) * res)))];
+
+        // Sort vector in ascending order of intersection
+        sort(intersections.begin(), intersections.end());
+
+        int size = intersections.size() - 1;
+
+        // Fill GeoDivs by iterating through intersections
+        for (int l = 1; l < size; l += 2) {
+          double x_1 = intersections[l].coord;
+          double x_2 = intersections[l + 1].coord;
+          std::string gd_1 = intersections[l].geo_div_id;
+          std::string gd_2 = intersections[l + 1].geo_div_id;
+
+          if (gd_1 != gd_2 && x_1 == x_2) {
+            for (auto &gd : this->geo_divs_) {
+              if (gd.id() == gd_1) {
+                gd.adjacent_to(gd_2);
+              } else if (gd.id() == gd_2) {
+                gd.adjacent_to(gd_1);
+              }
+            }
+          }
+
+        }
+      }
+    }
+  }
+
+}

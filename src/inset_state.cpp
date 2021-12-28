@@ -289,14 +289,6 @@ void InsetState::set_grid_dimensions(
   return;
 }
 
-void InsetState::set_horizontal_scans(
-  const std::vector<std::vector<intersection> > ha)
-{
-  horizontal_adj_.clear();
-  horizontal_adj_ = ha;
-  return;
-}
-
 void InsetState::set_inset_name(const std::string inset_name)
 {
   inset_name_ = inset_name;

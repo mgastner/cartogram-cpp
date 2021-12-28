@@ -4,61 +4,6 @@
 #include "auto_color.h"
 #include "colors.h"
 
-void create_adjacency_graph(InsetState* inset_state,
-                            char graph,
-                            unsigned int res)
-{
-
-  // Getting the chosen graph.
-  std::vector<std::vector<intersection> > adj_graph;
-  unsigned int max_k = 0;
-  if (graph == 'h') {
-    adj_graph = inset_state->horizontal_scans(res);
-    max_k = inset_state->ly();
-  } else if (graph == 'v') {
-    adj_graph = inset_state->vertical_scans(res);
-    max_k = inset_state->lx();
-  }
-
-  // Iterating through horizontal adjacency graph
-  for (unsigned int k = 0; k < max_k; ++k) {
-
-    // Cycle through each of the "res" number of rays in one cell
-    for (double ray = k + (1.0/res)/2;
-         ray < k + 1;
-         ray += (1.0/res)) {
-
-      // The intersections for one ray
-      std::vector<intersection> intersections =
-        adj_graph[static_cast<int>(round(((ray - (1.0/res)/2.0) * res)))];
-
-      // Sort vector in ascending order of intersection
-      sort(intersections.begin(), intersections.end());
-
-      int size = intersections.size() - 1;
-
-      // Fill GeoDivs by iterating through intersections
-      for (int l = 1; l < size; l += 2) {
-        double x_1 = intersections[l].coord;
-        double x_2 = intersections[l + 1].coord;
-        std::string gd_1 = intersections[l].geo_div_id;
-        std::string gd_2 = intersections[l + 1].geo_div_id;
-
-        if (gd_1 != gd_2 && x_1 == x_2) {
-          for (auto &gd : *inset_state->ref_to_geo_divs()) {
-            if (gd.id() == gd_1) {
-              gd.adjacent_to(gd_2);
-            } else if (gd.id() == gd_2) {
-              gd.adjacent_to(gd_1);
-            }
-          }
-        }
-
-      }
-    }
-  }
-}
-
 // Function to automatically color topology based on adjacency graph
 void auto_color(InsetState* inset_state)
 {
@@ -83,8 +28,7 @@ void auto_color(InsetState* inset_state)
   // create_vertical_adjacency_graph(inset_state, res);
 
   // Creating full adjacency graph based on vertical and horizontal graphs
-  create_adjacency_graph(inset_state, 'h', res);
-  create_adjacency_graph(inset_state, 'v', res);
+  inset_state->create_adjacency_graph(res);
 
   // Count to maximize colors used. This changes the starting color that
   // the algorithm choses for each GeoDiv.
