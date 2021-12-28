@@ -5,13 +5,19 @@
 #include "ft_real_2d.h"
 #include "geo_div.h"
 #include "xy_point.h"
+#include "geometry.h"
 #include <vector>
 #include <boost/multi_array.hpp>
 #include <map>
 
-// Struct to store intersection data
+// Struct to store intersection between line parallel with
+// axis, and line segment.
 struct intersection {
-  double x;  // x-coordinate of intersection
+
+  // Intersection coordinates
+  // The x OR y coordinate, depending on which axis is the line parallel to.
+  // The coordinate that does not represent the line is stored.
+  double coord;
   double target_density;  // GeoDiv's target_density
   std::string geo_div_id;  // GeoDIv's ID
   bool direction;  // Does intersection enter (true) or exit (false)?
@@ -19,7 +25,8 @@ struct intersection {
   // Overloading "<" operator, similar to above
   bool operator < (const intersection &rhs) const
   {
-    return (x < rhs.x || (x == rhs.x && direction < rhs.direction));
+    return (coord < rhs.coord ||
+           (coord == rhs.coord && direction < rhs.direction));
   }
 };
 
@@ -73,7 +80,6 @@ public:
   void execute_fftw_bwd_plan() const;
   void execute_fftw_fwd_plan() const;
   const std::vector<GeoDiv> geo_divs() const;
-  const std::vector<std::vector<intersection> > horizontal_adj() const;
   void increment_integration();
   void initialize_cum_proj();
   const std::string inset_name() const;
@@ -102,11 +108,10 @@ public:
   void set_area_errors();
   void set_geo_divs(const std::vector<GeoDiv>);
   void set_grid_dimensions(const unsigned int lx, const unsigned int ly);
-  void set_horizontal_adj(const std::vector<std::vector<intersection> >);
   void set_inset_name(const std::string);
   void set_map_scale(const double);
   void set_pos(const std::string);
-  void set_vertical_adj(const std::vector<std::vector<intersection> >);
+
   void set_xmin(const unsigned int);
   void set_ymin(const unsigned int);
   bool target_area_is_missing(const std::string) const;
@@ -115,7 +120,13 @@ public:
   void target_areas_replace(const std::string, const double);
   double total_inset_area() const;
   double total_target_area() const;
+
+  // Adjacency graph functions
+  void set_horizontal_adj(const std::vector<std::vector<intersection> >);
+  void set_vertical_adj(const std::vector<std::vector<intersection> >);
+  const std::vector<std::vector<intersection> > horizontal_adj() const;
   const std::vector<std::vector<intersection> > vertical_adj() const;
+
   const std::vector<Polygon_with_holes> intersections() const;
 };
 

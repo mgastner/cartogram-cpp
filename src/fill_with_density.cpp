@@ -24,7 +24,8 @@ bool ray_y_intersects(XYPoint a,
     }
 
     // Edit intersection passed by reference
-    temp->x = (a.x * (b.y - ray_y) + b.x * (ray_y - a.y)) / (b.y - a.y);
+    // coord stores the x coordinate.
+    temp->coord = (a.x * (b.y - ray_y) + b.x * (ray_y - a.y)) / (b.y - a.y);
     temp->target_density = target_density;
     temp->direction = false;  // Temporary value
     return true;
@@ -167,7 +168,7 @@ void fill_with_density(bool plot_density, InsetState* inset_state)
             std::cerr << "Y-coordinate: " << ray_y << std::endl;
             std::cerr << "Intersection points: " << std::endl;
             for (unsigned int l = 0; l < intersections.size(); ++l) {
-              std::cerr << intersections[l].x << std::endl;
+              std::cerr << intersections[l].coord << std::endl;
             }
             std::cerr << std::endl << std::endl;
             _Exit(932875);
@@ -217,8 +218,8 @@ void fill_with_density(bool plot_density, InsetState* inset_state)
       // evaluate to a large positive number instead of -1. In this case,
       // we would erroneously enter the loop.
       for (unsigned int l = 1; l + 1 < intersections.size(); l += 2) {
-        double left_x = intersections[l].x;
-        double right_x = intersections[l + 1].x;
+        double left_x = intersections[l].coord;
+        double right_x = intersections[l + 1].coord;
         if (left_x != right_x) {
           if (ceil(left_x) == ceil(right_x)) {
 
@@ -236,7 +237,7 @@ void fill_with_density(bool plot_density, InsetState* inset_state)
 
         // Fill last exiting intersection with GeoDiv where part of ray inside
         // the graticule cell is inside the GeoDiv
-        unsigned int last_x = intersections.back().x;
+        unsigned int last_x = intersections.back().coord;
         double last_weight =
           inset_state->area_errors_at(intersections.back().geo_div_id) *
           (ceil(last_x) - last_x);
@@ -247,8 +248,8 @@ void fill_with_density(bool plot_density, InsetState* inset_state)
 
       // Fill GeoDivs by iterating through intersections
       for (unsigned int l = 0; l < intersections.size(); l += 2) {
-        double left_x = intersections[l].x;
-        double right_x = intersections[l + 1].x;
+        double left_x = intersections[l].coord;
+        double right_x = intersections[l + 1].coord;
 
         // Check for intersection of polygons, holes and GeoDivs
         // TODO: Decide whether to comment out? (probably not)

@@ -24,10 +24,8 @@ bool ray_x_intersects(XYPoint a,
     }
 
     // Edit intersection passed by reference
-    // Although it's name is x, this is the y-coordinate. This is becasue
-    // the intersections struct was initally made for fill_with_density.cpp
-    // which only required us to run through horizontal rays.
-    temp->x = (a.y * (b.x - ray_x) + b.y * (ray_x - a.x)) / (b.x - a.x);
+    // coord stores the y coordinate.
+    temp->coord = (a.y * (b.x - ray_x) + b.y * (ray_x - a.x)) / (b.x - a.x);
     temp->target_density = target_density;
     temp->direction = false;  // Temporary value
     return true;
@@ -124,7 +122,7 @@ void create_vertical_adjacency_graph(InsetState* inset_state, unsigned int res)
             std::cerr << "X-coordinate: " << ray_x << std::endl;
             std::cerr << "Intersection points: " << std::endl;
             for (unsigned int l = 0; l < intersections.size(); ++l) {
-              std::cerr << intersections[l].x << std::endl;
+              std::cerr << intersections[l].coord << std::endl;
             }
             std::cerr << std::endl << std::endl;
             _Exit(932875);
@@ -181,8 +179,8 @@ void create_adjacency_graph(InsetState* inset_state,
 
       // Fill GeoDivs by iterating through intersections
       for (int l = 1; l < size; l += 2) {
-        double x_1 = intersections[l].x;
-        double x_2 = intersections[l + 1].x;
+        double x_1 = intersections[l].coord;
+        double x_2 = intersections[l + 1].coord;
         std::string gd_1 = intersections[l].geo_div_id;
         std::string gd_2 = intersections[l + 1].geo_div_id;
 
