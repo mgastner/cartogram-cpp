@@ -129,6 +129,9 @@ public:
   void create_adjacency_graph(unsigned int res);
 
   const std::vector<Polygon_with_holes> intersections() const;
+
+  // Function to automatically color inset
+  void auto_color();
 };
 
 #endif

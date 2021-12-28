@@ -1,11 +1,10 @@
 #include "constants.h"
 #include "cartogram_info.h"
 #include "inset_state.h"
-#include "auto_color.h"
 #include "colors.h"
 
 // Function to automatically color topology based on adjacency graph
-void auto_color(InsetState* inset_state)
+void InsetState::auto_color()
 {
 
   std::vector<Color> palette;
@@ -28,7 +27,7 @@ void auto_color(InsetState* inset_state)
   // create_vertical_adjacency_graph(inset_state, res);
 
   // Creating full adjacency graph based on vertical and horizontal graphs
-  inset_state->create_adjacency_graph(res);
+  this->create_adjacency_graph(res);
 
   // Count to maximize colors used. This changes the starting color that
   // the algorithm choses for each GeoDiv.
@@ -39,11 +38,11 @@ void auto_color(InsetState* inset_state)
   int max_i = palette.size();
 
   // Iterating until we are able to color the entire map
-  while (inset_state->colors_size() < inset_state->n_geo_divs() &&
+  while (this->colors_size() < this->n_geo_divs() &&
          max_i >= 0) {
 
     // Iterating through GeoDivs
-    for (auto &gd : *inset_state->ref_to_geo_divs()) {
+    for (auto gd : this->geo_divs_) {
 
       // Iterating through all possible colors
       for (size_t i = (count % max_i); i < palette.size(); ++i) {
@@ -54,8 +53,8 @@ void auto_color(InsetState* inset_state)
         for (std::string gd_id : gd.adjacent_geodivs()) {
 
           // Checking to see whether color found
-          if (inset_state->color_found(gd_id)) {
-            if (inset_state->colors_at(gd_id) == c) {
+          if (this->color_found(gd_id)) {
+            if (this->colors_at(gd_id) == c) {
               shared_color = true;
             }
           }
@@ -64,7 +63,7 @@ void auto_color(InsetState* inset_state)
         // If the color is not shared with any other adjacent GeoDiv,
         // we assign it the color.
         if (!shared_color) {
-          inset_state->colors_insert(gd.id(), c);
+          this->colors_insert(gd.id(), c);
           i = palette.size();
         }
       }

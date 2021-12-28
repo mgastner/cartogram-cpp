@@ -1,5 +1,4 @@
 #include "albers_projection.h"
-#include "auto_color.h"
 #include "blur_density.h"
 #include "cartogram_info.h"
 #include "check_topology.h"
@@ -213,7 +212,7 @@ int main(const int argc, const char *argv[])
 
       // Automatically color GeoDivs if no colors are provided
       if (inset_state.colors_empty()) {
-        auto_color(&inset_state);
+        inset_state.auto_color();
       }
 
       // Write EPS if requested by command-line option
