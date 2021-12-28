@@ -125,7 +125,7 @@ public:
   void set_horizontal_scans(const std::vector<std::vector<intersection> >);
   // void set_vertical_adj(const std::vector<std::vector<intersection> >);
   const std::vector<std::vector<intersection> >
-    horizontal_scans() const;
+    horizontal_scans(unsigned int) const;
   const std::vector<std::vector<intersection> >
     vertical_scans(unsigned int) const;
 

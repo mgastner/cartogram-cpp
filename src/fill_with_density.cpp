@@ -3,36 +3,6 @@
 #include "write_eps.h"
 #include "fill_with_density.h"
 
-bool ray_y_intersects(XYPoint a,
-                      XYPoint b,
-                      double ray_y,
-                      intersection *temp,
-                      double target_density,
-                      double epsilon)
-{
-  // Check if intersection is present
-  if (((a.y <= ray_y && b.y >= ray_y) ||
-       (a.y >= ray_y && b.y <= ray_y)) &&
-
-      // Pre-condition to ignore grazing incidence (i.e., a line segment along
-      // the polygon is exactly on the test ray)
-      (a.y != b.y)) {
-    if (a.y == ray_y) {
-      a.y += epsilon;
-    } else if (b.y == ray_y) {
-      b.y += epsilon;
-    }
-
-    // Edit intersection passed by reference
-    // coord stores the x coordinate.
-    temp->coord = (a.x * (b.y - ray_y) + b.x * (ray_y - a.y)) / (b.y - a.y);
-    temp->target_density = target_density;
-    temp->direction = false;  // Temporary value
-    return true;
-  }
-  return false;
-}
-
 void fill_with_density(bool plot_density, InsetState* inset_state)
 {
   // Calculate the total current area and total target area. We assume that
@@ -59,7 +29,7 @@ void fill_with_density(bool plot_density, InsetState* inset_state)
   // Resolution with which we sample polygons. "res" is the number of
   // horizontal "test rays" between each of the ly consecutive horizontal
   // graticule lines.
-  unsigned int res = 16;
+  unsigned int res = default_res;
 
   // A vector (map_intersections) to store vectors of intersections
   int n_rays = static_cast<int>(inset_state->ly() * res);
@@ -75,120 +45,8 @@ void fill_with_density(bool plot_density, InsetState* inset_state)
   std::vector<std::vector<double> >
   rho_den(inset_state->lx(), std::vector<double> (inset_state->ly(), 0));
 
-  // Iterate through GeoDivs in inset_state
-  for (auto gd : inset_state->geo_divs()) {
-
-    // Find target density
-    double target_density;
-    target_density = inset_state->target_areas_at(gd.id()) / gd.area();
-
-    // Iterate through "polygons with holes" in inset_state
-    for (unsigned int j = 0; j < gd.n_polygons_with_holes(); ++j) {
-      Polygon_with_holes pwh = gd.polygons_with_holes()[j];
-      Bbox bb = pwh.bbox();
-
-      // Cycle through y-coordinates in bounding box of pwh
-      for (unsigned int k = floor(bb.ymin()) - 1;
-           k <= ceil(bb.ymax()) + 1;
-           ++k) {
-
-        // Cycle through each of the "test rays" between the graticule lines
-        // y = k and y = k+1
-        for (double ray_y = k + (1.0/res)/2;
-             ray_y < k + 1;
-             ray_y += (1.0/res)) {
-          Polygon ext_ring = pwh.outer_boundary();
-          XYPoint prev_point;
-          prev_point.x = ext_ring[ext_ring.size()-1][0];
-          prev_point.y = ext_ring[ext_ring.size()-1][1];
-
-          // Temporary vector of intersections for this particular ray
-          std::vector<intersection> intersections;
-
-          // The following algorithm works by iterating through "res" rays in
-          // each cell. For each ray, we iterate through every edge in a
-          // polygon and store any intersections. Finally, once all
-          // intersections have been stored, we iterate between intersections,
-          // and add the appropriate densities.
-          // We add a small value "epsilon" in case the ray with equation
-          // y = ray_y goes exactly through curr_point. The addition ensures
-          // that, if there is any intersection, it is only counted once. It
-          // also correctly detects whether the ray crosses through the point
-          // without entering or exiting the polygon.
-          double epsilon = 1e-6 / res;
-
-          // First we run the algorithm on the exterior ring
-          for (unsigned int l = 0; l < ext_ring.size(); ++l) {
-            XYPoint curr_point;
-            curr_point.x = ext_ring[l][0];
-            curr_point.y = ext_ring[l][1];
-            intersection temp;
-            if (ray_y_intersects(curr_point,
-                                 prev_point,
-                                 ray_y,
-                                 &temp,
-                                 target_density,
-                                 epsilon)) {
-              temp.geo_div_id = gd.id();
-              intersections.push_back(temp);
-            }
-            prev_point.x = curr_point.x;
-            prev_point.y = curr_point.y;
-          }
-
-          // Run algorithm on each hole
-          for (auto hci = pwh.holes_begin(); hci != pwh.holes_end(); ++hci) {
-            Polygon hole = *hci;
-            prev_point.x = hole[hole.size()-1][0];
-            prev_point.y = hole[hole.size()-1][1];
-            for (unsigned int l = 0; l < hole.size(); ++l) {
-              XYPoint curr_point;
-              curr_point.x = hole[l][0];
-              curr_point.y = hole[l][1];
-              intersection temp;
-              if (ray_y_intersects(curr_point,
-                                   prev_point,
-                                   ray_y,
-                                   &temp,
-                                   target_density,
-                                   epsilon)) {
-                temp.geo_div_id = gd.id();
-                intersections.push_back(temp);
-              }
-              prev_point.x = curr_point.x;
-              prev_point.y = curr_point.y;
-            }
-          }
-
-          // Check if the number of intersections is odd
-          if (intersections.size() % 2 != 0) {
-            std::cerr << "Incorrect Topology" << std::endl;
-            std::cerr << "Number of intersections: " << intersections.size();
-            std::cerr << std::endl;
-            std::cerr << "Y-coordinate: " << ray_y << std::endl;
-            std::cerr << "Intersection points: " << std::endl;
-            for (unsigned int l = 0; l < intersections.size(); ++l) {
-              std::cerr << intersections[l].coord << std::endl;
-            }
-            std::cerr << std::endl << std::endl;
-            _Exit(932875);
-          }
-          std::sort(intersections.begin(), intersections.end());
-
-          // Add sorted vector of intersections to vector map_intersections
-          for (unsigned int l = 0; l < intersections.size(); ++l) {
-            intersections[l].direction = (l%2 == 0);
-            int index = round((ray_y - 0.5/res) * res);
-            map_intersections[index].push_back(intersections[l]);
-          }
-        }
-      }
-    }
-  }
-
-  // Horizontal adjacency graph for automatic coloring
-  inset_state->set_horizontal_scans(map_intersections);
-  map_intersections = inset_state->horizontal_scans();
+  // See horizontal_scans in scanline_graph.cpp for more information.
+  map_intersections = inset_state->horizontal_scans(res);
 
   // Determine rho's numerator and denominator:
   // - rho_num is the sum of (weight * target_density) for each segment of a

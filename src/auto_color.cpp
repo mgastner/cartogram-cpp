@@ -1,3 +1,4 @@
+#include "constants.h"
 #include "cartogram_info.h"
 #include "inset_state.h"
 #include "auto_color.h"
@@ -12,7 +13,7 @@ void create_adjacency_graph(InsetState* inset_state,
   std::vector<std::vector<intersection> > adj_graph;
   unsigned int max_k = 0;
   if (graph == 'h') {
-    adj_graph = inset_state->horizontal_scans();
+    adj_graph = inset_state->horizontal_scans(res);
     max_k = inset_state->ly();
   } else if (graph == 'v') {
     adj_graph = inset_state->vertical_scans(res);
@@ -75,13 +76,8 @@ void auto_color(InsetState* inset_state)
   palette.push_back(Color(102, 102, 102)); // dark grey
   palette.push_back(Color(166, 118, 29)); // mustard-brown
 
-
-  // Getting the horizontal adjacency graph.
-  std::vector<std::vector<intersection> > horizontal_adj =
-    inset_state->horizontal_scans();
-
   // Find resolution
-  unsigned int res = horizontal_adj.size() / inset_state->ly();
+  unsigned int res = default_res;
 
   // Creating vertical adjacency graph
   // create_vertical_adjacency_graph(inset_state, res);
