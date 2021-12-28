@@ -52,6 +52,7 @@ add_executable(
   src/write_geojson.cpp
   src/albers_projection.cpp
   src/parse_arguments.cpp
+  src/scanline_graph.cpp
 )
 
 # Linking appropriate libraries required.
