@@ -242,7 +242,7 @@ int main(const int argc, const char *argv[])
 
         // Plotting intersections if requested
         if (plot_intersections) {
-          write_intersections_to_eps(&inset_state);
+          inset_state.write_intersections_to_eps();
         }
 
         // Calculate progress percentage. We assume that the maximum area

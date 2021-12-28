@@ -292,51 +292,35 @@ void write_density_to_eps(const std::string eps_name,
   return;
 }
 
-void write_intersections_to_eps(InsetState *inset_state)
+void InsetState::write_intersections_to_eps()
 {
   std::string eps_name =
-    inset_state->inset_name() +
+    this->inset_name() +
     "_intersections_" +
-    std::to_string(inset_state->n_finished_integrations()) +
+    std::to_string(this->n_finished_integrations()) +
     ".eps";
 
   // Calculating intersections
-  std::vector<Polygon_with_holes> intersections = inset_state->intersections();
+  std::vector<Segment> intersections = this->intersections();
 
   // Printing intersections to EPS if intersections present
   std::cerr << "Writing " << eps_name << std::endl;
   std::ofstream eps_file(eps_name);
-  write_eps_header_and_definitions(eps_file, eps_name, inset_state);
+  write_eps_header_and_definitions(eps_file, eps_name, this);
   write_polygons_to_eps(eps_file,
                         false, // Whether to fill polygons with default color
                         false, // Whether to fill polygons with assigned color
-                        inset_state);
-  for (auto pwh : intersections) {
-    Polygon ext_ring = pwh.outer_boundary();
+                        this);
+  for (auto seg : intersections) {
 
     // Move to starting coordinates
-    eps_file << "n " << ext_ring[0][0] << " " << ext_ring[0][1] << " m\n";
+    eps_file << seg[0][0] << " " << seg[0][1] << " m\n";
 
-    // Plot each point in exterior ring
-    for (unsigned int i = 1; i < ext_ring.size(); ++i) {
-      eps_file << ext_ring[i][0] << " " << ext_ring[i][1] << " l\n";
-    }
+    // Draw line
+    eps_file << seg[1][0] << " " << seg[1][1] << " l\n";
 
-    // Close path
-    eps_file << "c\n";
-
-    // Plot holes
-    for (auto hci = pwh.holes_begin(); hci != pwh.holes_end(); ++hci) {
-      Polygon hole = *hci;
-      eps_file << hole[0][0] << " " << hole[0][1] << " m\n";
-      for (unsigned int i = 1; i < hole.size(); ++i) {
-        eps_file << hole[i][0] << " " << hole[i][1] << " l\n";
-      }
-      eps_file << "c\n";
-    }
-
-    // Fill path with red
-    eps_file << "1 0 0 srgb f\n";
+    // Fill line with red and stroke
+    eps_file << "1 0 0 srgb s\n";
   }
   eps_file << "showpage\n";
   eps_file << "%%EOF\n";

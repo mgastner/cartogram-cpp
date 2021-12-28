@@ -128,10 +128,14 @@ public:
     vertical_scans(unsigned int) const;
   void create_adjacency_graph(unsigned int res);
 
-  const std::vector<Polygon_with_holes> intersections() const;
+  const std::vector<Segment> intersections() const;
 
   // Function to automatically color inset
   void auto_color();
+
+  // Function to write all intersections found to an EPS file
+  // as "*_intersections_*.eps"
+  void write_intersections_to_eps();
 };
 
 #endif

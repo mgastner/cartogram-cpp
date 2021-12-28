@@ -346,3 +346,11 @@ void InsetState::create_adjacency_graph(unsigned int res)
   }
 
 }
+
+// Returns line segments highlighting intersection points using scan graphs.
+const std::vector<Segment> InsetState::intersections() const
+{
+  std::vector<Segment> intersections;
+  // std::vector<Polygon_with_holes> all_pgwhs_in_inset;
+  return intersections;
+}
