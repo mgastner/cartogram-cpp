@@ -9,6 +9,12 @@ void rescale_map(unsigned int long_grid_side_length,
 {
   double padding = (is_world_map ?  1.0 : padding_unless_world);
   Bbox bb = inset_state->bbox();
+  if (is_world_map) {
+    bb = Bbox(project_x_to_smyth(-180.0),
+              project_y_to_smyth(-90.0),
+              project_x_to_smyth(180.0),
+              project_y_to_smyth(90.0));
+  }
 
   // Expand bounding box to guarantee a minimum padding
   double new_xmin =
@@ -34,10 +40,8 @@ void rescale_map(unsigned int long_grid_side_length,
     lx = long_grid_side_length;
     latt_const = (new_xmax-new_xmin) / lx;
     ly = 1 << static_cast<int>(ceil(log2((new_ymax-new_ymin) / latt_const)));
-    if (!is_world_map){
-      new_ymax = 0.5*(bb.ymax()+bb.ymin()) + 0.5*ly*latt_const;
-      new_ymin = 0.5*(bb.ymax()+bb.ymin()) - 0.5*ly*latt_const;
-    }
+    new_ymax = 0.5*(bb.ymax()+bb.ymin()) + 0.5*ly*latt_const;
+    new_ymin = 0.5*(bb.ymax()+bb.ymin()) - 0.5*ly*latt_const;
   } else {
     ly = long_grid_side_length;
     latt_const = (new_ymax-new_ymin) / ly;
