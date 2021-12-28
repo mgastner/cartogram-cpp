@@ -12,10 +12,10 @@ void create_adjacency_graph(InsetState* inset_state,
   std::vector<std::vector<intersection> > adj_graph;
   unsigned int max_k = 0;
   if (graph == 'h') {
-    adj_graph = inset_state->horizontal_adj();
+    adj_graph = inset_state->horizontal_scans();
     max_k = inset_state->ly();
   } else if (graph == 'v') {
-    adj_graph = inset_state->vertical_adj();
+    adj_graph = inset_state->vertical_scans(res);
     max_k = inset_state->lx();
   }
 
@@ -78,13 +78,13 @@ void auto_color(InsetState* inset_state)
 
   // Getting the horizontal adjacency graph.
   std::vector<std::vector<intersection> > horizontal_adj =
-    inset_state->horizontal_adj();
+    inset_state->horizontal_scans();
 
   // Find resolution
   unsigned int res = horizontal_adj.size() / inset_state->ly();
 
   // Creating vertical adjacency graph
-  inset_state->create_vertical_adjacency_graph(res);
+  // create_vertical_adjacency_graph(inset_state, res);
 
   // Creating full adjacency graph based on vertical and horizontal graphs
   create_adjacency_graph(inset_state, 'h', res);

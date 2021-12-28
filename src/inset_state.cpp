@@ -100,7 +100,7 @@ const std::vector<GeoDiv> InsetState::geo_divs() const
   return geo_divs_;
 }
 
-const std::vector<std::vector<intersection> > InsetState::horizontal_adj()
+const std::vector<std::vector<intersection> > InsetState::horizontal_scans()
 const
 {
   return horizontal_adj_;
@@ -295,7 +295,7 @@ void InsetState::set_grid_dimensions(
   return;
 }
 
-void InsetState::set_horizontal_adj(
+void InsetState::set_horizontal_scans(
   const std::vector<std::vector<intersection> > ha)
 {
   horizontal_adj_.clear();
@@ -321,12 +321,12 @@ void InsetState::set_pos(const std::string pos)
   return;
 }
 
-void InsetState::set_vertical_adj(std::vector<std::vector<intersection> > va)
-{
-  vertical_adj_.clear();
-  vertical_adj_ = va;
-  return;
-}
+// void InsetState::set_vertical_adj(std::vector<std::vector<intersection> > va)
+// {
+//   vertical_adj_.clear();
+//   vertical_adj_ = va;
+//   return;
+// }
 void InsetState::set_xmin(const unsigned int new_xmin)
 {
   new_xmin_ = new_xmin;
@@ -380,10 +380,10 @@ double InsetState::total_target_area() const
   return inset_total_target_area;
 }
 
-const std::vector<std::vector<intersection> > InsetState::vertical_adj() const
-{
-  return vertical_adj_;
-}
+// const std::vector<std::vector<intersection> > InsetState::vertical_adj() const
+// {
+//   return vertical_adj_;
+// }
 
 const std::vector<Polygon_with_holes> InsetState::intersections() const
 {

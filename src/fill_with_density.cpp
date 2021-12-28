@@ -187,7 +187,8 @@ void fill_with_density(bool plot_density, InsetState* inset_state)
   }
 
   // Horizontal adjacency graph for automatic coloring
-  inset_state->set_horizontal_adj(map_intersections);
+  inset_state->set_horizontal_scans(map_intersections);
+  map_intersections = inset_state->horizontal_scans();
 
   // Determine rho's numerator and denominator:
   // - rho_num is the sum of (weight * target_density) for each segment of a

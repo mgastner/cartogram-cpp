@@ -122,11 +122,12 @@ public:
   double total_target_area() const;
 
   // Adjacency graph functions
-  void create_vertical_adjacency_graph(unsigned int);
-  void set_horizontal_adj(const std::vector<std::vector<intersection> >);
-  void set_vertical_adj(const std::vector<std::vector<intersection> >);
-  const std::vector<std::vector<intersection> > horizontal_adj() const;
-  const std::vector<std::vector<intersection> > vertical_adj() const;
+  void set_horizontal_scans(const std::vector<std::vector<intersection> >);
+  // void set_vertical_adj(const std::vector<std::vector<intersection> >);
+  const std::vector<std::vector<intersection> >
+    horizontal_scans() const;
+  const std::vector<std::vector<intersection> >
+    vertical_scans(unsigned int) const;
 
   const std::vector<Polygon_with_holes> intersections() const;
 };

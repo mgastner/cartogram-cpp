@@ -30,7 +30,9 @@ bool ray_x_intersects(XYPoint a,
   return false;
 }
 
-void InsetState::create_vertical_adjacency_graph(unsigned int res)
+// Creates a vector of intersections between each GeoDiv and each scanline.
+const std::vector<std::vector<intersection> >
+  InsetState::vertical_scans(unsigned int res) const
 {
 
   // A vector to store the vertical adjacency graph.
@@ -138,5 +140,5 @@ void InsetState::create_vertical_adjacency_graph(unsigned int res)
   }
 
   // Setting Vertical Adjacency graph for automatic coloring
-  vertical_adj_ = vertical_adj;
+  return vertical_adj;
 }
