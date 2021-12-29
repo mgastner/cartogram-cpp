@@ -228,8 +228,19 @@ int main(const int argc, const char *argv[])
         } else {
           eps_input_filename += "_input.eps";
         }
+        inset_eps_area = inset_state.total_inset_area();
+        std::cerr << "inset_eps_area = " << inset_eps_area << std::endl;
+        std::cerr << "inset_eps_area = " << inset_eps_area << std::endl;
+        std::cerr << "Total EPS Area 512 * 512 : " << lx * ly << std::endl;
+        std::cerr << "Percentage of Total EPS : " << inset_eps_area/ (lx * ly) << std::endl;
+        double eps_one_unit_area = (inset_albers_area / inset_eps_area);
+        std::cerr << "One unit area of EPS map: " << eps_one_unit_area << std::endl;
+        for (int i = 10; i < 30; i++) {
+          double eps_area = eps_one_unit_area * i * i;
+          std::cerr << "Area of EPS map " << i << " unit: " << eps_area << std::endl;
+        }
         std::cerr << "Writing " << eps_input_filename << std::endl;
-        write_map_to_eps(eps_input_filename, plot_graticule, &inset_state, 22);
+        write_map_to_eps(eps_input_filename, plot_graticule, &inset_state, 23);
       }
 
       // We make the approximation that the progress towards generating the
@@ -295,22 +306,22 @@ int main(const int argc, const char *argv[])
 
         // Update area errors
         inset_state.set_area_errors();
-        std::cerr << "max. area err: "
-                  << inset_state.max_area_error().value
-                  << ", GeoDiv: "
-                  << inset_state.max_area_error().geo_div
-                  << std::endl;
-        std::cerr << "Progress: "
-                  << progress + (inset_max_frac / n_predicted_integrations)
-                  << std::endl
-                  << std::endl;
+        // std::cerr << "max. area err: "
+        //           << inset_state.max_area_error().value
+        //           << ", GeoDiv: "
+        //           << inset_state.max_area_error().geo_div
+        //           << std::endl;
+        // std::cerr << "Progress: "
+        //           << progress + (inset_max_frac / n_predicted_integrations)
+        //           << std::endl
+        //           << std::endl;
       }
       progress += inset_max_frac;
-      std::cerr << "Finished inset "
-                << inset_pos
-                << "\nProgress: "
-                << progress
-                << std::endl;
+      // std::cerr << "Finished inset "
+      //           << inset_pos
+      //           << "\nProgress: "
+      //           << progress
+      //           << std::endl;
 
       // Print EPS of cartogram
       if (make_polygon_eps) {
@@ -324,15 +335,18 @@ int main(const int argc, const char *argv[])
                   << eps_output_filename << std::endl;
                   
         inset_eps_area = inset_state.total_inset_area();
-        double eps_one_unit_area = ((inset_albers_area / inset_eps_area) * lx * ly) / (lx + ly)/2;
+        std::cerr << "inset_eps_area = " << inset_eps_area << std::endl;
+        std::cerr << "Total EPS Area 512 * 512 : " << lx * ly << std::endl;
+        std::cerr << "Percentage of Total EPS : " << inset_eps_area/ (lx * ly) << std::endl;
+        double eps_one_unit_area = (inset_albers_area / inset_eps_area);
         std::cerr << "One unit area of EPS map: " << eps_one_unit_area << std::endl;
-        for (int i = 10; i < 25; i++) {
-          double eps_area = eps_one_unit_area * i;
+        for (int i = 10; i < 30; i++) {
+          double eps_area = eps_one_unit_area * i * i;
           std::cerr << "Area of EPS map " << i << " unit: " << eps_area << std::endl;
         }
         
         write_map_to_eps(eps_output_filename, plot_graticule,
-                         &inset_state, 22);
+                         &inset_state, 24);
       }
 
       // Rescale insets in correct proportion to each other

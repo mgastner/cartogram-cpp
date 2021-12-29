@@ -7,8 +7,8 @@
 constexpr unsigned int default_long_grid_side_length = 512;
 constexpr double dbl_epsilon = std::numeric_limits<double>::epsilon();
 constexpr double dbl_inf = std::numeric_limits<double>::infinity();
-constexpr unsigned int max_integrations = 100;
-constexpr double max_permitted_area_error = 0.01;
+constexpr unsigned int max_integrations = 200;
+constexpr double max_permitted_area_error = 0.005;
 constexpr double padding_unless_world = 1.5;
 constexpr double pi = std::numbers::pi;
 constexpr double earth_radius = 6378.1370;
