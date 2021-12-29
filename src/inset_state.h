@@ -127,7 +127,7 @@ public:
     vertical_scans(unsigned int) const;
   void create_adjacency_graph(unsigned int res);
 
-  const std::vector<Segment> intersections() const;
+  const std::vector<Segment> intersections(unsigned int) const;
 
   // Function to automatically color inset
   void auto_color();

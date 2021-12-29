@@ -301,7 +301,7 @@ void InsetState::write_intersections_to_eps()
     ".eps";
 
   // Calculating intersections
-  std::vector<Segment> intersections = this->intersections();
+  std::vector<Segment> intersections = this->intersections(default_res);
 
   // Printing intersections to EPS if intersections present
   std::cerr << "Writing " << eps_name << std::endl;

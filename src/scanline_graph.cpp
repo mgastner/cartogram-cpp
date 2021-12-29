@@ -349,15 +349,14 @@ void InsetState::create_adjacency_graph(unsigned int res)
 }
 
 // Returns line segments highlighting intersection points using scan graphs.
-const std::vector<Segment> InsetState::intersections() const
+const std::vector<Segment> InsetState::intersections(unsigned int res) const
 {
   std::vector<Segment> int_segments;
 
   // Getting horizontal scan graph
   std::vector<std::vector<intersection> > horizontal_scans;
-  horizontal_scans = this->horizontal_scans(default_res);
+  horizontal_scans = this->horizontal_scans(res);
 
-  unsigned int res = default_res;
   unsigned int max_k = this->ly();
 
   // Iterating through horizontal adjacency graph
@@ -396,7 +395,7 @@ const std::vector<Segment> InsetState::intersections() const
   max_k = this->lx();
   // Getting vertical scan graph
   std::vector<std::vector<intersection> > vertical_scans;
-  vertical_scans = this->vertical_scans(default_res);
+  vertical_scans = this->vertical_scans(res);
 
   // Iterating through horizontal adjacency graph
   for (unsigned int k = 0; k < max_k; ++k) {
