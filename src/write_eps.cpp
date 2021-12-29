@@ -311,6 +311,10 @@ void InsetState::write_intersections_to_eps()
                         false, // Whether to fill polygons with default color
                         false, // Whether to fill polygons with assigned color
                         this);
+
+  // Set line width of intersection lines
+  eps_file << 0.0001 * (1.0/default_res) * std::min(this->lx(), this->ly())
+           << " slw\n";
   for (auto seg : intersections) {
 
     // Move to starting coordinates
