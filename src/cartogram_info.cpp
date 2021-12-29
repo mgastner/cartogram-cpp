@@ -87,7 +87,7 @@ void CartogramInfo::replace_missing_and_zero_target_areas()
 {
   // Threshold in percetage of non-na and non-zero total area for a target
   // area to be considered "too small".
-  double small_area_threshold_percent = 5e-5;
+  double small_area_threshold_percent = 2e-5;
 
   // Get total current area and total target area
   double total_cart_non_na_area = 0.0;
@@ -160,7 +160,7 @@ void CartogramInfo::replace_missing_and_zero_target_areas()
 
     // Calculate the factor by which to scale the small target areas. We aim
     // to scale min_positive_area to small_area_threshold_absolute.
-    double small_scale_fac = small_area_threshold_absolute / min_positive_area;
+    // double small_scale_fac = small_area_threshold_absolute / min_positive_area;
     
     // Replace non-positive target areas with a fraction of the smallest
     // positive target area.
@@ -171,7 +171,8 @@ void CartogramInfo::replace_missing_and_zero_target_areas()
       for (const auto &gd : inset_state.geo_divs()) {
         const double target_area = inset_state.target_areas_at(gd.id());
         if (target_area < small_area_threshold_absolute) {
-          double new_target_area = target_area * small_scale_fac;
+          // double new_target_area = target_area * small_scale_fac;
+          double new_target_area = small_area_threshold_absolute;
           inset_state.target_areas_replace(gd.id(), new_target_area);
           std::cerr << gd.id() << ": "
                     << target_area << " to " << new_target_area << std::endl;
