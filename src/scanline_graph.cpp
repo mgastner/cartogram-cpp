@@ -1,4 +1,5 @@
 #include "inset_state.h"
+#include "constants.h"
 
 bool ray_y_intersects(XYPoint a,
                       XYPoint b,
@@ -306,7 +307,7 @@ void InsetState::create_adjacency_graph(unsigned int res)
       max_k = this->lx();
     }
 
-    // Iterating through horizontal adjacency graph
+    // Iterating through scanline graph
     for (unsigned int k = 0; k < max_k; ++k) {
 
       // Cycle through each of the "res" number of rays in one cell
@@ -325,12 +326,12 @@ void InsetState::create_adjacency_graph(unsigned int res)
 
         // Fill GeoDivs by iterating through intersections
         for (int l = 1; l < size; l += 2) {
-          double x_1 = intersections[l].coord;
-          double x_2 = intersections[l + 1].coord;
+          double coord_1 = intersections[l].coord;
+          double coord_2 = intersections[l + 1].coord;
           std::string gd_1 = intersections[l].geo_div_id;
           std::string gd_2 = intersections[l + 1].geo_div_id;
 
-          if (gd_1 != gd_2 && x_1 == x_2) {
+          if (gd_1 != gd_2 && coord_1 == coord_2) {
             for (auto &gd : this->geo_divs_) {
               if (gd.id() == gd_1) {
                 gd.adjacent_to(gd_2);
@@ -351,6 +352,52 @@ void InsetState::create_adjacency_graph(unsigned int res)
 const std::vector<Segment> InsetState::intersections() const
 {
   std::vector<Segment> intersections;
-  // std::vector<Polygon_with_holes> all_pgwhs_in_inset;
+
+  // Getting scan graphs
+  std::vector<std::vector<intersection> > horizontal_scans, vertical_scans;
+  horizontal_scans = this->horizontal_scans(default_res);
+  vertical_scans = this->vertical_scans(default_res);
+
+  unsigned int res = default_res;
+  unsigned int max_k = this->ly();
+
+  // Iterating through horizontal adjacency graph
+  for (unsigned int k = 0; k < max_k; ++k) {
+
+    // Cycle through each of the "res" number of rays in one cell
+    for (double ray = k + (1.0/res)/2;
+         ray < k + 1;
+         ray += (1.0/res)) {
+
+      // The intersections for one ray
+      std::vector<intersection> intersections =
+        horizontal_scans[static_cast<int>(round(((ray - (1.0/res)/2.0) * res)))];
+
+      // Sort vector in ascending order of intersection
+      sort(intersections.begin(), intersections.end());
+
+      int size = intersections.size() - 1;
+
+      // Fill GeoDivs by iterating through intersections
+      for (int l = 1; l < size; l += 2) {
+        double coord_1 = intersections[l].coord;
+        double coord_2 = intersections[l + 1].coord;
+        std::string gd_1 = intersections[l].geo_div_id;
+        std::string gd_2 = intersections[l + 1].geo_div_id;
+
+        // if (gd_1 != gd_2 && coord_1 == coord_2) {
+        //   for (auto gd : this->geo_divs_) {
+        //     if (gd.id() == gd_1) {
+        //       gd.adjacent_to(gd_2);
+        //     } else if (gd.id() == gd_2) {
+        //       gd.adjacent_to(gd_1);
+        //     }
+        //   }
+        // }
+
+      }
+    }
+  }
+
   return intersections;
 }

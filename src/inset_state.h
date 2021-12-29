@@ -5,7 +5,6 @@
 #include "ft_real_2d.h"
 #include "geo_div.h"
 #include "xy_point.h"
-#include "geometry.h"
 #include <vector>
 #include <boost/multi_array.hpp>
 #include <map>
