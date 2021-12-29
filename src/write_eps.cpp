@@ -313,7 +313,7 @@ void InsetState::write_intersections_to_eps()
                         this);
 
   // Set line width of intersection lines
-  eps_file << 0.0001 * (1.0/default_res) * std::min(this->lx(), this->ly())
+  eps_file << 0.0001 * std::min(this->lx(), this->ly())
            << " slw\n";
   for (auto seg : intersections) {
 

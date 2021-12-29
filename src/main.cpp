@@ -240,11 +240,6 @@ int main(const int argc, const char *argv[])
                   << inset_state.n_finished_integrations()
                   << std::endl;
 
-        // Plotting intersections if requested
-        if (plot_intersections) {
-          inset_state.write_intersections_to_eps();
-        }
-
         // Calculate progress percentage. We assume that the maximum area
         // error is typically reduced to 1/5 of the previous value.
         const double ratio_actual_to_permitted_max_area_error =
@@ -268,6 +263,11 @@ int main(const int argc, const char *argv[])
         fill_with_density(plot_density, &inset_state);
         if (blur_width > 0.0) {
           blur_density(blur_width, plot_density, &inset_state);
+        }
+
+        // Plotting intersections if requested
+        if (plot_intersections) {
+          inset_state.write_intersections_to_eps();
         }
         flatten_density(&inset_state);
         if (triangulation) {
@@ -317,6 +317,11 @@ int main(const int argc, const char *argv[])
                 << progress
                 << std::endl;
 
+      // Plotting intersections if requested
+      if (plot_intersections) {
+        inset_state.write_intersections_to_eps();
+      }
+      
       // Print EPS of cartogram
       if (make_polygon_eps) {
         std::string eps_output_filename = inset_state.inset_name();
