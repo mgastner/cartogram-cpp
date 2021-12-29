@@ -265,8 +265,11 @@ int main(const int argc, const char *argv[])
         // Blur density to speed up the numerics in flatten_density() below.
         // We slowly reduce the blur width so that the areas can reach their
         // target values.
+        // TO-DO: For the world map, the max area error started increasing after
+        // blur_width hit 0. Is there a better way solve this than setting
+        // blur_width to always be non-zero and very small?
         double blur_width;
-        if (inset_state.n_finished_integrations() < 10) {
+        if (inset_state.n_finished_integrations() < max_integrations) {
           blur_width =
             std::pow(2.0, 5 - int(inset_state.n_finished_integrations()));
         } else {
