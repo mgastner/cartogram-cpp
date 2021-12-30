@@ -45,7 +45,7 @@ for folder in ../sample_data/*; do
 
         # Running cartogram, and timing it in seconds
         start=$(date +%s)
-        $(cartogram ${map} -V ${csv} ${cli} > tmp.txt 2>&1) >> tmp.txt
+        $(cartogram ${map} ${csv} ${cli} > tmp.txt 2>&1) >> tmp.txt
         end=$(date +%s)
         runtime=$((end-start))
 
