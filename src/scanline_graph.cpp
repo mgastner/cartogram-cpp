@@ -387,7 +387,6 @@ const std::vector<Segment> InsetState::intersections(unsigned int res) const
               Point(intersections[l + 2].coord, ray)
             )
           );
-          l++;
         }
       }
     }
