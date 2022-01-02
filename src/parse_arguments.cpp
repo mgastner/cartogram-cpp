@@ -27,8 +27,9 @@ argparse::ArgumentParser parsed_arguments(const int argc,
   arguments.add_argument("geometry_file")
   .help("File path: GeoJSON file");
 
-  // Optional argument accepting visual variables file (CSV) as input
-  arguments.add_argument("-V", "--visual_variable_file")
+  // Positional argument accepting visual variables file (CSV) as input
+  arguments.add_argument("visual_variable_file")
+  .default_value("none")
   .help("File path: CSV file with ID, area, and (optionally) colour");
 
   // Optional argument accepting long grid side length (unsigned int) as
@@ -161,17 +162,17 @@ argparse::ArgumentParser parsed_arguments(const int argc,
   std::cerr << "Using geometry from file " << geo_file_name << std::endl;
 
   // Check if a visual-variables file or -m flag is passed
-  if (arguments.present<std::string>("-V")) {
-    visual_file_name = arguments.get<std::string>("-V");
+  if (arguments.is_used("visual_variable_file")) {
+    visual_file_name = arguments.get<std::string>("visual_variable_file");
     std::cerr << "Using visual variables from file "
               << visual_file_name
               << std::endl;
   } else if (!make_csv) {
 
     // CSV file not given, and user does not want to create one
+    std::cerr << arguments << std::endl;
     std::cerr << "ERROR: No CSV file given!" << std::endl;
     std::cerr << "To create a CSV, please use the -m flag." << std::endl;
-    std::cerr << arguments << std::endl;
     _Exit(15);
   }
   return arguments;
