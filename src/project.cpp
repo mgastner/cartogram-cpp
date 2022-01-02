@@ -146,10 +146,6 @@ Point projected_point_on_grid_or_edge(const Point pt,
 // error message.
 int chosen_diag(Point v[4], unsigned int *num_concave, InsetState *inset_state)
 {
-  const boost::multi_array<XYPoint, 2> &proj = *inset_state->ref_to_proj();
-  const unsigned int lx = inset_state->lx();
-  const unsigned int ly = inset_state->ly();
-
   // The input v[i].x can only be 0, lx, or 0.5, 1.5, ..., lx-0.5.
   // A similar rule applies to the y-coordinates.
   for (unsigned int i = 0; i < 4; ++i) {
