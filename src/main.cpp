@@ -252,13 +252,14 @@ int main(const int argc, const char *argv[])
         // Blur density to speed up the numerics in flatten_density() below.
         // We slowly reduce the blur width so that the areas can reach their
         // target values.
-        double blur_width;
-        if (inset_state.n_finished_integrations() < 10) {
-          blur_width =
-            std::pow(2.0, 5 - int(inset_state.n_finished_integrations()));
-        } else {
-          blur_width = 0.0;
-        }
+        double blur_width =
+          std::pow(2.0, 5 - int(inset_state.n_finished_integrations()));
+        // if (inset_state.n_finished_integrations() < max_integrations) {
+        //   blur_width =
+        //     std::pow(2.0, 5 - int(inset_state.n_finished_integrations()));
+        // } else {
+        //   blur_width = 0.0;
+        // }
         std::cerr << "blur_width = " << blur_width << std::endl;
 
         // TODO: THIS if-CONDITION IS INELEGANT. IN AN UPDATED VERSION OF
