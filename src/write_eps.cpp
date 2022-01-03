@@ -160,11 +160,12 @@ void write_map_to_eps(const std::string eps_name,
   std::ofstream eps_file(eps_name);
   write_eps_header_and_definitions(eps_file, eps_name, inset_state);
 
-  // Check whether all GeoDivs are colored
+  // Check whether all GeoDivs are colored, and, if colored, use given colors
+  // instead of default color.
   const bool has_colors =
     (inset_state->colors_size() == inset_state->n_geo_divs());
   write_polygons_to_eps(eps_file,
-                        true,
+                        true, // Whether to fill polygons with default color
                         has_colors,
                         inset_state);
   if (plot_graticule) {
@@ -281,7 +282,50 @@ void write_density_to_eps(const std::string eps_name,
       eps_file << r << " " << g << " " << b << " srgb f\n";
     }
   }
-  write_polygons_to_eps(eps_file, false, false, inset_state);
+  write_polygons_to_eps(eps_file,
+                        false, // Whether to fill polygons with default color
+                        false, // Whether to fill polygons with default color
+                        inset_state);
+  eps_file << "showpage\n";
+  eps_file << "%%EOF\n";
+  eps_file.close();
+  return;
+}
+
+void InsetState::write_intersections_to_eps(unsigned int res)
+{
+  std::string eps_name =
+    this->inset_name() +
+    "_intersections_" +
+    std::to_string(this->n_finished_integrations()) +
+    ".eps";
+
+  // Calculating intersections
+  std::vector<Segment> intersections = this->intersections(res);
+
+  // Printing intersections to EPS if intersections present
+  std::cerr << "Writing " << eps_name << std::endl;
+  std::ofstream eps_file(eps_name);
+  write_eps_header_and_definitions(eps_file, eps_name, this);
+  write_polygons_to_eps(eps_file,
+                        false, // Whether to fill polygons with default color
+                        false, // Whether to fill polygons with assigned color
+                        this);
+
+  // Set line width of intersection lines
+  eps_file << 0.0001 * std::min(this->lx(), this->ly())
+           << " slw\n";
+  for (auto seg : intersections) {
+
+    // Move to starting coordinates
+    eps_file << seg[0][0] << " " << seg[0][1] << " m\n";
+
+    // Draw line
+    eps_file << seg[1][0] << " " << seg[1][1] << " l\n";
+
+    // Fill line with red and stroke
+    eps_file << "1 0 0 srgb s\n";
+  }
   eps_file << "showpage\n";
   eps_file << "%%EOF\n";
   eps_file.close();
