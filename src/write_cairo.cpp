@@ -52,7 +52,6 @@ void write_cairo_polygons_to_png(const char *filename,
                     double red = col.r / 255.0;
                     double green = col.g / 255.0;
                     double blue = col.b / 255.0;
-                    std::cout << red << " " << green << " " << blue << '\n';
 
                     // Fill path
                     cairo_set_source_rgb(cr, red, green, blue);
@@ -76,25 +75,19 @@ void write_cairo_polygons_to_png(const char *filename,
 
         // Vertical graticule lines
         for (unsigned int i = 0; i <= inset_state->lx(); i += graticule_line_spacing) {
-            //eps_file << cum_proj[i][0].x << " " << cum_proj[i][0].y << " m\n";
             cairo_move_to(cr, cum_proj[i][0].x, cum_proj[i][0].y);
             for (unsigned int j = 1; j < inset_state->ly(); ++j) {
-                //eps_file << cum_proj[i][j].x << " " << cum_proj[i][j].y << " l\n";
                 cairo_line_to(cr, cum_proj[i][j].x, cum_proj[i][j].y);
             }
-            //eps_file << "s\n";
             cairo_stroke(cr);
         }
 
         // Horizontal graticule lines
         for (unsigned int j = 0; j <= inset_state->ly(); j += graticule_line_spacing) {
-            //eps_file << cum_proj[0][j].x << " " << cum_proj[0][j].y << " m\n";
             cairo_move_to(cr, cum_proj[0][j].x, cum_proj[0][j].y);
             for (unsigned int i = 1; i < inset_state->lx(); ++i) {
-                //eps_file << cum_proj[i][j].x << " " << cum_proj[i][j].y << " l\n";
                 cairo_line_to(cr, cum_proj[i][j].x, cum_proj[i][j].y);
             }
-            //eps_file << "s\n";
             cairo_stroke(cr);
         }
     }
