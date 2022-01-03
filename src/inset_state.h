@@ -5,29 +5,10 @@
 #include "ft_real_2d.h"
 #include "geo_div.h"
 #include "xy_point.h"
+#include "intersection.h"
 #include <vector>
 #include <boost/multi_array.hpp>
 #include <map>
-
-// Struct to store intersection between line parallel with
-// axis, and line segment.
-struct intersection {
-
-  // Intersection coordinates
-  // The x OR y coordinate, depending on which axis is the line parallel to.
-  // The coordinate that does not represent the line is stored.
-  double coord;
-  double target_density;  // GeoDiv's target_density
-  std::string geo_div_id;  // GeoDIv's ID
-  bool direction;  // Does intersection enter (true) or exit (false)?
-
-  // Overloading "<" operator, similar to above
-  bool operator < (const intersection &rhs) const
-  {
-    return (coord < rhs.coord ||
-           (coord == rhs.coord && direction < rhs.direction));
-  }
-};
 
 struct max_area_error_info {
   double value;

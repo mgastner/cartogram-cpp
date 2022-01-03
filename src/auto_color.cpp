@@ -1,6 +1,7 @@
 #include "constants.h"
 #include "cartogram_info.h"
 #include "inset_state.h"
+#include "intersection.h"
 #include "colors.h"
 
 // Function to automatically color topology based on adjacency graph
