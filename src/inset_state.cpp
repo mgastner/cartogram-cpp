@@ -359,3 +359,17 @@ double InsetState::total_target_area() const
   }
   return inset_total_target_area;
 }
+
+std::string InsetState::labels_at(const std::string id) const
+{
+  if (labels_.find(id) == labels_.end()) {
+    return "";
+  }
+  return labels_.at(id);
+}
+
+void InsetState::labels_insert(const std::string id, const std::string label)
+{
+  labels_.insert(std::pair<std::string, std::string>(id, label));
+  return;
+}

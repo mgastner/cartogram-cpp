@@ -20,6 +20,7 @@ private:
   std::unordered_map<std::string, double> area_errors_;
   Bbox bbox_;  // Bounding box
   std::unordered_map<std::string, Color> colors_;
+  std::unordered_map<std::string, std::string> labels_;
   fftw_plan fwd_plan_for_rho_, bwd_plan_for_rho_;
   std::vector<GeoDiv> geo_divs_;  // Geographic divisions in this inset
   std::unordered_map<std::string, bool> is_input_target_area_missing_;
@@ -65,6 +66,8 @@ public:
   const std::string inset_name() const;
   bool is_input_target_area_missing(const std::string) const;
   void is_input_target_area_missing_insert(const std::string, const bool);
+  std::string labels_at(const std::string) const;
+  void labels_insert(const std::string, const std::string);
   unsigned int lx() const;
   unsigned int ly() const;
   void make_fftw_plans_for_rho();
