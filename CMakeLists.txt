@@ -54,6 +54,7 @@ add_executable(
   src/albers_projection.cpp
   src/parse_arguments.cpp
   src/write_cairo.cpp
+  src/scanline_graph.cpp
 )
 
 # Linking appropriate libraries required.
