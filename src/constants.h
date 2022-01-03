@@ -12,8 +12,9 @@ constexpr double max_permitted_area_error = 0.01;
 constexpr double padding_unless_world = 1.5;
 constexpr double pi = std::numbers::pi;
 
-// Granularity of fill_with_density scanlines
+// Granularity of scanlines (horizontal_scans, vertical_scans)
 constexpr unsigned int default_res = 16;
+constexpr unsigned int intersections_res = 1;
 
 // Points after simplification
 constexpr unsigned int default_target_points_per_inset = 10000;

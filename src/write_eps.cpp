@@ -292,7 +292,7 @@ void write_density_to_eps(const std::string eps_name,
   return;
 }
 
-void InsetState::write_intersections_to_eps()
+void InsetState::write_intersections_to_eps(unsigned int res)
 {
   std::string eps_name =
     this->inset_name() +
@@ -301,7 +301,7 @@ void InsetState::write_intersections_to_eps()
     ".eps";
 
   // Calculating intersections
-  std::vector<Segment> intersections = this->intersections(default_res);
+  std::vector<Segment> intersections = this->intersections(res);
 
   // Printing intersections to EPS if intersections present
   std::cerr << "Writing " << eps_name << std::endl;

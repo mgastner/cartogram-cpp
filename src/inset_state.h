@@ -134,7 +134,7 @@ public:
 
   // Function to write all intersections found to an EPS file
   // as "*_intersections_*.eps"
-  void write_intersections_to_eps();
+  void write_intersections_to_eps(unsigned int);
 };
 
 #endif

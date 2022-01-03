@@ -352,78 +352,58 @@ void InsetState::create_adjacency_graph(unsigned int res)
 const std::vector<Segment> InsetState::intersections(unsigned int res) const
 {
   std::vector<Segment> int_segments;
+  for (char graph : {'h', 'v'}) {
 
-  // Getting horizontal scan graph
-  std::vector<std::vector<intersection> > horizontal_scans;
-  horizontal_scans = this->horizontal_scans(res);
+    // Getting horizontal scan graph
+    std::vector<std::vector<intersection> > scans;
+    unsigned int max_k;
 
-  unsigned int max_k = this->ly();
-
-  // Iterating through horizontal adjacency graph
-  for (unsigned int k = 0; k < max_k; ++k) {
-
-    // Cycle through each of the "res" number of rays in one cell
-    for (double ray = k + (1.0/res)/2;
-         ray < k + 1;
-         ray += (1.0/res)) {
-
-      // The intersections for one ray
-      std::vector<intersection> intersections =
-        horizontal_scans[static_cast<int>(round(((ray - (1.0/res)/2.0) * res)))];
-
-      // Sort vector in ascending order of intersection
-      std::sort(intersections.begin(), intersections.end());
-
-      int size = intersections.size() - 1;
-
-      // Check for intersections, if both are entering/exiting
-      for (int l = 0; l < size; ++l) {
-        if (intersections[l].direction == intersections[l + 1].direction &&
-            intersections[l].direction &&
-            l + 2 <= size) {
-          int_segments.push_back(
-            Segment(
-              Point(intersections[l + 1].coord, ray),
-              Point(intersections[l + 2].coord, ray)
-            )
-          );
-        }
-      }
+    if (graph == 'h') {
+      scans = this->horizontal_scans(res);
+      max_k= this->ly();
+    } else {
+      scans = this->vertical_scans(res);
+      max_k= this->lx();
     }
-  }
-  max_k = this->lx();
-  // Getting vertical scan graph
-  std::vector<std::vector<intersection> > vertical_scans;
-  vertical_scans = this->vertical_scans(res);
 
-  // Iterating through horizontal adjacency graph
-  for (unsigned int k = 0; k < max_k; ++k) {
+    // Iterating through horizontal adjacency graph
+    for (unsigned int k = 0; k < max_k; ++k) {
 
-    // Cycle through each of the "res" number of rays in one cell
-    for (double ray = k + (1.0/res)/2;
-         ray < k + 1;
-         ray += (1.0/res)) {
+      // Cycle through each of the "res" number of rays in one cell
+      for (double ray = k + (1.0/res)/2;
+          ray < k + 1;
+          ray += (1.0/res)) {
 
-      // The intersections for one ray
-      std::vector<intersection> intersections =
-        vertical_scans[static_cast<int>(round(((ray - (1.0/res)/2.0) * res)))];
+        // The intersections for one ray
+        std::vector<intersection> intersections =
+          scans[static_cast<int>(round(((ray - (1.0/res)/2.0) * res)))];
 
-      // Sort vector in ascending order of intersection
-      std::sort(intersections.begin(), intersections.end());
+        // Sort vector in ascending order of intersection
+        std::sort(intersections.begin(), intersections.end());
 
-      int size = intersections.size() - 1;
+        int size = intersections.size() - 1;
 
-      // Check for intersections, if both are entering/exiting
-      for (int l = 0; l < size; ++l) {
-        if (intersections[l].direction == intersections[l + 1].direction &&
-            intersections[l].direction &&
-            l + 2 <= size) {
-          int_segments.push_back(
-            Segment(
-              Point(ray, intersections[l + 1].coord),
-              Point(ray, intersections[l + 2].coord)
-            )
-          );
+        // Check for intersections, if both are entering/exiting
+        for (int l = 0; l < size; ++l) {
+          if (intersections[l].direction == intersections[l + 1].direction &&
+              intersections[l].direction &&
+              l + 2 <= size) {
+            if (intersections[l + 1].coord != intersections[l + 2].coord) {
+              Segment temp;
+              if (graph == 'h') {
+                temp = Segment(
+                               Point(intersections[l + 1].coord, ray),
+                               Point(intersections[l + 2].coord, ray)
+                               );
+              } else {
+                temp = Segment(
+                               Point(ray, intersections[l + 1].coord),
+                               Point(ray, intersections[l + 2].coord)
+                               );
+              }
+              int_segments.push_back(temp);
+            }
+          }
         }
       }
     }
