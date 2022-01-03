@@ -24,6 +24,7 @@ class GeoDiv {
     const std::vector<Polygon_with_holes> polygons_with_holes() const;
     void push_back(const Polygon_with_holes);
     std::vector<Polygon_with_holes> *ref_to_polygons_with_holes();
+    Point point_on_surface() const;
 };
 
 #endif

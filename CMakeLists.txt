@@ -55,6 +55,7 @@ add_executable(
   src/parse_arguments.cpp
   src/write_cairo.cpp
   src/scanline_graph.cpp
+  src/intersection.cpp
 )
 
 # Linking appropriate libraries required.
