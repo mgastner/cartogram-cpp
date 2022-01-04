@@ -20,7 +20,7 @@ void write_cairo_polygons_to_png(const char *filename,
 
     unsigned int line_width = std::min(inset_state->lx(), inset_state->ly());
     cairo_set_line_width(cr, 0.001 * line_width);
-
+    // draw the shapes
     for (auto gd : inset_state->geo_divs()) {
         for (auto pwh : gd.polygons_with_holes()) {
             Polygon ext_ring = pwh.outer_boundary();
@@ -64,6 +64,21 @@ void write_cairo_polygons_to_png(const char *filename,
         }
     }
 
+    //add the labels
+    for (auto gd : inset_state->geo_divs()) {
+        // go to a specific coordinate to place the label
+        cairo_set_source_rgb(cr, 0, 0, 0);
+        cairo_select_font_face(cr, "Sans", CAIRO_FONT_SLANT_NORMAL, CAIRO_FONT_WEIGHT_NORMAL);
+        cairo_set_font_size(cr, 14.0);
+        Point label_coordinate = gd.point_on_surface();
+        cairo_move_to(cr, label_coordinate.x(), image_size - label_coordinate.y());
+        //get the label
+        std::string label = inset_state->labels_at(gd.id());
+        const char* label_char = label.c_str();
+        cairo_show_text(cr, label_char);
+    }
+
+    //plot the graticule
     if (plot_graticule) {
         boost::multi_array<XYPoint, 2> &cum_proj =
         *inset_state->ref_to_cum_proj();
