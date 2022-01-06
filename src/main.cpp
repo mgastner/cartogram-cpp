@@ -358,7 +358,7 @@ int main(const int argc, const char *argv[])
   write_geojson(cart_json,
                 geo_file_name,
                 output_file_name,
-                std::cerr,
+                std::cout,
                 output_to_stdout,
                 &cart_info);
   return EXIT_SUCCESS;
