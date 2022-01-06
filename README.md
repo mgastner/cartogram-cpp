@@ -8,7 +8,25 @@ Gastner MT, Seguy V, More P. _Fast flow-based algorithm for creating density-equ
 
 ## Dependencies
 
-### Ubuntu
+### macOS
+
+#### Installing Homebrew
+
+Install [homebrew](brew.sh) by running the following command:
+
+    /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+
+#### Installing dependencies through Homebrew
+
+Install llvm, pkg-config, boost, fftw, cgal, nlohmann-json, and cmake by running the following command:
+
+    brew install llvm libomp pkg-config boost fftw cgal nlohmann-json cmake
+
+## Installation and Usage
+
+The instructions are the same for all systems.
+
+### Debian-based Distributions (Ubuntu, Arch Linux etc.)
 
 #### Installing GNU gcc-11
 
@@ -61,29 +79,11 @@ For posterity: Once version 5.3 is available through apt (you may check [here](h
         make
         sudo make install
 
-### macOS
-
-#### Installing Homebrew
-
-Install [homebrew](brew.sh) by running the following command:
-
-    /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
-
-#### Installing dependencies through Homebrew
-
-Install gcc-11, pkg-config, boost, fftw, cgal, nlohmann-json, and cmake by running the following command:
-
-    brew install llvm libomp pkg-config boost fftw cgal nlohmann-json cmake
-
-## Installation and Usage
-
-These instructions work on Ubuntu and macOS.
-
 ### Installation
 
-Go to the `cartogram_cpp/build` directory in your preferred terminal and execute the following commands.
+Go to the `cartogram_cpp` directory in your preferred terminal and execute the following commands.
 
-    cmake .
+    mkdir -p build && cd build && cmake ..
     make
     sudo make install
 
@@ -95,10 +95,10 @@ Go to the `cartogram_cpp/build` directory in your preferred terminal and execute
 
 Run the following command (replace `your-geojson-file.geojson` file with your geographic data and `your-csv-file.csv` with your visual variables file, containing target areas for each geographic region):
 
-        cartogram your-geojson-file.geojson -V your-csv-file.csv
+        cartogram your-geojson-file.geojson your-csv-file.csv
 
 -   The first argument's input is a GeoJSON or JSON file, in the standard GeoJSON format.
--   The `-V` flag (uppercase, case-sensitive) accepts a `.csv` file with data about target areas.
+-   The second argument's input is a `.csv` file with data about target areas.
 
 _Note: use the `-h` flag to display more options._
 

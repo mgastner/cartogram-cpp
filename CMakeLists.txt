@@ -5,7 +5,10 @@ project(cartogram LANGUAGES CXX)
 # Setting compile options.
 set(CMAKE_CXX_STANDARD 20)
 set(THREADS_PREFER_PTHREAD_FLAG ON)
+
+# Setting CMake build options, adding path for binary.
 set(CMAKE_BUILD_TYPE Release)
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
 
 # Lots of warnings.
 add_compile_options(-Wall -Wextra -pedantic)
@@ -25,30 +28,31 @@ link_libraries(PkgConfig::FFTW)
 # Adding C++ files needed for compilation.
 add_executable(
   cartogram
-  ../cartogram_generator/main.cpp
-  ../cartogram_generator/geo_div.cpp
-  ../cartogram_generator/cartogram_info.cpp
-  ../cartogram_generator/inset_state.cpp
-  ../cartogram_generator/read_csv.cpp
-  ../cartogram_generator/rescale_map.cpp
-  ../cartogram_generator/write_eps.cpp
-  ../cartogram_generator/colors.cpp
-  ../cartogram_generator/auto_color.cpp
-  ../cartogram_generator/check_topology.cpp
-  ../cartogram_generator/matrix.cpp
-  ../cartogram_generator/densify.cpp
-  ../cartogram_generator/densification_points.cpp
-  ../cartogram_generator/read_geojson.cpp
-  ../cartogram_generator/fill_with_density.cpp
-  ../cartogram_generator/blur_density.cpp
-  ../cartogram_generator/flatten_density.cpp
-  ../cartogram_generator/ft_real_2d.cpp
-  ../cartogram_generator/interpolate_bilinearly.cpp
-  ../cartogram_generator/project.cpp
-  ../cartogram_generator/simplify_inset.cpp
-  ../cartogram_generator/write_geojson.cpp
-  ../cartogram_generator/albers_projection.cpp
-  ../cartogram_generator/parse_arguments.cpp)
+  src/main.cpp
+  src/geo_div.cpp
+  src/cartogram_info.cpp
+  src/inset_state.cpp
+  src/read_csv.cpp
+  src/rescale_map.cpp
+  src/write_eps.cpp
+  src/colors.cpp
+  src/auto_color.cpp
+  src/check_topology.cpp
+  src/matrix.cpp
+  src/densify.cpp
+  src/densification_points.cpp
+  src/read_geojson.cpp
+  src/fill_with_density.cpp
+  src/blur_density.cpp
+  src/flatten_density.cpp
+  src/ft_real_2d.cpp
+  src/interpolate_bilinearly.cpp
+  src/project.cpp
+  src/simplify_inset.cpp
+  src/write_geojson.cpp
+  src/albers_projection.cpp
+  src/parse_arguments.cpp
+)
 
 # Linking appropriate libraries required.
 if(APPLE)
