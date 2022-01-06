@@ -284,38 +284,47 @@ void read_geojson(const std::string geometry_file_name,
     }
     std::cerr << std::endl;
 
-    // Present user with all possible identifiers and a few examples
-    std::cerr << "These are the unique identifiers and their values: ";
-    std::cerr << std::endl;
-    print_properties_map(
-      viable_properties_map, viable_properties_map.size() + 1);
-    std::cerr << viable_properties_map.size() + 1 << ". All";
-    std::cerr << std::endl << std::endl;
 
     // Have the user choose which key(s) they want to use as the identifier(s)
-    std::cerr << "Please enter your number here: ";
+    // if more than one key available
     unsigned long chosen_number = 0;
-    while (std::cin.fail() ||
-           chosen_number < 1 ||
-           chosen_number > viable_properties_map.size() + 1) {
+    if (viable_properties_map.size() > 1) {
 
-      // Prompt user for input
-      std::cerr << "Please enter your number here: ";
-      std::cin >> chosen_number;
-      if (std::cin.fail()) {
-        std::cerr << "Invalid input! Try again." << std::endl;
+      // Present user with all possible identifiers and a few examples
+      std::cerr << "These are the unique identifiers and their values: ";
+      std::cerr << std::endl;
+      print_properties_map(
+        viable_properties_map, viable_properties_map.size() + 1);
+      std::cerr << viable_properties_map.size() + 1 << ". All";
+      std::cerr << std::endl << std::endl;
+      while (std::cin.fail() ||
+             chosen_number < 1 ||
+             chosen_number > viable_properties_map.size() + 1) {
 
-        // Clear std::cin buffer
-        std::cin.clear();
-        std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
-      } else if (chosen_number < 1 ||
-                 chosen_number > viable_properties_map.size() + 1) {
-        std::cerr << "Please enter a number between 1 and "
-                  << viable_properties_map.size() + 1
-                  << std::endl;
+        // Prompt user for input
+        std::cerr << "Please enter your number here: ";
+        std::cin >> chosen_number;
+        if (std::cin.fail()) {
+          std::cerr << "Invalid input! Try again." << std::endl;
+
+          // Clear std::cin buffer
+          std::cin.clear();
+          std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
+        } else if (chosen_number < 1 ||
+                   chosen_number > viable_properties_map.size() + 1) {
+          std::cerr << "Please enter a number between 1 and "
+                    << viable_properties_map.size() + 1
+                    << std::endl;
+        }
       }
+      std::cerr << std::endl;
+    } else {
+      std::cerr << "Only one unique identifier found: ";
+      print_properties_map(
+        viable_properties_map, viable_properties_map.size() + 1);
+      std::cerr << std::endl;
+      chosen_number++;
     }
-    std::cerr << std::endl;
 
     // Declare chosen identifier(s)
     std::map<std::string, std::vector<std::string> > chosen_identifiers;
@@ -335,7 +344,8 @@ void read_geojson(const std::string geometry_file_name,
 
     // Write CSV
     std::ofstream out_file_csv;
-    out_file_csv.open ("template_from_geojson.csv");
+    std::string csv_name = cart_info->map_name() + ".csv";
+    out_file_csv.open (csv_name);
     if (!out_file_csv) {
       throw std::system_error(errno,
                               std::system_category(),
@@ -399,7 +409,7 @@ void read_geojson(const std::string geometry_file_name,
     _Exit(20);
   }
 
-  // Check whether all IDs in GeoJSON appear in visual_variable_file.
+  // Check whether all IDs in GeoJSON appear in visual_variable_file
   std::set<std::string> ids_not_in_vv;
   std::set_difference(ids_in_geojson.begin(), ids_in_geojson.end(),
                       ids_in_vv_file.begin(), ids_in_vv_file.end(),

@@ -11,6 +11,7 @@ private:
   std::string id_header_;
   std::set<std::string> ids_in_visual_variables_file_;
   std::map<std::string, InsetState> inset_states_;
+  std::string map_name_;
 
   // TODO: We assume that either all external rings are counterclockwise or
   // all are clockwise. This dichotomy covers most geospatial boundary files
@@ -38,5 +39,7 @@ public:
   void set_id_header(const std::string);
   void set_original_ext_ring_is_clockwise(const bool);
   const std::string visual_variable_file() const;
+  void set_map_name(const std::string);
+  const std::string map_name() const;
 };
 #endif
