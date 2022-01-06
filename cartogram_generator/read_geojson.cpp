@@ -141,9 +141,9 @@ GeoDiv json_to_cgal(const std::string id,
   return gd;
 }
 
-void print_properties_map(const std::map<std::string,
-                          std::vector<std::string> > properties_map,
-                          const unsigned long chosen_number)
+void print_properties_map(
+  const std::map<std::string, std::vector<std::string> > properties_map,
+  const unsigned long chosen_number)
 {
   const unsigned long max_n_printed_values = 5;
   auto value_vec = properties_map.begin()->second;
@@ -285,10 +285,11 @@ void read_geojson(const std::string geometry_file_name,
     std::cerr << std::endl;
 
 
-    // Have the user choose which key(s) they want to use as the identifier(s),
+    // Have the user choose which key(s) they want to use as the identifier(s)
     // if more than one key available
     unsigned long chosen_number = 0;
     if (viable_properties_map.size() > 1) {
+
       // Present user with all possible identifiers and a few examples
       std::cerr << "These are the unique identifiers and their values: ";
       std::cerr << std::endl;
@@ -324,6 +325,7 @@ void read_geojson(const std::string geometry_file_name,
       std::cerr << std::endl;
       chosen_number++;
     }
+
     // Declare chosen identifier(s)
     std::map<std::string, std::vector<std::string> > chosen_identifiers;
     unsigned int i = 0;
@@ -407,7 +409,7 @@ void read_geojson(const std::string geometry_file_name,
     _Exit(20);
   }
 
-  // Check whether all IDs in GeoJSON appear in visual_variable_file.
+  // Check whether all IDs in GeoJSON appear in visual_variable_file
   std::set<std::string> ids_not_in_vv;
   std::set_difference(ids_in_geojson.begin(), ids_in_geojson.end(),
                       ids_in_vv_file.begin(), ids_in_vv_file.end(),

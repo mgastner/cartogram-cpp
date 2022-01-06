@@ -24,9 +24,9 @@
 
 int main(const int argc, const char *argv[])
 {
-  std::string geo_file_name, visual_file_name; // Default values
+  std::string geo_file_name, visual_file_name;  // Default values
 
-  // Default number of grid cells along longer Cartesian coordinate axis.
+  // Default number of grid cells along longer Cartesian coordinate axis
   unsigned int long_grid_side_length = default_long_grid_side_length;
 
   // World maps need special projections. By default, we assume that the
@@ -71,7 +71,7 @@ int main(const int argc, const char *argv[])
   // that needs to be handled by functions called from main().
   CartogramInfo cart_info(world, visual_file_name);
 
-  // Determine name of input map and store it.
+  // Determine name of input map and store it
   std::string map_name = geo_file_name;
   if (map_name.find_last_of("/\\") != std::string::npos) {
     map_name = map_name.substr(map_name.find_last_of("/\\") + 1);
@@ -191,7 +191,7 @@ int main(const int argc, const char *argv[])
                            output_equal_area);
     } else {
 
-      // Rescale map to fit into a rectangular box [0, lx] * [0, ly].
+      // Rescale map to fit into a rectangular box [0, lx] * [0, ly]
       rescale_map(long_grid_side_length,
                   &inset_state,
                   cart_info.is_world_map());
