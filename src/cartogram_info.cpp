@@ -86,10 +86,10 @@ std::map<std::string, InsetState> *CartogramInfo::ref_to_inset_states()
 void CartogramInfo::replace_missing_and_zero_target_areas()
 {
   // Threshold as a fraction of non-na and non-zero total area for a target
-  // area to be considered "too small".
+  // area to be considered "too small"
   // To-do: have this threshold be defined in constants.h? The current value
   // is also somewhat arbitrary, being the smallest one tested to work with
-  // the current world map.
+  // the current world map
   double small_area_threshold_percent = 2e-5;
 
   // Get total current area and total target area
@@ -106,7 +106,7 @@ void CartogramInfo::replace_missing_and_zero_target_areas()
   }
 
   // Calculate absolute threshold for small areas, to facilitate
-  // comparison.
+  // comparison
   double small_area_absolute_threshold =
     total_cart_non_na_ta * small_area_threshold_percent;
   
@@ -137,8 +137,9 @@ void CartogramInfo::replace_missing_and_zero_target_areas()
 
     double replacement_target_area;
 
-    // If not all target areas are initially missing or zero, we replace the
-    // zero and small areas, if any, with small_area_absolute_threshold.
+    // We replace the zero and small areas, if any, with
+    // small_area_absolute_threshold if not all target areas are initially
+    // missing or zero
     if (small_area_absolute_threshold > 0.0) {
       std::cerr << "Replacing small target areas."
                 << std::endl;
@@ -160,13 +161,13 @@ void CartogramInfo::replace_missing_and_zero_target_areas()
       replacement_target_area = min_positive_area;
     }
 
-    // Replace the small target areas.
+    // Replace the small target areas
     for (auto &inset_info : inset_states_) {
       auto &inset_state = inset_info.second;
       for (const auto &gd : inset_state.geo_divs()) {
+
         // Current target area
         const double target_area = inset_state.target_areas_at(gd.id());
-
         if ((target_area >= 0.0) &&
             (target_area <= small_area_absolute_threshold)) { 
           inset_state.target_areas_replace(gd.id(), replacement_target_area);
