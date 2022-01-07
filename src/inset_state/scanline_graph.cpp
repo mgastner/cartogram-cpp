@@ -1,5 +1,5 @@
-#include "inset_state.h"
-#include "constants.h"
+#include "../inset_state.h"
+#include "../constants.h"
 
 bool ray_y_intersects(XYPoint a,
                       XYPoint b,
@@ -387,22 +387,21 @@ const std::vector<Segment> InsetState::intersections(unsigned int res) const
         for (int l = 0; l < size; ++l) {
           if (intersections[l].direction == intersections[l + 1].direction &&
               intersections[l].direction &&
-              l + 2 <= size) {
-            if (intersections[l + 1].coord != intersections[l + 2].coord) {
-              Segment temp;
-              if (graph == 'h') {
-                temp = Segment(
-                               Point(intersections[l + 1].coord, ray),
-                               Point(intersections[l + 2].coord, ray)
-                               );
-              } else {
-                temp = Segment(
-                               Point(ray, intersections[l + 1].coord),
-                               Point(ray, intersections[l + 2].coord)
-                               );
-              }
-              int_segments.push_back(temp);
+              l + 2 <= size &&
+              intersections[l + 1].coord != intersections[l + 2].coord) {
+            Segment temp;
+            if (graph == 'h') {
+              temp = Segment(
+                              Point(intersections[l + 1].coord, ray),
+                              Point(intersections[l + 2].coord, ray)
+                              );
+            } else {
+              temp = Segment(
+                              Point(ray, intersections[l + 1].coord),
+                              Point(ray, intersections[l + 2].coord)
+                              );
             }
+            int_segments.push_back(temp);
           }
         }
       }

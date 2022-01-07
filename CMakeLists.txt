@@ -36,13 +36,13 @@ add_executable(
   src/rescale_map.cpp
   src/write_eps.cpp
   src/colors.cpp
-  src/auto_color.cpp
+  src/inset_state/auto_color.cpp
   src/check_topology.cpp
   src/matrix.cpp
   src/densify.cpp
   src/densification_points.cpp
   src/read_geojson.cpp
-  src/fill_with_density.cpp
+  src/inset_state/fill_with_density.cpp
   src/blur_density.cpp
   src/flatten_density.cpp
   src/ft_real_2d.cpp
@@ -52,7 +52,7 @@ add_executable(
   src/write_geojson.cpp
   src/albers_projection.cpp
   src/parse_arguments.cpp
-  src/scanline_graph.cpp
+  src/inset_state/scanline_graph.cpp
 )
 
 # Linking appropriate libraries required.

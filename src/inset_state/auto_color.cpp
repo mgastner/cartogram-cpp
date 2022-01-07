@@ -1,7 +1,7 @@
-#include "constants.h"
-#include "cartogram_info.h"
-#include "inset_state.h"
-#include "colors.h"
+#include "../constants.h"
+#include "../cartogram_info.h"
+#include "../inset_state.h"
+#include "../colors.h"
 
 // Function to automatically color topology based on adjacency graph
 void InsetState::auto_color()
@@ -27,7 +27,7 @@ void InsetState::auto_color()
   // create_vertical_adjacency_graph(inset_state, res);
 
   // Creating full adjacency graph based on vertical and horizontal graphs
-  this->create_adjacency_graph(res);
+  InsetState::create_adjacency_graph(res);
 
   // Count to maximize colors used. This changes the starting color that
   // the algorithm choses for each GeoDiv.
