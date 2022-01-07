@@ -67,8 +67,8 @@ void write_polygon_to_cairo_surface(cairo_t *cr,
         const char* label_char = label.c_str();
         // go to a specific coordinate to place the label
         cairo_set_source_rgb(cr, 0, 0, 0);
-        cairo_select_font_face(cr, "Sans", CAIRO_FONT_SLANT_NORMAL, CAIRO_FONT_WEIGHT_NORMAL);
-        cairo_set_font_size(cr, 10.0);
+        cairo_select_font_face(cr, "sans-serif", CAIRO_FONT_SLANT_NORMAL, CAIRO_FONT_WEIGHT_NORMAL);
+        cairo_set_font_size(cr, 8.0);
         Point label_coordinate = gd.point_on_surface();
 
         cairo_text_extents(cr, label_char, &extents);
