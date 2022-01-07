@@ -186,10 +186,8 @@ Point pgnwh_point_on_surface(const Polygon_with_holes pgnwh)
   return Point(midpoint.x, midpoint.y);
 }
 
-// Function to find point of surface of largest Polygon_with_holes
-Point GeoDiv::point_on_surface() const
+const Polygon_with_holes GeoDiv::largest_polygon_with_holes() const
 {
-
   // Finding pgnwh with largest area
   double max_area = -dbl_inf;
   Polygon_with_holes largest_pgnwh;
@@ -206,7 +204,12 @@ Point GeoDiv::point_on_surface() const
       largest_pgnwh = Polygon_with_holes(pgnwh);
     }
   }
+  return largest_pgnwh;
+}
 
+// Function to find point of surface of largest Polygon_with_holes
+Point GeoDiv::point_on_surface() const
+{
   // Returning point of surface of found polygon
-  return pgnwh_point_on_surface(largest_pgnwh);
+  return pgnwh_point_on_surface(this->GeoDiv::largest_polygon_with_holes());
 }

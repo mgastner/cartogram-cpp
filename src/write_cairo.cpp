@@ -6,6 +6,55 @@
 #include "inset_state.h"
 #include "iostream"
 
+std::pair <bool, double> get_font_size(cairo_t *cr,
+                                        const char *label,
+                                        Point label_coordinate,
+                                        GeoDiv gd)
+{
+    cairo_text_extents_t extents;
+    bool draw_label = false;
+    double font_size;
+    for(font_size = max_font_size; font_size >= min_font_size; font_size -= 0.5) {
+        cairo_set_font_size(cr, font_size);
+        cairo_text_extents(cr, label, &extents);
+        
+        // get largest pgnwh
+        Polygon_with_holes largest_pgnwh = gd.largest_polygon_with_holes();
+        
+        // get bounding box of the label
+        CGAL::Bbox_2 bb(label_coordinate.x() - extents.width / 1.8,
+                        label_coordinate.y() - extents.height / 1.8,
+                        label_coordinate.x() + extents.width / 1.8,
+                        label_coordinate.y() + extents.height / 1.8);
+   
+        
+        // create a vector bounding box edge points
+        std::vector<Point> bb_edge_points;
+        for(int i = 0; i <= 1; i++) {
+            for(int j = 0; j <= 5; j++) {
+                bb_edge_points.push_back(Point((j * bb.xmin() + (5 - j) * bb.xmax()) / 5,
+                                               (i * bb.ymin() + (1 - i) * bb.ymax())));
+            }
+        }
+        
+        // check if all of the edge points of the bounding box are inside the
+        // largest pgnwh
+        bool all_edge_points_inside = true;
+        for(Point p : bb_edge_points) {
+            if(largest_pgnwh.outer_boundary().has_on_unbounded_side(p)) {
+                all_edge_points_inside = false;
+                break;
+            }
+        }
+        
+        if(all_edge_points_inside) {
+            draw_label = true;
+            break;
+        }
+    }
+    return std::make_pair(draw_label, font_size);
+    
+}
 void write_polygon_to_cairo_surface(cairo_t *cr,
                             int height,
                             bool fill_polygons,
@@ -68,15 +117,20 @@ void write_polygon_to_cairo_surface(cairo_t *cr,
         // go to a specific coordinate to place the label
         cairo_set_source_rgb(cr, 0, 0, 0);
         cairo_select_font_face(cr, "sans-serif", CAIRO_FONT_SLANT_NORMAL, CAIRO_FONT_WEIGHT_NORMAL);
-        cairo_set_font_size(cr, 8.0);
         Point label_coordinate = gd.point_on_surface();
+        
+        // get the size of the label
+        std::pair <bool, double> font_data = get_font_size(cr, label_char, label_coordinate, gd);
+        if (font_data.first == true) {
+            double font_size = font_data.second;
+            cairo_set_font_size(cr, font_size);
+            cairo_text_extents(cr, label_char, &extents);
+            double x = label_coordinate.x() - (extents.width / 2 + extents.x_bearing);
+            double y = height - label_coordinate.y() - (extents.height / 2 + extents.y_bearing);
+            cairo_move_to(cr, x, y);
 
-        cairo_text_extents(cr, label_char, &extents);
-        double x = label_coordinate.x() - (extents.width / 2 + extents.x_bearing);
-        double y = height - label_coordinate.y() - (extents.height / 2 + extents.y_bearing);
-        cairo_move_to(cr, x, y);
-
-        cairo_show_text(cr, label_char);
+            cairo_show_text(cr, label_char);
+        }
     }
 
     //plot the graticule

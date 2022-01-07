@@ -18,6 +18,7 @@ class GeoDiv {
     void adjacent_to(const std::string);
     double area() const;
     const std::string id() const;
+    const Polygon_with_holes largest_polygon_with_holes() const;
     unsigned int n_points() const;
     unsigned int n_polygons_with_holes() const;
     unsigned int n_rings() const;
@@ -25,6 +26,7 @@ class GeoDiv {
     void push_back(const Polygon_with_holes);
     std::vector<Polygon_with_holes> *ref_to_polygons_with_holes();
     Point point_on_surface() const;
+
 };
 
 #endif
