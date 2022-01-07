@@ -123,8 +123,7 @@ void CartogramInfo::replace_missing_and_zero_target_areas()
         // Insert true into an std::unordered_map that stores whether a
         // GeoDiv's target area is missing
         inset_state.is_input_target_area_missing_insert(gd.id(), true);
-      } else if ((target_area == 0.0) ||
-                 (target_area < small_area_absolute_threshold)) {
+      } else if (target_area <= small_area_absolute_threshold) {
         ta_small_exists = true;
       }
 
@@ -168,9 +167,8 @@ void CartogramInfo::replace_missing_and_zero_target_areas()
         // Current target area
         const double target_area = inset_state.target_areas_at(gd.id());
 
-        if (((target_area >= 0.0) &&
-            (target_area < small_area_absolute_threshold)) ||
-            (target_area == 0.0)) { 
+        if ((target_area >= 0.0) &&
+            (target_area <= small_area_absolute_threshold)) { 
           inset_state.target_areas_replace(gd.id(), replacement_target_area);
           std::cerr << gd.id() << ": "
                     << target_area << " to " << replacement_target_area
