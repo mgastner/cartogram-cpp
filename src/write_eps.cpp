@@ -165,7 +165,7 @@ void write_map_to_eps(const std::string eps_name,
   const bool has_colors =
     (inset_state->colors_size() == inset_state->n_geo_divs());
   write_polygons_to_eps(eps_file,
-                        true, // Whether to fill polygons with default color
+                        true,  // Whether to fill polygons with default color
                         has_colors,
                         inset_state);
   if (plot_graticule) {
@@ -283,8 +283,8 @@ void write_density_to_eps(const std::string eps_name,
     }
   }
   write_polygons_to_eps(eps_file,
-                        false, // Whether to fill polygons with default color
-                        false, // Whether to fill polygons with default color
+                        false,  // Whether to fill polygons with default color
+                        false,  // Whether to fill polygons with default color
                         inset_state);
   eps_file << "showpage\n";
   eps_file << "%%EOF\n";
@@ -308,8 +308,8 @@ void InsetState::write_intersections_to_eps(unsigned int res)
   std::ofstream eps_file(eps_name);
   write_eps_header_and_definitions(eps_file, eps_name, this);
   write_polygons_to_eps(eps_file,
-                        false, // Whether to fill polygons with default color
-                        false, // Whether to fill polygons with assigned color
+                        false,  // Whether to fill polygons with default color
+                        false,  // Whether to fill polygons with assigned color
                         this);
 
   // Set line width of intersection lines

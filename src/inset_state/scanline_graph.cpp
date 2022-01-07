@@ -354,7 +354,7 @@ const std::vector<Segment> InsetState::intersections(unsigned int res) const
   std::vector<Segment> int_segments;
   for (char graph : {'h', 'v'}) {
 
-    // Getting horizontal scan graph
+    // Getting appropriate scan graph
     std::vector<std::vector<intersection> > scans;
     unsigned int max_k;
 
@@ -366,7 +366,7 @@ const std::vector<Segment> InsetState::intersections(unsigned int res) const
       max_k= this->lx();
     }
 
-    // Iterating through horizontal adjacency graph
+    // Iterating through scanline graph
     for (unsigned int k = 0; k < max_k; ++k) {
 
       // Cycle through each of the "res" number of rays in one cell
