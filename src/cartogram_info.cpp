@@ -85,12 +85,6 @@ std::map<std::string, InsetState> *CartogramInfo::ref_to_inset_states()
 
 void CartogramInfo::replace_missing_and_zero_target_areas()
 {
-  // Threshold as a fraction of non-na and non-zero total area for a target
-  // area to be considered "too small"
-  // To-do: have this threshold be defined in constants.h? The current value
-  // is also somewhat arbitrary, being the smallest one tested to work with
-  // the current world map
-  double small_area_threshold_percent = 2e-5;
 
   // Get total current area and total target area
   double total_cart_non_na_area = 0.0;
@@ -108,7 +102,7 @@ void CartogramInfo::replace_missing_and_zero_target_areas()
   // Calculate absolute threshold for small areas, to facilitate
   // comparison
   double small_area_absolute_threshold =
-    total_cart_non_na_ta * small_area_threshold_percent;
+    total_cart_non_na_ta * small_area_threshold_frac;
   
   // Check whether target areas exist that are missing or very small
   bool ta_small_exists = false;
