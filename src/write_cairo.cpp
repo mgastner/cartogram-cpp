@@ -22,10 +22,10 @@ std::pair <bool, double> get_font_size(cairo_t *cr,
         Polygon_with_holes largest_pgnwh = gd.largest_polygon_with_holes();
         
         // get bounding box of the label
-        CGAL::Bbox_2 bb(label_coordinate.x() - extents.width / 1.8,
-                        label_coordinate.y() - extents.height / 1.8,
-                        label_coordinate.x() + extents.width / 1.8,
-                        label_coordinate.y() + extents.height / 1.8);
+        CGAL::Bbox_2 bb(label_coordinate.x() - extents.width / 2,
+                        label_coordinate.y() - extents.height / 2,
+                        label_coordinate.x() + extents.width / 2,
+                        label_coordinate.y() + extents.height / 2);
    
         
         // create a vector bounding box edge points
@@ -162,6 +162,8 @@ void write_polygon_to_cairo_surface(cairo_t *cr,
         }
     }
 }
+
+// Outputs a PNG file
 void write_cairo_polygons_to_png(std::string fname,
                             bool fill_polygons,
                             bool colors,
@@ -185,6 +187,7 @@ void write_cairo_polygons_to_png(std::string fname,
     cairo_surface_destroy(surface);
 }
 
+// Outputs a PS file
 void write_cairo_polygons_to_ps(std::string fname,
                            bool fill_polygons,
                            bool colors,
@@ -192,10 +195,11 @@ void write_cairo_polygons_to_ps(std::string fname,
                            InsetState *inset_state)
 {
     const char* filename = fname.c_str();
-    cairo_surface_t *surface;
-    cairo_t *cr;
     unsigned int width = inset_state->lx();
     unsigned int height = inset_state->ly();
+
+    cairo_surface_t *surface;
+    cairo_t *cr;
 
     surface = cairo_ps_surface_create(filename, width, height);
     cr = cairo_create(surface);
@@ -216,9 +220,8 @@ void write_cairo_polygons_to_ps(std::string fname,
     cairo_destroy(cr);
 }
 
-// This function outputs both png and ps files
+// Outputs both png and ps files
 void write_cairo_map(std::string filename, bool plot_graticule, InsetState* inset_state) {
-    // solid: clockwise, holes: anti-clockwise
     std::string png_filename = filename + ".png";
     std::string ps_filename = filename + ".ps";
 
