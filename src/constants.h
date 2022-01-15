@@ -31,7 +31,7 @@ constexpr double inset_spacing_factor = 0.1;
 constexpr double divider_length = 0.8;
 
 // Font size range for cairo labelling
-constexpr double min_font_size = 5;
+constexpr double min_font_size = 6;
 constexpr double max_font_size = 10;
 
 #endif
