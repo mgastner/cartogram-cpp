@@ -1,0 +1,103 @@
+city,lat,lng,country,iso2,admin_name,capital,population,population_proper
+Brussels,50.8333,4.3333,Belgium,BE,Brussels-Capital Region,primary,1743000,1019022
+Antwerp,51.2206,4.4003,Belgium,BE,Flanders,minor,920000,459805
+Gent,51.0536,3.7253,Belgium,BE,Flanders,minor,262219,262219
+Charleroi,50.4167,4.4442,Belgium,BE,Wallonia,minor,201816,201816
+Liège,50.6397,5.5706,Belgium,BE,Wallonia,minor,197885,197885
+Anderlecht,50.8392,4.3297,Belgium,BE,Brussels-Capital Region,,120887,120887
+Bruges,51.2089,3.2242,Belgium,BE,Flanders,minor,118053,118053
+Namur,50.4667,4.8667,Belgium,BE,Wallonia,admin,110939,110939
+Moortebeek,50.8547,4.3386,Belgium,BE,Flanders,,97979,97979
+Mons,50.4550,3.9520,Belgium,BE,Wallonia,minor,95299,95299
+Mechelen,51.0281,4.4803,Belgium,BE,Flanders,minor,86921,86921
+Aalst,50.9333,4.0333,Belgium,BE,Flanders,minor,85715,85715
+La Louvière,50.4778,4.1881,Belgium,BE,Wallonia,,80986,80986
+Sint-Niklaas,51.1644,4.1392,Belgium,BE,Flanders,minor,76756,76756
+Hasselt,50.9304,5.3383,Belgium,BE,Flanders,minor,69222,69222
+Seraing,50.5986,5.5122,Belgium,BE,Wallonia,,64270,64270
+Roeselare,50.9447,3.1233,Belgium,BE,Flanders,minor,62301,62301
+Forest,50.8117,4.3181,Belgium,BE,Brussels-Capital Region,,56581,56581
+Jette,50.8758,4.3244,Belgium,BE,Brussels-Capital Region,,52728,52728
+Etterbeek,50.8361,4.3861,Belgium,BE,Brussels-Capital Region,,48473,48473
+Beveren,51.2000,4.2500,Belgium,BE,Flanders,,48192,48192
+Dendermonde,51.0167,4.1000,Belgium,BE,Flanders,minor,45673,45673
+Vilvoorde,50.9281,4.4245,Belgium,BE,Flanders,minor,44015,44015
+Heist-op-den-Berg,51.0758,4.7286,Belgium,BE,Flanders,,42950,42950
+Evere,50.8719,4.4033,Belgium,BE,Brussels-Capital Region,,42656,42656
+Lokeren,51.1000,3.9833,Belgium,BE,Flanders,,41057,41057
+Herstal,50.6644,5.6300,Belgium,BE,Wallonia,,39958,39958
+Braine-l’Alleud,50.6806,4.3717,Belgium,BE,Wallonia,,39837,39837
+Halle,50.7361,4.2372,Belgium,BE,Flanders,,39096,39096
+Ninove,50.8333,4.0167,Belgium,BE,Flanders,,38692,38692
+Wilrijk,51.1667,4.3833,Belgium,BE,Flanders,,38319,38319
+Mechelen-aan-de-Maas,50.9967,5.7025,Belgium,BE,Flanders,,38193,38193
+Mol,51.1842,5.1156,Belgium,BE,Flanders,,37022,37022
+Lierre,51.1311,4.5697,Belgium,BE,Flanders,,36646,36646
+Ieper,50.8500,2.8833,Belgium,BE,Flanders,minor,34964,34964
+Schoten,51.2500,4.5000,Belgium,BE,Flanders,,34462,34462
+Sint-Pieters-Leeuw,50.7833,4.2500,Belgium,BE,Flanders,,34038,34038
+Zaventem,50.8833,4.4667,Belgium,BE,Flanders,,33806,33806
+Binche,50.4103,4.1652,Belgium,BE,Wallonia,,33598,33598
+Geraardsbergen,50.7667,3.8667,Belgium,BE,Flanders,,33403,33403
+Menen,50.7956,3.1217,Belgium,BE,Flanders,,33190,33190
+Knokke-Heist,51.3414,3.2869,Belgium,BE,Flanders,,33097,33097
+Asse,50.9000,4.2000,Belgium,BE,Flanders,,32958,32958
+Louvain-la-Neuve,50.6696,4.6112,Belgium,BE,Wallonia,,31551,31551
+Wevelgem,50.8081,3.1839,Belgium,BE,Flanders,,31412,31412
+Oudenaarde,50.8500,3.6000,Belgium,BE,Flanders,minor,31132,31132
+Deinze,50.9833,3.5272,Belgium,BE,Flanders,,31085,31085
+Waterloo,50.7167,4.3833,Belgium,BE,Wallonia,,30174,30174
+Arlon,49.6836,5.8167,Belgium,BE,Wallonia,minor,29733,29733
+Temse,51.1261,4.2133,Belgium,BE,Flanders,,29528,29528
+Brecht,51.3494,4.6394,Belgium,BE,Flanders,,29454,29454
+Herentals,51.1767,4.8364,Belgium,BE,Flanders,,28272,28272
+Ans,50.6625,5.5200,Belgium,BE,Wallonia,,28238,28238
+Harelbeke,50.8567,3.3131,Belgium,BE,Flanders,,27886,27886
+Soignies,50.5667,4.0667,Belgium,BE,Wallonia,minor,27603,27603
+Andenne,50.4833,5.1000,Belgium,BE,Wallonia,,27573,27573
+Sint-Joost-ten-Node,50.8508,4.3692,Belgium,BE,Brussels-Capital Region,,27497,27497
+Kapellen,51.3150,4.4294,Belgium,BE,Flanders,,26981,26981
+Ronse,50.7500,3.6000,Belgium,BE,Flanders,,26337,26337
+Willebroek,51.0597,4.3581,Belgium,BE,Flanders,,26223,26223
+Flémalle-Haute,50.6011,5.4628,Belgium,BE,Wallonia,,26174,26174
+Mortsel,51.1703,4.4567,Belgium,BE,Flanders,,26157,26157
+Tubize,50.6928,4.2050,Belgium,BE,Wallonia,,25914,25914
+Lanaken,50.8925,5.6497,Belgium,BE,Flanders,,25818,25818
+Wetteren,51.0000,3.8833,Belgium,BE,Flanders,,25477,25477
+Ganshoren,50.8703,4.3078,Belgium,BE,Brussels-Capital Region,,25234,25234
+Maaseik,51.1019,5.7856,Belgium,BE,Flanders,minor,25201,25201
+Beersel,50.7631,4.3086,Belgium,BE,Flanders,,25069,25069
+Westerlo,51.0897,4.9153,Belgium,BE,Flanders,,24884,24884
+Merelbeke,50.9939,3.7461,Belgium,BE,Flanders,,24634,24634
+Zwevegem,50.8000,3.3333,Belgium,BE,Flanders,,24619,24619
+Saint-Nicolas,50.6333,5.5333,Belgium,BE,Wallonia,,24251,24251
+Diest,50.9847,5.0514,Belgium,BE,Flanders,,23824,23824
+Maldegem,51.2089,3.4464,Belgium,BE,Flanders,,23689,23689
+Oostkamp,51.1544,3.2353,Belgium,BE,Flanders,,23580,23580
+Eeklo,51.1858,3.5639,Belgium,BE,Flanders,minor,20890,20890
+Tielt,50.9989,3.3258,Belgium,BE,Flanders,minor,20422,20422
+Bastogne,50.0042,5.7200,Belgium,BE,Wallonia,minor,15894,15894
+Veurne,51.0722,2.6622,Belgium,BE,Flanders,minor,11790,11790
+Neufchâteau,49.8411,5.4353,Belgium,BE,Wallonia,minor,7679,7679
+Verviers,50.5835,5.8641,Belgium,BE,Wallonia,minor,,
+Ostend,51.2141,2.9259,Belgium,BE,Flanders,minor,,
+Leuven,50.8791,4.7009,Belgium,BE,Flanders,minor,,
+Mouscron,50.7433,3.2148,Belgium,BE,Wallonia,minor,,
+Kortrijk,50.8285,3.2643,Belgium,BE,Flanders,minor,,
+Wavre,50.7147,4.6107,Belgium,BE,Wallonia,minor,,
+Turnhout,51.3231,4.9483,Belgium,BE,Flanders,minor,,
+Nivelles,50.5988,4.3273,Belgium,BE,Wallonia,minor,,
+Huy,50.5201,5.2375,Belgium,BE,Wallonia,minor,,
+Waremme,50.6967,5.2569,Belgium,BE,Wallonia,minor,,
+Enghien,50.6890,4.0336,Belgium,BE,Wallonia,minor,,
+Tournai,50.6069,3.3896,Belgium,BE,Wallonia,minor,,
+Tongeren,50.7807,5.4623,Belgium,BE,Flanders,minor,,
+Lincent,50.7130,5.0328,Belgium,BE,Wallonia,minor,,
+Ath,50.6283,3.7794,Belgium,BE,Wallonia,minor,,
+Hannut,50.6720,5.0781,Belgium,BE,Wallonia,minor,,
+Thuin,50.3398,4.2874,Belgium,BE,Wallonia,minor,,
+Marche-en-Famenne,50.2266,5.3437,Belgium,BE,Wallonia,minor,,
+Dinant,50.2600,4.9101,Belgium,BE,Wallonia,minor,,
+Virton,49.5677,5.5323,Belgium,BE,Wallonia,minor,,
+Diksmuide,51.0321,2.8651,Belgium,BE,Flanders,minor,,
+Philippeville,50.1964,4.5436,Belgium,BE,Wallonia,minor,,
