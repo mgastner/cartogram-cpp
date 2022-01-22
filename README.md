@@ -83,13 +83,14 @@ For posterity: Once version 5.3 is available through apt (you may check [here](h
 
 Go to the `cartogram_cpp` directory in your preferred terminal and execute the following commands.
 
-    mkdir -p build && cd build && cmake ..
-    make
-    sudo make install
+    cmake -B build
+    make -C build
+    sudo make install -C build
 
 ### Troubleshooting
 
 - In case running `cmake .` gives you an error, it is likely that a dependency was not installed correctly. Rerun the appropriate commands above to install the required dependencies and try again.
+- In case you get a `Permission denied` error, try running the command that gave you the error with `sudo`, as done with `sudo make install` above.
 
 ### Usage
 
