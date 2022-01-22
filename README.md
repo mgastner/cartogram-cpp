@@ -106,7 +106,7 @@ _Note: use the `-h` flag to display more options._
 The CSV file should be in the following format:
 
 | NAME_1     | Data (eg: Population) | Color   |
-| :--------- | :-------------------- | :------ |
+|:-----------|:----------------------|:--------|
 | Bruxelles  | 1208542               | #e74c3c |
 | Vlaanderen | 6589069               | #f1c40f |
 | Wallonie   | 3633795               | #34495e |
