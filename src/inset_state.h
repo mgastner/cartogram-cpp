@@ -68,6 +68,7 @@ private:
 public:
   explicit InsetState(const std::string);  // Constructor
   double area_errors_at(const std::string) const;
+  void auto_color(); // Automatically color inset
   Bbox bbox() const;
   bool color_found(const std::string id) const;
   const Color colors_at(const std::string) const;
@@ -75,13 +76,18 @@ public:
   void colors_insert(const std::string, const Color);
   void colors_insert(const std::string, const std::string);
   unsigned int colors_size() const;
+  void create_adjacency_graph(unsigned int res);
   void destroy_fftw_plans_for_rho();
   void execute_fftw_bwd_plan() const;
   void execute_fftw_fwd_plan() const;
+  void fill_with_density(bool); // Fill map with density, using scanlines
   const std::vector<GeoDiv> geo_divs() const;
+  const std::vector<std::vector<intersection> >
+    horizontal_scans(unsigned int) const;
   void increment_integration();
   void initialize_cum_proj();
   const std::string inset_name() const;
+  const std::vector<Segment> intersections(unsigned int) const;
   bool is_input_target_area_missing(const std::string) const;
   void is_input_target_area_missing_insert(const std::string, const bool);
   unsigned int lx() const;
@@ -119,25 +125,12 @@ public:
   void target_areas_replace(const std::string, const double);
   double total_inset_area() const;
   double total_target_area() const;
-
-  // Adjacency graph functions
-  const std::vector<std::vector<intersection> >
-    horizontal_scans(unsigned int) const;
   const std::vector<std::vector<intersection> >
     vertical_scans(unsigned int) const;
-  void create_adjacency_graph(unsigned int res);
 
-  const std::vector<Segment> intersections(unsigned int) const;
-
-  // Function to automatically color inset
-  void auto_color();
-
-  // Function to write all intersections found to an EPS file
+  // Write all intersections found to an EPS file
   // as "*_intersections_*.eps"
   void write_intersections_to_eps(unsigned int);
-
-  // Function to fill map with density, using scanlines
-  void fill_with_density(bool);
 };
 
 #endif

@@ -149,7 +149,7 @@ argparse::ArgumentParser parsed_arguments(const int argc,
   plot_graticule = arguments.get<bool>("-g");
   plot_intersections = arguments.get<bool>("-I");
 
-  // Check if n_polygons specified, but --simplify not passed.
+  // Check if n_points specified, but --simplify not passed
   if (arguments.is_used("-S") && !arguments.is_used("-s")) {
     std::cerr << "WARNING: --simplify flag not passed!" << std::endl;
     std::cerr << "Polygons will not be simplified." << std::endl;

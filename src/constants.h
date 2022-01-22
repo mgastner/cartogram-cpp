@@ -16,6 +16,10 @@ constexpr double pi = std::numbers::pi;
 constexpr unsigned int default_res = 16;
 constexpr unsigned int intersections_res = 1;
 
+// default_res is used for fill with density.
+// intersection_res is used to specify the number of scanlines shown in output
+// files showing intersections.
+
 // Points after simplification
 constexpr unsigned int default_target_points_per_inset = 10000;
 constexpr unsigned int min_points_per_ring = 10;

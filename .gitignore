@@ -18,6 +18,9 @@ cartogram
 # Don't ignore .gitkeep file
 !.gitkeep
 
+# Ignore test logs
+*.txt
+
 # Boilerplate code for .gitignore
 
 # Prerequisites

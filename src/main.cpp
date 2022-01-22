@@ -24,10 +24,10 @@ int main(const int argc, const char *argv[])
 {
   std::string geo_file_name, visual_file_name; // Default values
 
-  // Default number of grid cells along longer Cartesian coordinate axis.
+  // Default number of grid cells along longer Cartesian coordinate axis
   unsigned int long_grid_side_length = default_long_grid_side_length;
 
-  // Target number of points to retain after simplification.
+  // Target number of points to retain after simplification
   unsigned int target_points_per_inset = default_target_points_per_inset;
 
   // World maps need special projections. By default, we assume that the
@@ -287,11 +287,6 @@ int main(const int argc, const char *argv[])
           project(&inset_state);
         }
         if (simplify) {
-
-          // Triangulation, automatically combined with densification,
-          // increases the number of points. Simplification ensures that the
-          // number of points does not exceed a reasonable limit, resulting
-          // in smaller output and shorter run-times.
           simplify_inset(&inset_state,
                          target_points_per_inset);
         }
