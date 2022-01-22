@@ -76,7 +76,7 @@ public:
   void colors_insert(const std::string, const Color);
   void colors_insert(const std::string, const std::string);
   unsigned int colors_size() const;
-  void create_adjacency_graph(unsigned int res);
+  void create_continuity_graph(unsigned int res);
   void destroy_fftw_plans_for_rho();
   void execute_fftw_bwd_plan() const;
   void execute_fftw_fwd_plan() const;
@@ -87,7 +87,7 @@ public:
   void increment_integration();
   void initialize_cum_proj();
   const std::string inset_name() const;
-  const std::vector<Segment> intersections(unsigned int) const;
+  const std::vector<Segment> intersecting_segments(unsigned int) const;
   bool is_input_target_area_missing(const std::string) const;
   void is_input_target_area_missing_insert(const std::string, const bool);
   unsigned int lx() const;
@@ -116,7 +116,6 @@ public:
   void set_inset_name(const std::string);
   void set_map_scale(const double);
   void set_pos(const std::string);
-
   void set_xmin(const unsigned int);
   void set_ymin(const unsigned int);
   bool target_area_is_missing(const std::string) const;

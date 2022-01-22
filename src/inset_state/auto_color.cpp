@@ -27,7 +27,7 @@ void InsetState::auto_color()
   // create_vertical_adjacency_graph(inset_state, res);
 
   // Creating full adjacency graph based on vertical and horizontal graphs
-  InsetState::create_adjacency_graph(res);
+  create_continuity_graph(res);
 
   // Count to maximize colors used. This changes the starting color that
   // the algorithm choses for each GeoDiv.
