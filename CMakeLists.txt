@@ -53,6 +53,7 @@ add_executable(
   src/albers_projection.cpp
   src/parse_arguments.cpp
   src/inset_state/scanline_graph.cpp
+  src/inset_state/intersection.cpp
 )
 
 # Linking appropriate libraries required.

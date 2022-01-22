@@ -3,7 +3,7 @@
 #include "../inset_state.h"
 #include "../colors.h"
 
-// Function to automatically color topology based on adjacency graph
+// Function to automatically color topology based on contiguity graph
 void InsetState::auto_color()
 {
 
@@ -23,11 +23,8 @@ void InsetState::auto_color()
   // Find resolution
   unsigned int res = default_res;
 
-  // Creating vertical adjacency graph
-  // create_vertical_adjacency_graph(inset_state, res);
-
-  // Creating full adjacency graph based on vertical and horizontal graphs
-  create_continuity_graph(res);
+  // Creating full continuity graph based on vertical and horizontal scanlines
+  create_contiguity_graph(res);
 
   // Count to maximize colors used. This changes the starting color that
   // the algorithm choses for each GeoDiv.

@@ -1,41 +1,12 @@
 #include "../inset_state.h"
 #include "../constants.h"
 
-bool ray_y_intersects(XYPoint a,
-                      XYPoint b,
-                      double ray_y,
-                      intersection *temp,
-                      double target_density,
-                      double epsilon)
+std::vector<std::vector<intersection> >
+  InsetState::scanlines_parallel_to_axis(char grid_side, unsigned int res) const
 {
-  // Check if intersection is present
-  if (((a.y <= ray_y && b.y >= ray_y) ||
-       (a.y >= ray_y && b.y <= ray_y)) &&
-
-      // Pre-condition to ignore grazing incidence (i.e., a line segment along
-      // the polygon is exactly on the test ray)
-      (a.y != b.y)) {
-    if (a.y == ray_y) {
-      a.y += epsilon;
-    } else if (b.y == ray_y) {
-      b.y += epsilon;
-    }
-
-    // Edit intersection passed by reference
-    // coord stores the x coordinate.
-    temp->coord = (a.x * (b.y - ray_y) + b.x * (ray_y - a.y)) / (b.y - a.y);
-    temp->target_density = target_density;
-    temp->direction = false;  // Temporary value
-    return true;
-  }
-  return false;
-}
-
-const std::vector<std::vector<intersection> >
-  InsetState::horizontal_scans(unsigned int res) const
-{
-  int n_rays = static_cast<unsigned int>(ly_ * res);
-  std::vector<std::vector<intersection> > horizontal_scans(n_rays);
+  unsigned int grid_length = (grid_side == 'x') ? lx() : ly();
+  int n_rays = grid_length * res;
+  std::vector<std::vector<intersection> > scanlines(n_rays);
 
   // Iterate through GeoDivs in inset_state
   for (auto gd : geo_divs()) {
@@ -48,16 +19,23 @@ const std::vector<std::vector<intersection> >
     for (const auto &pwh : gd.polygons_with_holes()) {
       Bbox bb = pwh.bbox();
 
-      // Cycle through y-coordinates in bounding box of pwh
-      for (unsigned int k = floor(bb.ymin()) - 1;
-           k <= ceil(bb.ymax()) + 1;
+      double min_lim, max_lim;
+      if (grid_side == 'x') {
+        min_lim = bb.ymin(); max_lim = bb.ymax();
+      } else {
+        min_lim = bb.xmin(); max_lim = bb.xmax();
+      }
+
+      // Cycle through coordinates in bounding box of pwh
+      for (unsigned int k = floor(min_lim) - 1;
+           k <= ceil(max_lim) + 1;
            ++k) {
 
         // Cycle through each of the "test rays" between the graticule lines
         // y = k and y = k+1
-        for (double ray_y = k + (1.0/res)/2;
-             ray_y < k + 1;
-             ray_y += (1.0/res)) {
+        for (double ray = k + (1.0/res)/2;
+             ray < k + 1;
+             ray += (1.0/res)) {
           Polygon ext_ring = pwh.outer_boundary();
           XYPoint prev_point;
           prev_point.x = ext_ring[ext_ring.size()-1][0];
@@ -83,13 +61,13 @@ const std::vector<std::vector<intersection> >
             XYPoint curr_point;
             curr_point.x = ext_ring[l][0];
             curr_point.y = ext_ring[l][1];
-            intersection temp;
-            if (ray_y_intersects(curr_point,
-                                 prev_point,
-                                 ray_y,
-                                 &temp,
-                                 target_density,
-                                 epsilon)) {
+            intersection temp = (grid_side == 'x') ? intersection(true) :
+              intersection(false);
+            if (temp.ray_intersects(curr_point,
+                                    prev_point,
+                                    ray,
+                                    target_density,
+                                    epsilon)) {
               temp.geo_div_id = gd.id();
               intersections.push_back(temp);
             }
@@ -106,13 +84,13 @@ const std::vector<std::vector<intersection> >
               XYPoint curr_point;
               curr_point.x = hole[l][0];
               curr_point.y = hole[l][1];
-              intersection temp;
-              if (ray_y_intersects(curr_point,
-                                   prev_point,
-                                   ray_y,
-                                   &temp,
-                                   target_density,
-                                   epsilon)) {
+              intersection temp = (grid_side == 'x') ? intersection(true) :
+                intersection(false);
+              if (temp.ray_intersects(curr_point,
+                                      prev_point,
+                                      ray,
+                                      target_density,
+                                      epsilon)) {
                 temp.geo_div_id = gd.id();
                 intersections.push_back(temp);
               }
@@ -123,187 +101,51 @@ const std::vector<std::vector<intersection> >
 
           // Check if the number of intersections is odd
           if (intersections.size() % 2 != 0) {
-            std::cerr << "Incorrect Topology" << std::endl;
+            std::cerr << "Incorrect Topology." << std::endl;
             std::cerr << "Number of intersections: " << intersections.size();
             std::cerr << std::endl;
-            std::cerr << "Y-coordinate: " << ray_y << std::endl;
+            std::cerr << grid_side << "-coordinate: " << ray << std::endl;
             std::cerr << "Intersection points: " << std::endl;
             for (unsigned int l = 0; l < intersections.size(); ++l) {
-              std::cerr << intersections[l].coord << std::endl;
+              std::cerr <<
+                ((grid_side == 'x') ?
+                 intersections[l].x() :
+                 intersections[l].y())
+                        << std::endl;
             }
             std::cerr << std::endl << std::endl;
             _Exit(932875);
           }
           std::sort(intersections.begin(), intersections.end());
 
-          // Add sorted vector of intersections to vector horizontal_scans
+          // Assign directions to intersections and add sorted vector of
+          // intersections to vector scanlines
+          int index = round((ray - 0.5/res) * res);
           for (unsigned int l = 0; l < intersections.size(); ++l) {
             intersections[l].direction = (l%2 == 0);
-            int index = round((ray_y - 0.5/res) * res);
-            horizontal_scans[index].push_back(intersections[l]);
+            scanlines[index].push_back(intersections[l]);
           }
         }
       }
     }
   }
-  return horizontal_scans;
+  return scanlines;
 }
 
-bool ray_x_intersects(XYPoint a,
-                      XYPoint b,
-                      double ray_x,
-                      intersection *temp,
-                      double target_density,
-                      double epsilon)
-{
-  // Check if intersection is present
-  if (((a.x <= ray_x && b.x >= ray_x) ||
-       (a.x >= ray_x && b.x <= ray_x)) &&
-
-      // Pre-condition to ignore grazing incidence (i.e. a line segment along
-      // the polygon is exactly on the test ray)
-      (a.x != b.x)) {
-    if (a.x == ray_x) {
-      a.x += epsilon;
-    } else if (b.x == ray_x) {
-      b.x += epsilon;
-    }
-
-    // Edit intersection passed by reference
-    // coord stores the y coordinate.
-    temp->coord = (a.y * (b.x - ray_x) + b.y * (ray_x - a.x)) / (b.x - a.x);
-    temp->target_density = target_density;
-    temp->direction = false;  // Temporary value
-    return true;
-  }
-  return false;
-}
-
-// Creates a vector of intersections between each GeoDiv and each scanline.
-const std::vector<std::vector<intersection> >
-  InsetState::vertical_scans(unsigned int res) const
-{
-
-  // A vector to store the vertical adjacency graph.
-  // Inspired by code for fill_with_density.cpp
-  int n_rays = static_cast<unsigned int>(lx_ * res);
-  std::vector<std::vector<intersection> > vertical_scans(n_rays);
-
-  // Creating vertical adjacency graph
-  for (auto gd : geo_divs_) {
-
-    // Iterate through "polygons with holes" in inset_state
-    for (unsigned int j = 0; j < gd.n_polygons_with_holes(); ++j) {
-      Polygon_with_holes pwh = gd.polygons_with_holes()[j];
-      Bbox bb = pwh.bbox();
-
-      // Cycle through x-coordinates in bounding box of pwh
-      for (unsigned int k = floor(bb.xmin()) - 1;
-           k <= ceil(bb.xmax()) + 1;
-           ++k) {
-
-        // Cycle through each of the "test rays" between the graticule lines
-        // x = k and x = k+1
-        for (double ray_x = k + (1.0/res)/2;
-             ray_x < k + 1;
-             ray_x += (1.0/res)) {
-          Polygon ext_ring = pwh.outer_boundary();
-          XYPoint prev_point;
-          prev_point.x = ext_ring[ext_ring.size()-1][0];
-          prev_point.y = ext_ring[ext_ring.size()-1][1];
-
-
-          // Temporary vector of intersections for this particular ray
-          std::vector<intersection> intersections;
-
-          double epsilon = 1e-6 * (1.0/res);
-
-          // First we run the algorithm on the exterior ring
-          for (unsigned int l = 0; l < ext_ring.size(); ++l) {
-            XYPoint curr_point;
-            curr_point.x = ext_ring[l][0];
-            curr_point.y = ext_ring[l][1];
-            intersection temp;
-            if (ray_x_intersects(curr_point,
-                                 prev_point,
-                                 ray_x,
-                                 &temp,
-                                 0,
-                                 epsilon)) {
-              temp.geo_div_id = gd.id();
-              intersections.push_back(temp);
-            }
-            prev_point.x = curr_point.x;
-            prev_point.y = curr_point.y;
-          }
-
-          // Run algorithm on each hole
-          for (auto hci = pwh.holes_begin(); hci != pwh.holes_end(); ++hci) {
-            Polygon hole = *hci;
-            prev_point.x = hole[hole.size()-1][0];
-            prev_point.y = hole[hole.size()-1][1];
-            for (unsigned int l = 0; l < hole.size(); ++l) {
-              XYPoint curr_point;
-              curr_point.x = hole[l][0];
-              curr_point.y = hole[l][1];
-              intersection temp;
-              if (ray_x_intersects(curr_point,
-                                   prev_point,
-                                   ray_x,
-                                   &temp,
-                                   0,
-                                   epsilon)) {
-
-                temp.geo_div_id = gd.id();
-                intersections.push_back(temp);
-              }
-              prev_point.x = curr_point.x;
-              prev_point.y = curr_point.y;
-            }
-          }
-
-          // Check if odd number of intersections, indicating self-intersection
-          if (intersections.size() % 2 != 0) {
-            std::cerr << "Incorrect Topology" << std::endl;
-            std::cerr << "Number of intersections: " << intersections.size();
-            std::cerr << std::endl;
-            std::cerr << "X-coordinate: " << ray_x << std::endl;
-            std::cerr << "Intersection points: " << std::endl;
-            for (unsigned int l = 0; l < intersections.size(); ++l) {
-              std::cerr << intersections[l].coord << std::endl;
-            }
-            std::cerr << std::endl << std::endl;
-            _Exit(932875);
-          }
-          std::sort(intersections.begin(), intersections.end());
-
-          // Add sorted vector of intersections to adjacency graph
-          for (unsigned int l = 0; l < intersections.size(); ++l) {
-            intersections[l].direction = (l%2 == 0);
-            int index = round(((ray_x - (1.0/res)/2.0) * res));
-            vertical_scans[index].push_back(intersections[l]);
-          }
-        }
-      }
-    }
-  }
-  return vertical_scans;
-}
-
-// Creates an adjacency graph using horizontal and vertical scans above
-void InsetState::create_continuity_graph(unsigned int res)
+// Creates continuity/adjacency graph using horizontal and vertical scans above
+void InsetState::create_contiguity_graph(unsigned int res)
 {
 
   // Getting the chosen graph.
   for (char graph : {'h', 'v'}) {
     std::vector<std::vector<intersection> > scan_graph;
-    unsigned int max_k = 0;
+    unsigned int max_k;
     if (graph == 'h') {
-      scan_graph = horizontal_scans(res);
-      max_k = ly();
-    } else if (graph == 'v') {
-      scan_graph = vertical_scans(res);
-      max_k = lx();
+      scan_graph = scanlines_parallel_to_axis('x', res);
+      max_k= ly();
+    } else {
+      scan_graph = scanlines_parallel_to_axis('y', res);
+      max_k= lx();
     }
 
     // Iterating through scanline graph
@@ -325,8 +167,8 @@ void InsetState::create_continuity_graph(unsigned int res)
 
         // Fill GeoDivs by iterating through intersections
         for (int l = 1; l < size; l += 2) {
-          double coord_1 = intersections[l].coord;
-          double coord_2 = intersections[l + 1].coord;
+          double coord_1 = intersections[l].x();
+          double coord_2 = intersections[l + 1].x();
           std::string gd_1 = intersections[l].geo_div_id;
           std::string gd_2 = intersections[l + 1].geo_div_id;
 
@@ -357,10 +199,10 @@ const std::vector<Segment> InsetState::intersecting_segments(unsigned int res)
     std::vector<std::vector<intersection> > scans;
     unsigned int max_k;
     if (graph == 'h') {
-      scans = horizontal_scans(res);
+      scans = scanlines_parallel_to_axis('x', res);
       max_k= ly();
     } else {
-      scans = vertical_scans(res);
+      scans = scanlines_parallel_to_axis('y', res);
       max_k= lx();
     }
 
@@ -384,21 +226,22 @@ const std::vector<Segment> InsetState::intersecting_segments(unsigned int res)
         for (int l = 0; l < size; ++l) {
           if (intersections[l].direction == intersections[l + 1].direction &&
               intersections[l].direction &&
-              l + 2 <= size &&
-              intersections[l + 1].coord != intersections[l + 2].coord) {
+              l + 2 <= size) {
             Segment temp;
-            if (graph == 'h') {
+            if (graph == 'h' &&
+                intersections[l + 1].x() != intersections[l + 2].x()) {
               temp = Segment(
-                              Point(intersections[l + 1].coord, ray),
-                              Point(intersections[l + 2].coord, ray)
+                              Point(intersections[l + 1].x(), ray),
+                              Point(intersections[l + 2].x(), ray)
                               );
-            } else {
+              int_segments.push_back(temp);
+            } else if (intersections[l + 1].y() != intersections[l + 2].y()) {
               temp = Segment(
-                              Point(ray, intersections[l + 1].coord),
-                              Point(ray, intersections[l + 2].coord)
+                              Point(ray, intersections[l + 1].y()),
+                              Point(ray, intersections[l + 2].y())
                               );
+              int_segments.push_back(temp);
             }
-            int_segments.push_back(temp);
           }
         }
       }

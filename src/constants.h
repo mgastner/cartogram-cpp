@@ -12,7 +12,7 @@ constexpr double max_permitted_area_error = 0.01;
 constexpr double padding_unless_world = 1.5;
 constexpr double pi = std::numbers::pi;
 
-// Granularity of scanlines (horizontal_scans, vertical_scans)
+// Granularity of scanlines (see inset_state/scanline_graph.cpp)
 constexpr unsigned int default_res = 16;
 constexpr unsigned int intersections_res = 1;
 

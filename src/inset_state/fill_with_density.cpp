@@ -44,8 +44,8 @@ void InsetState::fill_with_density(bool plot_density)
   std::vector<std::vector<double> >
   rho_den(this->lx(), std::vector<double> (this->ly(), 0));
 
-  // See horizontal_scans in scanline_graph.cpp for more information.
-  map_intersections = this->horizontal_scans(res);
+  // See scanlines_parallel_to_axis in scanline_graph.cpp for more information
+  map_intersections = this->scanlines_parallel_to_axis('x', res);
 
   // Determine rho's numerator and denominator:
   // - rho_num is the sum of (weight * target_density) for each segment of a
@@ -76,8 +76,8 @@ void InsetState::fill_with_density(bool plot_density)
       // evaluate to a large positive number instead of -1. In this case,
       // we would erroneously enter the loop.
       for (unsigned int l = 1; l + 1 < intersections.size(); l += 2) {
-        double left_x = intersections[l].coord;
-        double right_x = intersections[l + 1].coord;
+        double left_x = intersections[l].x();
+        double right_x = intersections[l + 1].x();
         if (left_x != right_x) {
           if (ceil(left_x) == ceil(right_x)) {
 
@@ -95,7 +95,7 @@ void InsetState::fill_with_density(bool plot_density)
 
         // Fill last exiting intersection with GeoDiv where part of ray inside
         // the graticule cell is inside the GeoDiv
-        unsigned int last_x = intersections.back().coord;
+        unsigned int last_x = intersections.back().x();
         double last_weight =
           this->area_errors_at(intersections.back().geo_div_id) *
           (ceil(last_x) - last_x);
@@ -106,8 +106,8 @@ void InsetState::fill_with_density(bool plot_density)
 
       // Fill GeoDivs by iterating through intersections
       for (unsigned int l = 0; l < intersections.size(); l += 2) {
-        double left_x = intersections[l].coord;
-        double right_x = intersections[l + 1].coord;
+        double left_x = intersections[l].x();
+        double right_x = intersections[l + 1].x();
 
         // Check for intersection of polygons, holes and GeoDivs
         // TODO: Decide whether to comment out? (probably not)

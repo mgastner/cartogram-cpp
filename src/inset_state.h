@@ -5,29 +5,10 @@
 #include "ft_real_2d.h"
 #include "geo_div.h"
 #include "xy_point.h"
+#include "inset_state/intersection.h"
 #include <vector>
 #include <boost/multi_array.hpp>
 #include <map>
-
-// Struct to store intersection between line parallel with
-// axis, and line segment.
-struct intersection {
-
-  // Intersection coordinates
-  // The x OR y coordinate, depending on which axis is the line parallel to.
-  // The coordinate that does not represent the line is stored.
-  double coord;
-  double target_density;  // GeoDiv's target_density
-  std::string geo_div_id;  // GeoDIv's ID
-  bool direction;  // Does intersection enter (true) or exit (false)?
-
-  // Overloading "<" operator, similar to above
-  bool operator < (const intersection &rhs) const
-  {
-    return (coord < rhs.coord ||
-           (coord == rhs.coord && direction < rhs.direction));
-  }
-};
 
 struct max_area_error_info {
   double value;
@@ -46,8 +27,6 @@ private:
   // Chosen diagonal for each graticule cell
   boost::multi_array<int, 2> graticule_diagonals_;
 
-  // Horizontal and vertical adjacency graphs
-  std::vector<std::vector<intersection> > horizontal_adj_, vertical_adj_;
   std::string inset_name_; // Map name, appended with Position if n_insets > 2
   unsigned int lx_, ly_;  // Lattice dimensions
   double map_scale_; // Double to map scale
@@ -76,14 +55,12 @@ public:
   void colors_insert(const std::string, const Color);
   void colors_insert(const std::string, const std::string);
   unsigned int colors_size() const;
-  void create_continuity_graph(unsigned int res);
+  void create_contiguity_graph(unsigned int res);
   void destroy_fftw_plans_for_rho();
   void execute_fftw_bwd_plan() const;
   void execute_fftw_fwd_plan() const;
   void fill_with_density(bool); // Fill map with density, using scanlines
   const std::vector<GeoDiv> geo_divs() const;
-  const std::vector<std::vector<intersection> >
-    horizontal_scans(unsigned int) const;
   void increment_integration();
   void initialize_cum_proj();
   const std::string inset_name() const;
@@ -110,6 +87,8 @@ public:
   boost::multi_array<XYPoint, 2> *ref_to_proj();
   FTReal2d *ref_to_rho_ft();
   FTReal2d *ref_to_rho_init();
+  std::vector<std::vector<intersection> >
+    scanlines_parallel_to_axis(char, unsigned int) const;
   void set_area_errors();
   void set_geo_divs(const std::vector<GeoDiv>);
   void set_grid_dimensions(const unsigned int lx, const unsigned int ly);
@@ -124,8 +103,6 @@ public:
   void target_areas_replace(const std::string, const double);
   double total_inset_area() const;
   double total_target_area() const;
-  const std::vector<std::vector<intersection> >
-    vertical_scans(unsigned int) const;
 
   // Write all intersections found to an EPS file
   // as "*_intersections_*.eps"
