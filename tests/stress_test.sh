@@ -53,16 +53,16 @@ run_map()
 
     # display warnings, errors etc.
     if [[ $line =~ "error"  || $line =~ "warning" || $line =~ "invalid" ]]; then
-    printf "\b$line\n\n" | tee -a "${results_file}" | color $red
-    fi
-
-    if [[ $line =~ "progress: 1" ]]; then
-      printf "\b== Integration finished ==\n" | tee -a "${results_file}"
+      printf "\b$line\n\n" | tee -a "${results_file}" | color $red
     fi
 
     # check if integration finished
-    if [[ $line =~ "progress" ]]; then
-    printf "\b - $line, in $((SECONDS-start))s\n" | tee -a "${results_file}"
+    if [[ $line =~ "progress: 0." ]]; then
+      printf "\b  ${line:12:2}%% in $((SECONDS-start))s\n" | tee -a "${results_file}"
+    fi
+
+    if [[ $line =~ "progress: 1" ]]; then
+      printf "\b== Integration finished ==\n" | tee -a "${results_file}" | color $yellow
     fi
 
     # code for spinner
@@ -74,7 +74,7 @@ run_map()
     done
   end=${SECONDS}
   runtime=$((end-start))
-  printf "\b == Runtime ${runtime}s == \n" | tee -a "${results_file}"
+  printf "\b== Runtime ${runtime}s == \n" | tee -a "${results_file}"
 
   # Checking for any errors, invalid geometry or unfinished integration
   if grep -qi "invalid" ${tmp_file} || grep -qi "error" ${tmp_file} || ! grep -Fxq "Progress: 1" ${tmp_file} ; then
