@@ -1,6 +1,39 @@
 #include "../inset_state.h"
 #include "../constants.h"
 
+// This function adds intersections between a ray and a polygon to
+// "intersections"
+void add_intersections(std::vector<intersection> &intersections,
+                       Polygon pgn,
+                       double ray,
+                       double target_density,
+                       double epsilon,
+                       std::string gd_id,
+                       char grid_side)
+{
+
+          XYPoint prev_point;
+          prev_point.x = pgn[pgn.size()-1][0];
+          prev_point.y = pgn[pgn.size()-1][1];
+          for (unsigned int l = 0; l < pgn.size(); ++l) {
+            XYPoint curr_point;
+            curr_point.x = pgn[l][0];
+            curr_point.y = pgn[l][1];
+            intersection temp = (grid_side == 'x') ? intersection(true) :
+              intersection(false);
+            if (temp.ray_intersects(curr_point,
+                                    prev_point,
+                                    ray,
+                                    target_density,
+                                    epsilon)) {
+              temp.geo_div_id = gd_id;
+              intersections.push_back(temp);
+            }
+            prev_point.x = curr_point.x;
+            prev_point.y = curr_point.y;
+          }
+}
+
 std::vector<std::vector<intersection> >
   InsetState::scanlines_parallel_to_axis(char grid_side, unsigned int res) const
 {
@@ -35,10 +68,6 @@ std::vector<std::vector<intersection> >
         for (double ray = k + (1.0/res)/2;
              ray < k + 1;
              ray += (1.0/res)) {
-          Polygon ext_ring = pwh.outer_boundary();
-          XYPoint prev_point;
-          prev_point.x = ext_ring[ext_ring.size()-1][0];
-          prev_point.y = ext_ring[ext_ring.size()-1][1];
 
           // Temporary vector of intersections for this particular ray
           std::vector<intersection> intersections;
@@ -52,50 +81,28 @@ std::vector<std::vector<intersection> >
           // y = ray_y goes exactly through curr_point. The addition ensures
           // that, if there is any intersection, it is only counted once. It
           // also correctly detects whether the ray crosses through the point
-          // without entering or exiting the polygon.
+          // without entering or exiting the polygon. The case is the same when
+          // x = ray_x goes exactly through curr_point.
           double epsilon = 1e-6 / res;
 
           // First we run the algorithm on the exterior ring
-          for (unsigned int l = 0; l < ext_ring.size(); ++l) {
-            XYPoint curr_point;
-            curr_point.x = ext_ring[l][0];
-            curr_point.y = ext_ring[l][1];
-            intersection temp = (grid_side == 'x') ? intersection(true) :
-              intersection(false);
-            if (temp.ray_intersects(curr_point,
-                                    prev_point,
-                                    ray,
-                                    target_density,
-                                    epsilon)) {
-              temp.geo_div_id = gd.id();
-              intersections.push_back(temp);
-            }
-            prev_point.x = curr_point.x;
-            prev_point.y = curr_point.y;
-          }
+          add_intersections(intersections,
+                            pwh.outer_boundary(),
+                            ray,
+                            target_density,
+                            epsilon,
+                            gd.id(),
+                            grid_side);
 
           // Run algorithm on each hole
-          for (auto hci = pwh.holes_begin(); hci != pwh.holes_end(); ++hci) {
-            Polygon hole = *hci;
-            prev_point.x = hole[hole.size()-1][0];
-            prev_point.y = hole[hole.size()-1][1];
-            for (unsigned int l = 0; l < hole.size(); ++l) {
-              XYPoint curr_point;
-              curr_point.x = hole[l][0];
-              curr_point.y = hole[l][1];
-              intersection temp = (grid_side == 'x') ? intersection(true) :
-                intersection(false);
-              if (temp.ray_intersects(curr_point,
-                                      prev_point,
-                                      ray,
-                                      target_density,
-                                      epsilon)) {
-                temp.geo_div_id = gd.id();
-                intersections.push_back(temp);
-              }
-              prev_point.x = curr_point.x;
-              prev_point.y = curr_point.y;
-            }
+          for (auto h = pwh.holes_begin(); h != pwh.holes_end(); ++h) {
+            add_intersections(intersections,
+                              (*h),
+                              ray,
+                              target_density,
+                              epsilon,
+                              gd.id(),
+                              grid_side);
           }
 
           // Check if the number of intersections is odd
@@ -187,7 +194,7 @@ void InsetState::create_contiguity_graph(unsigned int res)
   }
 }
 
-// Returns line segments highlighting intersection points using scan graphs
+// Returns line segments highlighting intersection points using scans above
 const std::vector<Segment> InsetState::intersecting_segments(unsigned int res)
   const
 {
