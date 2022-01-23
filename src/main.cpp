@@ -22,7 +22,7 @@
 
 int main(const int argc, const char *argv[])
 {
-  std::string geo_file_name, visual_file_name;  // Default values
+  std::string geo_file_name, visual_file_name; // Default values
 
   // Default number of grid cells along longer Cartesian coordinate axis
   unsigned int long_grid_side_length = default_long_grid_side_length;
@@ -73,17 +73,6 @@ int main(const int argc, const char *argv[])
   // Initialize cart_info. It contains all information about the cartogram
   // that needs to be handled by functions called from main().
   CartogramInfo cart_info(world, visual_file_name);
-
-  // Determine name of input map and store it
-  std::string map_name = geo_file_name;
-  if (map_name.find_last_of("/\\") != std::string::npos) {
-    map_name = map_name.substr(map_name.find_last_of("/\\") + 1);
-  }
-  if (map_name.find('.') != std::string::npos) {
-    map_name = map_name.substr(0, map_name.find('.'));
-  }
-  cart_info.set_map_name(map_name);
-
   if (!make_csv) {
 
     // Read visual variables (e.g. area, color) from CSV
@@ -133,6 +122,15 @@ int main(const int argc, const char *argv[])
     // 'auto' will automatically deduce the const qualifier.
     auto &inset_state = inset_info.second;
     total_geo_divs += inset_state.n_geo_divs();
+  }
+
+  // Determine name of input map
+  std::string map_name = geo_file_name;
+  if (map_name.find_last_of("/\\") != std::string::npos) {
+    map_name = map_name.substr(map_name.find_last_of("/\\") + 1);
+  }
+  if (map_name.find('.') != std::string::npos) {
+    map_name = map_name.substr(0, map_name.find('.'));
   }
 
   // Project map and ensure that all holes are inside polygons
@@ -195,7 +193,7 @@ int main(const int argc, const char *argv[])
                            output_equal_area);
     } else {
 
-      // Rescale map to fit into a rectangular box [0, lx] * [0, ly]
+      // Rescale map to fit into a rectangular box [0, lx] * [0, ly].
       rescale_map(long_grid_side_length,
                   &inset_state,
                   cart_info.is_world_map());
@@ -357,7 +355,7 @@ int main(const int argc, const char *argv[])
   write_geojson(cart_json,
                 geo_file_name,
                 output_file_name,
-                std::cout,
+                std::cerr,
                 output_to_stdout,
                 &cart_info);
   return EXIT_SUCCESS;
