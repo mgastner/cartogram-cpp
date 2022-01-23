@@ -33,9 +33,9 @@ shopt -s extglob nocasematch
 sp='/-\|'
 spin()
 {
-  for run in {1..4}; do
+  for run in {1..3}; do
     printf '\b%.1s' "$sp"
-    sleep 0.24
+    sleep 0.33
     sp=${sp#?}${sp%???}
   done
 }
@@ -56,9 +56,13 @@ run_map()
     printf "\b$line\n\n" | tee -a "${results_file}" | color $red
     fi
 
-    # check if integration finished
     if [[ $line =~ "progress: 1" ]]; then
-    printf "\b== Integration finished ==\n" | tee -a "${results_file}" | color $yellow
+      printf "\b== Integration finished ==\n" | tee -a "${results_file}"
+    fi
+
+    # check if integration finished
+    if [[ $line =~ "progress" ]]; then
+    printf "\b - $line, in $((SECONDS-start))s\n" | tee -a "${results_file}"
     fi
 
     # code for spinner
@@ -70,7 +74,7 @@ run_map()
     done
   end=${SECONDS}
   runtime=$((end-start))
-  printf "\b== RUNTIME ${runtime}s ==\n" | tee -a "${results_file}"
+  printf "\b == Runtime ${runtime}s == \n" | tee -a "${results_file}"
 
   # Checking for any errors, invalid geometry or unfinished integration
   if grep -qi "invalid" ${tmp_file} || grep -qi "error" ${tmp_file} || ! grep -Fxq "Progress: 1" ${tmp_file} ; then
