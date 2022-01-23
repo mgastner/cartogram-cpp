@@ -34,7 +34,7 @@ PROGRESS_BAR_WIDTH=50  # progress bar length in characters
 
 draw_progress_bar() {
 
-  local __percentage=$1
+  local __percentage=$((10#$1))
 
   # Rescale the bar according to the progress bar width
   local __num_bar=$(( $__percentage * $PROGRESS_BAR_WIDTH / 100 ))
