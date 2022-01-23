@@ -26,4 +26,8 @@ constexpr double inset_spacing_factor = 0.1;
 // Percent of height/width of tallest/widest inset that divider should be
 constexpr double divider_length = 0.8;
 
+// Threshold as a fraction of non-na and non-zero total area for a target
+// area to be considered "too small"
+constexpr double small_area_threshold_frac = 2e-5;
+
 #endif
