@@ -56,6 +56,7 @@ public:
   void colors_insert(const std::string, const std::string);
   unsigned int colors_size() const;
   void create_contiguity_graph(unsigned int res);
+  void densify_geo_divs();
   void destroy_fftw_plans_for_rho();
   void execute_fftw_bwd_plan() const;
   void execute_fftw_fwd_plan() const;
