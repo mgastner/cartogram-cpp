@@ -253,8 +253,8 @@ int main(const int argc, const char *argv[])
         // Blur density to speed up the numerics in flatten_density() below.
         // We slowly reduce the blur width so that the areas can reach their
         // target values.
-        // TO-DO: whenever blur_width hits 0, the maximum area error will start
-        // increasing again and eventually lead to an invalid graticule cell 
+        // TODO: whenever blur_width hits 0, the maximum area error will start
+        // increasing again and eventually lead to an invalid graticule cell
         // error when projecting with triangulation. Investigate why. As a
         // temporary fix, we set blur_width to always be non-zero, regardless
         // of the number of integrations.
