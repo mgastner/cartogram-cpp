@@ -20,7 +20,7 @@ double GeoDiv::area() const
 {
   double a = 0.0;
   for (auto pwh : polygons_with_holes()) {
-    Polygon ext_ring = pwh.outer_boundary();
+    const Polygon ext_ring = pwh.outer_boundary();
     a += ext_ring.area();
     for (auto hci = pwh.holes_begin(); hci != pwh.holes_end(); ++hci) {
       Polygon hole = *hci;
@@ -38,12 +38,11 @@ const std::string GeoDiv::id() const
 unsigned int GeoDiv::n_points() const
 {
   unsigned int n_points = 0;
-  for (Polygon_with_holes pgnwh : polygons_with_holes_) {
-    Polygon outer = pgnwh.outer_boundary();
+  for (const auto &pwh : polygons_with_holes_) {
+    const Polygon outer = pwh.outer_boundary();
     n_points += outer.size();
-
-    std::vector<Polygon> holes_v(pgnwh.holes_begin(), pgnwh.holes_end());
-    for (Polygon hole : holes_v) {
+    const std::vector<Polygon> holes_v(pwh.holes_begin(), pwh.holes_end());
+    for (const auto &hole : holes_v) {
       n_points += hole.size();
     }
   }
@@ -69,9 +68,9 @@ const std::vector<Polygon_with_holes> GeoDiv::polygons_with_holes() const
   return polygons_with_holes_;
 }
 
-void GeoDiv::push_back(const Polygon_with_holes pgnwh)
+void GeoDiv::push_back(const Polygon_with_holes pwh)
 {
-  polygons_with_holes_.push_back(pgnwh);
+  polygons_with_holes_.push_back(pwh);
   return;
 }
 
