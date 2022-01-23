@@ -16,7 +16,7 @@ color() { tput setaf $1; cat; tput sgr0; }
 # From https://unix.stackexchange.com/questions/462515/
 # check-command-line-arguments
 if [ $# -eq 0 ] || [ -z "$1" ]; then
-cli="-est"
+  cli="-est"
 else
   cli="$1"
 fi
@@ -27,78 +27,79 @@ printf "to cartogram\n\n" | tee -a "${results_file}"
 # Turning on extended glob option
 shopt -s extglob nocasematch
 
-# Simple loading spinner, adapted from:
-# https://stackoverflow.com/questions/238073/how-to-add-a-progress-bar-to-a-shell-script/4276265#4276265
+# Simple progress bar:
+# Inspired from: https://github.com/pollev/bash_progress_bar
 
-sp='/-\|'
-spin()
-{
-  for run in {1..3}; do
-    printf '\b%.1s' "$sp"
-    sleep 0.33
-    sp=${sp#?}${sp%???}
-  done
+PROGRESS_BAR_WIDTH=50  # progress bar length in characters
+
+draw_progress_bar() {
+
+  local __percentage=$1
+
+  # Rescale the bar according to the progress bar width
+  local __num_bar=$(( $__percentage * $PROGRESS_BAR_WIDTH / 100 ))
+
+  # Draw progress bar
+  for b in $(seq 1 $__num_bar); do printf "⬜" ; done
+  for s in $(seq 1 $(($PROGRESS_BAR_WIDTH - $__num_bar))); do printf " "; done
+  printf "$__percentage%% \r"
 }
 
 # Function to test map with csv
 run_map()
 {
+  printed=0
+  draw_progress_bar 0
   start=$SECONDS
-  curr_runtime=$SECONDS
   cartogram ${map} ${csv} ${cli} 2>&1 |
     while read line
-  do
-    # save to temp file
-    echo $line >> ${tmp_file}
+    do
+      # save to temp file
+      echo $line >> ${tmp_file}
 
-    # display warnings, errors etc.
-    if [[ $line =~ "error"  || $line =~ "warning" || $line =~ "invalid" ]]; then
-      printf "\b$line\n\n" | tee -a "${results_file}" | color $red
-    fi
+      # display warnings, errors etc.
+      if [[ $line =~ "error"  || $line =~ "warning" || $line =~ "invalid" ]]; then
+        printf "\n\n$line\n\n" | tee -a "${results_file}" | color $red
+      fi
 
-    # check if integration finished
-    if [[ $line =~ "progress: 0." ]]; then
-      printf "\b  ${line:12:2}%% in $((SECONDS-start))s\n" | tee -a "${results_file}"
-    fi
+      # check if integration finished
+      if [[ $line =~ "progress: 0." ]]; then
+        draw_progress_bar ${line:12:2}
+      fi
 
-    if [[ $line =~ "progress: 1" ]]; then
-      printf "\b== Integration finished ==\n" | tee -a "${results_file}" | color $yellow
-    fi
-
-    # code for spinner
-    if [[ $(( SECONDS - $curr_runtime)) -eq 1 ]]; then
-    spin &
-    curr_runtime=$SECONDS
-    fi
-
+      if [[ $line =~ "progress: 1" && "$printed" -eq 0 ]]; then
+        draw_progress_bar 100
+        printed=1
+        printf "\n\n== Integration finished ==\n" | tee -a "${results_file}" | color $yellow
+      fi
     done
-  end=${SECONDS}
+  end=$SECONDS
   runtime=$((end-start))
-  printf "\b== Runtime ${runtime}s == \n" | tee -a "${results_file}"
+  printf "== Runtime ${runtime}s == \n" | tee -a "${results_file}"
 
   # Checking for any errors, invalid geometry or unfinished integration
   if grep -qi "invalid" ${tmp_file} || grep -qi "error" ${tmp_file} || ! grep -Fxq "Progress: 1" ${tmp_file} ; then
-  printf "\b== FAILED ==\n" | tee -a "${results_file}" | color $red
+    printf "== FAILED ==\n" | tee -a "${results_file}" | color $red
 
-  # Printing country to failed_tmp.txt
-  if [[ "${failed}" -eq 0 ]] || ! grep -qi "${country}" failed_tmp.txt; then
-  printf "\n${country}\n" >> failed_tmp.txt
-  fi
+    # Printing country to failed_tmp.txt
+    if [[ "${failed}" -eq 0 ]] || ! grep -qi "${country}" failed_tmp.txt; then
+      printf "\n${country}\n" >> failed_tmp.txt
+    fi
 
-  # Increasing failed counter
-  failed=$((failed+1))
+    # Increasing failed counter
+    failed=$((failed+1))
 
-  # Saving data to file if FAILED
-  map_wo_ext=${map_file_name%.*json}
-  csv_wo_ext=${csv_name%.csv}
-  err_file="results_${start_date}-${map_wo_ext}-${csv_wo_ext}.txt"
-  printf " - ${map_file_name} with ${csv_name}\n" >> failed_tmp.txt
-  printf "Full output saved to ${err_file}\n" | tee -a "${results_file}"
-  mv ${tmp_file} ${err_file}
+    # Saving data to file if FAILED
+    map_wo_ext=${map_file_name%.*json}
+    csv_wo_ext=${csv_name%.csv}
+    err_file="results_${start_date}-${map_wo_ext}-${csv_wo_ext}.txt"
+    printf " - ${map_file_name} with ${csv_name}\n" >> failed_tmp.txt
+    printf "Full output saved to ${err_file}\n" | tee -a "${results_file}"
+    mv ${tmp_file} ${err_file}
 
-  # If no errors, and integration finished, pass
+    # If no errors, and integration finished, pass
   else
-    printf "\b== PASSED ==\n" | tee -a "${results_file}" | color $green
+    printf "== PASSED ==\n" | tee -a "${results_file}" | color $green
   fi
 
   # Empty temporary file
@@ -120,7 +121,7 @@ for folder in ../sample_data/*; do
     country=${folder##*/}
     printf " -------- Testing ${country}\n\n" | tee -a "${results_file}" | color $magenta
 
-  # Iterating through maps (GeoJSON(s) or JSON(s)) in country's folder
+    # Iterating through maps (GeoJSON(s) or JSON(s)) in country's folder
     for map in ${folder}/*.*json; do
       map_file_name=${map##*/}
       printf "Trying ${map_file_name}\n" | tee -a "${results_file}" | color $blue
@@ -164,7 +165,7 @@ fi
 rm ${tmp_file}
 
 # Prompting for file deletion
-printf "\bClear ALL *.eps and *.geojson files in current directory? [y/N]: " | color $yellow
+printf "Clear ALL *.eps and *.geojson files in current directory? [y/N]: " | color $yellow
 read to_clear
 if [[ "$to_clear" == "y" ]]; then
   rm *.eps; rm *.geojson
