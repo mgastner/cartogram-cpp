@@ -4,16 +4,15 @@
 std::vector<std::vector<intersection> >
   InsetState::scanlines_parallel_to_axis(char grid_side, unsigned int res) const
 {
-  unsigned int grid_length = (grid_side == 'x') ? lx() : ly();
-  int n_rays = grid_length * res;
+  unsigned int grid_length = (grid_side == 'x') ? ly() : lx();
+  unsigned int n_rays = grid_length * res;
   std::vector<std::vector<intersection> > scanlines(n_rays);
 
   // Iterate through GeoDivs in inset_state
   for (auto gd : geo_divs()) {
 
     // Find target density
-    double target_density;
-    target_density = target_areas_.at(gd.id()) / gd.area();
+    double target_density = target_areas_.at(gd.id()) / gd.area();
 
     // Iterate through "polygons with holes" in inset_state
     for (const auto &pwh : gd.polygons_with_holes()) {
@@ -32,7 +31,7 @@ std::vector<std::vector<intersection> >
            ++k) {
 
         // Cycle through each of the "test rays" between the graticule lines
-        // y = k and y = k+1
+        // y = k and y = k+1 or x = k and x = k + 1, depending on grid_side
         for (double ray = k + (1.0/res)/2;
              ray < k + 1;
              ray += (1.0/res)) {

@@ -8,6 +8,11 @@ struct XYPoint {
   double x;
   double y;
 
+  // Flip x and y coordinates
+  void flip() {
+    double temp = x; x = y; y = temp;
+  }
+
   // Overload "<" operator. Idea from
   // https://stackoverflow.com/questions/4892680/sorting-a-vector-of-structs
   bool operator < (const XYPoint &rhs) const

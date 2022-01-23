@@ -1,7 +1,14 @@
 #include "intersection.h"
 
 intersection::intersection(bool side) :
-  x_or_y(side),
+  is_x(side),
+  direction(false)  // Temporary value
+{
+  return;
+}
+
+intersection::intersection() :
+  is_x(true),     // Assuming x if not explicitly declared
   direction(false)  // Temporary value
 {
   return;
@@ -21,6 +28,14 @@ bool intersection::ray_intersects(XYPoint a,
                                   double td,
                                   double epsilon)
 {
+
+  // Flip coordinates, in case y.
+  // The formulae below would be the exact same, just with x replaced with y
+  // and vice-versa.
+  if (!is_x) {
+    a.flip(); b.flip();
+  }
+
   // Check if intersection is present
   if (((a.y <= ray && b.y >= ray) ||
        (a.y >= ray && b.y <= ray)) &&
@@ -37,11 +52,7 @@ bool intersection::ray_intersects(XYPoint a,
     // Edit intersection passed by reference
     // coord stores the x coordinate.
     target_density = td;
-    if (x_or_y) {
-      coord = (a.y * (b.x - ray) + b.y * (ray - a.x)) / (b.x - a.x);
-    } else {
-      coord = (a.x * (b.y - ray) + b.x * (ray - a.y)) / (b.y - a.y);
-    }
+    coord = (a.x * (b.y - ray) + b.x * (ray - a.y)) / (b.y - a.y);
     return true;
   }
   return false;

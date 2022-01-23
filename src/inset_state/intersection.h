@@ -12,7 +12,7 @@ class intersection {
   // The x OR y coordinate, depending on which axis is the line parallel to.
   // The coordinate that does not represent the line is stored.
   double coord;
-  bool x_or_y; // Is this the x coordinate (true) or the y coordinate (true)?
+  bool is_x; // Is this the x coordinate (true) or the y coordinate (true)?
 
  public:
   double target_density;  // GeoDiv's target_density
@@ -26,7 +26,10 @@ class intersection {
             (coord == rhs.coord && direction < rhs.direction));
   }
 
+  // Constructors
   intersection(bool);
+  intersection();
+
   double x() const;
   double y() const;
   bool ray_intersects(XYPoint,
