@@ -42,10 +42,10 @@ private:
 
   // Horizontal and vertical adjacency graphs
   std::vector<std::vector<intersection> > horizontal_adj_, vertical_adj_;
-  std::string inset_name_; // Map name, appended with Position if n_insets > 2
-  unsigned int lx_, ly_;  // Lattice dimensions
-  double map_scale_; // Double to map scale
-  unsigned int new_xmin_, new_ymin_; // To store map translation vector
+  std::string inset_name_;  // Map name, can be more explicit than pos_
+  unsigned int lx_, ly_;   // Lattice dimensions
+  double map_scale_;  // Lattice spacing in terms of equal-area coordinates
+  unsigned int new_xmin_, new_ymin_;  // Map translation vector
   unsigned int n_finished_integrations_;
   std::string pos_;  // Position of inset ("C", "T" etc.)
   boost::multi_array<XYPoint, 2> proj_;  // Cartogram projection
@@ -116,6 +116,7 @@ public:
   double total_inset_area() const;
   double total_target_area() const;
   const std::vector<std::vector<intersection> > vertical_adj() const;
+  void densify_geo_divs();
 };
 
 #endif

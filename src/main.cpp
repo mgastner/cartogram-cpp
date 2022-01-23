@@ -24,9 +24,9 @@
 
 int main(const int argc, const char *argv[])
 {
-  std::string geo_file_name, visual_file_name; // Default values
+  std::string geo_file_name, visual_file_name;  // Default values
 
-  // Default number of grid cells along longer Cartesian coordinate axis.
+  // Default number of grid cells along longer Cartesian coordinate axis
   unsigned int long_grid_side_length = default_long_grid_side_length;
 
   // World maps need special projections. By default, we assume that the
@@ -34,8 +34,8 @@ int main(const int argc, const char *argv[])
   bool world;
 
   // Another cartogram projection method based on triangulation of graticule
-  // cells. It can reduce or even eliminate intersections that occur when
-  // projecting "naively".
+  // cells. It can eliminate intersections that occur when the projected
+  // graticule lines are strongly curved.
   bool triangulation;
 
   // Shall the polygons be simplified?
@@ -66,10 +66,20 @@ int main(const int argc, const char *argv[])
     plot_density,
     plot_graticule);
 
-
   // Initialize cart_info. It contains all information about the cartogram
   // that needs to be handled by functions called from main().
   CartogramInfo cart_info(world, visual_file_name);
+
+  // Determine name of input map and store it
+  std::string map_name = geo_file_name;
+  if (map_name.find_last_of("/\\") != std::string::npos) {
+    map_name = map_name.substr(map_name.find_last_of("/\\") + 1);
+  }
+  if (map_name.find('.') != std::string::npos) {
+    map_name = map_name.substr(0, map_name.find('.'));
+  }
+  cart_info.set_map_name(map_name);
+
   if (!make_csv) {
 
     // Read visual variables (e.g. area, color) from CSV
@@ -85,7 +95,7 @@ int main(const int argc, const char *argv[])
       return EXIT_FAILURE;
     } catch (const std::runtime_error& e) {
 
-      // Likely due to invalid CSV file
+      // If there is an error, it is probably because of an invalid CSV file
       std::cerr << "ERROR: "
                 << e.what()
                 << std::endl;
@@ -94,7 +104,7 @@ int main(const int argc, const char *argv[])
   }
 
   // Read geometry. If the GeoJSON does not explicitly contain a "crs" field,
-  // assume that the coordinates are in longitude and latitude.
+  // we assume that the coordinates are in longitude and latitude.
   std::string crs = "+proj=longlat";
   try {
     read_geojson(geo_file_name, make_csv, &crs, &cart_info);
@@ -109,25 +119,16 @@ int main(const int argc, const char *argv[])
   }
   std::cerr << "Coordinate reference system: " << crs << std::endl;
 
-  // Progress percentage
+  // Progress measured on a scale from 0 (start) to 1 (end)
   double progress = 0.0;
 
   // Store total number of GeoDivs to monitor progress
   double total_geo_divs = 0;
   for (const auto &inset_info : *cart_info.ref_to_inset_states()) {
 
-    // 'auto' will automatically deduce the const qualifier.
+    // 'auto' will automatically deduce the const qualifier
     auto &inset_state = inset_info.second;
     total_geo_divs += inset_state.n_geo_divs();
-  }
-
-  // Determine name of input map
-  std::string map_name = geo_file_name;
-  if (map_name.find_last_of("/\\") != std::string::npos) {
-    map_name = map_name.substr(map_name.find_last_of("/\\") + 1);
-  }
-  if (map_name.find('.') != std::string::npos) {
-    map_name = map_name.substr(0, map_name.find('.'));
   }
 
   // Project map and ensure that all holes are inside polygons
@@ -189,7 +190,7 @@ int main(const int argc, const char *argv[])
                            output_equal_area);
     } else {
 
-      // Rescale map to fit into a rectangular box [0, lx] * [0, ly].
+      // Rescale map to fit into a rectangular box [0, lx] * [0, ly]
       rescale_map(long_grid_side_length,
                   &inset_state,
                   cart_info.is_world_map());
@@ -283,11 +284,7 @@ int main(const int argc, const char *argv[])
           fill_graticule_diagonals(&inset_state);
 
           // Densify map
-          // TODO: It would make sense to turn densified_geo_divs() into a
-          // method of InsetState. Then the next command could be written more
-          // simply as inset_state.densify_geo_divs().
-          inset_state.set_geo_divs(
-            densified_geo_divs(inset_state.geo_divs()));
+          inset_state.densify_geo_divs();
 
           // Project with triangulation
           project_with_triangulation(&inset_state);
@@ -362,7 +359,7 @@ int main(const int argc, const char *argv[])
   write_geojson(cart_json,
                 geo_file_name,
                 output_file_name,
-                std::cerr,
+                std::cout,
                 output_to_stdout,
                 &cart_info);
   return EXIT_SUCCESS;

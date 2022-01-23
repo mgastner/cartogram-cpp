@@ -1,0 +1,80 @@
+city,lat,lng,country,iso2,admin_name,capital,population,population_proper
+Cairo,30.0561,31.2394,Egypt,EG,Al Qāhirah,primary,19372000,9500000
+Giza,29.9870,31.2118,Egypt,EG,Al Jīzah,admin,5598402,5598402
+Alexandria,31.2000,29.9167,Egypt,EG,Al Iskandarīyah,admin,4870000,4870000
+Madīnat as Sādis min Uktūbar,29.9361,30.9269,Egypt,EG,Al Jīzah,,1500000,1500000
+Shubrā al Khaymah,30.1286,31.2422,Egypt,EG,Al Qalyūbīyah,,1025569,1025569
+Al Manşūrah,31.0500,31.3833,Egypt,EG,Ad Daqahlīyah,admin,960423,960423
+Ḩalwān,29.8419,31.3342,Egypt,EG,Al Qāhirah,,619293,619293
+Al Maḩallah al Kubrá,30.9667,31.1667,Egypt,EG,Al Gharbīyah,,543271,543271
+Port Said,31.2500,32.2833,Egypt,EG,Būr Sa‘īd,admin,524433,524433
+Suez,29.9667,32.5333,Egypt,EG,As Suways,admin,485342,485342
+Ţanţā,30.7833,31.0000,Egypt,EG,Al Gharbīyah,admin,429503,429503
+Asyūţ,27.1869,31.1714,Egypt,EG,Asyūţ,admin,389307,389307
+Al Fayyūm,29.3000,30.8333,Egypt,EG,Al Fayyūm,admin,315940,315940
+Az Zaqāzīq,30.5667,31.5000,Egypt,EG,Ash Sharqīyah,admin,302840,302840
+Ismailia,30.5833,32.2667,Egypt,EG,Al Ismā‘īlīyah,admin,293184,293184
+Aswān,24.0889,32.8997,Egypt,EG,Aswān,admin,267913,267913
+Kafr ad Dawwār,31.1417,30.1272,Egypt,EG,Al Buḩayrah,,262748,262748
+Damanhūr,31.0500,30.4667,Egypt,EG,Al Buḩayrah,admin,244043,244043
+Al Minyā,28.0833,30.7500,Egypt,EG,Al Minyā,admin,236043,236043
+Damietta,31.4167,31.8214,Egypt,EG,Dumyāţ,admin,206664,206664
+Luxor,25.6969,32.6422,Egypt,EG,Al Uqşur,admin,202232,202232
+Qinā,26.1667,32.7167,Egypt,EG,Qinā,admin,201191,201191
+Sūhāj,26.5606,31.6917,Egypt,EG,Sūhāj,admin,193931,193931
+Banī Suwayf,29.0667,31.0833,Egypt,EG,Banī Suwayf,admin,193048,193048
+Shibīn al Kawm,30.5920,30.9000,Egypt,EG,Al Minūfīyah,admin,182900,182900
+Al ‘Arīsh,31.1249,33.8006,Egypt,EG,Shamāl Sīnā’,admin,178651,128855
+Al Ghardaqah,27.2578,33.8117,Egypt,EG,Al Baḩr al Aḩmar,admin,160901,160901
+Banhā,30.4628,31.1797,Egypt,EG,Al Qalyūbīyah,admin,157701,157701
+Kafr ash Shaykh,31.1000,30.9500,Egypt,EG,Kafr ash Shaykh,admin,147393,147393
+Disūq,31.1308,30.6479,Egypt,EG,Kafr ash Shaykh,,143404,143404
+Bilbays,30.4167,31.5667,Egypt,EG,Ash Sharqīyah,,141285,141285
+Mallawī,27.7306,30.8425,Egypt,EG,Al Minyā,,139929,139929
+Idfū,24.9781,32.8789,Egypt,EG,Aswān,,133772,133772
+Mīt Ghamr,30.7192,31.2628,Egypt,EG,Ad Daqahlīyah,,121039,121039
+Munūf,30.4667,30.9333,Egypt,EG,Al Minūfīyah,,117240,117240
+Jirjā,26.3419,31.8894,Egypt,EG,Sūhāj,,102597,102597
+Akhmīm,26.5642,31.7461,Egypt,EG,Sūhāj,,101509,101509
+Ziftá,30.7119,31.2394,Egypt,EG,Al Gharbīyah,,93740,93740
+Samālūţ,28.3000,30.7167,Egypt,EG,Al Minyā,,91475,91475
+Manfalūţ,27.3128,30.9703,Egypt,EG,Asyūţ,,82585,82585
+Banī Mazār,28.5000,30.8000,Egypt,EG,Al Minyā,,79553,79553
+Armant,25.6167,32.5333,Egypt,EG,Qinā,,76457,76457
+Maghāghah,28.6483,30.8422,Egypt,EG,Al Minyā,,75657,75657
+Kawm Umbū,24.4667,32.9500,Egypt,EG,Aswān,,71596,71596
+Būr Fu’ād,31.2314,32.3253,Egypt,EG,Būr Sa‘īd,,70417,70417
+Al Qūşīyah,27.4403,30.8183,Egypt,EG,Asyūţ,,69388,69388
+Rosetta,31.4014,30.4194,Egypt,EG,Al Buḩayrah,,68947,68947
+Isnā,25.2933,32.5564,Egypt,EG,Qinā,,68656,68656
+Maţrūḩ,31.3333,27.2333,Egypt,EG,Maţrūḩ,,68339,68339
+Abnūb,27.2667,31.1500,Egypt,EG,Asyūţ,,67526,67526
+Hihyā,30.6687,31.5904,Egypt,EG,Ash Sharqīyah,,66702,66702
+Samannūd,30.9622,31.2425,Egypt,EG,Al Gharbīyah,,57177,57177
+Dandarah,26.1422,32.6697,Egypt,EG,Qinā,,53109,53109
+Al Khārjah,25.4400,30.5500,Egypt,EG,Al Wādī al Jadīd,admin,49991,49991
+Al Balyanā,26.2329,31.9993,Egypt,EG,Sūhāj,,46997,46997
+Maţāy,28.4167,30.7833,Egypt,EG,Al Minyā,,46903,46903
+Naj‘ Ḩammādī,26.0500,32.2500,Egypt,EG,Qinā,,45038,45038
+Şān al Ḩajar al Qiblīyah,30.9769,31.8800,Egypt,EG,Ash Sharqīyah,,43157,43157
+Dayr Mawās,27.6414,30.8494,Egypt,EG,Al Minyā,,40640,40640
+Ihnāsyā al Madīnah,29.0856,30.9344,Egypt,EG,Banī Suwayf,,40001,40001
+Darāw,24.4003,32.9306,Egypt,EG,Aswān,,38400,38400
+Abū Qīr,31.3167,30.0667,Egypt,EG,Al Iskandarīyah,,37997,37997
+Fāraskūr,31.3297,31.7147,Egypt,EG,Dumyāţ,,36850,36850
+Ra’s Ghārib,28.3597,33.0775,Egypt,EG,Al Baḩr al Aḩmar,,32318,32318
+Al Ḩusaynīyah,30.8612,31.9190,Egypt,EG,Ash Sharqīyah,,30825,30825
+Safājā,26.7517,33.9344,Egypt,EG,Al Baḩr al Aḩmar,,28261,28261
+Qiman al ‘Arūs,29.3005,31.1683,Egypt,EG,Banī Suwayf,,28246,28246
+Qahā,30.2833,31.2000,Egypt,EG,Al Qalyūbīyah,,26694,26694
+Al Karnak,25.7184,32.6581,Egypt,EG,Al Uqşur,,26488,26488
+Hirrīyat Raznah,30.6028,31.5372,Egypt,EG,Ash Sharqīyah,,24359,24359
+Al Quşayr,26.1091,34.2760,Egypt,EG,Al Baḩr al Aḩmar,,24344,24344
+Kafr Shukr,30.5470,31.2673,Egypt,EG,Al Minūfīyah,,23390,23390
+Sīwah,29.2000,25.5167,Egypt,EG,Maţrūḩ,,23080,23080
+Kafr Sa‘d,31.3557,31.6848,Egypt,EG,Dumyāţ,,22500,22500
+Shārūnah,28.5940,30.8516,Egypt,EG,Al Minyā,,22221,22221
+Aţ Ţūr,28.2333,33.6167,Egypt,EG,Janūb Sīnā’,admin,12733,12733
+Rafaḩ,31.2820,34.2387,Egypt,EG,Shamāl Sīnā’,minor,,
+Ash Shaykh Zuwayd,31.2119,34.1106,Egypt,EG,Shamāl Sīnā’,minor,,
+Bi’r al ‘Abd,31.0000,33.0167,Egypt,EG,Shamāl Sīnā’,minor,,
