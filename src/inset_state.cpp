@@ -360,11 +360,6 @@ double InsetState::total_target_area() const
   return inset_total_target_area;
 }
 
-const std::vector<std::vector<intersection> > InsetState::vertical_adj() const
-{
-  return vertical_adj_;
-}
-
 void InsetState::densify_geo_divs()
 {
   geo_divs_ = densified_geo_divs(geo_divs_);
