@@ -168,10 +168,9 @@ void InsetState::create_contiguity_graph(unsigned int res)
 
         // Sort vector in ascending order of intersection
         sort(intersections.begin(), intersections.end());
-
         int size = intersections.size() - 1;
 
-        // Fill GeoDivs by iterating through intersections
+        // Find adjacent GeoDivs by iterating through intersections
         for (int l = 1; l < size; l += 2) {
           double coord_1 = intersections[l].x();
           double coord_2 = intersections[l + 1].x();
