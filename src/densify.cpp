@@ -22,8 +22,8 @@ std::vector<GeoDiv> densified_geo_divs(std::vector<GeoDiv> geodivs)
   std::vector<GeoDiv> geodivs_dens;
   for (GeoDiv gd : geodivs) {
     GeoDiv gd_dens(gd.id());
-    for (Polygon_with_holes pgnwh : gd.polygons_with_holes()) {
-      Polygon outer = pgnwh.outer_boundary();
+    for (const auto &pwh : gd.polygons_with_holes()) {
+      Polygon outer = pwh.outer_boundary();
       Polygon outer_dens;
 
       // Iterate over each point in the outer boundary of the polygon
@@ -57,10 +57,10 @@ std::vector<GeoDiv> densified_geo_divs(std::vector<GeoDiv> geodivs)
       // }
 
       std::vector<Polygon> holes_v_dens;
-      std::vector<Polygon> holes_v(pgnwh.holes_begin(), pgnwh.holes_end());
+      std::vector<Polygon> holes_v(pwh.holes_begin(), pwh.holes_end());
 
       // Iterate over each hole
-      for (Polygon hole : holes_v) {
+      for (const auto &hole : holes_v) {
         Polygon hole_dens;
         for (size_t j = 0; j < hole.size(); ++j) {
 
@@ -86,9 +86,9 @@ std::vector<GeoDiv> densified_geo_divs(std::vector<GeoDiv> geodivs)
 
         holes_v_dens.push_back(hole_dens);
       }
-      Polygon_with_holes pgnwh_dens(outer_dens, holes_v_dens.begin(),
+      Polygon_with_holes pwh_dens(outer_dens, holes_v_dens.begin(),
                                     holes_v_dens.end());
-      gd_dens.push_back(pgnwh_dens);
+      gd_dens.push_back(pwh_dens);
     }
     geodivs_dens.push_back(gd_dens);
   }
