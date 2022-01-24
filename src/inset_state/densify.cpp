@@ -1,10 +1,8 @@
 #include "../inset_state.h"
 #include "../constants.h"
 
-// Determine whether points are indistinguishable
-bool points_almost_equal(Point a, Point b) {
-  return (almost_equal(a[0], b[0]) && almost_equal(a[1], b[1]));
-}
+// Determine whether points are indistinguishable using machine epsilon.
+// See "../cgal_typedef.h"
 bool xy_points_almost_equal(XYPoint a, XYPoint b) {
   return (almost_equal(a.x, b.x) && almost_equal(a.y, b.y));
 }
@@ -201,7 +199,7 @@ std::vector<Point> densification_points(Point pt1, Point pt2)
 bool duplicates(std::vector<Point> v) {
   CGAL::set_pretty_mode(std::cerr);
   for (size_t i = 0; i < v.size() - 1; ++i) {
-    if (points_almost_equal(v[i], v[i + 1])) {
+    if (v[i] == v[i + 1]) {
       std::cerr << "i = " << i << std::endl;
       std::cerr << "Point: " << i << ", v[i]: " << v[i] << std::endl;
       std::cerr << "Point: " << i + 1 << ", v[i + 1]: " << v[i + 1] << std::endl;

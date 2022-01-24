@@ -35,7 +35,6 @@ class Point: public CGAL_Point
     // https://stackoverflow.com/questions/347358/inheriting-constructors
     using CGAL_Point::CGAL_Point;
     bool operator==(const Point &) const;
-
 };
 
 bool almost_equal(double a, double b);

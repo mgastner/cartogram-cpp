@@ -54,6 +54,7 @@ add_executable(
   src/inset_state/densify.cpp
   src/inset_state/intersection.cpp
   src/inset_state/scanline_graph.cpp
+  src/inset_state/contiguity_graph.cpp
 )
 
 # Linking appropriate libraries required.

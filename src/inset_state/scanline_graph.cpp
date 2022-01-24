@@ -35,7 +35,7 @@ void add_intersections(std::vector<intersection> &intersections,
 }
 
 std::vector<std::vector<intersection> >
-  InsetState::scanlines_parallel_to_axis(char grid_side, unsigned int res) const
+ InsetState::scanlines_parallel_to_axis(char grid_side, unsigned int res) const
 {
   unsigned int grid_length = (grid_side == 'x') ? ly() : lx();
   unsigned int n_rays = grid_length * res;
@@ -136,61 +136,6 @@ std::vector<std::vector<intersection> >
     }
   }
   return scanlines;
-}
-
-// Creates continuity/adjacency graph using horizontal and vertical scans above
-void InsetState::create_contiguity_graph(unsigned int res)
-{
-
-  // Getting the chosen graph.
-  for (char graph : {'h', 'v'}) {
-    std::vector<std::vector<intersection> > scan_graph;
-    unsigned int max_k;
-    if (graph == 'h') {
-      scan_graph = scanlines_parallel_to_axis('x', res);
-      max_k= ly();
-    } else {
-      scan_graph = scanlines_parallel_to_axis('y', res);
-      max_k= lx();
-    }
-
-    // Iterating through scanline graph
-    for (unsigned int k = 0; k < max_k; ++k) {
-
-      // Cycle through each of the "res" number of rays in one cell
-      for (double ray = k + (1.0/res)/2;
-           ray < k + 1;
-           ray += (1.0/res)) {
-
-        // Intersections for one ray
-        std::vector<intersection> intersections =
-          scan_graph[static_cast<int>(round(((ray - (1.0/res)/2.0) * res)))];
-
-        // Sort vector in ascending order of intersection
-        sort(intersections.begin(), intersections.end());
-        int size = intersections.size() - 1;
-
-        // Find adjacent GeoDivs by iterating through intersections
-        for (int l = 1; l < size; l += 2) {
-          double coord_1 = intersections[l].x();
-          double coord_2 = intersections[l + 1].x();
-          std::string gd_1 = intersections[l].geo_div_id;
-          std::string gd_2 = intersections[l + 1].geo_div_id;
-
-          if (gd_1 != gd_2 && coord_1 == coord_2) {
-            for (auto &gd : geo_divs_) {
-              if (gd.id() == gd_1) {
-                gd.adjacent_to(gd_2);
-              } else if (gd.id() == gd_2) {
-                gd.adjacent_to(gd_1);
-              }
-            }
-          }
-
-        }
-      }
-    }
-  }
 }
 
 // Returns line segments highlighting intersection points using scans above
