@@ -35,11 +35,11 @@ void InsetState::auto_color()
   int max_i = palette.size();
 
   // Iterating until we are able to color the entire map
-  while (this->colors_size() < this->n_geo_divs() &&
+  while (colors_size() < n_geo_divs() &&
          max_i >= 0) {
 
     // Iterating through GeoDivs
-    for (auto gd : this->geo_divs_) {
+    for (auto gd : geo_divs()) {
 
       // Iterating through all possible colors
       for (size_t i = (count % max_i); i < palette.size(); ++i) {
@@ -50,8 +50,8 @@ void InsetState::auto_color()
         for (std::string gd_id : gd.adjacent_geodivs()) {
 
           // Checking to see whether color found
-          if (this->color_found(gd_id)) {
-            if (this->colors_at(gd_id) == c) {
+          if (color_found(gd_id)) {
+            if (colors_at(gd_id) == c) {
               shared_color = true;
             }
           }
@@ -60,7 +60,7 @@ void InsetState::auto_color()
         // If the color is not shared with any other adjacent GeoDiv,
         // we assign it the color.
         if (!shared_color) {
-          this->colors_insert(gd.id(), c);
+          colors_insert(gd.id(), c);
           i = palette.size();
         }
       }
