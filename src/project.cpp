@@ -1,4 +1,3 @@
-#include "densification_points.h"
 #include "interpolate_bilinearly.h"
 #include "matrix.h"
 #include "project.h"

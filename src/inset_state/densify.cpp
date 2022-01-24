@@ -1,4 +1,5 @@
-#include "densification_points.h"
+#include "../inset_state.h"
+#include "../constants.h"
 
 // Use machine epsilon (defined in constants.h) to get almost equal doubles.
 // From https://en.cppreference.com/w/cpp/types/numeric_limits/epsilon
@@ -200,4 +201,97 @@ std::vector<Point> densification_points(Point pt1, Point pt2)
     }
   }
   return intersections;
+}
+// TODO: This function may be more meaningfully included in
+// check_topology.cpp.
+bool duplicates(std::vector<Point> v) {
+  CGAL::set_pretty_mode(std::cerr);
+  for (size_t i = 0; i < v.size() - 1; ++i) {
+    if (points_almost_equal(v[i], v[i + 1])) {
+      std::cerr << "i = " << i << std::endl;
+      std::cerr << "Point: " << i << ", v[i]: " << v[i] << std::endl;
+      std::cerr << "Point: " << i + 1 << ", v[i + 1]: " << v[i + 1] << std::endl;
+      return true;
+    }
+  }
+  return false;
+}
+
+void InsetState::densify_geo_divs()
+{
+  std::cerr << "Densifying" << std::endl;
+  std::vector<GeoDiv> geodivs_dens;
+  for (GeoDiv gd : geo_divs()) {
+    GeoDiv gd_dens(gd.id());
+    for (const auto &pwh : gd.polygons_with_holes()) {
+      Polygon outer = pwh.outer_boundary();
+      Polygon outer_dens;
+
+      // Iterate over each point in the outer boundary of the polygon
+      for (size_t i = 0; i < outer.size(); ++i) {
+
+        // The segment defined by points `a` and `b` is to be densified.
+        // `b` should be the point immediately after `a`, unless `a` is the
+        // final point of the boundary, in which case `b` should be the first
+        // point.
+        Point a = outer[i];
+        Point b = (i == outer.size() - 1) ? outer[0] : outer[i + 1];
+
+        // Densify the segment.
+        std::vector<Point> outer_pts_dens = densification_points(a, b);
+
+        // Push all points. Omit the last point because it will be included
+        // in the next iteration. Otherwise, we would have duplicated points
+        // in the polygon.
+        for (size_t i = 0; i < (outer_pts_dens.size() - 1); ++i) {
+          outer_dens.push_back(outer_pts_dens[i]);
+        }
+      }
+
+      // Check for duplicate points in the densified outer boundary
+      // std::vector<Point> temp_out;
+      // for (size_t i = 0; i < outer_dens.size(); ++i) {
+      //   temp_out.push_back(outer_dens[i]);
+      // }
+      // if (duplicates(temp_out)) {
+      //   std::cerr << "Duplicates found in outer boundary!" << std::endl;
+      // }
+
+      std::vector<Polygon> holes_v_dens;
+      std::vector<Polygon> holes_v(pwh.holes_begin(), pwh.holes_end());
+
+      // Iterate over each hole
+      for (const auto &hole : holes_v) {
+        Polygon hole_dens;
+        for (size_t j = 0; j < hole.size(); ++j) {
+
+          // `c` and `d` are determined in the same way as `a` and `b` above
+          Point c = hole[j];
+          Point d = (j == hole.size() - 1) ? hole[0] : hole[j + 1];
+
+          std::vector<Point> hole_pts_dens = densification_points(c, d);
+
+          for (size_t i = 0; i < (hole_pts_dens.size() - 1); ++i) {
+            hole_dens.push_back(hole_pts_dens[i]);
+          }
+        }
+
+        // Check for duplicate points in the densified hole boundary
+        // std::vector<Point> temp_holes;
+        // for (size_t i = 0; i < hole_dens.size(); ++i) {
+        //   temp_holes.push_back(hole_dens[i]);
+        // }
+        // if (duplicates(temp_holes)) {
+        //   std::cerr << "Duplicates found in hole!" << std::endl;
+        // }
+
+        holes_v_dens.push_back(hole_dens);
+      }
+      Polygon_with_holes pwh_dens(outer_dens, holes_v_dens.begin(),
+                                    holes_v_dens.end());
+      gd_dens.push_back(pwh_dens);
+    }
+    geodivs_dens.push_back(gd_dens);
+  }
+  set_geo_divs(geodivs_dens);
 }

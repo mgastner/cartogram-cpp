@@ -1,6 +1,5 @@
 #include "inset_state.h"
 #include "constants.h"
-#include "densify.h"
 
 InsetState::InsetState(std::string pos) : pos_(pos)
 {
@@ -358,9 +357,4 @@ double InsetState::total_target_area() const
     inset_total_target_area += geo_div_target_area.second;
   }
   return inset_total_target_area;
-}
-
-void InsetState::densify_geo_divs()
-{
-  geo_divs_ = densified_geo_divs(geo_divs_);
 }

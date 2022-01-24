@@ -39,8 +39,6 @@ add_executable(
   src/inset_state/auto_color.cpp
   src/check_topology.cpp
   src/matrix.cpp
-  src/densify.cpp
-  src/densification_points.cpp
   src/read_geojson.cpp
   src/inset_state/fill_with_density.cpp
   src/blur_density.cpp
@@ -52,8 +50,9 @@ add_executable(
   src/write_geojson.cpp
   src/albers_projection.cpp
   src/parse_arguments.cpp
-  src/inset_state/scanline_graph.cpp
+  src/inset_state/densify.cpp
   src/inset_state/intersection.cpp
+  src/inset_state/scanline_graph.cpp
 )
 
 # Linking appropriate libraries required.

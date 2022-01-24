@@ -3,8 +3,6 @@
 #include "cartogram_info.h"
 #include "check_topology.h"
 #include "constants.h"
-#include "densification_points.h"
-#include "densify.h"
 #include "flatten_density.h"
 #include "geo_div.h"
 #include "inset_state.h"
