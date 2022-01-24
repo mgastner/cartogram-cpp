@@ -1,5 +1,5 @@
-#include "constants.h"
 #include "matrix.h"
+#include "constants.h"
 #include "inset_state.h"
 
 Matrix::Matrix()

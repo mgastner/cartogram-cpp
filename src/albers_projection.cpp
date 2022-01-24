@@ -1,4 +1,3 @@
-#include "cgal_typedef.h"
 #include "constants.h"
 #include "inset_state.h"
 #include <math.h>

@@ -9,7 +9,7 @@ typedef CGAL::Exact_predicates_inexact_constructions_kernel Epick;
 typedef CGAL::Polygon_2<Epick> Polygon;
 typedef CGAL::Polygon_with_holes_2<Epick> Polygon_with_holes;
 typedef CGAL::Aff_transformation_2<Epick> Transformation;
-typedef CGAL::Point_2<Epick> Point;
+typedef CGAL::Point_2<Epick> CGAL_Point;
 typedef CGAL::Bbox_2 Bbox;
 typedef CGAL::Segment_2<Epick> Segment;
 
@@ -26,5 +26,18 @@ typedef CGAL::Constrained_Delaunay_triangulation_2<
 typedef CGAL::Constrained_triangulation_plus_2<CDT> CT;
 typedef PS::Stop_below_count_ratio_threshold Stop;
 typedef PS::Squared_distance_cost Cost;
+
+class Point: public CGAL_Point
+{
+ public:
+
+    // Inheriting constructors, according to:
+    // https://stackoverflow.com/questions/347358/inheriting-constructors
+    using CGAL_Point::CGAL_Point;
+    bool operator==(const Point &) const;
+
+};
+
+bool almost_equal(double a, double b);
 
 #endif

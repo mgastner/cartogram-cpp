@@ -50,6 +50,7 @@ add_executable(
   src/write_geojson.cpp
   src/albers_projection.cpp
   src/parse_arguments.cpp
+  src/cgal_typedef.cpp
   src/inset_state/densify.cpp
   src/inset_state/intersection.cpp
   src/inset_state/scanline_graph.cpp
