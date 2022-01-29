@@ -32,6 +32,10 @@ std::vector<GeoDiv> densified_geo_divs(std::vector<GeoDiv> gds)
         }
       }
       std::vector<Polygon> dens_holes;
+      
+      // TODO: WOULD THE LOOP OVER HOLES THAT WE USUALLY USE:
+      // for (auto h = pwh.holes_begin(); h != pwh.holes_end(); ++h) {
+      // BE MORE EFFICIENT BECAUSE NO COPIES OF THE HOLES ARE MADE?
       std::vector<Polygon> holes(pwh.holes_begin(), pwh.holes_end());
       for (Polygon hole : holes) {
         Polygon dens_hole;

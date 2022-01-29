@@ -22,11 +22,11 @@ Bbox InsetState::bbox() const
   double inset_ymax = -dbl_inf;
   for (const auto &gd : geo_divs_) {
     for (const auto &pwh : gd.polygons_with_holes()) {
-      const Bbox pwh_bbox = pwh.bbox();
-      inset_xmin = std::min(pwh_bbox.xmin(), inset_xmin);
-      inset_ymin = std::min(pwh_bbox.ymin(), inset_ymin);
-      inset_xmax = std::max(pwh_bbox.xmax(), inset_xmax);
-      inset_ymax = std::max(pwh_bbox.ymax(), inset_ymax);
+      const auto bb = pwh.bbox();
+      inset_xmin = std::min(bb.xmin(), inset_xmin);
+      inset_ymin = std::min(bb.ymin(), inset_ymin);
+      inset_xmax = std::max(bb.xmax(), inset_xmax);
+      inset_ymax = std::max(bb.ymax(), inset_ymax);
     }
   }
   Bbox inset_bb(inset_xmin, inset_ymin, inset_xmax, inset_ymax);
@@ -109,8 +109,8 @@ void InsetState::increment_integration()
 void InsetState::initialize_cum_proj()
 {
   cum_proj_.resize(boost::extents[lx_][ly_]);
-  for (unsigned int i = 0; i < lx_; i++) {
-    for (unsigned int j = 0; j < ly_; j++) {
+  for (unsigned int i = 0; i < lx_; ++i) {
+    for (unsigned int j = 0; j < ly_; ++j) {
       cum_proj_[i][j].x = i + 0.5;
       cum_proj_[i][j].y = j + 0.5;
     }
@@ -354,7 +354,7 @@ double InsetState::total_inset_area() const
 double InsetState::total_target_area() const
 {
   double inset_total_target_area = 0;
-  for(const auto &geo_div_target_area : target_areas_) {
+  for (const auto &geo_div_target_area : target_areas_) {
     inset_total_target_area += geo_div_target_area.second;
   }
   return inset_total_target_area;
@@ -372,4 +372,9 @@ void InsetState::labels_insert(const std::string id, const std::string label)
 {
   labels_.insert(std::pair<std::string, std::string>(id, label));
   return;
+}
+
+void InsetState::densify_geo_divs()
+{
+  geo_divs_ = densified_geo_divs(geo_divs_);
 }

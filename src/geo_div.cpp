@@ -22,7 +22,7 @@ double GeoDiv::area() const
 {
   double a = 0.0;
   for (const auto &pwh : polygons_with_holes()) {
-    Polygon ext_ring = pwh.outer_boundary();
+    const auto ext_ring = pwh.outer_boundary();
     a += ext_ring.area();
     for (auto h = pwh.holes_begin(); h != pwh.holes_end(); ++h) {
       Polygon hole = *h;
@@ -63,7 +63,7 @@ unsigned int GeoDiv::n_points() const
   for (const auto &pwh : polygons_with_holes_) {
     const auto outer = pwh.outer_boundary();
     n_points += outer.size();
-    std::vector<Polygon> holes(pwh.holes_begin(), pwh.holes_end());
+    const std::vector<Polygon> holes(pwh.holes_begin(), pwh.holes_end());
     for (const auto &hole : holes) {
       n_points += hole.size();
     }

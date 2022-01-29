@@ -31,14 +31,14 @@ void InsetState::fill_with_density(bool plot_density)
   const unsigned int res = default_res;
 
   // A vector (map_intersections) to store vectors of intersections
-  const int n_rays = static_cast<int>(ly_ * res);
+  const unsigned int n_rays = static_cast<int>(ly_ * res);
   std::vector<std::vector<intersection> > map_intersections(n_rays);
 
-  // Density numerator and denominator for each graticule cell
-  // A density of a graticule cell can be calculated with (rho_num / rho_den).
-  // We initially assign 0 to all elements because we assume that all
-  // graticule cells are outside any GeoDiv. Any graticule cell where rho_den
-  // is 0 will get the mean_density
+  // Density numerator and denominator for each graticule cell. The density of
+  // a graticule cell can be calculated with (rho_num / rho_den). We initially
+  // assign 0 to all elements because we assume that all graticule cells are
+  // outside any GeoDiv. Any graticule cell where rho_den is 0 will be filled
+  // with the mean_density.
   std::vector<std::vector<double> >
   rho_num(lx_, std::vector<double> (ly_, 0));
   std::vector<std::vector<double> >

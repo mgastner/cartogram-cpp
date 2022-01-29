@@ -120,7 +120,7 @@ void transform_to_albers_projection(InsetState *inset_state)
   const double max_lon = (bb.xmax() * pi) / 180;
   const double max_lat = (bb.ymax() * pi) / 180;
 
-  // Reference Longitude and Latitude
+  // Reference longitude and latitude
   const double lambda_0 = 0.5 * (min_lon + max_lon);
   const double phi_0 = 0.5 * (min_lat + max_lat);
 
@@ -136,7 +136,7 @@ void transform_to_albers_projection(InsetState *inset_state)
 
       // Get outer boundary
       auto &outer_boundary = *(&pwh.outer_boundary());
-
+      
       // Iterate through outer boundary's coordinates
       for (auto &coords_outer : outer_boundary) {
 
@@ -151,7 +151,6 @@ void transform_to_albers_projection(InsetState *inset_state)
       // Iterate through holes
       for (auto h = pwh.holes_begin(); h != pwh.holes_end(); ++h) {
         auto &hole = *h;
-
         // Iterate through hole's coordinates
         for (auto &coords_hole : hole) {
 

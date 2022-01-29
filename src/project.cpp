@@ -241,7 +241,7 @@ std::vector<XYPoint> transformed_triangle(const std::vector<XYPoint> tri,
                                           InsetState *inset_state)
 {
   std::vector<XYPoint> transf_tri;
-  for(XYPoint pt : tri) {
+  for (const auto &pt : tri) {
     exit_if_point_not_on_grid_or_edge(pt, inset_state);
     XYPoint transf_pt = projected_point_on_grid_or_edge(pt, inset_state);
     transf_tri.push_back(transf_pt);
