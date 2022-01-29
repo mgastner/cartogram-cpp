@@ -364,7 +364,7 @@ void read_geojson(const std::string geometry_file_name,
         csv_rows[0].push_back("Cartogram Data (eg. Population)");
         csv_rows[0].push_back("Color");
         csv_rows[0].push_back("Inset");
-        csv_rows[0].push_back("Abbreviation");
+        csv_rows[0].push_back("Label");
       }
       for (size_t k = 0; k < ids.size(); ++k) {
         csv_rows[k + 1].push_back(ids[k]);

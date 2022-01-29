@@ -22,8 +22,9 @@ find_package(PkgConfig REQUIRED)
 
 # Finding and linking FFTW using PkgConfig.
 pkg_search_module(FFTW REQUIRED fftw3 IMPORTED_TARGET)
-include_directories(PkgConfig::FFTW)
-link_libraries(PkgConfig::FFTW)
+pkg_search_module(Cairo REQUIRED cairo IMPORTED_TARGET)
+include_directories(PkgConfig::FFTW PkgConfig::Cairo)
+link_libraries(PkgConfig::FFTW PkgConfig::Cairo)
 
 # Adding C++ files needed for compilation.
 add_executable(
@@ -52,6 +53,9 @@ add_executable(
   src/write_geojson.cpp
   src/albers_projection.cpp
   src/parse_arguments.cpp
+  src/write_cairo.cpp
+  src/scanline_graph.cpp
+  src/intersection.cpp
 )
 
 # Linking appropriate libraries required.
@@ -83,6 +87,7 @@ target_link_libraries(
   CGAL::CGAL
   ${CMAKE_THREAD_LIBS_INIT}
   PkgConfig::FFTW
+  PkgConfig::Cairo
   OpenMP::OpenMP_CXX
 )
 

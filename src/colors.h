@@ -16,7 +16,7 @@ struct Color {
   Color(std::string);
   std::string eps();
 
-  bool operator == (const Color& rhs)
+  bool operator == (const Color& rhs) const
   {
       return (r == rhs.r && g == rhs.g && b == rhs.b);
   }

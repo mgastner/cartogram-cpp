@@ -28,15 +28,11 @@ void adjust_for_dual_hemisphere(InsetState *inset_state)
   double min_lon_east = dbl_inf;
   for (const auto &gd : inset_state->geo_divs()) {
     for (const auto &pwh : gd.polygons_with_holes()) {
-      const Bbox bb = pwh.bbox();
-      const double bb_xmax = bb.xmax();
-      const double bb_xmin = bb.xmin();
-      max_lon_west = bb_xmax < 0
-                     ? std::max(bb_xmax, max_lon_west)
-                     : max_lon_west;
-      min_lon_east = bb_xmin >= 0
-                     ? std::min(bb_xmin, min_lon_east)
-                     : min_lon_east;
+      const auto bb = pwh.bbox();
+      const double xmax = bb.xmax();
+      const double xmin = bb.xmin();
+      max_lon_west = xmax < 0 ? std::max(xmax, max_lon_west) : max_lon_west;
+      min_lon_east = xmin >= 0 ? std::min(xmin, min_lon_east) : min_lon_east;
     }
   }
 
@@ -60,17 +56,15 @@ void adjust_for_dual_hemisphere(InsetState *inset_state)
 
       // Iterate through Polygon_with_holes
       for (auto &pwh : *gd.ref_to_polygons_with_holes()) {
-        Polygon *outer_boundary = &pwh.outer_boundary();
+        auto *outer_boundary = &pwh.outer_boundary();
 
         // If pwh is in the western hemisphere
         if (pwh.bbox().xmin() < 0) {
           *outer_boundary = transform(translate, *outer_boundary);
 
           // Iterate through holes
-          for (auto hole_it = pwh.holes_begin();
-               hole_it != pwh.holes_end();
-               ++hole_it) {
-            *hole_it = transform(translate, *hole_it);
+          for (auto h = pwh.holes_begin(); h != pwh.holes_end(); ++h) {
+            *h = transform(translate, *h);
           }
         }
       }
@@ -108,8 +102,7 @@ Point projected_albers_coordinates(Point coords,
     x = rho * sin(theta);
     y = rho_0 - (rho * cos(theta));
   }
-  const Point coords_converted(x, y);
-  return coords_converted;
+  return Point(x, y);
 }
 
 void transform_to_albers_projection(InsetState *inset_state)
@@ -119,7 +112,7 @@ void transform_to_albers_projection(InsetState *inset_state)
   adjust_for_dual_hemisphere(inset_state);
 
   // Recalculate the bbox after dual hemisphere adjustment
-  const Bbox bb = inset_state->bbox();
+  const auto bb = inset_state->bbox();
 
   // Declarations for albers_formula()
   const double min_lon = (bb.xmin() * pi) / 180;
@@ -142,8 +135,8 @@ void transform_to_albers_projection(InsetState *inset_state)
     for (auto &pwh : *(gd.ref_to_polygons_with_holes())) {
 
       // Get outer boundary
-      Polygon &outer_boundary = *(&pwh.outer_boundary());
-
+      auto &outer_boundary = *(&pwh.outer_boundary());
+      
       // Iterate through outer boundary's coordinates
       for (auto &coords_outer : outer_boundary) {
 
@@ -156,11 +149,8 @@ void transform_to_albers_projection(InsetState *inset_state)
       }
 
       // Iterate through holes
-      for (auto hole_it = pwh.holes_begin();
-           hole_it != pwh.holes_end();
-           ++hole_it) {
-        Polygon &hole = *hole_it;
-
+      for (auto h = pwh.holes_begin(); h != pwh.holes_end(); ++h) {
+        auto &hole = *h;
         // Iterate through hole's coordinates
         for (auto &coords_hole : hole) {
 

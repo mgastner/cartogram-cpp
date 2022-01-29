@@ -1,12 +1,10 @@
 #include "albers_projection.h"
-#include "auto_color.h"
 #include "blur_density.h"
 #include "cartogram_info.h"
 #include "check_topology.h"
 #include "constants.h"
 #include "densification_points.h"
 #include "densify.h"
-#include "fill_with_density.h"
 #include "flatten_density.h"
 #include "geo_div.h"
 #include "inset_state.h"
@@ -17,6 +15,7 @@
 #include "simplify_inset.h"
 #include "write_eps.h"
 #include "write_geojson.h"
+#include "write_cairo.h"
 #include "xy_point.h"
 #include "parse_arguments.h"
 #include <iostream>
@@ -28,6 +27,9 @@ int main(const int argc, const char *argv[])
 
   // Default number of grid cells along longer Cartesian coordinate axis
   unsigned int long_grid_side_length = default_long_grid_side_length;
+
+  // Target number of points to retain after simplification.
+  unsigned int target_points_per_inset = default_target_points_per_inset;
 
   // World maps need special projections. By default, we assume that the
   // input map is not a world map.
@@ -47,7 +49,8 @@ int main(const int argc, const char *argv[])
        output_equal_area,
        output_to_stdout,
        plot_density,
-       plot_graticule;
+       plot_graticule,
+       plot_intersections;
 
   // Parse command-line arguments
   argparse::ArgumentParser arguments = parsed_arguments(
@@ -56,6 +59,7 @@ int main(const int argc, const char *argv[])
     geo_file_name,
     visual_file_name,
     long_grid_side_length,
+    target_points_per_inset,
     world,
     triangulation,
     simplify,
@@ -64,7 +68,8 @@ int main(const int argc, const char *argv[])
     output_equal_area,
     output_to_stdout,
     plot_density,
-    plot_graticule);
+    plot_graticule,
+    plot_intersections);
 
   // Initialize cart_info. It contains all information about the cartogram
   // that needs to be handled by functions called from main().
@@ -182,7 +187,8 @@ int main(const int argc, const char *argv[])
       // Simplify inset if -s flag is passed. This option reduces the number
       // of points used to represent the GeoDivs in the inset, thereby
       // reducing the output file sizes and run times.
-      simplify_inset(&inset_state);
+      simplify_inset(&inset_state,
+                     target_points_per_inset);
     }
     if (output_equal_area) {
       normalize_inset_area(&inset_state,
@@ -206,27 +212,21 @@ int main(const int argc, const char *argv[])
       // Set initial area errors
       inset_state.set_area_errors();
 
-      // TODO: AN UPDATED VERSION OF auto_color() SHOULD AVOID HAVING TO
-      // CALL fill_with_density() TO GET ADJACENCY.
-
-      // Fill density to fill horizontal adjacency map
-      fill_with_density(plot_density, &inset_state);
-
       // Automatically color GeoDivs if no colors are provided
       if (inset_state.colors_empty()) {
-        auto_color(&inset_state);
+        inset_state.auto_color();
       }
 
-      // Write EPS if requested by command-line option
+      // Write PNG and PS files if requested by command-line option
       if (make_polygon_eps) {
-        std::string eps_input_filename = inset_state.inset_name();
+        std::string input_filename = inset_state.inset_name();
         if (plot_graticule) {
-          eps_input_filename += "_input_graticule.eps";
+          input_filename += "_input_graticule";
         } else {
-          eps_input_filename += "_input.eps";
+          input_filename += "_input";
         }
-        std::cerr << "Writing " << eps_input_filename << std::endl;
-        write_map_to_eps(eps_input_filename, plot_graticule, &inset_state);
+        std::cerr << "Writing " << input_filename << std::endl;
+        write_cairo_map(input_filename, plot_graticule, &inset_state);
       }
 
       // We make the approximation that the progress towards generating the
@@ -268,14 +268,14 @@ int main(const int argc, const char *argv[])
         // }
         std::cerr << "blur_width = " << blur_width << std::endl;
 
-        // TODO: THIS if-CONDITION IS INELEGANT. IN AN UPDATED VERSION OF
-        // auto_color() THE EARLIER fill_with_density() SHOULD BE REMOVED
-        // AND THE if-CONDITION BE DROPPED.
-        if (inset_state.n_finished_integrations() > 0) {
-          fill_with_density(plot_density, &inset_state);
-        }
+        inset_state.fill_with_density(plot_density);
         if (blur_width > 0.0) {
           blur_density(blur_width, plot_density, &inset_state);
+        }
+
+        // Plotting intersections if requested
+        if (plot_intersections) {
+          inset_state.write_intersections_to_eps(intersections_res);
         }
         flatten_density(&inset_state);
         if (triangulation) {
@@ -297,7 +297,8 @@ int main(const int argc, const char *argv[])
           // increases the number of points. Simplification ensures that the
           // number of points does not exceed a reasonable limit, resulting
           // in smaller output and shorter run-times.
-          simplify_inset(&inset_state);
+          simplify_inset(&inset_state,
+                         target_points_per_inset);
         }
         inset_state.increment_integration();
 
@@ -320,17 +321,22 @@ int main(const int argc, const char *argv[])
                 << progress
                 << std::endl;
 
-      // Print EPS of cartogram
+      // Plotting intersections if requested
+      if (plot_intersections) {
+        inset_state.write_intersections_to_eps(intersections_res);
+      }
+
+      // Print PNG and PS files of cartogram
       if (make_polygon_eps) {
-        std::string eps_output_filename = inset_state.inset_name();
+        std::string output_filename = inset_state.inset_name();
         if (plot_graticule) {
-          eps_output_filename += "_output_graticule.eps";
+          output_filename += "_output_graticule";
         } else {
-          eps_output_filename += "_output.eps";
+          output_filename += "_output";
         }
         std::cerr << "Writing "
-                  << eps_output_filename << std::endl;
-        write_map_to_eps(eps_output_filename, plot_graticule,
+                  << output_filename << std::endl;
+        write_cairo_map(output_filename, plot_graticule,
                          &inset_state);
       }
 

@@ -23,8 +23,7 @@ public:
   double &operator() (const unsigned int, const unsigned int);
 
   // Getter for array elements
-  double operator() (const unsigned int,
-                     const unsigned int) const;
+  double operator() (const unsigned int, const unsigned int) const;
 };
 
 #endif
