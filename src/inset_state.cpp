@@ -21,12 +21,12 @@ Bbox InsetState::bbox() const
   double inset_ymin = dbl_inf;
   double inset_ymax = -dbl_inf;
   for (const auto &gd : geo_divs_) {
-    for (const auto &pgnwh : gd.polygons_with_holes()) {
-      const Bbox pgnwh_bbox = pgnwh.bbox();
-      inset_xmin = std::min(pgnwh_bbox.xmin(), inset_xmin);
-      inset_ymin = std::min(pgnwh_bbox.ymin(), inset_ymin);
-      inset_xmax = std::max(pgnwh_bbox.xmax(), inset_xmax);
-      inset_ymax = std::max(pgnwh_bbox.ymax(), inset_ymax);
+    for (const auto &pwh : gd.polygons_with_holes()) {
+      const Bbox pwh_bbox = pwh.bbox();
+      inset_xmin = std::min(pwh_bbox.xmin(), inset_xmin);
+      inset_ymin = std::min(pwh_bbox.ymin(), inset_ymin);
+      inset_xmax = std::max(pwh_bbox.xmax(), inset_xmax);
+      inset_ymax = std::max(pwh_bbox.ymax(), inset_ymax);
     }
   }
   Bbox inset_bb(inset_xmin, inset_ymin, inset_xmax, inset_ymax);
