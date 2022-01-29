@@ -102,8 +102,7 @@ Point projected_albers_coordinates(Point coords,
     x = rho * sin(theta);
     y = rho_0 - (rho * cos(theta));
   }
-  const Point coords_converted(x, y);
-  return coords_converted;
+  return Point(x, y);
 }
 
 void transform_to_albers_projection(InsetState *inset_state)
