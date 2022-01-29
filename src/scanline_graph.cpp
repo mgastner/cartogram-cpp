@@ -70,8 +70,8 @@ const std::vector<std::vector<intersection> >
           }
 
           // Run algorithm on each hole
-          for (auto hci = pwh.holes_begin(); hci != pwh.holes_end(); ++hci) {
-            Polygon hole = *hci;
+          for (auto h = pwh.holes_begin(); h != pwh.holes_end(); ++h) {
+            Polygon hole = *h;
             prev_point.x = hole[hole.size()-1][0];
             prev_point.y = hole[hole.size()-1][1];
             for (unsigned int l = 0; l < hole.size(); ++l) {
@@ -180,8 +180,8 @@ const std::vector<std::vector<intersection> >
           }
 
           // Run algorithm on each hole
-          for (auto hci = pwh.holes_begin(); hci != pwh.holes_end(); ++hci) {
-            Polygon hole = *hci;
+          for (auto h = pwh.holes_begin(); h != pwh.holes_end(); ++h) {
+            Polygon hole = *h;
             prev_point.x = hole[hole.size()-1][0];
             prev_point.y = hole[hole.size()-1][1];
             for (unsigned int l = 0; l < hole.size(); ++l) {

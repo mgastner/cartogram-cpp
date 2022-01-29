@@ -83,8 +83,8 @@ void write_polygon_to_cairo_surface(cairo_t *cr,
       }
 
       // Plot holes
-      for (auto hci = pwh.holes_begin(); hci != pwh.holes_end(); ++hci) {
-        Polygon hole = *hci;
+      for (auto h = pwh.holes_begin(); h != pwh.holes_end(); ++h) {
+        Polygon hole = *h;
         cairo_move_to(cr, hole[0][0], height - hole[0][1]);
         unsigned int hole_size = hole.size();
         for (unsigned int i = 1; i <= hole_size; ++i) {

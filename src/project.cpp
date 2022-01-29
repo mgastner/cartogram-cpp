@@ -65,8 +65,8 @@ void project(InsetState *inset_state)
                                      old_ext_intp_y + old_ext_ring[i][1]));
       }
       std::vector<Polygon> hole_v;
-      for (auto hci = pwh.holes_begin(); hci != pwh.holes_end(); ++hci) {
-        Polygon old_hole = *hci;
+      for (auto h = pwh.holes_begin(); h != pwh.holes_end(); ++h) {
+        Polygon old_hole = *h;
         Polygon new_hole;
         for (unsigned int i = 0; i < old_hole.size(); ++i) {
 
@@ -412,8 +412,8 @@ void project_with_triangulation(InsetState *inset_state)
         new_ext_ring.push_back(Point(new_ext_ring_pt.x, new_ext_ring_pt.y));
       }
       std::vector<Polygon> hole_v;
-      for (auto hci = pwh.holes_begin(); hci != pwh.holes_end(); ++hci) {
-        const Polygon old_hole = *hci;
+      for (auto h = pwh.holes_begin(); h != pwh.holes_end(); ++h) {
+        const Polygon old_hole = *h;
         Polygon new_hole;
         for (unsigned int i = 0; i < old_hole.size(); ++i) {
 
