@@ -26,17 +26,13 @@ void adjust_for_dual_hemisphere(InsetState *inset_state)
   // longitude in the eastern hemisphere
   double max_lon_west = -dbl_inf;
   double min_lon_east = dbl_inf;
-  for (GeoDiv gd : (*inset_state).geo_divs()) {
-    for (Polygon_with_holes pwh : gd.polygons_with_holes()) {
-      Bbox pwh_bb = pwh.bbox();
-      double pwh_bb_xmax = pwh_bb.xmax();
-      double pwh_bb_xmin = pwh_bb.xmin();
-      max_lon_west = pwh_bb_xmax < 0
-                     ? std::max(pwh_bb_xmax, max_lon_west)
-                     : max_lon_west;
-      min_lon_east = pwh_bb_xmin >= 0
-                     ? std::min(pwh_bb_xmin, min_lon_east)
-                     : min_lon_east;
+  for (const auto &gd : inset_state->geo_divs()) {
+    for (const auto &pwh : gd.polygons_with_holes()) {
+      const auto bb = pwh.bbox();
+      const double xmax = bb.xmax();
+      const double xmin = bb.xmin();
+      max_lon_west = xmax < 0 ? std::max(xmax, max_lon_west) : max_lon_west;
+      min_lon_east = xmin >= 0 ? std::min(xmin, min_lon_east) : min_lon_east;
     }
   }
 
@@ -60,17 +56,15 @@ void adjust_for_dual_hemisphere(InsetState *inset_state)
 
       // Iterate through Polygon_with_holes
       for (auto &pwh : *gd.ref_to_polygons_with_holes()) {
-        Polygon *outer_boundary = &pwh.outer_boundary();
+        auto *outer_boundary = &pwh.outer_boundary();
 
         // If pwh is in the western hemisphere
         if (pwh.bbox().xmin() < 0) {
           *outer_boundary = transform(translate, *outer_boundary);
 
           // Iterate through holes
-          for (auto hole_it = pwh.holes_begin();
-               hole_it != pwh.holes_end();
-               ++hole_it) {
-            *hole_it = transform(translate, *hole_it);
+          for (auto h = pwh.holes_begin(); h != pwh.holes_end(); ++h) {
+            *h = transform(translate, *h);
           }
         }
       }
@@ -85,8 +79,8 @@ Point projected_albers_coordinates(Point coords,
                                    double phi_1,
                                    double phi_2)
 {
-  double lon_in_radians = (coords.x() * pi) / 180;
-  double lat_in_radians = (coords.y() * pi) / 180;
+  const double lon_in_radians = (coords.x() * pi) / 180;
+  const double lat_in_radians = (coords.y() * pi) / 180;
   double x, y;
   if (abs(phi_1 + phi_2) < 1e-6) {
 
@@ -100,15 +94,15 @@ Point projected_albers_coordinates(Point coords,
 
     // Albers projection formula:
     // https://en.wikipedia.org/wiki/Albers_projection
-    double n = 0.5 * (sin(phi_1) + sin(phi_2));
-    double c = cos(phi_1)*cos(phi_1) + 2*n*sin(phi_1);
-    double rho_0 = sqrt(c - 2*n*sin(phi_0)) / n;
-    double theta = n * (lon_in_radians - lambda_0);
-    double rho = sqrt(c - (2 * n * sin(lat_in_radians))) / n;
+    const double n = 0.5 * (sin(phi_1) + sin(phi_2));
+    const double c = cos(phi_1)*cos(phi_1) + 2*n*sin(phi_1);
+    const double rho_0 = sqrt(c - 2*n*sin(phi_0)) / n;
+    const double theta = n * (lon_in_radians - lambda_0);
+    const double rho = sqrt(c - (2 * n * sin(lat_in_radians))) / n;
     x = rho * sin(theta);
     y = rho_0 - (rho * cos(theta));
   }
-  Point coords_converted(x, y);
+  const Point coords_converted(x, y);
   return coords_converted;
 }
 
@@ -119,33 +113,33 @@ void transform_to_albers_projection(InsetState *inset_state)
   adjust_for_dual_hemisphere(inset_state);
 
   // Recalculate the bbox after dual hemisphere adjustment
-  Bbox bb = inset_state->bbox();
+  const auto bb = inset_state->bbox();
 
   // Declarations for albers_formula()
-  double min_lon = (bb.xmin() * pi) / 180;
-  double min_lat = (bb.ymin() * pi) / 180;
-  double max_lon = (bb.xmax() * pi) / 180;
-  double max_lat = (bb.ymax() * pi) / 180;
+  const double min_lon = (bb.xmin() * pi) / 180;
+  const double min_lat = (bb.ymin() * pi) / 180;
+  const double max_lon = (bb.xmax() * pi) / 180;
+  const double max_lat = (bb.ymax() * pi) / 180;
 
   // Reference Longitude and Latitude
-  double lambda_0 = 0.5 * (min_lon + max_lon);
-  double phi_0 = 0.5 * (min_lat + max_lat);
+  const double lambda_0 = 0.5 * (min_lon + max_lon);
+  const double phi_0 = 0.5 * (min_lat + max_lat);
 
   // Standard parallels
-  double phi_1 = 0.5 * (phi_0 + max_lat);
-  double phi_2 = 0.5 * (phi_0 + min_lat);
+  const double phi_1 = 0.5 * (phi_0 + max_lat);
+  const double phi_2 = 0.5 * (phi_0 + min_lat);
 
   // Iterate through GeoDivs
-  for (GeoDiv &gd : *(inset_state->ref_to_geo_divs())) {
+  for (auto &gd : *(inset_state->ref_to_geo_divs())) {
 
     // Iterate through Polygon_with_holes
-    for (Polygon_with_holes &pwh : *(gd.ref_to_polygons_with_holes())) {
+    for (auto &pwh : *(gd.ref_to_polygons_with_holes())) {
 
       // Get outer boundary
-      Polygon &outer_boundary = *(&pwh.outer_boundary());
+      auto &outer_boundary = *(&pwh.outer_boundary());
 
       // Iterate through outer boundary's coordinates
-      for (Point &coords_outer : outer_boundary) {
+      for (auto &coords_outer : outer_boundary) {
 
         // Assign outer boundary's coordinates to transformed coordinates
         coords_outer = projected_albers_coordinates(coords_outer,
@@ -156,13 +150,11 @@ void transform_to_albers_projection(InsetState *inset_state)
       }
 
       // Iterate through holes
-      for (auto hole_it = pwh.holes_begin();
-           hole_it != pwh.holes_end();
-           ++hole_it) {
-        Polygon &hole = *hole_it;
+      for (auto h = pwh.holes_begin(); h != pwh.holes_end(); ++h) {
+        auto &hole = *h;
 
         // Iterate through hole's coordinates
-        for (Point &coords_hole : hole) {
+        for (auto &coords_hole : hole) {
 
           // Assign hole's coordinates to transformed coordinates
           coords_hole = projected_albers_coordinates(coords_hole,
