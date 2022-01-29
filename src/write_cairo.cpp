@@ -23,12 +23,7 @@ bool all_points_inside_exterior_ring(std::vector<Point> pts,
   return true;
 }
 
-// TODO: A SIMPLER WAY WOULD BE TO RETURN A DOUBLE. IF THE RETURN VALUE IS
-//       ZERO, THEN DO NOT DRAW THE LABEL.
-std::pair <bool, double> font_size(cairo_t *cr,
-                                   const char *label,
-                                   Point label_coordinate,
-                                   GeoDiv gd)
+double font_size(cairo_t *cr, const char *label, Point label_pt, GeoDiv gd)
 {
   cairo_text_extents_t extents;
   double ft_size;
@@ -38,11 +33,10 @@ std::pair <bool, double> font_size(cairo_t *cr,
     const auto largest_pwh = gd.largest_polygon_with_holes();
 
     // Bounding box of the label
-    const CGAL::Bbox_2 bb(label_coordinate.x() - 0.5*extents.width,
-                          label_coordinate.y() - 0.5*extents.height,
-                          label_coordinate.x() + 0.5*extents.width,
-                          label_coordinate.y() + 0.5*extents.height);
-
+    const CGAL::Bbox_2 bb(label_pt.x() - 0.5*extents.width,
+                          label_pt.y() - 0.5*extents.height,
+                          label_pt.x() + 0.5*extents.width,
+                          label_pt.y() + 0.5*extents.height);
 
     // Vector of bounding-box edge points
     std::vector<Point> bb_edge_points;
@@ -55,10 +49,10 @@ std::pair <bool, double> font_size(cairo_t *cr,
       }
     }
     if (all_points_inside_exterior_ring(bb_edge_points, largest_pwh)) {
-      return std::make_pair(true, ft_size);
+      return ft_size;
     }
   }
-  return std::make_pair(false, 0.0);
+  return 0.0;
 }
 
 void write_polygon_to_cairo_surface(cairo_t *cr,
@@ -128,15 +122,13 @@ void write_polygon_to_cairo_surface(cairo_t *cr,
     Point label_coordinate = gd.point_on_surface_of_geodiv();
 
     // get the size of the label
-    std::pair <bool, double> font_data = font_size(cr, label_char, label_coordinate, gd);
-    if (font_data.first == true) {
-      double font_size = font_data.second;
-      cairo_set_font_size(cr, font_size);
+    const double ft_size = font_size(cr, label_char, label_coordinate, gd);
+    if (ft_size > 0.0) {
+      cairo_set_font_size(cr, ft_size);
       cairo_text_extents(cr, label_char, &extents);
       double x = label_coordinate.x() - (extents.width / 2 + extents.x_bearing);
       double y = height - label_coordinate.y() - (extents.height / 2 + extents.y_bearing);
       cairo_move_to(cr, x, y);
-
       cairo_show_text(cr, label_char);
     }
   }
