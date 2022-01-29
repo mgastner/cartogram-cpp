@@ -27,15 +27,15 @@ void adjust_for_dual_hemisphere(InsetState *inset_state)
   double max_lon_west = -dbl_inf;
   double min_lon_east = dbl_inf;
   for (GeoDiv gd : (*inset_state).geo_divs()) {
-    for (Polygon_with_holes pgnwh : gd.polygons_with_holes()) {
-      Bbox pgnwh_bb = pgnwh.bbox();
-      double pgnwh_bb_xmax = pgnwh_bb.xmax();
-      double pgnwh_bb_xmin = pgnwh_bb.xmin();
-      max_lon_west = pgnwh_bb_xmax < 0
-                     ? std::max(pgnwh_bb_xmax, max_lon_west)
+    for (Polygon_with_holes pwh : gd.polygons_with_holes()) {
+      Bbox pwh_bb = pwh.bbox();
+      double pwh_bb_xmax = pwh_bb.xmax();
+      double pwh_bb_xmin = pwh_bb.xmin();
+      max_lon_west = pwh_bb_xmax < 0
+                     ? std::max(pwh_bb_xmax, max_lon_west)
                      : max_lon_west;
-      min_lon_east = pgnwh_bb_xmin >= 0
-                     ? std::min(pgnwh_bb_xmin, min_lon_east)
+      min_lon_east = pwh_bb_xmin >= 0
+                     ? std::min(pwh_bb_xmin, min_lon_east)
                      : min_lon_east;
     }
   }
@@ -59,16 +59,16 @@ void adjust_for_dual_hemisphere(InsetState *inset_state)
     for (auto &gd : *inset_state->ref_to_geo_divs()) {
 
       // Iterate through Polygon_with_holes
-      for (auto &pgnwh : *gd.ref_to_polygons_with_holes()) {
-        Polygon *outer_boundary = &pgnwh.outer_boundary();
+      for (auto &pwh : *gd.ref_to_polygons_with_holes()) {
+        Polygon *outer_boundary = &pwh.outer_boundary();
 
-        // If the pgnwh is in the western hemisphere
-        if (pgnwh.bbox().xmin() < 0) {
+        // If pwh is in the western hemisphere
+        if (pwh.bbox().xmin() < 0) {
           *outer_boundary = transform(translate, *outer_boundary);
 
           // Iterate through holes
-          for (auto hole_it = pgnwh.holes_begin();
-               hole_it != pgnwh.holes_end();
+          for (auto hole_it = pwh.holes_begin();
+               hole_it != pwh.holes_end();
                ++hole_it) {
             *hole_it = transform(translate, *hole_it);
           }
@@ -139,10 +139,10 @@ void transform_to_albers_projection(InsetState *inset_state)
   for (GeoDiv &gd : *(inset_state->ref_to_geo_divs())) {
 
     // Iterate through Polygon_with_holes
-    for (Polygon_with_holes &pgnwh : *(gd.ref_to_polygons_with_holes())) {
+    for (Polygon_with_holes &pwh : *(gd.ref_to_polygons_with_holes())) {
 
       // Get outer boundary
-      Polygon &outer_boundary = *(&pgnwh.outer_boundary());
+      Polygon &outer_boundary = *(&pwh.outer_boundary());
 
       // Iterate through outer boundary's coordinates
       for (Point &coords_outer : outer_boundary) {
@@ -156,8 +156,8 @@ void transform_to_albers_projection(InsetState *inset_state)
       }
 
       // Iterate through holes
-      for (auto hole_it = pgnwh.holes_begin();
-           hole_it != pgnwh.holes_end();
+      for (auto hole_it = pwh.holes_begin();
+           hole_it != pwh.holes_end();
            ++hole_it) {
         Polygon &hole = *hole_it;
 
