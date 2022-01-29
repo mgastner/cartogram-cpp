@@ -8,7 +8,6 @@ GeoDiv::GeoDiv(const std::string i) : id_(i)
   return;
 }
 
-
 const std::set<std::string> GeoDiv::adjacent_geodivs() const
 {
   return adjacent_geodivs_;
@@ -36,6 +35,26 @@ double GeoDiv::area() const
 const std::string GeoDiv::id() const
 {
   return id_;
+}
+
+const Polygon_with_holes GeoDiv::largest_polygon_with_holes() const
+{
+  double max_area = -dbl_inf;
+  Polygon_with_holes largest_pwh;
+  for (auto pwh : polygons_with_holes()) {
+    double area = 0.0;
+    Polygon ext_ring = pwh.outer_boundary();
+    area += ext_ring.area();
+    for (auto hci = pwh.holes_begin(); hci != pwh.holes_end(); ++hci) {
+      Polygon hole = *hci;
+      area += hole.area();
+    }
+    if (area > max_area) {
+      max_area = area;
+      largest_pwh = Polygon_with_holes(pwh);
+    }
+  }
+  return largest_pwh;
 }
 
 unsigned int GeoDiv::n_points() const
@@ -66,20 +85,12 @@ unsigned int GeoDiv::n_rings() const
   return n_rings;
 }
 
-const std::vector<Polygon_with_holes> GeoDiv::polygons_with_holes() const
+// TODO: THIS IS NOT THE USUAL DEFINITION OF point_on_surface(). INSTEAD OF
+//       THE LARGEST POLYGON WITH HOLES, THE LARGEST LINE SEGMENT IN ANY
+//       POLYGON WITH HOLES IN THE MULTIPOLYGON IS CHOSEN.
+Point GeoDiv::point_on_surface_of_geodiv() const
 {
-  return polygons_with_holes_;
-}
-
-void GeoDiv::push_back(const Polygon_with_holes pgnwh)
-{
-  polygons_with_holes_.push_back(pgnwh);
-  return;
-}
-
-std::vector<Polygon_with_holes> *GeoDiv::ref_to_polygons_with_holes()
-{
-  return &polygons_with_holes_;
+  return point_on_surface_of_polygon_with_holes(largest_polygon_with_holes());
 }
 
 // Function that takes a Polygon_with_holes and returns the midpoint of the
@@ -87,35 +98,31 @@ std::vector<Polygon_with_holes> *GeoDiv::ref_to_polygons_with_holes()
 // northern and southern tip of the polygon. Reference:
 // https://gis.stackexchange.com/questions/76498/how-is-st-pointonsurface-
 // calculated
-Point pgnwh_point_on_surface(const Polygon_with_holes pgnwh)
+Point GeoDiv::point_on_surface_of_polygon_with_holes(
+  const Polygon_with_holes pwh) const
 {
-  // Calculate line_y
-  CGAL::Bbox_2 bb = pgnwh.bbox();
+  CGAL::Bbox_2 bb = pwh.bbox();
   double line_y = (bb.ymin() + bb.ymax()) / 2;
-
-  // Epsilon based on default resolution
   double epsilon = 1e-6 * (1.0/default_res);
 
   // Vector to store intersections
   std::vector<intersection> intersections;
+  Polygon ext_ring = pwh.outer_boundary();
 
-  // Getting outer_boundary from pgnwh
-  Polygon ext_ring = pgnwh.outer_boundary();
-
-  // Setting up previous point to form segment (curr_point, prev_point)
+  // Store previous point to form segment (curr_point, prev_point)
   XYPoint prev_point;
   prev_point.x = ext_ring[ext_ring.size()-1][0];
   prev_point.y = ext_ring[ext_ring.size()-1][1];
 
-  // Finding all the intersections with exterior ring
+  // Find all the intersections with exterior ring
   for (unsigned int l = 0; l < ext_ring.size(); ++l) {
     XYPoint curr_point;
     curr_point.x = ext_ring[l][0];
     curr_point.y = ext_ring[l][1];
     intersection temp;
 
-    // Function to calculate whether intersection exists between
-    // segment (prev_point, curr_point) and line_y
+    // Calculate whether intersection exists between segment (prev_point,
+    // curr_point) and line_y
     if (ray_y_intersects(curr_point,
                          prev_point,
                          line_y,
@@ -128,8 +135,8 @@ Point pgnwh_point_on_surface(const Polygon_with_holes pgnwh)
     prev_point.y = curr_point.y;
   }
 
-  // Finding all intersections for holes
-  for (auto hci = pgnwh.holes_begin(); hci != pgnwh.holes_end(); ++hci) {
+  // Find all intersections with holes
+  for (auto hci = pwh.holes_begin(); hci != pwh.holes_end(); ++hci) {
     Polygon hole = *hci;
     prev_point.x = hole[hole.size()-1][0];
     prev_point.y = hole[hole.size()-1][1];
@@ -150,29 +157,28 @@ Point pgnwh_point_on_surface(const Polygon_with_holes pgnwh)
       prev_point.y = curr_point.y;
     }
   }
-
   std::sort(intersections.begin(), intersections.end());
 
-  // Assign directions (i.e. whether the line is entering or leaving the
+  // Assign directions (i.e., whether the line is entering or leaving the
   // polygon with holes)
   for (unsigned int l = 0; l < intersections.size(); ++l) {
     intersections[l].direction = (l%2 == 0);
   }
 
-  // Assigning length of line segments (to find longest) using the
-  // target_density property of intersections for line segment lengths
+  // Assign length of line segments using the target_density property of
+  // intersections for line segment lengths
   for (unsigned int l = 0; l < intersections.size(); l += 2) {
     intersections[l].target_density =
       intersections[l + 1].coord - intersections[l].coord;
   }
 
-  // Finding maximum segment length
+  // Find maximum segment length
   double max_length = intersections[0].target_density;
   double left = intersections[0].coord;
   double right = intersections[1].coord;
   XYPoint midpoint((right + left) / 2, line_y);
 
-  // Iterating through lengths
+  // Iterate over lengths
   for (unsigned int l = 0; l < intersections.size(); l += 2) { \
     if (intersections[l].target_density > max_length) {
       left = intersections[l].coord;
@@ -181,35 +187,21 @@ Point pgnwh_point_on_surface(const Polygon_with_holes pgnwh)
       midpoint.x = (right + left) / 2;
     }
   }
-
-  // Making final midpoint and returning it
   return Point(midpoint.x, midpoint.y);
 }
 
-const Polygon_with_holes GeoDiv::largest_polygon_with_holes() const
+const std::vector<Polygon_with_holes> GeoDiv::polygons_with_holes() const
 {
-  // Finding pgnwh with largest area
-  double max_area = -dbl_inf;
-  Polygon_with_holes largest_pgnwh;
-  for (auto pgnwh : polygons_with_holes()) {
-    double area = 0.0;
-    Polygon ext_ring = pgnwh.outer_boundary();
-    area += ext_ring.area();
-    for (auto hci = pgnwh.holes_begin(); hci != pgnwh.holes_end(); ++hci) {
-      Polygon hole = *hci;
-      area += hole.area();
-    }
-    if (area > max_area) {
-      max_area = area;
-      largest_pgnwh = Polygon_with_holes(pgnwh);
-    }
-  }
-  return largest_pgnwh;
+  return polygons_with_holes_;
 }
 
-// Function to find point of surface of largest Polygon_with_holes
-Point GeoDiv::point_on_surface() const
+void GeoDiv::push_back(const Polygon_with_holes pwh)
 {
-  // Returning point of surface of found polygon
-  return pgnwh_point_on_surface(this->GeoDiv::largest_polygon_with_holes());
+  polygons_with_holes_.push_back(pwh);
+  return;
+}
+
+std::vector<Polygon_with_holes> *GeoDiv::ref_to_polygons_with_holes()
+{
+  return &polygons_with_holes_;
 }
