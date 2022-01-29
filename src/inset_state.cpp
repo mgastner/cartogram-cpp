@@ -376,5 +376,5 @@ void InsetState::labels_insert(const std::string id, const std::string label)
 
 void InsetState::densify_geo_divs()
 {
-  geo_divs_ = densified_geo_divs(geo_divs_);
+  geo_divs_ = densified_geo_divs(geo_divs_, lx(), ly());
 }
