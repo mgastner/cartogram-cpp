@@ -21,11 +21,11 @@ void GeoDiv::adjacent_to(const std::string id)
 double GeoDiv::area() const
 {
   double a = 0.0;
-  for (auto pwh : polygons_with_holes()) {
+  for (const auto &pwh : polygons_with_holes()) {
     Polygon ext_ring = pwh.outer_boundary();
     a += ext_ring.area();
-    for (auto hci = pwh.holes_begin(); hci != pwh.holes_end(); ++hci) {
-      Polygon hole = *hci;
+    for (auto h = pwh.holes_begin(); h != pwh.holes_end(); ++h) {
+      Polygon hole = *h;
       a += hole.area();
     }
   }
@@ -41,12 +41,12 @@ const Polygon_with_holes GeoDiv::largest_polygon_with_holes() const
 {
   double max_area = -dbl_inf;
   Polygon_with_holes largest_pwh;
-  for (auto pwh : polygons_with_holes()) {
+  for (const auto &pwh : polygons_with_holes_) {
     double area = 0.0;
-    Polygon ext_ring = pwh.outer_boundary();
+    const auto ext_ring = pwh.outer_boundary();
     area += ext_ring.area();
-    for (auto hci = pwh.holes_begin(); hci != pwh.holes_end(); ++hci) {
-      Polygon hole = *hci;
+    for (auto h = pwh.holes_begin(); h != pwh.holes_end(); ++h) {
+      const auto hole = *h;
       area += hole.area();
     }
     if (area > max_area) {
@@ -60,11 +60,11 @@ const Polygon_with_holes GeoDiv::largest_polygon_with_holes() const
 unsigned int GeoDiv::n_points() const
 {
   unsigned int n_points = 0;
-  for (Polygon_with_holes pgn_wh : polygons_with_holes_) {
-    Polygon outer = pgn_wh.outer_boundary();
+  for (const auto &pwh : polygons_with_holes_) {
+    const auto outer = pwh.outer_boundary();
     n_points += outer.size();
-    std::vector<Polygon> holes_v(pgn_wh.holes_begin(), pgn_wh.holes_end());
-    for (Polygon hole : holes_v) {
+    std::vector<Polygon> holes(pwh.holes_begin(), pwh.holes_end());
+    for (const auto &hole : holes) {
       n_points += hole.size();
     }
   }
@@ -101,24 +101,21 @@ Point GeoDiv::point_on_surface_of_geodiv() const
 Point GeoDiv::point_on_surface_of_polygon_with_holes(
   const Polygon_with_holes pwh) const
 {
-  CGAL::Bbox_2 bb = pwh.bbox();
-  double line_y = (bb.ymin() + bb.ymax()) / 2;
-  double epsilon = 1e-6 * (1.0/default_res);
+  const auto bb = pwh.bbox();
+  const double line_y = (bb.ymin() + bb.ymax()) / 2;
+  const double epsilon = 1e-6 / default_res;
 
   // Vector to store intersections
   std::vector<intersection> intersections;
-  Polygon ext_ring = pwh.outer_boundary();
+  const auto ext_ring = pwh.outer_boundary();
 
   // Store previous point to form segment (curr_point, prev_point)
-  XYPoint prev_point;
-  prev_point.x = ext_ring[ext_ring.size()-1][0];
-  prev_point.y = ext_ring[ext_ring.size()-1][1];
+  const auto last_ext_ring_pt = ext_ring[ext_ring.size()-1];
+  XYPoint prev_point(last_ext_ring_pt.x(), last_ext_ring_pt.y());
 
   // Find all the intersections with exterior ring
   for (unsigned int l = 0; l < ext_ring.size(); ++l) {
-    XYPoint curr_point;
-    curr_point.x = ext_ring[l][0];
-    curr_point.y = ext_ring[l][1];
+    const XYPoint curr_point(ext_ring[l].x(), ext_ring[l].y());
     intersection temp;
 
     // Calculate whether intersection exists between segment (prev_point,
@@ -136,14 +133,12 @@ Point GeoDiv::point_on_surface_of_polygon_with_holes(
   }
 
   // Find all intersections with holes
-  for (auto hci = pwh.holes_begin(); hci != pwh.holes_end(); ++hci) {
-    Polygon hole = *hci;
+  for (auto h = pwh.holes_begin(); h != pwh.holes_end(); ++h) {
+    Polygon hole = *h;
     prev_point.x = hole[hole.size()-1][0];
     prev_point.y = hole[hole.size()-1][1];
     for (unsigned int l = 0; l < hole.size(); ++l) {
-      XYPoint curr_point;
-      curr_point.x = hole[l][0];
-      curr_point.y = hole[l][1];
+      const XYPoint curr_point(hole[l].x(), hole[l].y());
       intersection temp;
       if (ray_y_intersects(curr_point,
                            prev_point,
