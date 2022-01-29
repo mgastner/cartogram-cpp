@@ -5,15 +5,15 @@
 const std::vector<std::vector<intersection> >
   InsetState::horizontal_scans(unsigned int res) const
 {
-  int n_rays = static_cast<int>(this->ly_ * res);
+  int n_rays = static_cast<int>(ly_ * res);
   std::vector<std::vector<intersection> > horizontal_scans(n_rays);
 
   // Iterate through GeoDivs in inset_state
-  for (auto gd : this->geo_divs_) {
+  for (auto gd : geo_divs_) {
 
     // Find target density
     double target_density;
-    target_density = this->target_areas_.at(gd.id()) / gd.area();
+    target_density = target_areas_.at(gd.id()) / gd.area();
 
     // Iterate through "polygons with holes" in inset_state
     for (unsigned int j = 0; j < gd.n_polygons_with_holes(); ++j) {
@@ -128,11 +128,11 @@ const std::vector<std::vector<intersection> >
 
   // A vector to store the vertical adjacency graph.
   // Inspired by code for fill_with_density.cpp
-  int n_rays = static_cast<int>(this->lx_ * res);
+  int n_rays = static_cast<int>(lx_ * res);
   std::vector<std::vector<intersection> > vertical_scans(n_rays);
 
   // Creating vertical adjacency graph
-  for (auto gd : this->geo_divs_) {
+  for (auto gd : geo_divs_) {
 
     // Iterate through "polygons with holes" in inset_state
     for (unsigned int j = 0; j < gd.n_polygons_with_holes(); ++j) {
@@ -241,11 +241,11 @@ void InsetState::create_adjacency_graph(unsigned int res)
     std::vector<std::vector<intersection> > scan_graph;
     unsigned int max_k = 0;
     if (graph == 'h') {
-      scan_graph = this->horizontal_scans(res);
-      max_k = this->ly();
+      scan_graph = horizontal_scans(res);
+      max_k = ly_;
     } else if (graph == 'v') {
-      scan_graph = this->vertical_scans(res);
-      max_k = this->lx();
+      scan_graph = vertical_scans(res);
+      max_k = lx_;
     }
 
     // Iterating through scanline graph
@@ -273,7 +273,7 @@ void InsetState::create_adjacency_graph(unsigned int res)
           std::string gd_2 = intersections[l + 1].geo_div_id;
 
           if (gd_1 != gd_2 && coord_1 == coord_2) {
-            for (auto &gd : this->geo_divs_) {
+            for (auto &gd : geo_divs_) {
               if (gd.id() == gd_1) {
                 gd.adjacent_to(gd_2);
               } else if (gd.id() == gd_2) {
@@ -300,11 +300,11 @@ const std::vector<Segment> InsetState::intersections(unsigned int res) const
     unsigned int max_k;
 
     if (graph == 'h') {
-      scans = this->horizontal_scans(res);
-      max_k= this->ly();
+      scans = horizontal_scans(res);
+      max_k= ly_;
     } else {
-      scans = this->vertical_scans(res);
-      max_k= this->lx();
+      scans = vertical_scans(res);
+      max_k= lx_;
     }
 
     // Iterating through horizontal adjacency graph
