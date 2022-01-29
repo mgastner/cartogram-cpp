@@ -22,13 +22,13 @@ void InsetState::auto_color()
   palette.push_back(Color(166, 118, 29)); // mustard-brown
 
   // Find resolution
-  unsigned int res = default_res;
+  const unsigned int res = default_res;
 
   // Creating vertical adjacency graph
   // create_vertical_adjacency_graph(inset_state, res);
 
   // Creating full adjacency graph based on vertical and horizontal graphs
-  this->create_adjacency_graph(res);
+  create_adjacency_graph(res);
 
   // Count to maximize colors used. This changes the starting color that
   // the algorithm choses for each GeoDiv.
@@ -39,32 +39,31 @@ void InsetState::auto_color()
   int max_i = palette.size();
 
   // Iterating until we are able to color the entire map
-  while (this->colors_size() < this->n_geo_divs() &&
-         max_i >= 0) {
+  while (colors_size() < n_geo_divs() && max_i >= 0) {
 
     // Iterating through GeoDivs
-    for (auto gd : this->geo_divs_) {
+    for (auto &gd : geo_divs_) {
 
       // Iterating through all possible colors
       for (size_t i = (count % max_i); i < palette.size(); ++i) {
-        Color c = palette[i];
+        const Color c = palette[i];
         bool shared_color = false;
 
         // Iterating through adjacent GeoDivs to check whether shared color
-        for (std::string gd_id : gd.adjacent_geodivs()) {
+        for (const auto &gd_id : gd.adjacent_geodivs()) {
 
           // Checking to see whether color found
-          if (this->color_found(gd_id)) {
-            if (this->colors_at(gd_id) == c) {
+          if (color_found(gd_id)) {
+            if (colors_at(gd_id) == c) {
               shared_color = true;
             }
           }
         }
 
-        // If the color is not shared with any other adjacent GeoDiv,
-        // we assign it the color.
+        // If the color is not shared with any other adjacent GeoDiv, assign
+        // this color to GeoDiv
         if (!shared_color) {
-          this->colors_insert(gd.id(), c);
+          colors_insert(gd.id(), c);
           i = palette.size();
         }
       }
