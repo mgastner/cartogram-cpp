@@ -125,7 +125,7 @@ void write_polygon_to_cairo_surface(cairo_t *cr,
     // go to a specific coordinate to place the label
     cairo_set_source_rgb(cr, 0, 0, 0);
     cairo_select_font_face(cr, "sans-serif", CAIRO_FONT_SLANT_NORMAL, CAIRO_FONT_WEIGHT_NORMAL);
-    Point label_coordinate = gd.point_on_surface();
+    Point label_coordinate = gd.point_on_surface_of_geodiv();
 
     // get the size of the label
     std::pair <bool, double> font_data = font_size(cr, label_char, label_coordinate, gd);
