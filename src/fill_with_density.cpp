@@ -8,19 +8,19 @@ void InsetState::fill_with_density(bool plot_density)
   // target areas that were zero or missing in the input have already been
   // replaced by CartogramInfo::replace_missing_and_zero_target_areas().
   double total_current_area = 0.0;
-  for (auto gd : this->geo_divs()) {
+  for (auto gd : geo_divs_) {
     total_current_area += gd.area();
   }
   double total_target_area = 0.0;
-  for (auto gd : this->geo_divs()) {
-    total_target_area += this->target_areas_at(gd.id());
+  for (auto gd : geo_divs_) {
+    total_target_area += target_areas_at(gd.id());
   }
   double mean_density = total_target_area / total_current_area;
-  FTReal2d rho_init = this->rho_init_;
+  FTReal2d rho_init = rho_init_;
 
   // Initially assign 0 to all densities
-  for (unsigned int i = 0; i < this->lx(); ++i) {
-    for (unsigned int j = 0; j < this->ly(); ++j) {
+  for (unsigned int i = 0; i < lx_; ++i) {
+    for (unsigned int j = 0; j < ly_; ++j) {
       rho_init(i, j) = 0;
     }
   }
@@ -31,7 +31,7 @@ void InsetState::fill_with_density(bool plot_density)
   unsigned int res = default_res;
 
   // A vector (map_intersections) to store vectors of intersections
-  int n_rays = static_cast<int>(this->ly() * res);
+  int n_rays = static_cast<int>(ly_ * res);
   std::vector<std::vector<intersection> > map_intersections(n_rays);
 
   // Density numerator and denominator for each graticule cell
@@ -40,12 +40,12 @@ void InsetState::fill_with_density(bool plot_density)
   // graticule cells are outside any GeoDiv. Any graticule cell where rho_den
   // is 0 will get the mean_density
   std::vector<std::vector<double> >
-  rho_num(this->lx(), std::vector<double> (this->ly(), 0));
+  rho_num(lx_, std::vector<double> (ly_, 0));
   std::vector<std::vector<double> >
-  rho_den(this->lx(), std::vector<double> (this->ly(), 0));
+  rho_den(lx_, std::vector<double> (ly_, 0));
 
   // See horizontal_scans in scanline_graph.cpp for more information.
-  map_intersections = this->horizontal_scans(res);
+  map_intersections = horizontal_scans(res);
 
   // Determine rho's numerator and denominator:
   // - rho_num is the sum of (weight * target_density) for each segment of a
@@ -54,7 +54,7 @@ void InsetState::fill_with_density(bool plot_density)
   // The weight of a segment of a ray that is inside a GeoDiv is equal to
   // (length of the segment inside the geo_div) * (area error of the geodiv).
   // We cycle through y-coordinates in inset_state.
-  for (unsigned int k = 0; k < this->ly(); ++k) {
+  for (unsigned int k = 0; k < ly_; ++k) {
 
     // Cycle through each of the "res" number of rays in one cell
     for (double ray_y = k + 0.5/res;
@@ -85,7 +85,7 @@ void InsetState::fill_with_density(bool plot_density)
             // enters and leaves a GeoDiv in this cell. We weigh the density
             // of the cell by the GeoDiv's area error.
             double weight =
-              this->area_errors_at(intersections[l].geo_div_id) *
+              area_errors_at(intersections[l].geo_div_id) *
               (right_x - left_x);
             double target_dens = intersections[l].target_density;
             rho_num[ceil(left_x) - 1][k] += weight * target_dens;
@@ -97,7 +97,7 @@ void InsetState::fill_with_density(bool plot_density)
         // the graticule cell is inside the GeoDiv
         unsigned int last_x = intersections.back().coord;
         double last_weight =
-          this->area_errors_at(intersections.back().geo_div_id) *
+          area_errors_at(intersections.back().geo_div_id) *
           (ceil(last_x) - last_x);
         double last_target_density = intersections.back().target_density;
         rho_num[ceil(last_x) - 1][k] += last_weight * last_target_density;
@@ -126,7 +126,7 @@ void InsetState::fill_with_density(bool plot_density)
         // Fill each cell between intersections
         for (unsigned int m = ceil(left_x); m <= ceil(right_x); ++m) {
           double weight =
-            this->area_errors_at(intersections[l].geo_div_id);
+            area_errors_at(intersections[l].geo_div_id);
           double target_dens = intersections[l].target_density;
           if (ceil(left_x) == ceil(right_x)) {
             weight *= (right_x - left_x);
@@ -143,8 +143,8 @@ void InsetState::fill_with_density(bool plot_density)
   }
 
   // Fill rho_init with the ratio of rho_num to rho_den
-  for (unsigned int i = 0; i < this->lx(); ++i) {
-    for (unsigned int j = 0; j < this->ly(); ++j) {
+  for (unsigned int i = 0; i < lx_; ++i) {
+    for (unsigned int j = 0; j < ly_; ++j) {
       if (rho_den[i][j] == 0) {
         rho_init(i, j) = mean_density;
       } else {
@@ -154,13 +154,13 @@ void InsetState::fill_with_density(bool plot_density)
   }
   if (plot_density) {
     std::string file_name =
-      this->inset_name() +
+      inset_name_ +
       "_unblurred_density_" +
-      std::to_string(this->n_finished_integrations()) +
+      std::to_string(n_finished_integrations_) +
       ".eps";
     std::cerr << "Writing " << file_name << std::endl;
     write_density_to_eps(file_name, rho_init.as_1d_array(), this);
   }
-  this->execute_fftw_fwd_plan();
+  execute_fftw_fwd_plan();
   return;
 }
