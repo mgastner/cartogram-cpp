@@ -1,27 +1,27 @@
-NAME_1,Population
-Aargau,685845
-Appenzell Ausserrhoden,55445
-Appenzell Innerrhoden,16128
-Basel-Landschaft,289468
-Basel-Stadt,195844
-Bern,1039474
-Fribourg,321783
-Geneve,504128
-Glarus,40590
-Graubunden,199021
-Jura,73584
-Lucerne,413120
-Neuchatel,176496
-Nidwalden,43087
-Obwalden,37930
-Sankt Gallen,510734
-Schaffhausen,82348
-Schwyz,160480
-Solothurn,275247
-Thurgau,279547
-Ticino,351491
-Uri,36703
-Valais,345525
-Vaud,805098
-Zug,127642
-Zurich,1539275
+NAME_1,Population,Label
+Aargau,685845,AG
+Appenzell Ausserrhoden,55445,AR
+Appenzell Innerrhoden,16128,AI
+Basel-Landschaft,289468,BL
+Basel-Stadt,195844,BS
+Bern,1039474,BE
+Fribourg,321783,FR
+Geneve,504128,GE
+Glarus,40590,GL
+Graubunden,199021,GR
+Jura,73584,JU
+Lucerne,413120,LU
+Neuchatel,176496,NE
+Nidwalden,43087,NW
+Obwalden,37930,OW
+Sankt Gallen,510734,SG
+Schaffhausen,82348,SH
+Schwyz,160480,SZ
+Solothurn,275247,SO
+Thurgau,279547,TG
+Ticino,351491,TI
+Uri,36703,UR
+Valais,345525,VS
+Vaud,805098,VD
+Zug,127642,ZG
+Zurich,1539275,ZH

@@ -10,7 +10,7 @@ void read_csv(argparse::ArgumentParser arguments,
 {
 
   // Retrieve CSV Name.
-  std::string csv_name = arguments.get<std::string>("-V");
+  std::string csv_name = arguments.get<std::string>("visual_variable_file");
 
   // Open CSV Reader.
   csv::CSVReader reader(csv_name);
@@ -50,6 +50,10 @@ void read_csv(argparse::ArgumentParser arguments,
   // "Color".
   std::string color_header = arguments.get<std::string>("-c");
   int color_col = reader.index_of(color_header);
+
+  // Default: "Label".
+  std::string label_header = arguments.get<std::string>("-L");
+  int label_col = reader.index_of(label_header);
 
   // Read CSV
   std::set<std::string> inset_pos_set;
@@ -96,6 +100,12 @@ void read_csv(argparse::ArgumentParser arguments,
     std::string color = "";
     if (color_col != csv::CSV_NOT_FOUND) {
       color = row[color_col].get();
+    }
+
+    // Read Label
+    std::string label = "";
+    if (label_col != csv::CSV_NOT_FOUND) {
+      label = row[label_col].get();
     }
 
     // Read inset. Assume inset_pos is "C" if there is no inset column.
@@ -156,6 +166,9 @@ void read_csv(argparse::ArgumentParser arguments,
     inset_state->target_areas_insert(id, area);
     if (color != "") {
       inset_state->colors_insert(id, color);
+    }
+    if (label != "") {
+      inset_state->labels_insert(id, label);
     }
   }
   return;

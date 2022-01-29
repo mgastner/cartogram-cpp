@@ -7,6 +7,7 @@ argparse::ArgumentParser parsed_arguments(const int argc,
                                           std::string &geo_file_name,
                                           std::string &visual_file_name,
                                           unsigned int &long_grid_side_length,
+                                          unsigned int &target_points_per_inset,
                                           bool &world,
                                           bool &triangulation,
                                           bool &simplify,
@@ -15,7 +16,8 @@ argparse::ArgumentParser parsed_arguments(const int argc,
                                           bool &output_equal_area,
                                           bool &output_to_stdout,
                                           bool &plot_density,
-                                          bool &plot_graticule)
+                                          bool &plot_graticule,
+                                          bool &plot_intersections)
 {
   // Create parser for arguments using argparse.
   // From https://github.com/p-ranav/argparse
@@ -25,8 +27,9 @@ argparse::ArgumentParser parsed_arguments(const int argc,
   arguments.add_argument("geometry_file")
   .help("File path: GeoJSON file");
 
-  // Optional argument accepting visual variables file (CSV) as input
-  arguments.add_argument("-V", "--visual_variable_file")
+  // Positional argument accepting visual variables file (CSV) as input
+  arguments.add_argument("visual_variable_file")
+  .default_value("none")
   .help("File path: CSV file with ID, area, and (optionally) colour");
 
   // Optional argument accepting long grid side length (unsigned int) as
@@ -58,6 +61,11 @@ argparse::ArgumentParser parsed_arguments(const int argc,
   .default_value(false)
   .implicit_value(true);
 
+  arguments.add_argument("-I", "--intersections_to_eps")
+  .help("Boolean: make EPS images *_intersections_*.eps?")
+  .default_value(false)
+  .implicit_value(true);
+
   arguments.add_argument("-q", "--output_equal_area")
   .help("Boolean: Output equal area GeoJSON")
   .default_value(false)
@@ -72,6 +80,11 @@ argparse::ArgumentParser parsed_arguments(const int argc,
   .help("Boolean: Shall the polygons be simplified?")
   .default_value(false)
   .implicit_value(true);
+
+  arguments.add_argument("-S", "--n_points")
+  .help("Integer: If simplification enabled, target number of points per inset")
+  .default_value(default_target_points_per_inset)
+  .scan<'u', unsigned int>();
 
   arguments.add_argument("-m", "--make_csv")
   .help("Boolean: create CSV file from given GeoJSON?")
@@ -95,6 +108,10 @@ argparse::ArgumentParser parsed_arguments(const int argc,
   .default_value(std::string("Color"))
   .help(pre + "colors");
 
+  arguments.add_argument("-L", "--label")
+    .default_value(std::string("Label"))
+    .help(pre + "labels");
+
   arguments.add_argument("-n", "--inset")
   .default_value(std::string("Inset"))
   .help(pre + "insets");
@@ -111,6 +128,9 @@ argparse::ArgumentParser parsed_arguments(const int argc,
 
   // Set long grid-side length
   long_grid_side_length = arguments.get<unsigned int>("-l");
+
+  // Set target_points_per_inset
+  target_points_per_inset = arguments.get<unsigned int>("-S");
 
   // Set boolean values
   world = arguments.get<bool>("-w");
@@ -131,23 +151,32 @@ argparse::ArgumentParser parsed_arguments(const int argc,
   output_to_stdout = arguments.get<bool>("-o");
   plot_density =  arguments.get<bool>("-d");
   plot_graticule = arguments.get<bool>("-g");
+  plot_intersections = arguments.get<bool>("-I");
+
+  // Check if n_polygons specified, but --simplify not passed.
+  if (arguments.is_used("-S") && !arguments.is_used("-s")) {
+    std::cerr << "WARNING: --simplify flag not passed!" << std::endl;
+    std::cerr << "Polygons will not be simplified." << std::endl;
+    std::cerr << "To enable simplification, pass the -s flag." << std::endl;
+    std::cerr << arguments << std::endl;
+  }
 
   // Print geometry and visual-variables file used
   geo_file_name = arguments.get<std::string>("geometry_file");
   std::cerr << "Using geometry from file " << geo_file_name << std::endl;
 
   // Check if a visual-variables file or -m flag is passed
-  if (arguments.present<std::string>("-V")) {
-    visual_file_name = arguments.get<std::string>("-V");
+  if (arguments.is_used("visual_variable_file")) {
+    visual_file_name = arguments.get<std::string>("visual_variable_file");
     std::cerr << "Using visual variables from file "
               << visual_file_name
               << std::endl;
   } else if (!make_csv) {
 
     // CSV file not given, and user does not want to create one
+    std::cerr << arguments << std::endl;
     std::cerr << "ERROR: No CSV file given!" << std::endl;
     std::cerr << "To create a CSV, please use the -m flag." << std::endl;
-    std::cerr << arguments << std::endl;
     _Exit(15);
   }
   return arguments;

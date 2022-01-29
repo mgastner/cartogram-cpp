@@ -85,42 +85,40 @@ std::map<std::string, InsetState> *CartogramInfo::ref_to_inset_states()
 
 void CartogramInfo::replace_missing_and_zero_target_areas()
 {
-  // Threshold in percetage of non-na and non-zero total area for a target
-  // area to be considered "too small".
-  double small_area_threshold_percent = 2e-5;
 
   // Get total current area and total target area
-  double total_cart_non_na_area = 0.0;
-  double total_cart_non_na_ta = 0.0;
-
+  double total_start_area_with_data = 0.0;
+  double total_target_area_with_data = 0.0;
   for (const auto &inset_info : inset_states_) {
     auto &inset_state = inset_info.second;
     for (const auto &gd : inset_state.geo_divs()) {
       if (!inset_state.target_area_is_missing(gd.id())) {
-        total_cart_non_na_area += gd.area();
-        total_cart_non_na_ta += inset_state.target_areas_at(gd.id());
+        total_start_area_with_data += gd.area();
+        total_target_area_with_data += inset_state.target_areas_at(gd.id());
       }
     }
   }
 
-  double small_area_threshold_absolute =
-    total_cart_non_na_ta * small_area_threshold_percent;
-  
+  // Calculate threshold for small target areas. For GeoDivs below this
+  // threshold, the target area is scaled up for easier calculation.
+  const double small_target_area_threshold =
+    total_target_area_with_data * small_area_threshold_frac;
+
   // Check whether target areas exist that are missing or very small
-  bool ta_small_exists = false;
-  bool ta_na_exists = false;
+  bool small_target_area_exists = false;
+  bool missing_target_area_exists = false;
   for (auto &inset_info : inset_states_) {
     auto &inset_state = inset_info.second;
     for (const auto &gd : inset_state.geo_divs()) {
       const double target_area = inset_state.target_areas_at(gd.id());
       if (target_area < 0.0) {
-        ta_na_exists = true;
+        missing_target_area_exists = true;
 
         // Insert true into an std::unordered_map that stores whether a
         // GeoDiv's target area is missing
         inset_state.is_input_target_area_missing_insert(gd.id(), true);
-      } else if (target_area < small_area_threshold_absolute) {
-        ta_small_exists = true;
+      } else if (target_area <= small_target_area_threshold) {
+        small_target_area_exists = true;
       }
 
       // Insert false if the value does not already exist in the map
@@ -128,61 +126,58 @@ void CartogramInfo::replace_missing_and_zero_target_areas()
     }
   }
 
-  // Deal with target areas that are too small
-  if (ta_small_exists) {
+  // Deal with target areas that are below the threshold
+  if (small_target_area_exists) {
+    double replacement_target_area;
 
-    // We first deal with cases where the target area is zero.
-    // To do this, we find the smallest positive target area and assign it
-    // to GeoDivs with zero target area.
-    double min_positive_area = dbl_inf;
-    for (const auto &inset_info : inset_states_) {
-      auto &inset_state = inset_info.second;
-      for (const auto &gd : inset_state.geo_divs()) {
-        const double target_area = inset_state.target_areas_at(gd.id());
+    // We replace the zero and small areas, if any, with
+    // small_area_absolute_threshold if not all target areas are initially
+    // missing or zero
+    if (small_target_area_threshold > 0.0) {
+      std::cerr << "Replacing small target areas."
+                << std::endl;
+      replacement_target_area = small_target_area_threshold;
+    } else {
 
-        // Target area not equal to zero and not missing
-        if (target_area > 0.0) {
-          min_positive_area = std::min(min_positive_area, target_area);
-        }
-      }
-    }
-
-    // If all target areas are zero or missing, we assign the minimum GeoDiv
-    // area (instead of the minimum target area) to min_positive_area
-    if (min_positive_area == dbl_inf) {
+      // If all target areas are zero or missing, we assign the minimum GeoDiv
+      // area (instead of the minimum target area) as replacement_target_area.
+      std::cerr << "No non-zero target area.\n"
+                << "Setting zero target areas to the minimum positive area."
+                << std::endl;
+      double min_positive_area = dbl_inf;
       for (const auto &inset_info : inset_states_) {
         auto &inset_state = inset_info.second;
         for (const auto &gd : inset_state.geo_divs()) {
           min_positive_area = std::min(min_positive_area, gd.area());
         }
       }
+      replacement_target_area = min_positive_area;
     }
 
-    // Calculate the factor by which to scale the small target areas. We aim
-    // to scale min_positive_area to small_area_threshold_absolute.
-    // double small_scale_fac = small_area_threshold_absolute / min_positive_area;
-    
-    // Replace non-positive target areas with a fraction of the smallest
-    // positive target area.
-    std::cerr << "Replacing small target areas."
-              << std::endl;
+    // Replace the small target areas
     for (auto &inset_info : inset_states_) {
       auto &inset_state = inset_info.second;
       for (const auto &gd : inset_state.geo_divs()) {
+
+        // Current target area
         const double target_area = inset_state.target_areas_at(gd.id());
-        if (target_area < small_area_threshold_absolute) {
-          // double new_target_area = target_area * small_scale_fac;
-          double new_target_area = small_area_threshold_absolute;
-          inset_state.target_areas_replace(gd.id(), new_target_area);
+        if ((target_area >= 0.0) &&
+            (target_area <= small_target_area_threshold)) {
+          inset_state.target_areas_replace(gd.id(), replacement_target_area);
           std::cerr << gd.id() << ": "
-                    << target_area << " to " << new_target_area << std::endl;
+                    << target_area << " to " << replacement_target_area
+                    << std::endl;
+
+          // Update total target area
+          total_target_area_with_data +=
+            (replacement_target_area - target_area);
         }
       }
     }
   }
 
   // Deal with missing target areas
-  if (ta_na_exists) {
+  if (missing_target_area_exists) {
 
     // Assign new target areas to GeoDivs
     for (auto &inset_info : inset_states_) {
@@ -193,13 +188,14 @@ void CartogramInfo::replace_missing_and_zero_target_areas()
 
           // If all target areas are missing, make all GeoDivs equal to their
           // geographic area
-          if (total_cart_non_na_ta == 0.0) {
+          if (total_target_area_with_data == 0.0) {
             new_target_area = gd.area();
           } else {
 
             // Replace target_area
-            new_target_area =
-              (total_cart_non_na_ta / total_cart_non_na_area) * gd.area();
+            const double mean_density =
+              (total_target_area_with_data / total_start_area_with_data);
+            new_target_area = mean_density * gd.area();
           }
           inset_state.target_areas_replace(gd.id(), new_target_area);
         }
@@ -224,4 +220,15 @@ void CartogramInfo::set_original_ext_ring_is_clockwise(
 const std::string CartogramInfo::visual_variable_file() const
 {
   return visual_variable_file_;
+}
+
+void CartogramInfo::set_map_name(const std::string map_name)
+{
+  map_name_ = map_name;
+  return;
+}
+
+const std::string CartogramInfo::map_name() const
+{
+  return map_name_;
 }

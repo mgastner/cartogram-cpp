@@ -1,5 +1,6 @@
-#include "constants.h"
 #include "inset_state.h"
+#include "constants.h"
+#include <CGAL/Boolean_set_operations_2.h>
 
 InsetState::InsetState(std::string pos) : pos_(pos)
 {
@@ -20,12 +21,12 @@ Bbox InsetState::bbox() const
   double inset_ymin = dbl_inf;
   double inset_ymax = -dbl_inf;
   for (const auto &gd : geo_divs_) {
-    for (const auto &pgnwh : gd.polygons_with_holes()) {
-      const Bbox pgnwh_bbox = pgnwh.bbox();
-      inset_xmin = std::min(pgnwh_bbox.xmin(), inset_xmin);
-      inset_ymin = std::min(pgnwh_bbox.ymin(), inset_ymin);
-      inset_xmax = std::max(pgnwh_bbox.xmax(), inset_xmax);
-      inset_ymax = std::max(pgnwh_bbox.ymax(), inset_ymax);
+    for (const auto &pwh : gd.polygons_with_holes()) {
+      const auto bb = pwh.bbox();
+      inset_xmin = std::min(bb.xmin(), inset_xmin);
+      inset_ymin = std::min(bb.ymin(), inset_ymin);
+      inset_xmax = std::max(bb.xmax(), inset_xmax);
+      inset_ymax = std::max(bb.ymax(), inset_ymax);
     }
   }
   Bbox inset_bb(inset_xmin, inset_ymin, inset_xmax, inset_ymax);
@@ -99,12 +100,6 @@ const std::vector<GeoDiv> InsetState::geo_divs() const
   return geo_divs_;
 }
 
-const std::vector<std::vector<intersection> > InsetState::horizontal_adj()
-const
-{
-  return horizontal_adj_;
-}
-
 void InsetState::increment_integration()
 {
   n_finished_integrations_ += 1;
@@ -114,8 +109,8 @@ void InsetState::increment_integration()
 void InsetState::initialize_cum_proj()
 {
   cum_proj_.resize(boost::extents[lx_][ly_]);
-  for (unsigned int i = 0; i < lx_; i++) {
-    for (unsigned int j = 0; j < ly_; j++) {
+  for (unsigned int i = 0; i < lx_; ++i) {
+    for (unsigned int j = 0; j < ly_; ++j) {
       cum_proj_[i][j].x = i + 0.5;
       cum_proj_[i][j].y = j + 0.5;
     }
@@ -294,14 +289,6 @@ void InsetState::set_grid_dimensions(
   return;
 }
 
-void InsetState::set_horizontal_adj(
-  const std::vector<std::vector<intersection> > ha)
-{
-  horizontal_adj_.clear();
-  horizontal_adj_ = ha;
-  return;
-}
-
 void InsetState::set_inset_name(const std::string inset_name)
 {
   inset_name_ = inset_name;
@@ -320,12 +307,6 @@ void InsetState::set_pos(const std::string pos)
   return;
 }
 
-void InsetState::set_vertical_adj(std::vector<std::vector<intersection> > va)
-{
-  vertical_adj_.clear();
-  vertical_adj_ = va;
-  return;
-}
 void InsetState::set_xmin(const unsigned int new_xmin)
 {
   new_xmin_ = new_xmin;
@@ -373,13 +354,27 @@ double InsetState::total_inset_area() const
 double InsetState::total_target_area() const
 {
   double inset_total_target_area = 0;
-  for(const auto &geo_div_target_area : target_areas_) {
+  for (const auto &geo_div_target_area : target_areas_) {
     inset_total_target_area += geo_div_target_area.second;
   }
   return inset_total_target_area;
 }
 
-const std::vector<std::vector<intersection> > InsetState::vertical_adj() const
+std::string InsetState::labels_at(const std::string id) const
 {
-  return vertical_adj_;
+  if (labels_.find(id) == labels_.end()) {
+    return "";
+  }
+  return labels_.at(id);
+}
+
+void InsetState::labels_insert(const std::string id, const std::string label)
+{
+  labels_.insert(std::pair<std::string, std::string>(id, label));
+  return;
+}
+
+void InsetState::densify_geo_divs()
+{
+  geo_divs_ = densified_geo_divs(geo_divs_);
 }

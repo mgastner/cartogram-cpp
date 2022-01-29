@@ -120,8 +120,9 @@ GeoDiv json_to_cgal(const std::string id,
       const unsigned int last_index = jphc_int.size() - 1;
       if (jphc_int[0][0] != jphc_int[last_index][0] ||
           jphc_int[0][1] != jphc_int[last_index][1]) {
-        int_ring.push_back(Point(static_cast<double>(jphc_int[last_index][0]),
-                                 static_cast<double>(jphc_int[last_index][1])));
+        int_ring.push_back(
+          Point(static_cast<double>(jphc_int[last_index][0]),
+                static_cast<double>(jphc_int[last_index][1])));
       }
       if (!int_ring.is_simple()) {
         std::cerr << "ERROR: interior ring not a simple polygon" << std::endl;
@@ -144,25 +145,23 @@ void print_properties_map(
   const std::map<std::string, std::vector<std::string> > properties_map,
   const unsigned long chosen_number)
 {
+  const unsigned long max_n_printed_values = 5;
+  auto value_vec = properties_map.begin()->second;
+  const unsigned long n_printed_values = std::min(
+    value_vec.size(), static_cast<unsigned long>(max_n_printed_values));
   unsigned long i = 0;
-  for (const auto &[key, value_vec] : properties_map) {
+  for (const auto &[key, val] : properties_map) {
     ++i;
     if (chosen_number == i || chosen_number == properties_map.size() + 1) {
-      std::cerr << i << ". " << key << ": { ";
-      for (long unsigned int j = 0; j < value_vec.size(); ++j) {
-        std::cerr << value_vec[j];
-        if (j < value_vec.size() - 1 && j < 5) {
-          std::cerr << ", ";
-        } else {
-          if (j < value_vec.size() - 1) {
-            std::cerr << " ...";
-          } else {
-            std::cerr << " }";
-          }
-          break;
-        }
+      std::cerr << i << ". " << key << ": {";
+      for (unsigned long j = 0; j < n_printed_values - 1; ++j) {
+        std::cerr << val[j] << ", ";
       }
-      std::cerr << std::endl;
+      std::cerr << val[n_printed_values - 1];
+      if (val.size() > n_printed_values) {
+        std::cerr << " ...";
+      }
+      std::cerr << "}" << std::endl;
     }
   }
   return;
@@ -173,9 +172,6 @@ void read_geojson(const std::string geometry_file_name,
                   std::string *crs,
                   CartogramInfo *cart_info)
 {
-  bool is_polygon;
-  bool polygon_warning_has_been_issued = false;
-
   // Open file
   std::ifstream in_file(geometry_file_name);
   if (!in_file) {
@@ -207,12 +203,7 @@ void read_geojson(const std::string geometry_file_name,
   for (auto &[inset_pos, inset_state] : *cart_info->ref_to_inset_states()) {
     for (const auto &feature : j["features"]) {
       const nlohmann::json geometry = feature["geometry"];
-      is_polygon = (geometry["type"] == "Polygon");
-      if (is_polygon && !polygon_warning_has_been_issued) {
-        std::cerr << "WARNING: support for Polygon geometry experimental, "
-                  << "for best results use MultiPolygon" << "\n";
-        polygon_warning_has_been_issued = true;
-      }
+      const bool is_polygon = (geometry["type"] == "Polygon");
       if (!make_csv) {
 
         // Store ID from properties
@@ -267,7 +258,7 @@ void read_geojson(const std::string geometry_file_name,
     std::map<std::string, std::vector<std::string> > properties_map;
     for (const auto &feature : j["features"]) {
       for (const auto &property_item : feature["properties"].items()) {
-        const auto key = property_item.key();
+        auto key = property_item.key();
 
         // Handle strings and numbers
         std::string value = property_item.value().dump();
@@ -294,38 +285,47 @@ void read_geojson(const std::string geometry_file_name,
     }
     std::cerr << std::endl;
 
-    // Present user with all possible identifiers and a few examples
-    std::cerr << "These are the unique identifiers and their values: ";
-    std::cerr << std::endl;
-    print_properties_map(
-      viable_properties_map, viable_properties_map.size() + 1);
-    std::cerr << viable_properties_map.size() + 1 << ". All";
-    std::cerr << std::endl << std::endl;
 
     // Have the user choose which key(s) they want to use as the identifier(s)
-    std::cerr << "Please enter your number here: ";
+    // if more than one key available
     unsigned long chosen_number = 0;
-    while (std::cin.fail() ||
-           chosen_number < 1 ||
-           chosen_number > viable_properties_map.size() + 1) {
+    if (viable_properties_map.size() > 1) {
 
-      // Prompt user for input
-      std::cerr << "Please enter your number here: ";
-      std::cin >> chosen_number;
-      if (std::cin.fail()) {
-        std::cerr << "Invalid input! Try again." << std::endl;
+      // Present user with all possible identifiers and a few examples
+      std::cerr << "These are the unique identifiers and their values: ";
+      std::cerr << std::endl;
+      print_properties_map(
+        viable_properties_map, viable_properties_map.size() + 1);
+      std::cerr << viable_properties_map.size() + 1 << ". All";
+      std::cerr << std::endl << std::endl;
+      while (std::cin.fail() ||
+             chosen_number < 1 ||
+             chosen_number > viable_properties_map.size() + 1) {
 
-        // Clear std::cin buffer
-        std::cin.clear();
-        std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
-      } else if (chosen_number < 1 ||
-                 chosen_number > viable_properties_map.size() + 1) {
-        std::cerr << "Please enter a number between 1 and "
-                  << viable_properties_map.size() + 1
-                  << std::endl;
+        // Prompt user for input
+        std::cerr << "Please enter your number here: ";
+        std::cin >> chosen_number;
+        if (std::cin.fail()) {
+          std::cerr << "Invalid input! Try again." << std::endl;
+
+          // Clear std::cin buffer
+          std::cin.clear();
+          std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
+        } else if (chosen_number < 1 ||
+                   chosen_number > viable_properties_map.size() + 1) {
+          std::cerr << "Please enter a number between 1 and "
+                    << viable_properties_map.size() + 1
+                    << std::endl;
+        }
       }
+      std::cerr << std::endl;
+    } else {
+      std::cerr << "Only one unique identifier found: ";
+      print_properties_map(
+        viable_properties_map, viable_properties_map.size() + 1);
+      std::cerr << std::endl;
+      chosen_number++;
     }
-    std::cerr << std::endl;
 
     // Declare chosen identifier(s)
     std::map<std::string, std::vector<std::string> > chosen_identifiers;
@@ -338,14 +338,15 @@ void read_geojson(const std::string geometry_file_name,
       }
     }
 
-    // Print chosen identifiers
-    std::cerr << "Chosen identifiers: " << std::endl;
+    // Print chosen identifier(s)
+    std::cerr << "Chosen identifier(s): " << std::endl;
     print_properties_map(viable_properties_map, chosen_number);
     std::cerr << std::endl;
 
     // Write CSV
     std::ofstream out_file_csv;
-    out_file_csv.open ("template_from_geojson.csv");
+    std::string csv_name = cart_info->map_name() + ".csv";
+    out_file_csv.open (csv_name);
     if (!out_file_csv) {
       throw std::system_error(errno,
                               std::system_category(),
@@ -364,7 +365,7 @@ void read_geojson(const std::string geometry_file_name,
         csv_rows[0].push_back("Cartogram Data (eg. Population)");
         csv_rows[0].push_back("Color");
         csv_rows[0].push_back("Inset");
-        csv_rows[0].push_back("Abbreviation");
+        csv_rows[0].push_back("Label");
       }
       for (size_t k = 0; k < ids.size(); ++k) {
         csv_rows[k + 1].push_back(ids[k]);
@@ -409,7 +410,7 @@ void read_geojson(const std::string geometry_file_name,
     _Exit(20);
   }
 
-  // Check whether all IDs in GeoJSON appear in visual_variable_file.
+  // Check whether all IDs in GeoJSON appear in visual_variable_file
   std::set<std::string> ids_not_in_vv;
   std::set_difference(ids_in_geojson.begin(), ids_in_geojson.end(),
                       ids_in_vv_file.begin(), ids_in_vv_file.end(),
