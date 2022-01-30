@@ -7,11 +7,11 @@ following the naming convention:
 
 `(geographic_region)_by_(division)_(optional_descrip)_(year[s])`
 
-The names of the geographic regions and the administrative divisions should be
-in British English.
+Names of geographic regions and administrative divisions should be in British
+English.
 Years refer to the time when the administrative divisions existed (both with
-the boundaries and the names in the files), not the years when the data were
-obtained.
+the boundaries and the names in the files stored in this directory), not the
+years when the data were obtained.
 It is encouraged to state the `year[s]` as a range if possible.
 Examples:
 
@@ -30,8 +30,8 @@ Examples:
 - `india_by_state_2000_to_2014`
 
   Explanation:
-  The data in this directory refer to Chhattisgarh, Uttaranchal and Jharkhand
-  (all formed in 2000) as separate states.
+  Data in this directory refer to Chhattisgarh, Uttaranchal and Jharkhand (all
+  formed in 2000) as separate states.
   However, Telangana (formed in 2014) does not appear as a separate state.
 - `germany_by_electoral_district_2017`
 
@@ -51,7 +51,7 @@ In each subdirectory, there should be:
 
   `(geographic_region)_by_(division)_(optional_descrip)_(year[s]).geojson`
 - at least one CSV file for the population.
-  CSV files for other statistics (e.g., GDP or members of parliament) can be
+  CSV files for other statistics (e.g.\ GDP or members of parliament) can be
   optionally added.
   The minimal format of the CSV file should be:
 
@@ -61,9 +61,9 @@ In each subdirectory, there should be:
   | Vlaanderen | 6589069    |
   | Wallonie   | 3633795    |
 
-  The column header for the divisions (e.g. `Region`) must match a key in the
+  The column header for the divisions (e.g.\ `Region`) must match a key in the
   GeoJSON file.
-  The names of the divisions (e.g. Bruxelles etc.) must match the values in
+  The names of the divisions (e.g.\ Bruxelles etc.) must match the values in
   the GeoJSON.
 
   CSV file names should follow the pattern:
@@ -90,7 +90,7 @@ In each subdirectory, there should be:
     * the lines of code used to convert the geographic boundaries from the
       data source to the GeoJSON in the corresponding directory.
       The code may involve subsetting, simplification, topology repair etc.
-    * instructions how to run the code (e.g., stating the programming
+    * instructions how to run the code (e.g.\ stating the programming
       language, software, version of the software, version of add-on packages
       and additional files needed).
     * a full bibliographic reference to the data in the CSV file(s).
