@@ -221,7 +221,7 @@ void InsetState::densify_geo_divs()
 {
   std::cerr << "Densifying" << std::endl;
   std::vector<GeoDiv> geodivs_dens;
-  for (GeoDiv gd : geo_divs()) {
+  for (GeoDiv gd : geo_divs_) {
     GeoDiv gd_dens(gd.id());
     for (const auto &pwh : gd.polygons_with_holes()) {
       Polygon outer = pwh.outer_boundary();
@@ -237,7 +237,7 @@ void InsetState::densify_geo_divs()
         Point a = outer[i];
         Point b = (i == outer.size() - 1) ? outer[0] : outer[i + 1];
 
-        // Densify the segment.
+        // Densify the segment
         std::vector<Point> outer_pts_dens = densification_points(a, b);
 
         // Push all points. Omit the last point because it will be included
