@@ -27,10 +27,11 @@ private:
   // Chosen diagonal for each graticule cell
   boost::multi_array<int, 2> graticule_diagonals_;
 
-  std::string inset_name_; // Map name, appended with Position if n_insets > 2
+  // Map name. Inset position is appended to the name if n_insets > 2.
+  std::string inset_name_;
   unsigned int lx_, ly_;  // Lattice dimensions
-  double map_scale_; // Double to map scale
-  unsigned int new_xmin_, new_ymin_; // To store map translation vector
+  double map_scale_;  // Lattice spacing in terms of equal-area coordinates
+  unsigned int new_xmin_, new_ymin_;  // Map translation vector
   unsigned int n_finished_integrations_;
   std::string pos_;  // Position of inset ("C", "T" etc.)
   boost::multi_array<XYPoint, 2> proj_;  // Cartogram projection
@@ -47,7 +48,7 @@ private:
 public:
   explicit InsetState(const std::string);  // Constructor
   double area_errors_at(const std::string) const;
-  void auto_color(); // Automatically color inset
+  void auto_color();  // Automatically color GeoDivs in inset
   Bbox bbox() const;
   bool color_found(const std::string id) const;
   const Color colors_at(const std::string) const;
@@ -60,7 +61,7 @@ public:
   void destroy_fftw_plans_for_rho();
   void execute_fftw_bwd_plan() const;
   void execute_fftw_fwd_plan() const;
-  void fill_with_density(bool); // Fill map with density, using scanlines
+  void fill_with_density(bool);  // Fill map with density, using scanlines
   const std::vector<GeoDiv> geo_divs() const;
   void increment_integration();
   void initialize_cum_proj();
@@ -105,8 +106,7 @@ public:
   double total_inset_area() const;
   double total_target_area() const;
 
-  // Write all intersections found to an EPS file
-  // as "*_intersections_*.eps"
+  // Write all intersections found to an EPS file named "*_intersections_*.eps"
   void write_intersections_to_eps(unsigned int);
 };
 
