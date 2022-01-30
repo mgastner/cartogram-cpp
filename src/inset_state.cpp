@@ -1,5 +1,6 @@
 #include "inset_state.h"
 #include "constants.h"
+#include "densify.h"
 #include <CGAL/Boolean_set_operations_2.h>
 
 InsetState::InsetState(std::string pos) : pos_(pos)
