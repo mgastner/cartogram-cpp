@@ -13,10 +13,10 @@ constexpr double padding_unless_world = 1.5;
 constexpr double pi = std::numbers::pi;
 
 // Granularity of scanlines (see inset_state/scanline_graph.cpp)
-constexpr unsigned int default_res = 16;
-constexpr unsigned int intersections_res = 1;
+constexpr unsigned int default_resolution = 16;
+constexpr unsigned int intersections_resolution = 1;
 
-// default_res is used for fill with density.
+// default_resolution is used for fill with density.
 // intersection_res is used to specify the number of scanlines shown in output
 // files showing intersections.
 

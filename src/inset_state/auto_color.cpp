@@ -21,10 +21,10 @@ void InsetState::auto_color()
   palette.push_back(Color(166, 118, 29)); // mustard-brown
 
   // Find resolution
-  unsigned int res = default_res;
+  unsigned int resolution = default_resolution;
 
   // Creating full continuity graph based on vertical and horizontal scanlines
-  create_contiguity_graph(res);
+  create_contiguity_graph(resolution);
 
   // Count to maximize colors used. This changes the starting color that
   // the algorithm choses for each GeoDiv.

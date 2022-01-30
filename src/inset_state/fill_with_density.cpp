@@ -25,13 +25,13 @@ void InsetState::fill_with_density(bool plot_density)
     }
   }
 
-  // Resolution with which we sample polygons. "res" is the number of
+  // Resolution with which we sample polygons. "resolution" is the number of
   // horizontal "test rays" between each of the ly consecutive horizontal
   // graticule lines.
-  unsigned int res = default_res;
+  unsigned int resolution = default_resolution;
 
   // A vector (map_intersections) to store vectors of intersections
-  unsigned int n_rays = ly() * res;
+  unsigned int n_rays = ly() * resolution;
   std::vector<std::vector<intersection> > map_intersections(n_rays);
 
   // Density numerator and denominator for each graticule cell
@@ -45,7 +45,7 @@ void InsetState::fill_with_density(bool plot_density)
     rho_den(lx(), std::vector<double> (ly(), 0));
 
   // See scanlines_parallel_to_axis in scanline_graph.cpp for more information
-  map_intersections = scanlines_parallel_to_axis('x', res);
+  map_intersections = scanlines_parallel_to_axis('x', resolution);
 
   // Determine rho's numerator and denominator:
   // - rho_num is the sum of (weight * target_density) for each segment of a
@@ -56,14 +56,14 @@ void InsetState::fill_with_density(bool plot_density)
   // We cycle through y-coordinates in inset_state.
   for (unsigned int k = 0; k < ly(); ++k) {
 
-    // Cycle through each of the "res" number of rays in one cell
-    for (double ray_y = k + 0.5/res;
+    // Cycle through each of the "resolution" number of rays in one cell
+    for (double ray_y = k + 0.5/resolution;
          ray_y < k + 1;
-         ray_y += 1.0/res) {
+         ray_y += 1.0/resolution) {
 
       // Intersections for one ray
       std::vector<intersection> intersections =
-        map_intersections[static_cast<int>(round((ray_y - 0.5/res) * res))];
+        map_intersections[static_cast<int>(round((ray_y - 0.5/resolution) * resolution))];
 
       // Sort vector in ascending order of intersection
       std::sort(intersections.begin(), intersections.end());

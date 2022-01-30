@@ -270,7 +270,7 @@ int main(const int argc, const char *argv[])
 
         // Plotting intersections if requested
         if (plot_intersections) {
-          inset_state.write_intersections_to_eps(intersections_res);
+          inset_state.write_intersections_to_eps(intersections_resolution);
         }
         flatten_density(&inset_state);
         if (triangulation) {
@@ -313,7 +313,7 @@ int main(const int argc, const char *argv[])
 
       // Plotting intersections if requested
       if (plot_intersections) {
-        inset_state.write_intersections_to_eps(intersections_res);
+        inset_state.write_intersections_to_eps(intersections_resolution);
       }
 
       // Print EPS of cartogram
