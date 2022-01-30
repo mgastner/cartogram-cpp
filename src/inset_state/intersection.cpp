@@ -2,14 +2,14 @@
 
 intersection::intersection(bool side) :
   is_x(side),
-  direction(false)  // Temporary value
+  ray_enters(false)  // Temporary value
 {
   return;
 }
 
 intersection::intersection() :
-  is_x(true),     // Assuming x if not explicitly declared
-  direction(false)  // Temporary value
+  is_x(true),     // Assume x if not explicitly declared
+  ray_enters(false)  // Temporary value
 {
   return;
 }
@@ -28,15 +28,14 @@ bool intersection::ray_intersects(XYPoint a,
                                   double td,
                                   double epsilon)
 {
-
-  // Flip coordinates, in case y.
-  // The formulae below would be the exact same, just with x replaced with y
-  // and vice-versa.
+  // Flip coordinates if rays are in y-direction. The formulae below are the
+  // same, except that x is replaced with y and vice versa.
   if (!is_x) {
-    a.flip(); b.flip();
+    a.flip();
+    b.flip();
   }
 
-  // Check if intersection is present
+  // Check whether an intersection is present
   if (((a.y <= ray && b.y >= ray) ||
        (a.y >= ray && b.y <= ray)) &&
 
@@ -49,8 +48,7 @@ bool intersection::ray_intersects(XYPoint a,
       b.y += epsilon;
     }
 
-    // Edit intersection passed by reference
-    // coord stores the x coordinate.
+    // Edit intersection passed by reference. coord stores the x coordinate.
     target_density = td;
     coord = (a.x * (b.y - ray) + b.x * (ray - a.y)) / (b.y - a.y);
     return true;

@@ -4,26 +4,23 @@
 #include "../xy_point.h"
 #include <iostream>
 
-// Struct to store intersection between line segment and grid line.
+// Struct to store intersection between line segment and grid line
 class intersection {
 
  private:
-  // Intersection coordinates
-  // The x OR y coordinate, depending on which axis is the line parallel to.
-  // The coordinate that does not represent the line is stored.
-  double coord;
-  bool is_x; // Is this the x coordinate (true) or the y coordinate (true)?
+  double coord;  // Coordinate in the direction of the ray
+  bool is_x;  // Is the direction along the x-axis or y-axis?
 
  public:
   double target_density;  // GeoDiv's target_density
   std::string geo_div_id;  // GeoDIv's ID
-  bool direction;  // Does intersection enter (true) or exit (false)?
+  bool ray_enters;  // Does the ray enter (true) a GeoDiv or exit (false)?
 
   // Overloading "<" operator, similar to above
   bool operator < (const intersection &rhs) const
   {
     return (coord < rhs.coord ||
-            (coord == rhs.coord && direction < rhs.direction));
+            (coord == rhs.coord && ray_enters < rhs.ray_enters));
   }
 
   // Constructors
@@ -32,11 +29,7 @@ class intersection {
 
   double x() const;
   double y() const;
-  bool ray_intersects(XYPoint,
-                      XYPoint,
-                      double,
-                      double,
-                      double);
+  bool ray_intersects(XYPoint, XYPoint, double, double, double);
 };
 
 #endif

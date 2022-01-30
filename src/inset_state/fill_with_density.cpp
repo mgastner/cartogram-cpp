@@ -8,11 +8,11 @@ void InsetState::fill_with_density(bool plot_density)
   // target areas that were zero or missing in the input have already been
   // replaced by CartogramInfo::replace_missing_and_zero_target_areas().
   double total_current_area = 0.0;
-  for (auto gd : geo_divs()) {
+  for (const auto &gd : geo_divs_) {
     total_current_area += gd.area();
   }
   double total_target_area = 0.0;
-  for (auto gd : geo_divs()) {
+  for (const auto &gd : geo_divs_) {
     total_target_area += target_areas_at(gd.id());
   }
   double mean_density = total_target_area / total_current_area;
@@ -34,11 +34,11 @@ void InsetState::fill_with_density(bool plot_density)
   unsigned int n_rays = ly() * resolution;
   std::vector<std::vector<intersection> > map_intersections(n_rays);
 
-  // Density numerator and denominator for each graticule cell
-  // A density of a graticule cell can be calculated with (rho_num / rho_den).
-  // We initially assign 0 to all elements because we assume that all
-  // graticule cells are outside any GeoDiv. Any graticule cell where rho_den
-  // is 0 will get the mean_density
+  // Density numerator and denominator for each graticule cell. The density of
+  // a graticule cell can be calculated with (rho_num / rho_den). We initially
+  // assign 0 to all elements because we assume that all graticule cells are
+  // outside any GeoDiv. Any graticule cell where rho_den is 0 will be filled
+  // with the mean_density.
   std::vector<std::vector<double> >
     rho_num(lx(), std::vector<double> (ly(), 0));
   std::vector<std::vector<double> >
@@ -53,10 +53,10 @@ void InsetState::fill_with_density(bool plot_density)
   // - rho_den is the sum of the weights of a ray that is inside a GeoDiv.
   // The weight of a segment of a ray that is inside a GeoDiv is equal to
   // (length of the segment inside the geo_div) * (area error of the geodiv).
-  // We cycle through y-coordinates in inset_state.
-  for (unsigned int k = 0; k < ly(); ++k) {
 
-    // Cycle through each of the "resolution" number of rays in one cell
+  // Iterate over each of the "resolution" rays between the graticule lines
+  // y = k and y = k+1
+  for (unsigned int k = 0; k < ly(); ++k) {
     for (double ray_y = k + 0.5/resolution;
          ray_y < k + 1;
          ray_y += 1.0/resolution) {
@@ -70,14 +70,14 @@ void InsetState::fill_with_density(bool plot_density)
 
       // If the ray has intersections, we fill any empty spaces between
       // GeoDivs. Please note that we cannot write the loop condition as:
-      // l < intersections.size() - 1
+      // ll < intersections.size() - 1
       // because intersection.size() is an unsigned integer. If
       // intersections.size() equals zero, then the right-hand side would
       // evaluate to a large positive number instead of -1. In this case,
       // we would erroneously enter the loop.
-      for (unsigned int l = 1; l + 1 < intersections.size(); l += 2) {
-        double left_x = intersections[l].x();
-        double right_x = intersections[l + 1].x();
+      for (unsigned int ll = 1; ll + 1 < intersections.size(); ll += 2) {
+        double left_x = intersections[ll].x();
+        double right_x = intersections[ll + 1].x();
         if (left_x != right_x) {
           if (ceil(left_x) == ceil(right_x)) {
 
@@ -85,9 +85,9 @@ void InsetState::fill_with_density(bool plot_density)
             // enters and leaves a GeoDiv in this cell. We weigh the density
             // of the cell by the GeoDiv's area error.
             double weight =
-              area_errors_at(intersections[l].geo_div_id) *
+              area_errors_at(intersections[ll].geo_div_id) *
               (right_x - left_x);
-            double target_dens = intersections[l].target_density;
+            double target_dens = intersections[ll].target_density;
             rho_num[ceil(left_x) - 1][k] += weight * target_dens;
             rho_den[ceil(left_x) - 1][k] += weight;
           }
@@ -105,13 +105,13 @@ void InsetState::fill_with_density(bool plot_density)
       }
 
       // Fill GeoDivs by iterating through intersections
-      for (unsigned int l = 0; l < intersections.size(); l += 2) {
-        double left_x = intersections[l].x();
-        double right_x = intersections[l + 1].x();
+      for (unsigned int ll = 0; ll < intersections.size(); ll += 2) {
+        double left_x = intersections[ll].x();
+        double right_x = intersections[ll + 1].x();
 
         // Check for intersection of polygons, holes and GeoDivs
         // TODO: Decide whether to comment out? (probably not)
-        if (intersections[l].direction == intersections[l + 1].direction) {
+        if (intersections[ll].ray_enters == intersections[ll + 1].ray_enters) {
 
           // Highlight where intersection is present
           std::cerr << "\nInvalid Geometry!" << std::endl;
@@ -126,8 +126,8 @@ void InsetState::fill_with_density(bool plot_density)
         // Fill each cell between intersections
         for (unsigned int m = ceil(left_x); m <= ceil(right_x); ++m) {
           double weight =
-            area_errors_at(intersections[l].geo_div_id);
-          double target_dens = intersections[l].target_density;
+            area_errors_at(intersections[ll].geo_div_id);
+          double target_dens = intersections[ll].target_density;
           if (ceil(left_x) == ceil(right_x)) {
             weight *= (right_x - left_x);
           } else if (m == ceil(left_x)) {

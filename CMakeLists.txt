@@ -31,7 +31,6 @@ add_executable(
   src/main.cpp
   src/geo_div.cpp
   src/cartogram_info.cpp
-  src/inset_state.cpp
   src/read_csv.cpp
   src/rescale_map.cpp
   src/write_eps.cpp
@@ -50,6 +49,7 @@ add_executable(
   src/write_geojson.cpp
   src/albers_projection.cpp
   src/parse_arguments.cpp
+  src/inset_state/inset_state.cpp
   src/inset_state/densify.cpp
   src/inset_state/intersection.cpp
   src/inset_state/scanline_graph.cpp

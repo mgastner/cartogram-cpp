@@ -221,7 +221,7 @@ void InsetState::densify_geo_divs()
 {
   std::cerr << "Densifying" << std::endl;
   std::vector<GeoDiv> geodivs_dens;
-  for (GeoDiv gd : geo_divs_) {
+  for (const auto &gd : geo_divs_) {
     GeoDiv gd_dens(gd.id());
     for (const auto &pwh : gd.polygons_with_holes()) {
       Polygon outer = pwh.outer_boundary();

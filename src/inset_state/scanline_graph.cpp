@@ -128,7 +128,7 @@ std::vector<std::vector<intersection> >
           // intersections to vector scanlines
           int index = round((ray - 0.5/res) * res);
           for (unsigned int l = 0; l < intersections.size(); ++l) {
-            intersections[l].direction = (l%2 == 0);
+            intersections[l].ray_enters = (l%2 == 0);
             scanlines[index].push_back(intersections[l]);
           }
         }
@@ -229,8 +229,8 @@ const std::vector<Segment> InsetState::intersecting_segments(unsigned int res)
 
         // Check for intersections, if both are entering/exiting
         for (int l = 0; l < size; ++l) {
-          if (intersections[l].direction == intersections[l + 1].direction &&
-              intersections[l].direction &&
+          if (intersections[l].ray_enters == intersections[l + 1].ray_enters &&
+              intersections[l].ray_enters &&
               l + 2 <= size) {
             Segment temp;
             if (graph == 'h' &&
