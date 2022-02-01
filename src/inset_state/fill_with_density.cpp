@@ -45,7 +45,7 @@ void InsetState::fill_with_density(bool plot_density)
     rho_den(lx(), std::vector<double> (ly(), 0));
 
   // See scanlines_parallel_to_axis in scanline_graph.cpp for more information
-  map_intersections = scanlines_parallel_to_axis('x', resolution);
+  map_intersections = scanlines_parallel_to_axis(true, resolution);
 
   // Determine rho's numerator and denominator:
   // - rho_num is the sum of (weight * target_density) for each segment of a
@@ -63,9 +63,9 @@ void InsetState::fill_with_density(bool plot_density)
 
       // Intersections for one ray
       std::vector<intersection> intersections =
-        map_intersections[static_cast<int>(round((ray_y - 0.5/resolution) * resolution))];
+        map_intersections[round((ray_y - 0.5/resolution) * resolution)];
 
-      // Sort vector in ascending order of intersection
+      // Sort intersections in ascending order
       std::sort(intersections.begin(), intersections.end());
 
       // If the ray has intersections, we fill any empty spaces between

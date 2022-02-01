@@ -90,7 +90,7 @@ public:
   FTReal2d *ref_to_rho_ft();
   FTReal2d *ref_to_rho_init();
   std::vector<std::vector<intersection> >
-    scanlines_parallel_to_axis(char, unsigned int) const;
+    scanlines_parallel_to_axis(bool, unsigned int) const;
   void set_area_errors();
   void set_geo_divs(const std::vector<GeoDiv>);
   void set_grid_dimensions(const unsigned int lx, const unsigned int ly);
