@@ -20,10 +20,11 @@
 
 int main(const int argc, const char *argv[])
 {
-  std::string geo_file_name, visual_file_name; // Default values
+  std::string geo_file_name, visual_file_name;  // Default values
 
   // Default number of grid cells along longer Cartesian coordinate axis
-  unsigned int long_grid_side_length = default_long_grid_side_length;
+  unsigned int max_n_graticule_rows_or_cols =
+    default_max_n_graticule_rows_or_cols;
 
   // Target number of points to retain after simplification
   unsigned int target_points_per_inset = default_target_points_per_inset;
@@ -55,7 +56,7 @@ int main(const int argc, const char *argv[])
     argv,
     geo_file_name,
     visual_file_name,
-    long_grid_side_length,
+    max_n_graticule_rows_or_cols,
     target_points_per_inset,
     world,
     triangulation,
@@ -191,8 +192,8 @@ int main(const int argc, const char *argv[])
                            output_equal_area);
     } else {
 
-      // Rescale map to fit into a rectangular box [0, lx] * [0, ly].
-      rescale_map(long_grid_side_length,
+      // Rescale map to fit into a rectangular box [0, lx] * [0, ly]
+      rescale_map(max_n_graticule_rows_or_cols,
                   &inset_state,
                   cart_info.is_world_map());
 
@@ -203,8 +204,6 @@ int main(const int argc, const char *argv[])
       inset_state.ref_to_rho_ft()->allocate(lx, ly);
       inset_state.make_fftw_plans_for_rho();
       inset_state.initialize_cum_proj();
-
-      // Set initial area errors
       inset_state.set_area_errors();
 
       // Automatically color GeoDivs if no colors are provided
@@ -267,8 +266,6 @@ int main(const int argc, const char *argv[])
         if (blur_width > 0.0) {
           blur_density(blur_width, plot_density, &inset_state);
         }
-
-        // Plotting intersections if requested
         if (plot_intersections) {
           inset_state.write_intersections_to_eps(intersections_resolution);
         }
@@ -310,8 +307,6 @@ int main(const int argc, const char *argv[])
                 << "\nProgress: "
                 << progress
                 << std::endl;
-
-      // Plotting intersections if requested
       if (plot_intersections) {
         inset_state.write_intersections_to_eps(intersections_resolution);
       }

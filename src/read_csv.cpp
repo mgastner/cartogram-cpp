@@ -17,7 +17,7 @@ void read_csv(argparse::ArgumentParser arguments,
 
   // Find index of column with IDs. If no ID column header was passed with the
   // command-line flag --id, the ID column is assumed to have index 0.
-  auto is_id_header = arguments.present<std::string>("-i");
+  auto is_id_header = arguments.present<std::string>("-D");
   std::string id_header;
   int id_col = 0;
   if (is_id_header) {
@@ -34,7 +34,7 @@ void read_csv(argparse::ArgumentParser arguments,
   // passed with the command-line flag --area, the area column is assumed to
   // have index 1.
   int area_col = 1;
-  if (auto area_header = arguments.present<std::string>("-a")) {
+  if (auto area_header = arguments.present<std::string>("-A")) {
     std::cout << "Area Header: " << *area_header << std::endl;
     area_col = reader.index_of(*area_header);
   }
@@ -42,13 +42,13 @@ void read_csv(argparse::ArgumentParser arguments,
   // Find index of column with inset specifiers. If no inset column header was
   // passed with the command-line flag --inset, the header is assumed to be
   // "Inset".
-  std::string inset_header = arguments.get<std::string>("-n");
+  std::string inset_header = arguments.get<std::string>("-I");
   int inset_col = reader.index_of(inset_header);
 
   // Find index of column with color specifiers. If no color column header was
   // passed with the command-line flag --color, the header is assumed to be
   // "Color".
-  std::string color_header = arguments.get<std::string>("-c");
+  std::string color_header = arguments.get<std::string>("-C");
   int color_col = reader.index_of(color_header);
 
   // Read CSV
