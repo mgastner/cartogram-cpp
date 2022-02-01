@@ -104,7 +104,7 @@ void InsetState::fill_with_density(bool plot_density)
         rho_den[ceil(last_x) - 1][k] += last_weight;
       }
 
-      // Fill GeoDivs by iterating through intersections
+      // Fill GeoDivs by iterating over intersections
       for (unsigned int ll = 0; ll < intersections.size(); ll += 2) {
         double left_x = intersections[ll].x();
         double right_x = intersections[ll + 1].x();
