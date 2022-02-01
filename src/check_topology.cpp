@@ -8,8 +8,8 @@ void holes_inside_polygons(InsetState *inset_state)
   for (auto gd : inset_state->geo_divs()) {
     for (auto pwh : gd.polygons_with_holes()) {
       Polygon ext_ring = pwh.outer_boundary();
-      for (auto hci = pwh.holes_begin(); hci != pwh.holes_end(); ++hci) {
-        Polygon hole = *hci;
+      for (auto h = pwh.holes_begin(); h != pwh.holes_end(); ++h) {
+        Polygon hole = *h;
         for (unsigned int i = 0; i < hole.size(); ++i) {
 
           // TODO: In the future, a better method would be to only check

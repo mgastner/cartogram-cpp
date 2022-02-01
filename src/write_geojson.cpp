@@ -24,8 +24,8 @@ nlohmann::json inset_to_json(InsetState *inset_state)
       polygon_container.push_back(er_container);
 
       // Get holes of Polygon_with_holes
-      for (auto hci = pwh.holes_begin(); hci != pwh.holes_end(); ++hci) {
-        Polygon hole = *hci;
+      for (auto h = pwh.holes_begin(); h != pwh.holes_end(); ++h) {
+        Polygon hole = *h;
         nlohmann::json hole_container;
         for (unsigned int i = 0; i < hole.size(); ++i) {
 
@@ -96,8 +96,8 @@ nlohmann::json cgal_to_json(CartogramInfo *cart_info)
         polygon_container.push_back(er_container);
 
         // Get holes of polygon with holes
-        for (auto hci = pwh.holes_begin(); hci != pwh.holes_end(); ++hci) {
-          Polygon hole = *hci;
+        for (auto h = pwh.holes_begin(); h != pwh.holes_end(); ++h) {
+          Polygon hole = *h;
 
           // Set hole to counter-clockwise if it was originally like that
           if (cart_info->original_ext_ring_is_clockwise()) {

@@ -13,6 +13,7 @@
 #include "simplify_inset.h"
 #include "write_eps.h"
 #include "write_geojson.h"
+#include "write_cairo.h"
 #include "xy_point.h"
 #include "parse_arguments.h"
 #include <iostream>
@@ -211,16 +212,16 @@ int main(const int argc, const char *argv[])
         inset_state.auto_color();
       }
 
-      // Write EPS if requested by command-line option
+      // Write PNG and PS files if requested by command-line option
       if (make_polygon_eps) {
-        std::string eps_input_filename = inset_state.inset_name();
+        std::string input_filename = inset_state.inset_name();
         if (plot_graticule) {
-          eps_input_filename += "_input_graticule.eps";
+          input_filename += "_input_graticule";
         } else {
-          eps_input_filename += "_input.eps";
+          input_filename += "_input";
         }
-        std::cerr << "Writing " << eps_input_filename << std::endl;
-        write_map_to_eps(eps_input_filename, plot_graticule, &inset_state);
+        std::cerr << "Writing " << input_filename << std::endl;
+        write_cairo_map(input_filename, plot_graticule, &inset_state);
       }
 
       // We make the approximation that the progress towards generating the
@@ -311,17 +312,17 @@ int main(const int argc, const char *argv[])
         inset_state.write_intersections_to_eps(intersections_resolution);
       }
 
-      // Print EPS of cartogram
+      // Print PNG and PS files of cartogram
       if (make_polygon_eps) {
-        std::string eps_output_filename = inset_state.inset_name();
+        std::string output_filename = inset_state.inset_name();
         if (plot_graticule) {
-          eps_output_filename += "_output_graticule.eps";
+          output_filename += "_output_graticule";
         } else {
-          eps_output_filename += "_output.eps";
+          output_filename += "_output";
         }
         std::cerr << "Writing "
-                  << eps_output_filename << std::endl;
-        write_map_to_eps(eps_output_filename, plot_graticule,
+                  << output_filename << std::endl;
+        write_cairo_map(output_filename, plot_graticule,
                          &inset_state);
       }
 

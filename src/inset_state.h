@@ -19,10 +19,13 @@ class InsetState {
 private:
   std::unordered_map<std::string, double> area_errors_;
   Bbox bbox_;  // Bounding box
+  fftw_plan bwd_plan_for_rho_;
   std::unordered_map<std::string, Color> colors_;
-  fftw_plan fwd_plan_for_rho_, bwd_plan_for_rho_;
+
+  // Cumulative cartogram projection
+  boost::multi_array<XYPoint, 2> cum_proj_;
+  fftw_plan fwd_plan_for_rho_;
   std::vector<GeoDiv> geo_divs_;  // Geographic divisions in this inset
-  std::unordered_map<std::string, bool> is_input_target_area_missing_;
 
   // Chosen diagonal for each graticule cell
   boost::multi_array<int, 2> graticule_diagonals_;
@@ -35,11 +38,13 @@ private:
   unsigned int n_finished_integrations_;
   std::string pos_;  // Position of inset ("C", "T" etc.)
   boost::multi_array<XYPoint, 2> proj_;  // Cartogram projection
-  boost::multi_array<XYPoint, 2> cum_proj_;  // Cumulative cartogram projection
 
   // Rasterized density and its Fourier transform
   FTReal2d rho_init_, rho_ft_;
   std::unordered_map<std::string, double> target_areas_;
+
+  // Vertical adjacency graph
+  std::vector<std::vector<intersection> > vertical_adj_;
 
   // Make default contructor private so that only
   // InsetState(const std::string) can be called as constructor
@@ -48,33 +53,37 @@ private:
 public:
   explicit InsetState(const std::string);  // Constructor
   double area_errors_at(const std::string) const;
-  void auto_color();  // Automatically color GeoDivs in inset
+  void auto_color();  // Automatically color GeoDivs
   Bbox bbox() const;
-  bool color_found(const std::string id) const;
   const Color colors_at(const std::string) const;
   bool colors_empty() const;
+  bool color_found(const std::string id) const;
   void colors_insert(const std::string, const Color);
   void colors_insert(const std::string, const std::string);
   unsigned int colors_size() const;
-  void create_contiguity_graph(unsigned int res);
+  void create_contiguity_graph(unsigned int);
   void densify_geo_divs();
   void destroy_fftw_plans_for_rho();
   void execute_fftw_bwd_plan() const;
   void execute_fftw_fwd_plan() const;
   void fill_with_density(bool);  // Fill map with density, using scanlines
   const std::vector<GeoDiv> geo_divs() const;
+  const std::vector<std::vector<intersection> >
+    horizontal_scans(unsigned int) const;
   void increment_integration();
   void initialize_cum_proj();
   const std::string inset_name() const;
   const std::vector<Segment> intersecting_segments(unsigned int) const;
   bool is_input_target_area_missing(const std::string) const;
   void is_input_target_area_missing_insert(const std::string, const bool);
+  std::string labels_at(const std::string) const;
+  void labels_insert(const std::string, const std::string);
   unsigned int lx() const;
   unsigned int ly() const;
   void make_fftw_plans_for_rho();
   double map_scale() const;
-  double max_area_error_stdcerr() const;
   struct max_area_error_info max_area_error() const;
+  double max_area_error_stdcerr() const;
   unsigned int new_xmin() const;
   unsigned int new_ymin() const;
   unsigned int n_finished_integrations() const;

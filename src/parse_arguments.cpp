@@ -110,9 +110,13 @@ argparse::ArgumentParser parsed_arguments(const int argc,
     .default_value(std::string("Color"))
     .help(pre + "colors");
 
+  arguments.add_argument("-L", "--label")
+    .default_value(std::string("Label"))
+    .help(pre + "labels");
+
   arguments.add_argument("-I", "--inset")
-    .default_value(std::string("Inset"))
-    .help(pre + "insets");
+  .default_value(std::string("Inset"))
+  .help(pre + "insets");
 
   // Parse command line arguments
   try {

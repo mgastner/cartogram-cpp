@@ -21,7 +21,7 @@ Bbox InsetState::bbox() const
   double inset_ymax = -dbl_inf;
   for (const auto &gd : geo_divs_) {
     for (const auto &pwh : gd.polygons_with_holes()) {
-      const Bbox bb = pwh.bbox();
+      const auto bb = pwh.bbox();
       inset_xmin = std::min(bb.xmin(), inset_xmin);
       inset_ymin = std::min(bb.ymin(), inset_ymin);
       inset_xmax = std::max(bb.xmax(), inset_xmax);
@@ -357,4 +357,18 @@ double InsetState::total_target_area() const
     inset_total_target_area += geo_div_target_area.second;
   }
   return inset_total_target_area;
+}
+
+std::string InsetState::labels_at(const std::string id) const
+{
+  if (labels_.find(id) == labels_.end()) {
+    return "";
+  }
+  return labels_.at(id);
+}
+
+void InsetState::labels_insert(const std::string id, const std::string label)
+{
+  labels_.insert(std::pair<std::string, std::string>(id, label));
+  return;
 }

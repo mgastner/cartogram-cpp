@@ -74,8 +74,8 @@ void write_polygons_to_eps(std::ofstream &eps_file,
       eps_file << "c\n";
 
       // Plot holes
-      for (auto hci = pwh.holes_begin(); hci != pwh.holes_end(); ++hci) {
-        const Polygon hole = *hci;
+      for (auto h = pwh.holes_begin(); h != pwh.holes_end(); ++h) {
+        const Polygon hole = *h;
         eps_file << hole[0][0] << " " << hole[0][1] << " m\n";
         for (unsigned int i = 1; i < hole.size(); ++i) {
           eps_file << hole[i][0] << " " << hole[i][1] << " l\n";
@@ -312,7 +312,7 @@ void InsetState::write_intersections_to_eps(unsigned int res)
                         this);
 
   // Set line width of intersection lines
-  eps_file << 0.0001 * std::min(lx(), ly())
+  eps_file << 0.0001 * std::min(lx_, ly_)
            << " slw\n";
   for (auto seg : intersections) {
 

@@ -34,6 +34,10 @@ constexpr double inset_spacing_factor = 0.1;
 // Percent of height/width of tallest/widest inset that divider should be
 constexpr double divider_length = 0.8;
 
+// Font size range for cairo labelling
+constexpr double min_font_size = 6.0;
+constexpr double max_font_size = 10.0;
+
 // Threshold as a fraction of non-na and non-zero total area for a target
 // area to be considered "too small"
 constexpr double small_area_threshold_frac = 2e-5;
