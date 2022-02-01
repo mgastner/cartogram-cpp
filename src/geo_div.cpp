@@ -103,7 +103,7 @@ Point GeoDiv::point_on_surface_of_polygon_with_holes(
 {
   const auto bb = pwh.bbox();
   const double line_y = (bb.ymin() + bb.ymax()) / 2;
-  const double epsilon = 1e-6 / default_res;
+  const double epsilon = 1e-6 / default_max_n_graticule_rows_or_cols;
 
   // Vector to store intersections
   std::vector<intersection> intersections;

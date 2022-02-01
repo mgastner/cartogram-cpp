@@ -32,6 +32,8 @@ private:
 
   // Map name. Inset position is appended to the name if n_insets > 2.
   std::string inset_name_;
+  std::unordered_map<std::string, bool> is_input_target_area_missing_;
+  std::unordered_map<std::string, std::string> labels_;
   unsigned int lx_, ly_;  // Lattice dimensions
   double map_scale_;  // Lattice spacing in terms of equal-area coordinates
   unsigned int new_xmin_, new_ymin_;  // Map translation vector
