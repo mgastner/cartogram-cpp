@@ -1,5 +1,4 @@
 #include "geo_div.h"
-#include "intersection.h"
 #include "xy_point.h"
 #include "constants.h"
 
@@ -107,77 +106,39 @@ Point GeoDiv::point_on_surface_of_polygon_with_holes(
 
   // Vector to store intersections
   std::vector<intersection> intersections;
-  const auto ext_ring = pwh.outer_boundary();
-
-  // Store previous point to form segment (curr_point, prev_point)
-  const auto last_ext_ring_pt = ext_ring[ext_ring.size()-1];
-  XYPoint prev_point(last_ext_ring_pt.x(), last_ext_ring_pt.y());
-
-  // Find all the intersections with exterior ring
-  for (unsigned int l = 0; l < ext_ring.size(); ++l) {
-    const XYPoint curr_point(ext_ring[l].x(), ext_ring[l].y());
-    intersection temp;
-
-    // Calculate whether intersection exists between segment (prev_point,
-    // curr_point) and line_y
-    if (ray_y_intersects(curr_point,
-                         prev_point,
-                         line_y,
-                         &temp,
-                         0,
-                         epsilon)) {
-      intersections.push_back(temp);
-    }
-    prev_point.x = curr_point.x;
-    prev_point.y = curr_point.y;
-  }
-
-  // Find all intersections with holes
-  for (auto h = pwh.holes_begin(); h != pwh.holes_end(); ++h) {
-    Polygon hole = *h;
-    prev_point.x = hole[hole.size()-1][0];
-    prev_point.y = hole[hole.size()-1][1];
-    for (unsigned int l = 0; l < hole.size(); ++l) {
-      const XYPoint curr_point(hole[l].x(), hole[l].y());
-      intersection temp;
-      if (ray_y_intersects(curr_point,
-                           prev_point,
-                           line_y,
-                           &temp,
-                           0,
-                           epsilon)) {
-        intersections.push_back(temp);
-      }
-      prev_point.x = curr_point.x;
-      prev_point.y = curr_point.y;
-    }
-  }
+  add_intersections(intersections,
+                    pwh.outer_boundary(),
+                    line_y,
+                    0,
+                    epsilon,
+                    id_,
+                    true);
   std::sort(intersections.begin(), intersections.end());
 
   // Assign directions (i.e., whether the line is entering or leaving the
   // polygon with holes)
   for (unsigned int l = 0; l < intersections.size(); ++l) {
-    intersections[l].direction = (l%2 == 0);
+    intersections[l].ray_enters = (l%2 == 0);
   }
 
   // Assign length of line segments using the target_density property of
   // intersections for line segment lengths
   for (unsigned int l = 0; l < intersections.size(); l += 2) {
     intersections[l].target_density =
-      intersections[l + 1].coord - intersections[l].coord;
+      intersections[l + 1].x() - intersections[l].x();
   }
 
   // Find maximum segment length
   double max_length = intersections[0].target_density;
-  double left = intersections[0].coord;
-  double right = intersections[1].coord;
+  double left = intersections[0].x();
+  double right = intersections[1].x();
   XYPoint midpoint((right + left) / 2, line_y);
 
   // Iterate over lengths
   for (unsigned int l = 0; l < intersections.size(); l += 2) { \
     if (intersections[l].target_density > max_length) {
-      left = intersections[l].coord;
-      right = intersections[l + 1].coord;
+      left = intersections[l].x();
+      right = intersections[l + 1].x();
       max_length = intersections[l].target_density;
       midpoint.x = (right + left) / 2;
     }

@@ -1,62 +1,88 @@
 #include "intersection.h"
 
-bool ray_y_intersects(XYPoint a,
-                      XYPoint b,
-                      double ray_y,
-                      intersection *temp,
-                      double target_density,
-                      double epsilon)
+intersection::intersection(bool side) :
+  is_x(side),
+  ray_enters(false)  // Temporary value
 {
-  // Check if intersection is present
-  if (((a.y <= ray_y && b.y >= ray_y) ||
-       (a.y >= ray_y && b.y <= ray_y)) &&
+  return;
+}
+
+intersection::intersection() :
+  is_x(true),     // Assume x if not explicitly declared
+  ray_enters(false)  // Temporary value
+{
+  return;
+}
+
+double intersection::x() const {
+  return coord;
+}
+
+double intersection::y() const {
+  return coord;
+}
+
+bool intersection::ray_intersects(XYPoint a,
+                                  XYPoint b,
+                                  double ray,
+                                  double td,
+                                  double epsilon)
+{
+  // Flip coordinates if rays are in y-direction. The formulae below are the
+  // same, except that x is replaced with y and vice versa.
+  if (!is_x) {
+    a.flip();
+    b.flip();
+  }
+
+  // Check whether an intersection is present
+  if (((a.y <= ray && b.y >= ray) ||
+       (a.y >= ray && b.y <= ray)) &&
 
       // Pre-condition to ignore grazing incidence (i.e., a line segment along
       // the polygon is exactly on the test ray)
       (a.y != b.y)) {
-    if (a.y == ray_y) {
+    if (a.y == ray) {
       a.y += epsilon;
-    } else if (b.y == ray_y) {
+    } else if (b.y == ray) {
       b.y += epsilon;
     }
 
-    // Edit intersection passed by reference
-    // coord stores the x coordinate.
-    temp->coord = (a.x * (b.y - ray_y) + b.x * (ray_y - a.y)) / (b.y - a.y);
-    temp->target_density = target_density;
-    temp->direction = false;  // Temporary value
+    // Edit intersection passed by reference. coord stores the x coordinate.
+    target_density = td;
+    coord = (a.x * (b.y - ray) + b.x * (ray - a.y)) / (b.y - a.y);
     return true;
   }
   return false;
 }
 
-
-bool ray_x_intersects(XYPoint a,
-                      XYPoint b,
-                      double ray_x,
-                      intersection *temp,
-                      double target_density,
-                      double epsilon)
+// This function adds intersections between a ray and a polygon to
+// `intersections`
+void add_intersections(std::vector<intersection> &intersections,
+                       Polygon pgn,
+                       double ray,
+                       double target_density,
+                       double epsilon,
+                       std::string gd_id,
+                       bool is_x_axis)
 {
-  // Check if intersection is present
-  if (((a.x <= ray_x && b.x >= ray_x) ||
-       (a.x >= ray_x && b.x <= ray_x)) &&
-
-      // Pre-condition to ignore grazing incidence (i.e. a line segment along
-      // the polygon is exactly on the test ray)
-      (a.x != b.x)) {
-    if (a.x == ray_x) {
-      a.x += epsilon;
-    } else if (b.x == ray_x) {
-      b.x += epsilon;
+  XYPoint prev_point;
+  prev_point.x = pgn[pgn.size()-1].x();
+  prev_point.y = pgn[pgn.size()-1].y();
+  for (unsigned int l = 0; l < pgn.size(); ++l) {
+    XYPoint curr_point;
+    curr_point.x = pgn[l].x();
+    curr_point.y = pgn[l].y();
+    intersection temp(is_x_axis);
+    if (temp.ray_intersects(curr_point,
+                            prev_point,
+                            ray,
+                            target_density,
+                            epsilon)) {
+      temp.geo_div_id = gd_id;
+      intersections.push_back(temp);
     }
-
-    // Edit intersection passed by reference
-    // coord stores the y coordinate.
-    temp->coord = (a.y * (b.x - ray_x) + b.y * (ray_x - a.x)) / (b.x - a.x);
-    temp->target_density = target_density;
-    temp->direction = false;  // Temporary value
-    return true;
+    prev_point.x = curr_point.x;
+    prev_point.y = curr_point.y;
   }
-  return false;
 }

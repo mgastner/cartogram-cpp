@@ -37,11 +37,10 @@ add_executable(
   src/write_cairo.cpp
   src/write_eps.cpp
   src/colors.cpp
-  src/inset_state/auto_color.cpp
   src/check_topology.cpp
   src/matrix.cpp
   src/read_geojson.cpp
-  src/inset_state/fill_with_density.cpp
+  src/intersection.cpp
   src/blur_density.cpp
   src/flatten_density.cpp
   src/ft_real_2d.cpp
@@ -51,9 +50,10 @@ add_executable(
   src/write_geojson.cpp
   src/albers_projection.cpp
   src/parse_arguments.cpp
+  src/inset_state/auto_color.cpp
+  src/inset_state/fill_with_density.cpp
   src/inset_state/inset_state.cpp
   src/inset_state/densify.cpp
-  src/inset_state/intersection.cpp
   src/inset_state/scanline_graph.cpp
 )
 

@@ -1,37 +1,6 @@
 #include "../inset_state.h"
 #include "../constants.h"
 
-// This function adds intersections between a ray and a polygon to
-// `intersections`
-void add_intersections(std::vector<intersection> &intersections,
-                       Polygon pgn,
-                       double ray,
-                       double target_density,
-                       double epsilon,
-                       std::string gd_id,
-                       bool is_x_axis)
-{
-  XYPoint prev_point;
-  prev_point.x = pgn[pgn.size()-1].x();
-  prev_point.y = pgn[pgn.size()-1].y();
-  for (unsigned int l = 0; l < pgn.size(); ++l) {
-    XYPoint curr_point;
-    curr_point.x = pgn[l].x();
-    curr_point.y = pgn[l].y();
-    intersection temp(is_x_axis);
-    if (temp.ray_intersects(curr_point,
-                            prev_point,
-                            ray,
-                            target_density,
-                            epsilon)) {
-      temp.geo_div_id = gd_id;
-      intersections.push_back(temp);
-    }
-    prev_point.x = curr_point.x;
-    prev_point.y = curr_point.y;
-  }
-}
-
 std::vector<std::vector<intersection> >
   InsetState::scanlines_parallel_to_axis(bool is_x_axis,
                                          unsigned int resolution) const
