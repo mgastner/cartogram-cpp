@@ -12,13 +12,13 @@ constexpr double max_permitted_area_error = 0.01;
 constexpr double padding_unless_world = 1.5;
 constexpr double pi = std::numbers::pi;
 
-// Granularity of scanlines (see inset_state/scanline_graph.cpp)
+// The resolution represents the number of rays to shoot through each cell
+// (see inset_state/scanline_graph.cpp).
+// default_resolution is used for fill with density.
+// intersection_resolution is used to specify the number of scanlines shown
+// in output files showing intersections.
 constexpr unsigned int default_resolution = 16;
 constexpr unsigned int intersections_resolution = 1;
-
-// default_resolution is used for fill with density.
-// intersection_res is used to specify the number of scanlines shown in output
-// files showing intersections.
 
 // Points after simplification
 constexpr unsigned int default_target_points_per_inset = 10000;

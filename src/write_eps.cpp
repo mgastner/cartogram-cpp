@@ -160,8 +160,7 @@ void write_map_to_eps(const std::string eps_name,
   std::ofstream eps_file(eps_name);
   write_eps_header_and_definitions(eps_file, eps_name, inset_state);
 
-  // Check whether all GeoDivs are colored, and, if colored, use given colors
-  // instead of default color.
+  // Check whether all GeoDivs are colored
   const bool has_colors =
     (inset_state->colors_size() == inset_state->n_geo_divs());
   write_polygons_to_eps(eps_file,

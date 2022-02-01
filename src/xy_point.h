@@ -10,7 +10,9 @@ struct XYPoint {
 
   // Flip x and y coordinates
   void flip() {
-    double temp = x; x = y; y = temp;
+    double temp = x;
+    x = y;
+    y = temp;
   }
 
   // Overload "<" operator. Idea from
