@@ -20,7 +20,7 @@ void InsetState::auto_color()
   palette.push_back(Color(166, 118, 29));  // mustard-brown
 
   // Find resolution
-  unsigned int resolution = default_resolution;
+  const unsigned int resolution = default_resolution;
 
   // Creating full continuity graph based on vertical and horizontal scanlines
   create_contiguity_graph(resolution);
@@ -35,15 +35,15 @@ void InsetState::auto_color()
 
   // Iterating until we are able to color the entire map
   while (colors_size() < n_geo_divs() && max_i >= 0) {
-    for (auto gd : geo_divs_) {
+    for (const auto &gd : geo_divs_) {
 
       // Iterating over all possible colors
       for (size_t i = (count % max_i); i < palette.size(); ++i) {
-        Color c = palette[i];
+        const Color c = palette[i];
         bool shared_color = false;
 
         // Check whether adjacent GeoDivs have the same color
-        for (std::string gd_id : gd.adjacent_geodivs()) {
+        for (const auto &gd_id : gd.adjacent_geodivs()) {
           if (color_found(gd_id)) {
             if (colors_at(gd_id) == c) {
               shared_color = true;
