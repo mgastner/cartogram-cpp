@@ -23,8 +23,8 @@ double GeoDiv::area() const
   for (const auto &pwh : polygons_with_holes()) {
     const auto ext_ring = pwh.outer_boundary();
     a += ext_ring.area();
-    for (auto hole = pwh.holes_begin(); hole != pwh.holes_end(); ++hole) {
-      a += (*hole).area();
+    for (auto h = pwh.holes_begin(); h != pwh.holes_end(); ++h) {
+      a += (*h).area();
     }
   }
   return a;

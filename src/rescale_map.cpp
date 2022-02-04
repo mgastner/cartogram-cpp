@@ -59,9 +59,9 @@ void rescale_map(unsigned int max_n_graticule_rows_or_cols,
       Polygon *ext_ring = &pwh.outer_boundary();
       *ext_ring = transform(translate, *ext_ring);
       *ext_ring = transform(scale, *ext_ring);
-      for (auto hi = pwh.holes_begin(); hi != pwh.holes_end(); ++hi) {
-        *hi = transform(translate, *hi);
-        *hi = transform(scale, *hi);
+      for (auto h = pwh.holes_begin(); h != pwh.holes_end(); ++h) {
+        *h = transform(translate, *h);
+        *h = transform(scale, *h);
       }
     }
   }
@@ -99,9 +99,9 @@ void normalize_inset_area(InsetState *inset_state,
       Polygon *ext_ring = &pwh.outer_boundary();
       *ext_ring = transform(translate, *ext_ring);
       *ext_ring = transform(scale, *ext_ring);
-      for (auto hi = pwh.holes_begin(); hi != pwh.holes_end(); ++hi) {
-        *hi = transform(translate, *hi);
-        *hi = transform(scale, *hi);
+      for (auto h = pwh.holes_begin(); h != pwh.holes_end(); ++h) {
+        *h = transform(translate, *h);
+        *h = transform(scale, *h);
       }
     }
   }
@@ -196,8 +196,8 @@ void shift_insets_to_target_position(CartogramInfo *cart_info)
       for (auto &pwh : *gd.ref_to_polygons_with_holes()) {
         Polygon *ext_ring = &pwh.outer_boundary();
         *ext_ring = transform(translate, *ext_ring);
-        for (auto hi = pwh.holes_begin(); hi != pwh.holes_end(); ++hi) {
-          *hi = transform(translate, *hi);
+        for (auto h = pwh.holes_begin(); h != pwh.holes_end(); ++h) {
+          *h = transform(translate, *h);
         }
       }
     }
