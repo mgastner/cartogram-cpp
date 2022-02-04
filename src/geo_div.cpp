@@ -23,9 +23,8 @@ double GeoDiv::area() const
   for (const auto &pwh : polygons_with_holes()) {
     const auto ext_ring = pwh.outer_boundary();
     a += ext_ring.area();
-    for (auto h = pwh.holes_begin(); h != pwh.holes_end(); ++h) {
-      Polygon hole = *h;
-      a += hole.area();
+    for (auto hole = pwh.holes_begin(); hole != pwh.holes_end(); ++hole) {
+      a += (*hole).area();
     }
   }
   return a;
@@ -44,9 +43,8 @@ const Polygon_with_holes GeoDiv::largest_polygon_with_holes() const
     double area = 0.0;
     const auto ext_ring = pwh.outer_boundary();
     area += ext_ring.area();
-    for (auto h = pwh.holes_begin(); h != pwh.holes_end(); ++h) {
-      const auto hole = *h;
-      area += hole.area();
+    for (auto hole = pwh.holes_begin(); hole != pwh.holes_end(); ++hole) {
+      area += (*hole).area();
     }
     if (area > max_area) {
       max_area = area;
@@ -62,9 +60,8 @@ unsigned int GeoDiv::n_points() const
   for (const auto &pwh : polygons_with_holes_) {
     const auto outer = pwh.outer_boundary();
     n_points += outer.size();
-    const std::vector<Polygon> holes(pwh.holes_begin(), pwh.holes_end());
-    for (const auto &hole : holes) {
-      n_points += hole.size();
+    for (auto hole = pwh.holes_begin(); hole != pwh.holes_end(); ++hole) {
+      n_points += (*hole).size();
     }
   }
   return n_points;
@@ -128,17 +125,15 @@ Point GeoDiv::point_on_surface_of_polygon_with_holes(
       intersections[l + 1].x() - intersections[l].x();
   }
 
-  // Find maximum segment length
-  double max_length = intersections[0].target_density;
-  double left = intersections[0].x();
-  double right = intersections[1].x();
-  XYPoint midpoint((right + left) / 2, line_y);
+  // Find midpoint in maximum segment length
+  double max_length = 0.0;
+  XYPoint midpoint;
 
   // Iterate over lengths
   for (unsigned int l = 0; l < intersections.size(); l += 2) { \
     if (intersections[l].target_density > max_length) {
-      left = intersections[l].x();
-      right = intersections[l + 1].x();
+      const double left = intersections[l].x();
+      const double right = intersections[l + 1].x();
       max_length = intersections[l].target_density;
       midpoint.x = (right + left) / 2;
     }
