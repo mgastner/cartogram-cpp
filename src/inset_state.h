@@ -59,7 +59,7 @@ public:
   Bbox bbox() const;
   const Color colors_at(const std::string) const;
   bool colors_empty() const;
-  bool color_found(const std::string id) const;
+  bool color_found(const std::string) const;
   void colors_insert(const std::string, const Color);
   void colors_insert(const std::string, const std::string);
   unsigned int colors_size() const;
@@ -104,7 +104,7 @@ public:
     scanlines_parallel_to_axis(bool, unsigned int) const;
   void set_area_errors();
   void set_geo_divs(const std::vector<GeoDiv>);
-  void set_grid_dimensions(const unsigned int lx, const unsigned int ly);
+  void set_grid_dimensions(const unsigned int, const unsigned int);
   void set_inset_name(const std::string);
   void set_map_scale(const double);
   void set_pos(const std::string);
