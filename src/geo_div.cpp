@@ -43,8 +43,8 @@ const Polygon_with_holes GeoDiv::largest_polygon_with_holes() const
     double area = 0.0;
     const auto ext_ring = pwh.outer_boundary();
     area += ext_ring.area();
-    for (auto hole = pwh.holes_begin(); hole != pwh.holes_end(); ++hole) {
-      area += (*hole).area();
+    for (auto h = pwh.holes_begin(); h != pwh.holes_end(); ++h) {
+      area += (*h).area();
     }
     if (area > max_area) {
       max_area = area;
@@ -60,8 +60,8 @@ unsigned int GeoDiv::n_points() const
   for (const auto &pwh : polygons_with_holes_) {
     const auto outer = pwh.outer_boundary();
     n_points += outer.size();
-    for (auto hole = pwh.holes_begin(); hole != pwh.holes_end(); ++hole) {
-      n_points += (*hole).size();
+    for (auto h = pwh.holes_begin(); h != pwh.holes_end(); ++h) {
+      n_points += (*h).size();
     }
   }
   return n_points;
