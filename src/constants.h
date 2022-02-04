@@ -14,7 +14,7 @@ constexpr double pi = std::numbers::pi;
 
 // The resolution represents the number of rays to shoot through each cell
 // (see inset_state/scanline_graph.cpp).
-// default_resolution is used for fill with density.
+// default_resolution is used for filling graticule cells with density.
 // intersection_resolution is used to specify the number of scanlines shown
 // in output files showing intersections.
 constexpr unsigned int default_resolution = 16;
