@@ -175,11 +175,13 @@ fi
 rm ${tmp_file}
 
 # Prompting for file deletion
-printf "Clear ALL *.eps and *.geojson files in current directory? [y/N]: " | color $yellow
+printf "Clear ALL *.geojson, *.png and *.ps files in current directory? [y/N]: " | color $yellow
 read to_clear
 if [[ "$to_clear" == "y" ]]; then
-  rm *.eps; rm *.geojson
-  printf "All *.eps and *.geojson files deleted.\n" | color $red
+  rm *.geojson;
+  rm *.png;
+  rm *.ps;
+  printf "All *.geojson, *.png and *.ps files deleted.\n" | color $red
 else
   printf "Files not cleared.\n" | color $green
 fi
