@@ -1,6 +1,10 @@
 #include "../inset_state.h"
 #include "../constants.h"
 
+// TODO: THE OUTPUT FROM intersections_with_rays_parallel_to_axis() ALWAYS
+// SEEM TO COME WITH A NEED TO SORT AFTERWARDS. SHOULD SORTING BECOME PART of
+// intersections_with_rays_parallel_to_axis() TO SAVE TYPING ELSEWHERE?
+
 std::vector<std::vector<intersection> >
 InsetState::intersections_with_rays_parallel_to_axis(
   char axis,
@@ -11,19 +15,19 @@ InsetState::intersections_with_rays_parallel_to_axis(
               << std::endl;
     exit(984320);
   }
-  unsigned int grid_length = (axis == 'x' ? ly_ : lx_);
-  unsigned int n_rays = grid_length * resolution;
+  const unsigned int grid_length = (axis == 'x' ? ly_ : lx_);
+  const unsigned int n_rays = grid_length * resolution;
   std::vector<std::vector<intersection> > scanlines(n_rays);
 
   // Iterate over GeoDivs in inset_state
   for (const auto &gd : geo_divs_) {
 
     // Find target density
-    double target_density = target_areas_.at(gd.id()) / gd.area();
+    const double target_density = target_areas_.at(gd.id()) / gd.area();
 
     // Iterate over "polygons with holes" in inset_state
     for (const auto &pwh : gd.polygons_with_holes()) {
-      Bbox bb = pwh.bbox();
+      const Bbox bb = pwh.bbox();
       double min_lim, max_lim;
       if (axis == 'x') {
         min_lim = bb.ymin();
@@ -57,7 +61,7 @@ InsetState::intersections_with_rays_parallel_to_axis(
           // The addition ensures that, if there is any intersection, it is only
           // counted once. This method also correctly detects whether the ray
           // touches the point without entering or exiting the polygon.
-          double epsilon = 1e-6 / resolution;
+          const double epsilon = 1e-6 / resolution;
 
           // Run algorithm on exterior ring
           add_intersections(intersections,
@@ -104,7 +108,7 @@ InsetState::intersections_with_rays_parallel_to_axis(
 
           // Assign directions to intersections and add sorted vector of
           // intersections to vector `scanlines`
-          int index = round((ray - 0.5/resolution) * resolution);
+          const int index = round((ray - 0.5/resolution) * resolution);
           for (unsigned int l = 0; l < intersections.size(); ++l) {
             intersections[l].ray_enters = (l%2 == 0);
             scanlines[index].push_back(intersections[l]);
@@ -116,17 +120,17 @@ InsetState::intersections_with_rays_parallel_to_axis(
   return scanlines;
 }
 
-// Creates continuity/adjacency graph using horizontal and vertical scans above
+// Creates continuity/adjacency graph using horizontal and vertical scans
 void InsetState::create_contiguity_graph(unsigned int resolution)
 {
   // Calculate horizontal and vertical scanlines
   for (char axis : {'x', 'y'}) {
-    std::vector<std::vector<intersection> > scanlines =
+    const std::vector<std::vector<intersection> > scanlines =
       intersections_with_rays_parallel_to_axis(axis, resolution);
-    unsigned int max_k = (axis == 'x' ? ly_ : lx_);
+    const unsigned int grid_length = (axis == 'x' ? ly_ : lx_);
 
     // Iterate over rows (if is_x_axis) or columns
-    for (unsigned int k = 0; k < max_k; ++k) {
+    for (unsigned int k = 0; k < grid_length; ++k) {
 
       // Iterate over rays in this row or column
       for (double ray = k + (1.0/resolution)/2;
@@ -139,14 +143,14 @@ void InsetState::create_contiguity_graph(unsigned int resolution)
 
         // Sort intersections in ascending order
         sort(intersections.begin(), intersections.end());
-        int size = intersections.size() - 1;
+        const int size = intersections.size() - 1;
 
         // Find adjacent GeoDivs by iterating over intersections
         for (int l = 1; l < size; l += 2) {
-          double coord_1 = intersections[l].x();
-          double coord_2 = intersections[l + 1].x();
-          std::string gd_1 = intersections[l].geo_div_id;
-          std::string gd_2 = intersections[l + 1].geo_div_id;
+          const double coord_1 = intersections[l].x();
+          const double coord_2 = intersections[l + 1].x();
+          const std::string gd_1 = intersections[l].geo_div_id;
+          const std::string gd_2 = intersections[l + 1].geo_div_id;
 
           // Update adjacency
           if (gd_1 != gd_2 && coord_1 == coord_2) {
@@ -170,12 +174,12 @@ InsetState::intersecting_segments(unsigned int resolution) const
 {
   std::vector<Segment> int_segments;
   for (char axis : {'x', 'y'}) {
-    std::vector<std::vector<intersection> > scanlines =
+    const std::vector<std::vector<intersection> > scanlines =
       intersections_with_rays_parallel_to_axis(axis, resolution);
-    unsigned int max_k = (axis == 'x' ? ly_ : lx_);
+    const unsigned int grid_length = (axis == 'x' ? ly_ : lx_);
 
     // Iterate over rows (if is_x_axis) or columns
-    for (unsigned int k = 0; k < max_k; ++k) {
+    for (unsigned int k = 0; k < grid_length; ++k) {
 
       // Iterate over rays in this row or column
       for (double ray = k + (1.0/resolution)/2;
