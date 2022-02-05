@@ -3,40 +3,40 @@
 
 void InsetState::create_contiguity_graph()
 {
-
-  // Finding positions of GeoDivs
+  // Assign integers to GeoDivs
   std::map<std::string, unsigned int> int_at_gd;
   size_t i = 0;
-  for (auto gd : geo_divs()) {
+  for (const auto &gd : geo_divs()) {
     int_at_gd[gd.id()] = i;
     i++;
   }
 
-  // Mapping points to geodivs (which GeoDivs have this point)
-  std::map<Point, std::vector<unsigned int>> gds_at_point;
-
-  for (auto gd : geo_divs()) {
-    unsigned int gd_as_int = int_at_gd.at(gd.id());
+  // For all points in the inset, determine which GeoDivs have this point in
+  // their boundaries
+  std::map<Point, std::vector<unsigned int> > gds_at_point;
+  for (const auto &gd : geo_divs()) {
+    const auto gd_as_int = int_at_gd.at(gd.id());
     for (const auto &pwh : gd.polygons_with_holes()) {
-      for (Point p : pwh.outer_boundary()) {
+      for (const auto &p : pwh.outer_boundary()) {
         gds_at_point[p].push_back(gd_as_int);
       }
       for (auto h = pwh.holes_begin(); h != pwh.holes_end(); ++h) {
-        for (Point p : (*h)) {
+        for (const auto &p : (*h)) {
           gds_at_point[p].push_back(gd_as_int);
         }
       }
     }
   }
 
-  // Iterating through all points
-  for (auto [Point, geo_divs_with_point] : gds_at_point ) {
+  // Iterate over all points
+  for (const auto &point_info : gds_at_point) {
+    const auto &geo_divs_with_point = point_info.second;
     for (unsigned int i = 0; i < geo_divs_with_point.size(); ++i) {
       for (unsigned int j = i + 1; j < geo_divs_with_point.size(); ++j) {
-        unsigned int gd_i = geo_divs_with_point[i];
-        unsigned int gd_j = geo_divs_with_point[j];
+        const auto gd_i = geo_divs_with_point[i];
+        const auto gd_j = geo_divs_with_point[j];
 
-        // Ensuring that the geodivs are different
+        // Ensure that GeoDivs are different
         if (gd_i != gd_j) {
           geo_divs_[gd_i].adjacent_to(geo_divs_[gd_j].id());
           geo_divs_[gd_j].adjacent_to(geo_divs_[gd_i].id());
