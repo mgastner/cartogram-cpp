@@ -10,7 +10,7 @@ struct XYPoint {
 
   // Flip x and y coordinates
   void flip() {
-    double temp = x;
+    const double temp = x;
     x = y;
     y = temp;
   }
@@ -39,7 +39,7 @@ struct XYPoint {
   }
 
   // Constructor with two values given
-  XYPoint(double xg, double yg) {
+  XYPoint(const double xg, const double yg) {
     x = xg;
     y = yg;
   }
