@@ -1,42 +1,48 @@
 #ifndef INTERSECTION_H_
 #define INTERSECTION_H_
 
-#include <string>
 #include "xy_point.h"
+#include "cgal_typedef.h"
+#include <iostream>
 
-// Struct to store intersection between line parallel with
-// axis, and line segment.
-struct intersection {
+// Struct to store intersection between line segment and grid line
+class intersection {
 
-  // Intersection coordinates
-  // The x OR y coordinate, depending on which axis is the line parallel to.
-  // The coordinate that does not represent the line is stored.
-  double coord;
+ private:
+  double coord;  // Coordinate in the direction of the ray
+  bool is_x;  // Is the direction along the x-axis or y-axis?
+
+ public:
   double target_density;  // GeoDiv's target_density
   std::string geo_div_id;  // GeoDIv's ID
-  bool direction;  // Does intersection enter (true) or exit (false)?
+  bool ray_enters;  // Does the ray enter (true) a GeoDiv or exit (false)?
 
   // Overloading "<" operator, similar to above
   bool operator < (const intersection &rhs) const
   {
     return (coord < rhs.coord ||
-            (coord == rhs.coord && direction < rhs.direction));
+            (coord == rhs.coord && ray_enters < rhs.ray_enters));
   }
+
+  // Constructors
+  intersection(bool);
+  intersection();
+
+  double x() const;
+  double y() const;
+  bool ray_intersects(XYPoint,
+                      XYPoint,
+                      const double,
+                      const double,
+                      const double);
 };
 
-
-bool ray_y_intersects(XYPoint a,
-                      XYPoint b,
-                      double ray_y,
-                      intersection *temp,
-                      double target_density,
-                      double epsilon);
-
-bool ray_x_intersects(XYPoint a,
-                      XYPoint b,
-                      double ray_x,
-                      intersection *temp,
-                      double target_density,
-                      double epsilon);
+void add_intersections(std::vector<intersection> &,
+                       const Polygon,
+                       const double,
+                       const double,
+                       const double,
+                       const std::string,
+                       const char);
 
 #endif

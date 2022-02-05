@@ -4,7 +4,7 @@
 #include <limits>
 #include <numbers>
 
-constexpr unsigned int default_long_grid_side_length = 512;
+constexpr unsigned int default_max_n_graticule_rows_or_cols = 512;
 constexpr double dbl_epsilon = std::numeric_limits<double>::epsilon();
 constexpr double dbl_inf = std::numeric_limits<double>::infinity();
 constexpr unsigned int max_integrations = 100;
@@ -12,9 +12,13 @@ constexpr double max_permitted_area_error = 0.01;
 constexpr double padding_unless_world = 1.5;
 constexpr double pi = std::numbers::pi;
 
-// Granularity of scanlines (horizontal_scans, vertical_scans)
-constexpr unsigned int default_res = 16;
-constexpr unsigned int intersections_res = 1;
+// The resolution represents the number of rays to shoot through each cell
+// (see inset_state/scanline_graph.cpp).
+// default_resolution is used for filling graticule cells with density.
+// intersection_resolution is used to specify the number of scanlines shown
+// in output files showing intersections.
+constexpr unsigned int default_resolution = 16;
+constexpr unsigned int intersections_resolution = 1;
 
 // Points after simplification
 constexpr unsigned int default_target_points_per_inset = 10000;

@@ -13,9 +13,9 @@ private:
 public:
   double *as_1d_array() const;
   void set_array_size(const unsigned int, const unsigned int);
-  void allocate(const unsigned int lx, const unsigned int ly);
+  void allocate(const unsigned int, const unsigned int);
   void free();
-  void make_fftw_plan(fftw_r2r_kind kind0, fftw_r2r_kind kind1);
+  void make_fftw_plan(fftw_r2r_kind, fftw_r2r_kind);
   void execute_fftw_plan();
   void destroy_fftw_plan();
 

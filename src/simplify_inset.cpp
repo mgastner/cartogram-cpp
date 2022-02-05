@@ -96,8 +96,8 @@ void simplify_inset(InsetState *inset_state,
   for (const auto &gd : inset_state->geo_divs()) {
     for (const auto &pwh : gd.polygons_with_holes()) {
       ct.insert_constraint(pwh.outer_boundary());
-      for (auto hi = pwh.holes_begin(); hi != pwh.holes_end(); ++hi) {
-        ct.insert_constraint(*hi);
+      for (auto h = pwh.holes_begin(); h != pwh.holes_end(); ++h) {
+        ct.insert_constraint(*h);
       }
     }
   }
@@ -135,8 +135,8 @@ void simplify_inset(InsetState *inset_state,
                                                      &simpl_bboxes,
                                                      &unmatched);
       matching_simpl_pgn.push_back(ext_index);
-      for (auto hi = pwh.holes_begin(); hi != pwh.holes_end(); ++hi) {
-        const int hole_index = simplified_polygon_index(*hi,
+      for (auto h = pwh.holes_begin(); h != pwh.holes_end(); ++h) {
+        const int hole_index = simplified_polygon_index(*h,
                                                         &simpl_pgns,
                                                         &simpl_bboxes,
                                                         &unmatched);
@@ -160,9 +160,9 @@ void simplify_inset(InsetState *inset_state,
     for (auto &pwh : *gd.ref_to_polygons_with_holes()) {
       const unsigned int match = matching_simpl_pgn[pgn_ctr++];
       pwh.outer_boundary() = simpl_pgns[match];
-      for (auto hi = pwh.holes_begin(); hi != pwh.holes_end(); ++hi) {
+      for (auto h = pwh.holes_begin(); h != pwh.holes_end(); ++h) {
         const unsigned int match = matching_simpl_pgn[pgn_ctr++];
-        *hi = simpl_pgns[match];
+        *h = simpl_pgns[match];
       }
     }
   }

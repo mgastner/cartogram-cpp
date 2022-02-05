@@ -22,10 +22,6 @@ Install llvm, pkg-config, boost, fftw, cgal, nlohmann-json, and cmake by running
 
     brew install llvm libomp pkg-config boost fftw cgal nlohmann-json cmake
 
-## Installation and Usage
-
-The instructions are the same for all systems.
-
 ### Debian-based Distributions (Ubuntu, Arch Linux etc.)
 
 #### Installing GNU gcc-11
@@ -83,13 +79,14 @@ For posterity: Once version 5.3 is available through apt (you may check [here](h
 
 Go to the `cartogram_cpp` directory in your preferred terminal and execute the following commands.
 
-    mkdir -p build && cd build && cmake ..
-    make
-    sudo make install
+    cmake -B build
+    make -C build
+    sudo make install -C build
 
 ### Troubleshooting
 
-- In case running `cmake .` gives you an error, it is likely that a dependency was not installed correctly. Rerun the appropriate commands above to install the required dependencies and try again.
+- If running `cmake -B build` gives you an error, it is likely that a dependency was not installed correctly. Rerun the appropriate commands above to install the required dependencies and try again.
+- If you get a error which mentions permission issues, try running the command that gave you the error with `sudo` prefixed, as done with `sudo make install -C build` above.
 
 ### Usage
 
@@ -104,11 +101,11 @@ _Note: use the `-h` flag to display more options._
 
 The CSV file should be in the following format:
 
-| NAME_1     | Data (eg: Population) | Color   |
-| :--------- | :-------------------- | :------ |
-| Bruxelles  | 1208542               | #e74c3c |
-| Vlaanderen | 6589069               | #f1c40f |
-| Wallonie   | 3633795               | #34495e |
+| NAME_1     | Data (e.g., Population) | Color   |
+|:-----------|:------------------------|:--------|
+| Bruxelles  | 1208542                 | #e74c3c |
+| Vlaanderen | 6589069                 | #f1c40f |
+| Wallonie   | 3633795                 | #34495e |
 
 -   `NAME_1` should be the same as the identifying property's name in the GeoJSON. The rows should also have the same data as is present in the identifying property.
 -   `Data` contains the data you would like your cartogram to based on.
@@ -122,9 +119,9 @@ The CSV file should be in the following format:
 
 ### Uninstallation
 
-Go to the `cartogram_cpp/build` directory in your preferred terminal and execute the following command:
+Go to the `cartogram_cpp` directory in your preferred terminal and execute the following command:
 
-    sudo make uninstall
+    sudo make uninstall -C build
 
 Upon successful uninstallation, the following will be outputted:
 

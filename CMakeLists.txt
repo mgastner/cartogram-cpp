@@ -32,18 +32,15 @@ add_executable(
   src/main.cpp
   src/geo_div.cpp
   src/cartogram_info.cpp
-  src/inset_state.cpp
   src/read_csv.cpp
   src/rescale_map.cpp
+  src/write_cairo.cpp
   src/write_eps.cpp
   src/colors.cpp
-  src/auto_color.cpp
   src/check_topology.cpp
   src/matrix.cpp
-  src/densify.cpp
-  src/densification_points.cpp
   src/read_geojson.cpp
-  src/fill_with_density.cpp
+  src/intersection.cpp
   src/blur_density.cpp
   src/flatten_density.cpp
   src/ft_real_2d.cpp
@@ -53,9 +50,11 @@ add_executable(
   src/write_geojson.cpp
   src/albers_projection.cpp
   src/parse_arguments.cpp
-  src/write_cairo.cpp
-  src/scanline_graph.cpp
-  src/intersection.cpp
+  src/inset_state/auto_color.cpp
+  src/inset_state/fill_with_density.cpp
+  src/inset_state/inset_state.cpp
+  src/inset_state/densify.cpp
+  src/inset_state/scanline_graph.cpp
 )
 
 # Linking appropriate libraries required.
