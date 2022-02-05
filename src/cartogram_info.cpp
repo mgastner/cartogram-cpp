@@ -22,13 +22,6 @@ double CartogramInfo::cart_total_target_area() const
   return area;
 }
 
-void CartogramInfo::gd_to_inset_insert(const std::string id,
-                                       const std::string inset)
-{
-  gd_to_inset_.insert(std::pair<std::string, std::string>(id, inset));
-  return;
-}
-
 const std::string CartogramInfo::id_header() const
 {
   return id_header_;
@@ -38,6 +31,13 @@ const std::set<std::string> CartogramInfo::ids_in_visual_variables_file()
 const
 {
   return ids_in_visual_variables_file_;
+}
+
+void CartogramInfo::insert_gd_into_inset(const std::string id,
+                                         const std::string inset)
+{
+  gd_to_inset_.insert(std::pair<std::string, std::string>(id, inset));
+  return;
 }
 
 void CartogramInfo::insert_id_in_visual_variables_file(const std::string id)
@@ -111,18 +111,13 @@ void CartogramInfo::replace_missing_and_zero_target_areas()
     auto &inset_state = inset_info.second;
     for (const auto &gd : inset_state.geo_divs()) {
       const double target_area = inset_state.target_area_at(gd.id());
-      if (target_area < 0.0) {
-        missing_target_area_exists = true;
-
-        // Insert true into an std::unordered_map that stores whether a
-        // GeoDiv's target area is missing
-        inset_state.is_input_target_area_missing_insert(gd.id(), true);
-      } else if (target_area <= small_target_area_threshold) {
+      inset_state.insert_whether_input_target_area_is_missing(
+        gd.id(),
+        target_area < 0.0);
+      if (target_area >= 0.0 && target_area <= small_target_area_threshold) {
         small_target_area_exists = true;
       }
 
-      // Insert false if the value does not already exist in the map
-      inset_state.is_input_target_area_missing_insert(gd.id(), false);
     }
   }
 

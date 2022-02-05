@@ -47,29 +47,6 @@ bool InsetState::colors_empty() const
   return colors_.empty();
 }
 
-void InsetState::colors_insert(const std::string id, const Color c)
-{
-  if (colors_.count(id)) {
-    colors_.erase(id);
-  }
-  colors_.insert(std::pair<std::string, Color>(id, c));
-  return;
-}
-
-void InsetState::colors_insert(const std::string id, std::string color)
-{
-  if (colors_.count(id)) {
-    colors_.erase(id);
-  }
-
-  // From https://stackoverflow.com/questions/313970/how-to-convert-stdstring-
-  // to-lower-case
-  std::transform(color.begin(), color.end(), color.begin(), ::tolower);
-  const Color c(color);
-  colors_.insert(std::pair<std::string, Color>(id, c));
-  return;
-}
-
 unsigned int InsetState::colors_size() const
 {
   return colors_.size();
@@ -116,6 +93,50 @@ void InsetState::initialize_cum_proj()
   }
 }
 
+void InsetState::insert_color(const std::string id, const Color c)
+{
+  if (colors_.count(id)) {
+    colors_.erase(id);
+  }
+  colors_.insert(std::pair<std::string, Color>(id, c));
+  return;
+}
+
+void InsetState::insert_color(const std::string id, std::string color)
+{
+  if (colors_.count(id)) {
+    colors_.erase(id);
+  }
+
+  // From https://stackoverflow.com/questions/313970/how-to-convert-stdstring-
+  // to-lower-case
+  std::transform(color.begin(), color.end(), color.begin(), ::tolower);
+  const Color c(color);
+  colors_.insert(std::pair<std::string, Color>(id, c));
+  return;
+}
+
+void InsetState::insert_label(const std::string id, const std::string label)
+{
+  labels_.insert(std::pair<std::string, std::string>(id, label));
+  return;
+}
+
+void InsetState::insert_target_area(const std::string id, const double area)
+{
+  target_areas_.insert(std::pair<std::string, double>(id, area));
+  return;
+}
+
+void InsetState::insert_whether_input_target_area_is_missing(
+  const std::string id,
+  const bool is_missing)
+{
+  is_input_target_area_missing_.insert(
+    std::pair<std::string, bool>(id, is_missing));
+  return;
+}
+
 const std::string InsetState::inset_name() const
 {
   return inset_name_;
@@ -124,14 +145,6 @@ const std::string InsetState::inset_name() const
 bool InsetState::is_input_target_area_missing(const std::string id) const
 {
   return is_input_target_area_missing_.at(id);
-}
-
-void InsetState::is_input_target_area_missing_insert(const std::string id,
-                                                     const bool is_missing)
-{
-  is_input_target_area_missing_.insert(
-    std::pair<std::string, bool>(id, is_missing));
-  return;
 }
 
 unsigned int InsetState::lx() const
@@ -329,12 +342,6 @@ double InsetState::target_area_at(const std::string id) const
   return target_areas_.at(id);
 }
 
-void InsetState::target_areas_insert(const std::string id, const double area)
-{
-  target_areas_.insert(std::pair<std::string, double>(id, area));
-  return;
-}
-
 void InsetState::target_areas_replace(const std::string id, const double area)
 {
   target_areas_[id] = area;
@@ -365,10 +372,4 @@ std::string InsetState::label_at(const std::string id) const
     return "";
   }
   return labels_.at(id);
-}
-
-void InsetState::labels_insert(const std::string id, const std::string label)
-{
-  labels_.insert(std::pair<std::string, std::string>(id, label));
-  return;
 }

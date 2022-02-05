@@ -150,7 +150,7 @@ void read_csv(argparse::ArgumentParser arguments,
     }
 
     // Associate GeoDiv ID with inset positon
-    cart_info->gd_to_inset_insert(id, inset_pos);
+    cart_info->insert_gd_into_inset(id, inset_pos);
 
     // Create inset_state for inset_pos unless it already exists
     if (!inset_pos_set.contains(inset_pos)) {
@@ -163,12 +163,12 @@ void read_csv(argparse::ArgumentParser arguments,
     std::map<std::string, InsetState> *inset_states =
       cart_info->ref_to_inset_states();
     InsetState *inset_state = &inset_states->at(inset_pos);
-    inset_state->target_areas_insert(id, area);
+    inset_state->insert_target_area(id, area);
     if (color != "") {
-      inset_state->colors_insert(id, color);
+      inset_state->insert_color(id, color);
     }
     if (label != "") {
-      inset_state->labels_insert(id, label);
+      inset_state->insert_label(id, label);
     }
   }
   return;

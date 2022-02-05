@@ -53,7 +53,7 @@ void InsetState::auto_color()
 
         // Assign color if it is not shared with any adjacent GeoDiv
         if (!shared_color) {
-          colors_insert(gd.id(), c);
+          insert_color(gd.id(), c);
           i = palette.size();
         }
       }
