@@ -40,7 +40,6 @@ void InsetState::fill_with_density(bool plot_density)
   // - rho_den is the sum of the weights of a ray that is inside a GeoDiv.
   // The weight of a segment of a ray that is inside a GeoDiv is equal to
   // (length of the segment inside the geo_div) * (area error of the geodiv).
-
   // Iterate over each of the rays between the graticule lines y = k and
   // y = k+1
   for (unsigned int k = 0; k < ly_; ++k) {
