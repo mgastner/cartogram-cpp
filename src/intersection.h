@@ -30,15 +30,19 @@ class intersection {
 
   double x() const;
   double y() const;
-  bool ray_intersects(XYPoint, XYPoint, double, double, double);
+  bool ray_intersects(XYPoint,
+                      XYPoint,
+                      const double,
+                      const double,
+                      const double);
 };
 
 void add_intersections(std::vector<intersection> &,
-                       Polygon,
-                       double,
-                       double,
-                       double,
-                       std::string,
-                       char);
+                       const Polygon,
+                       const double,
+                       const double,
+                       const double,
+                       const std::string,
+                       const char);
 
 #endif

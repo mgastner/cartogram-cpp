@@ -8,7 +8,7 @@ intersection::intersection(bool side) :
 }
 
 intersection::intersection() :
-  is_x(true),     // Assume x if not explicitly declared
+  is_x(true),  // Assume x if not explicitly declared
   ray_enters(false)  // Temporary value
 {
   return;
@@ -22,11 +22,14 @@ double intersection::y() const {
   return coord;
 }
 
+// TODO: THE NAME ray_intersects() SOUNDS AS IF THE FUNCTION ONLY RETURNS A
+// boolean ANSWER. HOWEVER, IT ALSO SETS coord AND target_density. IS IT
+// POSSIBLE TO MOVE THE SIDE EFFECTS INTO SEPARATE FUNCTIONS?
 bool intersection::ray_intersects(XYPoint a,
                                   XYPoint b,
-                                  double ray,
-                                  double td,
-                                  double epsilon)
+                                  const double ray,
+                                  const double td,
+                                  const double epsilon)
 {
   // Flip coordinates if rays are in y-direction. The formulae below are the
   // same, except that x is replaced with y and vice versa.
@@ -48,7 +51,7 @@ bool intersection::ray_intersects(XYPoint a,
       b.y += epsilon;
     }
 
-    // Edit intersection passed by reference. coord stores the x coordinate.
+    // Edit intersection passed by reference. coord stores the x-coordinate.
     target_density = td;
     coord = (a.x * (b.y - ray) + b.x * (ray - a.y)) / (b.y - a.y);
     return true;
@@ -59,25 +62,21 @@ bool intersection::ray_intersects(XYPoint a,
 // This function adds intersections between a ray and a polygon to
 // `intersections`
 void add_intersections(std::vector<intersection> &intersections,
-                       Polygon pgn,
-                       double ray,
-                       double target_density,
-                       double epsilon,
-                       std::string gd_id,
-                       char axis)
+                       const Polygon pgn,
+                       const double ray,
+                       const double target_density,
+                       const double epsilon,
+                       const std::string gd_id,
+                       const char axis)
 {
   if (axis != 'x' && axis != 'y') {
     std::cerr << "Invalid axis in add_intersections()"
               << std::endl;
     exit(984321);
   }
-  XYPoint prev_point;
-  prev_point.x = pgn[pgn.size()-1].x();
-  prev_point.y = pgn[pgn.size()-1].y();
-  for (unsigned int l = 0; l < pgn.size(); ++l) {
-    XYPoint curr_point;
-    curr_point.x = pgn[l].x();
-    curr_point.y = pgn[l].y();
+  XYPoint prev_point(pgn[pgn.size()-1].x(), pgn[pgn.size()-1].y());
+  for (unsigned int p = 0; p < pgn.size(); ++p) {
+    const XYPoint curr_point(pgn[p].x(), pgn[p].y());
     intersection temp(axis == 'x');
     if (temp.ray_intersects(curr_point,
                             prev_point,
