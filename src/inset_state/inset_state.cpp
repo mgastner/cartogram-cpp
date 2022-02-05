@@ -170,11 +170,6 @@ void InsetState::make_fftw_plans_for_rho()
   return;
 }
 
-double InsetState::map_scale() const
-{
-  return map_scale_;
-}
-
 struct max_area_error_info InsetState::max_area_error() const
 {
   double value = -dbl_inf;
@@ -186,16 +181,6 @@ struct max_area_error_info InsetState::max_area_error() const
     }
   }
   return {value, worst_gd};
-}
-
-unsigned int InsetState::new_xmin() const
-{
-  return new_xmin_;
-}
-
-unsigned int InsetState::new_ymin() const
-{
-  return new_ymin_;
 }
 
 unsigned int InsetState::n_finished_integrations() const
@@ -268,6 +253,12 @@ FTReal2d *InsetState::ref_to_rho_init()
   return &rho_init_;
 }
 
+void InsetState::replace_target_area(const std::string id, const double area)
+{
+  target_areas_[id] = area;
+  return;
+}
+
 void InsetState::set_area_errors()
 {
   // Formula for relative area error:
@@ -307,27 +298,9 @@ void InsetState::set_inset_name(const std::string inset_name)
   return;
 }
 
-void InsetState::set_map_scale(const double map_scale)
-{
-  map_scale_ = map_scale;
-  return;
-}
-
 void InsetState::set_pos(const std::string pos)
 {
   pos_ = pos;
-  return;
-}
-
-void InsetState::set_xmin(const unsigned int new_xmin)
-{
-  new_xmin_ = new_xmin;
-  return;
-}
-
-void InsetState::set_ymin(const unsigned int new_ymin)
-{
-  new_ymin_ = new_ymin;
   return;
 }
 
@@ -340,12 +313,6 @@ bool InsetState::target_area_is_missing(const std::string id) const
 double InsetState::target_area_at(const std::string id) const
 {
   return target_areas_.at(id);
-}
-
-void InsetState::target_areas_replace(const std::string id, const double area)
-{
-  target_areas_[id] = area;
-  return;
 }
 
 double InsetState::total_inset_area() const

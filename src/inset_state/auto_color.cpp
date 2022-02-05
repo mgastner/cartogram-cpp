@@ -34,7 +34,7 @@ void InsetState::auto_color()
   int max_i = palette.size();
 
   // Iterating until we are able to color the entire map
-  while (colors_size() < n_geo_divs() && max_i >= 0) {
+  while (colors_.size() < n_geo_divs() && max_i >= 0) {
     for (const auto &gd : geo_divs_) {
 
       // Iterating over all possible colors

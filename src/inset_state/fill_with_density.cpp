@@ -140,7 +140,7 @@ void InsetState::fill_with_density(bool plot_density)
   }
   if (plot_density) {
     std::string file_name =
-      inset_name() +
+      inset_name_ +
       "_unblurred_density_" +
       std::to_string(n_finished_integrations()) +
       ".eps";

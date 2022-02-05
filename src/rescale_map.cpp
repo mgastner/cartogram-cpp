@@ -65,11 +65,6 @@ void rescale_map(unsigned int max_n_graticule_rows_or_cols,
       }
     }
   }
-
-  // Storing coordinates to rescale in future
-  inset_state->set_xmin(new_xmin);
-  inset_state->set_ymin(new_ymin);
-  inset_state->set_map_scale(latt_const);
   return;
 }
 

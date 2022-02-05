@@ -158,7 +158,7 @@ void CartogramInfo::replace_missing_and_zero_target_areas()
         const double target_area = inset_state.target_area_at(gd.id());
         if ((target_area >= 0.0) &&
             (target_area <= small_target_area_threshold)) {
-          inset_state.target_areas_replace(gd.id(), replacement_target_area);
+          inset_state.replace_target_area(gd.id(), replacement_target_area);
           std::cerr << gd.id() << ": "
                     << target_area << " to " << replacement_target_area
                     << std::endl;
@@ -192,7 +192,7 @@ void CartogramInfo::replace_missing_and_zero_target_areas()
               (total_target_area_with_data / total_start_area_with_data);
             new_target_area = mean_density * gd.area();
           }
-          inset_state.target_areas_replace(gd.id(), new_target_area);
+          inset_state.replace_target_area(gd.id(), new_target_area);
         }
       }
     }
