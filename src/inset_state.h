@@ -44,9 +44,6 @@ private:
   FTReal2d rho_init_, rho_ft_;
   std::unordered_map<std::string, double> target_areas_;
 
-  // Vertical adjacency graph
-  std::vector<std::vector<intersection> > vertical_adj_;
-
   // Make default contructor private so that only
   // InsetState(const std::string) can be called as constructor
   InsetState();
