@@ -114,15 +114,18 @@ Point GeoDiv::point_on_surface_of_polygon_with_holes(
 
   // Assign directions (i.e., whether the line is entering or leaving the
   // polygon with holes)
-  for (unsigned int l = 0; l < intersections.size(); ++l) {
-    intersections[l].ray_enters = (l%2 == 0);
+  for (unsigned int i = 0; i < intersections.size(); ++i) {
+    intersections[i].ray_enters = (i%2 == 0);
   }
 
+  // TODO: USING target_density WHEN WE REALLY MEAN LINE LENGTH FEELS LIKE A
+  // BAD HACK. SHOULD WE RENAME THE DATA MEMBER target_density TO
+  // value_in_geo_div?
   // Assign length of line segments using the target_density property of
   // intersections for line segment lengths
-  for (unsigned int l = 0; l < intersections.size(); l += 2) {
-    intersections[l].target_density =
-      intersections[l + 1].x() - intersections[l].x();
+  for (unsigned int i = 0; i < intersections.size(); i += 2) {
+    intersections[i].target_density =
+      intersections[i + 1].x() - intersections[i].x();
   }
 
   // Find midpoint in maximum segment length
@@ -130,11 +133,11 @@ Point GeoDiv::point_on_surface_of_polygon_with_holes(
   XYPoint midpoint;
 
   // Iterate over lengths
-  for (unsigned int l = 0; l < intersections.size(); l += 2) { \
-    if (intersections[l].target_density > max_length) {
-      const double left = intersections[l].x();
-      const double right = intersections[l + 1].x();
-      max_length = intersections[l].target_density;
+  for (unsigned int i = 0; i < intersections.size(); i += 2) { \
+    if (intersections[i].target_density > max_length) {
+      const double left = intersections[i].x();
+      const double right = intersections[i + 1].x();
+      max_length = intersections[i].target_density;
       midpoint.x = (right + left) / 2;
     }
   }
