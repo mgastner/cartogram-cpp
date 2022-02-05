@@ -94,7 +94,7 @@ void CartogramInfo::replace_missing_and_zero_target_areas()
     for (const auto &gd : inset_state.geo_divs()) {
       if (!inset_state.target_area_is_missing(gd.id())) {
         total_start_area_with_data += gd.area();
-        total_target_area_with_data += inset_state.target_areas_at(gd.id());
+        total_target_area_with_data += inset_state.target_area_at(gd.id());
       }
     }
   }
@@ -110,7 +110,7 @@ void CartogramInfo::replace_missing_and_zero_target_areas()
   for (auto &inset_info : inset_states_) {
     auto &inset_state = inset_info.second;
     for (const auto &gd : inset_state.geo_divs()) {
-      const double target_area = inset_state.target_areas_at(gd.id());
+      const double target_area = inset_state.target_area_at(gd.id());
       if (target_area < 0.0) {
         missing_target_area_exists = true;
 
@@ -160,7 +160,7 @@ void CartogramInfo::replace_missing_and_zero_target_areas()
       for (const auto &gd : inset_state.geo_divs()) {
 
         // Current target area
-        const double target_area = inset_state.target_areas_at(gd.id());
+        const double target_area = inset_state.target_area_at(gd.id());
         if ((target_area >= 0.0) &&
             (target_area <= small_target_area_threshold)) {
           inset_state.target_areas_replace(gd.id(), replacement_target_area);

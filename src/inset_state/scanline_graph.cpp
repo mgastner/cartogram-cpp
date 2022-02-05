@@ -2,10 +2,16 @@
 #include "../constants.h"
 
 std::vector<std::vector<intersection> >
-  InsetState::scanlines_parallel_to_axis(bool is_x_axis,
-                                         unsigned int resolution) const
+InsetState::intersections_with_rays_parallel_to_axis(
+  char axis,
+  unsigned int resolution) const
 {
-  unsigned int grid_length = is_x_axis ? ly() : lx();
+  if (axis != 'x' && axis != 'y') {
+    std::cerr << "Invalid axis in intersections_with_rays_parallel_to_axis()"
+              << std::endl;
+    exit(984320);
+  }
+  unsigned int grid_length = (axis == 'x' ? ly_ : lx_);
   unsigned int n_rays = grid_length * resolution;
   std::vector<std::vector<intersection> > scanlines(n_rays);
 
@@ -19,7 +25,7 @@ std::vector<std::vector<intersection> >
     for (const auto &pwh : gd.polygons_with_holes()) {
       Bbox bb = pwh.bbox();
       double min_lim, max_lim;
-      if (is_x_axis) {
+      if (axis == 'x') {
         min_lim = bb.ymin();
         max_lim = bb.ymax();
       } else {
@@ -60,7 +66,7 @@ std::vector<std::vector<intersection> >
                             target_density,
                             epsilon,
                             gd.id(),
-                            is_x_axis);
+                            axis);
 
           // Run algorithm on each hole
           for (auto h = pwh.holes_begin(); h != pwh.holes_end(); ++h) {
@@ -70,22 +76,26 @@ std::vector<std::vector<intersection> >
                               target_density,
                               epsilon,
                               gd.id(),
-                              is_x_axis);
+                              axis);
           }
 
           // Check whether the number of intersections is odd
           if (intersections.size() % 2 != 0) {
-            std::cerr << "Incorrect Topology." << std::endl;
-            std::cerr << "Number of intersections: " << intersections.size();
-            std::cerr << std::endl;
-            std::cerr << (is_x_axis ? "X" : "Y");
-            std:: cerr << "-coordinate: " << ray << std::endl;
-            std::cerr << "Intersection points: " << std::endl;
+            std::cerr << "Incorrect Topology.\n"
+                      << "Number of intersections: "
+                      << intersections.size()
+                      << "\n"
+                      << axis
+                      << "-coordinate: "
+                      << ray
+                      << "\n"
+                      << "Intersection points: "
+                      << std::endl;
 
             for (unsigned int l = 0; l < intersections.size(); ++l) {
-              std::cerr <<
-                (is_x_axis ? intersections[l].x() : intersections[l].y())
-                        << std::endl;
+              std::cerr
+                << (axis == 'x' ? intersections[l].x() : intersections[l].y())
+                << std::endl;
             }
             std::cerr << std::endl << std::endl;
             _Exit(932875);
@@ -110,10 +120,10 @@ std::vector<std::vector<intersection> >
 void InsetState::create_contiguity_graph(unsigned int resolution)
 {
   // Calculate horizontal and vertical scanlines
-  for (bool is_x_axis : {true, false}) {
+  for (char axis : {'x', 'y'}) {
     std::vector<std::vector<intersection> > scanlines =
-      scanlines_parallel_to_axis(is_x_axis, resolution);
-    unsigned int max_k = is_x_axis ? ly() : lx();
+      intersections_with_rays_parallel_to_axis(axis, resolution);
+    unsigned int max_k = (axis == 'x' ? ly_ : lx_);
 
     // Iterate over rows (if is_x_axis) or columns
     for (unsigned int k = 0; k < max_k; ++k) {
@@ -156,13 +166,13 @@ void InsetState::create_contiguity_graph(unsigned int resolution)
 
 // Returns line segments highlighting intersection points using scans above
 const std::vector<Segment>
-  InsetState::intersecting_segments(unsigned int resolution) const
+InsetState::intersecting_segments(unsigned int resolution) const
 {
   std::vector<Segment> int_segments;
-  for (bool is_x_axis : {true, false}) {
+  for (char axis : {'x', 'y'}) {
     std::vector<std::vector<intersection> > scanlines =
-      scanlines_parallel_to_axis(is_x_axis, resolution);
-    unsigned int max_k = is_x_axis ? ly() : lx();
+      intersections_with_rays_parallel_to_axis(axis, resolution);
+    unsigned int max_k = (axis == 'x' ? ly_ : lx_);
 
     // Iterate over rows (if is_x_axis) or columns
     for (unsigned int k = 0; k < max_k; ++k) {
@@ -185,18 +195,18 @@ const std::vector<Segment>
               intersections[l].ray_enters &&
               l + 2 <= intersections.size()) {
             Segment temp;
-            if (is_x_axis &&
+            if (axis == 'x' &&
                 intersections[l + 1].x() != intersections[l + 2].x()) {
               temp = Segment(
-                             Point(intersections[l + 1].x(), ray),
-                             Point(intersections[l + 2].x(), ray)
-                             );
+                Point(intersections[l + 1].x(), ray),
+                Point(intersections[l + 2].x(), ray)
+                );
               int_segments.push_back(temp);
             } else if (intersections[l + 1].y() != intersections[l + 2].y()) {
               temp = Segment(
-                             Point(ray, intersections[l + 1].y()),
-                             Point(ray, intersections[l + 2].y())
-                             );
+                Point(ray, intersections[l + 1].y()),
+                Point(ray, intersections[l + 2].y())
+                );
               int_segments.push_back(temp);
             }
           }

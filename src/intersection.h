@@ -39,6 +39,6 @@ void add_intersections(std::vector<intersection> &,
                        double,
                        double,
                        std::string,
-                       bool);
+                       char);
 
 #endif

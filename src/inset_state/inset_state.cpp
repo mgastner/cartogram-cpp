@@ -7,7 +7,7 @@ InsetState::InsetState(std::string pos) : pos_(pos)
   return;
 }
 
-double InsetState::area_errors_at(const std::string id) const
+double InsetState::area_error_at(const std::string id) const
 {
   return area_errors_.at(id);
 }
@@ -37,7 +37,7 @@ bool InsetState::color_found(const std::string id) const
   return colors_.count(id);
 }
 
-const Color InsetState::colors_at(const std::string id) const
+const Color InsetState::color_at(const std::string id) const
 {
   return colors_.at(id);
 }
@@ -262,12 +262,12 @@ void InsetState::set_area_errors()
   double sum_target_area = 0.0;
   double sum_cart_area = 0.0;
   for (const auto &gd : geo_divs_) {
-    sum_target_area += target_areas_at(gd.id());
+    sum_target_area += target_area_at(gd.id());
     sum_cart_area += gd.area();
   }
   for (const auto &gd : geo_divs_) {
     const double obj_area =
-      target_areas_at(gd.id()) * sum_cart_area / sum_target_area;
+      target_area_at(gd.id()) * sum_cart_area / sum_target_area;
     area_errors_[gd.id()] = std::abs((gd.area() / obj_area) - 1);
   }
   return;
@@ -324,7 +324,7 @@ bool InsetState::target_area_is_missing(const std::string id) const
   return target_areas_.at(id) < 0.0;
 }
 
-double InsetState::target_areas_at(const std::string id) const
+double InsetState::target_area_at(const std::string id) const
 {
   return target_areas_.at(id);
 }
@@ -359,7 +359,7 @@ double InsetState::total_target_area() const
   return inset_total_target_area;
 }
 
-std::string InsetState::labels_at(const std::string id) const
+std::string InsetState::label_at(const std::string id) const
 {
   if (labels_.find(id) == labels_.end()) {
     return "";

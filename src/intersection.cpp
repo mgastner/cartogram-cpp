@@ -64,8 +64,13 @@ void add_intersections(std::vector<intersection> &intersections,
                        double target_density,
                        double epsilon,
                        std::string gd_id,
-                       bool is_x_axis)
+                       char axis)
 {
+  if (axis != 'x' && axis != 'y') {
+    std::cerr << "Invalid axis in add_intersections()"
+              << std::endl;
+    exit(984321);
+  }
   XYPoint prev_point;
   prev_point.x = pgn[pgn.size()-1].x();
   prev_point.y = pgn[pgn.size()-1].y();
@@ -73,7 +78,7 @@ void add_intersections(std::vector<intersection> &intersections,
     XYPoint curr_point;
     curr_point.x = pgn[l].x();
     curr_point.y = pgn[l].y();
-    intersection temp(is_x_axis);
+    intersection temp(axis == 'x');
     if (temp.ray_intersects(curr_point,
                             prev_point,
                             ray,

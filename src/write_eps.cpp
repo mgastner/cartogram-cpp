@@ -96,7 +96,7 @@ void write_polygons_to_eps(std::ofstream &eps_file,
         } else if (colors) {
 
           // Get color
-          Color col = inset_state->colors_at(gd.id());
+          Color col = inset_state->color_at(gd.id());
 
           // Fill path
           eps_file << col.eps() << "srgb f\n";

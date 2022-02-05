@@ -109,7 +109,7 @@ Point GeoDiv::point_on_surface_of_polygon_with_holes(
                     0,
                     epsilon,
                     id_,
-                    true);
+                    'x');
   std::sort(intersections.begin(), intersections.end());
 
   // Assign directions (i.e., whether the line is entering or leaving the

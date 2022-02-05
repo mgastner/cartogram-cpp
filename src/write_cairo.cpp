@@ -97,7 +97,7 @@ void write_polygon_to_cairo_surface(cairo_t *cr,
         } else if (colors) {
 
           // Get color
-          const Color col = inset_state->colors_at(gd.id());
+          const Color col = inset_state->color_at(gd.id());
 
           // Fill path
           cairo_set_source_rgb(cr,
@@ -118,7 +118,7 @@ void write_polygon_to_cairo_surface(cairo_t *cr,
 
   // Add labels
   for (const auto &gd : inset_state->geo_divs()) {
-    const std::string label = inset_state->labels_at(gd.id());
+    const std::string label = inset_state->label_at(gd.id());
     const char* label_char = label.c_str();
 
     // Go to a specific coordinate to place the label

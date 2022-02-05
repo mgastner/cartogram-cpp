@@ -45,7 +45,7 @@ void InsetState::auto_color()
         // Check whether adjacent GeoDivs have the same color
         for (const auto &gd_id : gd.adjacent_geodivs()) {
           if (color_found(gd_id)) {
-            if (colors_at(gd_id) == c) {
+            if (color_at(gd_id) == c) {
               shared_color = true;
             }
           }

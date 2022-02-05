@@ -54,10 +54,10 @@ private:
 
 public:
   explicit InsetState(const std::string);  // Constructor
-  double area_errors_at(const std::string) const;
+  double area_error_at(const std::string) const;
   void auto_color();  // Automatically color GeoDivs
   Bbox bbox() const;
-  const Color colors_at(const std::string) const;
+  const Color color_at(const std::string) const;
   bool colors_empty() const;
   bool color_found(const std::string) const;
   void colors_insert(const std::string, const Color);
@@ -76,9 +76,11 @@ public:
   void initialize_cum_proj();
   const std::string inset_name() const;
   const std::vector<Segment> intersecting_segments(unsigned int) const;
+  std::vector<std::vector<intersection> >
+    intersections_with_rays_parallel_to_axis(char, unsigned int) const;
   bool is_input_target_area_missing(const std::string) const;
   void is_input_target_area_missing_insert(const std::string, const bool);
-  std::string labels_at(const std::string) const;
+  std::string label_at(const std::string) const;
   void labels_insert(const std::string, const std::string);
   unsigned int lx() const;
   unsigned int ly() const;
@@ -100,8 +102,6 @@ public:
   boost::multi_array<XYPoint, 2> *ref_to_proj();
   FTReal2d *ref_to_rho_ft();
   FTReal2d *ref_to_rho_init();
-  std::vector<std::vector<intersection> >
-    scanlines_parallel_to_axis(bool, unsigned int) const;
   void set_area_errors();
   void set_geo_divs(const std::vector<GeoDiv>);
   void set_grid_dimensions(const unsigned int, const unsigned int);
@@ -111,7 +111,7 @@ public:
   void set_xmin(const unsigned int);
   void set_ymin(const unsigned int);
   bool target_area_is_missing(const std::string) const;
-  double target_areas_at(const std::string) const;
+  double target_area_at(const std::string) const;
   void target_areas_insert(const std::string, const double);
   void target_areas_replace(const std::string, const double);
   double total_inset_area() const;
