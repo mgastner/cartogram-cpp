@@ -28,8 +28,7 @@ Bbox InsetState::bbox() const
       inset_ymax = std::max(bb.ymax(), inset_ymax);
     }
   }
-  Bbox inset_bb(inset_xmin, inset_ymin, inset_xmax, inset_ymax);
-  return inset_bb;
+  return Bbox(inset_xmin, inset_ymin, inset_xmax, inset_ymax);;
 }
 
 bool InsetState::color_found(const std::string id) const
@@ -266,12 +265,12 @@ void InsetState::set_area_errors()
   double sum_target_area = 0.0;
   double sum_cart_area = 0.0;
   for (const auto &gd : geo_divs_) {
-    sum_target_area += target_area_at(gd.id());
+    sum_target_area += target_areas_.at(gd.id());
     sum_cart_area += gd.area();
   }
   for (const auto &gd : geo_divs_) {
     const double obj_area =
-      target_area_at(gd.id()) * sum_cart_area / sum_target_area;
+      target_areas.at(gd.id()) * sum_cart_area / sum_target_area;
     area_errors_[gd.id()] = std::abs((gd.area() / obj_area) - 1);
   }
   return;

@@ -6,7 +6,7 @@ void InsetState::create_contiguity_graph()
   // Assign integers to GeoDivs
   std::map<std::string, unsigned int> int_at_gd;
   size_t i = 0;
-  for (const auto &gd : geo_divs()) {
+  for (const auto &gd : geo_divs_) {
     int_at_gd[gd.id()] = i;
     i++;
   }
@@ -14,7 +14,7 @@ void InsetState::create_contiguity_graph()
   // For all points in the inset, determine which GeoDivs have this point in
   // their boundaries
   std::map<Point, std::vector<unsigned int> > gds_at_point;
-  for (const auto &gd : geo_divs()) {
+  for (const auto &gd : geo_divs_) {
     const auto gd_as_int = int_at_gd.at(gd.id());
     for (const auto &pwh : gd.polygons_with_holes()) {
       for (const auto &p : pwh.outer_boundary()) {
