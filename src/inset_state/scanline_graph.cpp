@@ -129,7 +129,7 @@ void InsetState::create_contiguity_graph(unsigned int resolution)
       intersections_with_rays_parallel_to_axis(axis, resolution);
     const unsigned int grid_length = (axis == 'x' ? ly_ : lx_);
 
-    // Iterate over rows (if is_x_axis) or columns
+    // Iterate over rows (if axis is 'x') or columns
     for (unsigned int k = 0; k < grid_length; ++k) {
 
       // Iterate over rays in this row or column
@@ -178,7 +178,7 @@ InsetState::intersecting_segments(unsigned int resolution) const
       intersections_with_rays_parallel_to_axis(axis, resolution);
     const unsigned int grid_length = (axis == 'x' ? ly_ : lx_);
 
-    // Iterate over rows (if is_x_axis) or columns
+    // Iterate over rows (if axis is 'x') or columns
     for (unsigned int k = 0; k < grid_length; ++k) {
 
       // Iterate over rays in this row or column
