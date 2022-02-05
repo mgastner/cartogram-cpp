@@ -1,5 +1,5 @@
-#include "inset_state.h"
-#include "constants.h"
+#include "../inset_state.h"
+#include "../constants.h"
 
 InsetState::InsetState(std::string pos) : pos_(pos)
 {
@@ -7,7 +7,7 @@ InsetState::InsetState(std::string pos) : pos_(pos)
   return;
 }
 
-double InsetState::area_errors_at(const std::string id) const
+double InsetState::area_error_at(const std::string id) const
 {
   return area_errors_.at(id);
 }
@@ -21,7 +21,7 @@ Bbox InsetState::bbox() const
   double inset_ymax = -dbl_inf;
   for (const auto &gd : geo_divs_) {
     for (const auto &pwh : gd.polygons_with_holes()) {
-      const Bbox bb = pwh.bbox();
+      const auto bb = pwh.bbox();
       inset_xmin = std::min(bb.xmin(), inset_xmin);
       inset_ymin = std::min(bb.ymin(), inset_ymin);
       inset_xmax = std::max(bb.xmax(), inset_xmax);
@@ -37,7 +37,7 @@ bool InsetState::color_found(const std::string id) const
   return colors_.count(id);
 }
 
-const Color InsetState::colors_at(const std::string id) const
+const Color InsetState::color_at(const std::string id) const
 {
   return colors_.at(id);
 }
@@ -45,29 +45,6 @@ const Color InsetState::colors_at(const std::string id) const
 bool InsetState::colors_empty() const
 {
   return colors_.empty();
-}
-
-void InsetState::colors_insert(const std::string id, const Color c)
-{
-  if (colors_.count(id)) {
-    colors_.erase(id);
-  }
-  colors_.insert(std::pair<std::string, Color>(id, c));
-  return;
-}
-
-void InsetState::colors_insert(const std::string id, std::string color)
-{
-  if (colors_.count(id)) {
-    colors_.erase(id);
-  }
-
-  // From https://stackoverflow.com/questions/313970/how-to-convert-stdstring-
-  // to-lower-case
-  std::transform(color.begin(), color.end(), color.begin(), ::tolower);
-  const Color c(color);
-  colors_.insert(std::pair<std::string, Color>(id, c));
-  return;
 }
 
 unsigned int InsetState::colors_size() const
@@ -116,6 +93,50 @@ void InsetState::initialize_cum_proj()
   }
 }
 
+void InsetState::insert_color(const std::string id, const Color c)
+{
+  if (colors_.count(id)) {
+    colors_.erase(id);
+  }
+  colors_.insert(std::pair<std::string, Color>(id, c));
+  return;
+}
+
+void InsetState::insert_color(const std::string id, std::string color)
+{
+  if (colors_.count(id)) {
+    colors_.erase(id);
+  }
+
+  // From https://stackoverflow.com/questions/313970/how-to-convert-stdstring-
+  // to-lower-case
+  std::transform(color.begin(), color.end(), color.begin(), ::tolower);
+  const Color c(color);
+  colors_.insert(std::pair<std::string, Color>(id, c));
+  return;
+}
+
+void InsetState::insert_label(const std::string id, const std::string label)
+{
+  labels_.insert(std::pair<std::string, std::string>(id, label));
+  return;
+}
+
+void InsetState::insert_target_area(const std::string id, const double area)
+{
+  target_areas_.insert(std::pair<std::string, double>(id, area));
+  return;
+}
+
+void InsetState::insert_whether_input_target_area_is_missing(
+  const std::string id,
+  const bool is_missing)
+{
+  is_input_target_area_missing_.insert(
+    std::pair<std::string, bool>(id, is_missing));
+  return;
+}
+
 const std::string InsetState::inset_name() const
 {
   return inset_name_;
@@ -124,14 +145,6 @@ const std::string InsetState::inset_name() const
 bool InsetState::is_input_target_area_missing(const std::string id) const
 {
   return is_input_target_area_missing_.at(id);
-}
-
-void InsetState::is_input_target_area_missing_insert(const std::string id,
-                                                     const bool is_missing)
-{
-  is_input_target_area_missing_.insert(
-    std::pair<std::string, bool>(id, is_missing));
-  return;
 }
 
 unsigned int InsetState::lx() const
@@ -157,11 +170,6 @@ void InsetState::make_fftw_plans_for_rho()
   return;
 }
 
-double InsetState::map_scale() const
-{
-  return map_scale_;
-}
-
 struct max_area_error_info InsetState::max_area_error() const
 {
   double value = -dbl_inf;
@@ -173,16 +181,6 @@ struct max_area_error_info InsetState::max_area_error() const
     }
   }
   return {value, worst_gd};
-}
-
-unsigned int InsetState::new_xmin() const
-{
-  return new_xmin_;
-}
-
-unsigned int InsetState::new_ymin() const
-{
-  return new_ymin_;
 }
 
 unsigned int InsetState::n_finished_integrations() const
@@ -255,6 +253,12 @@ FTReal2d *InsetState::ref_to_rho_init()
   return &rho_init_;
 }
 
+void InsetState::replace_target_area(const std::string id, const double area)
+{
+  target_areas_[id] = area;
+  return;
+}
+
 void InsetState::set_area_errors()
 {
   // Formula for relative area error:
@@ -262,12 +266,12 @@ void InsetState::set_area_errors()
   double sum_target_area = 0.0;
   double sum_cart_area = 0.0;
   for (const auto &gd : geo_divs_) {
-    sum_target_area += target_areas_at(gd.id());
+    sum_target_area += target_area_at(gd.id());
     sum_cart_area += gd.area();
   }
   for (const auto &gd : geo_divs_) {
     const double obj_area =
-      target_areas_at(gd.id()) * sum_cart_area / sum_target_area;
+      target_area_at(gd.id()) * sum_cart_area / sum_target_area;
     area_errors_[gd.id()] = std::abs((gd.area() / obj_area) - 1);
   }
   return;
@@ -294,27 +298,9 @@ void InsetState::set_inset_name(const std::string inset_name)
   return;
 }
 
-void InsetState::set_map_scale(const double map_scale)
-{
-  map_scale_ = map_scale;
-  return;
-}
-
 void InsetState::set_pos(const std::string pos)
 {
   pos_ = pos;
-  return;
-}
-
-void InsetState::set_xmin(const unsigned int new_xmin)
-{
-  new_xmin_ = new_xmin;
-  return;
-}
-
-void InsetState::set_ymin(const unsigned int new_ymin)
-{
-  new_ymin_ = new_ymin;
   return;
 }
 
@@ -324,21 +310,9 @@ bool InsetState::target_area_is_missing(const std::string id) const
   return target_areas_.at(id) < 0.0;
 }
 
-double InsetState::target_areas_at(const std::string id) const
+double InsetState::target_area_at(const std::string id) const
 {
   return target_areas_.at(id);
-}
-
-void InsetState::target_areas_insert(const std::string id, const double area)
-{
-  target_areas_.insert(std::pair<std::string, double>(id, area));
-  return;
-}
-
-void InsetState::target_areas_replace(const std::string id, const double area)
-{
-  target_areas_[id] = area;
-  return;
 }
 
 double InsetState::total_inset_area() const
@@ -357,4 +331,12 @@ double InsetState::total_target_area() const
     inset_total_target_area += geo_div_target_area.second;
   }
   return inset_total_target_area;
+}
+
+std::string InsetState::label_at(const std::string id) const
+{
+  if (labels_.find(id) == labels_.end()) {
+    return "";
+  }
+  return labels_.at(id);
 }

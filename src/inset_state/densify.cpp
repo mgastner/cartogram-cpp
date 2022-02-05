@@ -1,8 +1,17 @@
 #include "../inset_state.h"
 #include "../constants.h"
 
-// Determine whether points are indistinguishable using machine epsilon.
-// See "../cgal_typedef.h"
+// Use machine epsilon (defined in constants.h) to get almost equal doubles.
+// From https://en.cppreference.com/w/cpp/types/numeric_limits/epsilon
+bool almost_equal(double a, double b) {
+  return abs(a - b) <= dbl_epsilon * abs(a + b) * 2;
+}
+
+// Determine whether points are indistinguishable
+bool points_almost_equal(Point a, Point b) {
+  return (almost_equal(a[0], b[0]) && almost_equal(a[1], b[1]));
+}
+
 bool xy_points_almost_equal(XYPoint a, XYPoint b) {
   return (almost_equal(a.x, b.x) && almost_equal(a.y, b.y));
 }
@@ -23,10 +32,10 @@ XYPoint calc_intersection(XYPoint a1, XYPoint a2, XYPoint b1, XYPoint b2) {
   }
 
   // Get line equations
-  double a = (a1.y - a2.y) / (a1.x - a2.x);
-  double a_intercept = a1.y - (a1.x * a);
-  double b = (b1.y - b2.y) / (b1.x - b2.x);
-  double b_intercept = b1.y - (b1.x * b);
+  const double a = (a1.y - a2.y) / (a1.x - a2.x);
+  const double a_intercept = a1.y - (a1.x * a);
+  const double b = (b1.y - b2.y) / (b1.x - b2.x);
+  const double b_intercept = b1.y - (b1.x * b);
   XYPoint intersection;
   if (isfinite(a) && isfinite(b) && a != b) {
 
@@ -80,24 +89,24 @@ std::vector<Point> densification_points(Point pt1, Point pt2)
   XYPoint a;
   XYPoint b;
   if ((pt1[0] > pt2[0]) || ((pt1[0] == pt2[0]) && (pt1[1] > pt2[1]))) {
-    a.x = pt2[0]; a.y = pt2[1];
-    b.x = pt1[0]; b.y = pt1[1];
+    a.x = pt2[0];
+    a.y = pt2[1];
+    b.x = pt1[0];
+    b.y = pt1[1];
   } else{
-    a.x = pt1[0]; a.y = pt1[1];
-    b.x = pt2[0]; b.y = pt2[1];
+    a.x = pt1[0];
+    a.y = pt1[1];
+    b.x = pt2[0];
+    b.y = pt2[1];
   }
   temp_intersections.push_back(a);
   temp_intersections.push_back(b);
 
   // Get bottom-left point of graticule cell containing `a`
-  XYPoint av0;
-  av0.x = floor(a.x + 0.5) - 0.5;
-  av0.y = floor(a.y + 0.5) - 0.5;
+  const XYPoint av0(floor(a.x + 0.5) - 0.5, floor(a.y + 0.5) - 0.5);
 
   // Get bottom-left point of graticule cell containing `b`
-  XYPoint bv0;
-  bv0.x = floor(b.x + 0.5) - 0.5;
-  bv0.y = floor(b.y + 0.5) - 0.5;
+  const XYPoint bv0(floor(b.x + 0.5) - 0.5, floor(b.y + 0.5) - 0.5);
 
   // Get bottom-left (start_v) and top-right (end_v) graticule cells of the
   // graticule cell rectangle (the smallest rectangular section of the
@@ -126,18 +135,10 @@ std::vector<Point> densification_points(Point pt1, Point pt2)
 
       // Get points for the current graticule cell, in this order:
       // bottom-left, bottom-right, top-right, top-left
-      XYPoint v0;
-      v0.x = int_x + 0.5;
-      v0.y = int_y + 0.5;
-      XYPoint v1;
-      v1.x = v0.x + 1.0;
-      v1.y = v0.y;
-      XYPoint v2;
-      v2.x = v0.x + 1.0;
-      v2.y = v0.y + 1.0;
-      XYPoint v3;
-      v3.x = v0.x;
-      v3.y = v0.y + 1.0;
+      const XYPoint v0(int_x + 0.5, int_y + 0.5);
+      const XYPoint v1(v0.x + 1.0, v0.y);
+      const XYPoint v2(v0.x + 1.0, v0.y + 1.0);
+      const XYPoint v3(v0.x, v0.y + 1.0);
       std::vector<XYPoint> graticule_intersections;
 
       // Bottom intersection
@@ -187,13 +188,14 @@ std::vector<Point> densification_points(Point pt1, Point pt2)
                                 temp_intersections[0].y));
   for (unsigned int i = 1; i < temp_intersections.size(); ++i) {
     if (!xy_points_almost_equal(temp_intersections[i - 1],
-                               temp_intersections[i])) {
+                                temp_intersections[i])) {
       intersections.push_back(Point(temp_intersections[i].x,
                                     temp_intersections[i].y));
     }
   }
   return intersections;
 }
+
 // TODO: This function may be more meaningfully included in
 // check_topology.cpp.
 bool duplicates(std::vector<Point> v) {
@@ -202,7 +204,11 @@ bool duplicates(std::vector<Point> v) {
     if (v[i] == v[i + 1]) {
       std::cerr << "i = " << i << std::endl;
       std::cerr << "Point: " << i << ", v[i]: " << v[i] << std::endl;
-      std::cerr << "Point: " << i + 1 << ", v[i + 1]: " << v[i + 1] << std::endl;
+      std::cerr << "Point: "
+                << i + 1
+                << ", v[i + 1]: "
+                << v[i + 1]
+                << std::endl;
       return true;
     }
   }
@@ -213,10 +219,10 @@ void InsetState::densify_geo_divs()
 {
   std::cerr << "Densifying" << std::endl;
   std::vector<GeoDiv> geodivs_dens;
-  for (GeoDiv gd : geo_divs()) {
+  for (const auto &gd : geo_divs_) {
     GeoDiv gd_dens(gd.id());
     for (const auto &pwh : gd.polygons_with_holes()) {
-      Polygon outer = pwh.outer_boundary();
+      const Polygon outer = pwh.outer_boundary();
       Polygon outer_dens;
 
       // Iterate over each point in the outer boundary of the polygon
@@ -226,11 +232,11 @@ void InsetState::densify_geo_divs()
         // `b` should be the point immediately after `a`, unless `a` is the
         // final point of the boundary, in which case `b` should be the first
         // point.
-        Point a = outer[i];
-        Point b = (i == outer.size() - 1) ? outer[0] : outer[i + 1];
+        const Point a = outer[i];
+        const Point b = (i == outer.size() - 1) ? outer[0] : outer[i + 1];
 
-        // Densify the segment.
-        std::vector<Point> outer_pts_dens = densification_points(a, b);
+        // Densify the segment
+        const std::vector<Point> outer_pts_dens = densification_points(a, b);
 
         // Push all points. Omit the last point because it will be included
         // in the next iteration. Otherwise, we would have duplicated points
@@ -250,19 +256,16 @@ void InsetState::densify_geo_divs()
       // }
 
       std::vector<Polygon> holes_v_dens;
-      std::vector<Polygon> holes_v(pwh.holes_begin(), pwh.holes_end());
 
       // Iterate over each hole
-      for (const auto &hole : holes_v) {
+      for (auto h = pwh.holes_begin(); h != pwh.holes_end(); ++h) {
         Polygon hole_dens;
-        for (size_t j = 0; j < hole.size(); ++j) {
+        for (size_t j = 0; j < (*h).size(); ++j) {
 
           // `c` and `d` are determined in the same way as `a` and `b` above
-          Point c = hole[j];
-          Point d = (j == hole.size() - 1) ? hole[0] : hole[j + 1];
-
-          std::vector<Point> hole_pts_dens = densification_points(c, d);
-
+          const Point c = (*h)[j];
+          const Point d = (j == (*h).size() - 1) ? (*h)[0] : (*h)[j + 1];
+          const std::vector<Point> hole_pts_dens = densification_points(c, d);
           for (size_t i = 0; i < (hole_pts_dens.size() - 1); ++i) {
             hole_dens.push_back(hole_pts_dens[i]);
           }
@@ -279,8 +282,9 @@ void InsetState::densify_geo_divs()
 
         holes_v_dens.push_back(hole_dens);
       }
-      Polygon_with_holes pwh_dens(outer_dens, holes_v_dens.begin(),
-                                    holes_v_dens.end());
+      const Polygon_with_holes pwh_dens(outer_dens,
+                                        holes_v_dens.begin(),
+                                        holes_v_dens.end());
       gd_dens.push_back(pwh_dens);
     }
     geodivs_dens.push_back(gd_dens);

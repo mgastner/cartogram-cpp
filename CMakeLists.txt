@@ -22,8 +22,9 @@ find_package(PkgConfig REQUIRED)
 
 # Finding and linking FFTW using PkgConfig.
 pkg_search_module(FFTW REQUIRED fftw3 IMPORTED_TARGET)
-include_directories(PkgConfig::FFTW)
-link_libraries(PkgConfig::FFTW)
+pkg_search_module(Cairo REQUIRED cairo IMPORTED_TARGET)
+include_directories(PkgConfig::FFTW PkgConfig::Cairo)
+link_libraries(PkgConfig::FFTW PkgConfig::Cairo)
 
 # Adding C++ files needed for compilation.
 add_executable(
@@ -31,16 +32,15 @@ add_executable(
   src/main.cpp
   src/geo_div.cpp
   src/cartogram_info.cpp
-  src/inset_state.cpp
   src/read_csv.cpp
   src/rescale_map.cpp
+  src/write_cairo.cpp
   src/write_eps.cpp
   src/colors.cpp
-  src/inset_state/auto_color.cpp
   src/check_topology.cpp
   src/matrix.cpp
   src/read_geojson.cpp
-  src/inset_state/fill_with_density.cpp
+  src/intersection.cpp
   src/blur_density.cpp
   src/flatten_density.cpp
   src/ft_real_2d.cpp
@@ -51,8 +51,10 @@ add_executable(
   src/albers_projection.cpp
   src/parse_arguments.cpp
   src/cgal_typedef.cpp
+  src/inset_state/auto_color.cpp
+  src/inset_state/fill_with_density.cpp
+  src/inset_state/inset_state.cpp
   src/inset_state/densify.cpp
-  src/inset_state/intersection.cpp
   src/inset_state/scanline_graph.cpp
   src/inset_state/contiguity_graph.cpp
 )
@@ -86,6 +88,7 @@ target_link_libraries(
   CGAL::CGAL
   ${CMAKE_THREAD_LIBS_INIT}
   PkgConfig::FFTW
+  PkgConfig::Cairo
   OpenMP::OpenMP_CXX
 )
 

@@ -13,6 +13,7 @@
 #include "simplify_inset.h"
 #include "write_eps.h"
 #include "write_geojson.h"
+#include "write_cairo.h"
 #include "xy_point.h"
 #include "parse_arguments.h"
 #include <iostream>
@@ -20,10 +21,11 @@
 
 int main(const int argc, const char *argv[])
 {
-  std::string geo_file_name, visual_file_name; // Default values
+  std::string geo_file_name, visual_file_name;  // Default values
 
   // Default number of grid cells along longer Cartesian coordinate axis
-  unsigned int long_grid_side_length = default_long_grid_side_length;
+  unsigned int max_n_graticule_rows_or_cols =
+    default_max_n_graticule_rows_or_cols;
 
   // Target number of points to retain after simplification
   unsigned int target_points_per_inset = default_target_points_per_inset;
@@ -55,7 +57,7 @@ int main(const int argc, const char *argv[])
     argv,
     geo_file_name,
     visual_file_name,
-    long_grid_side_length,
+    max_n_graticule_rows_or_cols,
     target_points_per_inset,
     world,
     triangulation,
@@ -71,6 +73,17 @@ int main(const int argc, const char *argv[])
   // Initialize cart_info. It contains all information about the cartogram
   // that needs to be handled by functions called from main().
   CartogramInfo cart_info(world, visual_file_name);
+
+  // Determine name of input map and store it
+  std::string map_name = geo_file_name;
+  if (map_name.find_last_of("/\\") != std::string::npos) {
+    map_name = map_name.substr(map_name.find_last_of("/\\") + 1);
+  }
+  if (map_name.find('.') != std::string::npos) {
+    map_name = map_name.substr(0, map_name.find('.'));
+  }
+  cart_info.set_map_name(map_name);
+
   if (!make_csv) {
 
     // Read visual variables (e.g. area, color) from CSV
@@ -120,15 +133,6 @@ int main(const int argc, const char *argv[])
     // 'auto' will automatically deduce the const qualifier
     auto &inset_state = inset_info.second;
     total_geo_divs += inset_state.n_geo_divs();
-  }
-
-  // Determine name of input map
-  std::string map_name = geo_file_name;
-  if (map_name.find_last_of("/\\") != std::string::npos) {
-    map_name = map_name.substr(map_name.find_last_of("/\\") + 1);
-  }
-  if (map_name.find('.') != std::string::npos) {
-    map_name = map_name.substr(0, map_name.find('.'));
   }
 
   // Project map and ensure that all holes are inside polygons
@@ -191,8 +195,8 @@ int main(const int argc, const char *argv[])
                            output_equal_area);
     } else {
 
-      // Rescale map to fit into a rectangular box [0, lx] * [0, ly].
-      rescale_map(long_grid_side_length,
+      // Rescale map to fit into a rectangular box [0, lx] * [0, ly]
+      rescale_map(max_n_graticule_rows_or_cols,
                   &inset_state,
                   cart_info.is_world_map());
 
@@ -203,8 +207,6 @@ int main(const int argc, const char *argv[])
       inset_state.ref_to_rho_ft()->allocate(lx, ly);
       inset_state.make_fftw_plans_for_rho();
       inset_state.initialize_cum_proj();
-
-      // Set initial area errors
       inset_state.set_area_errors();
 
       // Automatically color GeoDivs if no colors are provided
@@ -212,16 +214,16 @@ int main(const int argc, const char *argv[])
         inset_state.auto_color();
       }
 
-      // Write EPS if requested by command-line option
+      // Write PNG and PS files if requested by command-line option
       if (make_polygon_eps) {
-        std::string eps_input_filename = inset_state.inset_name();
+        std::string input_filename = inset_state.inset_name();
         if (plot_graticule) {
-          eps_input_filename += "_input_graticule.eps";
+          input_filename += "_input_graticule";
         } else {
-          eps_input_filename += "_input.eps";
+          input_filename += "_input";
         }
-        std::cerr << "Writing " << eps_input_filename << std::endl;
-        write_map_to_eps(eps_input_filename, plot_graticule, &inset_state);
+        std::cerr << "Writing " << input_filename << std::endl;
+        write_cairo_map(input_filename, plot_graticule, &inset_state);
       }
 
       // We make the approximation that the progress towards generating the
@@ -267,10 +269,8 @@ int main(const int argc, const char *argv[])
         if (blur_width > 0.0) {
           blur_density(blur_width, plot_density, &inset_state);
         }
-
-        // Plotting intersections if requested
         if (plot_intersections) {
-          inset_state.write_intersections_to_eps(intersections_res);
+          inset_state.write_intersections_to_eps(intersections_resolution);
         }
         flatten_density(&inset_state);
         if (triangulation) {
@@ -310,23 +310,21 @@ int main(const int argc, const char *argv[])
                 << "\nProgress: "
                 << progress
                 << std::endl;
-
-      // Plotting intersections if requested
       if (plot_intersections) {
-        inset_state.write_intersections_to_eps(intersections_res);
+        inset_state.write_intersections_to_eps(intersections_resolution);
       }
 
-      // Print EPS of cartogram
+      // Print PNG and PS files of cartogram
       if (make_polygon_eps) {
-        std::string eps_output_filename = inset_state.inset_name();
+        std::string output_filename = inset_state.inset_name();
         if (plot_graticule) {
-          eps_output_filename += "_output_graticule.eps";
+          output_filename += "_output_graticule";
         } else {
-          eps_output_filename += "_output.eps";
+          output_filename += "_output";
         }
         std::cerr << "Writing "
-                  << eps_output_filename << std::endl;
-        write_map_to_eps(eps_output_filename, plot_graticule,
+                  << output_filename << std::endl;
+        write_cairo_map(output_filename, plot_graticule,
                          &inset_state);
       }
 
@@ -355,7 +353,7 @@ int main(const int argc, const char *argv[])
   write_geojson(cart_json,
                 geo_file_name,
                 output_file_name,
-                std::cerr,
+                std::cout,
                 output_to_stdout,
                 &cart_info);
   return EXIT_SUCCESS;

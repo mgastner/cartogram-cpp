@@ -74,8 +74,8 @@ void write_polygons_to_eps(std::ofstream &eps_file,
       eps_file << "c\n";
 
       // Plot holes
-      for (auto hci = pwh.holes_begin(); hci != pwh.holes_end(); ++hci) {
-        const Polygon hole = *hci;
+      for (auto h = pwh.holes_begin(); h != pwh.holes_end(); ++h) {
+        const Polygon hole = *h;
         eps_file << hole[0][0] << " " << hole[0][1] << " m\n";
         for (unsigned int i = 1; i < hole.size(); ++i) {
           eps_file << hole[i][0] << " " << hole[i][1] << " l\n";
@@ -96,7 +96,7 @@ void write_polygons_to_eps(std::ofstream &eps_file,
         } else if (colors) {
 
           // Get color
-          Color col = inset_state->colors_at(gd.id());
+          Color col = inset_state->color_at(gd.id());
 
           // Fill path
           eps_file << col.eps() << "srgb f\n";
@@ -160,8 +160,7 @@ void write_map_to_eps(const std::string eps_name,
   std::ofstream eps_file(eps_name);
   write_eps_header_and_definitions(eps_file, eps_name, inset_state);
 
-  // Check whether all GeoDivs are colored, and, if colored, use given colors
-  // instead of default color.
+  // Check whether all GeoDivs are colored
   const bool has_colors =
     (inset_state->colors_size() == inset_state->n_geo_divs());
   write_polygons_to_eps(eps_file,
@@ -313,7 +312,7 @@ void InsetState::write_intersections_to_eps(unsigned int res)
                         this);
 
   // Set line width of intersection lines
-  eps_file << 0.0001 * std::min(lx(), ly())
+  eps_file << 0.0001 * std::min(lx_, ly_)
            << " slw\n";
   for (auto seg : intersections) {
 

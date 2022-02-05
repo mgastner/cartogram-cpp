@@ -17,7 +17,7 @@ void read_csv(argparse::ArgumentParser arguments,
 
   // Find index of column with IDs. If no ID column header was passed with the
   // command-line flag --id, the ID column is assumed to have index 0.
-  auto is_id_header = arguments.present<std::string>("-i");
+  auto is_id_header = arguments.present<std::string>("-D");
   std::string id_header;
   int id_col = 0;
   if (is_id_header) {
@@ -34,7 +34,7 @@ void read_csv(argparse::ArgumentParser arguments,
   // passed with the command-line flag --area, the area column is assumed to
   // have index 1.
   int area_col = 1;
-  if (auto area_header = arguments.present<std::string>("-a")) {
+  if (auto area_header = arguments.present<std::string>("-A")) {
     std::cout << "Area Header: " << *area_header << std::endl;
     area_col = reader.index_of(*area_header);
   }
@@ -42,14 +42,18 @@ void read_csv(argparse::ArgumentParser arguments,
   // Find index of column with inset specifiers. If no inset column header was
   // passed with the command-line flag --inset, the header is assumed to be
   // "Inset".
-  std::string inset_header = arguments.get<std::string>("-n");
+  std::string inset_header = arguments.get<std::string>("-I");
   int inset_col = reader.index_of(inset_header);
 
   // Find index of column with color specifiers. If no color column header was
   // passed with the command-line flag --color, the header is assumed to be
   // "Color".
-  std::string color_header = arguments.get<std::string>("-c");
+  std::string color_header = arguments.get<std::string>("-C");
   int color_col = reader.index_of(color_header);
+
+  // Default: "Label".
+  std::string label_header = arguments.get<std::string>("-L");
+  int label_col = reader.index_of(label_header);
 
   // Read CSV
   std::set<std::string> inset_pos_set;
@@ -98,6 +102,12 @@ void read_csv(argparse::ArgumentParser arguments,
       color = row[color_col].get();
     }
 
+    // Read Label
+    std::string label = "";
+    if (label_col != csv::CSV_NOT_FOUND) {
+      label = row[label_col].get();
+    }
+
     // Read inset. Assume inset_pos is "C" if there is no inset column.
     std::string inset_pos = "C";
     if (inset_col != csv::CSV_NOT_FOUND) {
@@ -140,7 +150,7 @@ void read_csv(argparse::ArgumentParser arguments,
     }
 
     // Associate GeoDiv ID with inset positon
-    cart_info->gd_to_inset_insert(id, inset_pos);
+    cart_info->insert_gd_into_inset(id, inset_pos);
 
     // Create inset_state for inset_pos unless it already exists
     if (!inset_pos_set.contains(inset_pos)) {
@@ -153,9 +163,12 @@ void read_csv(argparse::ArgumentParser arguments,
     std::map<std::string, InsetState> *inset_states =
       cart_info->ref_to_inset_states();
     InsetState *inset_state = &inset_states->at(inset_pos);
-    inset_state->target_areas_insert(id, area);
+    inset_state->insert_target_area(id, area);
     if (color != "") {
-      inset_state->colors_insert(id, color);
+      inset_state->insert_color(id, color);
+    }
+    if (label != "") {
+      inset_state->insert_label(id, label);
     }
   }
   return;

@@ -1,5 +1,5 @@
-#ifndef XY_POINT_H_
-#define XY_POINT_H_
+#ifndef XYPOINT_H_
+#define XYPOINT_H_
 
 // Struct to store the X and Y coordinates of a 2D point as doubles.
 // Calculations with double coordinates produce more predictable
@@ -10,7 +10,9 @@ struct XYPoint {
 
   // Flip x and y coordinates
   void flip() {
-    double temp = x; x = y; y = temp;
+    const double temp = x;
+    x = y;
+    y = temp;
   }
 
   // Overload "<" operator. Idea from
@@ -27,6 +29,19 @@ struct XYPoint {
   bool operator == (const XYPoint &rhs) const
   {
     return (x == rhs.x && y == rhs.y);
+  }
+
+  // Constructor, setting points to 0
+  XYPoint()
+  {
+    x = 0;
+    y = 0;
+  }
+
+  // Constructor with two values given
+  XYPoint(const double xg, const double yg) {
+    x = xg;
+    y = yg;
   }
 };
 
