@@ -270,7 +270,7 @@ void InsetState::set_area_errors()
   }
   for (const auto &gd : geo_divs_) {
     const double obj_area =
-      target_areas.at(gd.id()) * sum_cart_area / sum_target_area;
+      target_areas_.at(gd.id()) * sum_cart_area / sum_target_area;
     area_errors_[gd.id()] = std::abs((gd.area() / obj_area) - 1);
   }
   return;
