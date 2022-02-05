@@ -114,10 +114,11 @@ void CartogramInfo::replace_missing_and_zero_target_areas()
       inset_state.insert_whether_input_target_area_is_missing(
         gd.id(),
         target_area < 0.0);
-      if (target_area >= 0.0 && target_area <= small_target_area_threshold) {
+      if (target_area < 0.0) {
+        missing_target_area_exists = true;
+      } else if (target_area <= small_target_area_threshold) {
         small_target_area_exists = true;
       }
-
     }
   }
 
