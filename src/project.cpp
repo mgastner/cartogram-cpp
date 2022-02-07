@@ -250,7 +250,7 @@ std::array<Point, 3> transformed_triangle(const std::array<Point, 3> tri,
   return transf_tri;
 }
 
-// TODO: Can is_point_on_triangle_boundary() be refactored as
+// TODO: Can is_on_triangle_boundary() be refactored as
 // is_on_triangle_boundary(const Point pt, const Polygon triangle)?
 // Why does `triangle.bounded_side(Point(x, y)) == CGAL::ON_BOUNDARY` not do
 // the job?
@@ -262,7 +262,7 @@ std::array<Point, 3> transformed_triangle(const std::array<Point, 3> tri,
 // triangle boundary.
 // Idea from https://stackoverflow.com/questions/7050186/find-if-point-lies-
 // on-line-segment
-bool is_point_on_triangle_boundary(const Polygon triangle,
+bool is_on_triangle_boundary(const Polygon triangle,
                                    const double x,
                                    const double y)
 {
@@ -342,14 +342,14 @@ std::array<Point, 3> untransformed_triangle(const Point pt,
   // If the point is in neither, an error is raised.
   std::array<Point, 3> triangle_coordinates;
   if ((triangle1.bounded_side(pt) == CGAL::ON_BOUNDED_SIDE) ||
-      (is_point_on_triangle_boundary(triangle1, pt.x(), pt.y()))) {
+      (is_on_triangle_boundary(triangle1, pt.x(), pt.y()))) {
     // if ((triangle1.bounded_side(Point(x, y)) == CGAL::ON_BOUNDED_SIDE) ||
     //     (triangle1.bounded_side(Point(x, y)) == CGAL::ON_BOUNDARY)) {
     for (unsigned int i = 0; i < triangle1.size(); ++i) {
       triangle_coordinates[i] = triangle1[i];
     }
   } else if ((triangle2.bounded_side(pt) == CGAL::ON_BOUNDED_SIDE) ||
-             (is_point_on_triangle_boundary(triangle2, pt.x(), pt.y()))) {
+             (is_on_triangle_boundary(triangle2, pt.x(), pt.y()))) {
     // } else if ((triangle2.bounded_side(Point(x, y)) == CGAL::ON_BOUNDED_SIDE) ||
     //          (triangle2.bounded_side(Point(x, y)) == CGAL::ON_BOUNDARY)) {
     for (unsigned int i = 0; i < triangle2.size(); ++i) {
@@ -386,7 +386,7 @@ std::array<Point, 3> untransformed_triangle(const Point pt,
               << "\n";
     std::cerr << (pt.y() == triangle1[0].y()) << "\n";
     std::cerr << almost_equal(pt.y(), triangle1[0].y()) << "\n";
-    std::cerr << is_point_on_triangle_boundary(triangle1, pt.x(), pt.y()) << "\n";
+    std::cerr << is_on_triangle_boundary(triangle1, pt.x(), pt.y()) << "\n";
     exit(1);
   }
   return triangle_coordinates;
