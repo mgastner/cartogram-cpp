@@ -116,7 +116,7 @@ void exit_if_point_not_on_grid_or_edge(const Point pt, InsetState *inset_state)
 }
 
 Point projected_point_on_grid_or_edge(const Point pt,
-                                        InsetState *inset_state)
+                                      InsetState *inset_state)
 {
   exit_if_point_not_on_grid_or_edge(pt, inset_state);
   boost::multi_array<XYPoint, 2> &proj = *inset_state->ref_to_proj();
@@ -235,9 +235,6 @@ void fill_graticule_diagonals(InsetState *inset_state)
   return;
 }
 
-// TODO: Using an std::vector seems overkill because we know the size of the
-// vector. Should we implement this function with C arrays or std::array
-// instead?
 std::array<Point, 3> transformed_triangle(const std::array<Point, 3> tri,
                                           InsetState *inset_state)
 {
@@ -250,11 +247,6 @@ std::array<Point, 3> transformed_triangle(const std::array<Point, 3> tri,
   return transf_tri;
 }
 
-// TODO: Can is_on_triangle_boundary() be refactored as
-// is_on_triangle_boundary(const Point pt, const Polygon triangle)?
-// Why does `triangle.bounded_side(Point(x, y)) == CGAL::ON_BOUNDARY` not do
-// the job?
-
 // Determine if a point A with coordinates (x, y) is on the boundary of a
 // triangle. For each triangle side, calculate the distances between A and
 // each of the two end points of the triangle side. If the sum of these two
@@ -262,6 +254,9 @@ std::array<Point, 3> transformed_triangle(const std::array<Point, 3> tri,
 // triangle boundary.
 // Idea from https://stackoverflow.com/questions/7050186/find-if-point-lies-
 // on-line-segment
+// Sometimes `triangle.bounded_side(Point(x, y)) == CGAL::ON_BOUNDARY` does not
+// return True even if the point is on the boundary. Hence the need for this
+// function.
 bool is_on_triangle_boundary(const Polygon triangle,
                                    const double x,
                                    const double y)
@@ -284,6 +279,9 @@ bool is_on_triangle_boundary(const Polygon triangle,
   return false;
 }
 
+// Get the untransformed triangle coordinates in which the point A is
+// situated. After transformation, this triangle must be entirely inside
+// the transformed graticule cell.
 std::array<Point, 3> untransformed_triangle(const Point pt,
                                             InsetState *inset_state)
 {
@@ -314,12 +312,21 @@ std::array<Point, 3> untransformed_triangle(const Point pt,
   // We use that diagonal to split the graticule into two triangles.
   int diag;
   if (v[0].x() == 0.0 || v[0].y() == 0.0 || v[2].x() == lx || v[2].y() == ly) {
+    
+    // Case where the graticule is on the edge of the grid.
+    // We calculate the chosen diagonal, as graticule_diagonals does not store
+    // the diagonals for edge grid cells.
     unsigned int concave = 0;
     diag = chosen_diag(v, &concave, inset_state);
   } else {
+
+    // Case where the graticule is not on the edge of the grid. We can find the
+    // already computed chosen diagonal in graticule_diagonals.
     diag =
       graticule_diagonals[static_cast<int>(v[0].x())][static_cast<int>(v[0].y())];
   }
+
+  // Get the two possible triangles.
   Polygon triangle1;
   Polygon triangle2;
   if (diag == 0) {
@@ -343,15 +350,11 @@ std::array<Point, 3> untransformed_triangle(const Point pt,
   std::array<Point, 3> triangle_coordinates;
   if ((triangle1.bounded_side(pt) == CGAL::ON_BOUNDED_SIDE) ||
       (is_on_triangle_boundary(triangle1, pt.x(), pt.y()))) {
-    // if ((triangle1.bounded_side(Point(x, y)) == CGAL::ON_BOUNDED_SIDE) ||
-    //     (triangle1.bounded_side(Point(x, y)) == CGAL::ON_BOUNDARY)) {
     for (unsigned int i = 0; i < triangle1.size(); ++i) {
       triangle_coordinates[i] = triangle1[i];
     }
   } else if ((triangle2.bounded_side(pt) == CGAL::ON_BOUNDED_SIDE) ||
              (is_on_triangle_boundary(triangle2, pt.x(), pt.y()))) {
-    // } else if ((triangle2.bounded_side(Point(x, y)) == CGAL::ON_BOUNDED_SIDE) ||
-    //          (triangle2.bounded_side(Point(x, y)) == CGAL::ON_BOUNDARY)) {
     for (unsigned int i = 0; i < triangle2.size(); ++i) {
       triangle_coordinates[i] = triangle2[i];
     }
