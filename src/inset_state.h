@@ -6,7 +6,6 @@
 #include "geo_div.h"
 #include "xy_point.h"
 #include "intersection.h"
-#include "densify.h"
 #include <vector>
 #include <boost/multi_array.hpp>
 #include <map>
