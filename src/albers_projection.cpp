@@ -136,7 +136,7 @@ void transform_to_albers_projection(InsetState *inset_state)
 
       // Get outer boundary
       auto &outer_boundary = *(&pwh.outer_boundary());
-      
+
       // Iterate through outer boundary's coordinates
       for (auto &coords_outer : outer_boundary) {
 
@@ -150,9 +150,9 @@ void transform_to_albers_projection(InsetState *inset_state)
 
       // Iterate through holes
       for (auto h = pwh.holes_begin(); h != pwh.holes_end(); ++h) {
-        auto &hole = *h;
+
         // Iterate through hole's coordinates
-        for (auto &coords_hole : hole) {
+        for (auto &coords_hole : *h) {
 
           // Assign hole's coordinates to transformed coordinates
           coords_hole = projected_albers_coordinates(coords_hole,

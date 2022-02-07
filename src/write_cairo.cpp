@@ -9,11 +9,11 @@
 // TODO: IS THERE A CGAL WAY OF DETERMINING WHETHER THE LABEL'S BOUNDING
 //       BOX IS COMPLETELY CONTAINED IN THE POLYGON?
 
-// TODO: SHOULD THE CRITERION FOR PRINTING A LABEL BE THAT FITS INSIDE THE
+// TODO: SHOULD THE CRITERION FOR PRINTING A LABEL BE THAT IT FITS INSIDE THE
 //       POLYGON WITH HOLES? THAT CRITERION WOULD BE MORE RESTRICTIVE THAN
 //       FITTING INSIDE THE EXTERIOR RING.
-bool all_points_inside_exterior_ring(std::vector<Point> pts,
-                                     Polygon_with_holes pwh)
+bool all_points_inside_exterior_ring(const std::vector<Point> pts,
+                                     const Polygon_with_holes pwh)
 {
   for (const auto &pt : pts) {
     if (pwh.outer_boundary().has_on_unbounded_side(pt)) {
@@ -23,12 +23,14 @@ bool all_points_inside_exterior_ring(std::vector<Point> pts,
   return true;
 }
 
-double font_size(cairo_t *cr, const char *label, Point label_pt, GeoDiv gd)
+double font_size(cairo_t *cr,
+                 const char *label,
+                 const Point label_pt,
+                 const GeoDiv gd)
 {
   cairo_text_extents_t extents;
-  double ft_size;
-  for (ft_size = max_font_size; ft_size >= min_font_size; ft_size -= 0.5) {
-    cairo_set_font_size(cr, ft_size);
+  for (double fsize = max_font_size; fsize >= min_font_size; fsize -= 0.5) {
+    cairo_set_font_size(cr, fsize);
     cairo_text_extents(cr, label, &extents);
     const auto largest_pwh = gd.largest_polygon_with_holes();
 
@@ -49,20 +51,20 @@ double font_size(cairo_t *cr, const char *label, Point label_pt, GeoDiv gd)
       }
     }
     if (all_points_inside_exterior_ring(bb_edge_points, largest_pwh)) {
-      return ft_size;
+      return fsize;
     }
   }
   return 0.0;
 }
 
 void write_polygon_to_cairo_surface(cairo_t *cr,
-                                    bool fill_polygons,
-                                    bool colors,
-                                    bool plot_graticule,
+                                    const bool fill_polygons,
+                                    const bool colors,
+                                    const bool plot_graticule,
                                     InsetState *inset_state)
 {
-  const unsigned int lx = inset_state->lx();
-  const unsigned int ly = inset_state->ly();
+  const auto lx = inset_state->lx();
+  const auto ly = inset_state->ly();
   cairo_set_line_width(cr, 1e-3 * std::min(lx, ly));
 
   // Draw the shapes
@@ -80,13 +82,10 @@ void write_polygon_to_cairo_surface(cairo_t *cr,
 
       // Plot holes
       for (auto h = pwh.holes_begin(); h != pwh.holes_end(); ++h) {
-        const auto hole = *h;
-        cairo_move_to(cr, hole[0].x(), ly - hole[0].y());
-        const unsigned int hole_size = hole.size();
-        for (unsigned int i = 1; i <= hole_size; ++i) {
-          cairo_line_to(cr,
-                        hole[i % hole_size].x(),
-                        ly - hole[i % hole_size].y());
+        cairo_move_to(cr, (*h)[0].x(), ly - (*h)[0].y());
+        const auto hsize = (*h).size();
+        for (unsigned int i = 1; i <= hsize; ++i) {
+          cairo_line_to(cr, (*h)[i % hsize].x(), ly - (*h)[i % hsize].y());
         }
       }
       if (colors || fill_polygons) {
@@ -97,7 +96,7 @@ void write_polygon_to_cairo_surface(cairo_t *cr,
         } else if (colors) {
 
           // Get color
-          const Color col = inset_state->colors_at(gd.id());
+          const auto col = inset_state->color_at(gd.id());
 
           // Fill path
           cairo_set_source_rgb(cr,
@@ -118,8 +117,8 @@ void write_polygon_to_cairo_surface(cairo_t *cr,
 
   // Add labels
   for (const auto &gd : inset_state->geo_divs()) {
-    const std::string label = inset_state->labels_at(gd.id());
-    const char* label_char = label.c_str();
+    const auto label = inset_state->label_at(gd.id());
+    const auto label_char = label.c_str();
 
     // Go to a specific coordinate to place the label
     cairo_set_source_rgb(cr, 0.0, 0.0, 0.0);
@@ -130,10 +129,10 @@ void write_polygon_to_cairo_surface(cairo_t *cr,
     const auto label_pt = gd.point_on_surface_of_geodiv();
 
     // Get size of label
-    const double ft_size = font_size(cr, label_char, label_pt, gd);
+    const auto fsize = font_size(cr, label_char, label_pt, gd);
     cairo_text_extents_t extents;
-    if (ft_size > 0.0) {
-      cairo_set_font_size(cr, ft_size);
+    if (fsize > 0.0) {
+      cairo_set_font_size(cr, fsize);
       cairo_text_extents(cr, label_char, &extents);
       const double x =
         label_pt.x() - (extents.width / 2 + extents.x_bearing);
@@ -146,8 +145,7 @@ void write_polygon_to_cairo_surface(cairo_t *cr,
 
   // Plot the graticule
   if (plot_graticule) {
-    const boost::multi_array<XYPoint, 2> &cum_proj =
-      *inset_state->ref_to_cum_proj();
+    const auto &cum_proj = *inset_state->ref_to_cum_proj();
     const unsigned int graticule_line_spacing = 7;
 
     // Set line width of graticule lines
@@ -175,15 +173,15 @@ void write_polygon_to_cairo_surface(cairo_t *cr,
 }
 
 // Outputs a PNG file
-void write_cairo_polygons_to_png(std::string fname,
-                                 bool fill_polygons,
-                                 bool colors,
-                                 bool plot_graticule,
+void write_cairo_polygons_to_png(const std::string fname,
+                                 const bool fill_polygons,
+                                 const bool colors,
+                                 const bool plot_graticule,
                                  InsetState *inset_state)
 {
-  const char* filename = fname.c_str();
-  const unsigned int lx = inset_state->lx();
-  const unsigned int ly = inset_state->ly();
+  const auto filename = fname.c_str();
+  const auto lx = inset_state->lx();
+  const auto ly = inset_state->ly();
   cairo_surface_t *surface;
   cairo_t *cr;
   surface = cairo_image_surface_create(CAIRO_FORMAT_ARGB32, lx, ly);
@@ -199,29 +197,29 @@ void write_cairo_polygons_to_png(std::string fname,
 }
 
 // Outputs a PS file
-void write_cairo_polygons_to_ps(std::string fname,
-                                bool fill_polygons,
-                                bool colors,
-                                bool plot_graticule,
+void write_cairo_polygons_to_ps(const std::string fname,
+                                const bool fill_polygons,
+                                const bool colors,
+                                const bool plot_graticule,
                                 InsetState *inset_state)
 {
-  const char* filename = fname.c_str();
-  const unsigned int lx = inset_state->lx();
-  const unsigned int ly = inset_state->ly();
+  const auto filename = fname.c_str();
+  const auto lx = inset_state->lx();
+  const auto ly = inset_state->ly();
   cairo_surface_t *surface;
   cairo_t *cr;
   surface = cairo_ps_surface_create(filename, lx, ly);
   cr = cairo_create(surface);
 
   // Add comments
-  std::string title = "%%Title: " + fname;
+  const std::string title = "%%Title: " + fname;
   cairo_ps_surface_dsc_comment(surface, title.c_str());
   cairo_ps_surface_dsc_comment(surface,
                                "%%Creator: Michael T. Gastner et al.");
   cairo_ps_surface_dsc_comment(surface,
                                "%%For: Humanity");
   cairo_ps_surface_dsc_comment(surface,
-                               "%%Copyright: License CC BY-NC-ND 2.0");
+                               "%%Copyright: License CC BY");
   cairo_ps_surface_dsc_comment(surface,
                                "%%Magnification: 1.0000");
   write_polygon_to_cairo_surface(cr,
@@ -236,12 +234,12 @@ void write_cairo_polygons_to_ps(std::string fname,
 
 // TODO: DO WE NEED THIS FUNCTION?
 // Outputs both png and ps files
-void write_cairo_map(std::string file_name,
-                     bool plot_graticule,
+void write_cairo_map(const std::string file_name,
+                     const bool plot_graticule,
                      InsetState* inset_state)
 {
-  const std::string png_name = file_name + ".png";
-  const std::string ps_name = file_name + ".ps";
+  const auto png_name = file_name + ".png";
+  const auto ps_name = file_name + ".ps";
 
   //Check whether the has all GeoDivs colored
   const bool has_colors =

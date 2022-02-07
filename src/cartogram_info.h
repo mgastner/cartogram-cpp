@@ -24,9 +24,9 @@ private:
 public:
   explicit CartogramInfo(const bool, const std::string);
   double cart_total_target_area() const;
-  void gd_to_inset_insert(const std::string, const std::string);
   const std::string id_header() const;
   const std::set<std::string> ids_in_visual_variables_file() const;
+  void insert_gd_into_inset(const std::string, const std::string);
   void insert_id_in_visual_variables_file(const std::string);
   void insert_inset_state(const std::string, const InsetState);
   const std::string inset_at_gd(const std::string) const;

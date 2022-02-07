@@ -3,7 +3,7 @@
 #include "inset_state.h"
 #include "smyth_projection.h"
 
-void rescale_map(unsigned int long_grid_side_length,
+void rescale_map(unsigned int max_n_graticule_rows_or_cols,
                  InsetState *inset_state,
                  bool is_world_map)
 {
@@ -27,23 +27,23 @@ void rescale_map(unsigned int long_grid_side_length,
     0.5 * ((1.0+padding)*bb.ymax() + (1.0-padding)*bb.ymin());
 
   // Ensure that the grid dimensions lx and ly are integer powers of 2
-  if ((long_grid_side_length <= 0) ||
-      ((long_grid_side_length &
-        (~long_grid_side_length + 1)) != long_grid_side_length)) {
-    std::cerr << "ERROR: long_grid_side_length must be an integer"
+  if ((max_n_graticule_rows_or_cols <= 0) ||
+      ((max_n_graticule_rows_or_cols &
+        (~max_n_graticule_rows_or_cols + 1)) != max_n_graticule_rows_or_cols)) {
+    std::cerr << "ERROR: max_n_graticule_rows_or_cols must be an integer"
               << "power of 2." << std::endl;
     _Exit(15);
   }
   unsigned int lx, ly;
   double latt_const;
   if (bb.xmax()-bb.xmin() > bb.ymax()-bb.ymin()) {
-    lx = long_grid_side_length;
+    lx = max_n_graticule_rows_or_cols;
     latt_const = (new_xmax-new_xmin) / lx;
     ly = 1 << static_cast<int>(ceil(log2((new_ymax-new_ymin) / latt_const)));
     new_ymax = 0.5*(bb.ymax()+bb.ymin()) + 0.5*ly*latt_const;
     new_ymin = 0.5*(bb.ymax()+bb.ymin()) - 0.5*ly*latt_const;
   } else {
-    ly = long_grid_side_length;
+    ly = max_n_graticule_rows_or_cols;
     latt_const = (new_ymax-new_ymin) / ly;
     lx = 1 << static_cast<int>(ceil(log2((new_xmax-new_xmin) / latt_const)));
     new_xmax = 0.5*(bb.xmax()+bb.xmin()) + 0.5*lx*latt_const;
@@ -66,17 +66,12 @@ void rescale_map(unsigned int long_grid_side_length,
       Polygon *ext_ring = &pwh.outer_boundary();
       *ext_ring = transform(translate, *ext_ring);
       *ext_ring = transform(scale, *ext_ring);
-      for (auto hi = pwh.holes_begin(); hi != pwh.holes_end(); ++hi) {
-        *hi = transform(translate, *hi);
-        *hi = transform(scale, *hi);
+      for (auto h = pwh.holes_begin(); h != pwh.holes_end(); ++h) {
+        *h = transform(translate, *h);
+        *h = transform(scale, *h);
       }
     }
   }
-
-  // Storing coordinates to rescale in future
-  inset_state->set_xmin(new_xmin);
-  inset_state->set_ymin(new_ymin);
-  inset_state->set_map_scale(latt_const);
   return;
 }
 
@@ -106,9 +101,9 @@ void normalize_inset_area(InsetState *inset_state,
       Polygon *ext_ring = &pwh.outer_boundary();
       *ext_ring = transform(translate, *ext_ring);
       *ext_ring = transform(scale, *ext_ring);
-      for (auto hi = pwh.holes_begin(); hi != pwh.holes_end(); ++hi) {
-        *hi = transform(translate, *hi);
-        *hi = transform(scale, *hi);
+      for (auto h = pwh.holes_begin(); h != pwh.holes_end(); ++h) {
+        *h = transform(translate, *h);
+        *h = transform(scale, *h);
       }
     }
   }
@@ -203,8 +198,8 @@ void shift_insets_to_target_position(CartogramInfo *cart_info)
       for (auto &pwh : *gd.ref_to_polygons_with_holes()) {
         Polygon *ext_ring = &pwh.outer_boundary();
         *ext_ring = transform(translate, *ext_ring);
-        for (auto hi = pwh.holes_begin(); hi != pwh.holes_end(); ++hi) {
-          *hi = transform(translate, *hi);
+        for (auto h = pwh.holes_begin(); h != pwh.holes_end(); ++h) {
+          *h = transform(translate, *h);
         }
       }
     }

@@ -30,7 +30,7 @@ shopt -s extglob nocasematch
 # Simple progress bar:
 # Inspired from: https://github.com/pollev/bash_progress_bar
 
-PROGRESS_BAR_WIDTH=50  # progress bar length in characters
+PROGRESS_BAR_WIDTH=50  # default progress bar length in characters
 
 draw_progress_bar() {
 
@@ -48,6 +48,16 @@ draw_progress_bar() {
 # Function to test map with csv
 run_map()
 {
+
+  COLUMNS=$(tput cols)
+  if [[ "$COLUMNS" -gt 60 ]]; then
+    PROGRESS_BAR_WIDTH=50
+  elif [[ "$COLUMNS" -gt 35 ]]; then
+    PROGRESS_BAR_WIDTH=25
+  else
+    PROGRESS_BAR_WIDTH=0
+  fi
+
   printed=0
   draw_progress_bar 0
   start=$SECONDS
@@ -62,11 +72,11 @@ run_map()
         printf "\n\n$line\n\n" | tee -a "${results_file}" | color $red
       fi
 
-      # check if integration finished
       if [[ $line =~ "progress: 0." ]]; then
         draw_progress_bar ${line:12:2}
       fi
 
+      # check if integration finished
       if [[ $line =~ "progress: 1" && "$printed" -eq 0 ]]; then
         draw_progress_bar 100
         printed=1
@@ -165,11 +175,13 @@ fi
 rm ${tmp_file}
 
 # Prompting for file deletion
-printf "Clear ALL *.eps and *.geojson files in current directory? [y/N]: " | color $yellow
+printf "Clear ALL *.geojson, *.png and *.ps files in current directory? [y/N]: " | color $yellow
 read to_clear
 if [[ "$to_clear" == "y" ]]; then
-  rm *.eps; rm *.geojson
-  printf "All *.eps and *.geojson files deleted.\n" | color $red
+  rm *.geojson;
+  rm *.png;
+  rm *.ps;
+  printf "All *.geojson, *.png and *.ps files deleted.\n" | color $red
 else
   printf "Files not cleared.\n" | color $green
 fi
