@@ -1,8 +1,8 @@
 #include "constants.h"
 #include "cartogram_info.h"
 #include "inset_state.h"
+#include "write_cairo.h"
 #include "write_eps.h"
-#include <iostream>
 
 void blur_density(const double blur_width,
                   bool plot_density,
@@ -26,12 +26,17 @@ void blur_density(const double blur_width,
   if (plot_density) {
     std::string file_name =
       inset_state->inset_name() +
+      "_cairo_blurred_density_" +
+      std::to_string(inset_state->n_finished_integrations()) +
+      ".ps";
+    std::string file_name2 = inset_state->inset_name() +
       "_blurred_density_" +
       std::to_string(inset_state->n_finished_integrations()) +
       ".eps";
     std::cerr << "Writing " << file_name << std::endl;
     FTReal2d &rho_init = *inset_state->ref_to_rho_init();
-    write_density_to_eps(file_name, rho_init.as_1d_array(), inset_state);
+    write_density_to_eps(file_name2, rho_init.as_1d_array(), inset_state);
+    write_density_to_ps(file_name, rho_init.as_1d_array(), inset_state);
   }
   return;
 }

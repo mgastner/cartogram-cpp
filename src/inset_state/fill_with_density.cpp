@@ -1,6 +1,7 @@
 #include "../cartogram_info.h"
-#include "../write_eps.h"
 #include "../inset_state.h"
+#include "../write_cairo.h"
+#include "../write_eps.h"
 
 void InsetState::fill_with_density(bool plot_density)
 {
@@ -140,11 +141,17 @@ void InsetState::fill_with_density(bool plot_density)
   if (plot_density) {
     std::string file_name =
       inset_name_ +
+      "_cairo_unblurred_density_" +
+      std::to_string(n_finished_integrations()) +
+      ".ps";
+      std::string file_name2 =
+      inset_name_ +
       "_unblurred_density_" +
       std::to_string(n_finished_integrations()) +
-      ".eps";
+      ".ps";
     std::cerr << "Writing " << file_name << std::endl;
-    write_density_to_eps(file_name, rho_init_.as_1d_array(), this);
+    write_density_to_eps(file_name2, rho_init_.as_1d_array(), this);
+    write_density_to_ps(file_name, rho_init_.as_1d_array(), this);
   }
   execute_fftw_fwd_plan();
   return;

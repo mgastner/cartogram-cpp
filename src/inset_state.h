@@ -113,6 +113,7 @@ public:
   // Write all intersections found to an EPS file named
   // "*_intersections_*.eps"
   void write_intersections_to_eps(unsigned int);
+  void write_intersections_to_ps(unsigned int);
 };
 
 #endif

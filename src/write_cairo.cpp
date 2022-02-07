@@ -1,10 +1,24 @@
 #include <cairo/cairo.h>
 #include <cairo/cairo-ps.h>
 #include <cairo/cairo-pdf.h>
-#include "constants.h"
 #include "cartogram_info.h"
+#include "constants.h"
 #include "inset_state.h"
-#include "iostream"
+
+void write_ps_header(const std::string filename,
+                      cairo_surface_t *surface) 
+{
+  const std::string title = "%%Title: " + filename;
+  cairo_ps_surface_dsc_comment(surface, title.c_str());
+  cairo_ps_surface_dsc_comment(surface,
+                               "%%Creator: Michael T. Gastner et al.");
+  cairo_ps_surface_dsc_comment(surface,
+                               "%%For: Humanity");
+  cairo_ps_surface_dsc_comment(surface,
+                               "%%Copyright: License CC BY");
+  cairo_ps_surface_dsc_comment(surface,
+                               "%%Magnification: 1.0000");                                            
+}
 
 // TODO: IS THERE A CGAL WAY OF DETERMINING WHETHER THE LABEL'S BOUNDING
 //       BOX IS COMPLETELY CONTAINED IN THE POLYGON?
@@ -57,10 +71,74 @@ double font_size(cairo_t *cr,
   return 0.0;
 }
 
-void write_polygon_to_cairo_surface(cairo_t *cr,
+void write_labels_to_cairo_surface(cairo_t *cr,
+                                   const InsetState *inset_state)
+{
+  const auto ly = inset_state->ly();
+  
+  for (const auto &gd : inset_state->geo_divs()) {
+    const auto label = inset_state->label_at(gd.id());
+    const auto label_char = label.c_str();
+
+    // Go to a specific coordinate to place the label
+    cairo_set_source_rgb(cr, 0.0, 0.0, 0.0);
+    cairo_select_font_face(cr,
+                           "sans-serif",
+                           CAIRO_FONT_SLANT_NORMAL,
+                           CAIRO_FONT_WEIGHT_NORMAL);
+    const auto label_pt = gd.point_on_surface_of_geodiv();
+
+    // Get size of label
+    const auto fsize = font_size(cr, label_char, label_pt, gd);
+    cairo_text_extents_t extents;
+    if (fsize > 0.0) {
+      cairo_set_font_size(cr, fsize);
+      cairo_text_extents(cr, label_char, &extents);
+      const double x =
+        label_pt.x() - (extents.width / 2 + extents.x_bearing);
+      const double y =
+        ly - label_pt.y() - (extents.height / 2 + extents.y_bearing);
+      cairo_move_to(cr, x, y);
+      cairo_show_text(cr, label_char);
+    }
+  }
+}
+
+void write_graticules_to_cairo_surface(cairo_t *cr,
+                                       InsetState *inset_state)
+{
+  const auto lx = inset_state->lx();
+  const auto ly = inset_state->ly();
+  const boost::multi_array<XYPoint, 2> &cum_proj =
+    *inset_state->ref_to_cum_proj();
+  const unsigned int graticule_line_spacing = 7;
+
+  // Set line width of graticule lines
+  cairo_set_line_width(cr, 5e-4 * std::min(lx, ly));
+  cairo_set_source_rgb(cr, 0.0, 0.0, 0.0);
+
+  // Vertical graticule lines
+  for (unsigned int i = 0; i <= lx; i += graticule_line_spacing) {
+    cairo_move_to(cr, cum_proj[i][0].x, ly - cum_proj[i][0].y);
+    for (unsigned int j = 1; j < ly; ++j) {
+      cairo_line_to(cr, cum_proj[i][j].x, ly - cum_proj[i][j].y);
+    }
+    cairo_stroke(cr);
+  }
+
+  // Horizontal graticule lines
+  for (unsigned int j = 0; j <= ly; j += graticule_line_spacing) {
+    cairo_move_to(cr, cum_proj[0][j].x, ly - cum_proj[0][j].y);
+    for (unsigned int i = 1; i < lx; ++i) {
+      cairo_line_to(cr, cum_proj[i][j].x, ly - cum_proj[i][j].y);
+    }
+    cairo_stroke(cr);
+  }
+}
+
+void write_polygons_to_cairo_surface(cairo_t *cr,
                                     const bool fill_polygons,
                                     const bool colors,
-                                    const bool plot_graticule,
                                     InsetState *inset_state)
 {
   const auto lx = inset_state->lx();
@@ -71,15 +149,16 @@ void write_polygon_to_cairo_surface(cairo_t *cr,
   for (const auto &gd : inset_state->geo_divs()) {
     for (const auto &pwh : gd.polygons_with_holes()) {
       const auto ext_ring = pwh.outer_boundary();
-
-      // Move to starting coordinates
       cairo_move_to(cr, ext_ring[0].x(), ly - ext_ring[0].y());
-
+      
       // Plot each point in exterior ring
       for (unsigned int i = 1; i < ext_ring.size(); ++i) {
         cairo_line_to(cr, ext_ring[i].x(), ly - ext_ring[i].y());
       }
-
+      
+      // Close the exterior ring
+      cairo_close_path(cr);
+      
       // Plot holes
       for (auto h = pwh.holes_begin(); h != pwh.holes_end(); ++h) {
         cairo_move_to(cr, (*h)[0].x(), ly - (*h)[0].y());
@@ -108,125 +187,73 @@ void write_polygon_to_cairo_surface(cairo_t *cr,
           // Fill path with default color
           cairo_set_source_rgb(cr, 0.96, 0.92, 0.70);
         }
+        cairo_fill_preserve(cr);
       }
-      cairo_fill_preserve(cr);
+
       cairo_set_source_rgb(cr, 0.0, 0.0, 0.0);
-      cairo_stroke(cr);
-    }
-  }
-
-  // Add labels
-  for (const auto &gd : inset_state->geo_divs()) {
-    const auto label = inset_state->label_at(gd.id());
-    const auto label_char = label.c_str();
-
-    // Go to a specific coordinate to place the label
-    cairo_set_source_rgb(cr, 0.0, 0.0, 0.0);
-    cairo_select_font_face(cr,
-                           "sans-serif",
-                           CAIRO_FONT_SLANT_NORMAL,
-                           CAIRO_FONT_WEIGHT_NORMAL);
-    const auto label_pt = gd.point_on_surface_of_geodiv();
-
-    // Get size of label
-    const auto fsize = font_size(cr, label_char, label_pt, gd);
-    cairo_text_extents_t extents;
-    if (fsize > 0.0) {
-      cairo_set_font_size(cr, fsize);
-      cairo_text_extents(cr, label_char, &extents);
-      const double x =
-        label_pt.x() - (extents.width / 2 + extents.x_bearing);
-      const double y =
-        ly - label_pt.y() - (extents.height / 2 + extents.y_bearing);
-      cairo_move_to(cr, x, y);
-      cairo_show_text(cr, label_char);
-    }
-  }
-
-  // Plot the graticule
-  if (plot_graticule) {
-    const auto &cum_proj = *inset_state->ref_to_cum_proj();
-    const unsigned int graticule_line_spacing = 7;
-
-    // Set line width of graticule lines
-    cairo_set_line_width(cr, 5e-4 * std::min(lx, ly));
-    cairo_set_source_rgb(cr, 0.0, 0.0, 0.0);
-
-    // Vertical graticule lines
-    for (unsigned int i = 0; i <= lx; i += graticule_line_spacing) {
-      cairo_move_to(cr, cum_proj[i][0].x, ly - cum_proj[i][0].y);
-      for (unsigned int j = 1; j < ly; ++j) {
-        cairo_line_to(cr, cum_proj[i][j].x, ly - cum_proj[i][j].y);
-      }
-      cairo_stroke(cr);
-    }
-
-    // Horizontal graticule lines
-    for (unsigned int j = 0; j <= ly; j += graticule_line_spacing) {
-      cairo_move_to(cr, cum_proj[0][j].x, ly - cum_proj[0][j].y);
-      for (unsigned int i = 1; i < lx; ++i) {
-        cairo_line_to(cr, cum_proj[i][j].x, ly - cum_proj[i][j].y);
-      }
       cairo_stroke(cr);
     }
   }
 }
 
 // Outputs a PNG file
-void write_cairo_polygons_to_png(const std::string fname,
+void write_map_to_png(const std::string fname,
                                  const bool fill_polygons,
-                                 const bool colors,
                                  const bool plot_graticule,
                                  InsetState *inset_state)
 {
   const auto filename = fname.c_str();
   const auto lx = inset_state->lx();
   const auto ly = inset_state->ly();
+  
+  //Check whether the has all GeoDivs colored
+  const bool colors =
+    (inset_state->colors_size() == inset_state->n_geo_divs());
   cairo_surface_t *surface;
   cairo_t *cr;
   surface = cairo_image_surface_create(CAIRO_FORMAT_ARGB32, lx, ly);
   cr = cairo_create(surface);
-  write_polygon_to_cairo_surface(cr,
+  write_polygons_to_cairo_surface(cr,
                                  fill_polygons,
                                  colors,
-                                 plot_graticule,
                                  inset_state);
+  write_labels_to_cairo_surface(cr, inset_state);
+  if (plot_graticule) {
+    write_graticules_to_cairo_surface(cr, inset_state);
+  }
   cairo_surface_write_to_png(surface, filename);
   cairo_destroy(cr);
   cairo_surface_destroy(surface);
 }
 
 // Outputs a PS file
-void write_cairo_polygons_to_ps(const std::string fname,
+void write_map_to_ps(const std::string fname,
                                 const bool fill_polygons,
-                                const bool colors,
                                 const bool plot_graticule,
                                 InsetState *inset_state)
 {
   const auto filename = fname.c_str();
   const auto lx = inset_state->lx();
   const auto ly = inset_state->ly();
+  
+  //Check whether the has all GeoDivs colored
+  const bool colors =
+    (inset_state->colors_size() == inset_state->n_geo_divs());
   cairo_surface_t *surface;
   cairo_t *cr;
   surface = cairo_ps_surface_create(filename, lx, ly);
   cr = cairo_create(surface);
-
-  // Add comments
-  const std::string title = "%%Title: " + fname;
-  cairo_ps_surface_dsc_comment(surface, title.c_str());
-  cairo_ps_surface_dsc_comment(surface,
-                               "%%Creator: Michael T. Gastner et al.");
-  cairo_ps_surface_dsc_comment(surface,
-                               "%%For: Humanity");
-  cairo_ps_surface_dsc_comment(surface,
-                               "%%Copyright: License CC BY");
-  cairo_ps_surface_dsc_comment(surface,
-                               "%%Magnification: 1.0000");
-  write_polygon_to_cairo_surface(cr,
+  
+  // Write header
+  write_ps_header(fname, surface);
+  write_polygons_to_cairo_surface(cr,
                                  fill_polygons,
                                  colors,
-                                 plot_graticule,
                                  inset_state);
+  write_labels_to_cairo_surface(cr, inset_state);
+  if (plot_graticule) {
+    write_graticules_to_cairo_surface(cr, inset_state);
+  }
   cairo_show_page(cr);
   cairo_surface_destroy(surface);
   cairo_destroy(cr);
@@ -240,18 +267,194 @@ void write_cairo_map(const std::string file_name,
 {
   const auto png_name = file_name + ".png";
   const auto ps_name = file_name + ".ps";
-
-  //Check whether the has all GeoDivs colored
-  const bool has_colors =
-    (inset_state->colors_size() == inset_state->n_geo_divs());
-  write_cairo_polygons_to_png(png_name,
-                              true,
-                              has_colors,
-                              plot_graticule,
-                              inset_state);
-  write_cairo_polygons_to_ps(ps_name,
-                             true,
-                             has_colors,
-                             plot_graticule,
-                             inset_state);
+ 
+  write_map_to_png(png_name,
+                  true,
+                  plot_graticule,
+                  inset_state);
+  write_map_to_ps(ps_name,
+                  true,
+                  plot_graticule,
+                  inset_state);
 }
+
+// Functions to show a scalar field called "density" as a heat map
+double interpolate_for_heatmap(const double x,
+                               const double xmin,
+                               const double xmax,
+                               const double ymin,
+                               const double ymax)
+{
+  return ((x - xmin) * ymax + (xmax - x) * ymin) / (xmax - xmin);
+}
+
+void heatmap_color(const double dens,
+                   const double dens_min,
+                   const double dens_mean,
+                   const double dens_max,
+                   double *r,
+                   double *g,
+                   double *b)
+{
+  // Assign possible categories for red, green, blue
+  const double red[] = {
+    0.33, 0.55, 0.75, 0.87, 0.96, 0.99, 0.78, 0.50, 0.21, 0.00, 0.00
+  };
+  const double green[] = {
+    0.19, 0.32, 0.51, 0.76, 0.91, 0.96, 0.92, 0.80, 0.59, 0.40, 0.24
+  };
+  const double blue[] = {
+    0.02, 0.04, 0.18, 0.49, 0.76, 0.89, 0.90, 0.76, 0.56, 0.37, 0.19
+  };
+  double xmin, xmax;
+  int color_category;
+
+  // Choose color category
+  if (dens > dens_max) {
+    *r = red[0];
+    *g = green[0];
+    *b = blue[0];
+    return;
+  } else if (dens > dens_mean) {
+    color_category = 5 * (dens_max - dens) / (dens_max - dens_mean);
+    xmax = dens_max - 0.2 * color_category * (dens_max - dens_mean);
+    xmin = xmax - 0.2 * (dens_max - dens_mean);
+
+    // Assign color category 0 if dens_max and dens are very close
+    color_category = std::max(color_category, 0);
+  } else if (dens > dens_min) {
+    color_category = 5 * (dens_mean - dens) / (dens_mean - dens_min) + 5;
+    xmax = dens_mean - 0.2 * (color_category - 5) * (dens_mean - dens_min);
+    xmin = xmax - 0.2 * (dens_mean - dens_min);
+
+    // Assign color category 9 if dens_min and dens are very close
+    color_category = std::min(color_category, 9);
+  } else {
+    *r = red[10];
+    *g = green[10];
+    *b = blue[10];
+    return;
+  }
+  *r = interpolate_for_heatmap(dens,
+                               xmin,
+                               xmax,
+                               red[color_category + 1],
+                               red[color_category]);
+  *g = interpolate_for_heatmap(dens,
+                               xmin,
+                               xmax,
+                               green[color_category + 1],
+                               green[color_category]);
+  *b = interpolate_for_heatmap(dens,
+                               xmin,
+                               xmax,
+                               blue[color_category + 1],
+                               blue[color_category]);
+}
+
+void write_density_to_ps(const std::string eps_name,
+                          const double *density,
+                          InsetState *inset_state)
+{
+  auto filename = eps_name.c_str();
+  const auto lx = inset_state->lx();
+  const auto ly = inset_state->ly();
+  cairo_surface_t *surface;
+  cairo_t *cr;
+  surface = cairo_ps_surface_create(filename, lx, ly);
+  cr = cairo_create(surface);
+  
+  // Write header
+  write_ps_header(eps_name, surface);
+  
+  cairo_set_line_width(cr, 0);
+  // Determine range of densities
+  double dens_min = dbl_inf;
+  double dens_mean = 0.0;
+  double dens_max = -dbl_inf;
+  const unsigned int n_grid_cells = inset_state->lx() * inset_state->ly();
+  for (unsigned int k = 0; k < n_grid_cells; ++k) {
+    dens_min = std::min(density[k], dens_min);
+    dens_mean += density[k];
+    dens_max = std::max(density[k], dens_max);
+  }
+  dens_mean /= n_grid_cells;
+  for (unsigned int i = 0; i < inset_state->lx(); ++i) {
+    for (unsigned int j = 0; j < inset_state->ly(); ++j) {
+      double r, g, b;
+      heatmap_color(density[i*inset_state->ly() + j],
+                    dens_min,
+                    dens_mean,
+                    dens_max,
+                    &r, &g, &b);
+      // Get four points of the square
+      double x_min = i - 0.5*sq_overlap;
+      double y_min = j - 0.5*sq_overlap;
+      double x_max = x_min + 1.2;
+      double y_max = y_min + 1.2;
+      
+      cairo_move_to(cr, x_min, ly - y_min);
+      cairo_line_to(cr, x_max, ly - y_min);
+      cairo_line_to(cr, x_max, ly - y_max);
+      cairo_line_to(cr, x_min, ly - y_max);
+      
+      cairo_set_source_rgb(cr, r, g, b);
+      cairo_fill(cr);
+      cairo_set_source_rgb(cr, 0, 0, 0);
+      cairo_stroke(cr);
+      
+    }
+  }
+  write_polygons_to_cairo_surface(cr,
+                                false,
+                                false,
+                                inset_state);
+  cairo_show_page(cr);
+  cairo_surface_destroy(surface);
+  cairo_destroy(cr);
+}
+
+void InsetState::write_intersections_to_ps(unsigned int res)
+{
+  std::string eps_name =
+    inset_name() +
+    "_cairo_intersections_" +
+    std::to_string(n_finished_integrations()) +
+    ".ps";
+
+  // Calculating intersections
+  std::vector<Segment> intersections = intersecting_segments(res);
+
+  auto filename = eps_name.c_str();
+  cairo_surface_t *surface;
+  cairo_t *cr;
+  surface = cairo_ps_surface_create(filename, lx_, ly_);
+  cr = cairo_create(surface);
+  
+  // Write header
+  write_ps_header(inset_name(), surface);
+                               
+  write_polygons_to_cairo_surface(cr,
+                              false,
+                              false,
+                              this);
+                              
+  cairo_set_line_width(cr, 0.0001 * std::min(lx_, ly_));
+
+  for (auto seg : intersections) {
+
+    // Move to starting coordinates
+    cairo_move_to(cr, seg[0][0], ly_ - seg[0][1]);
+
+    // Draw line
+    cairo_line_to(cr, seg[1][0], ly_ - seg[1][1]);
+
+    // line with red and stroke
+    cairo_set_source_rgb(cr, 1, 0, 0);
+    cairo_stroke(cr);
+  }
+  cairo_show_page(cr);
+  cairo_surface_destroy(surface);
+  cairo_destroy(cr);
+}
+

@@ -271,6 +271,7 @@ int main(const int argc, const char *argv[])
         }
         if (plot_intersections) {
           inset_state.write_intersections_to_eps(intersections_resolution);
+          inset_state.write_intersections_to_ps(intersections_resolution);
         }
         flatten_density(&inset_state);
         if (triangulation) {
@@ -312,6 +313,7 @@ int main(const int argc, const char *argv[])
                 << std::endl;
       if (plot_intersections) {
         inset_state.write_intersections_to_eps(intersections_resolution);
+        inset_state.write_intersections_to_ps(intersections_resolution);
       }
 
       // Print PNG and PS files of cartogram

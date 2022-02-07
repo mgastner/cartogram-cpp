@@ -177,7 +177,7 @@ void write_map_to_eps(const std::string eps_name,
 }
 
 // Functions to show a scalar field called "density" as a heat map
-double interpolate_for_heatmap(const double x,
+double interpolate_for_heatmap2(const double x,
                                const double xmin,
                                const double xmax,
                                const double ymin,
@@ -186,7 +186,7 @@ double interpolate_for_heatmap(const double x,
   return ((x - xmin) * ymax + (xmax - x) * ymin) / (xmax - xmin);
 }
 
-void heatmap_color(const double dens,
+void heatmap_color2(const double dens,
                    const double dens_min,
                    const double dens_mean,
                    const double dens_max,
@@ -233,17 +233,17 @@ void heatmap_color(const double dens,
     *b = blue[10];
     return;
   }
-  *r = interpolate_for_heatmap(dens,
+  *r = interpolate_for_heatmap2(dens,
                                xmin,
                                xmax,
                                red[color_category + 1],
                                red[color_category]);
-  *g = interpolate_for_heatmap(dens,
+  *g = interpolate_for_heatmap2(dens,
                                xmin,
                                xmax,
                                green[color_category + 1],
                                green[color_category]);
-  *b = interpolate_for_heatmap(dens,
+  *b = interpolate_for_heatmap2(dens,
                                xmin,
                                xmax,
                                blue[color_category + 1],
@@ -272,7 +272,7 @@ void write_density_to_eps(const std::string eps_name,
   for (unsigned int i = 0; i < inset_state->lx(); ++i) {
     for (unsigned int j = 0; j < inset_state->ly(); ++j) {
       double r, g, b;
-      heatmap_color(density[i*inset_state->ly() + j],
+      heatmap_color2(density[i*inset_state->ly() + j],
                     dens_min,
                     dens_mean,
                     dens_max,
