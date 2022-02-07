@@ -115,6 +115,7 @@ void exit_if_point_not_on_grid_or_edge(const Point pt, InsetState *inset_state)
   return;
 }
 
+// TO-DO: Should we shorten this function name to 'projected_point'?
 Point projected_point_on_grid_or_edge(const Point pt,
                                       InsetState *inset_state)
 {
@@ -360,7 +361,6 @@ std::array<Point, 3> untransformed_triangle(const Point pt,
     }
   } else {
     std::cerr << "Point not in graticule cell!\n";
-    std::setprecision(20);
     std::cerr << "Point coordinates:\n";
     std::cerr << "(" << pt.x() << ", " << pt.y() << ")\n";
     std::cerr << "Original graticule cell:\n";
@@ -369,27 +369,6 @@ std::array<Point, 3> untransformed_triangle(const Point pt,
     std::cerr << "(" << v[2].x() << ", " << v[2].y() << ")\n";
     std::cerr << "(" << v[3].x() << ", " << v[3].y() << ")\n";
     std::cerr << "Chosen diagonal: " << diag << "\n";
-    std::cerr << "Triangle 1:\n";
-    for (unsigned int i = 0; i < triangle1.size(); i++) {
-      std::cerr << "("
-                << triangle1[i].x()
-                << ", "
-                << triangle1[i].y()
-                << ")\n";
-    }
-    std::cerr << (triangle1.bounded_side(pt) == CGAL::ON_BOUNDARY)
-              << "\n";
-    std::cerr << (triangle1.bounded_side(pt) ==
-                  CGAL::ON_BOUNDED_SIDE)
-              << "\n";
-    std::cerr << (triangle2.bounded_side(pt) == CGAL::ON_BOUNDARY)
-              << "\n";
-    std::cerr << (triangle2.bounded_side(pt) ==
-                  CGAL::ON_BOUNDED_SIDE)
-              << "\n";
-    std::cerr << (pt.y() == triangle1[0].y()) << "\n";
-    std::cerr << almost_equal(pt.y(), triangle1[0].y()) << "\n";
-    std::cerr << is_on_triangle_boundary(triangle1, pt.x(), pt.y()) << "\n";
     exit(1);
   }
   return triangle_coordinates;
