@@ -56,6 +56,7 @@ add_executable(
   src/inset_state/densify.cpp
   src/inset_state/scanline_graph.cpp
   src/smyth_projection.cpp
+  src/round_point.cpp
 )
 
 # Linking appropriate libraries required.

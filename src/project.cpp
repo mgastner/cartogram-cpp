@@ -1,6 +1,7 @@
 #include "interpolate_bilinearly.h"
 #include "matrix.h"
 #include "project.h"
+#include "round_point.h"
 #include <boost/multi_array.hpp>
 #include <iostream>
 #include <vector>
