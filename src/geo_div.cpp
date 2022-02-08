@@ -110,6 +110,17 @@ Point GeoDiv::point_on_surface_of_polygon_with_holes(
                     epsilon,
                     id_,
                     'x');
+  
+  // Store hole intersections
+  for (auto hci = pwh.holes_begin(); hci != pwh.holes_end(); ++hci) {
+    add_intersections(intersections,
+                    *hci,
+                    line_y,
+                    0,
+                    epsilon,
+                    id_,
+                    'x');
+  }
   std::sort(intersections.begin(), intersections.end());
 
   // Assign directions (i.e., whether the line is entering or leaving the
@@ -131,6 +142,7 @@ Point GeoDiv::point_on_surface_of_polygon_with_holes(
   // Find midpoint in maximum segment length
   double max_length = 0.0;
   XYPoint midpoint;
+  midpoint.y = line_y;
 
   // Iterate over lengths
   for (unsigned int i = 0; i < intersections.size(); i += 2) { \
