@@ -19,6 +19,7 @@ argparse::ArgumentParser parsed_arguments(
   bool &output_to_stdout,
   bool &plot_density,
   bool &plot_graticule,
+  bool &plot_graticule_heatmap,
   bool &plot_intersections)
 {
   // Create parser for arguments using argparse.
@@ -61,6 +62,11 @@ argparse::ArgumentParser parsed_arguments(
 
   arguments.add_argument("-g", "--graticule_to_eps")
   .help("Boolean: make EPS images with graticule?")
+  .default_value(false)
+  .implicit_value(true);
+  
+  arguments.add_argument("-h", "--graticule_heatmap_to_eps")
+  .help("Boolean: make EPS images with graticule heatmap?")
   .default_value(false)
   .implicit_value(true);
 
@@ -154,6 +160,7 @@ argparse::ArgumentParser parsed_arguments(
   output_to_stdout = arguments.get<bool>("-o");
   plot_density =  arguments.get<bool>("-d");
   plot_graticule = arguments.get<bool>("-g");
+  plot_graticule_heatmap = arguments.get<bool>("-h");
   plot_intersections = arguments.get<bool>("-i");
 
   // Check whether n_points is specified but --simplify not passed

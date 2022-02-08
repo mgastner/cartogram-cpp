@@ -75,12 +75,9 @@ void write_labels_to_cairo_surface(cairo_t *cr,
                                    const InsetState *inset_state)
 {
   const auto ly = inset_state->ly();
-  
   for (const auto &gd : inset_state->geo_divs()) {
     const auto label = inset_state->label_at(gd.id());
     const auto label_char = label.c_str();
-
-    // Go to a specific coordinate to place the label
     cairo_set_source_rgb(cr, 0.0, 0.0, 0.0);
     cairo_select_font_face(cr,
                            "sans-serif",
@@ -91,6 +88,8 @@ void write_labels_to_cairo_surface(cairo_t *cr,
     // Get size of label
     const auto fsize = font_size(cr, label_char, label_pt, gd);
     cairo_text_extents_t extents;
+    
+    // Draw label only if appropriate size is found
     if (fsize > 0.0) {
       cairo_set_font_size(cr, fsize);
       cairo_text_extents(cr, label_char, &extents);
@@ -104,35 +103,150 @@ void write_labels_to_cairo_surface(cairo_t *cr,
   }
 }
 
+// Returns edge points of a graticule cell and treats 
+// them as a polygon.
+Polygon graticule_cell_edge_points(unsigned int x,
+                                unsigned int y,
+                                InsetState *inset_state)
+{
+  Polygon cell_edge_points;
+  const boost::multi_array<XYPoint, 2> &cum_proj =
+    *inset_state->ref_to_cum_proj();
+    
+  // Horizontal lower edge points
+  for (unsigned int i = x; i < x + graticule_width; ++i) {
+    auto x_coor_trans = cum_proj[i][y].x;
+    auto y_coor_trans = cum_proj[i][y].y;
+    cell_edge_points.push_back(Point(x_coor_trans, y_coor_trans));
+  }
+  
+  // Vertical right edge points
+  for (unsigned int i = y; i < y + graticule_width; ++i) {
+    auto x_coor_trans = cum_proj[x + graticule_width][i].x;
+    auto y_coor_trans = cum_proj[x + graticule_width][i].y;
+    cell_edge_points.push_back(Point(x_coor_trans, y_coor_trans));
+  }
+  
+  // Horizontal upper edge points
+  for (unsigned int i = x + graticule_width; i > x ; --i) {
+    auto x_coor_trans = cum_proj[i][y + graticule_width].x;
+    auto y_coor_trans = cum_proj[i][y + graticule_width].y;
+    cell_edge_points.push_back(Point(x_coor_trans, y_coor_trans));
+  }
+  
+  // Vertical left edge points
+  for (unsigned int i = y + graticule_width; i > y ; --i) {
+    auto x_coor_trans = cum_proj[x][i].x;
+    auto y_coor_trans = cum_proj[x][i].y;
+    cell_edge_points.push_back(Point(x_coor_trans, y_coor_trans));
+  }
+  
+  // Complete the polygon by making first and last point same
+  cell_edge_points.push_back(cell_edge_points[0]);
+  return cell_edge_points;    
+}
+
+// Returns graticule cell area based on edge points
+double graticule_cell_area(unsigned int x,
+                          unsigned int y,
+                          InsetState *inset_state)
+{
+  return graticule_cell_edge_points(x, y, inset_state).area();
+}
+
+// Returns the largest and smallest graticule cell area to be used for
+// graticule heatmap generation 
+std::pair<double,double> max_and_min_graticule_cell_area(InsetState *inset_state)
+{
+  auto lx = inset_state->lx();
+  auto ly = inset_state->ly();
+  
+  // Initialize max and min area
+  double max_area = -dbl_inf;
+  double min_area = dbl_inf;
+  
+  // Iterate over graticule cells
+  for (unsigned int i = 0; i <= lx - graticule_width; i += graticule_width) {
+    for(unsigned int j = 0; j <= ly - graticule_width; j += graticule_width) {
+      const auto area = graticule_cell_area(i, j, inset_state);
+      if (area > max_area) {
+        max_area = area;
+      }
+      if (area < min_area) {
+        min_area = area;
+      }
+    }
+  }
+  return std::make_pair(max_area, min_area);
+}
+
+// Sets the color of a graticule cell based on its area
+void graticule_cell_color(double area,
+                          double max_area,
+                          double min_area,
+                          double *r,
+                          double *g,
+                          double *b) 
+{
+  
+  // For input map when all cells are of same area
+  if (max_area - min_area < 1e-6) {
+    *r = 1.0 ;
+    *g = 1.0 ;
+    *b = 1.0 ;
+  } else {
+    
+    // Normalize area to [0,1] and make it logarithmic
+    double ratio = (log(area) - log(min_area))/ (log(max_area) - log(min_area));
+    *r = 1.0 - ratio;
+    *g = 1.0 - ratio;
+    *b = 1.0;
+  }
+}
+
+// Writes graticule cells and colors them if required
 void write_graticules_to_cairo_surface(cairo_t *cr,
-                                       InsetState *inset_state)
+                                      bool plot_graticule_heatmap,
+                                      InsetState *inset_state)
 {
   const auto lx = inset_state->lx();
   const auto ly = inset_state->ly();
-  const boost::multi_array<XYPoint, 2> &cum_proj =
-    *inset_state->ref_to_cum_proj();
-  const unsigned int graticule_line_spacing = 7;
+  
+  // Get max and min area of graticule cells
+  const auto max_and_min_area = max_and_min_graticule_cell_area(inset_state);
+  const auto max_area = max_and_min_area.first;
+  const auto min_area = max_and_min_area.second;
 
   // Set line width of graticule lines
   cairo_set_line_width(cr, 5e-4 * std::min(lx, ly));
   cairo_set_source_rgb(cr, 0.0, 0.0, 0.0);
 
-  // Vertical graticule lines
-  for (unsigned int i = 0; i <= lx; i += graticule_line_spacing) {
-    cairo_move_to(cr, cum_proj[i][0].x, ly - cum_proj[i][0].y);
-    for (unsigned int j = 1; j < ly; ++j) {
-      cairo_line_to(cr, cum_proj[i][j].x, ly - cum_proj[i][j].y);
+  // Iterate over graticule cells
+  for (unsigned int i = 0; i <= lx - graticule_width; i += graticule_width) {
+    for(unsigned int j = 0; j <= ly - graticule_width; j += graticule_width) {
+      
+      // Draw graticule cell by connecting edge points
+      const auto cell_edge_points = graticule_cell_edge_points(i, j, inset_state);                                           
+      cairo_move_to(cr, cell_edge_points[0].x(), ly - cell_edge_points[0].y());
+      for (unsigned int k = 1; k < cell_edge_points.size(); ++k) {
+        cairo_line_to(cr, cell_edge_points[k].x(), ly - cell_edge_points[k].y());
+      }
+      
+      // Color graticule cell if required
+      if (plot_graticule_heatmap) {
+        double r, g, b;
+        graticule_cell_color(graticule_cell_area(i, j, inset_state),
+                             max_area,
+                             min_area,
+                             &r,
+                             &g,
+                             &b);
+        cairo_set_source_rgb(cr, r, g, b);
+        cairo_fill_preserve(cr);
+      }
+      cairo_set_source_rgb(cr, 0.0, 0.0, 0.0);
+      cairo_stroke(cr);
     }
-    cairo_stroke(cr);
-  }
-
-  // Horizontal graticule lines
-  for (unsigned int j = 0; j <= ly; j += graticule_line_spacing) {
-    cairo_move_to(cr, cum_proj[0][j].x, ly - cum_proj[0][j].y);
-    for (unsigned int i = 1; i < lx; ++i) {
-      cairo_line_to(cr, cum_proj[i][j].x, ly - cum_proj[i][j].y);
-    }
-    cairo_stroke(cr);
   }
 }
 
@@ -197,10 +311,11 @@ void write_polygons_to_cairo_surface(cairo_t *cr,
 }
 
 // Outputs a PNG file
+// Not in use
 void write_map_to_png(const std::string fname,
-                                 const bool fill_polygons,
-                                 const bool plot_graticule,
-                                 InsetState *inset_state)
+                      const bool fill_polygons,
+                      const bool plot_graticule,
+                      InsetState *inset_state)
 {
   const auto filename = fname.c_str();
   const auto lx = inset_state->lx();
@@ -219,18 +334,18 @@ void write_map_to_png(const std::string fname,
                                  inset_state);
   write_labels_to_cairo_surface(cr, inset_state);
   if (plot_graticule) {
-    write_graticules_to_cairo_surface(cr, inset_state);
+    write_graticules_to_cairo_surface(cr, false, inset_state);
   }
   cairo_surface_write_to_png(surface, filename);
   cairo_destroy(cr);
   cairo_surface_destroy(surface);
 }
 
-// Outputs a PS file
+// Outputs a PS file with polygons, labels, and graticules (if required)
 void write_map_to_ps(const std::string fname,
-                                const bool fill_polygons,
-                                const bool plot_graticule,
-                                InsetState *inset_state)
+                    const bool fill_polygons,
+                    const bool plot_graticule,
+                    InsetState *inset_state)
 {
   const auto filename = fname.c_str();
   const auto lx = inset_state->lx();
@@ -246,37 +361,52 @@ void write_map_to_ps(const std::string fname,
   
   // Write header
   write_ps_header(fname, surface);
+  
+  // Draw polygons with color
   write_polygons_to_cairo_surface(cr,
                                  fill_polygons,
                                  colors,
                                  inset_state);
+                                 
+  // Place labels
   write_labels_to_cairo_surface(cr, inset_state);
+  
+  // Draw graticule without color
   if (plot_graticule) {
-    write_graticules_to_cairo_surface(cr, inset_state);
+    write_graticules_to_cairo_surface(cr, false, inset_state);
   }
   cairo_show_page(cr);
   cairo_surface_destroy(surface);
   cairo_destroy(cr);
 }
 
-// TODO: DO WE NEED THIS FUNCTION?
-// Outputs both png and ps files
-void write_cairo_map(const std::string file_name,
-                     const bool plot_graticule,
-                     InsetState* inset_state)
+// Outputs a PS file of graticule heatmap
+void write_graticule_heatmap_to_ps(const std::string ps_name,
+                                  InsetState *inset_state)
 {
-  const auto png_name = file_name + ".png";
-  const auto ps_name = file_name + ".ps";
- 
-  write_map_to_png(png_name,
-                  true,
-                  plot_graticule,
-                  inset_state);
-  write_map_to_ps(ps_name,
-                  true,
-                  plot_graticule,
-                  inset_state);
+  auto filename = ps_name.c_str();
+  const auto lx = inset_state->lx();
+  const auto ly = inset_state->ly();
+  cairo_surface_t *surface;
+  cairo_t *cr;
+  surface = cairo_ps_surface_create(filename, lx, ly);
+  cr = cairo_create(surface);
+  
+  // Write header
+  write_ps_header(ps_name, surface);
+  
+  // Write graticule with colors
+  write_graticules_to_cairo_surface(cr, true, inset_state);
+  
+  write_polygons_to_cairo_surface(cr,
+                                false,
+                                false,
+                                inset_state);
+  cairo_show_page(cr);
+  cairo_surface_destroy(surface);
+  cairo_destroy(cr);
 }
+
 
 // Functions to show a scalar field called "density" as a heat map
 double interpolate_for_heatmap(const double x,

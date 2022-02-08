@@ -49,6 +49,7 @@ int main(const int argc, const char *argv[])
        output_to_stdout,
        plot_density,
        plot_graticule,
+       plot_graticule_heatmap,
        plot_intersections;
 
   // Parse command-line arguments
@@ -68,6 +69,7 @@ int main(const int argc, const char *argv[])
     output_to_stdout,
     plot_density,
     plot_graticule,
+    plot_graticule_heatmap,
     plot_intersections);
 
   // Initialize cart_info. It contains all information about the cartogram
@@ -218,12 +220,20 @@ int main(const int argc, const char *argv[])
       if (make_polygon_eps) {
         std::string input_filename = inset_state.inset_name();
         if (plot_graticule) {
-          input_filename += "_input_graticule";
+          input_filename += "_input_graticule.ps";
         } else {
-          input_filename += "_input";
+          input_filename += "_input.ps";
         }
         std::cerr << "Writing " << input_filename << std::endl;
-        write_cairo_map(input_filename, plot_graticule, &inset_state);
+        write_map_to_ps(input_filename, true, plot_graticule, &inset_state);
+      }
+      
+      if(plot_graticule_heatmap) {
+        std::string input_filename = inset_state.inset_name();
+        input_filename += "_input_graticule_heatmap.ps";
+        std::cerr << "Writing "
+                  << input_filename << std::endl;
+        write_graticule_heatmap_to_ps(input_filename, &inset_state);
       }
 
       // We make the approximation that the progress towards generating the
@@ -316,18 +326,25 @@ int main(const int argc, const char *argv[])
         inset_state.write_intersections_to_ps(intersections_resolution);
       }
 
-      // Print PNG and PS files of cartogram
+      // Print PS files of cartogram
       if (make_polygon_eps) {
         std::string output_filename = inset_state.inset_name();
         if (plot_graticule) {
-          output_filename += "_output_graticule";
+          output_filename += "_output_graticule.ps";
         } else {
-          output_filename += "_output";
+          output_filename += "_output.ps";
         }
         std::cerr << "Writing "
                   << output_filename << std::endl;
-        write_cairo_map(output_filename, plot_graticule,
-                         &inset_state);
+        write_map_to_ps(output_filename, true, plot_graticule, &inset_state);
+      }
+      
+      if(plot_graticule_heatmap) {
+        std::string output_filename = inset_state.inset_name();
+        output_filename += "_output_graticule_heatmap.ps";
+        std::cerr << "Writing "
+                  << output_filename << std::endl;
+        write_graticule_heatmap_to_ps(output_filename, &inset_state);
       }
 
       // Rescale insets in correct proportion to each other
