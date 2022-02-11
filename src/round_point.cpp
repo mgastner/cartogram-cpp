@@ -1,5 +1,6 @@
 #include "constants.h"
 #include "round_point.h"
+#include <bit>
 
 // Use machine epsilon (defined in constants.h) to get almost equal doubles.
 // From https://en.cppreference.com/w/cpp/types/numeric_limits/epsilon
