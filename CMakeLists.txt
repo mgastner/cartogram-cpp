@@ -15,7 +15,6 @@ add_compile_options(-Wall -Wextra -pedantic)
 
 # Finding appropriate packages.
 find_package(OpenMP REQUIRED)
-find_package(CGAL 5.3 REQUIRED)
 find_package(Boost 1.70 REQUIRED)
 find_package(Threads REQUIRED)
 find_package(PkgConfig REQUIRED)
@@ -83,7 +82,6 @@ endif()
 target_link_libraries(
   cartogram
   ${Boost_LIBRARIES}
-  CGAL::CGAL
   ${CMAKE_THREAD_LIBS_INIT}
   PkgConfig::FFTW
   PkgConfig::Cairo
