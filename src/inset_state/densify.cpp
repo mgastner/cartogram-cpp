@@ -291,11 +291,11 @@ void InsetState::densify_geo_divs()
       // Iterate over each hole
       for (auto h = pwh.holes_begin(); h != pwh.holes_end(); ++h) {
         Polygon hole_dens;
-        for (size_t j = 0; j < (*h).size(); ++j) {
+        for (size_t j = 0; j < h->size(); ++j) {
 
           // `c` and `d` are determined in the same way as `a` and `b` above
           const Point c = (*h)[j];
-          const Point d = (j == (*h).size() - 1) ? (*h)[0] : (*h)[j + 1];
+          const Point d = (j == h->size() - 1) ? (*h)[0] : (*h)[j + 1];
           const std::vector<Point> hole_pts_dens =
             densification_points(c, d, lx_, ly_);
           for (size_t i = 0; i < (hole_pts_dens.size() - 1); ++i) {

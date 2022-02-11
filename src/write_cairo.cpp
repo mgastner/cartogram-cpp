@@ -83,7 +83,7 @@ void write_polygon_to_cairo_surface(cairo_t *cr,
       // Plot holes
       for (auto h = pwh.holes_begin(); h != pwh.holes_end(); ++h) {
         cairo_move_to(cr, (*h)[0].x(), ly - (*h)[0].y());
-        const auto hsize = (*h).size();
+        const auto hsize = h->size();
         for (unsigned int i = 1; i <= hsize; ++i) {
           cairo_line_to(cr, (*h)[i % hsize].x(), ly - (*h)[i % hsize].y());
         }

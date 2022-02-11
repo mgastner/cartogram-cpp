@@ -66,7 +66,7 @@ void project(InsetState *inset_state)
       std::vector<Polygon> hole_v;
       for (auto h = pwh.holes_begin(); h != pwh.holes_end(); ++h) {
         Polygon new_hole;
-        for (unsigned int i = 0; i < (*h).size(); ++i) {
+        for (unsigned int i = 0; i < h->size(); ++i) {
 
           // Update hole coordinates
           const auto old_hole_intp_x =
@@ -441,7 +441,7 @@ void project_with_triangulation(InsetState *inset_state)
       std::vector<Polygon> hole_v;
       for (auto h = pwh.holes_begin(); h != pwh.holes_end(); ++h) {
         Polygon new_hole;
-        for (unsigned int i = 0; i < (*h).size(); ++i) {
+        for (unsigned int i = 0; i < h->size(); ++i) {
 
           // Update hole coordinates
           const auto new_hole_pt =
