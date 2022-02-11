@@ -9,7 +9,7 @@ struct Matrix {
   Matrix();  // Constructor for identity matrix
 
   // Convert triangle to matrix
-  Matrix(const Point a, const Point b, const Point c);
+  Matrix(const Point, const Point, const Point);
   void scale(const double);
   double det() const;
   Matrix adjugate() const;
