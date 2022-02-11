@@ -45,12 +45,12 @@ int main(const int argc, const char *argv[])
 
   // Other boolean values that are needed to parse the command line arguments
   bool make_csv,
-       make_polygon_eps,
        output_equal_area,
        output_to_stdout,
        plot_density,
        plot_graticule,
-       plot_intersections;
+       plot_intersections,
+       plot_polygons;
 
   // Parse command-line arguments
   argparse::ArgumentParser arguments = parsed_arguments(
@@ -64,12 +64,12 @@ int main(const int argc, const char *argv[])
     triangulation,
     simplify,
     make_csv,
-    make_polygon_eps,
     output_equal_area,
     output_to_stdout,
     plot_density,
     plot_graticule,
-    plot_intersections);
+    plot_intersections,
+    plot_polygons);
 
   // Initialize cart_info. It contains all information about the cartogram
   // that needs to be handled by functions called from main().
@@ -84,7 +84,6 @@ int main(const int argc, const char *argv[])
     map_name = map_name.substr(0, map_name.find('.'));
   }
   cart_info.set_map_name(map_name);
-
   if (!make_csv) {
 
     // Read visual variables (e.g. area, color) from CSV
@@ -131,7 +130,7 @@ int main(const int argc, const char *argv[])
   double total_geo_divs = 0;
   for (const auto &inset_info : *cart_info.ref_to_inset_states()) {
 
-    // 'auto' will automatically deduce the const qualifier
+    // `auto` will automatically deduce the const qualifier
     auto &inset_state = inset_info.second;
     total_geo_divs += inset_state.n_geo_divs();
   }
@@ -153,8 +152,9 @@ int main(const int argc, const char *argv[])
     }
 
     // Can the coordinates be interpreted as longitude and latitude?
-    // TODO: the CRS field for GEOJSON files seem to be deprecated, but before
-    // it used to be written in the format specified here:
+    // TODO: the "crs" field for GeoJSON files seems to be deprecated. However,
+    // in earlier specifications, the coordinate reference system used to be
+    // written in the format specified here:
     // https://geojson.org/geojson-spec.html#coordinate-reference-system-objects.
     // It may be a good idea to make a list of possible entries corresponding
     // to longitude and lattitude projection. "urn:ogc:def:crs:OGC:1.3:CRS84"
@@ -163,11 +163,12 @@ int main(const int argc, const char *argv[])
     if (bb.xmin() >= -180.0 && bb.xmax() <= 180.0 &&
         bb.ymin() >= -90.0 && bb.ymax() <= 90.0 &&
         (crs == "+proj=longlat" ||
-        crs == "urn:ogc:def:crs:OGC:1.3:CRS84")) {
+         crs == "urn:ogc:def:crs:OGC:1.3:CRS84")) {
 
       // If yes, transform the coordinates with the Albers projection if the
-      // input map is not a world map. Use the Smyth-Craster projection otherwise
-      if (world){
+      // input map is not a world map. Otherwise, use the Smyth-Craster
+      // projection.
+      if (world) {
         project_to_smyth_equal_surface(&inset_state);
       } else {
         transform_to_albers_projection(&inset_state);
@@ -182,7 +183,7 @@ int main(const int argc, const char *argv[])
   // Replace missing and zero target areas with absolute values
   cart_info.replace_missing_and_zero_target_areas();
 
-  // Loop over insets
+  // Iterate over insets
   for (auto &[inset_pos, inset_state] : *cart_info.ref_to_inset_states()) {
 
     // Determine the name of the inset
@@ -196,9 +197,9 @@ int main(const int argc, const char *argv[])
     inset_state.set_inset_name(inset_name);
     if (simplify) {
 
-      // Simplify inset if -s flag is passed. This option reduces the number
-      // of points used to represent the GeoDivs in the inset, thereby
-      // reducing the output file sizes and run times.
+      // Simplification reduces the number of points used to represent the
+      // GeoDivs in the inset, thereby reducing output file sizes and run
+      // times
       simplify_inset(&inset_state,
                      target_points_per_inset);
     }
@@ -226,9 +227,9 @@ int main(const int argc, const char *argv[])
       if (inset_state.colors_empty()) {
         inset_state.auto_color();
       }
+      if (plot_polygons) {
 
-      // Write PNG and PS files if requested by command-line option
-      if (make_polygon_eps) {
+        // Write PNG and PS files if requested by command-line option
         std::string input_filename = inset_state.inset_name();
         if (plot_graticule) {
           input_filename += "_input_graticule";
@@ -243,7 +244,6 @@ int main(const int argc, const char *argv[])
       // cartogram is proportional to the number of GeoDivs that are in the
       // finished insets
       const double inset_max_frac = inset_state.n_geo_divs() / total_geo_divs;
-
 
       // Start map integration
       while (inset_state.n_finished_integrations() < max_integrations &&
@@ -266,7 +266,7 @@ int main(const int argc, const char *argv[])
         // TODO: whenever blur_width hits 0, the maximum area error will start
         // increasing again and eventually lead to an invalid graticule cell
         // error when projecting with triangulation. Investigate why. As a
-        // temporary fix, we set blur_width to always be non-zero, regardless
+        // temporary fix, we set blur_width to be always positive, regardless
         // of the number of integrations.
         double blur_width =
           std::pow(2.0, 5 - int(inset_state.n_finished_integrations()));
@@ -277,7 +277,6 @@ int main(const int argc, const char *argv[])
         //   blur_width = 0.0;
         // }
         std::cerr << "blur_width = " << blur_width << std::endl;
-
         inset_state.fill_with_density(plot_density);
         if (blur_width > 0.0) {
           blur_density(blur_width, plot_density, &inset_state);
@@ -326,9 +325,7 @@ int main(const int argc, const char *argv[])
       if (plot_intersections) {
         inset_state.write_intersections_to_eps(intersections_resolution);
       }
-
-      // Print PNG and PS files of cartogram
-      if (make_polygon_eps) {
+      if (plot_polygons) {
         std::string output_filename = inset_state.inset_name();
         if (plot_graticule) {
           output_filename += "_output_graticule";
@@ -338,22 +335,22 @@ int main(const int argc, const char *argv[])
         std::cerr << "Writing "
                   << output_filename << std::endl;
         write_cairo_map(output_filename, plot_graticule,
-                         &inset_state);
+                        &inset_state);
       }
-
-      if (world){
+      if (world) {
         project_from_smyth_equal_surface(&inset_state);
       } else {
+
         // Rescale insets in correct proportion to each other
         normalize_inset_area(&inset_state,
-                           cart_info.cart_total_target_area());
+                             cart_info.cart_total_target_area());
       }
 
       // Clean up after finishing all Fourier transforms for this inset
       inset_state.destroy_fftw_plans_for_rho();
       inset_state.ref_to_rho_init()->free();
       inset_state.ref_to_rho_ft()->free();
-    } // End of loop over insets
+    }  // End of loop over insets
   }
 
   // Shift insets so that they do not overlap

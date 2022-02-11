@@ -14,12 +14,12 @@ argparse::ArgumentParser parsed_arguments(
   bool &triangulation,
   bool &simplify,
   bool &make_csv,
-  bool &make_polygon_eps,
   bool &output_equal_area,
   bool &output_to_stdout,
   bool &plot_density,
   bool &plot_graticule,
-  bool &plot_intersections)
+  bool &plot_intersections,
+  bool &plot_polygons)
 {
   // Create parser for arguments using argparse.
   // From https://github.com/p-ranav/argparse
@@ -49,7 +49,7 @@ argparse::ArgumentParser parsed_arguments(
   .default_value(false)
   .implicit_value(true);
 
-  arguments.add_argument("-e", "--polygons_to_eps")
+  arguments.add_argument("-p", "--plot_polygons")
   .help("Boolean: make EPS image of input and output?")
   .default_value(false)
   .implicit_value(true);
@@ -149,12 +149,12 @@ argparse::ArgumentParser parsed_arguments(
     triangulation = true;
   }
   make_csv = arguments.get<bool>("-m");
-  make_polygon_eps = arguments.get<bool>("-e");
   output_equal_area = arguments.get<bool>("-q");
   output_to_stdout = arguments.get<bool>("-o");
   plot_density =  arguments.get<bool>("-d");
   plot_graticule = arguments.get<bool>("-g");
   plot_intersections = arguments.get<bool>("-i");
+  plot_polygons = arguments.get<bool>("-p");
 
   // Check whether n_points is specified but --simplify not passed
   if (arguments.is_used("-P") && !arguments.is_used("-s")) {

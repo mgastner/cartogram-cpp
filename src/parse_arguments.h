@@ -16,11 +16,11 @@ argparse::ArgumentParser parsed_arguments(
   bool &triangulation,
   bool &simplification,
   bool &make_csv,
-  bool &make_polygon_eps,
   bool &output_equal_area,
   bool &output_to_stdout,
   bool &plot_density,
   bool &plot_graticule,
-  bool &plot_intersections);
+  bool &plot_intersections,
+  bool &plot_polygons);
 
 #endif
