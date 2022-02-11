@@ -21,7 +21,7 @@ void check_geojson_validity(const nlohmann::json j)
     std::cerr << "ERROR: JSON does not contain a key 'features'" << std::endl;
     _Exit(6);
   }
-  const nlohmann::json features = j["features"];
+  const auto features = j["features"];
   for (const auto &feature : features) {
     if (!feature.contains(std::string{"type"})) {
       std::cerr << "ERROR: JSON contains a 'Features' element without key "
@@ -38,7 +38,7 @@ void check_geojson_validity(const nlohmann::json j)
                 << std::endl;
       _Exit(9);
     }
-    const nlohmann::json geometry = feature["geometry"];
+    const auto geometry = feature["geometry"];
     if (!geometry.contains(std::string("type"))) {
       std::cerr << "ERROR: JSON contains geometry without key 'type'"
                 << std::endl;
@@ -58,10 +58,10 @@ void check_geojson_validity(const nlohmann::json j)
   return;
 }
 
-GeoDiv json_to_cgal(const std::string id,
-                    const nlohmann::json json_coords_raw,
-                    const bool is_polygon,
-                    CartogramInfo *cart_info)
+GeoDiv json_to_geodiv(const std::string id,
+                      const nlohmann::json json_coords_raw,
+                      const bool is_polygon,
+                      CartogramInfo *cart_info)
 {
   GeoDiv gd(id);
   nlohmann::json json_coords;
@@ -74,7 +74,7 @@ GeoDiv json_to_cgal(const std::string id,
 
     // Store exterior ring in CGAL format
     Polygon ext_ring;
-    const nlohmann::json jphc_ext = json_pgn_holes_container[0];
+    const auto jphc_ext = json_pgn_holes_container[0];
     for (unsigned int j = 0; j < jphc_ext.size() - 1; ++j) {
       ext_ring.push_back(Point(static_cast<double>(jphc_ext[j][0]),
                                static_cast<double>(jphc_ext[j][1])));
@@ -82,7 +82,7 @@ GeoDiv json_to_cgal(const std::string id,
 
     // CGAL considers a polygon as simple only if first vertex and last vertex
     // are different
-    const unsigned int last_index = jphc_ext.size() - 1;
+    const auto last_index = jphc_ext.size() - 1;
     if (jphc_ext[0][0] != jphc_ext[last_index][0] ||
         jphc_ext[0][1] != jphc_ext[last_index][1]) {
       ext_ring.push_back(Point(static_cast<double>(jphc_ext[last_index][0]),
@@ -102,7 +102,7 @@ GeoDiv json_to_cgal(const std::string id,
     // strategy works for most geospatial boundary files in the wild, but it
     // would still be sensible to allow cases where there are external rings
     // with opposite winding directions.
-    const bool erico = ext_ring.is_clockwise_oriented();
+    const auto erico = ext_ring.is_clockwise_oriented();
     cart_info->set_original_ext_ring_is_clockwise(erico);
     if (erico) {
       ext_ring.reverse_orientation();
@@ -112,12 +112,12 @@ GeoDiv json_to_cgal(const std::string id,
     std::vector<Polygon> int_ring_v;
     for (unsigned int i = 1; i < json_pgn_holes_container.size(); ++i) {
       Polygon int_ring;
-      const nlohmann::json jphc_int = json_pgn_holes_container[i];
+      const auto jphc_int = json_pgn_holes_container[i];
       for (unsigned int j = 0; j < jphc_int.size() - 1; ++j) {
         int_ring.push_back(Point(static_cast<double>(jphc_int[j][0]),
                                  static_cast<double>(jphc_int[j][1])));
       }
-      const unsigned int last_index = jphc_int.size() - 1;
+      const auto last_index = jphc_int.size() - 1;
       if (jphc_int[0][0] != jphc_int[last_index][0] ||
           jphc_int[0][1] != jphc_int[last_index][1]) {
         int_ring.push_back(
@@ -145,11 +145,12 @@ void print_properties_map(
   const std::map<std::string, std::vector<std::string> > properties_map,
   const unsigned long chosen_number)
 {
-  const unsigned long max_n_printed_values = 5;
+  const unsigned int max_n_printed_values = 5;
   auto value_vec = properties_map.begin()->second;
-  const unsigned long n_printed_values = std::min(
-    value_vec.size(), static_cast<unsigned long>(max_n_printed_values));
-  unsigned long i = 0;
+  const auto n_printed_values = std::min(
+    value_vec.size(),
+    static_cast<unsigned long>(max_n_printed_values));
+  unsigned int i = 0;
   for (const auto &[key, val] : properties_map) {
     ++i;
     if (chosen_number == i || chosen_number == properties_map.size() + 1) {
@@ -185,35 +186,37 @@ void read_geojson(const std::string geometry_file_name,
   try {
     in_file >> j;
   } catch (nlohmann::json::parse_error& e) {
-    std::cerr << "ERROR: " << e.what() << '\n'
-              << "exception id: " << e.id << '\n'
-              << "byte position of error: " << e.byte << std::endl;
+    std::cerr << "ERROR: "
+              << e.what()
+              << ".\nexception id: "
+              << e.id
+              << "\nbyte position of error: "
+              << e.byte
+              << std::endl;
     _Exit(3);
   }
   check_geojson_validity(j);
   std::set<std::string> ids_in_geojson;
-
 
   // Read coordinate reference system if it is included in the GeoJSON
   if (j.contains(std::string{"crs"})) {
     *crs = j["crs"]["properties"]["name"];
   }
 
-  // Iterate through each inset
+  // Iterate over each inset
   for (auto &[inset_pos, inset_state] : *cart_info->ref_to_inset_states()) {
     for (const auto &feature : j["features"]) {
-      const nlohmann::json geometry = feature["geometry"];
+      const auto geometry = feature["geometry"];
       const bool is_polygon = (geometry["type"] == "Polygon");
       if (!make_csv) {
 
         // Store ID from properties
-        const nlohmann::json properties = feature["properties"];
+        const auto properties = feature["properties"];
         if (!properties.contains(cart_info->id_header()) &&
             cart_info->id_header() != "") {  // Visual file not provided
           std::cerr << "ERROR: In GeoJSON, there is no property "
                     << cart_info->id_header()
-                    << " in feature." << std::endl;
-          std::cerr << "Available properties are: "
+                    << " in feature.\nAvailable properties are: "
                     << properties
                     << std::endl;
           _Exit(16);
@@ -222,7 +225,7 @@ void read_geojson(const std::string geometry_file_name,
         // Use dump() instead of get() so that we can handle string and
         // numeric IDs in GeoJSON. Both types of IDs are converted to C++
         // strings.
-        std::string id = properties[cart_info->id_header()].dump();
+        auto id = properties[cart_info->id_header()].dump();
 
         // We only need to check whether the front of the string is '"'
         // because dump() automatically prefixes and postfixes a '"' to any
@@ -243,8 +246,10 @@ void read_geojson(const std::string geometry_file_name,
             _Exit(18);
           }
           ids_in_geojson.insert(id);
-          const GeoDiv gd =
-            json_to_cgal(id, geometry["coordinates"], is_polygon, cart_info);
+          const auto gd = json_to_geodiv(id,
+                                         geometry["coordinates"],
+                                         is_polygon,
+                                         cart_info);
           inset_state.push_back(gd);
         }
       }
@@ -258,15 +263,15 @@ void read_geojson(const std::string geometry_file_name,
     std::map<std::string, std::vector<std::string> > properties_map;
     for (const auto &feature : j["features"]) {
       for (const auto &property_item : feature["properties"].items()) {
-        auto key = property_item.key();
+        const auto key = property_item.key();
 
         // Handle strings and numbers
-        std::string value = property_item.value().dump();
+        auto value = property_item.value().dump();
         if (value.front() == '"') {
           value = value.substr(1, value.length() - 2);
         }
         const auto value_vec = properties_map[key];
-        const bool value_not_inside =
+        const auto value_not_inside =
           std::find(value_vec.begin(), value_vec.end(), value) ==
           value_vec.end();
         if (value != "null" && !value.empty() && value_not_inside) {
@@ -276,8 +281,7 @@ void read_geojson(const std::string geometry_file_name,
     }
 
     // Discard keys with repeating or missing values
-    std::map<std::string, std::vector<std::string> > viable_properties_map =
-      properties_map;
+    auto viable_properties_map = properties_map;
     for (const auto &[key, value_vec] : properties_map) {
       if (value_vec.size() < j["features"].size()) {
         viable_properties_map.erase(key);
@@ -285,19 +289,17 @@ void read_geojson(const std::string geometry_file_name,
     }
     std::cerr << std::endl;
 
-
-    // Have the user choose which key(s) they want to use as the identifier(s)
-    // if more than one key available
+    // Have the users choose which key(s) they want to use as the
+    // identifier(s) if more than one key available
     unsigned long chosen_number = 0;
     if (viable_properties_map.size() > 1) {
 
       // Present user with all possible identifiers and a few examples
-      std::cerr << "These are the unique identifiers and their values: ";
-      std::cerr << std::endl;
+      std::cerr << "These are the unique identifiers and their values:\n"
+                << std::endl;
       print_properties_map(
         viable_properties_map, viable_properties_map.size() + 1);
-      std::cerr << viable_properties_map.size() + 1 << ". All";
-      std::cerr << std::endl << std::endl;
+      std::cerr << viable_properties_map.size() + 1 << ". All\n" << std::endl;
       while (std::cin.fail() ||
              chosen_number < 1 ||
              chosen_number > viable_properties_map.size() + 1) {
@@ -324,13 +326,13 @@ void read_geojson(const std::string geometry_file_name,
       print_properties_map(
         viable_properties_map, viable_properties_map.size() + 1);
       std::cerr << std::endl;
-      chosen_number++;
+      ++chosen_number;
     }
 
     // Declare chosen identifier(s)
     std::map<std::string, std::vector<std::string> > chosen_identifiers;
     unsigned int i = 0;
-    for (auto [key, value_vec] : viable_properties_map) {
+    for (const auto &[key, value_vec] : viable_properties_map) {
       ++i;
       if (chosen_number == i ||
           chosen_number == viable_properties_map.size() + 1) {
@@ -345,8 +347,8 @@ void read_geojson(const std::string geometry_file_name,
 
     // Write CSV
     std::ofstream out_file_csv;
-    std::string csv_name = cart_info->map_name() + ".csv";
-    out_file_csv.open (csv_name);
+    const auto csv_name = cart_info->map_name() + ".csv";
+    out_file_csv.open(csv_name);
     if (!out_file_csv) {
       throw std::system_error(errno,
                               std::system_category(),
@@ -358,7 +360,7 @@ void read_geojson(const std::string geometry_file_name,
     csv_rows(chosen_identifiers.begin()->second.size() + 1);
 
     // Converting map into a vector
-    int column = 0;
+    unsigned int column = 0;
     for (const auto &[column_name, ids] : chosen_identifiers) {
       csv_rows[0].push_back(column_name);
       if (column == 0) {
@@ -390,8 +392,7 @@ void read_geojson(const std::string geometry_file_name,
   }
 
   // Check whether all IDs in visual_variable_file appear in GeoJSON
-  const std::set<std::string> ids_in_vv_file =
-    cart_info->ids_in_visual_variables_file();
+  const auto ids_in_vv_file = cart_info->ids_in_visual_variables_file();
   std::set<std::string> ids_not_in_geojson;
   std::set_difference(ids_in_vv_file.begin(), ids_in_vv_file.end(),
                       ids_in_geojson.begin(), ids_in_geojson.end(),
