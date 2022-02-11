@@ -14,7 +14,7 @@ struct Matrix {
   double det() const;
   Matrix adjugate() const;
   Matrix inverse() const;
-  Matrix multiplied_with(Matrix) const;
+  Matrix multiplied_with(const Matrix) const;
   Point transformed_point(const Point) const;
 };
 
