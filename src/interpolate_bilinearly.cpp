@@ -23,13 +23,19 @@ double interpolate_bilinearly(double x,
 {
   if (x < 0 || x > lx || y < 0 || y > ly) {
     std::cerr << "ERROR: coordinate outside bounding box in "
-              << "interpolate_bilinearly().\n";
-    std::cerr << "x=" << x << ", y=" << y << std::endl;
+              << __func__
+              << "().\n"
+              << "x="
+              << x
+              << ", y="
+              << y
+              << std::endl;
     exit(1);
   }
   if (zero != 'x' && zero != 'y') {
     std::cerr << "ERROR: unknown argument zero in "
-              << "interpolate_bilinearly()."
+              << __func__
+              << "()."
               << std::endl;
     exit(1);
   }

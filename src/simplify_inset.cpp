@@ -150,7 +150,10 @@ void simplify_inset(InsetState *inset_state,
                 matching_simpl_pgn.end(),
                 no_matching_simpl_pgn) != matching_simpl_pgn.end() ||
       !unmatched.empty()) {
-    std::cerr << "ERROR: Unmatched polygon in simplify_inset()." << std::endl;
+    std::cerr << "ERROR: Unmatched polygon in "
+              << __func__
+              << "()."
+              << std::endl;
     exit(1);
   }
 
