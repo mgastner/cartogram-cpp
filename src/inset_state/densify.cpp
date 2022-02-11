@@ -13,7 +13,8 @@ XYPoint calc_intersection(const XYPoint a1,
                           const XYPoint b1,
                           const XYPoint b2)
 {
-  // Check if any segment is undefined (i.e., defined by identical points)
+  // Check whether any segment is undefined (i.e., defined by identical
+  // points)
   if (a1 == a2 || b1 == b2) {
     std::cerr << "ERROR: End points of line segment are identical"
               << std::endl;
@@ -36,13 +37,11 @@ XYPoint calc_intersection(const XYPoint a1,
     // Only line (b1, b2) is vertical
     intersection.x = b1.x;
     intersection.y = a * b1.x + a_intercept;
-
   } else if (isfinite(b) && isinf(a)) {
 
     // Only line (a1, a2) is vertical
     intersection.x = a1.x;
     intersection.y = b * a1.x + b_intercept;
-
   } else {
 
     // Set negative intersection coordinates if there is no solution or
@@ -70,31 +69,35 @@ std::vector<Point> densification_points(const Point pt1,
                                         const unsigned int lx,
                                         const unsigned int ly)
 {
-
   // If the input points are identical, return them without calculating
-  // intersections.
+  // intersections
   if ((pt1.x() == pt2.x()) && (pt1.y() == pt2.y())) {
     std::vector<Point> points;
     points.push_back(pt1);
     points.push_back(pt2);
     return points;
   }
+
   // Vector for storing intersections before removing duplicates
   std::vector<XYPoint> temp_intersections;
 
-  // Assign `a` as the leftmost point of p1 and pt2. If both points have the
-  // same x-coordinate, assign `a` as the lower point. The other point is
-  // assigned as b. The segments (a, b) and (b, a) describe the same segment.
+  // Store the leftmost point of p1 and pt2 as `a`. If both points have the
+  // same x-coordinate, then store the lower point as `a`. The other point is
+  // stored as `b`. The segments (a, b) and (b, a) describe the same segment.
   // However, if we flip the order of a and b, the resulting intersections are
   // not necessarily the same because of floating point errors.
   XYPoint a;
   XYPoint b;
   if ((pt1.x() > pt2.x()) || ((pt1.x() == pt2.x()) && (pt1.y() > pt2.y()))) {
-    a.x = pt2.x(); a.y = pt2.y();
-    b.x = pt1.x(); b.y = pt1.y();
+    a.x = pt2.x();
+    a.y = pt2.y();
+    b.x = pt1.x();
+    b.y = pt1.y();
   } else{
-    a.x = pt1.x(); a.y = pt1.y();
-    b.x = pt2.x(); b.y = pt2.y();
+    a.x = pt1.x();
+    a.y = pt1.y();
+    b.x = pt2.x();
+    b.y = pt2.y();
   }
   temp_intersections.push_back(a);
   temp_intersections.push_back(b);
@@ -130,17 +133,17 @@ std::vector<Point> densification_points(const Point pt1,
   // Distance between top and bottom graticule cell
   const unsigned int dist_y = std::ceil(end_v.y - start_v.y);
 
-  // Iterative variables for tracking current graticule cell
+  // Iterator variables for tracking current graticule cell in next for-loop
   double current_graticule_x = start_v.x;
   double current_graticule_y = start_v.y;
 
-  // Loop through each row, from bottom to top
+  // Iterate over each row, from bottom to top
   for (unsigned int i = 0; i <= dist_y; ++i) {
 
-    // Loop through each column, from left to right
+    // Iterate over each column, from left to right
     for (unsigned int j = 0; j <= dist_x; ++j) {
 
-      // Get points for the current graticule cell, in this order:
+      // Get points for the current graticule cell, in the following order:
       // bottom-left, bottom-right, top-right, top-left
       XYPoint v0;
       v0.x = current_graticule_x;
@@ -156,7 +159,7 @@ std::vector<Point> densification_points(const Point pt1,
       v3.y = std::min(double(ly), v0.y + 1.0);
 
       // Store intersections of line segment from `a` to `b` with graticule
-      // lines and diagonals.
+      // lines and diagonals
       std::vector<XYPoint> graticule_intersections;
 
       // Bottom intersection
@@ -264,7 +267,7 @@ void InsetState::densify_geo_divs()
 
         // Densify the segment
         const std::vector<Point> outer_pts_dens =
-          densification_points(a, b, lx(), ly());
+          densification_points(a, b, lx_, ly_);
 
         // Push all points. Omit the last point because it will be included
         // in the next iteration. Otherwise, we would have duplicated points
@@ -294,7 +297,7 @@ void InsetState::densify_geo_divs()
           const Point c = (*h)[j];
           const Point d = (j == (*h).size() - 1) ? (*h)[0] : (*h)[j + 1];
           const std::vector<Point> hole_pts_dens =
-            densification_points(c, d, lx(), ly());
+            densification_points(c, d, lx_, ly_);
           for (size_t i = 0; i < (hole_pts_dens.size() - 1); ++i) {
             hole_dens.push_back(hole_pts_dens[i]);
           }
