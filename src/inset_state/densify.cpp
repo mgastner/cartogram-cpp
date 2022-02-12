@@ -145,18 +145,11 @@ std::vector<Point> densification_points(const Point pt1,
 
       // Get points for the current graticule cell, in the following order:
       // bottom-left, bottom-right, top-right, top-left
-      XYPoint v0;
-      v0.x = current_graticule_x;
-      v0.y = current_graticule_y;
-      XYPoint v1;
-      v1.x = std::min(double(lx), v0.x + 1.0);
-      v1.y = v0.y;
-      XYPoint v2;
-      v2.x = std::min(double(lx), v0.x + 1.0);
-      v2.y = std::min(double(ly), v0.y + 1.0);
-      XYPoint v3;
-      v3.x = v0.x;
-      v3.y = std::min(double(ly), v0.y + 1.0);
+      XYPoint v0(current_graticule_x, current_graticule_y);
+      XYPoint v1(std::min(double(lx), v0.x + 1.0), v0.y);
+      XYPoint v2(std::min(double(lx), v0.x + 1.0),
+                 std::min(double(ly), v0.y + 1.0));
+      XYPoint v3(v0.x, std::min(double(ly), v0.y + 1.0));
 
       // Store intersections of line segment from `a` to `b` with graticule
       // lines and diagonals
@@ -252,7 +245,7 @@ void InsetState::densify_geo_divs()
   for (const auto &gd : geo_divs_) {
     GeoDiv gd_dens(gd.id());
     for (const auto &pwh : gd.polygons_with_holes()) {
-      const Polygon outer = pwh.outer_boundary();
+      const auto outer = pwh.outer_boundary();
       Polygon outer_dens;
 
       // Iterate over each point in the outer boundary of the polygon
@@ -262,8 +255,8 @@ void InsetState::densify_geo_divs()
         // `b` should be the point immediately after `a`, unless `a` is the
         // final point of the boundary, in which case `b` should be the first
         // point.
-        const Point a = outer[i];
-        const Point b = (i == outer.size() - 1) ? outer[0] : outer[i + 1];
+        const auto a = outer[i];
+        const auto b = (i == outer.size() - 1) ? outer[0] : outer[i + 1];
 
         // Densify the segment
         const std::vector<Point> outer_pts_dens =
