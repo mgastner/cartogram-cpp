@@ -2,6 +2,11 @@
 #include "matrix.h"
 #include "inset_state.h"
 
+// TODO: IT WOULD BE LESS TYPING TO DEFINE Matrix AS A
+// boost::multi_array<double, 2>. THEN WE COULD WRITE THE IDENTITY MATRIX AS
+// for (unsigned int i = 0; i < 3; ++i) {
+//   for (unsigned int j = 0; j < 3; ++j) {
+//     p[i][j] = (i == j) ? 1 : 0;
 Matrix::Matrix()
 {
   // Identity matrix
