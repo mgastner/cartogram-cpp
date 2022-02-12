@@ -38,7 +38,7 @@ argparse::ArgumentParser parsed_arguments(
   // Optional argument accepting long grid side length (unsigned int) as
   // input. Default value declared in "constants.h"
   arguments.add_argument("-N", "--n_graticule_rows_or_cols")
-  .default_value(default_max_n_graticule_rows_or_cols)
+  .default_value(default_long_graticule_length)
   .scan<'u', unsigned int>()
   .help(
     "Integer: Number of grid cells along longer Cartesian coordinate axis");

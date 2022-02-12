@@ -6,6 +6,7 @@
 #include "flatten_density.h"
 #include "geo_div.h"
 #include "inset_state.h"
+#include "parse_arguments.h"
 #include "project.h"
 #include "read_csv.h"
 #include "read_geojson.h"
@@ -15,8 +16,6 @@
 #include "write_eps.h"
 #include "write_geojson.h"
 #include "write_cairo.h"
-#include "xy_point.h"
-#include "parse_arguments.h"
 #include <iostream>
 #include <cmath>
 
@@ -25,15 +24,12 @@ int main(const int argc, const char *argv[])
   std::string geo_file_name, visual_file_name;  // Default values
 
   // Default number of grid cells along longer Cartesian coordinate axis
-  unsigned int max_n_graticule_rows_or_cols =
-    default_max_n_graticule_rows_or_cols;
+  unsigned int long_graticule_length = default_long_graticule_length;
 
   // Target number of points to retain after simplification
   unsigned int target_points_per_inset = default_target_points_per_inset;
 
-  // World maps need special projections. By default, we assume that the
-  // input map is not a world map.
-  bool world;
+  bool world;  // World maps need special projections
 
   // Another cartogram projection method based on triangulation of graticule
   // cells. It can eliminate intersections that occur when the projected
@@ -58,7 +54,7 @@ int main(const int argc, const char *argv[])
     argv,
     geo_file_name,
     visual_file_name,
-    max_n_graticule_rows_or_cols,
+    long_graticule_length,
     target_points_per_inset,
     world,
     triangulation,
@@ -210,7 +206,7 @@ int main(const int argc, const char *argv[])
     } else {
 
       // Rescale map to fit into a rectangular box [0, lx] * [0, ly]
-      rescale_map(max_n_graticule_rows_or_cols,
+      rescale_map(long_graticule_length,
                   &inset_state,
                   cart_info.is_world_map());
 

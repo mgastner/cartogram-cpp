@@ -4,7 +4,7 @@
 #include <limits>
 #include <numbers>
 
-constexpr unsigned int default_max_n_graticule_rows_or_cols = 512;
+constexpr unsigned int default_long_graticule_length = 512;
 constexpr double dbl_epsilon = std::numeric_limits<double>::epsilon();
 constexpr double dbl_inf = std::numeric_limits<double>::infinity();
 constexpr unsigned int max_integrations = 100;
