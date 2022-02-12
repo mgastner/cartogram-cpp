@@ -8,8 +8,8 @@
 
 void project(InsetState *inset_state)
 {
-  const auto lx = inset_state->lx();
-  const auto ly = inset_state->ly();
+  const unsigned int lx = inset_state->lx();
+  const unsigned int ly = inset_state->ly();
   const auto &proj = *inset_state->ref_to_proj();
   auto &cum_proj = *inset_state->ref_to_cum_proj();
 
@@ -29,11 +29,11 @@ void project(InsetState *inset_state)
 
       // TODO: Should the interpolation be made on the basis of triangulation?
       // Calculate displacement for cumulative graticule coordinates
-      const auto graticule_intp_x = interpolate_bilinearly(
+      const double graticule_intp_x = interpolate_bilinearly(
         cum_proj[i][j].x,
         cum_proj[i][j].y,
         &xdisp, 'x', lx, ly);
-      const auto graticule_intp_y = interpolate_bilinearly(
+      const double graticule_intp_y = interpolate_bilinearly(
         cum_proj[i][j].x,
         cum_proj[i][j].y,
         &ydisp, 'y', lx, ly);
@@ -52,11 +52,11 @@ void project(InsetState *inset_state)
       for (unsigned int i = 0; i < old_ext_ring.size(); ++i) {
 
         // Update exterior ring coordinates
-        const auto old_ext_intp_x =
+        const double old_ext_intp_x =
           interpolate_bilinearly(old_ext_ring[i][0], old_ext_ring[i][1],
                                  &xdisp, 'x',
                                  lx, ly);
-        const auto old_ext_intp_y =
+        const double old_ext_intp_y =
           interpolate_bilinearly(old_ext_ring[i][0], old_ext_ring[i][1],
                                  &ydisp, 'y',
                                  lx, ly);
@@ -69,11 +69,11 @@ void project(InsetState *inset_state)
         for (unsigned int i = 0; i < h->size(); ++i) {
 
           // Update hole coordinates
-          const auto old_hole_intp_x =
+          const double old_hole_intp_x =
             interpolate_bilinearly((*h)[i].x(), (*h)[i].y(),
                                    &xdisp, 'x',
                                    lx, ly);
-          const auto old_hole_intp_y =
+          const double old_hole_intp_y =
             interpolate_bilinearly((*h)[i].x(), (*h)[i].y(),
                                    &ydisp, 'y',
                                    lx, ly);
@@ -98,8 +98,8 @@ void project(InsetState *inset_state)
 // y-coordinates.
 void exit_if_not_on_grid_or_edge(const Point pt, InsetState *inset_state)
 {
-  const auto lx = inset_state->lx();
-  const auto ly = inset_state->ly();
+  const unsigned int lx = inset_state->lx();
+  const unsigned int ly = inset_state->ly();
   if ((pt.x() != 0.0 && pt.x() != lx && pt.x() - int(pt.x()) != 0.5) ||
       (pt.y() != 0.0 && pt.y() != ly && pt.y() - int(pt.y()) != 0.5)) {
     std::cerr << "Error: Invalid input coordinate in triangulation\n"
@@ -118,12 +118,12 @@ Point projected_point(const Point pt, InsetState *inset_state)
 {
   exit_if_not_on_grid_or_edge(pt, inset_state);
   const auto &proj = *inset_state->ref_to_proj();
-  const auto lx = inset_state->lx();
-  const auto ly = inset_state->ly();
-  const auto proj_x = std::min(
+  const unsigned int lx = inset_state->lx();
+  const unsigned int ly = inset_state->ly();
+  const unsigned int proj_x = std::min(
     static_cast<unsigned int>(lx) - 1,
     static_cast<unsigned int>(pt.x()));
-  const auto proj_y = std::min(
+  const unsigned int proj_y = std::min(
     static_cast<unsigned int>(ly) - 1,
     static_cast<unsigned int>(pt.y()));
   return Point((pt.x() == 0.0 || pt.x() == inset_state->lx()) ?
@@ -207,8 +207,8 @@ int chosen_diag(const Point v[4],
 
 void fill_graticule_diagonals(InsetState *inset_state)
 {
-  const auto lx = inset_state->lx();
-  const auto ly = inset_state->ly();
+  const unsigned int lx = inset_state->lx();
+  const unsigned int ly = inset_state->ly();
   auto &graticule_diagonals = *inset_state->ref_to_graticule_diagonals();
 
   // Initialize array if running for the first time
@@ -271,8 +271,8 @@ bool is_on_triangle_boundary(const Point pt, const Polygon triangle)
 std::array<Point, 3> untransformed_triangle(const Point pt,
                                             InsetState *inset_state)
 {
-  const auto lx = inset_state->lx();
-  const auto ly = inset_state->ly();
+  const unsigned int lx = inset_state->lx();
+  const unsigned int ly = inset_state->ly();
   if (pt.x() < 0 || pt.x() > lx || pt.y() < 0 || pt.y() > ly) {
     CGAL::set_pretty_mode(std::cerr);
     std::cerr << "ERROR: coordinate outside bounding box in "
@@ -312,8 +312,8 @@ std::array<Point, 3> untransformed_triangle(const Point pt,
 
     // Case where the graticule is not on the edge of the grid. We can find the
     // already computed chosen diagonal in graticule_diagonals.
-    const auto x = static_cast<unsigned int>(v[0].x());
-    const auto y = static_cast<unsigned int>(v[0].y());
+    const unsigned int x = static_cast<unsigned int>(v[0].x());
+    const unsigned int y = static_cast<unsigned int>(v[0].y());
     diag = graticule_diagonals[x][y];
   }
 
@@ -460,8 +460,8 @@ void project_with_triangulation(InsetState *inset_state)
   inset_state->set_geo_divs(new_geo_divs);
 
   // Cumulative projection
-  const auto lx = inset_state->lx();
-  const auto ly = inset_state->ly();
+  const unsigned int lx = inset_state->lx();
+  const unsigned int ly = inset_state->ly();
   auto &cum_proj = *inset_state->ref_to_cum_proj();
   for (unsigned int i = 0; i < lx; ++i) {
     for (unsigned int j = 0; j < ly; ++j) {
