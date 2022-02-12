@@ -146,7 +146,7 @@ void print_properties_map(
   const unsigned long chosen_number)
 {
   const unsigned int max_n_printed_values = 5;
-  auto value_vec = properties_map.begin()->second;
+  const auto value_vec = properties_map.begin()->second;
   const auto n_printed_values = std::min(
     value_vec.size(),
     static_cast<unsigned long>(max_n_printed_values));
@@ -271,7 +271,7 @@ void read_geojson(const std::string geometry_file_name,
           value = value.substr(1, value.length() - 2);
         }
         const auto value_vec = properties_map[key];
-        const auto value_not_inside =
+        const bool value_not_inside =
           std::find(value_vec.begin(), value_vec.end(), value) ==
           value_vec.end();
         if (value != "null" && !value.empty() && value_not_inside) {
@@ -356,8 +356,8 @@ void read_geojson(const std::string geometry_file_name,
     }
 
     // Each vector of strings will represent one row
-    std::vector<std::vector<std::string> >
-    csv_rows(chosen_identifiers.begin()->second.size() + 1);
+    std::vector<std::vector<std::string> > csv_rows(
+      chosen_identifiers.begin()->second.size() + 1);
 
     // Converting map into a vector
     unsigned int column = 0;
