@@ -102,7 +102,7 @@ GeoDiv json_to_geodiv(const std::string id,
     // strategy works for most geospatial boundary files in the wild, but it
     // would still be sensible to allow cases where there are external rings
     // with opposite winding directions.
-    const auto erico = ext_ring.is_clockwise_oriented();
+    const boolean erico = ext_ring.is_clockwise_oriented();
     cart_info->set_original_ext_ring_is_clockwise(erico);
     if (erico) {
       ext_ring.reverse_orientation();
@@ -117,7 +117,7 @@ GeoDiv json_to_geodiv(const std::string id,
         int_ring.push_back(Point(static_cast<double>(jphc_int[j][0]),
                                  static_cast<double>(jphc_int[j][1])));
       }
-      const auto last_index = jphc_int.size() - 1;
+      const unsigned int last_index = jphc_int.size() - 1;
       if (jphc_int[0][0] != jphc_int[last_index][0] ||
           jphc_int[0][1] != jphc_int[last_index][1]) {
         int_ring.push_back(
@@ -147,7 +147,7 @@ void print_properties_map(
 {
   const unsigned int max_n_printed_values = 5;
   const auto value_vec = properties_map.begin()->second;
-  const auto n_printed_values = std::min(
+  const unsigned int n_printed_values = std::min(
     value_vec.size(),
     static_cast<unsigned long>(max_n_printed_values));
   unsigned int i = 0;
