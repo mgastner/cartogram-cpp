@@ -1,10 +1,10 @@
-#include <cairo/cairo.h>
-#include <cairo/cairo-ps.h>
-#include <cairo/cairo-pdf.h>
 #include "constants.h"
 #include "cartogram_info.h"
 #include "inset_state.h"
-#include "iostream"
+#include <cairo/cairo.h>
+#include <cairo/cairo-ps.h>
+#include <cairo/cairo-pdf.h>
+#include <iostream>
 
 // TODO: IS THERE A CGAL WAY OF DETERMINING WHETHER THE LABEL'S BOUNDING
 //       BOX IS COMPLETELY CONTAINED IN THE POLYGON?
@@ -28,9 +28,9 @@ double font_size(cairo_t *cr,
                  const Point label_pt,
                  const GeoDiv gd)
 {
-  cairo_text_extents_t extents;
   for (double fsize = max_font_size; fsize >= min_font_size; fsize -= 0.5) {
     cairo_set_font_size(cr, fsize);
+    cairo_text_extents_t extents;
     cairo_text_extents(cr, label, &extents);
     const auto largest_pwh = gd.largest_polygon_with_holes();
 
@@ -57,14 +57,14 @@ double font_size(cairo_t *cr,
   return 0.0;
 }
 
-void write_polygon_to_cairo_surface(cairo_t *cr,
-                                    const bool fill_polygons,
-                                    const bool colors,
-                                    const bool plot_graticule,
-                                    InsetState *inset_state)
+void write_polygons_to_cairo_surface(cairo_t *cr,
+                                     const bool fill_polygons,
+                                     const bool colors,
+                                     const bool plot_graticule,
+                                     InsetState *inset_state)
 {
-  const auto lx = inset_state->lx();
-  const auto ly = inset_state->ly();
+  const unsigned int lx = inset_state->lx();
+  const unsigned int ly = inset_state->ly();
   cairo_set_line_width(cr, 1e-3 * std::min(lx, ly));
 
   // Draw the shapes
@@ -130,9 +130,9 @@ void write_polygon_to_cairo_surface(cairo_t *cr,
 
     // Get size of label
     const auto fsize = font_size(cr, label_char, label_pt, gd);
-    cairo_text_extents_t extents;
     if (fsize > 0.0) {
       cairo_set_font_size(cr, fsize);
+      cairo_text_extents_t extents;
       cairo_text_extents(cr, label_char, &extents);
       const double x =
         label_pt.x() - (extents.width / 2 + extents.x_bearing);
@@ -180,17 +180,17 @@ void write_cairo_polygons_to_png(const std::string fname,
                                  InsetState *inset_state)
 {
   const auto filename = fname.c_str();
-  const auto lx = inset_state->lx();
-  const auto ly = inset_state->ly();
-  cairo_surface_t *surface;
-  cairo_t *cr;
-  surface = cairo_image_surface_create(CAIRO_FORMAT_ARGB32, lx, ly);
-  cr = cairo_create(surface);
-  write_polygon_to_cairo_surface(cr,
-                                 fill_polygons,
-                                 colors,
-                                 plot_graticule,
-                                 inset_state);
+  const unsigned int lx = inset_state->lx();
+  const unsigned int ly = inset_state->ly();
+  cairo_surface_t *surface = cairo_image_surface_create(CAIRO_FORMAT_ARGB32,
+                                                        lx,
+                                                        ly);
+  cairo_t *cr = cairo_create(surface);
+  write_polygons_to_cairo_surface(cr,
+                                  fill_polygons,
+                                  colors,
+                                  plot_graticule,
+                                  inset_state);
   cairo_surface_write_to_png(surface, filename);
   cairo_destroy(cr);
   cairo_surface_destroy(surface);
@@ -204,12 +204,10 @@ void write_cairo_polygons_to_ps(const std::string fname,
                                 InsetState *inset_state)
 {
   const auto filename = fname.c_str();
-  const auto lx = inset_state->lx();
-  const auto ly = inset_state->ly();
-  cairo_surface_t *surface;
-  cairo_t *cr;
-  surface = cairo_ps_surface_create(filename, lx, ly);
-  cr = cairo_create(surface);
+  const unsigned int lx = inset_state->lx();
+  const unsigned int ly = inset_state->ly();
+  cairo_surface_t *surface = cairo_ps_surface_create(filename, lx, ly);
+  cairo_t *cr = cairo_create(surface);
 
   // Add comments
   const std::string title = "%%Title: " + fname;
@@ -222,17 +220,18 @@ void write_cairo_polygons_to_ps(const std::string fname,
                                "%%Copyright: License CC BY");
   cairo_ps_surface_dsc_comment(surface,
                                "%%Magnification: 1.0000");
-  write_polygon_to_cairo_surface(cr,
-                                 fill_polygons,
-                                 colors,
-                                 plot_graticule,
-                                 inset_state);
+  write_polygons_to_cairo_surface(cr,
+                                  fill_polygons,
+                                  colors,
+                                  plot_graticule,
+                                  inset_state);
   cairo_show_page(cr);
   cairo_surface_destroy(surface);
   cairo_destroy(cr);
 }
 
-// TODO: DO WE NEED THIS FUNCTION?
+// TODO: DO WE NEED THIS FUNCTION? WOULD IT NOT MAKE MORE SENSE TO ONLY PRINT
+// FILE TYPES INDICATED BY COMMAND-LINE FLAGS?
 // Outputs both png and ps files
 void write_cairo_map(const std::string file_name,
                      const bool plot_graticule,
