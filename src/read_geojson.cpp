@@ -102,7 +102,7 @@ GeoDiv json_to_geodiv(const std::string id,
     // strategy works for most geospatial boundary files in the wild, but it
     // would still be sensible to allow cases where there are external rings
     // with opposite winding directions.
-    const boolean erico = ext_ring.is_clockwise_oriented();
+    const bool erico = ext_ring.is_clockwise_oriented();
     cart_info->set_original_ext_ring_is_clockwise(erico);
     if (erico) {
       ext_ring.reverse_orientation();
