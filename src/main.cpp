@@ -359,7 +359,7 @@ int main(const int argc, const char *argv[])
   } else {
     output_file_name = map_name + "_cartogram.geojson";
   }
-  const nlohmann::json cart_json = cgal_to_json(&cart_info);
+  const auto cart_json = cgal_to_json(&cart_info);
   write_geojson(cart_json,
                 geo_file_name,
                 output_file_name,
