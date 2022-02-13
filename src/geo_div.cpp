@@ -24,7 +24,7 @@ double GeoDiv::area() const
     const auto ext_ring = pwh.outer_boundary();
     a += ext_ring.area();
     for (auto h = pwh.holes_begin(); h != pwh.holes_end(); ++h) {
-      a += (*h).area();
+      a += h->area();
     }
   }
   return a;
@@ -44,7 +44,7 @@ const Polygon_with_holes GeoDiv::largest_polygon_with_holes() const
     const auto ext_ring = pwh.outer_boundary();
     area += ext_ring.area();
     for (auto h = pwh.holes_begin(); h != pwh.holes_end(); ++h) {
-      area += (*h).area();
+      area += h->area();
     }
     if (area > max_area) {
       max_area = area;
@@ -61,7 +61,7 @@ unsigned int GeoDiv::n_points() const
     const auto outer = pwh.outer_boundary();
     n_points += outer.size();
     for (auto h = pwh.holes_begin(); h != pwh.holes_end(); ++h) {
-      n_points += (*h).size();
+      n_points += h->size();
     }
   }
   return n_points;
@@ -81,9 +81,8 @@ unsigned int GeoDiv::n_rings() const
   return n_rings;
 }
 
-// TODO: THIS IS NOT THE USUAL DEFINITION OF point_on_surface(). INSTEAD OF
-//       THE LARGEST POLYGON WITH HOLES, THE LARGEST LINE SEGMENT IN ANY
-//       POLYGON WITH HOLES IN THE MULTIPOLYGON IS CHOSEN.
+// TODO: IS THIS THE USUAL DEFINITION OF point_on_surface()? SHOULD IT NOT BE
+// THE LARGEST LINE SEGMENT IN ANY POLYGON WITH HOLES IN THE GEO_DIV?
 Point GeoDiv::point_on_surface_of_geodiv() const
 {
   return point_on_surface_of_polygon_with_holes(largest_polygon_with_holes());
@@ -98,8 +97,8 @@ Point GeoDiv::point_on_surface_of_polygon_with_holes(
   const Polygon_with_holes pwh) const
 {
   const auto bb = pwh.bbox();
-  const double line_y = (bb.ymin() + bb.ymax()) / 2;
-  const double epsilon = 1e-6 / default_max_n_graticule_rows_or_cols;
+  const double line_y = 0.5 * (bb.ymin() + bb.ymax());
+  const double epsilon = 1e-6;
 
   // Vector to store intersections
   std::vector<intersection> intersections;
@@ -130,7 +129,7 @@ Point GeoDiv::point_on_surface_of_polygon_with_holes(
 
   // Find midpoint in maximum segment length
   double max_length = 0.0;
-  XYPoint midpoint;
+  double mid_x;
 
   // Iterate over lengths
   for (unsigned int i = 0; i < intersections.size(); i += 2) { \
@@ -138,10 +137,10 @@ Point GeoDiv::point_on_surface_of_polygon_with_holes(
       const double left = intersections[i].x();
       const double right = intersections[i + 1].x();
       max_length = intersections[i].target_density;
-      midpoint.x = (right + left) / 2;
+      mid_x = (right + left) / 2;
     }
   }
-  return Point(midpoint.x, midpoint.y);
+  return Point(mid_x, line_y);
 }
 
 const std::vector<Polygon_with_holes> GeoDiv::polygons_with_holes() const

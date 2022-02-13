@@ -9,7 +9,7 @@ void InsetState::fill_with_density(bool plot_density)
   // CartogramInfo::replace_missing_and_zero_target_areas()
   double mean_density = total_target_area() / total_inset_area();
 
-  // Initially assign 0 to all densities
+  // Initially assign zero to all densities
   for (unsigned int i = 0; i < lx_; ++i) {
     for (unsigned int j = 0; j < ly_; ++j) {
       rho_init_(i, j) = 0;
@@ -18,9 +18,11 @@ void InsetState::fill_with_density(bool plot_density)
 
   // Density numerator and denominator for each graticule cell. The density of
   // a graticule cell can be calculated with (rho_num / rho_den). We initially
-  // assign 0 to all elements because we assume that all graticule cells are
-  // outside any GeoDiv. Any graticule cell where rho_den is 0 will be filled
-  // with the mean_density.
+  // assign zero to all elements because we assume that all graticule cells
+  // are outside any GeoDiv. Any graticule cell where rho_den is zero will be
+  // filled with the mean_density.
+
+  // TODO: rho_num and rho_den could be a boost::multi_array<double, 2>.
   std::vector<std::vector<double> >
   rho_num(lx_, std::vector<double> (ly_, 0));
   std::vector<std::vector<double> >
@@ -30,23 +32,23 @@ void InsetState::fill_with_density(bool plot_density)
   // horizontal "test rays" between each of the ly consecutive horizontal
   // graticule lines.
   const unsigned int resolution = default_resolution;
-  std::vector<std::vector<intersection> >
-  intersections_with_rays =
+  auto intersections_with_rays =
     intersections_with_rays_parallel_to_axis('x', resolution);
 
   // Determine rho's numerator and denominator:
   // - rho_num is the sum of (weight * target_density) for each segment of a
-  //   ray that is inside a GeoDiv
+  //   ray that is inside a GeoDiv.
   // - rho_den is the sum of the weights of a ray that is inside a GeoDiv.
   // The weight of a segment of a ray that is inside a GeoDiv is equal to
   // (length of the segment inside the geo_div) * (area error of the geodiv).
-  // Iterate over each of the rays between the graticule lines y = k and
-  // y = k+1
   for (unsigned int k = 0; k < ly_; ++k) {
+
+    // Iterate over each of the rays between the graticule lines y = k and
+    // y = k+1
     for (double y = k + 0.5/resolution; y < k + 1; y += 1.0/resolution) {
 
       // Intersections for one ray
-      std::vector<intersection> intersections_at_y =
+      auto intersections_at_y =
         intersections_with_rays[round((y - 0.5/resolution) * resolution)];
 
       // Sort intersections in ascending order
@@ -110,6 +112,12 @@ void InsetState::fill_with_density(bool plot_density)
         }
 
         // Fill each cell between intersections
+        // TODO: WE ENCOUNTERED ISSUES WITH THE NEXT FOR_LOOP; THUS, WE
+        // TEMPORARILY REPLACED IT WITH THE VERSION COMMENTED-OUT BELOW.
+        // HOWEVER, NONE OF OUR CURRENT EXAMPLES EXHIBIT THIS PROBLEM.
+        // for (unsigned int m = std::max(ceil(left_x), 1.0);
+        //                   m <= std::max(ceil(right_x), 1.0);
+        //                   ++m) {
         for (unsigned int m = ceil(left_x); m <= ceil(right_x); ++m) {
           double weight = area_error_at(intersections_at_y[i].geo_div_id);
           if (ceil(left_x) == ceil(right_x)) {
