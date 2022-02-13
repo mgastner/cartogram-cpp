@@ -137,6 +137,16 @@ std::vector<Point> densification_points(const Point pt1,
   double current_graticule_x = start_v.x;
   double current_graticule_y = start_v.y;
 
+  // TODO: IT IS INEFFICIENT TO RUN THE INTERSECTIONS OF THE LINE FROM a TO b
+  // WITH THE HORIZONTAL GRID LINES AND VERTICAL GRID LINES IN EACH ITERATION
+  // OF THE NESTED LOOP BELOW. IT WOULD BE BETTER TO HAVE A NON-NESTED LOOP
+  // OVER EACH HORIZONTAL LINE IN THE RANGE, THEN A NON-NESTED LOOP OVER EACH
+  // VERTICAL LINE. FOR THE DIAGONALS, THIS PROCEDURE IS A LITTLE BIT
+  // TRICKIER; AT THE EDGES THE DIAGONALS ARE NOT STRAIGHT CONTINUATIONS OF
+  // THE ADJOINING DIAGONALS. STILL, THERE IS A PROBABLY A WAY TO GET
+  // INTERSECTIONS WITH THE 'MAIN' DIAGONALS ADN TREAT THE EDGE CASES
+  // SEPARATELY.
+
   // Iterate over each row, from bottom to top
   for (unsigned int i = 0; i <= dist_y; ++i) {
 
@@ -145,11 +155,14 @@ std::vector<Point> densification_points(const Point pt1,
 
       // Get points for the current graticule cell, in the following order:
       // bottom-left, bottom-right, top-right, top-left
-      XYPoint v0(current_graticule_x, current_graticule_y);
-      XYPoint v1(std::min(double(lx), v0.x + 1.0), v0.y);
-      XYPoint v2(std::min(double(lx), v0.x + 1.0),
-                 std::min(double(ly), v0.y + 1.0));
-      XYPoint v3(v0.x, std::min(double(ly), v0.y + 1.0));
+      const XYPoint v0(current_graticule_x, current_graticule_y);
+      const XYPoint v1(
+        v0.x == 0.0 ? 0.5 : std::min(double(lx), v0.x + 1.0),
+        v0.y);
+      const XYPoint v2(
+        v1.x,
+        v0.y == 0.0 ? 0.5 : std::min(double(ly), v0.y + 1.0));
+      const XYPoint v3(v0.x, v2.y);
 
       // Store intersections of line segment from `a` to `b` with graticule
       // lines and diagonals
@@ -177,7 +190,7 @@ std::vector<Point> densification_points(const Point pt1,
       // the x-coordinate is between a.x and b.x, but the y coordinate
       // is not between a.y and b.y (e.g. if the line from a to b is
       // vertical).
-      for (XYPoint inter : graticule_intersections) {
+      for (const auto &inter : graticule_intersections) {
         if (((a.x <= inter.x && inter.x <= b.x) ||
              (b.x <= inter.x && inter.x <= a.x)) &&
             ((a.y <= inter.y && inter.y <= b.y) ||
@@ -200,6 +213,8 @@ std::vector<Point> densification_points(const Point pt1,
   // Sort intersections
   std::sort(temp_intersections.begin(), temp_intersections.end());
 
+  // TODO: IF temp_intersections WERE AN ORDERED SET, THERE WOULD BE NO NEED
+  // TO REMOVE DUPLICATES
   // Eliminate duplicates
   std::vector<Point> intersections;
   intersections.push_back(Point(temp_intersections[0].x,
@@ -315,4 +330,5 @@ void InsetState::densify_geo_divs()
     geodivs_dens.push_back(gd_dens);
   }
   set_geo_divs(geodivs_dens);
+  return;
 }
