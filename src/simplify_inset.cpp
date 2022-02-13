@@ -85,6 +85,7 @@ void simplify_inset(InsetState *inset_state,
               << std::endl;
     return;
   }
+
   std::cerr << "Simplifying the inset. "
             << n_pts_before
             << " points in the inset before simplification."
@@ -154,6 +155,14 @@ void simplify_inset(InsetState *inset_state,
               << __func__
               << "()."
               << std::endl;
+    for (const auto &u : unmatched) {
+      std::cerr << "Unmatched polygon: "
+                << u
+                << std::endl;
+      for (const auto &pt : simpl_pgns[u]) {
+        std::cerr << pt << std::endl;
+      }
+    }
     exit(1);
   }
 
