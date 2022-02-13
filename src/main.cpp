@@ -137,6 +137,7 @@ int main(const int argc, const char *argv[])
     // Check for errors in the input topology
     try {
       holes_inside_polygons(&inset_state);
+      rings_are_simple(&inset_state);
     } catch (const std::system_error& e) {
       std::cerr << "ERROR: "
                 << e.what()
@@ -334,6 +335,15 @@ int main(const int argc, const char *argv[])
                         &inset_state);
       }
       if (world) {
+        const auto cart_json = cgal_to_json(&cart_info);
+        std::string output_file_name =
+          map_name + "_cartogram_in_smyth_projection.geojson";
+        write_geojson(cart_json,
+                      geo_file_name,
+                      output_file_name,
+                      std::cout,
+                      output_to_stdout,
+                      &cart_info);
         project_from_smyth_equal_surface(&inset_state);
       } else {
 
