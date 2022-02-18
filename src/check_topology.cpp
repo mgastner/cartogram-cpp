@@ -1,5 +1,6 @@
 #include "cartogram_info.h"
 #include "inset_state.h"
+#include "round_point.h"
 #include <CGAL/Boolean_set_operations_2.h>
 
 // Returns error if there are holes not inside their respective polygons
@@ -34,14 +35,14 @@ void holes_inside_polygons(InsetState *inset_state)
 
 // Use machine epsilon (defined in constants.h) to get almost equal doubles.
 // From https://en.cppreference.com/w/cpp/types/numeric_limits/epsilon
-bool almost_equal(double a, double b) {
-  return abs(a - b) <= dbl_epsilon * abs(a + b) * 2;
-}
+// bool almost_equal(double a, double b) {
+//   return abs(a - b) <= dbl_epsilon * abs(a + b) * 2;
+// }
 
-// Determine whether points are indistinguishable
-bool points_almost_equal(Point a, Point b) {
-  return (almost_equal(a[0], b[0]) && almost_equal(a[1], b[1]));
-}
+// // Determine whether points are indistinguishable
+// bool points_almost_equal(Point a, Point b) {
+//   return (almost_equal(a[0], b[0]) && almost_equal(a[1], b[1]));
+// }
 
 bool duplicates(std::vector<Point> v) {
   CGAL::set_pretty_mode(std::cerr);
