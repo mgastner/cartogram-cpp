@@ -1,6 +1,7 @@
 #include "../inset_state.h"
 #include "../constants.h"
 #include <CGAL/intersections.h>
+#include "../round_point.h"
 
 // This function takes two lines as input:
 // - line `a`, defined by points a1 and a2.
@@ -29,7 +30,50 @@ Point calc_intersection(Segment s1, Segment s2) {
 
   // Value outside grid cell indicating that no intersection was found
   return Point(-1, -1);
-}
+
+// XYPoint calc_intersection(const XYPoint a1,
+//                           const XYPoint a2,
+//                           const XYPoint b1,
+//                           const XYPoint b2)
+// {
+//   // Check whether any segment is undefined (i.e., defined by identical
+//   // points)
+//   if (a1 == a2 || b1 == b2) {
+//     std::cerr << "ERROR: End points of line segment are identical"
+//               << std::endl;
+//     _Exit(EXIT_FAILURE);
+//   }
+//
+//   // Get line equations
+//   const double a = (a1.y - a2.y) / (a1.x - a2.x);
+//   const double a_intercept = a1.y - (a1.x * a);
+//   const double b = (b1.y - b2.y) / (b1.x - b2.x);
+//   const double b_intercept = b1.y - (b1.x * b);
+//   XYPoint intersection;
+//   if (isfinite(a) && isfinite(b) && a != b) {
+//
+//     // Neither the line (a1, a2) nor the line (b1, b2) is vertical
+//     intersection.x = (b_intercept - a_intercept) / (a - b);
+//     intersection.y = a * intersection.x + a_intercept;
+//   } else if (isfinite(a) && isinf(b)) {
+//
+//     // Only line (b1, b2) is vertical
+//     intersection.x = b1.x;
+//     intersection.y = a * b1.x + a_intercept;
+//   } else if (isfinite(b) && isinf(a)) {
+//
+//     // Only line (a1, a2) is vertical
+//     intersection.x = a1.x;
+//     intersection.y = b * a1.x + b_intercept;
+//   } else {
+//
+//     // Set negative intersection coordinates if there is no solution or
+//     // infinitely many solutions
+//     intersection.x = -1;
+//     intersection.y = -1;
+//   }
+//   return intersection;
+// }
 
 // TODO: If a or b are themselves intersection points (e.g. if pt1.x is an
 // integer plus 0.5), it appears to be included in the returned intersections.
@@ -43,14 +87,26 @@ Point calc_intersection(Segment s1, Segment s2) {
 // function also returns all intersections with the diagonals of these
 // graticule cells. The function assumes that graticule cells start at
 // (0.5, 0.5).
-std::vector<Point> densification_points(Point pt1, Point pt2)
+std::vector<Point> densification_points(const Point pt1,
+                                        const Point pt2,
+                                        const unsigned int lx,
+                                        const unsigned int ly)
 {
+  // If the input points are identical, return them without calculating
+  // intersections
+  if ((pt1.x() == pt2.x()) && (pt1.y() == pt2.y())) {
+    std::vector<Point> points;
+    points.push_back(pt1);
+    points.push_back(pt2);
+    return points;
+  }
+
   // Vector for storing intersections before removing duplicates
   std::vector<Point> temp_intersections;
 
-  // Assign `a` as the leftmost point of p1 and pt2. If both points have the
-  // same x-coordinate, assign `a` as the lower point. The other point is
-  // assigned as b. The segments (a, b) and (b, a) describe the same segment.
+  // Store the leftmost point of p1 and pt2 as `a`. If both points have the
+  // same x-coordinate, then store the lower point as `a`. The other point is
+  // stored as `b`. The segments (a, b) and (b, a) describe the same segment.
   // However, if we flip the order of a and b, the resulting intersections are
   // not necessarily the same because of floating point errors.
   Point a = pt1;
@@ -70,6 +126,16 @@ std::vector<Point> densification_points(Point pt1, Point pt2)
   // Get bottom-left point of graticule cell containing `b`
   const Point bv0(floor(b.x() + 0.5) - 0.5, floor(b.y() + 0.5) - 0.5);
 
+  // Get bottom-left point of graticule cell containing `a`
+  XYPoint av0;
+  av0.x = std::max(0.0, floor(a.x + 0.5) - 0.5);
+  av0.y = std::max(0.0, floor(a.y + 0.5) - 0.5);
+
+  // Get bottom-left point of graticule cell containing `b`
+  XYPoint bv0;
+  bv0.x = std::max(0.0, floor(b.x + 0.5) - 0.5);
+  bv0.y = std::max(0.0, floor(b.y + 0.5) - 0.5);
+
   // Get bottom-left (start_v) and top-right (end_v) graticule cells of the
   // graticule cell rectangle (the smallest rectangular section of the
   // graticule grid cell containing both points)
@@ -81,23 +147,62 @@ std::vector<Point> densification_points(Point pt1, Point pt2)
   Point start_v(av0.x(), y1);
   Point end_v(bv0.x(), y2);
 
-  // Loop through each row, from bottom to top
-  for (unsigned int int_y = static_cast<unsigned int>(start_v.y());
-       int_y <= static_cast<unsigned int>(end_v.y());
-       ++int_y) {
+  // // Loop through each row, from bottom to top
+  // for (unsigned int int_y = static_cast<unsigned int>(start_v.y());
+  //      int_y <= static_cast<unsigned int>(end_v.y());
+  //      ++int_y) {
+  //
+  //   // Loop through each column, from left to right
+  //   for (unsigned int int_x = static_cast<unsigned int>(start_v.x());
+  //        int_x <= static_cast<unsigned int>(end_v.x());
+  //        ++int_x) {
 
-    // Loop through each column, from left to right
-    for (unsigned int int_x = static_cast<unsigned int>(start_v.x());
-         int_x <= static_cast<unsigned int>(end_v.x());
-         ++int_x) {
+  // Distance between left-most and right-most graticule cell
+  const unsigned int dist_x = std::ceil(end_v.x - start_v.x);
 
-      // Get points for the current graticule cell, in this order:
+  // Distance between top and bottom graticule cell
+  const unsigned int dist_y = std::ceil(end_v.y - start_v.y);
+
+  // Iterator variables for tracking current graticule cell in next for-loop
+  double current_graticule_x = start_v.x;
+  double current_graticule_y = start_v.y;
+
+  // TODO: IT IS INEFFICIENT TO RUN THE INTERSECTIONS OF THE LINE FROM a TO b
+  // WITH THE HORIZONTAL GRID LINES AND VERTICAL GRID LINES IN EACH ITERATION
+  // OF THE NESTED LOOP BELOW. IT WOULD BE BETTER TO HAVE A NON-NESTED LOOP
+  // OVER EACH HORIZONTAL LINE IN THE RANGE, THEN A NON-NESTED LOOP OVER EACH
+  // VERTICAL LINE. FOR THE DIAGONALS, THIS PROCEDURE IS A LITTLE BIT
+  // TRICKIER; AT THE EDGES THE DIAGONALS ARE NOT STRAIGHT CONTINUATIONS OF
+  // THE ADJOINING DIAGONALS. STILL, THERE IS A PROBABLY A WAY TO GET
+  // INTERSECTIONS WITH THE 'MAIN' DIAGONALS ADN TREAT THE EDGE CASES
+  // SEPARATELY.
+
+  // Iterate over each row, from bottom to top
+  for (unsigned int i = 0; i <= dist_y; ++i) {
+
+    // Iterate over each column, from left to right
+    for (unsigned int j = 0; j <= dist_x; ++j) {
+
+      // Get points for the current graticule cell, in the following order:
       // bottom-left, bottom-right, top-right, top-left
-      const Point v0(int_x + 0.5, int_y + 0.5);
-      const Point v1(v0.x() + 1.0, v0.y());
-      const Point v2(v0.x() + 1.0, v0.y() + 1.0);
-      const Point v3(v0.x(), v0.y() + 1.0);
+      // const Point v0(int_x + 0.5, int_y + 0.5);
+      // const Point v1(v0.x() + 1.0, v0.y());
+      // const Point v2(v0.x() + 1.0, v0.y() + 1.0);
+      // const Point v3(v0.x(), v0.y() + 1.0);
       std::vector<Point> graticule_intersections;
+
+      const XYPoint v0(current_graticule_x, current_graticule_y);
+      const XYPoint v1(
+        v0.x == 0.0 ? 0.5 : std::min(double(lx), v0.x + 1.0),
+        v0.y);
+      const XYPoint v2(
+        v1.x,
+        v0.y == 0.0 ? 0.5 : std::min(double(ly), v0.y + 1.0));
+      const XYPoint v3(v0.x, v2.y);
+
+      // Store intersections of line segment from `a` to `b` with graticule
+      // lines and diagonals
+      std::vector<XYPoint> graticule_intersections;
 
       // Bottom intersection
       graticule_intersections.push_back(calc_intersection(s1, Segment(v0, v1)));
@@ -126,20 +231,26 @@ std::vector<Point> densification_points(Point pt1, Point pt2)
              (b.x() <= inter.x() && inter.x() <= a.x())) &&
             ((a.y() <= inter.y() && inter.y() <= b.y()) ||
              (b.y() <= inter.y() && inter.y() <= a.y()))) {
-          temp_intersections.push_back(inter);
+          temp_intersections.push_back(rounded_point(inter));
         }
       }
+
+      // If the current graticule cell touches the left edge, add 0.5 to
+      // obtain the next graticule cell. Otherwise, add 1.0.
+      current_graticule_x += (current_graticule_x == 0.0) ? 0.5 : 1.0;
     }
+    current_graticule_x = start_v.x;
+
+    // If the current row touches the bottom edge, add 0.5 to
+    // obtain the next row. Otherwise, add 1.0.
+    current_graticule_y += (current_graticule_y == 0.0) ? 0.5 : 1.0;
   }
 
   // Sort intersections
   std::sort(temp_intersections.begin(), temp_intersections.end());
 
-  // Reverse if needed
-  if ((pt1[0] > pt2[0]) || ((pt1[0] == pt2[0]) && (pt1[1] > pt2[1]))) {
-    std::reverse(temp_intersections.begin(), temp_intersections.end());
-  }
-
+  // TODO: IF temp_intersections WERE AN ORDERED SET, THERE WOULD BE NO NEED
+  // TO REMOVE DUPLICATES
   // Eliminate duplicates
   std::vector<Point> intersections;
   intersections.push_back(temp_intersections[0]);
@@ -147,6 +258,11 @@ std::vector<Point> densification_points(Point pt1, Point pt2)
     if (temp_intersections[i - 1] != temp_intersections[i]) {
       intersections.push_back(temp_intersections[i]);
     }
+  }
+
+  // Reverse if needed
+  if ((pt1.x() > pt2.x()) || ((pt1.x() == pt2.x()) && (pt1.y() > pt2.y()))) {
+    std::reverse(intersections.begin(), intersections.end());
   }
   return intersections;
 }
@@ -158,7 +274,7 @@ void InsetState::densify_geo_divs()
   for (const auto &gd : geo_divs_) {
     GeoDiv gd_dens(gd.id());
     for (const auto &pwh : gd.polygons_with_holes()) {
-      const Polygon outer = pwh.outer_boundary();
+      const auto outer = pwh.outer_boundary();
       Polygon outer_dens;
 
       // Iterate over each point in the outer boundary of the polygon
@@ -168,11 +284,12 @@ void InsetState::densify_geo_divs()
         // `b` should be the point immediately after `a`, unless `a` is the
         // final point of the boundary, in which case `b` should be the first
         // point.
-        const Point a = outer[i];
-        const Point b = (i == outer.size() - 1) ? outer[0] : outer[i + 1];
+        const auto a = outer[i];
+        const auto b = (i == outer.size() - 1) ? outer[0] : outer[i + 1];
 
         // Densify the segment
-        const std::vector<Point> outer_pts_dens = densification_points(a, b);
+        const std::vector<Point> outer_pts_dens =
+          densification_points(a, b, lx_, ly_);
 
         // Push all points. Omit the last point because it will be included
         // in the next iteration. Otherwise, we would have duplicated points
@@ -186,12 +303,13 @@ void InsetState::densify_geo_divs()
       // Iterate over each hole
       for (auto h = pwh.holes_begin(); h != pwh.holes_end(); ++h) {
         Polygon hole_dens;
-        for (size_t j = 0; j < (*h).size(); ++j) {
+        for (size_t j = 0; j < h->size(); ++j) {
 
           // `c` and `d` are determined in the same way as `a` and `b` above
           const Point c = (*h)[j];
-          const Point d = (j == (*h).size() - 1) ? (*h)[0] : (*h)[j + 1];
-          const std::vector<Point> hole_pts_dens = densification_points(c, d);
+          const Point d = (j == h->size() - 1) ? (*h)[0] : (*h)[j + 1];
+          const std::vector<Point> hole_pts_dens =
+            densification_points(c, d, lx_, ly_);
           for (size_t i = 0; i < (hole_pts_dens.size() - 1); ++i) {
             hole_dens.push_back(hole_pts_dens[i]);
           }
@@ -206,4 +324,5 @@ void InsetState::densify_geo_divs()
     geodivs_dens.push_back(gd_dens);
   }
   set_geo_divs(geodivs_dens);
+  return;
 }

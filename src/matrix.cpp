@@ -2,6 +2,11 @@
 #include "matrix.h"
 #include "inset_state.h"
 
+// TODO: IT WOULD BE LESS TYPING TO DEFINE Matrix AS A
+// boost::multi_array<double, 2>. THEN WE COULD WRITE THE IDENTITY MATRIX AS
+// for (unsigned int i = 0; i < 3; ++i) {
+//   for (unsigned int j = 0; j < 3; ++j) {
+//     p[i][j] = (i == j) ? 1 : 0;
 Matrix::Matrix()
 {
   // Identity matrix
@@ -16,20 +21,20 @@ Matrix::Matrix()
   p33 = 1;
 }
 
-// Matrix from three XYPoints
-Matrix::Matrix (XYPoint a, XYPoint b, XYPoint c)
+// Matrix from three Points
+Matrix::Matrix(const Point a, const Point b, const Point c)
 {
   // First vertex
-  p11 = a.x;
-  p21 = a.y;
+  p11 = a.x();
+  p21 = a.y();
 
   // Second vertex
-  p12 = b.x;
-  p22 = b.y;
+  p12 = b.x();
+  p22 = b.y();
 
   // Third vertex
-  p13 = c.x;
-  p23 = c.y;
+  p13 = c.x();
+  p23 = c.y();
 
   // Make it a 3x3 matrix
   p31 = 1;
@@ -37,7 +42,7 @@ Matrix::Matrix (XYPoint a, XYPoint b, XYPoint c)
   p33 = 1;
 }
 
-void Matrix::scale(double multiplier)
+void Matrix::scale(const double multiplier)
 {
   p11 *= multiplier;
   p12 *= multiplier;
@@ -52,14 +57,14 @@ void Matrix::scale(double multiplier)
 }
 
 // Determinant
-double Matrix::det()
+double Matrix::det() const
 {
   return p11 * ((p22 * p33) - (p23 * p32)) -
          p12 * ((p21 * p33) - (p23 * p31)) +
          p13 * ((p21 * p32) - (p22 * p31));
 }
 
-Matrix Matrix::adjugate()
+Matrix Matrix::adjugate() const
 {
   Matrix adj;
   adj.p11 = ((p22 * p33) - (p23 * p32));
@@ -74,7 +79,7 @@ Matrix Matrix::adjugate()
   return adj;
 }
 
-Matrix Matrix::inverse()
+Matrix Matrix::inverse() const
 {
   // Calculate adjugate
   Matrix inv = adjugate();
@@ -91,7 +96,7 @@ Matrix Matrix::inverse()
   return inv;
 }
 
-Matrix Matrix::multiplied_with(Matrix m1)
+Matrix Matrix::multiplied_with(const Matrix m1) const
 {
   Matrix result;
   result.p11 = (p11 * m1.p11) + (p12 * m1.p21) + (p13 * m1.p31);
@@ -106,11 +111,11 @@ Matrix Matrix::multiplied_with(Matrix m1)
   return result;
 }
 
-// Transform XYPoint based on a transformation matrix
-XYPoint Matrix::transformed_XYPoint(XYPoint point)
+// Transform point based on a transformation matrix
+Point Matrix::transformed_point(const Point point) const
 {
-  XYPoint transformed;
-  transformed.x = p11 * (point.x) + p12 * (point.y) + p13;
-  transformed.y = p21 * (point.x) + p22 * (point.y) + p23;
-  return transformed;
+  return Point(
+    p11 * (point.x()) + p12 * (point.y()) + p13,
+    p21 * (point.x()) + p22 * (point.y()) + p23
+  );
 }
