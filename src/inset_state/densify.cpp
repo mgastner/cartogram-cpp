@@ -32,50 +32,6 @@ Point calc_intersection(Segment s1, Segment s2) {
   return Point(-1, -1);
 }
 
-// XYPoint calc_intersection(const XYPoint a1,
-//                           const XYPoint a2,
-//                           const XYPoint b1,
-//                           const XYPoint b2)
-// {
-//   // Check whether any segment is undefined (i.e., defined by identical
-//   // points)
-//   if (a1 == a2 || b1 == b2) {
-//     std::cerr << "ERROR: End points of line segment are identical"
-//               << std::endl;
-//     _Exit(EXIT_FAILURE);
-//   }
-//
-//   // Get line equations
-//   const double a = (a1.y - a2.y) / (a1.x - a2.x);
-//   const double a_intercept = a1.y - (a1.x * a);
-//   const double b = (b1.y - b2.y) / (b1.x - b2.x);
-//   const double b_intercept = b1.y - (b1.x * b);
-//   XYPoint intersection;
-//   if (isfinite(a) && isfinite(b) && a != b) {
-//
-//     // Neither the line (a1, a2) nor the line (b1, b2) is vertical
-//     intersection.x = (b_intercept - a_intercept) / (a - b);
-//     intersection.y = a * intersection.x + a_intercept;
-//   } else if (isfinite(a) && isinf(b)) {
-//
-//     // Only line (b1, b2) is vertical
-//     intersection.x = b1.x;
-//     intersection.y = a * b1.x + a_intercept;
-//   } else if (isfinite(b) && isinf(a)) {
-//
-//     // Only line (a1, a2) is vertical
-//     intersection.x = a1.x;
-//     intersection.y = b * a1.x + b_intercept;
-//   } else {
-//
-//     // Set negative intersection coordinates if there is no solution or
-//     // infinitely many solutions
-//     intersection.x = -1;
-//     intersection.y = -1;
-//   }
-//   return intersection;
-// }
-
 // TODO: If a or b are themselves intersection points (e.g. if pt1.x is an
 // integer plus 0.5), it appears to be included in the returned intersections.
 // Would this property cause the point to be included twice in the line
@@ -129,16 +85,6 @@ std::vector<Point> densification_points(const Point pt1,
   const Point bv0(std::max(0.0, floor(b.x() + 0.5) - 0.5),
                   std::max(0.0, floor(b.y() + 0.5) - 0.5));
 
-  // Get bottom-left point of graticule cell containing `a`
-  // XYPoint av0;
-  // av0.x = std::max(0.0, floor(a.x + 0.5) - 0.5);
-  // av0.y = std::max(0.0, floor(a.y + 0.5) - 0.5);
-
-  // Get bottom-left point of graticule cell containing `b`
-  // XYPoint bv0;
-  // bv0.x = std::max(0.0, floor(b.x + 0.5) - 0.5);
-  // bv0.y = std::max(0.0, floor(b.y + 0.5) - 0.5);
-
   // Get bottom-left (start_v) and top-right (end_v) graticule cells of the
   // graticule cell rectangle (the smallest rectangular section of the
   // graticule grid cell containing both points)
@@ -149,16 +95,6 @@ std::vector<Point> densification_points(const Point pt1,
   }
   Point start_v(av0.x(), y1);
   Point end_v(bv0.x(), y2);
-
-  // // Loop through each row, from bottom to top
-  // for (unsigned int int_y = static_cast<unsigned int>(start_v.y());
-  //      int_y <= static_cast<unsigned int>(end_v.y());
-  //      ++int_y) {
-  //
-  //   // Loop through each column, from left to right
-  //   for (unsigned int int_x = static_cast<unsigned int>(start_v.x());
-  //        int_x <= static_cast<unsigned int>(end_v.x());
-  //        ++int_x) {
 
   // Distance between left-most and right-most graticule cell
   const unsigned int dist_x = std::ceil(end_v.x() - start_v.x());
@@ -188,12 +124,6 @@ std::vector<Point> densification_points(const Point pt1,
 
       // Get points for the current graticule cell, in the following order:
       // bottom-left, bottom-right, top-right, top-left
-      // const Point v0(int_x + 0.5, int_y + 0.5);
-      // const Point v1(v0.x() + 1.0, v0.y());
-      // const Point v2(v0.x() + 1.0, v0.y() + 1.0);
-      // const Point v3(v0.x(), v0.y() + 1.0);
-      std::vector<Point> graticule_intersections;
-
       const Point v0(current_graticule_x, current_graticule_y);
       const Point v1(v0.x() == 0.0 ? 0.5 : std::min(double(lx), v0.x() + 1.0),
                      v0.y());
@@ -203,7 +133,7 @@ std::vector<Point> densification_points(const Point pt1,
 
       // Store intersections of line segment from `a` to `b` with graticule
       // lines and diagonals
-      // std::vector<XYPoint> graticule_intersections;
+      std::vector<Point> graticule_intersections;
 
       // Bottom intersection
       graticule_intersections.push_back(calc_intersection(s1, Segment(v0, v1)));
@@ -251,7 +181,8 @@ std::vector<Point> densification_points(const Point pt1,
   std::sort(temp_intersections.begin(), temp_intersections.end());
 
   // TODO: IF temp_intersections WERE AN ORDERED SET, THERE WOULD BE NO NEED
-  // TO REMOVE DUPLICATES
+  // TO REMOVE DUPLICATES. HOWEVER, WE MUST KEEP IN MIND THAT WE MAY NEED TO
+  // PROVIDE std::set WITH A CUSTOM COMPARATOR FUNCTION
   // Eliminate duplicates
   std::vector<Point> intersections;
   intersections.push_back(temp_intersections[0]);
