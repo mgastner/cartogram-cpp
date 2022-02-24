@@ -1,9 +1,9 @@
+#include "constants.h"
+#include "cartogram_info.h"
+#include "inset_state.h"
 #include <cairo/cairo.h>
 #include <cairo/cairo-ps.h>
 #include <cairo/cairo-pdf.h>
-#include "cartogram_info.h"
-#include "constants.h"
-#include "inset_state.h"
 
 void write_ps_header(const std::string filename,
                       cairo_surface_t *surface) 
@@ -42,9 +42,9 @@ double font_size(cairo_t *cr,
                  const Point label_pt,
                  const GeoDiv gd)
 {
-  cairo_text_extents_t extents;
   for (double fsize = max_font_size; fsize >= min_font_size; fsize -= 0.5) {
     cairo_set_font_size(cr, fsize);
+    cairo_text_extents_t extents;
     cairo_text_extents(cr, label, &extents);
     const auto largest_pwh = gd.largest_polygon_with_holes();
 
@@ -163,8 +163,8 @@ double graticule_cell_area(unsigned int x,
 std::pair<double,double> max_and_min_graticule_cell_area(InsetState *inset_state,
                                                           unsigned int cell_width)
 {
-  auto lx = inset_state->lx();
-  auto ly = inset_state->ly();
+  unsigned int lx = inset_state->lx();
+  unsigned int ly = inset_state->ly();
   
   // Initialize max and min area
   double max_area = -dbl_inf;
@@ -214,8 +214,8 @@ void write_graticules_to_cairo_surface(cairo_t *cr,
                                       bool plot_graticule_heatmap,
                                       InsetState *inset_state)
 {
-  const auto lx = inset_state->lx();
-  const auto ly = inset_state->ly();
+  const unsigned int lx = inset_state->lx();
+  const unsigned int ly = inset_state->ly();
 
   // Set line width of graticule lines
   cairo_set_line_width(cr, 5e-4 * std::min(lx, ly));
@@ -239,8 +239,8 @@ void write_graticules_to_cairo_surface(cairo_t *cr,
 void write_graticule_colors_to_cairo_surface(cairo_t *cr,
                                              InsetState *inset_state)
 {
-  const auto lx = inset_state->lx();
-  const auto ly = inset_state->ly();
+  const unsigned int lx = inset_state->lx();
+  const unsigned int ly = inset_state->ly();
   unsigned int cell_width = 1;
   
   // Get max and min area of graticule cells
@@ -285,8 +285,8 @@ void write_polygons_to_cairo_surface(cairo_t *cr,
                                     const bool draw_equal_area_map,
                                     InsetState *inset_state)
 {
-  const auto lx = inset_state->lx();
-  const auto ly = inset_state->ly();
+  const unsigned int lx = inset_state->lx();
+  const unsigned int ly = inset_state->ly();
   cairo_set_line_width(cr, 1e-3 * std::min(lx, ly));
   std::vector<GeoDiv> geo_divs;
   
@@ -361,10 +361,8 @@ void write_map_to_ps(const std::string fname,
   // Check whether the map has all GeoDivs colored
   const bool colors =
     (inset_state->colors_size() == inset_state->n_geo_divs());
-  cairo_surface_t *surface;
-  cairo_t *cr;
-  surface = cairo_ps_surface_create(filename, lx, ly);
-  cr = cairo_create(surface);
+  cairo_surface_t *surface = cairo_ps_surface_create(filename, lx, ly);
+  cairo_t *cr = cairo_create(surface);
   
   // Write header
   write_ps_header(fname, surface);
@@ -394,12 +392,10 @@ void write_graticule_heatmap_to_ps(const std::string ps_name,
                                   InsetState *inset_state)
 {
   auto filename = ps_name.c_str();
-  const auto lx = inset_state->lx();
-  const auto ly = inset_state->ly();
-  cairo_surface_t *surface;
-  cairo_t *cr;
-  surface = cairo_ps_surface_create(filename, lx, ly);
-  cr = cairo_create(surface);
+  const unsigned int lx = inset_state->lx();
+  const unsigned int ly = inset_state->ly();
+  cairo_surface_t *surface = cairo_ps_surface_create(filename, lx, ly);
+  cairo_t *cr = cairo_create(surface);
   
   // Write header
   write_ps_header(ps_name, surface);
@@ -504,10 +500,8 @@ void write_density_to_ps(const std::string ps_name,
   auto filename = ps_name.c_str();
   const auto lx = inset_state->lx();
   const auto ly = inset_state->ly();
-  cairo_surface_t *surface;
-  cairo_t *cr;
-  surface = cairo_ps_surface_create(filename, lx, ly);
-  cr = cairo_create(surface);
+  cairo_surface_t *surface = cairo_ps_surface_create(filename, lx, ly);
+  cairo_t *cr = cairo_create(surface);
   
   // Write header
   write_ps_header(ps_name, surface);
@@ -572,10 +566,8 @@ void InsetState::write_intersections_to_ps(unsigned int res)
   std::vector<Segment> intersections = intersecting_segments(res);
 
   auto filename = ps_name.c_str();
-  cairo_surface_t *surface;
-  cairo_t *cr;
-  surface = cairo_ps_surface_create(filename, lx_, ly_);
-  cr = cairo_create(surface);
+  cairo_surface_t *surface = cairo_ps_surface_create(filename, lx_, ly_);
+  cairo_t *cr = cairo_create(surface);
   
   // Write header
   write_ps_header(inset_name(), surface);
