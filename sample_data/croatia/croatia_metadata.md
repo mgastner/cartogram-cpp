@@ -1,10 +1,7 @@
 # Sources
 
-## croatia_gadm_2021Dec21.geojson
+## croatia_official_2020Jan28.geojson
 
 
-### croatia_covid_cases.csv
+### croatia_covid_cases_2022Feb24.csv
 
-
-
-## croatia_simplified.geojson
