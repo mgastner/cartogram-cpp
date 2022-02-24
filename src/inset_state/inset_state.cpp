@@ -76,6 +76,11 @@ const std::vector<GeoDiv> InsetState::geo_divs() const
   return geo_divs_;
 }
 
+const std::vector<GeoDiv> InsetState::geo_divs_original() const
+{
+  return geo_divs_original_;
+}
+
 void InsetState::increment_integration()
 {
   n_finished_integrations_ += 1;
@@ -233,6 +238,11 @@ std::vector<GeoDiv> *InsetState::ref_to_geo_divs()
   return &geo_divs_;
 }
 
+std::vector<GeoDiv> *InsetState::ref_to_geo_divs_original()
+{
+  return &geo_divs_original_;
+}
+
 boost::multi_array<int, 2> *InsetState::ref_to_graticule_diagonals()
 {
   return &graticule_diagonals_;
@@ -302,6 +312,17 @@ void InsetState::set_pos(const std::string pos)
 {
   pos_ = pos;
   return;
+}
+
+void InsetState::store_original_geo_divs()
+{
+  for (const auto &gd : geo_divs_) {
+    GeoDiv gd_original(gd.id() + "_original");
+    for(auto pwh : gd.polygons_with_holes()) {
+      gd_original.push_back(pwh);
+    }
+    geo_divs_original_.push_back(gd_original);
+  }
 }
 
 bool InsetState::target_area_is_missing(const std::string id) const

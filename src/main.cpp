@@ -16,8 +16,6 @@
 #include "write_cairo.h"
 #include "xy_point.h"
 #include "parse_arguments.h"
-#include <iostream>
-#include <cmath>
 
 int main(const int argc, const char *argv[])
 {
@@ -201,7 +199,10 @@ int main(const int argc, const char *argv[])
       rescale_map(max_n_graticule_rows_or_cols,
                   &inset_state,
                   cart_info.is_world_map());
-
+      
+      // Store original coordinates
+      inset_state.store_original_geo_divs();
+      
       // Set up Fourier transforms
       const unsigned int lx = inset_state.lx();
       const unsigned int ly = inset_state.ly();
@@ -228,14 +229,6 @@ int main(const int argc, const char *argv[])
         write_map_to_ps(input_filename, true, plot_graticule, &inset_state);
       }
       
-      if(plot_graticule_heatmap) {
-        std::string input_filename = inset_state.inset_name();
-        input_filename += "_input_graticule_heatmap.ps";
-        std::cerr << "Writing "
-                  << input_filename << std::endl;
-        write_graticule_heatmap_to_ps(input_filename, &inset_state);
-      }
-
       // We make the approximation that the progress towards generating the
       // cartogram is proportional to the number of GeoDivs that are in the
       // finished insets
@@ -340,11 +333,15 @@ int main(const int argc, const char *argv[])
       }
       
       if(plot_graticule_heatmap) {
-        std::string output_filename = inset_state.inset_name();
-        output_filename += "_output_graticule_heatmap.ps";
+        std::string inset_filename = inset_state.inset_name();
+        std::string output_filename = inset_filename + "_cartogram_graticule_heatmap.ps";
         std::cerr << "Writing "
                   << output_filename << std::endl;
-        write_graticule_heatmap_to_ps(output_filename, &inset_state);
+        write_graticule_heatmap_to_ps(output_filename, false, &inset_state);
+        output_filename = inset_filename + "_equalarea_graticule_heatmap.ps";
+        std::cerr << "Writing "
+                  << output_filename << std::endl;
+        write_graticule_heatmap_to_ps(output_filename, true, &inset_state);
       }
 
       // Rescale insets in correct proportion to each other
@@ -357,7 +354,7 @@ int main(const int argc, const char *argv[])
       inset_state.ref_to_rho_ft()->free();
     } // End of loop over insets
   }
-
+  
   // Shift insets so that they do not overlap
   shift_insets_to_target_position(&cart_info);
 

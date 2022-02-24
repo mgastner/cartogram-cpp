@@ -25,7 +25,7 @@ private:
   // Cumulative cartogram projection
   boost::multi_array<XYPoint, 2> cum_proj_;
   fftw_plan fwd_plan_for_rho_;
-  std::vector<GeoDiv> geo_divs_;  // Geographic divisions in this inset
+  std::vector<GeoDiv> geo_divs_, geo_divs_original_;  // Geographic divisions in this inset
 
   // Chosen diagonal for each graticule cell
   boost::multi_array<int, 2> graticule_diagonals_;
@@ -67,6 +67,7 @@ public:
   void execute_fftw_fwd_plan() const;
   void fill_with_density(bool);  // Fill map with density, using scanlines
   const std::vector<GeoDiv> geo_divs() const;
+  const std::vector<GeoDiv> geo_divs_original() const;
   const std::vector<std::vector<intersection> >
     horizontal_scans(unsigned int) const;
   void increment_integration();
@@ -95,6 +96,7 @@ public:
   void push_back(const GeoDiv);
   boost::multi_array<XYPoint, 2> *ref_to_cum_proj();
   std::vector<GeoDiv> *ref_to_geo_divs();
+  std::vector<GeoDiv> *ref_to_geo_divs_original();
   boost::multi_array<int, 2> *ref_to_graticule_diagonals();
   boost::multi_array<XYPoint, 2> *ref_to_proj();
   FTReal2d *ref_to_rho_ft();
@@ -105,6 +107,7 @@ public:
   void set_grid_dimensions(const unsigned int, const unsigned int);
   void set_inset_name(const std::string);
   void set_pos(const std::string);
+  void store_original_geo_divs();
   bool target_area_is_missing(const std::string) const;
   double target_area_at(const std::string) const;
   double total_inset_area() const;
