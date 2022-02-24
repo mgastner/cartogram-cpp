@@ -497,11 +497,11 @@ void heatmap_color(const double dens,
                                blue[color_category]);
 }
 
-void write_density_to_ps(const std::string eps_name,
+void write_density_to_ps(const std::string ps_name,
                           const double *density,
                           InsetState *inset_state)
 {
-  auto filename = eps_name.c_str();
+  auto filename = ps_name.c_str();
   const auto lx = inset_state->lx();
   const auto ly = inset_state->ly();
   cairo_surface_t *surface;
@@ -510,7 +510,7 @@ void write_density_to_ps(const std::string eps_name,
   cr = cairo_create(surface);
   
   // Write header
-  write_ps_header(eps_name, surface);
+  write_ps_header(ps_name, surface);
   
   cairo_set_line_width(cr, 0);
   // Determine range of densities
@@ -562,7 +562,7 @@ void write_density_to_ps(const std::string eps_name,
 
 void InsetState::write_intersections_to_ps(unsigned int res)
 {
-  std::string eps_name =
+  std::string ps_name =
     inset_name() +
     "_cairo_intersections_" +
     std::to_string(n_finished_integrations()) +
@@ -571,7 +571,7 @@ void InsetState::write_intersections_to_ps(unsigned int res)
   // Calculating intersections
   std::vector<Segment> intersections = intersecting_segments(res);
 
-  auto filename = eps_name.c_str();
+  auto filename = ps_name.c_str();
   cairo_surface_t *surface;
   cairo_t *cr;
   surface = cairo_ps_surface_create(filename, lx_, ly_);

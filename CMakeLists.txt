@@ -34,8 +34,7 @@ add_executable(
   src/cartogram_info.cpp
   src/read_csv.cpp
   src/rescale_map.cpp
-  src/write_cairo.cpp
-  src/write_eps.cpp
+  src/write_ps.cpp
   src/colors.cpp
   src/check_topology.cpp
   src/matrix.cpp

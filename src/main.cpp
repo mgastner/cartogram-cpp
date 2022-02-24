@@ -11,9 +11,8 @@
 #include "read_geojson.h"
 #include "rescale_map.h"
 #include "simplify_inset.h"
-#include "write_eps.h"
 #include "write_geojson.h"
-#include "write_cairo.h"
+#include "write_ps.h"
 #include "xy_point.h"
 #include "parse_arguments.h"
 #include <chrono>
@@ -56,7 +55,7 @@ int main(const int argc, const char *argv[])
 
   // Other boolean values that are needed to parse the command line arguments
   bool make_csv,
-       make_polygon_eps,
+       make_polygon_ps,
        output_equal_area,
        output_to_stdout,
        plot_density,
@@ -76,7 +75,7 @@ int main(const int argc, const char *argv[])
     triangulation,
     simplify,
     make_csv,
-    make_polygon_eps,
+    make_polygon_ps,
     output_equal_area,
     output_to_stdout,
     plot_density,
@@ -248,7 +247,7 @@ int main(const int argc, const char *argv[])
       }
 
       // Write PNG and PS files if requested by command-line option
-      if (make_polygon_eps) {
+      if (make_polygon_ps) {
         std::string input_filename = inset_state.inset_name();
         if (plot_graticule) {
           input_filename += "_input_graticule.ps";
@@ -305,7 +304,6 @@ int main(const int argc, const char *argv[])
           blur_density(blur_width, plot_density, &inset_state);
         }
         if (plot_intersections) {
-          inset_state.write_intersections_to_eps(intersections_resolution);
           inset_state.write_intersections_to_ps(intersections_resolution);
         }
         flatten_density(&inset_state);
@@ -354,12 +352,11 @@ int main(const int argc, const char *argv[])
                 << progress
                 << std::endl;
       if (plot_intersections) {
-        inset_state.write_intersections_to_eps(intersections_resolution);
         inset_state.write_intersections_to_ps(intersections_resolution);
       }
 
       // Print PS files of cartogram
-      if (make_polygon_eps) {
+      if (make_polygon_ps) {
         std::string output_filename = inset_state.inset_name();
         if (plot_graticule) {
           output_filename += "_output_graticule.ps";
