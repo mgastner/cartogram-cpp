@@ -8,7 +8,6 @@
 #include "inset_state.h"
 #include "parse_arguments.h"
 #include "project.h"
-#include "read_csv.h"
 #include "read_geojson.h"
 #include "rescale_map.h"
 #include "smyth_projection.h"
@@ -84,7 +83,7 @@ int main(const int argc, const char *argv[])
 
     // Read visual variables (e.g. area, color) from CSV
     try {
-      read_csv(arguments, &cart_info);
+      cart_info.read_csv(arguments);
     } catch (const std::system_error& e) {
       std::cerr << "ERROR: "
                 << e.what()

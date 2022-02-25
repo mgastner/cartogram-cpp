@@ -2,6 +2,7 @@
 #define CARTOGRAM_INFO_H_
 
 #include "inset_state.h"
+#include "argparse.hpp"
 #include "constants.h"
 #include <vector>
 
@@ -34,6 +35,7 @@ public:
   bool is_world_map() const;
   unsigned int n_insets() const;
   bool original_ext_ring_is_clockwise() const;
+  void read_csv(argparse::ArgumentParser);
   std::map<std::string, InsetState> *ref_to_inset_states();
   void replace_missing_and_zero_target_areas();
   void set_id_header(const std::string);
