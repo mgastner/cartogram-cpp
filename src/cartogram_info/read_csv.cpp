@@ -23,7 +23,7 @@ void CartogramInfo::read_csv(argparse::ArgumentParser arguments)
   }
 
   // Store header name of identifiers to read GeoJSON
-  set_id_header(id_header);
+  id_header_ = id_header;
 
   // Find index of column with target areas. If no area column header was
   // passed with the command-line flag --area, the area column is assumed to
@@ -70,7 +70,7 @@ void CartogramInfo::read_csv(argparse::ArgumentParser arguments)
                 << std::endl;
       _Exit(301);
     }
-    insert_id_in_visual_variables_file(id);
+    ids_in_visual_variables_file_.insert(id);
 
     // Get target area
     csv::CSVField area_field = row[area_col];
@@ -145,19 +145,18 @@ void CartogramInfo::read_csv(argparse::ArgumentParser arguments)
     }
 
     // Associate GeoDiv ID with inset positon
-    insert_gd_into_inset(id, inset_pos);
+    gd_to_inset_.insert(std::pair<std::string, std::string>(id, inset_pos));
 
     // Create inset_state for inset_pos unless it already exists
     if (!inset_pos_set.contains(inset_pos)) {
       InsetState inset_state(inset_pos);
-      insert_inset_state(inset_pos, inset_state);
+      inset_states_.insert(std::pair<std::string, InsetState>(inset_pos,
+                                                              inset_state));
       inset_pos_set.insert(inset_pos);
     }
 
     // Insert target area and color
-    std::map<std::string, InsetState> *inset_states =
-      ref_to_inset_states();
-    InsetState *inset_state = &inset_states->at(inset_pos);
+    InsetState *inset_state = &inset_states_.at(inset_pos);
     inset_state->insert_target_area(id, area);
     if (color != "") {
       inset_state->insert_color(id, color);
