@@ -1,8 +1,6 @@
-#include "geo_div.h"
-#include "cartogram_info.h"
-#include "inset_state.h"
+#include "../cartogram_info.h"
 #include <nlohmann/json.hpp>
-#include "cartogram_info/csv.hpp"
+#include "csv.hpp"
 #include <iostream>
 #include <fstream>
 
@@ -58,12 +56,14 @@ void check_geojson_validity(const nlohmann::json j)
   return;
 }
 
-GeoDiv json_to_geodiv(const std::string id,
-                      const nlohmann::json json_coords_raw,
-                      const bool is_polygon,
-                      CartogramInfo *cart_info)
+std::pair<GeoDiv, bool> json_to_geodiv(const std::string id,
+                                       const nlohmann::json json_coords_raw,
+                                       const bool is_polygon)
 {
   GeoDiv gd(id);
+
+  // Exterior ring is clockwise oriented?
+  bool erico;
   nlohmann::json json_coords;
   if (is_polygon) {
     json_coords["0"] = json_coords_raw;
@@ -98,12 +98,11 @@ GeoDiv json_to_geodiv(const std::string id,
     // GeoJSON does not match our convention, we reverse the polygon.
 
     // TODO: Currently, only the last exterior ring in the GeoJSON determines
-    // whether cart_info->original_ext_ring_is_clockwise() is true. This
+    // whether original_ext_ring_is_clockwise in CartogramInfo is true. This
     // strategy works for most geospatial boundary files in the wild, but it
     // would still be sensible to allow cases where there are external rings
     // with opposite winding directions.
-    const bool erico = ext_ring.is_clockwise_oriented();
-    cart_info->set_original_ext_ring_is_clockwise(erico);
+    erico = ext_ring.is_clockwise_oriented();
     if (erico) {
       ext_ring.reverse_orientation();
     }
@@ -138,7 +137,7 @@ GeoDiv json_to_geodiv(const std::string id,
                                  int_ring_v.end());
     gd.push_back(pwh);
   }
-  return gd;
+  return std::pair<GeoDiv, bool>(gd, erico);
 }
 
 void print_properties_map(
@@ -168,10 +167,9 @@ void print_properties_map(
   return;
 }
 
-void read_geojson(const std::string geometry_file_name,
-                  const bool make_csv,
-                  std::string *crs,
-                  CartogramInfo *cart_info)
+void CartogramInfo::read_geojson(const std::string geometry_file_name,
+                                 const bool make_csv,
+                                 std::string *crs)
 {
   // Open file
   std::ifstream in_file(geometry_file_name);
@@ -204,7 +202,7 @@ void read_geojson(const std::string geometry_file_name,
   }
 
   // Iterate over each inset
-  for (auto &[inset_pos, inset_state] : *cart_info->ref_to_inset_states()) {
+  for (auto &[inset_pos, inset_state] : inset_states_) {
     for (const auto &feature : j["features"]) {
       const auto geometry = feature["geometry"];
       const bool is_polygon = (geometry["type"] == "Polygon");
@@ -212,10 +210,10 @@ void read_geojson(const std::string geometry_file_name,
 
         // Store ID from properties
         const auto properties = feature["properties"];
-        if (!properties.contains(cart_info->id_header()) &&
-            cart_info->id_header() != "") {  // Visual file not provided
+        if (!properties.contains(id_header_) &&
+            id_header_ != "") {  // Visual file not provided
           std::cerr << "ERROR: In GeoJSON, there is no property "
-                    << cart_info->id_header()
+                    << id_header_
                     << " in feature.\nAvailable properties are: "
                     << properties
                     << std::endl;
@@ -225,7 +223,7 @@ void read_geojson(const std::string geometry_file_name,
         // Use dump() instead of get() so that we can handle string and
         // numeric IDs in GeoJSON. Both types of IDs are converted to C++
         // strings.
-        auto id = properties[cart_info->id_header()].dump();
+        auto id = properties[id_header_].dump();
 
         // We only need to check whether the front of the string is '"'
         // because dump() automatically prefixes and postfixes a '"' to any
@@ -233,7 +231,7 @@ void read_geojson(const std::string geometry_file_name,
         if (id.front() == '"') {
           id = id.substr(1, id.length() - 2);
         }
-        if (inset_pos == cart_info->inset_at_gd(id)) {
+        if (inset_pos == gd_to_inset_.at(id)) {
           if (ids_in_geojson.contains(id)) {
             std::cerr << "ERROR: ID "
                       << id
@@ -246,11 +244,11 @@ void read_geojson(const std::string geometry_file_name,
             _Exit(18);
           }
           ids_in_geojson.insert(id);
-          const auto gd = json_to_geodiv(id,
+          const auto gd_and_orientation = json_to_geodiv(id,
                                          geometry["coordinates"],
-                                         is_polygon,
-                                         cart_info);
-          inset_state.push_back(gd);
+                                         is_polygon);
+          inset_state.push_back(gd_and_orientation.first);
+          original_ext_ring_is_clockwise_ = gd_and_orientation.second;
         }
       }
     }
@@ -347,7 +345,7 @@ void read_geojson(const std::string geometry_file_name,
 
     // Write CSV
     std::ofstream out_file_csv;
-    const auto csv_name = cart_info->map_name() + ".csv";
+    const auto csv_name = map_name_ + ".csv";
     out_file_csv.open(csv_name);
     if (!out_file_csv) {
       throw std::system_error(errno,
@@ -392,7 +390,7 @@ void read_geojson(const std::string geometry_file_name,
   }
 
   // Check whether all IDs in visual_variable_file appear in GeoJSON
-  const auto ids_in_vv_file = cart_info->ids_in_visual_variables_file();
+  const auto ids_in_vv_file = ids_in_visual_variables_file_;
   std::set<std::string> ids_not_in_geojson;
   std::set_difference(ids_in_vv_file.begin(), ids_in_vv_file.end(),
                       ids_in_geojson.begin(), ids_in_geojson.end(),
@@ -400,7 +398,7 @@ void read_geojson(const std::string geometry_file_name,
                                     ids_not_in_geojson.end()));
   if (!ids_not_in_geojson.empty()) {
     std::cerr << "ERROR: Mismatch between GeoJSON and "
-              << cart_info->visual_variable_file()
+              << visual_variable_file_
               << "."
               << std::endl;
     std::cerr << "The following IDs do not appear in the GeoJSON:"
@@ -418,11 +416,11 @@ void read_geojson(const std::string geometry_file_name,
                       std::inserter(ids_not_in_vv, ids_not_in_vv.end()));
   if (!ids_not_in_vv.empty()) {
     std::cerr << "ERROR: Mismatch between GeoJSON and "
-              << cart_info->visual_variable_file()
+              << visual_variable_file_
               << "."
               << std::endl;
     std::cerr << "The following IDs do not appear in "
-              << cart_info->visual_variable_file()
+              << visual_variable_file_
               << ": "
               << std::endl;
     for (const auto &id : ids_not_in_vv) {

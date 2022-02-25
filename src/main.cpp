@@ -8,7 +8,6 @@
 #include "inset_state.h"
 #include "parse_arguments.h"
 #include "project.h"
-#include "read_geojson.h"
 #include "rescale_map.h"
 #include "smyth_projection.h"
 #include "simplify_inset.h"
@@ -78,6 +77,8 @@ int main(const int argc, const char *argv[])
   if (map_name.find('.') != std::string::npos) {
     map_name = map_name.substr(0, map_name.find('.'));
   }
+  std::cout << geo_file_name << "\n";
+
   cart_info.set_map_name(map_name);
   if (!make_csv) {
 
@@ -85,7 +86,7 @@ int main(const int argc, const char *argv[])
     try {
       cart_info.read_csv(arguments);
     } catch (const std::system_error& e) {
-      std::cerr << "ERROR: "
+      std::cerr << "ERROR reading CSV: "
                 << e.what()
                 << " ("
                 << e.code()
@@ -95,7 +96,7 @@ int main(const int argc, const char *argv[])
     } catch (const std::runtime_error& e) {
 
       // If there is an error, it is probably because of an invalid CSV file
-      std::cerr << "ERROR: "
+      std::cerr << "ERROR reading CSV: "
                 << e.what()
                 << std::endl;
       return EXIT_FAILURE;
@@ -106,9 +107,9 @@ int main(const int argc, const char *argv[])
   // we assume that the coordinates are in longitude and latitude.
   std::string crs = "+proj=longlat";
   try {
-    read_geojson(geo_file_name, make_csv, &crs, &cart_info);
+    cart_info.read_geojson(geo_file_name, make_csv, &crs);
   } catch (const std::system_error& e) {
-    std::cerr << "ERROR: "
+    std::cerr << "ERROR reading GeoJSON: "
               << e.what()
               << " ("
               << e.code()
@@ -138,7 +139,7 @@ int main(const int argc, const char *argv[])
       holes_inside_polygons(&inset_state);
       rings_are_simple(&inset_state);
     } catch (const std::system_error& e) {
-      std::cerr << "ERROR: "
+      std::cerr << "ERROR while checking topology: "
                 << e.what()
                 << " ("
                 << e.code()
