@@ -25,7 +25,7 @@ void blur_density(const double blur_width,
   if (plot_density) {
     std::string file_name =
       inset_state->inset_name() +
-      "_cairo_blurred_density_" +
+      "_blurred_density_" +
       std::to_string(inset_state->n_finished_integrations()) +
       ".ps";
     std::cerr << "Writing " << file_name << std::endl;

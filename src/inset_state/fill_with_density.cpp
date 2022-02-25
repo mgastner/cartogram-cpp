@@ -140,7 +140,7 @@ void InsetState::fill_with_density(bool plot_density)
   if (plot_density) {
     std::string file_name =
       inset_name_ +
-      "_cairo_unblurred_density_" +
+      "_unblurred_density_" +
       std::to_string(n_finished_integrations()) +
       ".ps";
     std::cerr << "Writing " << file_name << std::endl;
