@@ -7,8 +7,14 @@ set(CMAKE_CXX_STANDARD 20)
 set(THREADS_PREFER_PTHREAD_FLAG ON)
 
 # Setting CMake build options, adding path for binary.
-set(CMAKE_BUILD_TYPE Release)
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
+
+# Release mode by default, unless specified
+# https://stackoverflow.com/questions/48832233/
+# have-a-cmake-project-default-to-the-release-build-type
+if (NOT CMAKE_BUILD_TYPE)
+  set(CMAKE_BUILD_TYPE "Release" CACHE STRING "" FORCE)
+endif()
 
 # Lots of warnings.
 add_compile_options(-Wall -Wextra -pedantic)
@@ -23,6 +29,7 @@ pkg_search_module(Cairo REQUIRED cairo IMPORTED_TARGET)
 include_directories(PkgConfig::FFTW PkgConfig::Cairo)
 link_libraries(PkgConfig::FFTW PkgConfig::Cairo)
 
+
 # Adding C++ files needed for compilation.
 add_executable(
   cartogram
@@ -35,7 +42,6 @@ add_executable(
   src/colors.cpp
   src/check_topology.cpp
   src/matrix.cpp
-  src/read_geojson.cpp
   src/intersection.cpp
   src/blur_density.cpp
   src/flatten_density.cpp
@@ -47,6 +53,7 @@ add_executable(
   src/albers_projection.cpp
   src/parse_arguments.cpp
   src/cartogram_info/read_csv.cpp
+  src/cartogram_info/read_geojson.cpp
   src/inset_state/auto_color.cpp
   src/inset_state/fill_with_density.cpp
   src/inset_state/inset_state.cpp
