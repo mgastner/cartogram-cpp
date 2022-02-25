@@ -146,8 +146,6 @@ Polygon graticule_cell_edge_points(unsigned int x,
 
   // Complete the polygon by making first and last point same
   cell_edge_points.push_back(cell_edge_points[0]);
-  std::cout << x << " " << y << std::endl;
-  std::cout << cell_edge_points << std::endl;
 
   return cell_edge_points;    
 }
@@ -186,27 +184,45 @@ std::pair<double,double> max_and_min_graticule_cell_area(InsetState *inset_state
   return std::make_pair(max_area, min_area);
 }
 
-// Sets the color of a graticule cell based on its area
-void graticule_cell_color(double area,
-                          double max_area,
-                          double min_area,
-                          double *r,
-                          double *g,
-                          double *b) 
+
+void graticule_cell_color(const double area,
+                   const double max_area,
+                   const double min_area,
+                   double *r,
+                   double *g,
+                   double *b)
 {
+  // Assign possible categories for red, green, blue
+  const double red[] = {
+    1.000, 0.996, 0.988, 0.988, 0.984, 0.937, 0.796, 0.647, 0.404
+  };
+  const double green[] = {
+    0.961, 0.878, 0.733, 0.572, 0.416, 0.231, 0.094, 0.058, 0.000
+  };
+  const double blue[] = {
+    0.941, 0.824, 0.631, 0.447, 0.290, 0.173, 0.114, 0.082, 0.050
+  };
   
-  // For input map when all cells are of same area
-  if (max_area - min_area < 1e-6) {
-    *r = 1.0 ;
-    *g = 1.0 ;
-    *b = 1.0 ;
+  // Normalize area to [0,1] and make it logarithmic
+  double ratio = (log(area) - log(min_area))/ (log(max_area) - log(min_area));
+  
+  // Determine color category
+  double category = fmax(0, ratio * 8 - 10e-6);
+  double xmin = floor(category);
+  double xmax = ceil(category);
+  
+  if (area == max_area) {
+    *r = red[8];
+    *g = green[8];
+    *b = blue[8];
+  } else if (area == min_area) {
+    *r = red[0];
+    *g = green[0];
+    *b = blue[0];
   } else {
-    
-    // Normalize area to [0,1] and make it logarithmic
-    double ratio = (log(area) - log(min_area))/ (log(max_area) - log(min_area));
-    *r = 1.0 - ratio;
-    *g = 1.0 - ratio;
-    *b = 1.0;
+    *r = red[int(xmin)] + (red[int(xmax)] - red[int(xmin)]) * (category - xmin);
+    *g = green[int(xmin)] + (green[int(xmax)] - green[int(xmin)]) * (category - xmin);
+    *b = blue[int(xmin)] + (blue[int(xmax)] - blue[int(xmin)]) * (category - xmin);
   }
 }
 
