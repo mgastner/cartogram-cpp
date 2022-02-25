@@ -5,6 +5,13 @@
 #include <unordered_map>
 #include <string>
 
+// Color struct for storing double RGB values between 0 to 1
+struct Color_dbl {
+  double r;
+  double g;
+  double b;
+};
+
 struct Color {
 
   // red, green, blue values out of 255
