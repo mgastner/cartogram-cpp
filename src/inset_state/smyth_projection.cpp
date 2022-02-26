@@ -1,127 +1,95 @@
-#include "../inset_state.h"
 #include "../constants.h"
-#include <cmath>
+#include "../inset_state.h"
+#include <math.h>
 
 // Functions to project map with the Smyth equal-surface projection (also
 // known as Craster rectangular projection):
 // https://en.wikipedia.org/wiki/Cylindrical_equal-area_projection
 // The purpose is to create a projection that has a 2:1 aspect ratio so that
 // the Fourier transforms work optimally when padding is reduced to zero.
-double project_x_to_smyth(const double x)
+Point apply_smyth_craster_projection_on_point(Point p1)
 {
-  return x * std::sqrt(2.0 * pi) / 180.0;
-}
-
-double project_y_to_smyth(const double y)
-{
-  return std::sin(y * pi / 180.0) * std::sqrt(0.5 * pi);
+  return Point(p1.x() * std::sqrt(2.0 * pi) / 180.0,
+               std::sin(p1.y() * pi / 180.0) * std::sqrt(0.5 * pi));
 }
 
 void InsetState::apply_smyth_craster_projection()
 {
-  std::vector<GeoDiv> new_geo_divs;
-  for (const auto &gd : geo_divs_) {
-    GeoDiv new_gd(gd.id());
-    for (const auto &pwh : gd.polygons_with_holes()) {
-      const auto old_ext_ring = pwh.outer_boundary();
-      Polygon new_ext_ring;
-      for (unsigned int i = 0; i < old_ext_ring.size(); ++i) {
+  // Iterate over GeoDivs
+  for (auto &gd : geo_divs_) {
 
-        // Update exterior ring coordinates
-        const double new_ext_ring_point_x =
-          project_x_to_smyth(old_ext_ring[i].x());
-        const double new_ext_ring_point_y =
-          project_y_to_smyth(old_ext_ring[i].y());
-        new_ext_ring.push_back(Point(new_ext_ring_point_x,
-                                     new_ext_ring_point_y));
+    // Iterate over Polygon_with_holes
+    for (auto &pwh : *gd.ref_to_polygons_with_holes()) {
+
+      // Get outer boundary
+      auto &outer_boundary = *(&pwh.outer_boundary());
+
+      // Iterate over outer boundary's coordinates
+      for (auto &coords_outer : outer_boundary) {
+
+        // Assign outer boundary's coordinates to transformed coordinates
+        coords_outer = apply_smyth_craster_projection_on_point(coords_outer);
       }
-      std::vector<Polygon> hole_v;
+
+      // Iterate over holes
       for (auto h = pwh.holes_begin(); h != pwh.holes_end(); ++h) {
-        Polygon new_hole;
-        for (unsigned int i = 0; i < h->size(); ++i) {
 
-          // Update hole coordinates
-          const double new_hole_point_x =
-            project_x_to_smyth((*h)[i].x());
-          const double new_hole_point_y =
-            project_y_to_smyth((*h)[i].y());
-          new_hole.push_back(Point(new_hole_point_x,
-                                   new_hole_point_y));
+        // Iterate over hole's coordinates
+        for (auto &coords_hole : *h) {
+
+          // Assign hole's coordinates to transformed coordinates
+          coords_hole = apply_smyth_craster_projection_on_point(coords_hole);
         }
-        hole_v.push_back(new_hole);
       }
-      const Polygon_with_holes new_pwh(new_ext_ring,
-                                       hole_v.begin(),
-                                       hole_v.end());
-      new_gd.push_back(new_pwh);
     }
-    new_geo_divs.push_back(new_gd);
   }
-
-  // Replace old GeoDivs with new GeoDivs
-  geo_divs_.clear();
-  geo_divs_ = new_geo_divs;
   return;
 }
 
-/* Functions for the projection from Smyth-Craster coordinates to longitude/ */
-/* latitude. We assume that the Smyth-Craster coordinates have been scaled   */
-/* to fit in the box [0, lx] * [0, ly].                                      */
-double project_x_from_smyth(const double x, const int lx)
+// Functions for the projection from Smyth-Craster coordinates to longitude
+// latitude. We assume that the Smyth-Craster coordinates have been scaled
+// to fit in the box [0, lx] * [0, ly].
+Point reverse_smyth_craster_projection_on_point(Point p1,
+                                                 const unsigned int lx,
+                                                 const unsigned int ly)
 {
-  return (x * 360.0 / lx) - 180.0;
+  return Point((p1.x() * 360.0 / lx) - 180.0,
+               180.0 * std::asin((2.0 * p1.y() / ly) - 1) / pi);
 }
 
-double project_y_from_smyth(const double y, const int ly)
+void InsetState::revert_smyth_craster_projection()
 {
-  return 180.0 * std::asin((2.0 * y / ly) - 1) / pi;
-}
+  // Iterate over GeoDivs
+  for (auto &gd : geo_divs_) {
 
-  void InsetState::revert_smyth_craster_projection()
-{
-  const unsigned int lx = lx_;
-  const unsigned int ly = ly_;
-  std::vector<GeoDiv> new_geo_divs;
-  for (const auto &gd : geo_divs_) {
-    GeoDiv new_gd(gd.id());
-    for (const auto &pwh : gd.polygons_with_holes()) {
-      const auto old_ext_ring = pwh.outer_boundary();
-      Polygon new_ext_ring;
-      for (unsigned int i = 0; i < old_ext_ring.size(); ++i) {
+    // Iterate over Polygon_with_holes
+    for (auto &pwh : *gd.ref_to_polygons_with_holes()) {
 
-        // Update exterior ring coordinates
-        double new_ext_ring_point_x =
-          project_x_from_smyth(old_ext_ring[i].x(), lx);
-        double new_ext_ring_point_y =
-          project_y_from_smyth(old_ext_ring[i].y(), ly);
-        new_ext_ring.push_back(Point(new_ext_ring_point_x,
-                                     new_ext_ring_point_y));
+      // Get outer boundary
+      auto &outer_boundary = *(&pwh.outer_boundary());
+
+      // Iterate over outer boundary's coordinates
+      for (auto &coords_outer : outer_boundary) {
+
+        // Assign outer boundary's coordinates to transformed coordinates
+        coords_outer = reverse_smyth_craster_projection_on_point(coords_outer,
+                                                                 lx_,
+                                                                 ly_);
       }
-      std::vector<Polygon> hole_v;
+
+      // Iterate over holes
       for (auto h = pwh.holes_begin(); h != pwh.holes_end(); ++h) {
-        Polygon new_hole;
-        for (unsigned int i = 0; i < h->size(); ++i) {
 
-          // Update hole coordinates
-          const double new_hole_point_x =
-            project_x_from_smyth((*h)[i].x(), lx);
-          const double new_hole_point_y =
-            project_y_from_smyth((*h)[i].y(), ly);
-          new_hole.push_back(Point(new_hole_point_x,
-                                   new_hole_point_y));
+        // Iterate over hole's coordinates
+        for (auto &coords_hole : *h) {
+
+          // Assign hole's coordinates to transformed coordinates
+          coords_hole = reverse_smyth_craster_projection_on_point(coords_hole,
+                                                                  lx_,
+                                                                  ly_);
         }
-        hole_v.push_back(new_hole);
       }
-      const Polygon_with_holes new_pwh(new_ext_ring,
-                                       hole_v.begin(),
-                                       hole_v.end());
-      new_gd.push_back(new_pwh);
     }
-    new_geo_divs.push_back(new_gd);
   }
-
-  // Replace old GeoDivs with new GeoDivs
-  geo_divs_.clear();
-  geo_divs_ = new_geo_divs;
   return;
 }

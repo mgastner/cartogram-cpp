@@ -11,6 +11,7 @@ void rescale_map(unsigned int max_n_graticule_rows_or_cols,
 
     // Bbox for Smyth-Craster projection. Equivalent to applying Smyth-Craster
     // projection to -180, -90, 90, 180.
+    bb = Bbox(-2.50663, -1.25331, 2.50663, 1.25331);
   } else {
     bb = inset_state->bbox();
   }

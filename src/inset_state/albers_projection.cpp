@@ -50,10 +50,10 @@ void InsetState::adjust_for_dual_hemisphere()
       min_lon_east <= 180.0 &&
       min_lon_east - max_lon_west >= 180) {
 
-    // Iterate through GeoDivs
+    // Iterate over GeoDivs
     for (auto &gd : geo_divs_) {
 
-      // Iterate through Polygon_with_holes
+      // Iterate over Polygon_with_holes
       for (auto &pwh : *gd.ref_to_polygons_with_holes()) {
         auto *outer_boundary = &pwh.outer_boundary();
 
@@ -61,7 +61,7 @@ void InsetState::adjust_for_dual_hemisphere()
         if (pwh.bbox().xmin() < 0) {
           *outer_boundary = transform(translate, *outer_boundary);
 
-          // Iterate through holes
+          // Iterate over holes
           for (auto h = pwh.holes_begin(); h != pwh.holes_end(); ++h) {
             *h = transform(translate, *h);
           }
@@ -127,16 +127,16 @@ void InsetState::apply_albers_projection()
   const double phi_1 = 0.5 * (phi_0 + max_lat);
   const double phi_2 = 0.5 * (phi_0 + min_lat);
 
-  // Iterate through GeoDivs
+  // Iterate over GeoDivs
   for (auto &gd : geo_divs_) {
 
-    // Iterate through Polygon_with_holes
+    // Iterate over Polygon_with_holes
     for (auto &pwh : *gd.ref_to_polygons_with_holes()) {
 
       // Get outer boundary
       auto &outer_boundary = *(&pwh.outer_boundary());
 
-      // Iterate through outer boundary's coordinates
+      // Iterate over outer boundary's coordinates
       for (auto &coords_outer : outer_boundary) {
 
         // Assign outer boundary's coordinates to transformed coordinates
@@ -147,10 +147,10 @@ void InsetState::apply_albers_projection()
                                                     phi_2);
       }
 
-      // Iterate through holes
+      // Iterate over holes
       for (auto h = pwh.holes_begin(); h != pwh.holes_end(); ++h) {
 
-        // Iterate through hole's coordinates
+        // Iterate over hole's coordinates
         for (auto &coords_hole : *h) {
 
           // Assign hole's coordinates to transformed coordinates
