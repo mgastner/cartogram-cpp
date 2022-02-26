@@ -1,6 +1,5 @@
-#include "cgal_typedef.h"
-#include "constants.h"
-#include "inset_state.h"
+#include "../constants.h"
+#include "../inset_state.h"
 #include <math.h>
 #include <fstream>
 #include <iostream>
@@ -20,13 +19,13 @@ void print_albers_bbox(Bbox bb)
   return;
 }
 
-void adjust_for_dual_hemisphere(InsetState *inset_state)
+void InsetState::adjust_for_dual_hemisphere()
 {
   // Determine the maximum longitude in the western hemisphere and the minimum
   // longitude in the eastern hemisphere
   double max_lon_west = -dbl_inf;
   double min_lon_east = dbl_inf;
-  for (const auto &gd : inset_state->geo_divs()) {
+  for (const auto &gd : geo_divs_) {
     for (const auto &pwh : gd.polygons_with_holes()) {
       const auto bb = pwh.bbox();
       const double xmax = bb.xmax();
@@ -52,7 +51,7 @@ void adjust_for_dual_hemisphere(InsetState *inset_state)
       min_lon_east - max_lon_west >= 180) {
 
     // Iterate through GeoDivs
-    for (auto &gd : *inset_state->ref_to_geo_divs()) {
+    for (auto &gd : geo_divs_) {
 
       // Iterate through Polygon_with_holes
       for (auto &pwh : *gd.ref_to_polygons_with_holes()) {
@@ -105,14 +104,14 @@ Point projected_albers_coordinates(Point coords,
   return Point(x, y);
 }
 
-void transform_to_albers_projection(InsetState *inset_state)
+void InsetState::albers_projection()
 {
   // Adjust the longitude coordinates if the inset spans both the eastern and
   // western hemispheres
-  adjust_for_dual_hemisphere(inset_state);
+  adjust_for_dual_hemisphere();
 
   // Recalculate the bbox after dual hemisphere adjustment
-  const auto bb = inset_state->bbox();
+  const auto bb = bbox();
 
   // Declarations for albers_formula()
   const double min_lon = (bb.xmin() * pi) / 180;
@@ -129,10 +128,10 @@ void transform_to_albers_projection(InsetState *inset_state)
   const double phi_2 = 0.5 * (phi_0 + min_lat);
 
   // Iterate through GeoDivs
-  for (auto &gd : *(inset_state->ref_to_geo_divs())) {
+  for (auto &gd : geo_divs_) {
 
     // Iterate through Polygon_with_holes
-    for (auto &pwh : *(gd.ref_to_polygons_with_holes())) {
+    for (auto &pwh : *gd.ref_to_polygons_with_holes()) {
 
       // Get outer boundary
       auto &outer_boundary = *(&pwh.outer_boundary());

@@ -1,6 +1,5 @@
 #include "constants.h"
-#include "cartogram_info.h"
-#include "inset_state.h"
+#include "write_eps.h"
 #include <fstream>
 
 void write_eps_header_and_definitions(std::ofstream &eps_file,

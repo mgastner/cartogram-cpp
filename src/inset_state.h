@@ -55,6 +55,8 @@ private:
 public:
   explicit InsetState(const std::string);  // Constructor
   double area_error_at(const std::string) const;
+  void adjust_for_dual_hemisphere();
+  void albers_projection();
   void auto_color();  // Automatically color GeoDivs
   Bbox bbox() const;
   const Color color_at(const std::string) const;

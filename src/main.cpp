@@ -1,4 +1,3 @@
-#include "albers_projection.h"
 #include "blur_density.h"
 #include "cartogram_info.h"
 #include "check_topology.h"
@@ -161,7 +160,7 @@ int main(const int argc, const char *argv[])
       if (world) {
         project_to_smyth_equal_surface(&inset_state);
       } else {
-        transform_to_albers_projection(&inset_state);
+        inset_state.albers_projection();
       }
     } else if (output_equal_area) {
       std::cerr << "ERROR: Input GeoJSON is not a longitude-latitude map."
