@@ -1,5 +1,5 @@
-#include "inset_state.h"
-#include "constants.h"
+#include "../inset_state.h"
+#include "../constants.h"
 #include <cmath>
 
 // Functions to project map with the Smyth equal-surface projection (also
@@ -17,10 +17,10 @@ double project_y_to_smyth(const double y)
   return std::sin(y * pi / 180.0) * std::sqrt(0.5 * pi);
 }
 
-void project_to_smyth_equal_surface(InsetState *inset_state)
+void InsetState::apply_smyth_craster_projection()
 {
   std::vector<GeoDiv> new_geo_divs;
-  for (const auto &gd : inset_state->geo_divs()) {
+  for (const auto &gd : geo_divs_) {
     GeoDiv new_gd(gd.id());
     for (const auto &pwh : gd.polygons_with_holes()) {
       const auto old_ext_ring = pwh.outer_boundary();
@@ -57,7 +57,10 @@ void project_to_smyth_equal_surface(InsetState *inset_state)
     }
     new_geo_divs.push_back(new_gd);
   }
-  inset_state->set_geo_divs(new_geo_divs);
+
+  // Replace old GeoDivs with new GeoDivs
+  geo_divs_.clear();
+  geo_divs_ = new_geo_divs;
   return;
 }
 
@@ -74,12 +77,12 @@ double project_y_from_smyth(const double y, const int ly)
   return 180.0 * std::asin((2.0 * y / ly) - 1) / pi;
 }
 
-void project_from_smyth_equal_surface(InsetState *inset_state)
+  void InsetState::revert_smyth_craster_projection()
 {
-  const unsigned int lx = inset_state->lx();
-  const unsigned int ly = inset_state->ly();
+  const unsigned int lx = lx_;
+  const unsigned int ly = ly_;
   std::vector<GeoDiv> new_geo_divs;
-  for (const auto &gd : inset_state->geo_divs()) {
+  for (const auto &gd : geo_divs_) {
     GeoDiv new_gd(gd.id());
     for (const auto &pwh : gd.polygons_with_holes()) {
       const auto old_ext_ring = pwh.outer_boundary();
@@ -116,7 +119,9 @@ void project_from_smyth_equal_surface(InsetState *inset_state)
     }
     new_geo_divs.push_back(new_gd);
   }
-  inset_state->set_geo_divs(new_geo_divs);
 
+  // Replace old GeoDivs with new GeoDivs
+  geo_divs_.clear();
+  geo_divs_ = new_geo_divs;
   return;
 }

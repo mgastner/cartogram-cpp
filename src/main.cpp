@@ -8,8 +8,6 @@
 #include "parse_arguments.h"
 #include "project.h"
 #include "rescale_map.h"
-#include "smyth_projection.h"
-#include "simplify_inset.h"
 #include "write_eps.h"
 #include "write_cairo.h"
 #include <iostream>
@@ -158,9 +156,9 @@ int main(const int argc, const char *argv[])
       // input map is not a world map. Otherwise, use the Smyth-Craster
       // projection.
       if (world) {
-        project_to_smyth_equal_surface(&inset_state);
+        inset_state.apply_smyth_craster_projection();
       } else {
-        inset_state.albers_projection();
+        inset_state.apply_albers_projection();
       }
     } else if (output_equal_area) {
       std::cerr << "ERROR: Input GeoJSON is not a longitude-latitude map."
@@ -331,7 +329,7 @@ int main(const int argc, const char *argv[])
                                 output_file_name,
                                 std::cout,
                                 output_to_stdout);
-        project_from_smyth_equal_surface(&inset_state);
+        inset_state.revert_smyth_craster_projection();
       } else {
 
         // Rescale insets in correct proportion to each other

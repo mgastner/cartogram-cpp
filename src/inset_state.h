@@ -56,7 +56,8 @@ public:
   explicit InsetState(const std::string);  // Constructor
   double area_error_at(const std::string) const;
   void adjust_for_dual_hemisphere();
-  void albers_projection();
+  void apply_albers_projection();
+  void apply_smyth_craster_projection();
   void auto_color();  // Automatically color GeoDivs
   Bbox bbox() const;
   const Color color_at(const std::string) const;
@@ -105,6 +106,7 @@ public:
   FTReal2d *ref_to_rho_ft();
   FTReal2d *ref_to_rho_init();
   void replace_target_area(const std::string, const double);
+  void revert_smyth_craster_projection();
   void set_area_errors();
   void set_geo_divs(const std::vector<GeoDiv>);
   void set_grid_dimensions(const unsigned int, const unsigned int);

@@ -104,7 +104,7 @@ Point projected_albers_coordinates(Point coords,
   return Point(x, y);
 }
 
-void InsetState::albers_projection()
+void InsetState::apply_albers_projection()
 {
   // Adjust the longitude coordinates if the inset spans both the eastern and
   // western hemispheres

@@ -1,7 +1,5 @@
 #include "constants.h"
 #include "cartogram_info.h"
-#include "inset_state.h"
-#include "smyth_projection.h"
 
 void rescale_map(unsigned int max_n_graticule_rows_or_cols,
                  InsetState *inset_state,
@@ -10,10 +8,9 @@ void rescale_map(unsigned int max_n_graticule_rows_or_cols,
   double padding = (is_world_map ?  1.0 : padding_unless_world);
   Bbox bb;
   if (is_world_map) {
-    bb = Bbox(project_x_to_smyth(-180.0),
-              project_y_to_smyth(-90.0),
-              project_x_to_smyth(180.0),
-              project_y_to_smyth(90.0));
+
+    // Bbox for Smyth-Craster projection. Equivalent to applying Smyth-Craster
+    // projection to -180, -90, 90, 180.
   } else {
     bb = inset_state->bbox();
   }
