@@ -18,7 +18,7 @@
 
 int main(const int argc, const char *argv[])
 {
-  std::string geo_file_name, visual_file_name;  // Default values
+  std::string geo_file_name, visual_file_name;
 
   // Default number of grid cells along longer Cartesian coordinate axis
   unsigned int long_graticule_length = default_long_graticule_length;
@@ -190,8 +190,7 @@ int main(const int argc, const char *argv[])
       // Simplification reduces the number of points used to represent the
       // GeoDivs in the inset, thereby reducing output file sizes and run
       // times
-      simplify_inset(&inset_state,
-                     target_points_per_inset);
+      inset_state.simplify(target_points_per_inset);
     }
     if (output_equal_area) {
       normalize_inset_area(&inset_state,
@@ -289,8 +288,7 @@ int main(const int argc, const char *argv[])
           project(&inset_state);
         }
         if (simplify) {
-          simplify_inset(&inset_state,
-                         target_points_per_inset);
+          inset_state.simplify(target_points_per_inset);
         }
         inset_state.increment_integration();
 

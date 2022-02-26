@@ -49,7 +49,6 @@ add_executable(
   src/project.cpp
   src/rescale_map.cpp
   src/round_point.cpp
-  src/simplify_inset.cpp
   src/smyth_projection.cpp
   src/write_cairo.cpp
   src/write_eps.cpp
@@ -61,6 +60,7 @@ add_executable(
   src/inset_state/inset_state.cpp
   src/inset_state/densify.cpp
   src/inset_state/scanline_graph.cpp
+  src/inset_state/simplify_inset.cpp
   src/inset_state/write_inset_to_geojson.cpp
 )
 

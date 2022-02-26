@@ -108,6 +108,7 @@ public:
   void set_grid_dimensions(const unsigned int, const unsigned int);
   void set_inset_name(const std::string);
   void set_pos(const std::string);
+  void simplify(const unsigned int);
   bool target_area_is_missing(const std::string) const;
   double target_area_at(const std::string) const;
   double total_inset_area() const;

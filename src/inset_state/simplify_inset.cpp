@@ -1,8 +1,8 @@
 // TODO: What happens if two polygons have touching lines but the corner
 // points are not identical in both lines?
 
-#include "constants.h"
-#include "inset_state.h"
+#include "../inset_state.h"
+#include "../constants.h"
 #include <algorithm>
 
 // We use -1 to signal that there is no simplified polygon that can be matched
@@ -75,26 +75,21 @@ int simplified_polygon_index(const Polygon non_simpl_pgn,
   return no_matching_simpl_pgn;
 }
 
-void simplify_inset(InsetState *inset_state,
-                    const unsigned int target_points_per_inset)
+void InsetState::simplify(const unsigned int target_points_per_inset)
 {
-  const unsigned int n_pts_before = inset_state->n_points();
+  const unsigned int n_pts_before = n_points();
+  std::cerr << n_pts_before << " points in inset. ";
+
   if (n_pts_before <= target_points_per_inset) {
-    std::cerr << n_pts_before
-              << " points in inset. No need for simplification."
-              << std::endl;
+    std::cerr << "No need for simplification." << std::endl;
     return;
   }
-
-  std::cerr << "Simplifying the inset. "
-            << n_pts_before
-            << " points in the inset before simplification."
-            << std::endl;
+  std::cerr << "Simplifying the inset. " << std::endl;
 
   // Store Polygons as a CT (Constrained Triangulation) object. Code inspired
   // by https://doc.cgal.org/latest/Polyline_simplification_2/index.html
   CT ct;
-  for (const auto &gd : inset_state->geo_divs()) {
+  for (const auto &gd : geo_divs_) {
     for (const auto &pwh : gd.polygons_with_holes()) {
       ct.insert_constraint(pwh.outer_boundary());
       for (auto h = pwh.holes_begin(); h != pwh.holes_end(); ++h) {
@@ -106,7 +101,7 @@ void simplify_inset(InsetState *inset_state,
   // Simplify polygons
   const unsigned long target_pts =
     std::max(target_points_per_inset,
-             min_points_per_ring * inset_state->n_rings());
+             min_points_per_ring * n_rings());
   const double ratio = static_cast<double>(target_pts) / n_pts_before;
   PS::simplify(ct, Cost(), Stop(ratio));
 
@@ -129,7 +124,7 @@ void simplify_inset(InsetState *inset_state,
     boost::counting_iterator<unsigned int>(0U),
     boost::counting_iterator<unsigned int>(simpl_pgns.size()));
   std::vector<int> matching_simpl_pgn;
-  for (const auto &gd : inset_state->geo_divs()) {
+  for (const auto &gd : geo_divs_) {
     for (const auto &pwh : gd.polygons_with_holes()) {
       const int ext_index = simplified_polygon_index(pwh.outer_boundary(),
                                                      &simpl_pgns,
@@ -168,7 +163,7 @@ void simplify_inset(InsetState *inset_state,
 
   // Replace non-simplified polygons by their simplified counterparts
   unsigned int pgn_ctr = 0;
-  for (auto &gd : *inset_state->ref_to_geo_divs()) {
+  for (auto &gd : geo_divs_) {
     for (auto &pwh : *gd.ref_to_polygons_with_holes()) {
       const unsigned int match = matching_simpl_pgn[pgn_ctr++];
       pwh.outer_boundary() = simpl_pgns[match];
@@ -178,8 +173,6 @@ void simplify_inset(InsetState *inset_state,
       }
     }
   }
-  std::cerr << inset_state->n_points()
-            << " points after simplification."
-            << std::endl;
+  std::cerr << n_points() << " points after simplification." << std::endl;
   return;
 }
