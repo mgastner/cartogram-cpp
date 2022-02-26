@@ -1,6 +1,5 @@
 #include "../constants.h"
 #include "../inset_state.h"
-#include <math.h>
 #include <fstream>
 #include <iostream>
 
