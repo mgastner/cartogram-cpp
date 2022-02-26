@@ -22,6 +22,8 @@ private:
   bool is_world_map_;
   std::string visual_variable_file_;
 
+  nlohmann::json cgal_to_json();
+
 public:
   explicit CartogramInfo(const bool, const std::string);
   double cart_total_target_area() const;
@@ -34,6 +36,7 @@ public:
   const std::map<std::string, InsetState> inset_states() const;
   bool is_world_map() const;
   unsigned int n_insets() const;
+  unsigned int n_geo_divs() const;
   bool original_ext_ring_is_clockwise() const;
   void read_csv(argparse::ArgumentParser);
   void read_geojson(const std::string, const bool, std::string*);
@@ -44,5 +47,6 @@ public:
   const std::string visual_variable_file() const;
   void set_map_name(const std::string);
   const std::string map_name() const;
+  void write_geojson(std::string, std::string, std::ostream &, bool);
 };
 #endif

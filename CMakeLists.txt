@@ -53,9 +53,9 @@ add_executable(
   src/smyth_projection.cpp
   src/write_cairo.cpp
   src/write_eps.cpp
-  src/write_geojson.cpp
   src/cartogram_info/read_csv.cpp
   src/cartogram_info/read_geojson.cpp
+  src/cartogram_info/write_geojson.cpp
   src/inset_state/auto_color.cpp
   src/inset_state/fill_with_density.cpp
   src/inset_state/inset_state.cpp

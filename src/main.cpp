@@ -12,7 +12,6 @@
 #include "smyth_projection.h"
 #include "simplify_inset.h"
 #include "write_eps.h"
-#include "write_geojson.h"
 #include "write_cairo.h"
 #include <iostream>
 #include <cmath>
@@ -123,13 +122,7 @@ int main(const int argc, const char *argv[])
   double progress = 0.0;
 
   // Store total number of GeoDivs to monitor progress
-  double total_geo_divs = 0;
-  for (const auto &inset_info : *cart_info.ref_to_inset_states()) {
-
-    // `auto` will automatically deduce the const qualifier
-    auto &inset_state = inset_info.second;
-    total_geo_divs += inset_state.n_geo_divs();
-  }
+  double total_geo_divs = cart_info.n_geo_divs();
 
   // Project map and ensure that all holes are inside polygons
   for (auto &[inset_pos, inset_state] : *cart_info.ref_to_inset_states()) {
@@ -335,15 +328,12 @@ int main(const int argc, const char *argv[])
                         &inset_state);
       }
       if (world) {
-        const auto cart_json = cgal_to_json(&cart_info);
         std::string output_file_name =
           map_name + "_cartogram_in_smyth_projection.geojson";
-        write_geojson(cart_json,
-                      geo_file_name,
-                      output_file_name,
-                      std::cout,
-                      output_to_stdout,
-                      &cart_info);
+        cart_info.write_geojson(geo_file_name,
+                                output_file_name,
+                                std::cout,
+                                output_to_stdout);
         project_from_smyth_equal_surface(&inset_state);
       } else {
 
@@ -369,12 +359,9 @@ int main(const int argc, const char *argv[])
   } else {
     output_file_name = map_name + "_cartogram.geojson";
   }
-  const auto cart_json = cgal_to_json(&cart_info);
-  write_geojson(cart_json,
-                geo_file_name,
-                output_file_name,
-                std::cout,
-                output_to_stdout,
-                &cart_info);
+  cart_info.write_geojson(geo_file_name,
+                          output_file_name,
+                          std::cout,
+                          output_to_stdout);
   return EXIT_SUCCESS;
 }

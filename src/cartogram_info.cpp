@@ -228,3 +228,13 @@ const std::string CartogramInfo::map_name() const
 {
   return map_name_;
 }
+
+unsigned int CartogramInfo::n_geo_divs() const
+{
+  unsigned int n_geo_divs = 0;
+  for (const auto &inset_info : inset_states_) {
+    const auto &inset_state = inset_info.second;
+    n_geo_divs += inset_state.n_geo_divs();
+  }
+  return n_geo_divs;
+}

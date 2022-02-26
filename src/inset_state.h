@@ -80,6 +80,7 @@ public:
   void insert_whether_input_target_area_is_missing(const std::string,
                                                    const bool);
   const std::string inset_name() const;
+  nlohmann::json inset_to_geojson(bool) const;
   const std::vector<Segment> intersecting_segments(unsigned int) const;
   std::vector<std::vector<intersection> >
     intersections_with_rays_parallel_to_axis(char, unsigned int) const;
