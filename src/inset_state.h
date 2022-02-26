@@ -4,11 +4,12 @@
 #include "colors.h"
 #include "ft_real_2d.h"
 #include "geo_div.h"
-#include "xy_point.h"
 #include "intersection.h"
-#include <vector>
+#include "xy_point.h"
 #include <boost/multi_array.hpp>
 #include <map>
+#include <nlohmann/json.hpp>
+#include <vector>
 
 struct max_area_error_info {
   double value;
@@ -75,6 +76,7 @@ public:
   void insert_color(const std::string, const std::string);
   void insert_label(const std::string, const std::string);
   void insert_target_area(const std::string, const double);
+  nlohmann::json inset_to_json();
   void insert_whether_input_target_area_is_missing(const std::string,
                                                    const bool);
   const std::string inset_name() const;
