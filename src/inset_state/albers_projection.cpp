@@ -71,7 +71,7 @@ void InsetState::adjust_for_dual_hemisphere()
   return;
 }
 
-Point projected_albers_coordinates(Point coords,
+Point point_after_albers_projection(Point coords,
                                    double lambda_0,
                                    double phi_0,
                                    double phi_1,
@@ -126,41 +126,17 @@ void InsetState::apply_albers_projection()
   const double phi_1 = 0.5 * (phi_0 + max_lat);
   const double phi_2 = 0.5 * (phi_0 + min_lat);
 
-  // Iterate over GeoDivs
-  for (auto &gd : geo_divs_) {
+  // Specialise point_after_albers_projection with lx_ and ly_
+  std::function<Point(Point)> lambda =
+    [=](Point p1) {
+      return point_after_albers_projection(p1,
+                                           lambda_0,
+                                           phi_0,
+                                           phi_1,
+                                           phi_2);
+    };
 
-    // Iterate over Polygon_with_holes
-    for (auto &pwh : *gd.ref_to_polygons_with_holes()) {
-
-      // Get outer boundary
-      auto &outer_boundary = *(&pwh.outer_boundary());
-
-      // Iterate over outer boundary's coordinates
-      for (auto &coords_outer : outer_boundary) {
-
-        // Assign outer boundary's coordinates to transformed coordinates
-        coords_outer = projected_albers_coordinates(coords_outer,
-                                                    lambda_0,
-                                                    phi_0,
-                                                    phi_1,
-                                                    phi_2);
-      }
-
-      // Iterate over holes
-      for (auto h = pwh.holes_begin(); h != pwh.holes_end(); ++h) {
-
-        // Iterate over hole's coordinates
-        for (auto &coords_hole : *h) {
-
-          // Assign hole's coordinates to transformed coordinates
-          coords_hole = projected_albers_coordinates(coords_hole,
-                                                     lambda_0,
-                                                     phi_0,
-                                                     phi_1,
-                                                     phi_2);
-        }
-      }
-    }
-  }
+  // Apply "lambda" to all points
+  transform_points(lambda);
   return;
 }
