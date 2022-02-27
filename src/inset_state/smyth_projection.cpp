@@ -14,34 +14,7 @@ Point apply_smyth_craster_projection_on_point(Point p1)
 
 void InsetState::apply_smyth_craster_projection()
 {
-  // Iterate over GeoDivs
-  for (auto &gd : geo_divs_) {
-
-    // Iterate over Polygon_with_holes
-    for (auto &pwh : *gd.ref_to_polygons_with_holes()) {
-
-      // Get outer boundary
-      auto &outer_boundary = *(&pwh.outer_boundary());
-
-      // Iterate over outer boundary's coordinates
-      for (auto &coords_outer : outer_boundary) {
-
-        // Assign outer boundary's coordinates to transformed coordinates
-        coords_outer = apply_smyth_craster_projection_on_point(coords_outer);
-      }
-
-      // Iterate over holes
-      for (auto h = pwh.holes_begin(); h != pwh.holes_end(); ++h) {
-
-        // Iterate over hole's coordinates
-        for (auto &coords_hole : *h) {
-
-          // Assign hole's coordinates to transformed coordinates
-          coords_hole = apply_smyth_craster_projection_on_point(coords_hole);
-        }
-      }
-    }
-  }
+  transform_points(apply_smyth_craster_projection_on_point);
   return;
 }
 
@@ -58,37 +31,13 @@ Point reverse_smyth_craster_projection_on_point(Point p1,
 
 void InsetState::revert_smyth_craster_projection()
 {
-  // Iterate over GeoDivs
-  for (auto &gd : geo_divs_) {
+  // Specialise reverse_smyth_craster_projection_on_point with lx_ and ly_
+  std::function<Point(Point)> lambda =
+    [lx = lx_, ly = ly_](Point p1) {
+      return reverse_smyth_craster_projection_on_point(p1, lx, ly);
+  };
 
-    // Iterate over Polygon_with_holes
-    for (auto &pwh : *gd.ref_to_polygons_with_holes()) {
-
-      // Get outer boundary
-      auto &outer_boundary = *(&pwh.outer_boundary());
-
-      // Iterate over outer boundary's coordinates
-      for (auto &coords_outer : outer_boundary) {
-
-        // Assign outer boundary's coordinates to transformed coordinates
-        coords_outer = reverse_smyth_craster_projection_on_point(coords_outer,
-                                                                 lx_,
-                                                                 ly_);
-      }
-
-      // Iterate over holes
-      for (auto h = pwh.holes_begin(); h != pwh.holes_end(); ++h) {
-
-        // Iterate over hole's coordinates
-        for (auto &coords_hole : *h) {
-
-          // Assign hole's coordinates to transformed coordinates
-          coords_hole = reverse_smyth_craster_projection_on_point(coords_hole,
-                                                                  lx_,
-                                                                  ly_);
-        }
-      }
-    }
-  }
+  // Apply "lambda" to all points
+  transform_points(lambda);
   return;
 }

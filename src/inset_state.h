@@ -7,6 +7,7 @@
 #include "intersection.h"
 #include "xy_point.h"
 #include <boost/multi_array.hpp>
+#include <functional>
 #include <map>
 #include <nlohmann/json.hpp>
 #include <vector>
@@ -117,6 +118,9 @@ public:
   double target_area_at(const std::string) const;
   double total_inset_area() const;
   double total_target_area() const;
+
+  // Apply given function to all points
+  void transform_points(std::function<Point(Point)>);
 
   // Write all intersections found to an EPS file named
   // "*_intersections_*.eps"

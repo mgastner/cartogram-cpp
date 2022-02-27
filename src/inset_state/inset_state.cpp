@@ -340,3 +340,36 @@ std::string InsetState::label_at(const std::string id) const
   }
   return labels_.at(id);
 }
+
+void InsetState::transform_points(std::function<Point(Point)> transform_point)
+{
+  // Iterate over GeoDivs
+  for (auto &gd : geo_divs_) {
+
+    // Iterate over Polygon_with_holes
+    for (auto &pwh : *gd.ref_to_polygons_with_holes()) {
+
+      // Get outer boundary
+      auto &outer_boundary = *(&pwh.outer_boundary());
+
+      // Iterate over outer boundary's coordinates
+      for (auto &coords_outer : outer_boundary) {
+
+        // Assign outer boundary's coordinates to transformed coordinates
+        coords_outer = transform_point(coords_outer);
+      }
+
+      // Iterate over holes
+      for (auto h = pwh.holes_begin(); h != pwh.holes_end(); ++h) {
+
+        // Iterate over hole's coordinates
+        for (auto &coords_hole : *h) {
+
+          // Assign hole's coordinates to transformed coordinates
+          coords_hole = transform_point(coords_hole);
+        }
+      }
+    }
+  }
+  return;
+}
