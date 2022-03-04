@@ -52,6 +52,46 @@ XYPoint calc_intersection(const XYPoint a1,
   return intersection;
 }
 
+void add_intersection(std::vector<XYPoint> *intersections,
+                         const XYPoint a,
+                         const XYPoint b,
+                         const XYPoint c,
+                         const XYPoint d,
+                         const unsigned int lx,
+                         const unsigned int ly)
+{
+  XYPoint inter = calc_intersection(a, b, c, d);
+  if (((a.x <= inter.x && inter.x <= b.x) ||
+        (b.x <= inter.x && inter.x <= a.x)) &&
+      ((a.y <= inter.y && inter.y <= b.y) ||
+        (b.y <= inter.y && inter.y <= a.y)) &&
+      ((inter.y >= 0.5 && inter.y <= (ly - 0.5)) ||
+        (inter.x >= 0.5 && inter.x <= (lx - 0.5)))) {
+    (*intersections).push_back(rounded_XYpoint(inter, lx, ly));
+  }
+  return;
+}
+
+void add_edge_intersection(std::vector<XYPoint> *intersections,
+                         const XYPoint a,
+                         const XYPoint b,
+                         const XYPoint c,
+                         const XYPoint d,
+                         const unsigned int lx,
+                         const unsigned int ly)
+{
+  XYPoint inter = calc_intersection(a, b, c, d);
+  if (((a.x <= inter.x && inter.x <= b.x) ||
+        (b.x <= inter.x && inter.x <= a.x)) &&
+      ((a.y <= inter.y && inter.y <= b.y) ||
+        (b.y <= inter.y && inter.y <= a.y)) &&
+      ((inter.y < 0.5 || inter.y > (ly - 0.5)) ||
+        (inter.x < 0.5 || inter.x > (lx - 0.5)))) {
+    (*intersections).push_back(rounded_XYpoint(inter, lx, ly));
+  }
+  return;
+}
+
 // TODO: If a_ or b_ are themselves intersection points (e.g. if pt1.x is an
 // integer plus 0.5), it appears to be included in the returned intersections.
 // Would this property cause the point to be included twice in the line
@@ -102,112 +142,82 @@ std::vector<Point> densification_points(const Point pt1,
   temp_intersections.push_back(a);
   temp_intersections.push_back(b);
 
-  // Get bottom-left point of graticule cell containing `a`
-  XYPoint av0;
-  av0.x = std::max(0.0, floor(a.x + 0.5) - 0.5);
-  av0.y = std::max(0.0, floor(a.y + 0.5) - 0.5);
-
-  // Get bottom-left point of graticule cell containing `b`
-  XYPoint bv0;
-  bv0.x = std::max(0.0, floor(b.x + 0.5) - 0.5);
-  bv0.y = std::max(0.0, floor(b.y + 0.5) - 0.5);
-
-  // Get bottom-left (start_v) and top-right (end_v) graticule cells of the
-  // graticule cell rectangle (the smallest rectangular section of the
-  // graticule grid cell containing both points)
-  XYPoint start_v;
-  XYPoint end_v;
-  start_v.x = av0.x;
-  end_v.x = bv0.x;
-  if (a.y <= b.y) {
-    start_v.y = av0.y;
-    end_v.y = bv0.y;
-  } else {
-    start_v.y = bv0.y;
-    end_v.y = av0.y;
+  // Get vertical intersections
+  double x_start = floor(a.x + 0.5) + 0.5;
+  double x_end = b.x;
+  for (double i = x_start; i <= x_end; i += (i == 0.0) ? 0.5 : 1.0) {
+    XYPoint c; c.x = std::min(i, static_cast<double>(lx)); c.y = 0.0;
+    XYPoint d; d.x = std::min(i, static_cast<double>(lx)); c.y = 1.0;
+    add_intersection(&temp_intersections, a, b, c, d, lx, ly);
   }
 
-  // Distance between left-most and right-most graticule cell
-  const unsigned int dist_x = std::ceil(end_v.x - start_v.x);
+  // Get horizontal intersections
+  double y_start = floor(std::min(a.y, b.y) + 0.5) + 0.5;
+  double y_end = std::max(a.y, b.y);
+  for (double i = y_start; i <= y_end; i += (i == 0.0) ? 0.5 : 1.0) {
+    XYPoint c; c.x = 0.0; c.y = std::min(i, static_cast<double>(ly));
+    XYPoint d; d.x = 1.0; d.y = std::min(i, static_cast<double>(ly));
+    add_intersection(&temp_intersections, a, b, c, d, lx, ly);
+  }
 
-  // Distance between top and bottom graticule cell
-  const unsigned int dist_y = std::ceil(end_v.y - start_v.y);
+  // Get bottom-left to top-right diagonal intersections
+  double intercept_start = floor(std::min(a.y - a.x, b.y - b.x)) + 1.0;
+  double intercept_end = std::max(a.y - a.x, b.y - b.x);
+  for (double i = intercept_start; i <= intercept_end; ++i) {
+    XYPoint c; c.x = 0.0; c.y = i;
+    XYPoint d; d.x = 1.0; d.y = 1.0 + i;
+    add_intersection(&temp_intersections, a, b, c, d, lx, ly);
+  }
 
-  // Iterator variables for tracking current graticule cell in next for-loop
-  double current_graticule_x = start_v.x;
-  double current_graticule_y = start_v.y;
+  // Get top-left to bottom-right diagonal intersections
+  intercept_start = floor(std::min(a.y + a.x, b.y + b.x)) + 1.0;
+  intercept_end = std::max(a.y + a.x, b.y + b.x);
+  for (double i = intercept_start; i <= intercept_end; ++i) {
+    XYPoint c; c.x = 0.0; c.y = i;
+    XYPoint d; d.x = 1.0; d.y = -1.0 + i;
+    add_intersection(&temp_intersections, a, b, c, d, lx, ly);
+  }
 
-  // TODO: IT IS INEFFICIENT TO RUN THE INTERSECTIONS OF THE LINE FROM a TO b
-  // WITH THE HORIZONTAL GRID LINES AND VERTICAL GRID LINES IN EACH ITERATION
-  // OF THE NESTED LOOP BELOW. IT WOULD BE BETTER TO HAVE A NON-NESTED LOOP
-  // OVER EACH HORIZONTAL LINE IN THE RANGE, THEN A NON-NESTED LOOP OVER EACH
-  // VERTICAL LINE. FOR THE DIAGONALS, THIS PROCEDURE IS A LITTLE BIT
-  // TRICKIER; AT THE EDGES THE DIAGONALS ARE NOT STRAIGHT CONTINUATIONS OF
-  // THE ADJOINING DIAGONALS. STILL, THERE IS A PROBABLY A WAY TO GET
-  // INTERSECTIONS WITH THE 'MAIN' DIAGONALS ADN TREAT THE EDGE CASES
-  // SEPARATELY.
+  // Add edge diagonals when at least one point is on the edge of the grid.
+  if (a.x < 0.5 || b.x < 0.5 || a.x > (lx - 0.5) || b.x > (lx - 0.5)){
 
-  // Iterate over each row, from bottom to top
-  for (unsigned int i = 0; i <= dist_y; ++i) {
-
-    // Iterate over each column, from left to right
-    for (unsigned int j = 0; j <= dist_x; ++j) {
-
-      // Get points for the current graticule cell, in the following order:
-      // bottom-left, bottom-right, top-right, top-left
-      const XYPoint v0(current_graticule_x, current_graticule_y);
-      const XYPoint v1(
-        v0.x == 0.0 ? 0.5 : std::min(double(lx), v0.x + 1.0),
-        v0.y);
-      const XYPoint v2(
-        v1.x,
-        v0.y == 0.0 ? 0.5 : std::min(double(ly), v0.y + 1.0));
-      const XYPoint v3(v0.x, v2.y);
-
-      // Store intersections of line segment from `a` to `b` with graticule
-      // lines and diagonals
-      std::vector<XYPoint> graticule_intersections;
-
-      // Bottom intersection
-      graticule_intersections.push_back(calc_intersection(a, b, v0, v1));
-
-      // Left intersection
-      graticule_intersections.push_back(calc_intersection(a, b, v0, v3));
-
-      // Right intersection
-      graticule_intersections.push_back(calc_intersection(a, b, v1, v2));
-
-      // Top intersection
-      graticule_intersections.push_back(calc_intersection(a, b, v3, v2));
-
-      // Diagonal intersections
-      graticule_intersections.push_back(calc_intersection(a, b, v0, v2));
-      graticule_intersections.push_back(calc_intersection(a, b, v3, v1));
-
-      // Add only those intersections that are between `a` and `b`. Usually,
-      // it is enough to check that the x-coordinate of the intersection is
-      // between a.x and b.x. However, in some edge cases, it is possible that
-      // the x-coordinate is between a.x and b.x, but the y coordinate
-      // is not between a.y and b.y (e.g. if the line from a to b is
-      // vertical).
-      for (const auto &inter : graticule_intersections) {
-        if (((a.x <= inter.x && inter.x <= b.x) ||
-             (b.x <= inter.x && inter.x <= a.x)) &&
-            ((a.y <= inter.y && inter.y <= b.y) ||
-             (b.y <= inter.y && inter.y <= a.y))) {
-          temp_intersections.push_back(rounded_XYpoint(inter, lx, ly));
-        }
-      }
-
-      // If the current graticule cell touches the left edge, add 0.5 to
-      // obtain the next graticule cell. Otherwise, add 1.0.
-      current_graticule_x += (current_graticule_x == 0.0) ? 0.5 : 1.0;
+    // Bottom-left to top-right edge diagonals
+    intercept_start = floor(std::min(a.y - 2 * a.x, b.y - 2 * b.x) + 0.5) + 0.5;
+    intercept_end = std::max(a.y - 2 * a.x, b.y - 2 * b.x);
+    for (double i = intercept_start; i <= intercept_end; ++i) {
+      XYPoint c; c.x = 0.0; c.y = i;
+      XYPoint d; d.x = 1.0; d.y = 2.0 + i;
+      add_edge_intersection(&temp_intersections, a, b, c, d, lx, ly);
     }
-    current_graticule_x = start_v.x;
 
-    // If the current row touches the bottom edge, add 0.5 to
-    // obtain the next row. Otherwise, add 1.0.
-    current_graticule_y += (current_graticule_y == 0.0) ? 0.5 : 1.0;
+    // Top-left to bottom-right edge diagonals
+    intercept_start = floor(std::min(a.y + 2 * a.x, b.y + 2 * b.x) + 0.5) + 0.5;
+    intercept_end = std::max(a.y + 2 * a.x, b.y + 2 * b.x);
+    for (double i = intercept_start; i <= intercept_end; ++i) {
+      XYPoint c; c.x = 0.0; c.y = i;
+      XYPoint d; d.x = 1.0; d.y = -2.0 + i;
+      add_edge_intersection(&temp_intersections, a, b, c, d, lx, ly);
+    }
+  }
+  if (a.y < 0.5 || b.y < 0.5 || a.y > (ly - 0.5) || b.y > (ly - 0.5)){
+
+    // Bottom-left to top-right edge diagonals
+    intercept_start = floor(std::min(a.y - 0.5 * a.x, b.y - 0.5 * b.x) + 0.5) - 0.25;
+    intercept_end = std::max(a.y - 0.5 * a.x, b.y - 0.5 * b.x);
+    for (double i = intercept_start; i <= intercept_end; i += 0.5) {
+      XYPoint c; c.x = 0.0; c.y = i;
+      XYPoint d; d.x = 1.0; d.y = 0.5 + i;
+      add_edge_intersection(&temp_intersections, a, b, c, d, lx, ly);
+    }
+
+    // Top-left to botom-right edge diagonals
+    intercept_start = floor(std::min(a.y + 0.5 * a.x, b.y + 0.5 * b.x) + 0.5) - 0.25;
+    intercept_end = std::max(a.y + 0.5 * a.x, b.y + 0.5 * b.x);
+    for (double i = intercept_start; i <= intercept_end; i += 0.5) {
+      XYPoint c; c.x = 0.0; c.y = i;
+      XYPoint d; d.x = 1.0; d.y = -0.5 + i;
+      add_edge_intersection(&temp_intersections, a, b, c, d, lx, ly);
+    }
   }
 
   // Sort intersections
