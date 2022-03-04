@@ -61,6 +61,7 @@ public:
   void apply_smyth_craster_projection();
   void auto_color();  // Automatically color GeoDivs
   Bbox bbox() const;
+  int chosen_diag(const Point v[4], unsigned int *);
   const Color color_at(const std::string) const;
   bool colors_empty() const;
   bool color_found(const std::string) const;
@@ -70,6 +71,7 @@ public:
   void destroy_fftw_plans_for_rho();
   void execute_fftw_bwd_plan() const;
   void execute_fftw_fwd_plan() const;
+  void fill_graticule_diagonals();
   void fill_with_density(bool);  // Fill map with density, using scanlines
   const std::vector<GeoDiv> geo_divs() const;
   const std::vector<std::vector<intersection> >
@@ -100,6 +102,9 @@ public:
   unsigned int n_rings() const;
   const std::string pos() const;
   void project();
+  Point projected_point(const Point);
+  Point projected_point_with_triangulation(const Point);
+  void project_with_triangulation();
   void push_back(const GeoDiv);
   boost::multi_array<XYPoint, 2> *ref_to_cum_proj();
   std::vector<GeoDiv> *ref_to_geo_divs();
@@ -123,16 +128,13 @@ public:
   // Apply given function to all points
   void transform_points(std::function<Point(Point)>);
 
+  // Functions for project.cpp
+  std::array<Point, 3> transformed_triangle(const std::array<Point, 3>);
+  std::array<Point, 3> untransformed_triangle(const Point);
+
   // Write all intersections found to an EPS file named
   // "*_intersections_*.eps"
   void write_intersections_to_eps(unsigned int);
-  Point projected_point(const Point p1);
-  int chosen_diag(const Point v[4], unsigned int *num_concave);
-  void fill_graticule_diagonals();
-  std::array<Point, 3> transformed_triangle(const std::array<Point, 3>);
-  std::array<Point, 3> untransformed_triangle(const Point pt);
-  Point projected_point_with_triangulation(const Point pt);
-  void project_with_triangulation();
 };
 
 #endif
