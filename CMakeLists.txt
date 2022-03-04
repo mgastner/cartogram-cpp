@@ -37,27 +37,27 @@ add_executable(
   src/cartogram_info.cpp
   src/check_topology.cpp
   src/colors.cpp
-  src/flatten_density.cpp
   src/ft_real_2d.cpp
   src/geo_div.cpp
-  src/interpolate_bilinearly.cpp
   src/intersection.cpp
   src/main.cpp
-  src/matrix.cpp
   src/parse_arguments.cpp
   src/rescale_map.cpp
-  src/round_point.cpp
   src/write_cairo.cpp
   src/write_eps.cpp
   src/cartogram_info/read_csv.cpp
   src/cartogram_info/read_geojson.cpp
   src/cartogram_info/write_geojson.cpp
-  src/inset_state/auto_color.cpp
   src/inset_state/albers_projection.cpp
-  src/inset_state/fill_with_density.cpp
-  src/inset_state/inset_state.cpp
+  src/inset_state/auto_color.cpp
   src/inset_state/densify.cpp
+  src/inset_state/fill_with_density.cpp
+  src/inset_state/flatten_density.cpp
+  src/inset_state/inset_state.cpp
+  src/inset_state/interpolate_bilinearly.cpp
+  src/inset_state/matrix.cpp
   src/inset_state/project.cpp
+  src/inset_state/round_point.cpp
   src/inset_state/scanline_graph.cpp
   src/inset_state/simplify_inset.cpp
   src/inset_state/smyth_projection.cpp

@@ -1,7 +1,7 @@
 #include "../inset_state.h"
 #include "../constants.h"
 #include <CGAL/intersections.h>
-#include "../round_point.h"
+#include "round_point.h"
 
 // This function takes two lines as input:
 // - line `a`, defined by points a1 and a2.

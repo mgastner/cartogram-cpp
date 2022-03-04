@@ -1,6 +1,6 @@
 #include "cartogram_info.h"
 #include "inset_state.h"
-#include "round_point.h"
+#include "inset_state/round_point.h"
 #include <CGAL/Boolean_set_operations_2.h>
 
 // Returns error if there are holes not inside their respective polygons

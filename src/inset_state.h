@@ -72,7 +72,11 @@ public:
   void execute_fftw_bwd_plan() const;
   void execute_fftw_fwd_plan() const;
   void fill_graticule_diagonals();
+
+  // Density functions
   void fill_with_density(bool);  // Fill map with density, using scanlines
+  void flatten_density();  // Flatten said density with integration
+
   const std::vector<GeoDiv> geo_divs() const;
   const std::vector<std::vector<intersection> >
     horizontal_scans(unsigned int) const;

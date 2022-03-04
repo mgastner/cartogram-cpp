@@ -2,9 +2,6 @@
 #include "cartogram_info.h"
 #include "check_topology.h"
 #include "constants.h"
-#include "flatten_density.h"
-#include "geo_div.h"
-#include "inset_state.h"
 #include "parse_arguments.h"
 #include "rescale_map.h"
 #include "write_eps.h"
@@ -269,7 +266,7 @@ int main(const int argc, const char *argv[])
         if (plot_intersections) {
           inset_state.write_intersections_to_eps(intersections_resolution);
         }
-        flatten_density(&inset_state);
+        inset_state.flatten_density();
         if (triangulation) {
 
           // Choose diagonals that are inside graticule cells
