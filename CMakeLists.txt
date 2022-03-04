@@ -45,7 +45,6 @@ add_executable(
   src/main.cpp
   src/matrix.cpp
   src/parse_arguments.cpp
-  src/project.cpp
   src/rescale_map.cpp
   src/round_point.cpp
   src/write_cairo.cpp
@@ -58,6 +57,7 @@ add_executable(
   src/inset_state/fill_with_density.cpp
   src/inset_state/inset_state.cpp
   src/inset_state/densify.cpp
+  src/inset_state/project.cpp
   src/inset_state/scanline_graph.cpp
   src/inset_state/simplify_inset.cpp
   src/inset_state/smyth_projection.cpp

@@ -99,6 +99,7 @@ public:
   unsigned long n_points() const;
   unsigned int n_rings() const;
   const std::string pos() const;
+  void project();
   void push_back(const GeoDiv);
   boost::multi_array<XYPoint, 2> *ref_to_cum_proj();
   std::vector<GeoDiv> *ref_to_geo_divs();
@@ -125,6 +126,13 @@ public:
   // Write all intersections found to an EPS file named
   // "*_intersections_*.eps"
   void write_intersections_to_eps(unsigned int);
+  Point projected_point(const Point p1);
+  int chosen_diag(const Point v[4], unsigned int *num_concave);
+  void fill_graticule_diagonals();
+  std::array<Point, 3> transformed_triangle(const std::array<Point, 3>);
+  std::array<Point, 3> untransformed_triangle(const Point pt);
+  Point projected_point_with_triangulation(const Point pt);
+  void project_with_triangulation();
 };
 
 #endif

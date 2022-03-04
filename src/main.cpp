@@ -6,7 +6,6 @@
 #include "geo_div.h"
 #include "inset_state.h"
 #include "parse_arguments.h"
-#include "project.h"
 #include "rescale_map.h"
 #include "write_eps.h"
 #include "write_cairo.h"
@@ -274,15 +273,15 @@ int main(const int argc, const char *argv[])
         if (triangulation) {
 
           // Choose diagonals that are inside graticule cells
-          fill_graticule_diagonals(&inset_state);
+          inset_state.fill_graticule_diagonals();
 
           // Densify map
           inset_state.densify_geo_divs();
 
           // Project with triangulation
-          project_with_triangulation(&inset_state);
+          inset_state.project_with_triangulation();
         } else {
-          project(&inset_state);
+          inset_state.project();
         }
         if (simplify) {
           inset_state.simplify(target_points_per_inset);
