@@ -52,13 +52,14 @@ XYPoint calc_intersection(const XYPoint a1,
   return intersection;
 }
 
-void add_intersection(std::vector<XYPoint> *intersections,
-                         const XYPoint a,
-                         const XYPoint b,
-                         const XYPoint c,
-                         const XYPoint d,
-                         const unsigned int lx,
-                         const unsigned int ly)
+void add_intersection(std::set<XYPoint, decltype(xy_point_lesser)*>
+                        *intersections,
+                      const XYPoint a,
+                      const XYPoint b,
+                      const XYPoint c,
+                      const XYPoint d,
+                      const unsigned int lx,
+                      const unsigned int ly)
 {
   XYPoint inter = calc_intersection(a, b, c, d);
   if (((a.x <= inter.x && inter.x <= b.x) ||
@@ -67,18 +68,19 @@ void add_intersection(std::vector<XYPoint> *intersections,
         (b.y <= inter.y && inter.y <= a.y)) &&
       ((inter.y >= 0.5 && inter.y <= (ly - 0.5)) ||
         (inter.x >= 0.5 && inter.x <= (lx - 0.5)))) {
-    (*intersections).push_back(rounded_XYpoint(inter, lx, ly));
+    (*intersections).insert(rounded_XYpoint(inter, lx, ly));
   }
   return;
 }
 
-void add_edge_intersection(std::vector<XYPoint> *intersections,
-                         const XYPoint a,
-                         const XYPoint b,
-                         const XYPoint c,
-                         const XYPoint d,
-                         const unsigned int lx,
-                         const unsigned int ly)
+void add_edge_intersection(std::set<XYPoint, decltype(xy_point_lesser)*>
+                             *intersections,
+                           const XYPoint a,
+                           const XYPoint b,
+                           const XYPoint c,
+                           const XYPoint d,
+                           const unsigned int lx,
+                           const unsigned int ly)
 {
   XYPoint inter = calc_intersection(a, b, c, d);
   if (((a.x <= inter.x && inter.x <= b.x) ||
@@ -87,7 +89,7 @@ void add_edge_intersection(std::vector<XYPoint> *intersections,
         (b.y <= inter.y && inter.y <= a.y)) &&
       ((inter.y < 0.5 || inter.y > (ly - 0.5)) ||
         (inter.x < 0.5 || inter.x > (lx - 0.5)))) {
-    (*intersections).push_back(rounded_XYpoint(inter, lx, ly));
+    (*intersections).insert(rounded_XYpoint(inter, lx, ly));
   }
   return;
 }
@@ -118,8 +120,9 @@ std::vector<Point> densification_points(const Point pt1,
     return points;
   }
 
-  // Vector for storing intersections before removing duplicates
-  std::vector<XYPoint> temp_intersections;
+  // Ordered set for storing intersections before removing duplicates
+  std::set<XYPoint, decltype(xy_point_lesser)*>
+    temp_intersections(xy_point_lesser);
 
   // Store the leftmost point of p1 and pt2 as `a`. If both points have the
   // same x-coordinate, then store the lower point as `a`. The other point is
@@ -139,8 +142,8 @@ std::vector<Point> densification_points(const Point pt1,
     b.x = pt2.x();
     b.y = pt2.y();
   }
-  temp_intersections.push_back(a);
-  temp_intersections.push_back(b);
+  temp_intersections.insert(a);
+  temp_intersections.insert(b);
 
   // Get vertical intersections
   double x_start = floor(a.x + 0.5) + 0.5;
@@ -220,22 +223,19 @@ std::vector<Point> densification_points(const Point pt1,
     }
   }
 
-  // Sort intersections
-  std::sort(temp_intersections.begin(), temp_intersections.end());
+  // // DEBUGGING: Check if there are any two almost equal points in the set
+  // std::vector<XYPoint> inter_test(temp_intersections.begin(),
+  //                                 temp_intersections.end());
+  // for (unsigned int i = 1; i < inter_test.size(); ++i){
+  //   if (xy_points_almost_equal(inter_test[i - 1], inter_test[i]))
+  //     std::cout << "Almost equal points in set!\n";
+  // }
 
-  // TODO: IF temp_intersections WERE AN ORDERED SET, THERE WOULD BE NO NEED
-  // TO REMOVE DUPLICATES
-  // Eliminate duplicates
+  // Convert the set of XYPoints to a vector of CGAL points
+  // TO-DO: Phase out XYPoints entirely
   std::vector<Point> intersections;
-  intersections.push_back(Point(temp_intersections[0].x,
-                                temp_intersections[0].y));
-  for (unsigned int i = 1; i < temp_intersections.size(); ++i) {
-    if (!xy_points_almost_equal(temp_intersections[i - 1],
-                                temp_intersections[i])) {
-      intersections.push_back(Point(temp_intersections[i].x,
-                                    temp_intersections[i].y));
-    }
-  }
+  for (auto xypt : temp_intersections)
+    intersections.push_back(Point(xypt.x, xypt.y));
 
   // Reverse if needed
   if ((pt1.x() > pt2.x()) || ((pt1.x() == pt2.x()) && (pt1.y() > pt2.y()))) {
