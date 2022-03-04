@@ -182,15 +182,12 @@ int main(const int argc, const char *argv[])
       inset_state.simplify(target_points_per_inset);
     }
     if (output_equal_area) {
-      normalize_inset_area(&inset_state,
-                           cart_info.cart_total_target_area(),
-                           output_equal_area);
+      inset_state.normalize_inset_area(cart_info.cart_total_target_area(), 
+                                       output_equal_area);
     } else {
 
       // Rescale map to fit into a rectangular box [0, lx] * [0, ly]
-      rescale_map(long_graticule_length,
-                  &inset_state,
-                  cart_info.is_world_map());
+      inset_state.rescale_map(long_graticule_length, cart_info.is_world_map());
 
       // Set up Fourier transforms
       const unsigned int lx = inset_state.lx();
@@ -325,8 +322,7 @@ int main(const int argc, const char *argv[])
       } else {
 
         // Rescale insets in correct proportion to each other
-        normalize_inset_area(&inset_state,
-                             cart_info.cart_total_target_area());
+        inset_state.normalize_inset_area(cart_info.cart_total_target_area());
       }
 
       // Clean up after finishing all Fourier transforms for this inset
@@ -337,7 +333,7 @@ int main(const int argc, const char *argv[])
   }
 
   // Shift insets so that they do not overlap
-  shift_insets_to_target_position(&cart_info);
+  cart_info.shift_insets_to_target_position();
 
   // Output to GeoJSON
   std::string output_file_name;

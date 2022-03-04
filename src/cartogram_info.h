@@ -46,6 +46,7 @@ public:
   void set_original_ext_ring_is_clockwise(const bool);
   const std::string visual_variable_file() const;
   void set_map_name(const std::string);
+  void shift_insets_to_target_position();
   const std::string map_name() const;
   void write_geojson(std::string, std::string, std::ostream &, bool);
 };

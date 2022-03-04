@@ -40,12 +40,12 @@ add_executable(
   src/intersection.cpp
   src/main.cpp
   src/parse_arguments.cpp
-  src/rescale_map.cpp
   src/write_cairo.cpp
   src/write_eps.cpp
   src/cartogram_info/read_csv.cpp
   src/cartogram_info/read_geojson.cpp
   src/cartogram_info/write_geojson.cpp
+  src/cartogram_info/shift_insets_to_position.cpp
   src/inset_state/albers_projection.cpp
   src/inset_state/auto_color.cpp
   src/inset_state/blur_density.cpp
@@ -57,6 +57,7 @@ add_executable(
   src/inset_state/interpolate_bilinearly.cpp
   src/inset_state/matrix.cpp
   src/inset_state/project.cpp
+  src/inset_state/rescale_map.cpp
   src/inset_state/round_point.cpp
   src/inset_state/scanline_graph.cpp
   src/inset_state/simplify_inset.cpp

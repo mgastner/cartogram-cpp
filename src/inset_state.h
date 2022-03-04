@@ -107,6 +107,7 @@ public:
   unsigned int n_geo_divs() const;
   unsigned long n_points() const;
   unsigned int n_rings() const;
+  void normalize_inset_area(double total_cart_target_area, bool = false);
   const std::string pos() const;
   void project();
   Point projected_point(const Point);
@@ -120,6 +121,7 @@ public:
   FTReal2d *ref_to_rho_ft();
   FTReal2d *ref_to_rho_init();
   void replace_target_area(const std::string, const double);
+  void rescale_map(unsigned int, bool);
   void revert_smyth_craster_projection();
   void rings_are_simple();
   void set_area_errors();
