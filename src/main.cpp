@@ -1,8 +1,6 @@
 #include "cartogram_info.h"
 #include "constants.h"
 #include "parse_arguments.h"
-#include "rescale_map.h"
-#include "write_eps.h"
 #include "write_cairo.h"
 #include <iostream>
 

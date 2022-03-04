@@ -142,9 +142,12 @@ public:
   std::array<Point, 3> transformed_triangle(const std::array<Point, 3>);
   std::array<Point, 3> untransformed_triangle(const Point);
 
-  // Write all intersections found to an EPS file named
-  // "*_intersections_*.eps"
+  // Functions to write map to eps
+  void write_density_to_eps(const std::string, const double *);
+  void write_graticule_to_eps(std::ofstream &);
   void write_intersections_to_eps(unsigned int);
+  void write_map_to_eps(const std::string, const bool);
+  void write_polygons_to_eps(std::ofstream &, const bool, const bool);
 };
 
 #endif

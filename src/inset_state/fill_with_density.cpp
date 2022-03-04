@@ -1,5 +1,4 @@
 #include "../cartogram_info.h"
-#include "../write_eps.h"
 #include "../inset_state.h"
 
 void InsetState::fill_with_density(bool plot_density)
@@ -152,7 +151,7 @@ void InsetState::fill_with_density(bool plot_density)
       std::to_string(n_finished_integrations()) +
       ".eps";
     std::cerr << "Writing " << file_name << std::endl;
-    write_density_to_eps(file_name, rho_init_.as_1d_array(), this);
+    write_density_to_eps(file_name, rho_init_.as_1d_array());
   }
   execute_fftw_fwd_plan();
   return;

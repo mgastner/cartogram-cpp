@@ -41,7 +41,6 @@ add_executable(
   src/main.cpp
   src/parse_arguments.cpp
   src/write_cairo.cpp
-  src/write_eps.cpp
   src/cartogram_info/read_csv.cpp
   src/cartogram_info/read_geojson.cpp
   src/cartogram_info/write_geojson.cpp
@@ -62,6 +61,7 @@ add_executable(
   src/inset_state/scanline_graph.cpp
   src/inset_state/simplify_inset.cpp
   src/inset_state/smyth_projection.cpp
+  src/inset_state/write_eps.cpp
   src/inset_state/write_inset_to_geojson.cpp
 )
 
