@@ -33,7 +33,6 @@ link_libraries(PkgConfig::FFTW PkgConfig::Cairo)
 # Adding C++ files needed for compilation.
 add_executable(
   cartogram
-  src/blur_density.cpp
   src/cartogram_info.cpp
   src/colors.cpp
   src/ft_real_2d.cpp
@@ -49,6 +48,7 @@ add_executable(
   src/cartogram_info/write_geojson.cpp
   src/inset_state/albers_projection.cpp
   src/inset_state/auto_color.cpp
+  src/inset_state/blur_density.cpp
   src/inset_state/check_topology.cpp
   src/inset_state/densify.cpp
   src/inset_state/fill_with_density.cpp

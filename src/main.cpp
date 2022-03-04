@@ -1,4 +1,3 @@
-#include "blur_density.h"
 #include "cartogram_info.h"
 #include "constants.h"
 #include "parse_arguments.h"
@@ -258,7 +257,7 @@ int main(const int argc, const char *argv[])
         std::cerr << "blur_width = " << blur_width << std::endl;
         inset_state.fill_with_density(plot_density);
         if (blur_width > 0.0) {
-          blur_density(blur_width, plot_density, &inset_state);
+          inset_state.blur_density(blur_width, plot_density);
         }
         if (plot_intersections) {
           inset_state.write_intersections_to_eps(intersections_resolution);
