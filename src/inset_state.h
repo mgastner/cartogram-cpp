@@ -61,6 +61,7 @@ public:
   void apply_smyth_craster_projection();
   void auto_color();  // Automatically color GeoDivs
   Bbox bbox() const;
+  void check_topology();
   int chosen_diag(const Point v[4], unsigned int *);
   const Color color_at(const std::string) const;
   bool colors_empty() const;
@@ -78,6 +79,7 @@ public:
   void flatten_density();  // Flatten said density with integration
 
   const std::vector<GeoDiv> geo_divs() const;
+  void holes_inside_polygons();
   const std::vector<std::vector<intersection> >
     horizontal_scans(unsigned int) const;
   void increment_integration();
@@ -118,6 +120,7 @@ public:
   FTReal2d *ref_to_rho_init();
   void replace_target_area(const std::string, const double);
   void revert_smyth_craster_projection();
+  void rings_are_simple();
   void set_area_errors();
   void set_geo_divs(const std::vector<GeoDiv>);
   void set_grid_dimensions(const unsigned int, const unsigned int);

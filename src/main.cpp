@@ -1,13 +1,11 @@
 #include "blur_density.h"
 #include "cartogram_info.h"
-#include "check_topology.h"
 #include "constants.h"
 #include "parse_arguments.h"
 #include "rescale_map.h"
 #include "write_eps.h"
 #include "write_cairo.h"
 #include <iostream>
-#include <cmath>
 
 int main(const int argc, const char *argv[])
 {
@@ -122,8 +120,7 @@ int main(const int argc, const char *argv[])
 
     // Check for errors in the input topology
     try {
-      holes_inside_polygons(&inset_state);
-      rings_are_simple(&inset_state);
+      inset_state.check_topology();
     } catch (const std::system_error& e) {
       std::cerr << "ERROR while checking topology: "
                 << e.what()

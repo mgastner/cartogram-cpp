@@ -2,9 +2,6 @@
 #include "../inset_state.h"
 #include "interpolate_bilinearly.h"
 #include <boost/multi_array.hpp>
-#include <iostream>
-#include <algorithm>
-#include <vector>
 #include <omp.h>
 
 // Function to calculate the velocity at the grid points (x, y) with x =
