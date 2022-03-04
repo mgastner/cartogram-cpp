@@ -23,6 +23,15 @@ bool points_almost_equal(const Point a, const Point b) {
 bool xy_points_almost_equal(const XYPoint a, const XYPoint b) {
   return (almost_equal(a.x, b.x) && almost_equal(a.y, b.y));
 }
+bool xy_point_lesser(const XYPoint a, const XYPoint b) {
+  if (xy_points_almost_equal(a, b)){
+    return false;
+  } else if (a < b) {
+    return true;
+  } else {
+    return false;
+  }
+}
 
 // Function to round a double to a nearby bicimal. Bicimals are a more
 // "native" way of rounding than decimals because doubles are represented
