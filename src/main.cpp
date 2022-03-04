@@ -1,7 +1,6 @@
 #include "cartogram_info.h"
 #include "constants.h"
 #include "parse_arguments.h"
-#include "write_cairo.h"
 #include <iostream>
 
 int main(const int argc, const char *argv[])
@@ -210,7 +209,7 @@ int main(const int argc, const char *argv[])
           input_filename += "_input";
         }
         std::cerr << "Writing " << input_filename << std::endl;
-        write_cairo_map(input_filename, plot_graticule, &inset_state);
+        inset_state.write_cairo_map(input_filename, plot_graticule);
       }
 
       // We make the approximation that the progress towards generating the
@@ -306,8 +305,7 @@ int main(const int argc, const char *argv[])
         }
         std::cerr << "Writing "
                   << output_filename << std::endl;
-        write_cairo_map(output_filename, plot_graticule,
-                        &inset_state);
+        inset_state.write_cairo_map(output_filename, plot_graticule);
       }
       if (world) {
         std::string output_file_name =

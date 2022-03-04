@@ -7,6 +7,7 @@
 #include "intersection.h"
 #include "xy_point.h"
 #include <boost/multi_array.hpp>
+#include <cairo/cairo.h>
 #include <functional>
 #include <map>
 #include <nlohmann/json.hpp>
@@ -49,6 +50,9 @@ private:
   // Vertical adjacency graph
   std::vector<std::vector<intersection> > vertical_adj_;
 
+  // Create cairo surface
+  void write_polygons_to_cairo_surface(cairo_t *, const bool,
+                                       const bool, const bool);
   // Make default contructor private so that only
   // InsetState(const std::string) can be called as constructor
   InsetState();
@@ -141,6 +145,13 @@ public:
   // Functions for project.cpp
   std::array<Point, 3> transformed_triangle(const std::array<Point, 3>);
   std::array<Point, 3> untransformed_triangle(const Point);
+
+  // Cairo functions
+  void write_cairo_polygons_to_png(const std::string,
+                                   const bool, const bool, const bool);
+  void write_cairo_polygons_to_ps(const std::string,
+                                  const bool, const bool, const bool);
+  void write_cairo_map(const std::string, const bool);
 
   // Functions to write map to eps
   void write_density_to_eps(const std::string, const double *);
