@@ -536,15 +536,132 @@ void heatmap_color(const double dens,
                                blue[color_category]);
 }
 
+// Function to show the density bar on the cairo surface
+void write_density_bar_to_cairo_surface (const double min_value,
+                                          const double mean_value,
+                                          const double max_value,
+                                          cairo_t *cr,
+                                          Bbox bbox_bar,
+                                          const unsigned int ly) 
+{
+  const int n_gradident_bars = 500;
+  
+  // get bar coordinates
+  const double xmin_bar = bbox_bar.xmin();
+  const double xmax_bar = bbox_bar.xmax();
+  const double ymin_bar = bbox_bar.ymin();
+  const double ymax_bar = bbox_bar.ymax();
+  
+  const double bar_width = xmax_bar - xmin_bar;
+  
+  // position of mean line along bar
+  const double ymean_bar = ((ymax_bar - ymin_bar)/ (max_value - min_value)) * (mean_value - min_value) + ymin_bar;
+  
+  // calculate individual bar gradient segment property
+  const double gradient_segment_height = (ymax_bar - ymin_bar) / n_gradident_bars;
+  const double gradient_segment_value = (max_value - min_value) / n_gradident_bars;
+  
+  // Draw the outer bar lines
+  cairo_set_source_rgb(cr, 0.0, 0.0, 0.0);
+  cairo_set_line_width(cr, 1.0);
+  cairo_move_to(cr, xmin_bar, ly - ymin_bar);
+  cairo_line_to(cr, xmax_bar, ly - ymin_bar);
+  cairo_line_to(cr, xmax_bar, ly - ymax_bar);
+  cairo_line_to(cr, xmin_bar, ly - ymax_bar);
+  cairo_line_to(cr, xmin_bar, ly - ymin_bar);
+  cairo_stroke(cr);
+  
+  // Draw the gradient segment rectangles
+  double value_at_gradient_segment = min_value;
+  
+  for(double y = ymin_bar; y <= ymax_bar; y += gradient_segment_height) {
+    double r, g, b;
+    heatmap_color(value_at_gradient_segment, min_value, mean_value, max_value, &r, &g, &b);
+    cairo_set_source_rgb(cr, r, g, b);
+    cairo_rectangle(cr, xmin_bar, ly - y, bar_width, gradient_segment_height);
+    cairo_fill(cr);
+    value_at_gradient_segment += gradient_segment_value;
+  }
+  
+  // Draw the mean line
+  cairo_set_source_rgb(cr, 0.0, 0.0, 0.0);
+  cairo_move_to(cr, xmin_bar + bar_width/2, ly - ymean_bar);
+  cairo_line_to(cr, xmax_bar, ly - ymean_bar);
+  cairo_stroke(cr);
+  
+  // Set font properties
+  cairo_select_font_face(cr, "Sans", CAIRO_FONT_SLANT_NORMAL, CAIRO_FONT_WEIGHT_BOLD);
+  cairo_set_font_size(cr, 10);
+  
+  // Write "Density" on top of bar
+  cairo_move_to(cr, xmin_bar - bar_width/2 - 1, ly - (ymax_bar + 15));
+  cairo_show_text(cr, "Density");
+  
+  // Write "High" top right of bar
+  cairo_move_to(cr, xmax_bar + 5, ly - ymax_bar + 3);
+  cairo_show_text(cr, "High");
+  
+  // Write "Low" bottom right of bar
+  cairo_move_to(cr, xmax_bar + 5, ly - ymin_bar + 3);
+  cairo_show_text(cr, "Low");
+  
+  // Write "Mean" beside ymean_bar
+  cairo_move_to(cr, xmax_bar + 5, ly - ymean_bar + 3);
+  cairo_show_text(cr, "Mean");      
+}
+
+// This function creates a simple ps file with a density bar
+void write_density_bar_to_ps(std::string filename) {
+  
+  // Create a cairo surface
+  cairo_surface_t *surface = cairo_ps_surface_create(filename.c_str(),
+                                                     80,
+                                                     200);
+  cairo_t *cr = cairo_create(surface);
+  
+  // Write header
+  write_ps_header(filename, surface);
+  
+  write_density_bar_to_cairo_surface(0,
+                                     50,
+                                     100,
+                                     cr,
+                                     Bbox(20.0, 15.0, 35.0, 165.0),
+                                     200);
+
+  cairo_show_page(cr);
+  cairo_surface_destroy(surface);
+  cairo_destroy(cr);
+}
+
 void write_density_to_ps(const std::string ps_name,
                           const double *density,
                           InsetState *inset_state)
 {
+  // Whether to draw bar on the cairo surface
+  bool draw_bar = true;
+  
   auto filename = ps_name.c_str();
   const auto lx = inset_state->lx();
   const auto ly = inset_state->ly();
   cairo_surface_t *surface = cairo_ps_surface_create(filename, lx, ly);
   cairo_t *cr = cairo_create(surface);
+  
+  // Calculate bbox for the bar
+  const double bar_width = 15;
+  const double bar_height = 150;
+  const Bbox bbox = inset_state->bbox();
+  
+  // Position the bar 25 pixels to the right of the bbox
+  const double xmin_bar = bbox.xmax() + 25;
+  const double xmax_bar = xmin_bar + bar_width;
+  
+  // Position the bar at the middle of the bbox y coordinates
+  double ymid_bar = (bbox.ymax() + bbox.ymin()) / 2;
+  double ymin_bar = ymid_bar - bar_height/2;
+  double ymax_bar = ymid_bar + bar_height/2;
+  
+  const Bbox bbox_bar(xmin_bar, ymin_bar, xmax_bar, ymax_bar);
   
   // Write header
   write_ps_header(ps_name, surface);
@@ -592,6 +709,16 @@ void write_density_to_ps(const std::string ps_name,
                                 false,
                                 false,
                                 inset_state);
+                                
+  if (draw_bar) {
+    write_density_bar_to_cairo_surface(dens_min,
+                             dens_mean,
+                             dens_max,
+                             cr,
+                             bbox_bar,
+                             ly);
+  }
+  
   cairo_show_page(cr);
   cairo_surface_destroy(surface);
   cairo_destroy(cr);
@@ -601,7 +728,7 @@ void InsetState::write_intersections_to_ps(unsigned int res)
 {
   std::string ps_name =
     inset_name() +
-    "_cairo_intersections_" +
+    "_intersections_" +
     std::to_string(n_finished_integrations()) +
     ".ps";
 

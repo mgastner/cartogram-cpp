@@ -391,6 +391,14 @@ int main(const int argc, const char *argv[])
     } // End of loop over insets
   }
   
+  // Output a density heatmap's bar
+  if (plot_density) {
+    std::string output_filename = "density_heatmap_bar.ps";
+    std::cerr << "Writing "
+              << output_filename << std::endl;
+    write_density_bar_to_ps(output_filename);
+  }
+  
   // Shift insets so that they do not overlap
   shift_insets_to_target_position(&cart_info);
 
