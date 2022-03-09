@@ -95,19 +95,20 @@ void add_edge_intersection(std::set<XYPoint, decltype(xy_point_lesser)*>
 }
 
 void add_diagonals(double slope,
+                   double base_intercept,
+                   double step,
                    const XYPoint a,
                    const XYPoint b,
                    bool edge,
                    const unsigned int lx,
                    const unsigned int ly,
-                   double start_offset,
                    std::set<XYPoint, decltype(xy_point_lesser)*>
                       *intersections)
 {
   double intercept_start =
-    floor(std::min(a.y - slope * a.x, b.y - slope * b.x)) + start_offset;
+    floor(std::min(a.y - slope * a.x, b.y - slope * b.x)) + base_intercept;
   double intercept_end = std::max(a.y - slope * a.x, b.y - slope * b.x);
-  for (double i = intercept_start; i <= intercept_end; i += std::min(abs(slope), 1.0)) {
+  for (double i = intercept_start; i <= intercept_end; i += step) {
     XYPoint c; c.x = 0.0; c.y = i;
     XYPoint d; d.x = 1.0; d.y = slope + i;
     if (edge) {
@@ -188,90 +189,28 @@ std::vector<Point> densification_points(const Point pt1,
   }
 
   // Get bottom-left to top-right diagonal intersections
-  add_diagonals(1.0, a, b, false, lx, ly, 1.0, &temp_intersections);
+  add_diagonals(1.0, 0.0, 1.0, a, b, false, lx, ly, &temp_intersections);
 
   // Get top-left to bottom-right diagonal intersections
-  add_diagonals(-1.0, a, b, false, lx, ly, 1.0, &temp_intersections);
+  add_diagonals(-1.0, 0.0, 1.0, a, b, false, lx, ly, &temp_intersections);
 
   // Add edge diagonals when at least one point is on the edge of the grid.
   if (a.x < 0.5 || b.x < 0.5 || a.x > (lx - 0.5) || b.x > (lx - 0.5)){
 
     // Bottom-left to top-right edge diagonals
-    add_diagonals(2.0, a, b, true, lx, ly, 0.5, &temp_intersections);
+    add_diagonals(2.0, 0.5, 1.0, a, b, true, lx, ly, &temp_intersections);
 
     // Top-left to bottom-right edge diagonals
-    add_diagonals(-2.0, a, b, true, lx, ly, 0.5, &temp_intersections);
+    add_diagonals(-2.0, 0.5, 1.0, a, b, true, lx, ly, &temp_intersections);
   }
   if (a.y < 0.5 || b.y < 0.5 || a.y > (ly - 0.5) || b.y > (ly - 0.5)){
 
     // Bottom-left to top-right edge diagonals
-    add_diagonals(0.5, a, b, true, lx, ly, 0.25, &temp_intersections);
+    add_diagonals(0.5, 0.25, 0.5, a, b, true, lx, ly, &temp_intersections);
 
     // Top-left to botom-right edge diagonals
-    add_diagonals(-0.5, a, b, true, lx, ly, 0.25, &temp_intersections);
+    add_diagonals(-0.5, 0.25, 0.5, a, b, true, lx, ly, &temp_intersections);
   }
-
-  // double intercept_start = floor(std::min(a.y - a.x, b.y - b.x)) + 1.0;
-  // double intercept_end = std::max(a.y - a.x, b.y - b.x);
-  // for (double i = intercept_start; i <= intercept_end; ++i) {
-  //   XYPoint c; c.x = 0.0; c.y = i;
-  //   XYPoint d; d.x = 1.0; d.y = 1.0 + i;
-  //   add_intersection(&temp_intersections, a, b, c, d, lx, ly);
-  // }
-
-  // // Get top-left to bottom-right diagonal intersections
-  // intercept_start = floor(std::min(a.y + a.x, b.y + b.x)) + 1.0;
-  // intercept_end = std::max(a.y + a.x, b.y + b.x);
-  // for (double i = intercept_start; i <= intercept_end; ++i) {
-  //   XYPoint c; c.x = 0.0; c.y = i;
-  //   XYPoint d; d.x = 1.0; d.y = -1.0 + i;
-  //   add_intersection(&temp_intersections, a, b, c, d, lx, ly);
-  // }
-
-  // double intercept_start;
-  // double intercept_end;
-  
-  // // Add edge diagonals when at least one point is on the edge of the grid.
-  // if (a.x < 0.5 || b.x < 0.5 || a.x > (lx - 0.5) || b.x > (lx - 0.5)){
-
-  //   // Bottom-left to top-right edge diagonals
-  //   intercept_start = floor(std::min(a.y - 2 * a.x, b.y - 2 * b.x) + 0.5) + 0.5;
-  //   intercept_end = std::max(a.y - 2 * a.x, b.y - 2 * b.x);
-  //   for (double i = intercept_start; i <= intercept_end; ++i) {
-  //     XYPoint c; c.x = 0.0; c.y = i;
-  //     XYPoint d; d.x = 1.0; d.y = 2.0 + i;
-  //     add_edge_intersection(&temp_intersections, a, b, c, d, lx, ly);
-  //   }
-
-  //   // Top-left to bottom-right edge diagonals
-  //   intercept_start = floor(std::min(a.y + 2 * a.x, b.y + 2 * b.x) + 0.5) + 0.5;
-  //   intercept_end = std::max(a.y + 2 * a.x, b.y + 2 * b.x);
-  //   for (double i = intercept_start; i <= intercept_end; ++i) {
-  //     XYPoint c; c.x = 0.0; c.y = i;
-  //     XYPoint d; d.x = 1.0; d.y = -2.0 + i;
-  //     add_edge_intersection(&temp_intersections, a, b, c, d, lx, ly);
-  //   }
-  // }
-  // if (a.y < 0.5 || b.y < 0.5 || a.y > (ly - 0.5) || b.y > (ly - 0.5)){
-
-  //   // Bottom-left to top-right edge diagonals
-  //   intercept_start = floor(std::min(a.y - 0.5 * a.x, b.y - 0.5 * b.x) + 0.5) - 0.25;
-  //   intercept_end = std::max(a.y - 0.5 * a.x, b.y - 0.5 * b.x);
-  //   for (double i = intercept_start; i <= intercept_end; i += 0.5) {
-  //     XYPoint c; c.x = 0.0; c.y = i;
-  //     XYPoint d; d.x = 1.0; d.y = 0.5 + i;
-  //     add_edge_intersection(&temp_intersections, a, b, c, d, lx, ly);
-  //   }
-
-  //   // Top-left to botom-right edge diagonals
-  //   intercept_start = floor(std::min(a.y + 0.5 * a.x, b.y + 0.5 * b.x) + 0.5) - 0.25;
-  //   intercept_end = std::max(a.y + 0.5 * a.x, b.y + 0.5 * b.x);
-  //   for (double i = intercept_start; i <= intercept_end; i += 0.5) {
-  //     XYPoint c; c.x = 0.0; c.y = i;
-  //     XYPoint d; d.x = 1.0; d.y = -0.5 + i;
-  //     add_edge_intersection(&temp_intersections, a, b, c, d, lx, ly);
-  //   }
-  // }
 
   // // DEBUGGING: Check if there are any two almost equal points in the set
   // std::vector<XYPoint> inter_test(temp_intersections.begin(),
