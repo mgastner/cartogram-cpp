@@ -1,4 +1,4 @@
-#include "../cartogram_info.h"
+#include "cartogram_info.h"
 #include "csv.hpp"
 
 void CartogramInfo::read_csv(argparse::ArgumentParser arguments)

@@ -1,5 +1,5 @@
-#include "../constants.h"
-#include "../inset_state.h"
+#include "constants.h"
+#include "inset_state.h"
 
 void InsetState::rescale_map(unsigned int max_n_graticule_rows_or_cols,
                              bool is_world_map)

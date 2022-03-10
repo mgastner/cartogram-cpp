@@ -1,7 +1,6 @@
 #ifndef CGAL_TYPEDEF_H_
 #define CGAL_TYPEDEF_H_
 
-#include <CGAL/Exact_predicates_inexact_constructions_kernel.h>
 #include <CGAL/Polygon_with_holes_2.h>
 #include <CGAL/Polyline_simplification_2/simplify.h>
 

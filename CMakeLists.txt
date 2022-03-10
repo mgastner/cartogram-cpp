@@ -23,7 +23,7 @@ add_compile_options(-Wall -Wextra -pedantic)
 find_package(OpenMP REQUIRED)
 find_package(PkgConfig REQUIRED)
 
-# Finding and linking FFTW using PkgConfig.
+# Finding and linking FFTW, and Cairo using PkgConfig.
 pkg_search_module(FFTW REQUIRED fftw3 IMPORTED_TARGET)
 pkg_search_module(Cairo REQUIRED cairo IMPORTED_TARGET)
 include_directories(PkgConfig::FFTW PkgConfig::Cairo)
@@ -33,17 +33,13 @@ link_libraries(PkgConfig::FFTW PkgConfig::Cairo)
 # Adding C++ files needed for compilation.
 add_executable(
   cartogram
-  src/cartogram_info.cpp
-  src/colors.cpp
-  src/ft_real_2d.cpp
-  src/geo_div.cpp
-  src/intersection.cpp
   src/main.cpp
-  src/parse_arguments.cpp
+  src/cartogram_info/cartogram_info.cpp
   src/cartogram_info/read_csv.cpp
   src/cartogram_info/read_geojson.cpp
-  src/cartogram_info/write_geojson.cpp
   src/cartogram_info/shift_insets_to_position.cpp
+  src/cartogram_info/write_geojson.cpp
+  src/geo_div/geo_div.cpp
   src/inset_state/albers_projection.cpp
   src/inset_state/auto_color.cpp
   src/inset_state/blur_density.cpp
@@ -63,6 +59,10 @@ add_executable(
   src/inset_state/write_cairo.cpp
   src/inset_state/write_eps.cpp
   src/inset_state/write_inset_to_geojson.cpp
+  src/misc/colors.cpp
+  src/misc/ft_real_2d.cpp
+  src/misc/intersection.cpp
+  src/misc/parse_arguments.cpp
 )
 
 # Linking appropriate libraries required.
@@ -86,6 +86,8 @@ elseif(UNIX)
   set(CMAKE_CXX_COMPILER "g++-11")
   set(CMAKE_C_COMPILER "gcc-11")
 endif()
+
+target_include_directories(cartogram PUBLIC ${PROJECT_SOURCE_DIR}/include)
 
 # Linking appropriate libraries to cartogram target.
 target_link_libraries(

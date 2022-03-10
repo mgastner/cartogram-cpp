@@ -1,5 +1,5 @@
-#include "../inset_state.h"
-#include "../constants.h"
+#include "inset_state.h"
+#include "constants.h"
 
 // TODO: THE OUTPUT FROM intersections_with_rays_parallel_to_axis() ALWAYS
 // SEEM TO COME WITH A NEED TO SORT AFTERWARDS. SHOULD SORTING BECOME PART of

@@ -1,5 +1,5 @@
-#include "../inset_state.h"
-#include "../constants.h"
+#include "inset_state.h"
+#include "constants.h"
 #include <CGAL/intersections.h>
 #include "round_point.h"
 

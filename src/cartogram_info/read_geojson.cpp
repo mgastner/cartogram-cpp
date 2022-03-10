@@ -1,4 +1,4 @@
-#include "../cartogram_info.h"
+#include "cartogram_info.h"
 #include <nlohmann/json.hpp>
 #include "csv.hpp"
 #include <iostream>

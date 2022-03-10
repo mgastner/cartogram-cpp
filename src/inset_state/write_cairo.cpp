@@ -1,5 +1,5 @@
-#include "../constants.h"
-#include "../inset_state.h"
+#include "constants.h"
+#include "inset_state.h"
 #include <cairo/cairo-ps.h>
 #include <cairo/cairo-pdf.h>
 #include <iostream>

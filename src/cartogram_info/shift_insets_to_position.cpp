@@ -1,4 +1,4 @@
-#include "../cartogram_info.h"
+#include "cartogram_info.h"
 
 void CartogramInfo::shift_insets_to_target_position()
 {

@@ -1,5 +1,5 @@
-#include "../constants.h"
-#include "../inset_state.h"
+#include "constants.h"
+#include "inset_state.h"
 
 // Functions to project map with the Smyth equal-surface projection (also
 // known as Craster rectangular projection):

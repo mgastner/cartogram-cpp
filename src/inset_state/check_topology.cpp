@@ -1,4 +1,4 @@
-#include "../inset_state.h"
+#include "inset_state.h"
 #include "round_point.h"
 #include <CGAL/Boolean_set_operations_2.h>
 

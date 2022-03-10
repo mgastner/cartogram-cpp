@@ -1,4 +1,4 @@
-#include "../inset_state.h"
+#include "inset_state.h"
 
 nlohmann::json InsetState::inset_to_geojson(bool original_ext_ring_is_clockwise)
   const

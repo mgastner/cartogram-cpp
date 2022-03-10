@@ -1,5 +1,5 @@
-#include "../constants.h"
-#include "../inset_state.h"
+#include "constants.h"
+#include "inset_state.h"
 #include <iostream>
 
 void InsetState::blur_density(const double blur_width, bool plot_density)

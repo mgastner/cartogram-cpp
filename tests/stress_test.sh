@@ -125,7 +125,7 @@ total_tests=0
 failed=0
 
 # Iterating through folders in ..sample_data/
-for folder in ../sample_data/*; do
+for folder in sample_data/*; do
   if [[ -d "${folder}" && "${folder}" != *"sandbox"* ]]; then
     countries=$((countries+1))
     country=${folder##*/}

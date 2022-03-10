@@ -1,7 +1,7 @@
-#include "../constants.h"
-#include "../cartogram_info.h"
-#include "../inset_state.h"
-#include "../colors.h"
+#include "constants.h"
+#include "cartogram_info.h"
+#include "inset_state.h"
+#include "colors.h"
 
 // Function to automatically color topology based on contiguity graph
 void InsetState::auto_color()

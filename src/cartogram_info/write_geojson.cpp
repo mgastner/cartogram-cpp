@@ -1,4 +1,4 @@
-#include "../cartogram_info.h"
+#include "cartogram_info.h"
 #include <fstream>
 
 std::vector<double> divider_points(double x1, double y1, double x2, double y2)

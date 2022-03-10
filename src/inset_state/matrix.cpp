@@ -1,4 +1,4 @@
-#include "../constants.h"
+#include "constants.h"
 #include "matrix.h"
 
 // TODO: IT WOULD BE LESS TYPING TO DEFINE Matrix AS A

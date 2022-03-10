@@ -1,5 +1,5 @@
-#include "../constants.h"
-#include "../inset_state.h"
+#include "constants.h"
+#include "inset_state.h"
 #include "interpolate_bilinearly.h"
 #include <boost/multi_array.hpp>
 #include <omp.h>

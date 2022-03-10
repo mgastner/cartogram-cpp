@@ -1,8 +1,8 @@
 // TODO: What happens if two polygons have touching lines but the corner
 // points are not identical in both lines?
 
-#include "../inset_state.h"
-#include "../constants.h"
+#include "inset_state.h"
+#include "constants.h"
 #include <algorithm>
 
 // We use -1 to signal that there is no simplified polygon that can be matched
