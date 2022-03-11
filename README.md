@@ -1,4 +1,5 @@
-# cartogram-cpp
+# cartogram-cpp [![DOI](https://zenodo.org/badge/281575635.svg)](https://zenodo.org/badge/latestdoi/281575635)
+
 
 Cartogram generator in C++
 
