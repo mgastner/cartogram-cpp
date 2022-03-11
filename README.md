@@ -1,4 +1,4 @@
-# cartogram_cpp
+# cartogram-cpp
 
 Cartogram generator in C++
 
