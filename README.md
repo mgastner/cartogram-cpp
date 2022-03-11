@@ -1,4 +1,4 @@
-# cartogram-cpp [![DOI](https://zenodo.org/badge/281575635.svg)](https://zenodo.org/badge/latestdoi/281575635)
+# cartogram-cpp [![DOI](https://zenodo.org/badge/281575635.svg)](https://zenodo.org/badge/latestdoi/281575635) [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://github.com/mgastner/cartogram-cpp/blob/main/LICENSE)
 
 
 Cartogram generator in C++
