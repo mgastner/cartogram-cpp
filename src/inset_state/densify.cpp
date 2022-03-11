@@ -8,114 +8,44 @@
 // The function returns the intersection between them. If the two lines are
 // parallel or are the same, the function returns the point (-1, -1), which
 // is always outside of any graticule grid cell.
-XYPoint calc_intersection(const XYPoint a1,
-                          const XYPoint a2,
-                          const XYPoint b1,
-                          const XYPoint b2)
-{
-  // Check whether any segment is undefined (i.e., defined by identical
-  // points)
-  if (a1 == a2 || b1 == b2) {
-    std::cerr << "ERROR: End points of line segment are identical"
-              << std::endl;
-    _Exit(EXIT_FAILURE);
-  }
-
-  // Get line equations
-  const double a = (a1.y - a2.y) / (a1.x - a2.x);
-  const double a_intercept = a1.y - (a1.x * a);
-  const double b = (b1.y - b2.y) / (b1.x - b2.x);
-  const double b_intercept = b1.y - (b1.x * b);
-  XYPoint intersection;
-  if (isfinite(a) && isfinite(b) && a != b) {
-
-    // Neither the line (a1, a2) nor the line (b1, b2) is vertical
-    intersection.x = (b_intercept - a_intercept) / (a - b);
-    intersection.y = a * intersection.x + a_intercept;
-  } else if (isfinite(a) && isinf(b)) {
-
-    // Only line (b1, b2) is vertical
-    intersection.x = b1.x;
-    intersection.y = a * b1.x + a_intercept;
-  } else if (isfinite(b) && isinf(a)) {
-
-    // Only line (a1, a2) is vertical
-    intersection.x = a1.x;
-    intersection.y = b * a1.x + b_intercept;
-  } else {
-
-    // Set negative intersection coordinates if there is no solution or
-    // infinitely many solutions
-    intersection.x = -1;
-    intersection.y = -1;
-  }
-  return intersection;
-}
-
-void add_intersection(std::set<XYPoint, decltype(xy_point_lesser)*>
+void add_intersection(std::set<Point, decltype(point_lesser)*>
                         *intersections,
-                      const XYPoint a,
-                      const XYPoint b,
-                      const XYPoint c,
-                      const XYPoint d,
+                      const Point a,
+                      const Point b,
+                      const double coef_x,
+                      const double coef_y,
+                      const double intercept,
                       const unsigned int lx,
                       const unsigned int ly)
 {
-  XYPoint inter = calc_intersection(a, b, c, d);
-  if (((a.x <= inter.x && inter.x <= b.x) ||
-        (b.x <= inter.x && inter.x <= a.x)) &&
-      ((a.y <= inter.y && inter.y <= b.y) ||
-        (b.y <= inter.y && inter.y <= a.y)) &&
-      ((inter.y >= 0.5 && inter.y <= (ly - 0.5)) ||
-        (inter.x >= 0.5 && inter.x <= (lx - 0.5)))) {
-    (*intersections).insert(rounded_XYpoint(inter, lx, ly));
+  const auto result = CGAL::intersection(
+    Line(coef_x, coef_y, intercept),
+    Segment(a, b)
+  );
+  if (result) {
+    if (const Point* p = boost::get<Point>(&*result)) {
+      (*intersections).insert(rounded_point((*p), lx, ly));
+    }
   }
   return;
 }
 
-void add_edge_intersection(std::set<XYPoint, decltype(xy_point_lesser)*>
-                             *intersections,
-                           const XYPoint a,
-                           const XYPoint b,
-                           const XYPoint c,
-                           const XYPoint d,
-                           const unsigned int lx,
-                           const unsigned int ly)
-{
-  XYPoint inter = calc_intersection(a, b, c, d);
-  if (((a.x <= inter.x && inter.x <= b.x) ||
-        (b.x <= inter.x && inter.x <= a.x)) &&
-      ((a.y <= inter.y && inter.y <= b.y) ||
-        (b.y <= inter.y && inter.y <= a.y)) &&
-      ((inter.y < 0.5 || inter.y > (ly - 0.5)) ||
-        (inter.x < 0.5 || inter.x > (lx - 0.5)))) {
-    (*intersections).insert(rounded_XYpoint(inter, lx, ly));
-  }
-  return;
-}
-
-void add_diagonals(double slope,
-                   double base_intercept,
-                   double step,
-                   const XYPoint a,
-                   const XYPoint b,
-                   bool edge,
-                   const unsigned int lx,
-                   const unsigned int ly,
-                   std::set<XYPoint, decltype(xy_point_lesser)*>
-                      *intersections)
+void add_diag_intersection(std::set<Point, decltype(point_lesser)*>
+                              *intersections,
+                            const Point a,
+                            const Point b,
+                            double slope,
+                            double base_intercept,
+                            double step,
+                            const unsigned int lx,
+                            const unsigned int ly)
 {
   double intercept_start =
-    floor(std::min(a.y - slope * a.x, b.y - slope * b.x)) + base_intercept;
-  double intercept_end = std::max(a.y - slope * a.x, b.y - slope * b.x);
+    floor(std::min(a.y() - slope * a.x(), b.y() - slope * b.x()))
+    + base_intercept;
+  double intercept_end = std::max(a.y() - slope * a.x(), b.y() - slope * b.x());
   for (double i = intercept_start; i <= intercept_end; i += step) {
-    XYPoint c; c.x = 0.0; c.y = i;
-    XYPoint d; d.x = 1.0; d.y = slope + i;
-    if (edge) {
-      add_edge_intersection(intersections, a, b, c, d, lx, ly);
-    } else {
-      add_intersection(intersections, a, b, c, d, lx, ly);
-    }
+    add_intersection(intersections, a, b, slope, -1.0, i, lx, ly);
   }
 }
 
@@ -146,70 +76,60 @@ std::vector<Point> densification_points(const Point pt1,
   }
 
   // Ordered set for storing intersections before removing duplicates
-  std::set<XYPoint, decltype(xy_point_lesser)*>
-    temp_intersections(xy_point_lesser);
+  std::set<Point, decltype(point_lesser)*>
+    temp_intersections(point_lesser);
 
   // Store the leftmost point of p1 and pt2 as `a`. If both points have the
   // same x-coordinate, then store the lower point as `a`. The other point is
   // stored as `b`. The segments (a, b) and (b, a) describe the same segment.
   // However, if we flip the order of a and b, the resulting intersections are
   // not necessarily the same because of floating point errors.
-  XYPoint a;
-  XYPoint b;
+  Point a;
+  Point b;
   if ((pt1.x() > pt2.x()) || ((pt1.x() == pt2.x()) && (pt1.y() > pt2.y()))) {
-    a.x = pt2.x();
-    a.y = pt2.y();
-    b.x = pt1.x();
-    b.y = pt1.y();
+    a = pt2; b = pt1;
   } else{
-    a.x = pt1.x();
-    a.y = pt1.y();
-    b.x = pt2.x();
-    b.y = pt2.y();
+    a = pt1; b = pt2;
   }
   temp_intersections.insert(a);
   temp_intersections.insert(b);
 
   // Get vertical intersections
-  double x_start = floor(a.x + 0.5) + 0.5;
-  double x_end = b.x;
+  double x_start = floor(a.x() + 0.5) + 0.5;
+  double x_end = b.x();
   for (double i = x_start; i <= x_end; i += (i == 0.0) ? 0.5 : 1.0) {
-    XYPoint c; c.x = std::min(i, static_cast<double>(lx)); c.y = 0.0;
-    XYPoint d; d.x = std::min(i, static_cast<double>(lx)); c.y = 1.0;
-    add_intersection(&temp_intersections, a, b, c, d, lx, ly);
+    add_intersection(&temp_intersections, a, b, 1.0, 0.0, -i, lx, ly);
   }
 
   // Get horizontal intersections
-  double y_start = floor(std::min(a.y, b.y) + 0.5) + 0.5;
-  double y_end = std::max(a.y, b.y);
+  double y_start = floor(std::min(a.y(), b.y()) + 0.5) + 0.5;
+  double y_end = std::max(a.y(), b.y());
   for (double i = y_start; i <= y_end; i += (i == 0.0) ? 0.5 : 1.0) {
-    XYPoint c; c.x = 0.0; c.y = std::min(i, static_cast<double>(ly));
-    XYPoint d; d.x = 1.0; d.y = std::min(i, static_cast<double>(ly));
-    add_intersection(&temp_intersections, a, b, c, d, lx, ly);
+    add_intersection(&temp_intersections, a, b, 0.0, 1.0, -i, lx, ly);
   }
 
   // Get bottom-left to top-right diagonal intersections
-  add_diagonals(1.0, 0.0, 1.0, a, b, false, lx, ly, &temp_intersections);
+  add_diag_intersection(&temp_intersections, a, b, 1.0, 0.0, 1.0, lx, ly);
 
   // Get top-left to bottom-right diagonal intersections
-  add_diagonals(-1.0, 0.0, 1.0, a, b, false, lx, ly, &temp_intersections);
+  add_diag_intersection(&temp_intersections, a, b, -1.0, 0.0, 1.0, lx, ly);
 
   // Add edge diagonals when at least one point is on the edge of the grid.
-  if (a.x < 0.5 || b.x < 0.5 || a.x > (lx - 0.5) || b.x > (lx - 0.5)){
+  if (a.x() < 0.5 || b.x() < 0.5 || a.x() > (lx - 0.5) || b.x() > (lx - 0.5)){
 
     // Bottom-left to top-right edge diagonals
-    add_diagonals(2.0, 0.5, 1.0, a, b, true, lx, ly, &temp_intersections);
+    add_diag_intersection(&temp_intersections, a, b, 2.0, 0.5, 1.0, lx, ly);
 
     // Top-left to bottom-right edge diagonals
-    add_diagonals(-2.0, 0.5, 1.0, a, b, true, lx, ly, &temp_intersections);
+    add_diag_intersection(&temp_intersections, a, b, -2.0, 0.5, 1.0, lx, ly);
   }
-  if (a.y < 0.5 || b.y < 0.5 || a.y > (ly - 0.5) || b.y > (ly - 0.5)){
+  if (a.y() < 0.5 || b.y() < 0.5 || a.y() > (ly - 0.5) || b.y() > (ly - 0.5)){
 
     // Bottom-left to top-right edge diagonals
-    add_diagonals(0.5, 0.25, 0.5, a, b, true, lx, ly, &temp_intersections);
+    add_diag_intersection(&temp_intersections, a, b, 0.5, 0.25, 0.5, lx, ly);
 
     // Top-left to botom-right edge diagonals
-    add_diagonals(-0.5, 0.25, 0.5, a, b, true, lx, ly, &temp_intersections);
+    add_diag_intersection(&temp_intersections, a, b, -0.5, 0.25, 0.5, lx, ly);
   }
 
   // // DEBUGGING: Check if there are any two almost equal points in the set
@@ -220,12 +140,10 @@ std::vector<Point> densification_points(const Point pt1,
   //     std::cout << "Almost equal points in set!\n";
   // }
 
-  // Convert the set of XYPoints to a vector of CGAL points
-  // TO-DO: Phase out XYPoints entirely
-  std::vector<Point> intersections;
-  for (auto xypt : temp_intersections)
-    intersections.push_back(Point(xypt.x, xypt.y));
-
+  // Create a Point vector from the set
+  std::vector<Point> intersections(temp_intersections.begin(),
+                                   temp_intersections.end());
+  
   // Reverse if needed
   if ((pt1.x() > pt2.x()) || ((pt1.x() == pt2.x()) && (pt1.y() > pt2.y()))) {
     std::reverse(intersections.begin(), intersections.end());
