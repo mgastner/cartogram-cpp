@@ -239,6 +239,7 @@ int main(const int argc, const char *argv[])
       inset_state.ref_to_rho_ft()->allocate(lx, ly);
       inset_state.make_fftw_plans_for_rho();
       inset_state.initialize_cum_proj();
+      inset_state.initialize_original_proj();
       inset_state.set_area_errors();
 
       // Automatically color GeoDivs if no colors are provided

@@ -98,6 +98,18 @@ void InsetState::initialize_cum_proj()
   }
 }
 
+void InsetState::initialize_original_proj()
+{
+  original_proj_.resize(boost::extents[lx_][ly_]);
+  for (unsigned int i = 0; i < lx_; ++i) {
+    for (unsigned int j = 0; j < ly_; ++j) {
+      original_proj_[i][j].x = i + 0.5;
+      original_proj_[i][j].y = j + 0.5;
+    }
+  }
+  return;
+}
+
 void InsetState::insert_color(const std::string id, const Color c)
 {
   if (colors_.count(id)) {
@@ -150,6 +162,11 @@ const std::string InsetState::inset_name() const
 bool InsetState::is_input_target_area_missing(const std::string id) const
 {
   return is_input_target_area_missing_.at(id);
+}
+
+double InsetState::latt_const() const
+{
+  return latt_const_;
 }
 
 unsigned int InsetState::lx() const
@@ -233,6 +250,11 @@ boost::multi_array<XYPoint, 2> *InsetState::ref_to_cum_proj()
   return &cum_proj_;
 }
 
+boost::multi_array<XYPoint, 2> *InsetState::ref_to_original_proj()
+{
+  return &original_proj_;
+}
+
 std::vector<GeoDiv> *InsetState::ref_to_geo_divs()
 {
   return &geo_divs_;
@@ -305,6 +327,12 @@ void InsetState::set_grid_dimensions(
 void InsetState::set_inset_name(const std::string inset_name)
 {
   inset_name_ = inset_name;
+  return;
+}
+
+void InsetState::set_latt_const(const double latt_const)
+{
+  latt_const_ = latt_const;
   return;
 }
 

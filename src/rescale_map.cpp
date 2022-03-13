@@ -42,6 +42,9 @@ void rescale_map(unsigned int max_n_graticule_rows_or_cols,
     new_xmax = 0.5*(bb.xmax()+bb.xmin()) + 0.5*lx*latt_const;
     new_xmin = 0.5*(bb.xmax()+bb.xmin()) - 0.5*lx*latt_const;
   }
+  
+  // Store latt_const in inset_state
+  inset_state->set_latt_const(latt_const);
   std::cerr << "Rescaling to " << lx << "-by-" << ly
             << " grid with bounding box" << std::endl;
   std::cerr << "\t("

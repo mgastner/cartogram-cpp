@@ -21,7 +21,10 @@ private:
   Bbox bbox_;  // Bounding box
   fftw_plan bwd_plan_for_rho_;
   std::unordered_map<std::string, Color> colors_;
-
+  
+  // Scaling factor to convert albers unit to 512*512 unit
+  double latt_const_;
+  
   // Cumulative cartogram projection
   boost::multi_array<XYPoint, 2> cum_proj_;
   fftw_plan fwd_plan_for_rho_;
@@ -39,6 +42,7 @@ private:
   unsigned int n_finished_integrations_;
   std::string pos_;  // Position of inset ("C", "T" etc.)
   boost::multi_array<XYPoint, 2> proj_;  // Cartogram projection
+  boost::multi_array<XYPoint, 2> original_proj_;  // Original projection
 
   // Rasterized density and its Fourier transform
   FTReal2d rho_init_, rho_ft_;
@@ -72,6 +76,7 @@ public:
     horizontal_scans(unsigned int) const;
   void increment_integration();
   void initialize_cum_proj();
+  void initialize_original_proj();
   void insert_color(const std::string, const Color);
   void insert_color(const std::string, const std::string);
   void insert_label(const std::string, const std::string);
@@ -84,6 +89,7 @@ public:
     intersections_with_rays_parallel_to_axis(char, unsigned int) const;
   bool is_input_target_area_missing(const std::string) const;
   std::string label_at(const std::string) const;
+  double latt_const() const;
   unsigned int lx() const;
   unsigned int ly() const;
   void make_fftw_plans_for_rho();
@@ -95,6 +101,8 @@ public:
   const std::string pos() const;
   void push_back(const GeoDiv);
   boost::multi_array<XYPoint, 2> *ref_to_cum_proj();
+  boost::multi_array<XYPoint, 2> *ref_to_original_proj();
+  
   std::vector<GeoDiv> *ref_to_geo_divs();
   std::vector<GeoDiv> *ref_to_geo_divs_original();
   boost::multi_array<int, 2> *ref_to_graticule_diagonals();
@@ -106,6 +114,7 @@ public:
   void set_geo_divs(const std::vector<GeoDiv>);
   void set_grid_dimensions(const unsigned int, const unsigned int);
   void set_inset_name(const std::string);
+  void set_latt_const(const double);
   void set_pos(const std::string);
   void store_original_geo_divs();
   bool target_area_is_missing(const std::string) const;

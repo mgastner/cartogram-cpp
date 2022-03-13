@@ -114,7 +114,9 @@ Polygon graticule_cell_edge_points(unsigned int x,
                                 bool plot_equal_area_map = false)
 {
   Polygon cell_edge_points;
-  boost::multi_array<XYPoint, 2> &cum_proj = *inset_state->ref_to_cum_proj();
+  boost::multi_array<XYPoint, 2> &cum_proj = plot_equal_area_map ? 
+                                            *inset_state->ref_to_original_proj() :
+                                             *inset_state->ref_to_cum_proj();
 
   // Horizontal lower edge points
   for (unsigned int i = x; i < x + cell_width; ++i) {
@@ -184,6 +186,39 @@ std::pair<double,double> max_and_min_graticule_cell_area(InsetState *inset_state
   return std::make_pair(max_area, min_area);
 }
 
+std::pair<Point, Point> max_and_min_graticule_cell_area_index(InsetState *inset_state,
+                                                            unsigned int cell_width)
+{
+  unsigned int lx = inset_state->lx();
+  unsigned int ly = inset_state->ly();
+  
+  // Initialize max and min area
+  double max_area = -dbl_inf;
+  double min_area = dbl_inf;
+  unsigned int max_i = 0;
+  unsigned int max_j = 0;
+  unsigned int min_i = 0;
+  unsigned int min_j = 0;
+  
+  // Iterate over graticule cells
+  for (unsigned int i = 0; i < lx - cell_width; i += cell_width) {
+    for(unsigned int j = 0; j < ly - cell_width; j += cell_width) {
+      const auto area = graticule_cell_area(i, j, inset_state, cell_width);
+      if (area > max_area) {
+        max_area = area;
+        max_i = i;
+        max_j = j;
+      }
+      if (area < min_area) {
+        min_area = area;
+        min_i = i;
+        min_j = j;
+      }
+    }
+  }
+  return std::make_pair(Point(max_i, max_j), Point(min_i, min_j));
+}
+
 
 void graticule_cell_color(const double area,
                    const double max_area,
@@ -215,10 +250,12 @@ void graticule_cell_color(const double area,
     *r = red[8];
     *g = green[8];
     *b = blue[8];
+    return;
   } else if (area == min_area) {
     *r = red[0];
     *g = green[0];
     *b = blue[0];
+    return;
   } else {
     *r = red[int(xmin)] + (red[int(xmax)] - red[int(xmin)]) * (category - xmin);
     *g = green[int(xmin)] + (green[int(xmax)] - green[int(xmin)]) * (category - xmin);
@@ -234,7 +271,8 @@ std::vector<std::vector<Color_dbl>> graticule_cell_colors(InsetState *inset_stat
   
   // Initialize max and min area
   double max_area, min_area;
-  std::tie(max_area, min_area) = max_and_min_graticule_cell_area(inset_state, cell_width);
+  std::tie(max_area, min_area) = max_and_min_graticule_cell_area(inset_state, 
+                                                                cell_width);
   
   // Initialize colors
   std::vector<std::vector<Color_dbl>> colors(lx - cell_width,
@@ -253,10 +291,123 @@ std::vector<std::vector<Color_dbl>> graticule_cell_colors(InsetState *inset_stat
   return colors;
 }
 
+void write_graticule_heatmap_bar_to_cairo_surface
+                                (double min_value,
+                                  double max_value,
+                                  cairo_t *cr,
+                                  Bbox bbox_bar,
+                                  std::vector<std::pair<double, double>> major_ticks,
+                                  std::vector<std::pair<double, double>> minor_ticks,
+                                  const unsigned int ly) 
+{
+  const int n_gradident_bars = 500;
+  
+  // get bar coordinates
+  const double xmin_bar = bbox_bar.xmin();
+  const double xmax_bar = bbox_bar.xmax();
+  const double ymin_bar = bbox_bar.ymin();
+  const double ymax_bar = bbox_bar.ymax();
+  
+  const double bar_width = xmax_bar - xmin_bar;
+  
+  // calculate individual bar gradient segment property
+  const double gradient_segment_height = (ymax_bar - ymin_bar) / n_gradident_bars;
+  const double gradient_segment_value = (max_value - min_value) / n_gradident_bars;
+  
+  // Draw the outer bar lines
+  cairo_set_source_rgb(cr, 0.0, 0.0, 0.0);
+  cairo_set_line_width(cr, 1.0);
+  cairo_move_to(cr, xmin_bar, ly - ymin_bar);
+  cairo_line_to(cr, xmax_bar, ly - ymin_bar);
+  cairo_line_to(cr, xmax_bar, ly - ymax_bar);
+  cairo_line_to(cr, xmin_bar, ly - ymax_bar);
+  cairo_line_to(cr, xmin_bar, ly - ymin_bar);
+  cairo_stroke(cr);
+  
+  // Draw the gradient segment rectangles
+  double value_at_gradient_segment = min_value;
+  
+  for(double y = ymin_bar; y <= ymax_bar; y += gradient_segment_height) {
+    double r, g, b;
+    graticule_cell_color(exp(value_at_gradient_segment), exp(max_value), 
+                        exp(min_value), &r, &g, &b);
+    cairo_set_source_rgb(cr, r, g, b);
+    cairo_rectangle(cr, xmin_bar, ly - y, bar_width, gradient_segment_height);
+    cairo_fill(cr);
+    value_at_gradient_segment += gradient_segment_value;
+  }
+  
+  // Set font properties
+  cairo_select_font_face(cr, "Sans", CAIRO_FONT_SLANT_NORMAL, CAIRO_FONT_WEIGHT_BOLD);
+  cairo_set_font_size(cr, 8);
+  
+  // Draw the ticks and nice_numbers
+  cairo_set_source_rgb(cr, 0.0, 0.0, 0.0);
+  cairo_set_line_width(cr, .9);
+  for(auto tick : major_ticks) {
+    double area = tick.first;
+    int NiceNumber = tick.second;
+    if (area > min_value and area < max_value) {
+      double y = ((log(area) - log(min_value))/ (log(max_value) - log(min_value))) 
+                  * (ymax_bar - ymin_bar) + ymin_bar;
+      cairo_move_to(cr, xmax_bar - 6, ly - y);
+      cairo_line_to(cr, xmax_bar, ly - y);
+      cairo_move_to(cr, xmax_bar + 1, ly - y);
+      cairo_show_text(cr, std::to_string(NiceNumber).c_str());
+      cairo_stroke(cr);
+    }
+  }
+  cairo_set_line_width(cr, .7);
+  for(auto ticks: minor_ticks) {
+    double area = ticks.first;
+    double NiceNumber = ticks.second;
+    if (area > min_value and area < max_value) {
+      double y = ((log(area) - log(min_value))/ (log(max_value) - log(min_value))) * 
+                  (ymax_bar - ymin_bar) + ymin_bar;
+    
+      cairo_move_to(cr, xmax_bar - 3, ly - y);
+      cairo_line_to(cr, xmax_bar, ly - y);
+      cairo_stroke(cr);
+    }
+  }
+  
+  // TODO: Use cairo_text_extents_t for precise placement of text
+  cairo_set_line_width(cr, 1.0);
+  std::string bar_text_top = "Cases per";
+  std::string bar_text_bottom = "km²";
+  cairo_move_to(cr, (xmin_bar + xmax_bar)/2 - 16, ly - ymax_bar - 13.5);
+  cairo_show_text(cr, bar_text_top.c_str());
+  cairo_move_to(cr, (xmin_bar + xmax_bar)/2 - 5.5 , ly - ymax_bar - 5);
+  cairo_show_text(cr, bar_text_bottom.c_str());
+  
+}
 
+void trim_graticule_heatmap(cairo_t *cr,
+                            double padding,
+                            InsetState *inset_state)
+{
+  // Canvas dimension
+  double lx = (double) inset_state->lx();
+  double ly = (double) inset_state->ly();
+  Bbox bbox = inset_state->bbox();
+  double xmin = bbox.xmin() - padding;
+  double xmax = bbox.xmax() + padding;
+  double ymin = bbox.ymin() - padding;
+  double ymax = bbox.ymax() + padding;
+  
+  // Color white outside bbox
+  cairo_set_source_rgb(cr, 1.0, 1.0, 1.0);
+  cairo_rectangle(cr, 0, 0, xmin, ymax);
+  cairo_rectangle(cr, xmax, 0, lx - xmax, ymax);
+  cairo_rectangle(cr, 0, ymax, lx, ly - ymax);
+  cairo_rectangle(cr, 0, 0, lx, ymin);
+  cairo_fill(cr);
+  
+}
+  
+  
 // Writes graticule cells and colors them if required
 void write_graticules_to_cairo_surface(cairo_t *cr,
-                                      bool plot_graticule_heatmap,
                                       InsetState *inset_state)
 {
   const unsigned int lx = inset_state->lx();
@@ -292,11 +443,6 @@ void write_graticule_colors_to_cairo_surface(cairo_t *cr,
   // Get colors
   const auto colors = graticule_cell_colors(inset_state, cell_width);
   
-  // Using this hack to obtain square graticule cells
-  if (plot_equal_area_map) {
-    inset_state->initialize_cum_proj();
-  }
-  
   // Set line width of graticule lines
   cairo_set_line_width(cr, 5e-6 * std::min(lx, ly));
   
@@ -331,15 +477,11 @@ void write_polygons_to_cairo_surface(cairo_t *cr,
   const unsigned int lx = inset_state->lx();
   const unsigned int ly = inset_state->ly();
   cairo_set_line_width(cr, 1e-3 * std::min(lx, ly));
-  std::vector<GeoDiv> geo_divs;
   
   // Draw cartogram polygons or equal area map polygons
-  if (plot_equal_area_map) {
-    geo_divs = inset_state->geo_divs_original();
-  } else {
-    geo_divs = inset_state->geo_divs();
-  }
-  
+  std::vector<GeoDiv> geo_divs = plot_equal_area_map ? inset_state->geo_divs_original():
+                                                      inset_state->geo_divs();
+    
   // Draw the shapes
   for (const auto &gd : geo_divs) {
     for (const auto &pwh : gd.polygons_with_holes()) {
@@ -422,11 +564,182 @@ void write_map_to_ps(const std::string fname,
   
   // Draw graticule without color
   if (plot_graticule) {
-    write_graticules_to_cairo_surface(cr, false, inset_state);
+    write_graticules_to_cairo_surface(cr, inset_state);
   }
   cairo_show_page(cr);
   cairo_surface_destroy(surface);
   cairo_destroy(cr);
+}
+
+
+Polygon transform_to_albers_coor(Polygon edge_points,
+                                const InsetState *inset_state) 
+  {
+    const double latt_const = inset_state->latt_const();
+    
+    Transformation scale(CGAL::SCALING, latt_const);
+  
+    Polygon cell_edge_points_albers = transform(scale, edge_points);
+  
+    return cell_edge_points_albers;
+  }
+
+double albers_area_to_earth_area(const double albers_area) {
+  
+  return (albers_area * earth_surface_area)/(4 * pi);
+}
+
+double graticule_cell_area_km(const unsigned int i,
+                            const unsigned int j,
+                            InsetState *inset_state) {
+                              
+ Polygon cell_edge_points = graticule_cell_edge_points(i, j, inset_state,
+                                                        1,
+                                                        true);
+  const Polygon cell_edge_points_albers = transform_to_albers_coor(cell_edge_points,
+                                                                inset_state);
+  const double cell_area = cell_edge_points_albers.area();
+  
+  const double cell_area_km = albers_area_to_earth_area(cell_area);
+  
+  return cell_area_km;
+}
+
+double graticule_cell_target_area(const unsigned int i,
+                                  const unsigned int j,
+                                  const double total_target_area,
+                                  const double total_inset_area,
+                                  InsetState *inset_state)
+{
+  const Polygon cell_edge_points = graticule_cell_edge_points(i, j, inset_state,
+                                                        1,
+                                                        false);
+  const double cell_area = cell_edge_points.area();
+  
+  const double cell_target_area = (cell_area * total_target_area)/total_inset_area;
+                                  
+  return cell_target_area;
+}
+
+double graticule_cell_target_area_per_km(const unsigned int i,
+                                         const unsigned int j,
+                                         const double total_target_area,
+                                         const double total_inset_area,
+                                         InsetState *inset_state)
+{
+  const double cell_target_area = graticule_cell_target_area(i, j,
+                                                             total_target_area,
+                                                             total_inset_area,
+                                                             inset_state);
+  const double cell_area_km = graticule_cell_area_km(i, j, inset_state);
+  
+  const double cell_target_area_per_km = cell_target_area/cell_area_km;
+  
+  return cell_target_area_per_km;
+}
+
+std::vector<std::pair<double, double>> get_major_ticks(const double min_target_area_per_km,
+                                                      const double max_target_area_per_km,
+                                                      const double min_area_cell_point_area,
+                                                      const double max_area_cell_point_area,
+                                                      std::vector<int> nice_numbers)
+                                                      
+{
+  std::vector<std::pair<double, double>> ticks;
+   for(auto niceNumber : nice_numbers) {
+    double NiceNumberRatio = (niceNumber - min_target_area_per_km)
+                              /(max_target_area_per_km - min_target_area_per_km);
+    double area = min_area_cell_point_area + NiceNumberRatio * 
+                  (max_area_cell_point_area - min_area_cell_point_area);
+    ticks.push_back(std::make_pair(area, niceNumber));
+  }
+  return ticks;
+}
+
+std::vector<std::pair<double, double>> get_minor_ticks(int n_ticks_per_major,
+                                                      const double min_target_area_per_km,
+                                                      const double max_target_area_per_km,
+                                                      const double min_area_cell_point_area,
+                                                      const double max_area_cell_point_area,
+                                                      std::vector<int> nice_numbers)
+                                                      
+{
+  n_ticks_per_major += 2;
+  std::vector<std::pair<double, double>> minor_ticks;
+  const int n_major_ticks = nice_numbers.size();
+  for(int i = 0; i < n_major_ticks - 1; i++) {
+    double first_major_tick = (double) nice_numbers[i];
+    double second_major_tick = (double) nice_numbers[i+1];
+    double minor_tick_ratio = (second_major_tick - first_major_tick)/(n_ticks_per_major - 1);
+    for(int j = 1; j < n_ticks_per_major - 1; j++) {
+      double minor_tick = first_major_tick + minor_tick_ratio * j;
+      double NiceNumberRatio = (minor_tick - min_target_area_per_km)/
+                                (max_target_area_per_km - min_target_area_per_km);
+      double area = min_area_cell_point_area + NiceNumberRatio * 
+                    (max_area_cell_point_area - min_area_cell_point_area);
+      minor_ticks.push_back(std::make_pair(area, minor_tick));
+    }
+  } 
+  return minor_ticks;
+}
+
+std::pair<std::vector<std::pair<double, double>>, std::vector<std::pair<double, double>>>
+                                                           get_ticks (const int n_ticks_per_major,
+                                                            const double min_target_area_per_km,
+                                                            const double max_target_area_per_km,
+                                                            const double min_area_cell_point_area,
+                                                            const double max_area_cell_point_area,
+                                                            std::vector<int> nice_numbers) 
+{
+  std::vector<std::pair<double, double>> major_ticks = get_major_ticks(min_target_area_per_km,
+                                                                      max_target_area_per_km,
+                                                                      min_area_cell_point_area,
+                                                                      max_area_cell_point_area,
+                                                                      nice_numbers);
+  std::vector<std::pair<double, double>> minor_ticks = get_minor_ticks(n_ticks_per_major,
+                                                                      min_target_area_per_km,
+                                                                      max_target_area_per_km,
+                                                                      min_area_cell_point_area,
+                                                                      max_area_cell_point_area,
+                                                                      nice_numbers);
+  std::pair<std::vector<std::pair<double, double>>, std::vector<std::pair<double, double>>> 
+                                                            ticks(major_ticks, minor_ticks);
+  return ticks;
+}
+
+
+
+Bbox get_bbox_bar(const double bar_width,
+                  const double bar_height,
+                  InsetState *inset_state) 
+{
+
+  const Bbox bbox = inset_state->bbox();
+  
+ // Position the bar 25 pixels to the right of the bbox
+  const double xmin_bar = bbox.xmax() + 35;
+  const double xmax_bar = xmin_bar + bar_width;
+  
+  // Position the bar at the middle of the bbox y coordinates
+  double ymid_bar = (bbox.ymax() + bbox.ymin()) / 2 - 25;
+  double ymin_bar = ymid_bar - bar_height/2;
+  double ymax_bar = ymid_bar + bar_height/2;
+  
+  const Bbox bbox_bar(xmin_bar, ymin_bar, xmax_bar, ymax_bar);
+  
+  return bbox_bar;
+}
+
+std::vector<int> get_nice_numbers_for_bar(const double max_target_area_per_km) 
+{
+  std::vector<int> nice_numbers;
+  int NiceNumber = 1;
+  nice_numbers.push_back(NiceNumber);
+  while(NiceNumber < max_target_area_per_km) {
+    NiceNumber = NiceNumber * 10;
+    nice_numbers.push_back(NiceNumber);
+  }
+  return nice_numbers;
 }
 
 // Outputs a PS file of graticule heatmap
@@ -440,23 +753,63 @@ void write_graticule_heatmap_to_ps(const std::string ps_name,
   cairo_surface_t *surface = cairo_ps_surface_create(filename, lx, ly);
   cairo_t *cr = cairo_create(surface);
   
+  // Get inset areas
+  const double total_target_area = inset_state->total_target_area();
+  const double total_inset_area = inset_state->total_inset_area();
+  
+  const Bbox bbox_bar = get_bbox_bar(15, 150, inset_state);
+  
   // Write header
   write_ps_header(ps_name, surface);
   
+  // Get the max and min graticule cell area points
+  Point max_area_cell_point, min_area_cell_point;
+  
+  std::tie(max_area_cell_point, min_area_cell_point) = max_and_min_graticule_cell_area_index(inset_state, 1);
+  
+  const double max_area_cell_point_area = graticule_cell_area(max_area_cell_point.x(), 
+                                                              max_area_cell_point.y(), 
+                                                              inset_state, 1);
+  const double min_area_cell_point_area = graticule_cell_area(min_area_cell_point.x(), 
+                                                              min_area_cell_point.y(), 
+                                                              inset_state, 1);
+  
+  // Get the max and min graticule cell target area per km
+  double max_target_area_per_km = graticule_cell_target_area_per_km(max_area_cell_point.x(),
+                                                                    max_area_cell_point.y(),
+                                                                    total_target_area,
+                                                                    total_inset_area,
+                                                                    inset_state);
+  double min_target_area_per_km = graticule_cell_target_area_per_km(min_area_cell_point.x(),
+                                                                    min_area_cell_point.y(),
+                                                                    total_target_area,
+                                                                    total_inset_area,
+                                                                    inset_state);
+  
+  std::vector<int> nice_numbers = get_nice_numbers_for_bar(max_target_area_per_km);
+  
+  std::vector<std::pair<double, double>> major_ticks, minor_ticks;
+  
+  std::tie(major_ticks, minor_ticks) = get_ticks(10, min_target_area_per_km, max_target_area_per_km,
+                                                 min_area_cell_point_area, max_area_cell_point_area,
+                                                 nice_numbers);
   // Draw colors
   write_graticule_colors_to_cairo_surface(cr, inset_state, plot_equal_area_map);
-  
-  // Draw graticules
-  if (not plot_equal_area_map) {
-    write_graticules_to_cairo_surface(cr, true, inset_state);
-  }
   
   // Draw polygons without color
   write_polygons_to_cairo_surface(cr,
                               false,
                               false,
                               plot_equal_area_map,
-                              inset_state);                        
+                              inset_state); 
+  
+  trim_graticule_heatmap(cr, 20, inset_state);
+  
+  write_graticule_heatmap_bar_to_cairo_surface(min_area_cell_point_area, 
+                                              max_area_cell_point_area, 
+                                              cr, bbox_bar, major_ticks, 
+                                              minor_ticks, ly);
+                        
   cairo_show_page(cr);
   cairo_surface_destroy(surface);
   cairo_destroy(cr);
@@ -639,7 +992,7 @@ void write_density_to_ps(const std::string ps_name,
                           InsetState *inset_state)
 {
   // Whether to draw bar on the cairo surface
-  bool draw_bar = true;
+  bool draw_bar = false;
   
   auto filename = ps_name.c_str();
   const auto lx = inset_state->lx();

@@ -11,6 +11,7 @@ constexpr unsigned int max_integrations = 100;
 constexpr double max_permitted_area_error = 0.01;
 constexpr double padding_unless_world = 1.5;
 constexpr double pi = std::numbers::pi;
+constexpr double earth_surface_area = 510.1e6;
 
 // The resolution represents the number of rays to shoot through each cell
 // (see inset_state/scanline_graph.cpp).
