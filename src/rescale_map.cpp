@@ -62,7 +62,7 @@ void rescale_map(unsigned int max_n_graticule_rows_or_cols,
 
   // Rescale and translate all GeoDiv coordinates
   const Transformation translate(CGAL::TRANSLATION,
-                           CGAL::Vector_2<Scd>(-new_xmin, -new_ymin));
+                                 CGAL::Vector_2<Scd>(-new_xmin, -new_ymin));
   const Transformation scale(CGAL::SCALING, (1.0/latt_const));
   for (auto &gd : *inset_state->ref_to_geo_divs()) {
     for (auto &pwh : *gd.ref_to_polygons_with_holes()) {
@@ -96,7 +96,7 @@ void normalize_inset_area(InsetState *inset_state,
   const Transformation translate(
     CGAL::TRANSLATION,
     CGAL::Vector_2<Scd>(-(bb.xmin() + bb.xmax()) / 2,
-                          -(bb.ymin() + bb.ymax()) / 2));
+                        -(bb.ymin() + bb.ymax()) / 2));
   const Transformation scale(CGAL::SCALING, scale_factor);
   for (auto &gd : *inset_state->ref_to_geo_divs()) {
     for (auto &pwh : *gd.ref_to_polygons_with_holes()) {
