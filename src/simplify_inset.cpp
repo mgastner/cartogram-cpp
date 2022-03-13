@@ -28,15 +28,15 @@ bool contains_vertices_in_order(const Polygon non_simpl_pgn,
   // polygon. For the if-condition, see:
   // https://stackoverflow.com/questions/325933/determine-whether-two-date-
   // ranges-overlap/325964#325964 (accessed on 2021-10-05).
-  Bbox non_simpl_bb = non_simpl_pgn.bbox();
-  if (non_simpl_bb.xmax() < simpl_bb.xmin()
-      || non_simpl_bb.xmin() > simpl_bb.xmax()
-      || non_simpl_bb.ymax() < simpl_bb.ymin()
-      || non_simpl_bb.ymin() > simpl_bb.ymax()) {
+  const auto non_simpl_bb = non_simpl_pgn.bbox();
+  if (non_simpl_bb.xmax() < simpl_bb.xmin() ||
+      non_simpl_bb.xmin() > simpl_bb.xmax() ||
+      non_simpl_bb.ymax() < simpl_bb.ymin() ||
+      non_simpl_bb.ymin() > simpl_bb.ymax()) {
     return false;
   }
   std::vector<unsigned int> indices;
-  for (const auto simpl_pt : simpl_pgn) {
+  for (const auto &simpl_pt : simpl_pgn) {
     const auto non_simpl_it = std::find(non_simpl_pgn.vertices_begin(),
                                         non_simpl_pgn.vertices_end(),
                                         simpl_pt);
@@ -64,7 +64,7 @@ int simplified_polygon_index(const Polygon non_simpl_pgn,
   // polygons as an argument so that the bounding boxes do not need to be
   // calculated repeatedly. We maintain a list of hitherto unmatched polygon
   // indices to avoid unnecessary iterations.
-  for (const auto i : *unmatched) {
+  for (const auto &i : *unmatched) {
     if (contains_vertices_in_order(non_simpl_pgn,
                                    simpl_pgns->at(i),
                                    simpl_bboxes->at(i))) {
@@ -76,7 +76,7 @@ int simplified_polygon_index(const Polygon non_simpl_pgn,
 }
 
 void simplify_inset(InsetState *inset_state,
-                    unsigned int target_points_per_inset)
+                    const unsigned int target_points_per_inset)
 {
   const unsigned int n_pts_before = inset_state->n_points();
   if (n_pts_before <= target_points_per_inset) {
@@ -85,6 +85,7 @@ void simplify_inset(InsetState *inset_state,
               << std::endl;
     return;
   }
+
   std::cerr << "Simplifying the inset. "
             << n_pts_before
             << " points in the inset before simplification."
@@ -103,10 +104,10 @@ void simplify_inset(InsetState *inset_state,
   }
 
   // Simplify polygons
-  unsigned long target_pts =
+  const unsigned long target_pts =
     std::max(target_points_per_inset,
              min_points_per_ring * inset_state->n_rings());
-  const double ratio = double(target_pts) / n_pts_before;
+  const double ratio = static_cast<double>(target_pts) / n_pts_before;
   PS::simplify(ct, Cost(), Stop(ratio));
 
   // Store each constraint in ct as a polygon. Also store bounding box so
@@ -150,7 +151,18 @@ void simplify_inset(InsetState *inset_state,
                 matching_simpl_pgn.end(),
                 no_matching_simpl_pgn) != matching_simpl_pgn.end() ||
       !unmatched.empty()) {
-    std::cerr << "ERROR: Unmatched polygon in simplify_inset()." << std::endl;
+    std::cerr << "ERROR: Unmatched polygon in "
+              << __func__
+              << "()."
+              << std::endl;
+    for (const auto &u : unmatched) {
+      std::cerr << "Unmatched polygon: "
+                << u
+                << std::endl;
+      for (const auto &pt : simpl_pgns[u]) {
+        std::cerr << pt << std::endl;
+      }
+    }
     exit(1);
   }
 
