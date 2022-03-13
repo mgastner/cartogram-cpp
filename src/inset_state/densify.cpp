@@ -20,7 +20,7 @@ Point calc_intersection(Segment s1, Segment s2) {
   //   _Exit(EXIT_FAILURE);
   // }
 
-  // Return segment intersection, if it exists
+  // Return segment intersection if it exists
   const auto result = CGAL::intersection(s1, s2);
   if (result) {
     if (const Point* p = boost::get<Point>(&*result)) {
@@ -157,7 +157,7 @@ std::vector<Point> densification_points(const Point pt1,
       // the x-coordinate is between a.x and b.x, but the y coordinate
       // is not between a.y and b.y (e.g. if the line from a to b is
       // vertical).
-      for (Point inter : graticule_intersections) {
+      for (const auto &inter : graticule_intersections) {
         if (((a.x() <= inter.x() && inter.x() <= b.x()) ||
              (b.x() <= inter.x() && inter.x() <= a.x())) &&
             ((a.y() <= inter.y() && inter.y() <= b.y()) ||
