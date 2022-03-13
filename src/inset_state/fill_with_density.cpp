@@ -2,7 +2,8 @@
 #include "../inset_state.h"
 #include "../write_ps.h"
 
-void InsetState::fill_with_density(bool plot_density)
+void InsetState::fill_with_density(bool plot_density, 
+                                  bool plot_graticule_heatmap)
 {
   // We assume that target areas that were zero or missing in the input have
   // already been replaced by
@@ -137,6 +138,17 @@ void InsetState::fill_with_density(bool plot_density)
       }
     }
   }
+  if (plot_graticule_heatmap and n_finished_integrations() == 1){
+  std::string file_name =
+      inset_name_ +
+      "_piecewise_density_" +
+      std::to_string(n_finished_integrations()) +
+      ".ps";
+
+    write_density_to_ps(file_name, rho_init_.as_1d_array(), this,
+                         plot_graticule_heatmap);
+  }
+  
   if (plot_density) {
     std::string file_name =
       inset_name_ +

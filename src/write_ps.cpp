@@ -360,7 +360,6 @@ void write_graticule_heatmap_bar_to_cairo_surface
   cairo_set_line_width(cr, .7);
   for(auto ticks: minor_ticks) {
     double area = ticks.first;
-    double NiceNumber = ticks.second;
     if (area > min_value and area < max_value) {
       double y = ((log(area) - log(min_value))/ (log(max_value) - log(min_value))) * 
                   (ymax_bar - ymin_bar) + ymin_bar;
@@ -808,8 +807,7 @@ void write_graticule_heatmap_to_ps(const std::string ps_name,
   write_graticule_heatmap_bar_to_cairo_surface(min_area_cell_point_area, 
                                               max_area_cell_point_area, 
                                               cr, bbox_bar, major_ticks, 
-                                              minor_ticks, ly);
-                        
+                                              minor_ticks, ly);       
   cairo_show_page(cr);
   cairo_surface_destroy(surface);
   cairo_destroy(cr);
@@ -989,7 +987,8 @@ void write_density_bar_to_ps(std::string filename) {
 
 void write_density_to_ps(const std::string ps_name,
                           const double *density,
-                          InsetState *inset_state)
+                          InsetState *inset_state,
+                          const bool plot_graticule_heatmap = false)
 {
   // Whether to draw bar on the cairo surface
   bool draw_bar = false;
@@ -1000,21 +999,7 @@ void write_density_to_ps(const std::string ps_name,
   cairo_surface_t *surface = cairo_ps_surface_create(filename, lx, ly);
   cairo_t *cr = cairo_create(surface);
   
-  // Calculate bbox for the bar
-  const double bar_width = 15;
-  const double bar_height = 150;
-  const Bbox bbox = inset_state->bbox();
-  
-  // Position the bar 25 pixels to the right of the bbox
-  const double xmin_bar = bbox.xmax() + 25;
-  const double xmax_bar = xmin_bar + bar_width;
-  
-  // Position the bar at the middle of the bbox y coordinates
-  double ymid_bar = (bbox.ymax() + bbox.ymin()) / 2;
-  double ymin_bar = ymid_bar - bar_height/2;
-  double ymax_bar = ymid_bar + bar_height/2;
-  
-  const Bbox bbox_bar(xmin_bar, ymin_bar, xmax_bar, ymax_bar);
+  const Bbox bbox_bar = get_bbox_bar(15, 150, inset_state);
   
   // Write header
   write_ps_header(ps_name, surface);
@@ -1031,14 +1016,26 @@ void write_density_to_ps(const std::string ps_name,
     dens_max = std::max(density[k], dens_max);
   }
   dens_mean /= n_grid_cells;
+  
   for (unsigned int i = 0; i < inset_state->lx(); ++i) {
     for (unsigned int j = 0; j < inset_state->ly(); ++j) {
       double r, g, b;
+      if (plot_graticule_heatmap){
+        graticule_cell_color(density[i*inset_state->ly() + j],
+                dens_max,
+                dens_min,
+                &r,
+                &g,
+                &b);
+      }
+      else {
       heatmap_color(density[i*inset_state->ly() + j],
                     dens_min,
                     dens_mean,
                     dens_max,
                     &r, &g, &b);
+      }
+  
       // Get four points of the square
       double x_min = i - 0.5*sq_overlap;
       double y_min = j - 0.5*sq_overlap;
