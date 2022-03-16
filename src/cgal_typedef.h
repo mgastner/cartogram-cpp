@@ -10,6 +10,7 @@ typedef CGAL::Polygon_2<Epick> Polygon;
 typedef CGAL::Polygon_with_holes_2<Epick> Polygon_with_holes;
 typedef CGAL::Aff_transformation_2<Epick> Transformation;
 typedef CGAL::Point_2<Epick> Point;
+typedef CGAL::Line_2<Epick> Line;
 typedef CGAL::Bbox_2 Bbox;
 typedef CGAL::Segment_2<Epick> Segment;
 
