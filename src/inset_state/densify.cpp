@@ -3,12 +3,13 @@
 #include <CGAL/intersections.h>
 #include "../round_point.h"
 
-// This function takes two lines as input:
-// - line `a`, defined by points a1 and a2.
-// - line `b`, defined by points b1 and b2.
-// The function returns the intersection between them. If the two lines are
-// parallel or are the same, the function returns the point (-1, -1), which
-// is always outside of any graticule grid cell.
+// This function takes the following as input:
+// - a segment defined by points a and b.
+// - a line defined by coef_x, coef_y, and intercept with the formula
+//      coef_x * x + coef_y * y + intercept = 0.
+// The function returns the unique intersection point between them. If this
+// intersection point does not exist, the function returns the point (-1, -1),
+// which is always outside of any graticule grid cell.
 Point calc_intersection(const Point a,
                         const Point b,
                         const double coef_x,
@@ -29,22 +30,36 @@ Point calc_intersection(const Point a,
   return Point(-1.0, -1.0);
 }
 
-// edge: 'x', 'y', 'n'
-void add_diag_intersection(std::set<Point, decltype(point_lesser)*>
-                              *intersections,
-                            const Point a,
-                            const Point b,
-                            double slope,
-                            double base_intercept,
-                            double step,
-                            const unsigned int lx,
-                            const unsigned int ly,
-                            char edge)
+// This function takes as input points a and b which define a segment, and
+// the following arguments which defines the kind of diagonals for which we
+// will calculate intersections:
+// - slope: the slope of every diagonal.
+// - base_intercept: the intercept that is the closest to 0 of a diagonal
+// on the grid.
+// - step: what we need to add to each diagonal's intercept to obtain the
+// next diagonal.
+// - edge: a char, which can be either 'x', 'y', or 'n'. 'x' marks diagonals
+// on the left or right edges of the grid, 'y' marks diagonals on the top or
+// bottom edges, and 'n' marks non-edge diagonals.
+// TODO: we can also determine whether it's an edge diagonal or not just by
+// looking at the slope, but having a separate edge argument might be clearer.
+// What should we do?
+void add_diag_inter(std::set<Point, decltype(point_lesser)*>
+                      *intersections,
+                    const Point a,
+                    const Point b,
+                    double slope,
+                    double base_intercept,
+                    double step,
+                    const unsigned int lx,
+                    const unsigned int ly,
+                    char edge)
 {
   double intercept_start =
     floor(std::min(a.y() - slope * a.x(), b.y() - slope * b.x()))
     + base_intercept;
-  double intercept_end = std::max(a.y() - slope * a.x(), b.y() - slope * b.x());
+  double intercept_end =
+    std::max(a.y() - slope * a.x(), b.y() - slope * b.x());
   for (double i = intercept_start; i <= intercept_end; i += step) {
     Point inter = calc_intersection(a, b, slope, -1.0, i, lx, ly);
     if (inter > Point(0, 0)){
@@ -120,27 +135,27 @@ std::vector<Point> densification_points(const Point pt1,
   }
 
   // Get bottom-left to top-right diagonal intersections
-  add_diag_intersection(&temp_intersections, a, b, 1.0, 0.0, 1.0, lx, ly, 'n');
+  add_diag_inter(&temp_intersections, a, b, 1.0, 0.0, 1.0, lx, ly, 'n');
 
   // Get top-left to bottom-right diagonal intersections
-  add_diag_intersection(&temp_intersections, a, b, -1.0, 0.0, 1.0, lx, ly, 'n');
+  add_diag_inter(&temp_intersections, a, b, -1.0, 0.0, 1.0, lx, ly, 'n');
 
   // Add edge diagonals when at least one point is on the edge of the grid.
   if (a.x() < 0.5 || b.x() < 0.5 || a.x() > (lx - 0.5) || b.x() > (lx - 0.5)){
 
     // Bottom-left to top-right edge diagonals
-    add_diag_intersection(&temp_intersections, a, b, 2.0, 0.5, 1.0, lx, ly, 'x');
+    add_diag_inter(&temp_intersections, a, b, 2.0, 0.5, 1.0, lx, ly, 'x');
 
     // Top-left to bottom-right edge diagonals
-    add_diag_intersection(&temp_intersections, a, b, -2.0, 0.5, 1.0, lx, ly, 'x');
+    add_diag_inter(&temp_intersections, a, b, -2.0, 0.5, 1.0, lx, ly, 'x');
   }
   if (a.y() < 0.5 || b.y() < 0.5 || a.y() > (ly - 0.5) || b.y() > (ly - 0.5)){
 
     // Bottom-left to top-right edge diagonals
-    add_diag_intersection(&temp_intersections, a, b, 0.5, 0.25, 0.5, lx, ly, 'y');
+    add_diag_inter(&temp_intersections, a, b, 0.5, 0.25, 0.5, lx, ly, 'y');
 
     // Top-left to botom-right edge diagonals
-    add_diag_intersection(&temp_intersections, a, b, -0.5, 0.25, 0.5, lx, ly, 'y');
+    add_diag_inter(&temp_intersections, a, b, -0.5, 0.25, 0.5, lx, ly, 'y');
   }
 
   // // DEBUGGING: Check if there are any two almost equal points in the set
