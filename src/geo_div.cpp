@@ -129,7 +129,7 @@ Point GeoDiv::point_on_surface_of_polygon_with_holes(
 
   // Find midpoint in maximum segment length
   double max_length = 0.0;
-  double mid_x;
+  double mid_x = -1.0;  // Temporary value
 
   // Iterate over lengths
   for (unsigned int i = 0; i < intersections.size(); i += 2) { \

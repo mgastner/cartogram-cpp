@@ -37,7 +37,7 @@ void adjust_for_dual_hemisphere(InsetState *inset_state)
   }
 
   // Set transformation (translation) values to +360 for longitude
-  Transformation translate(CGAL::TRANSLATION, CGAL::Vector_2<Epick>(360, 0));
+  Transformation translate(CGAL::TRANSLATION, CGAL::Vector_2<Scd>(360, 0));
 
   // - If min_lon_east == max_lon_west, the whole inset is contained in either
   //   only the western or only the eastern hemisphere

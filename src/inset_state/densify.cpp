@@ -1,5 +1,6 @@
 #include "../inset_state.h"
 #include "../constants.h"
+#include <CGAL/intersections.h>
 #include "../round_point.h"
 
 // This function takes two lines as input:
@@ -49,7 +50,7 @@ void add_diag_intersection(std::set<Point, decltype(point_lesser)*>
   }
 }
 
-// TODO: If a_ or b_ are themselves intersection points (e.g. if pt1.x is an
+// TODO: If a or b are themselves intersection points (e.g. if pt1.x is an
 // integer plus 0.5), it appears to be included in the returned intersections.
 // Would this property cause the point to be included twice in the line
 // segment (once when the end point is the argument pt1 and a second time when
@@ -151,25 +152,6 @@ std::vector<Point> densification_points(const Point pt1,
   return intersections;
 }
 
-// TODO: This function may be more meaningfully included in
-// check_topology.cpp.
-bool duplicates(std::vector<Point> v) {
-  CGAL::set_pretty_mode(std::cerr);
-  for (size_t i = 0; i < v.size() - 1; ++i) {
-    if (points_almost_equal(v[i], v[i + 1])) {
-      std::cerr << "i = " << i << std::endl;
-      std::cerr << "Point: " << i << ", v[i]: " << v[i] << std::endl;
-      std::cerr << "Point: "
-                << i + 1
-                << ", v[i + 1]: "
-                << v[i + 1]
-                << std::endl;
-      return true;
-    }
-  }
-  return false;
-}
-
 void InsetState::densify_geo_divs()
 {
   std::cerr << "Densifying" << std::endl;
@@ -201,16 +183,6 @@ void InsetState::densify_geo_divs()
           outer_dens.push_back(outer_pts_dens[i]);
         }
       }
-
-      // Check for duplicate points in the densified outer boundary
-      // std::vector<Point> temp_out;
-      // for (size_t i = 0; i < outer_dens.size(); ++i) {
-      //   temp_out.push_back(outer_dens[i]);
-      // }
-      // if (duplicates(temp_out)) {
-      //   std::cerr << "Duplicates found in outer boundary!" << std::endl;
-      // }
-
       std::vector<Polygon> holes_v_dens;
 
       // Iterate over each hole
@@ -227,16 +199,6 @@ void InsetState::densify_geo_divs()
             hole_dens.push_back(hole_pts_dens[i]);
           }
         }
-
-        // Check for duplicate points in the densified hole boundary
-        // std::vector<Point> temp_holes;
-        // for (size_t i = 0; i < hole_dens.size(); ++i) {
-        //   temp_holes.push_back(hole_dens[i]);
-        // }
-        // if (duplicates(temp_holes)) {
-        //   std::cerr << "Duplicates found in hole!" << std::endl;
-        // }
-
         holes_v_dens.push_back(hole_dens);
       }
       const Polygon_with_holes pwh_dens(outer_dens,

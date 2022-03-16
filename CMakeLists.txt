@@ -15,9 +15,6 @@ add_compile_options(-Wall -Wextra -pedantic)
 
 # Finding appropriate packages.
 find_package(OpenMP REQUIRED)
-find_package(CGAL 5.3 REQUIRED)
-find_package(Boost 1.70 REQUIRED)
-find_package(Threads REQUIRED)
 find_package(PkgConfig REQUIRED)
 
 # Finding and linking FFTW using PkgConfig.
@@ -84,9 +81,6 @@ endif()
 # Linking appropriate libraries to cartogram target.
 target_link_libraries(
   cartogram
-  ${Boost_LIBRARIES}
-  CGAL::CGAL
-  ${CMAKE_THREAD_LIBS_INIT}
   PkgConfig::FFTW
   PkgConfig::Cairo
   OpenMP::OpenMP_CXX
