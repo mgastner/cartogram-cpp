@@ -51,7 +51,8 @@ void InsetState::project()
     }
   }
 
-  // Specialise interpolate_point_bilinearly
+  // Specialise/curry interpolate_point_bilinearly such that it only requires
+  // one argument (Point p1).
   std::function<Point(Point)> lambda =
     [&xdisp, &ydisp, lx = lx_, ly = ly_](Point p1) {
       return interpolate_point_bilinearly(p1, &xdisp, &ydisp, lx, ly);
@@ -65,17 +66,15 @@ void InsetState::project()
 // In chosen_diag() and transformed_triangle(), the input x-coordinates can
 // only be 0, lx, or 0.5, 1.5, ..., lx-0.5. A similar rule applies to the
 // y-coordinates.
-void exit_if_not_on_grid_or_edge(const Point pt,
-                                 const unsigned int lx,
-                                 const unsigned int ly)
+void InsetState::exit_if_not_on_grid_or_edge(const Point p1) const
 {
-  if ((pt.x() != 0.0 && pt.x() != lx && pt.x() - int(pt.x()) != 0.5) ||
-      (pt.y() != 0.0 && pt.y() != ly && pt.y() - int(pt.y()) != 0.5)) {
+  if ((p1.x() != 0.0 && p1.x() != lx_ && p1.x() - int(p1.x()) != 0.5) ||
+      (p1.y() != 0.0 && p1.y() != ly_ && p1.y() - int(p1.y()) != 0.5)) {
     std::cerr << "Error: Invalid input coordinate in triangulation\n"
               << "\tpt = ("
-              << pt.x()
+              << p1.x()
               << ", "
-              << pt.y()
+              << p1.y()
               << ")"
               << std::endl;
     exit(1);
@@ -85,7 +84,7 @@ void exit_if_not_on_grid_or_edge(const Point pt,
 
 Point InsetState::projected_point(const Point p1)
 {
-  exit_if_not_on_grid_or_edge(p1, lx_, ly_);
+  exit_if_not_on_grid_or_edge(p1);
   const unsigned int proj_x = std::min(
     static_cast<unsigned int>(lx_) - 1,
     static_cast<unsigned int>(p1.x()));
@@ -114,7 +113,7 @@ int InsetState::chosen_diag(const Point v[4], unsigned int *num_concave)
   // The input v[i].x can only be 0, lx, or 0.5, 1.5, ..., lx-0.5. A similar
   // rule applies to the y-coordinates.
   for (unsigned int i = 0; i < 4; ++i) {
-    exit_if_not_on_grid_or_edge(v[i], lx_, ly_);
+    exit_if_not_on_grid_or_edge(v[i]);
   }
 
   // Transform the coordinates in v to the corresponding coordinates on the
@@ -198,7 +197,7 @@ std::array<Point, 3> InsetState::transformed_triangle(const std::array<Point, 3>
 {
   std::array<Point, 3> transf_tri;
   for (unsigned int i = 0; i < 3; ++i) {
-    exit_if_not_on_grid_or_edge(tri[i], lx_, ly_);
+    exit_if_not_on_grid_or_edge(tri[i]);
     const auto transf_pt = projected_point(tri[i]);
     transf_tri[i] = transf_pt;
   }

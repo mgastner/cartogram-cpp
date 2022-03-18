@@ -126,7 +126,8 @@ void InsetState::apply_albers_projection()
   const double phi_1 = 0.5 * (phi_0 + max_lat);
   const double phi_2 = 0.5 * (phi_0 + min_lat);
 
-  // Specialise point_after_albers_projection with lx_ and ly_
+  // Specialise/curry point_after_albers_projection such that it only requires
+  // one argument (Point p1).
   std::function<Point(Point)> lambda =
     [=](Point p1) {
       return point_after_albers_projection(p1,

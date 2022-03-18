@@ -77,6 +77,7 @@ public:
   void destroy_fftw_plans_for_rho();
   void execute_fftw_bwd_plan() const;
   void execute_fftw_fwd_plan() const;
+  void exit_if_not_on_grid_or_edge(const Point p1) const;
   void fill_graticule_diagonals();
 
   // Density functions
