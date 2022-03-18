@@ -1,7 +1,8 @@
 #ifndef ROUND_POINT_H_
 #define ROUND_POINT_H_
 
-#include "inset_state.h"
+#include "cgal_typedef.h"
+#include "xy_point.h"
 
 bool almost_equal(const double, const double);
 bool points_almost_equal(const Point, const Point);
