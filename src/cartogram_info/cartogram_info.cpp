@@ -22,47 +22,6 @@ double CartogramInfo::cart_total_target_area() const
   return area;
 }
 
-const std::string CartogramInfo::id_header() const
-{
-  return id_header_;
-}
-
-const std::set<std::string> CartogramInfo::ids_in_visual_variables_file()
-const
-{
-  return ids_in_visual_variables_file_;
-}
-
-void CartogramInfo::insert_gd_into_inset(const std::string id,
-                                         const std::string inset)
-{
-  gd_to_inset_.insert(std::pair<std::string, std::string>(id, inset));
-  return;
-}
-
-void CartogramInfo::insert_id_in_visual_variables_file(const std::string id)
-{
-  ids_in_visual_variables_file_.insert(id);
-}
-
-void CartogramInfo::insert_inset_state(const std::string inset_pos,
-                                       const InsetState inset_state)
-{
-  inset_states_.insert(std::pair<std::string, InsetState>(inset_pos,
-                                                          inset_state));
-  return;
-}
-
-const std::string CartogramInfo::inset_at_gd(const std::string id) const
-{
-  return gd_to_inset_.at(id);
-}
-
-const std::map<std::string, InsetState> CartogramInfo::inset_states() const
-{
-  return inset_states_;
-}
-
 bool CartogramInfo::is_world_map() const
 {
   return is_world_map_;
@@ -198,24 +157,6 @@ void CartogramInfo::replace_missing_and_zero_target_areas()
       }
     }
   }
-}
-
-void CartogramInfo::set_id_header(const std::string id)
-{
-  id_header_ = id;
-  return;
-}
-
-void CartogramInfo::set_original_ext_ring_is_clockwise(
-  const bool original_ext_ring_is_clockwise)
-{
-  original_ext_ring_is_clockwise_ = original_ext_ring_is_clockwise;
-  return;
-}
-
-const std::string CartogramInfo::visual_variable_file() const
-{
-  return visual_variable_file_;
 }
 
 void CartogramInfo::set_map_name(const std::string map_name)

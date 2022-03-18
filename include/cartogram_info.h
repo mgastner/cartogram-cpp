@@ -27,13 +27,6 @@ private:
 public:
   explicit CartogramInfo(const bool, const std::string);
   double cart_total_target_area() const;
-  const std::string id_header() const;
-  const std::set<std::string> ids_in_visual_variables_file() const;
-  void insert_gd_into_inset(const std::string, const std::string);
-  void insert_id_in_visual_variables_file(const std::string);
-  void insert_inset_state(const std::string, const InsetState);
-  const std::string inset_at_gd(const std::string) const;
-  const std::map<std::string, InsetState> inset_states() const;
   bool is_world_map() const;
   unsigned int n_insets() const;
   unsigned int n_geo_divs() const;
@@ -42,9 +35,6 @@ public:
   void read_geojson(const std::string, const bool, std::string*);
   std::map<std::string, InsetState> *ref_to_inset_states();
   void replace_missing_and_zero_target_areas();
-  void set_id_header(const std::string);
-  void set_original_ext_ring_is_clockwise(const bool);
-  const std::string visual_variable_file() const;
   void set_map_name(const std::string);
   void shift_insets_to_target_position();
   const std::string map_name() const;

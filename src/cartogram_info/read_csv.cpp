@@ -63,7 +63,7 @@ void CartogramInfo::read_csv(argparse::ArgumentParser arguments)
 
     // Read ID of geographic division
     std::string id = row[id_col].get();
-    if (ids_in_visual_variables_file().contains(id)) {
+    if (ids_in_visual_variables_file_.contains(id)) {
       std::cerr << "ERROR: ID "
                 << id
                 << " appears more than once in CSV"

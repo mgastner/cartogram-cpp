@@ -118,10 +118,6 @@ public:
   Point projected_point_with_triangulation(const Point);
   void project_with_triangulation();
   void push_back(const GeoDiv);
-  boost::multi_array<XYPoint, 2> *ref_to_cum_proj();
-  std::vector<GeoDiv> *ref_to_geo_divs();
-  boost::multi_array<int, 2> *ref_to_graticule_diagonals();
-  boost::multi_array<XYPoint, 2> *ref_to_proj();
   FTReal2d *ref_to_rho_ft();
   FTReal2d *ref_to_rho_init();
   void replace_target_area(const std::string, const double);
@@ -129,10 +125,8 @@ public:
   void revert_smyth_craster_projection();
   void rings_are_simple();
   void set_area_errors();
-  void set_geo_divs(const std::vector<GeoDiv>);
   void set_grid_dimensions(const unsigned int, const unsigned int);
   void set_inset_name(const std::string);
-  void set_pos(const std::string);
   void simplify(const unsigned int);
   bool target_area_is_missing(const std::string) const;
   double target_area_at(const std::string) const;

@@ -255,6 +255,7 @@ void InsetState::densify_geo_divs()
     }
     geodivs_dens.push_back(gd_dens);
   }
-  set_geo_divs(geodivs_dens);
+  geo_divs_.clear();
+  geo_divs_ = geodivs_dens;
   return;
 }

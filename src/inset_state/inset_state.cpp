@@ -223,26 +223,6 @@ void InsetState::push_back(const GeoDiv gd)
   return;
 }
 
-boost::multi_array<XYPoint, 2> *InsetState::ref_to_cum_proj()
-{
-  return &cum_proj_;
-}
-
-std::vector<GeoDiv> *InsetState::ref_to_geo_divs()
-{
-  return &geo_divs_;
-}
-
-boost::multi_array<int, 2> *InsetState::ref_to_graticule_diagonals()
-{
-  return &graticule_diagonals_;
-}
-
-boost::multi_array<XYPoint, 2> *InsetState::ref_to_proj()
-{
-  return &proj_;
-}
-
 FTReal2d *InsetState::ref_to_rho_ft()
 {
   return &rho_ft_;
@@ -277,13 +257,6 @@ void InsetState::set_area_errors()
   return;
 }
 
-void InsetState::set_geo_divs(const std::vector<GeoDiv> geo_divs_new)
-{
-  geo_divs_.clear();
-  geo_divs_ = geo_divs_new;
-  return;
-}
-
 void InsetState::set_grid_dimensions(
   const unsigned int lx, const unsigned int ly)
 {
@@ -295,12 +268,6 @@ void InsetState::set_grid_dimensions(
 void InsetState::set_inset_name(const std::string inset_name)
 {
   inset_name_ = inset_name;
-  return;
-}
-
-void InsetState::set_pos(const std::string pos)
-{
-  pos_ = pos;
   return;
 }
 
