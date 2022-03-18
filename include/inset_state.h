@@ -93,7 +93,6 @@ public:
   void insert_color(const std::string, const std::string);
   void insert_label(const std::string, const std::string);
   void insert_target_area(const std::string, const double);
-  nlohmann::json inset_to_json();
   void insert_whether_input_target_area_is_missing(const std::string,
                                                    const bool);
   const std::string inset_name() const;
