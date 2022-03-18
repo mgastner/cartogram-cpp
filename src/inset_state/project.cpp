@@ -379,34 +379,17 @@ Point InsetState::projected_point_with_triangulation(const Point pt)
 void InsetState::project_with_triangulation()
 {
 
-  // Iterate over GeoDivs
-  for (auto &gd : geo_divs_) {
+  // Store reference to current object and call member function
+  // projected_point_with_triangulation
+  // https://www.nextptr.com/tutorial/ta1430524603/
+  // capture-this-in-lambda-expression-timeline-of-change
+  std::function<Point(Point)> lambda =
+    [&](Point p1) {
+      return projected_point_with_triangulation(p1);
+    };
 
-    // Iterate over Polygon_with_holes
-    for (auto &pwh : *gd.ref_to_polygons_with_holes()) {
-
-      // Get outer boundary
-      auto &outer_boundary = *(&pwh.outer_boundary());
-
-      // Iterate over outer boundary's coordinates
-      for (auto &coords_outer : outer_boundary) {
-
-        // Assign outer boundary's coordinates to transformed coordinates
-        coords_outer = projected_point_with_triangulation(coords_outer);
-      }
-
-      // Iterate over holes
-      for (auto h = pwh.holes_begin(); h != pwh.holes_end(); ++h) {
-
-        // Iterate over hole's coordinates
-        for (auto &coords_hole : *h) {
-
-          // Assign hole's coordinates to transformed coordinates
-          coords_hole = projected_point_with_triangulation(coords_hole);
-        }
-      }
-    }
-  }
+  // Transforming all points based on triangulation
+  transform_points(lambda);
 
   // Cumulative projection
   for (unsigned int i = 0; i < lx_; ++i) {
