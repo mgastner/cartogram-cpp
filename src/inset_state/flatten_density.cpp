@@ -105,15 +105,15 @@ void InsetState::flatten_density()
   // every point on the lx_-times-ly_ grid at t = 0. We must typecast lx_ and ly_
   // as double-precision numbers. Otherwise the ratios in the denominator
   // will evaluate as zero.
-  double dlx_ = lx_;
-  double dly_ = ly_;
+  double dlx = lx_;
+  double dly = ly_;
 
-  // We temporarily_ insert the Fourier coefficients for the x-components and
+  // We temporarily insert the Fourier coefficients for the x-components and
   // y-components of the flux vector into grid_fluxx_init and grid_fluxy_init
   for (unsigned int i = 0; i < lx_-1; ++i) {
     double di = i;
     for (unsigned int j = 0; j < ly_; ++j) {
-      double denom = pi * ((di+1)/dlx_ + (j/(di+1)) * (j/dly_) * (dlx_/dly_));
+      double denom = pi * ((di+1)/dlx + (j/(di+1)) * (j/dly) * (dlx/dly));
       grid_fluxx_init(i, j) =
         -rho_ft_(i+1, j) / denom;
     }
@@ -124,7 +124,7 @@ void InsetState::flatten_density()
   for (unsigned int i=0; i<lx_; ++i) {
     double di = i;
     for (unsigned int j = 0; j < ly_-1; ++j) {
-      double denom = pi * ((di/(j+1)) * (di/dlx_) * (dly_/dlx_) + (j+1)/dly_);
+      double denom = pi * ((di/(j+1)) * (di/dlx) * (dly/dlx) + (j+1)/dly);
       grid_fluxy_init(i, j) =
         -rho_ft_(i, j+1) / denom;
     }
@@ -184,7 +184,7 @@ void InsetState::flatten_density()
       // x <- x + delta_t * v_x(x + 0.5*delta_t*v_x(x,y,t),
       //                        y + 0.5*delta_t*v_y(x,y,t),
       //                        t + 0.5*delta_t)
-      // and similarly_ for y.
+      // and similarly for y.
       calculate_velocity(t + 0.5*delta_t,
                          grid_fluxx_init, grid_fluxy_init,
                          rho_ft_, rho_init_,
