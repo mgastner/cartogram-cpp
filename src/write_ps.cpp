@@ -784,6 +784,9 @@ void write_graticule_heatmap_to_ps(const std::string ps_name,
                                                                     total_target_area,
                                                                     total_inset_area,
                                                                     inset_state);
+  std::cerr << std::endl;                                                          
+  std::cerr << "Max target area per km: " << max_target_area_per_km << std::endl;
+  std::cerr << "Min target area per km: " << min_target_area_per_km << std::endl;
   
   std::vector<int> nice_numbers = get_nice_numbers_for_bar(max_target_area_per_km);
   
@@ -1001,6 +1004,9 @@ void write_density_to_ps(const std::string ps_name,
   
   const Bbox bbox_bar = get_bbox_bar(15, 150, inset_state);
   
+  double each_graticule_cell_area_km = graticule_cell_area_km(0,
+                                      0,
+                                      inset_state);
   // Write header
   write_ps_header(ps_name, surface);
   
@@ -1021,9 +1027,15 @@ void write_density_to_ps(const std::string ps_name,
     for (unsigned int j = 0; j < inset_state->ly(); ++j) {
       double r, g, b;
       if (plot_graticule_heatmap){
-        graticule_cell_color(density[i*inset_state->ly() + j],
-                dens_max,
-                dens_min,
+        double target_area_per_cell_km = density[i*inset_state->ly() + j]/
+                                          each_graticule_cell_area_km;
+        
+        // Values here used are "Max target area per km" and 
+        // "Min target area per km", which is obtained by running the 
+        // code with the "plot_graticule_heatmap" -h flag set to true
+        graticule_cell_color(target_area_per_cell_km,
+                642.872,
+                0.656938,
                 &r,
                 &g,
                 &b);
