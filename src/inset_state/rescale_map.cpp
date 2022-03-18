@@ -29,6 +29,7 @@ void InsetState::rescale_map(unsigned int max_n_graticule_rows_or_cols,
     0.5 * ((1.0+padding)*bb.ymax() + (1.0-padding)*bb.ymin());
 
   // Ensure that the grid dimensions lx and ly are integer powers of 2
+  unsigned int lx, ly;
   if ((max_n_graticule_rows_or_cols <= 0) ||
       ((max_n_graticule_rows_or_cols &
         (~max_n_graticule_rows_or_cols + 1)) != max_n_graticule_rows_or_cols)) {
@@ -37,7 +38,6 @@ void InsetState::rescale_map(unsigned int max_n_graticule_rows_or_cols,
               << std::endl;
     _Exit(15);
   }
-  unsigned int lx, ly;
   double latt_const;
   if (bb.xmax()-bb.xmin() > bb.ymax()-bb.ymin()) {
     lx = max_n_graticule_rows_or_cols;
