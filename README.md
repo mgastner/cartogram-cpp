@@ -86,7 +86,7 @@ Go to the `cartogram_cpp` directory in your preferred terminal and execute the f
     make -C build
     sudo make install -C build
 
-If your computer has multiple cores, you may use the `make` command with the `-j` flag to use all your cores, or `-j` followed by a number to use the specified number of cores (like `-j4` to use 4 cores). You may perform the entire installation at once with:
+If your computer has multiple cores, you may use the `make` command with the `-j` flag to use all your cores, or `-j` followed by a number to use the specified number of cores (for example, `-j4` to use 4 cores). You may perform the entire installation at once with:
 
     sudo cmake -B build; sudo make install -j -C build
 
