@@ -138,7 +138,7 @@ void InsetState::fill_with_density(bool plot_density,
       }
     }
   }
-  if (plot_graticule_heatmap and n_finished_integrations() == 1){
+  if (plot_graticule_heatmap and n_finished_integrations() == 0){
   std::string file_name =
       inset_name_ +
       "_piecewise_density_" +
