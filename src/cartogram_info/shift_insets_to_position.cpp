@@ -83,17 +83,8 @@ void CartogramInfo::shift_insets_to_target_position()
     const Transformation translate(CGAL::TRANSLATION,
                                    CGAL::Vector_2<Scd>(x, y));
 
-    // TODO: WE USE THE for-LOOP BELOW SEVERAL TIMES IN THIS FILE. CAN IT BE
-    // TURNED INTO A FUNCTION TO REDUCE CODE DUPLICATION?
-    for (auto &gd : *inset_state.ref_to_geo_divs()) {
-      for (auto &pwh : *gd.ref_to_polygons_with_holes()) {
-        auto *ext_ring = &pwh.outer_boundary();
-        *ext_ring = transform(translate, *ext_ring);
-        for (auto h = pwh.holes_begin(); h != pwh.holes_end(); ++h) {
-          *h = transform(translate, *h);
-        }
-      }
-    }
+    // Apply translation to all points
+    inset_state.transform_points(translate);
   }
   return;
 }
