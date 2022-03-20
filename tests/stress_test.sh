@@ -176,12 +176,16 @@ rm ${tmp_file}
 
 # Prompting for file deletion
 printf "Clear ALL *.geojson, *.png and *.ps files in current directory? [y/N]: " | color $yellow
-read to_clear
-if [[ "$to_clear" == "y" ]]; then
+read -t 10 to_clear
+if [[ $? -ne 0 ]]; then
+  printf "\nNo response received! " | color $red
+elif [ "$to_clear" == "y" ]; then
   rm *.geojson;
   rm *.png;
   rm *.ps;
   printf "All *.geojson, *.png and *.ps files deleted.\n" | color $red
-else
-  printf "Files not cleared.\n" | color $green
+  exit ${failed}
 fi
+
+printf "Files not cleared.\n" | color $green
+exit ${failed}
