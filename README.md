@@ -25,7 +25,7 @@ Install llvm, pkg-config, boost, fftw, cgal, nlohmann-json, and cmake by running
 
     brew install llvm libomp pkg-config boost fftw cgal nlohmann-json cmake
 
-### Debian-based Distributions (Ubuntu, Arch Linux etc.)
+### Debian-based distributions (Ubuntu, Arch Linux etc.)
 
 #### Installing GNU gcc-11
 
@@ -88,7 +88,7 @@ Go to the `cartogram_cpp` directory in your preferred terminal and execute the f
 
 If your computer has multiple cores, you may use the `make` command with the `-j` flag to use all your cores, or `-j` followed by a number to use the specified number of cores (for example, `-j4` to use 4 cores). You may perform the entire installation at once with:
 
-    sudo cmake -B build; sudo make install -j -C build
+    sudo cmake -B build && sudo make install -j -C build
 
 Using lesser cores than you have is recommended so that your computer still has some headroom for other tasks. Thus, it may be a good idea for you to modify the above snippet, appending your preferred number of cores to `-j`.
 
@@ -126,6 +126,12 @@ The CSV file should be in the following format:
     3.  `#e74c3c`: hex code of color, must start with `#`.
 
 **You may find sample GeoJSON (containing geographic data) and CSV (containing information about target areas, colors and other visual variables) files in the `cartogram_cpp/sample_data` directory.**
+
+### Testing
+
+If you'd like to contribute to the project, please run our test battery after you make any changes. You may do so by going to the `cartogram_cpp/tests` directory and running the following command:
+
+        bash stress_test.sh
 
 ### Uninstallation
 
