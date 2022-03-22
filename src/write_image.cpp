@@ -50,7 +50,7 @@ double font_size(cairo_t *cr,
     cairo_set_font_size(cr, fsize);
     cairo_text_extents_t extents;
     cairo_text_extents(cr, label, &extents);
-    const auto largest_pwh = gd.largest_polygon_with_holes();
+    const Polygon_with_holes largest_pwh = gd.largest_polygon_with_holes();
 
     // Bounding box of the label
     const CGAL::Bbox_2 bb(label_pt.x() - 0.5 * extents.width,
@@ -80,20 +80,20 @@ double font_size(cairo_t *cr,
 void write_labels_to_cairo_surface(cairo_t *cr,
                                    const InsetState *inset_state)
 {
-  const auto ly = inset_state->ly();
+  const unsigned int ly = inset_state->ly();
   for (const auto &gd : inset_state->geo_divs())
   {
-    const auto label = inset_state->label_at(gd.id());
-    const auto label_char = label.c_str();
+    const std::string label = inset_state->label_at(gd.id());
+    const char *const label_char = label.c_str();
     cairo_set_source_rgb(cr, 0.0, 0.0, 0.0);
     cairo_select_font_face(cr,
                            "sans-serif",
                            CAIRO_FONT_SLANT_NORMAL,
                            CAIRO_FONT_WEIGHT_NORMAL);
-    const auto label_pt = gd.point_on_surface_of_geodiv();
+    const Point label_pt = gd.point_on_surface_of_geodiv();
 
     // Get size of label
-    const auto fsize = font_size(cr, label_char, label_pt, gd);
+    const double fsize = font_size(cr, label_char, label_pt, gd);
     cairo_text_extents_t extents;
 
     // Draw label only if appropriate size is found
@@ -125,32 +125,32 @@ Polygon graticule_cell_edge_points(unsigned int x,
   // Horizontal lower edge points
   for (unsigned int i = x; i < x + cell_width; ++i)
   {
-    auto x_coor_trans = cum_proj[i][y].x;
-    auto y_coor_trans = cum_proj[i][y].y;
+    double x_coor_trans = cum_proj[i][y].x;
+    double y_coor_trans = cum_proj[i][y].y;
     cell_edge_points.push_back(Point(x_coor_trans, y_coor_trans));
   }
 
   // Vertical right edge points
   for (unsigned int i = y; i < y + cell_width; ++i)
   {
-    auto x_coor_trans = cum_proj[x + cell_width][i].x;
-    auto y_coor_trans = cum_proj[x + cell_width][i].y;
+    double x_coor_trans = cum_proj[x + cell_width][i].x;
+    double y_coor_trans = cum_proj[x + cell_width][i].y;
     cell_edge_points.push_back(Point(x_coor_trans, y_coor_trans));
   }
 
   // Horizontal upper edge points
   for (unsigned int i = x + cell_width; i > x; --i)
   {
-    auto x_coor_trans = cum_proj[i][y + cell_width].x;
-    auto y_coor_trans = cum_proj[i][y + cell_width].y;
+    double x_coor_trans = cum_proj[i][y + cell_width].x;
+    double y_coor_trans = cum_proj[i][y + cell_width].y;
     cell_edge_points.push_back(Point(x_coor_trans, y_coor_trans));
   }
 
   // Vertical left edge points
   for (unsigned int i = y + cell_width; i > y; --i)
   {
-    auto x_coor_trans = cum_proj[x][i].x;
-    auto y_coor_trans = cum_proj[x][i].y;
+    double x_coor_trans = cum_proj[x][i].x;
+    double y_coor_trans = cum_proj[x][i].y;
     cell_edge_points.push_back(Point(x_coor_trans, y_coor_trans));
   }
 
@@ -188,7 +188,7 @@ std::pair<double, double> max_and_min_graticule_cell_area(InsetState *inset_stat
   {
     for (unsigned int j = 0; j < ly - cell_width; j += cell_width)
     {
-      const auto area = graticule_cell_area(i, j, inset_state, cell_width);
+      const double area = graticule_cell_area(i, j, inset_state, cell_width);
       max_area = std::max(max_area, area);
       min_area = std::min(min_area, area);
     }
@@ -215,7 +215,7 @@ std::pair<Point, Point> max_and_min_graticule_cell_area_index(InsetState *inset_
   {
     for (unsigned int j = 0; j < ly - cell_width; j += cell_width)
     {
-      const auto area = graticule_cell_area(i, j, inset_state, cell_width);
+      const double area = graticule_cell_area(i, j, inset_state, cell_width);
       if (area > max_area)
       {
         max_area = area;
@@ -298,7 +298,7 @@ std::vector<std::vector<Color_dbl>> graticule_cell_colors(InsetState *inset_stat
   {
     for (unsigned int j = 0; j < ly - cell_width; j += cell_width)
     {
-      const auto area = graticule_cell_area(i, j, inset_state, cell_width);
+      const double area = graticule_cell_area(i, j, inset_state, cell_width);
       double r, g, b;
       graticule_cell_color(area, max_area, min_area, &r, &g, &b);
       Color_dbl color = {r, g, b};
@@ -441,7 +441,7 @@ void write_graticules_to_cairo_surface(cairo_t *cr,
     {
 
       // Draw graticule cell by connecting edge points
-      const auto cell_edge_points = graticule_cell_edge_points(i, j, inset_state);
+      const Polygon cell_edge_points = graticule_cell_edge_points(i, j, inset_state);
       cairo_move_to(cr, cell_edge_points[0].x(), ly - cell_edge_points[0].y());
       for (unsigned int k = 1; k < cell_edge_points.size(); ++k)
       {
@@ -476,7 +476,7 @@ void write_graticule_colors_to_cairo_surface(cairo_t *cr,
       cairo_set_source_rgb(cr, colors[i][j].r, colors[i][j].g, colors[i][j].b);
 
       // Draw graticule cell by connecting edge points
-      const auto cell_edge_points = graticule_cell_edge_points(i, j, inset_state, cell_width,
+      const Polygon cell_edge_points = graticule_cell_edge_points(i, j, inset_state, cell_width,
                                                                plot_equal_area_map);
       cairo_move_to(cr, cell_edge_points[0].x(), ly - cell_edge_points[0].y());
       for (unsigned int k = 1; k < cell_edge_points.size(); ++k)
@@ -509,7 +509,7 @@ void write_polygons_to_cairo_surface(cairo_t *cr,
   {
     for (const auto &pwh : gd.polygons_with_holes())
     {
-      const auto ext_ring = pwh.outer_boundary();
+      const Polygon ext_ring = pwh.outer_boundary();
       cairo_move_to(cr, ext_ring[0].x(), ly - ext_ring[0].y());
 
       // Plot each point in exterior ring
@@ -525,7 +525,7 @@ void write_polygons_to_cairo_surface(cairo_t *cr,
       for (auto h = pwh.holes_begin(); h != pwh.holes_end(); ++h)
       {
         cairo_move_to(cr, (*h)[0].x(), ly - (*h)[0].y());
-        const auto hsize = (*h).size();
+        const size_t hsize = (*h).size();
         for (unsigned int i = 1; i <= hsize; ++i)
         {
           cairo_line_to(cr, (*h)[i % hsize].x(), ly - (*h)[i % hsize].y());
@@ -543,7 +543,7 @@ void write_polygons_to_cairo_surface(cairo_t *cr,
         {
 
           // Get color
-          const auto col = inset_state->color_at(gd.id());
+          const Color col = inset_state->color_at(gd.id());
 
           // Fill path
           cairo_set_source_rgb(cr,
@@ -573,8 +573,8 @@ void write_map_image(const std::string filename,
                      const bool image_format_ps,
                      InsetState *inset_state)
 {
-  const auto lx = inset_state->lx();
-  const auto ly = inset_state->ly();
+  const unsigned int lx = inset_state->lx();
+  const unsigned int ly = inset_state->ly();
 
   // Check whether the map has all GeoDivs colored
   const bool colors =
@@ -1057,9 +1057,9 @@ void write_density_image(const std::string filename,
                          InsetState *inset_state)
 {
   // Whether to draw bar on the cairo surface
-  bool draw_bar = false;
-  const auto lx = inset_state->lx();
-  const auto ly = inset_state->ly();
+  const bool draw_bar = false;
+  const unsigned int lx = inset_state->lx();
+  const unsigned int ly = inset_state->ly();
 
   cairo_surface_t *surface;
 
