@@ -16,7 +16,7 @@ argparse::ArgumentParser parsed_arguments(
   bool &triangulation,
   bool &simplification,
   bool &make_csv,
-  bool &make_polygon_ps,
+  bool &produce_map_image,
   bool &output_equal_area,
   bool &output_to_stdout,
   bool &plot_density,

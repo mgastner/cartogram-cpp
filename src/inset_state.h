@@ -122,9 +122,9 @@ public:
   double total_inset_area() const;
   double total_target_area() const;
 
-  // Write all intersections found to an PS file named
-  // "*_intersections_*.ps"
-  void write_intersections_to_ps(unsigned int);
+  // Write all intersections found to an SVG/PS file named
+  // "*_intersections_*.svg/ps"
+  void write_intersections_image(unsigned int);
 };
 
 #endif

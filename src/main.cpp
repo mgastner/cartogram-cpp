@@ -12,7 +12,7 @@
 #include "rescale_map.h"
 #include "simplify_inset.h"
 #include "write_geojson.h"
-#include "write_ps.h"
+#include "write_image.h"
 #include "xy_point.h"
 #include "parse_arguments.h"
 #include <chrono>
@@ -55,7 +55,7 @@ int main(const int argc, const char *argv[])
 
   // Other boolean values that are needed to parse the command line arguments
   bool make_csv,
-       make_polygon_ps,
+       produce_map_image,
        output_equal_area,
        output_to_stdout,
        plot_density,
@@ -75,7 +75,7 @@ int main(const int argc, const char *argv[])
     triangulation,
     simplify,
     make_csv,
-    make_polygon_ps,
+    produce_map_image,
     output_equal_area,
     output_to_stdout,
     plot_density,
@@ -248,15 +248,15 @@ int main(const int argc, const char *argv[])
       }
 
       // Write PNG and PS files if requested by command-line option
-      if (make_polygon_ps) {
+      if (produce_map_image) {
         std::string input_filename = inset_state.inset_name();
         if (plot_graticule) {
-          input_filename += "_input_graticule.ps";
+          input_filename += "_input_graticule";
         } else {
-          input_filename += "_input.ps";
+          input_filename += "_input";
         }
         std::cerr << "Writing " << input_filename << std::endl;
-        write_map_to_ps(input_filename, true, plot_graticule, &inset_state);
+        write_map_image(input_filename, true, plot_graticule, &inset_state);
       }
       
       // We make the approximation that the progress towards generating the
@@ -305,7 +305,7 @@ int main(const int argc, const char *argv[])
           blur_density(blur_width, plot_density, &inset_state);
         }
         if (plot_intersections) {
-          inset_state.write_intersections_to_ps(intersections_resolution);
+          inset_state.write_intersections_image(intersections_resolution);
         }
         flatten_density(&inset_state);
         if (triangulation) {
@@ -353,32 +353,32 @@ int main(const int argc, const char *argv[])
                 << progress
                 << std::endl;
       if (plot_intersections) {
-        inset_state.write_intersections_to_ps(intersections_resolution);
+        inset_state.write_intersections_image(intersections_resolution);
       }
 
       // Print PS files of cartogram
-      if (make_polygon_ps) {
+      if (produce_map_image) {
         std::string output_filename = inset_state.inset_name();
         if (plot_graticule) {
-          output_filename += "_output_graticule.ps";
+          output_filename += "_output_graticule";
         } else {
-          output_filename += "_output.ps";
+          output_filename += "_output";
         }
         std::cerr << "Writing "
                   << output_filename << std::endl;
-        write_map_to_ps(output_filename, true, plot_graticule, &inset_state);
+        write_map_image(output_filename, true, plot_graticule, &inset_state);
       }
       
       if(plot_graticule_heatmap) {
         std::string inset_filename = inset_state.inset_name();
-        std::string output_filename = inset_filename + "_cartogram_graticule_heatmap.ps";
+        std::string output_filename = inset_filename + "_cartogram_graticule_heatmap";
         std::cerr << "Writing "
                   << output_filename << std::endl;
-        write_graticule_heatmap_to_ps(output_filename, false, &inset_state);
-        output_filename = inset_filename + "_equalarea_graticule_heatmap.ps";
+        write_graticule_heatmap_image(output_filename, false, &inset_state);
+        output_filename = inset_filename + "_equalarea_graticule_heatmap";
         std::cerr << "Writing "
                   << output_filename << std::endl;
-        write_graticule_heatmap_to_ps(output_filename, true, &inset_state);
+        write_graticule_heatmap_image(output_filename, true, &inset_state);
       }
 
       // Rescale insets in correct proportion to each other
@@ -394,10 +394,10 @@ int main(const int argc, const char *argv[])
   
   // Output a density heatmap's bar
   if (plot_density) {
-    std::string output_filename = "density_heatmap_bar.ps";
+    std::string output_filename = "density_heatmap_bar";
     std::cerr << "Writing "
               << output_filename << std::endl;
-    write_density_bar_to_ps(output_filename);
+    write_density_bar_image(output_filename);
   }
   
   // Shift insets so that they do not overlap

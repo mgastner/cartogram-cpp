@@ -566,8 +566,8 @@ void write_polygons_to_cairo_surface(cairo_t *cr,
   }
 }
 
-// Outputs a PS file with polygons, labels, and graticules (if required)
-void write_map_to_ps(const std::string fname,
+// Outputs a SVG/PS file with polygons, labels, and graticules (if required)
+void write_map_image(const std::string fname,
                      const bool fill_polygons,
                      const bool plot_graticule,
                      InsetState *inset_state)
@@ -778,8 +778,8 @@ std::vector<int> get_nice_numbers_for_bar(const double max_target_area_per_km)
   return nice_numbers;
 }
 
-// Outputs a PS file of graticule heatmap
-void write_graticule_heatmap_to_ps(const std::string ps_name,
+// Outputs a SVG/PS file of graticule heatmap
+void write_graticule_heatmap_image(const std::string ps_name,
                                    const bool plot_equal_area_map,
                                    InsetState *inset_state)
 {
@@ -1006,8 +1006,8 @@ void write_density_bar_to_cairo_surface(const double min_value,
   cairo_show_text(cr, "Mean");
 }
 
-// This function creates a simple ps file with a density bar
-void write_density_bar_to_ps(std::string filename)
+// This function creates a simple SVG/PS file with a density bar
+void write_density_bar_image(std::string filename)
 {
 
   // Create a cairo surface
@@ -1031,7 +1031,7 @@ void write_density_bar_to_ps(std::string filename)
   cairo_destroy(cr);
 }
 
-void write_density_to_ps(const std::string ps_name,
+void write_density_image(const std::string ps_name,
                          const double *density,
                          InsetState *inset_state,
                          const bool plot_graticule_heatmap = false)
@@ -1134,7 +1134,7 @@ void write_density_to_ps(const std::string ps_name,
   cairo_destroy(cr);
 }
 
-void InsetState::write_intersections_to_ps(unsigned int res)
+void InsetState::write_intersections_image(unsigned int res)
 {
   std::string ps_name =
       inset_name() +

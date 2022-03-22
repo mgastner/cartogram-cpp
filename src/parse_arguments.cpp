@@ -14,7 +14,7 @@ argparse::ArgumentParser parsed_arguments(
   bool &triangulation,
   bool &simplify,
   bool &make_csv,
-  bool &make_polygon_ps,
+  bool &produce_map_image,
   bool &output_equal_area,
   bool &output_to_stdout,
   bool &plot_density,
@@ -50,28 +50,28 @@ argparse::ArgumentParser parsed_arguments(
   .default_value(false)
   .implicit_value(true);
 
-  arguments.add_argument("-e", "--polygons_to_ps")
-  .help("Boolean: make PS image of input and output?")
+  arguments.add_argument("-e", "--map_image")
+  .help("Boolean: produce SVG/PS image of input and output?")
   .default_value(false)
   .implicit_value(true);
 
-  arguments.add_argument("-d", "--density_to_ps")
-  .help("Boolean: make PS images *_density_*.ps?")
+  arguments.add_argument("-d", "--density_image")
+  .help("Boolean: produce density images *_density_*.svg/ps?")
   .default_value(false)
   .implicit_value(true);
 
-  arguments.add_argument("-g", "--graticule_to_ps")
-  .help("Boolean: make PS images with graticule?")
+  arguments.add_argument("-g", "--add_graticules_to_image")
+  .help("Boolean: include graticules in images?")
   .default_value(false)
   .implicit_value(true);
   
-  arguments.add_argument("-h", "--graticule_heatmap_to_ps")
-  .help("Boolean: make PS images with graticule heatmap?")
+  arguments.add_argument("-h", "--graticule_heatmap_image")
+  .help("Boolean: produce graticule heatmap images *_graticule_heatmap.svg/ps?")
   .default_value(false)
   .implicit_value(true);
 
-  arguments.add_argument("-i", "--intersections_to_ps")
-  .help("Boolean: make PS images *_intersections_*.ps?")
+  arguments.add_argument("-i", "--intersections_image")
+  .help("Boolean: produce intersections images *_intersections_*.svg/ps?")
   .default_value(false)
   .implicit_value(true);
 
@@ -155,7 +155,7 @@ argparse::ArgumentParser parsed_arguments(
     triangulation = true;
   }
   make_csv = arguments.get<bool>("-m");
-  make_polygon_ps = arguments.get<bool>("-e");
+  produce_map_image = arguments.get<bool>("-e");
   output_equal_area = arguments.get<bool>("-q");
   output_to_stdout = arguments.get<bool>("-o");
   plot_density =  arguments.get<bool>("-d");

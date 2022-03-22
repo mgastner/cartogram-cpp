@@ -1,6 +1,6 @@
 #include "../cartogram_info.h"
 #include "../inset_state.h"
-#include "../write_ps.h"
+#include "../write_image.h"
 
 void InsetState::fill_with_density(bool plot_density, 
                                   bool plot_graticule_heatmap)
@@ -142,10 +142,9 @@ void InsetState::fill_with_density(bool plot_density,
   std::string file_name =
       inset_name_ +
       "_piecewise_density_" +
-      std::to_string(n_finished_integrations()) +
-      ".ps";
+      std::to_string(n_finished_integrations());
 
-    write_density_to_ps(file_name, rho_init_.as_1d_array(), this,
+    write_density_image(file_name, rho_init_.as_1d_array(), this,
                          plot_graticule_heatmap);
   }
   
@@ -153,10 +152,9 @@ void InsetState::fill_with_density(bool plot_density,
     std::string file_name =
       inset_name_ +
       "_unblurred_density_" +
-      std::to_string(n_finished_integrations()) +
-      ".ps";
+      std::to_string(n_finished_integrations());
     std::cerr << "Writing " << file_name << std::endl;
-    write_density_to_ps(file_name, rho_init_.as_1d_array(), this);
+    write_density_image(file_name, rho_init_.as_1d_array(), this);
   }
   execute_fftw_fwd_plan();
   return;
