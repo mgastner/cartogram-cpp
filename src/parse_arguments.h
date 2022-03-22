@@ -17,6 +17,7 @@ argparse::ArgumentParser parsed_arguments(
   bool &simplification,
   bool &make_csv,
   bool &produce_map_image,
+  bool &image_format_ps,
   bool &output_equal_area,
   bool &output_to_stdout,
   bool &plot_density,

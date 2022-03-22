@@ -15,6 +15,7 @@ argparse::ArgumentParser parsed_arguments(
   bool &simplify,
   bool &make_csv,
   bool &produce_map_image,
+  bool &image_format_ps,
   bool &output_equal_area,
   bool &output_to_stdout,
   bool &plot_density,
@@ -52,6 +53,11 @@ argparse::ArgumentParser parsed_arguments(
 
   arguments.add_argument("-e", "--map_image")
   .help("Boolean: produce SVG/PS image of input and output?")
+  .default_value(false)
+  .implicit_value(true);
+  
+  arguments.add_argument("-p", "--image_format_ps")
+  .help("Boolean: use .ps format for images?")
   .default_value(false)
   .implicit_value(true);
 
@@ -156,6 +162,7 @@ argparse::ArgumentParser parsed_arguments(
   }
   make_csv = arguments.get<bool>("-m");
   produce_map_image = arguments.get<bool>("-e");
+  image_format_ps = arguments.get<bool>("-p");
   output_equal_area = arguments.get<bool>("-q");
   output_to_stdout = arguments.get<bool>("-o");
   plot_density =  arguments.get<bool>("-d");

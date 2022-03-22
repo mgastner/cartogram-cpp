@@ -4,7 +4,8 @@
 #include "write_image.h"
 
 void blur_density(const double blur_width,
-                  bool plot_density,
+                  const bool plot_density,
+                  const bool image_format_ps,
                   InsetState *inset_state)
 {
   const unsigned int lx = inset_state->lx();
@@ -27,9 +28,12 @@ void blur_density(const double blur_width,
       inset_state->inset_name() +
       "_blurred_density_" +
       std::to_string(inset_state->n_finished_integrations());
+    
+    image_format_ps ? file_name += ".ps" : file_name += ".svg";
     std::cerr << "Writing " << file_name << std::endl;
     FTReal2d &rho_init = *inset_state->ref_to_rho_init();
-    write_density_image(file_name, rho_init.as_1d_array(), inset_state);
+    write_density_image(file_name, rho_init.as_1d_array(), false,
+                      image_format_ps, inset_state);
   }
   return;
 }

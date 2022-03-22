@@ -2,8 +2,9 @@
 #include "../inset_state.h"
 #include "../write_image.h"
 
-void InsetState::fill_with_density(bool plot_density, 
-                                  bool plot_graticule_heatmap)
+void InsetState::fill_with_density(const bool plot_density, 
+                                  const bool plot_graticule_heatmap,
+                                  const bool image_format_ps)
 {
   // We assume that target areas that were zero or missing in the input have
   // already been replaced by
@@ -143,9 +144,12 @@ void InsetState::fill_with_density(bool plot_density,
       inset_name_ +
       "_piecewise_density_" +
       std::to_string(n_finished_integrations());
+    
+    // Update extension
+    image_format_ps ? file_name += ".ps" : file_name += ".svg";
 
-    write_density_image(file_name, rho_init_.as_1d_array(), this,
-                         plot_graticule_heatmap);
+    write_density_image(file_name, rho_init_.as_1d_array(),
+                         plot_graticule_heatmap, image_format_ps, this);
   }
   
   if (plot_density) {
@@ -154,7 +158,8 @@ void InsetState::fill_with_density(bool plot_density,
       "_unblurred_density_" +
       std::to_string(n_finished_integrations());
     std::cerr << "Writing " << file_name << std::endl;
-    write_density_image(file_name, rho_init_.as_1d_array(), this);
+    write_density_image(file_name, rho_init_.as_1d_array(),
+                      plot_graticule_heatmap, image_format_ps, this);
   }
   execute_fftw_fwd_plan();
   return;

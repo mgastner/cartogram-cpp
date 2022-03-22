@@ -56,6 +56,7 @@ int main(const int argc, const char *argv[])
   // Other boolean values that are needed to parse the command line arguments
   bool make_csv,
        produce_map_image,
+       image_format_ps,
        output_equal_area,
        output_to_stdout,
        plot_density,
@@ -76,6 +77,7 @@ int main(const int argc, const char *argv[])
     simplify,
     make_csv,
     produce_map_image,
+    image_format_ps,
     output_equal_area,
     output_to_stdout,
     plot_density,
@@ -250,13 +252,17 @@ int main(const int argc, const char *argv[])
       // Write PNG and PS files if requested by command-line option
       if (produce_map_image) {
         std::string input_filename = inset_state.inset_name();
-        if (plot_graticule) {
-          input_filename += "_input_graticule";
-        } else {
-          input_filename += "_input";
-        }
+        
+        // Update filename with graticule info
+        plot_graticule ? input_filename += "_input_graticule" :
+                        input_filename += "_input";
+        
+        // Update extension
+        image_format_ps ? input_filename += ".ps" : input_filename += ".svg";
+        
         std::cerr << "Writing " << input_filename << std::endl;
-        write_map_image(input_filename, true, plot_graticule, &inset_state);
+        write_map_image(input_filename, true, plot_graticule, image_format_ps,
+                       &inset_state);
       }
       
       // We make the approximation that the progress towards generating the
@@ -300,12 +306,14 @@ int main(const int argc, const char *argv[])
         // }
         std::cerr << "blur_width = " << blur_width << std::endl;
 
-        inset_state.fill_with_density(plot_density, plot_graticule_heatmap);
+        inset_state.fill_with_density(plot_density, plot_graticule_heatmap,
+                                      image_format_ps);
         if (blur_width > 0.0) {
-          blur_density(blur_width, plot_density, &inset_state);
+          blur_density(blur_width, plot_density, image_format_ps, &inset_state);
         }
         if (plot_intersections) {
-          inset_state.write_intersections_image(intersections_resolution);
+          inset_state.write_intersections_image(intersections_resolution,
+                                                image_format_ps);
         }
         flatten_density(&inset_state);
         if (triangulation) {
@@ -353,32 +361,48 @@ int main(const int argc, const char *argv[])
                 << progress
                 << std::endl;
       if (plot_intersections) {
-        inset_state.write_intersections_image(intersections_resolution);
+        inset_state.write_intersections_image(intersections_resolution,
+                                              image_format_ps);
       }
 
       // Print PS files of cartogram
       if (produce_map_image) {
         std::string output_filename = inset_state.inset_name();
-        if (plot_graticule) {
-          output_filename += "_output_graticule";
-        } else {
-          output_filename += "_output";
-        }
+        
+        // Update filename with graticule info
+        plot_graticule ? output_filename += "_output_graticule" :
+                        output_filename += "_output";
+        
+        // Update extension
+        image_format_ps ? output_filename += ".ps" : output_filename += ".svg";
+        
         std::cerr << "Writing "
                   << output_filename << std::endl;
-        write_map_image(output_filename, true, plot_graticule, &inset_state);
+        write_map_image(output_filename, true, plot_graticule, image_format_ps,
+                       &inset_state);
       }
       
-      if(plot_graticule_heatmap) {
-        std::string inset_filename = inset_state.inset_name();
-        std::string output_filename = inset_filename + "_cartogram_graticule_heatmap";
-        std::cerr << "Writing "
-                  << output_filename << std::endl;
-        write_graticule_heatmap_image(output_filename, false, &inset_state);
-        output_filename = inset_filename + "_equalarea_graticule_heatmap";
-        std::cerr << "Writing "
-                  << output_filename << std::endl;
-        write_graticule_heatmap_image(output_filename, true, &inset_state);
+      if (plot_graticule_heatmap) {
+        
+        // Produce equal-area graticule heatmap
+        std::string output_filename = inset_state.inset_name() 
+                                    + "_equal_area_graticule_heatmap";
+        
+        // Update extension
+        image_format_ps ? output_filename += ".ps" : output_filename += ".svg";
+        std::cerr << "Writing " << output_filename << std::endl;
+        write_graticule_heatmap_image(output_filename, true, image_format_ps,
+                                      &inset_state);
+        
+        // Produce cartogram graticule heatmap
+        output_filename = inset_state.inset_name() + "_cartogram_graticule_heatmap";
+        
+        // Update extension
+        image_format_ps ? output_filename += ".ps" : output_filename += ".svg";
+        
+        std::cerr << "Writing " << output_filename << std::endl;
+        write_graticule_heatmap_image(output_filename, false, image_format_ps,
+                                    &inset_state);
       }
 
       // Rescale insets in correct proportion to each other
@@ -394,10 +418,12 @@ int main(const int argc, const char *argv[])
   
   // Output a density heatmap's bar
   if (plot_density) {
-    std::string output_filename = "density_heatmap_bar";
-    std::cerr << "Writing "
-              << output_filename << std::endl;
-    write_density_bar_image(output_filename);
+    std::string output_filename = "density_bar";
+  
+    // Update extension
+    image_format_ps ? output_filename += ".ps" : output_filename += ".svg";
+    std::cerr << "Writing " << output_filename << std::endl;
+    write_density_bar_image(output_filename, image_format_ps);
   }
   
   // Shift insets so that they do not overlap

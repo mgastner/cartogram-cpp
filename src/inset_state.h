@@ -69,7 +69,7 @@ public:
   void destroy_fftw_plans_for_rho();
   void execute_fftw_bwd_plan() const;
   void execute_fftw_fwd_plan() const;
-  void fill_with_density(bool, bool);  // Fill map with density, using scanlines
+  void fill_with_density(const bool, const bool, const bool);  // Fill map with density, using scanlines
   const std::vector<GeoDiv> geo_divs() const;
   const std::vector<GeoDiv> geo_divs_original() const;
   const std::vector<std::vector<intersection> >
@@ -124,7 +124,7 @@ public:
 
   // Write all intersections found to an SVG/PS file named
   // "*_intersections_*.svg/ps"
-  void write_intersections_image(unsigned int);
+  void write_intersections_image(unsigned int, const bool);
 };
 
 #endif
