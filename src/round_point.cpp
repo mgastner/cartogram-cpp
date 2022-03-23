@@ -21,13 +21,7 @@ bool points_almost_equal(const Point a, const Point b) {
   return (almost_equal(a.x(), b.x()) && almost_equal(a.y(), b.y()));
 }
 bool point_lesser(const Point a, const Point b) {
-  if (points_almost_equal(a, b)){
-    return false;
-  } else if (a < b) {
-    return true;
-  } else {
-    return false;
-  }
+  return !(points_almost_equal(a, b) || a >= b);
 }
 bool xy_points_almost_equal(const XYPoint a, const XYPoint b) {
   return (almost_equal(a.x, b.x) && almost_equal(a.y, b.y));
