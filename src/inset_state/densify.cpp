@@ -3,10 +3,10 @@
 #include <CGAL/intersections.h>
 #include "../round_point.h"
 
-// This function takes the following as input:
+// This function has the following as parameters:
 // - a segment defined by points a and b.
-// - a line defined by coef_x, coef_y, and intercept with the formula
-//      coef_x * x + coef_y * y + intercept = 0.
+// - a line defined by coef_x, coef_y, and coef_const with the formula
+//      coef_x * x + coef_y * y + coef_const = 0.
 // The function returns the unique intersection point between them. If this
 // intersection point does not exist, the function returns the point (-1, -1),
 // which is always outside of any graticule grid cell.
@@ -14,18 +14,15 @@ Point calc_intersection(const Point a,
                         const Point b,
                         const double coef_x,
                         const double coef_y,
-                        const double intercept,
-                        const unsigned int lx,
-                        const unsigned int ly)
+                        const double coef_const)
 {
   const auto result = CGAL::intersection(
-    Line(coef_x, coef_y, intercept),
+    Line(coef_x, coef_y, coef_const),
     Segment(a, b)
   );
   if (result) {
-    if (const Point* p = boost::get<Point>(&*result)) {
-      return rounded_point((*p), lx, ly);
-    }
+    const Point* p = boost::get<Point>(&*result);
+    if (p) return (*p);
   }
   return Point(-1.0, -1.0);
 }
@@ -61,7 +58,7 @@ void add_diag_inter(std::set<Point, decltype(point_lesser)*>
   double intercept_end =
     std::max(a.y() - slope * a.x(), b.y() - slope * b.x());
   for (double i = intercept_start; i <= intercept_end; i += step) {
-    Point inter = calc_intersection(a, b, slope, -1.0, i, lx, ly);
+    Point inter = calc_intersection(a, b, slope, -1.0, i);
     if (inter > Point(0, 0)){
       if ((edge == 'x' && (inter.x() < 0.5 || inter.x() > (lx - 0.5))) ||
           (edge == 'y' && (inter.y() < 0.5 || inter.y() > (ly - 0.5))) ||
@@ -122,7 +119,7 @@ std::vector<Point> densification_points(const Point pt1,
   double x_start = floor(a.x() + 0.5) + 0.5;
   double x_end = b.x();
   for (double i = x_start; i <= x_end; i += (i == 0.0) ? 0.5 : 1.0) {
-    Point inter = calc_intersection(a, b, 1.0, 0.0, -i, lx, ly);
+    Point inter = calc_intersection(a, b, 1.0, 0.0, -i);
     if (inter > Point(0, 0)) temp_intersections.insert(inter);
   }
 
@@ -130,7 +127,7 @@ std::vector<Point> densification_points(const Point pt1,
   double y_start = floor(std::min(a.y(), b.y()) + 0.5) + 0.5;
   double y_end = std::max(a.y(), b.y());
   for (double i = y_start; i <= y_end; i += (i == 0.0) ? 0.5 : 1.0) {
-    Point inter = calc_intersection(a, b, 0.0, 1.0, -i, lx, ly);
+    Point inter = calc_intersection(a, b, 0.0, 1.0, -i);
     if (inter > Point(0, 0)) temp_intersections.insert(inter);
   }
 
