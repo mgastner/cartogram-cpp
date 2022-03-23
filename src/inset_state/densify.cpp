@@ -68,7 +68,7 @@ void add_diag_inter(std::set<Point, decltype(point_lesser)*>
     // and x = lx. Gentle and antigentle diagonals appear in graticules near
     // y = 0 and y = ly.
     Point inter = calc_intersection(a, b, slope, -1.0, d);
-    if (inter > Point(0, 0) &&
+    if (inter != Point(-1, -1) &&
         ((abs(slope) == 2 && (inter.x() < 0.5 || inter.x() > (lx - 0.5))) ||
         (abs(slope) == 0.5 && (inter.y() < 0.5 || inter.y() > (ly - 0.5))) ||
         (abs(slope) == 1 && inter.x() >= 0.5 && inter.x() <= (lx - 0.5) &&
@@ -128,7 +128,7 @@ std::vector<Point> densification_points(const Point pt1,
   double x_end = b.x();
   for (double i = x_start; i <= x_end; i += (i == 0.0) ? 0.5 : 1.0) {
     Point inter = calc_intersection(a, b, 1.0, 0.0, -i);
-    if (inter > Point(0, 0)) temp_intersections.insert(inter);
+    if (inter != Point(-1, -1)) temp_intersections.insert(inter);
   }
 
   // Get horizontal intersections
@@ -136,7 +136,7 @@ std::vector<Point> densification_points(const Point pt1,
   double y_end = std::max(a.y(), b.y());
   for (double i = y_start; i <= y_end; i += (i == 0.0) ? 0.5 : 1.0) {
     Point inter = calc_intersection(a, b, 0.0, 1.0, -i);
-    if (inter > Point(0, 0)) temp_intersections.insert(inter);
+    if (inter != Point(-1, -1)) temp_intersections.insert(inter);
   }
 
   // Get bottom-left to top-right diagonal intersections
