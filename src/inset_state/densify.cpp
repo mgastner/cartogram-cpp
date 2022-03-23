@@ -27,20 +27,14 @@ Point calc_intersection(const Point a,
   return Point(-1.0, -1.0);
 }
 
-// This function takes as input points a and b which define a segment, and
+// This function takes as arguments points a and b which define a segment, and
 // the following arguments which defines the kind of diagonals for which we
 // will calculate intersections:
 // - slope: the slope of every diagonal.
 // - base_intercept: the intercept that is the closest to 0 of a diagonal
-// on the grid.
+// on the grid. This value is either 0, 0.25, or 0.5.
 // - step: what we need to add to each diagonal's intercept to obtain the
 // next diagonal.
-// - edge: a char, which can be either 'x', 'y', or 'n'. 'x' marks diagonals
-// on the left or right edges of the grid, 'y' marks diagonals on the top or
-// bottom edges, and 'n' marks non-edge diagonals.
-// TODO: we can also determine whether it's an edge diagonal or not just by
-// looking at the slope, but having a separate edge argument might be clearer.
-// What should we do?
 void add_diag_inter(std::set<Point, decltype(point_lesser)*>
                       *intersections,
                     const Point a,
@@ -49,23 +43,37 @@ void add_diag_inter(std::set<Point, decltype(point_lesser)*>
                     double base_intercept,
                     double step,
                     const unsigned int lx,
-                    const unsigned int ly,
-                    char edge)
+                    const unsigned int ly)
 {
   double intercept_start =
     floor(std::min(a.y() - slope * a.x(), b.y() - slope * b.x()))
     + base_intercept;
   double intercept_end =
     std::max(a.y() - slope * a.x(), b.y() - slope * b.x());
-  for (double i = intercept_start; i <= intercept_end; i += step) {
-    Point inter = calc_intersection(a, b, slope, -1.0, i);
-    if (inter > Point(0, 0)){
-      if ((edge == 'x' && (inter.x() < 0.5 || inter.x() > (lx - 0.5))) ||
-          (edge == 'y' && (inter.y() < 0.5 || inter.y() > (ly - 0.5))) ||
-          (edge == 'n' && inter.x() >= 0.5 && inter.x() <= (lx - 0.5) &&
-            inter.y() >= 0.5 && inter.y() <= (ly - 0.5))){
-        (*intersections).insert(inter);
-      }
+  for (double d = intercept_start; d <= intercept_end; d += step) {
+
+    // We consider four types of diagonals:
+    // - 'normal': y = x + d,
+    // - 'antinormal': y = -x + d,
+    // - 'steep': y = 2x + d + base_intercept
+    //      (where base_intercept = 0.5),
+    // - 'antisteep': y = -2x + d + base_intercept
+    //      (where base_intercept = 0.5),
+    // - 'gentle': y = 0.5x + d + base_intercept,
+    //      (where base_intercept = 0.25),
+    // - 'antigentle': y = -0.5x + d + base_intercept,
+    //      (where base_intercept = 0.25),
+    // where d is the double increasing by step each iteration of the loop.
+    // Steep and antisteep diagonals appear in graticule cells near x = 0
+    // and x = lx. Gentle and antigentle diagonals appear in graticules near
+    // y = 0 and y = ly.
+    Point inter = calc_intersection(a, b, slope, -1.0, d);
+    if (inter > Point(0, 0) &&
+        ((abs(slope) == 2 && (inter.x() < 0.5 || inter.x() > (lx - 0.5))) ||
+        (abs(slope) == 0.5 && (inter.y() < 0.5 || inter.y() > (ly - 0.5))) ||
+        (abs(slope) == 1 && inter.x() >= 0.5 && inter.x() <= (lx - 0.5) &&
+          inter.y() >= 0.5 && inter.y() <= (ly - 0.5)))){
+      (*intersections).insert(inter);
     }
   }
 }
@@ -132,27 +140,27 @@ std::vector<Point> densification_points(const Point pt1,
   }
 
   // Get bottom-left to top-right diagonal intersections
-  add_diag_inter(&temp_intersections, a, b, 1.0, 0.0, 1.0, lx, ly, 'n');
+  add_diag_inter(&temp_intersections, a, b, 1.0, 0.0, 1.0, lx, ly);
 
   // Get top-left to bottom-right diagonal intersections
-  add_diag_inter(&temp_intersections, a, b, -1.0, 0.0, 1.0, lx, ly, 'n');
+  add_diag_inter(&temp_intersections, a, b, -1.0, 0.0, 1.0, lx, ly);
 
   // Add edge diagonals when at least one point is on the edge of the grid.
   if (a.x() < 0.5 || b.x() < 0.5 || a.x() > (lx - 0.5) || b.x() > (lx - 0.5)){
 
     // Bottom-left to top-right edge diagonals
-    add_diag_inter(&temp_intersections, a, b, 2.0, 0.5, 1.0, lx, ly, 'x');
+    add_diag_inter(&temp_intersections, a, b, 2.0, 0.5, 1.0, lx, ly);
 
     // Top-left to bottom-right edge diagonals
-    add_diag_inter(&temp_intersections, a, b, -2.0, 0.5, 1.0, lx, ly, 'x');
+    add_diag_inter(&temp_intersections, a, b, -2.0, 0.5, 1.0, lx, ly);
   }
   if (a.y() < 0.5 || b.y() < 0.5 || a.y() > (ly - 0.5) || b.y() > (ly - 0.5)){
 
     // Bottom-left to top-right edge diagonals
-    add_diag_inter(&temp_intersections, a, b, 0.5, 0.25, 0.5, lx, ly, 'y');
+    add_diag_inter(&temp_intersections, a, b, 0.5, 0.25, 0.5, lx, ly);
 
     // Top-left to botom-right edge diagonals
-    add_diag_inter(&temp_intersections, a, b, -0.5, 0.25, 0.5, lx, ly, 'y');
+    add_diag_inter(&temp_intersections, a, b, -0.5, 0.25, 0.5, lx, ly);
   }
 
   // // DEBUGGING: Check if there are any two almost equal points in the set
