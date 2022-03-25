@@ -24,6 +24,8 @@ cartogram
 
 # Ignore test logs
 *.txt
+*.ps
+*.svg
 
 # Boilerplate code for .gitignore
 
