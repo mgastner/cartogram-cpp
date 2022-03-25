@@ -18,7 +18,7 @@
 #include <chrono>
 
 typedef  std::chrono::steady_clock::time_point time_point;
-typedef  std::chrono::high_resolution_clock clock_time;
+typedef  std::chrono::steady_clock clock_time;
 typedef  std::chrono::milliseconds ms;
 
 template <typename T>
