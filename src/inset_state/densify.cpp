@@ -45,7 +45,7 @@ Point calc_intersection(
 // - step: what we need to add to each diagonal's intercept to obtain the
 //   next diagonal.
 void add_diag_inter(
-    std::set<Point, decltype(point_lesser)*> *intersections,
+    std::set<Point, decltype(point_less_than)*> *intersections,
     const Point a,
     const Point b,
     double slope,
@@ -116,7 +116,9 @@ std::vector<Point> densification_points(
   }
 
   // Ordered set for storing intersections before removing duplicates
-  std::set<Point, decltype(point_lesser)*> temp_intersections(point_lesser);
+  std::set<Point, decltype(point_less_than)*> temp_intersections(
+    point_less_than
+  );
 
   // Store the leftmost point of p1 and pt2 as `a`. If both points have the
   // same x-coordinate, then store the lower point as `a`. The other point is
