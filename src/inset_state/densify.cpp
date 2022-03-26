@@ -3,13 +3,21 @@
 #include <CGAL/intersections.h>
 #include "../round_point.h"
 
+// A point location at (-1, -1) is a sign that a point is not on the
+// [0, lx]-by-[0, ly] grid used for calculating the density to be equalized
+
+// TODO: Is there a way to avoid #define? The apparent alternative
+// `constexpr out_of_range(-1.0, -1.0);` does not work because "the
+// type 'const Point' ... is not literal".
+#define OUT_OF_RANGE Point(-1.0, -1.0)
+
 // This function has the following as parameters:
 // - a segment defined by points a and b.
 // - a line defined by coef_x, coef_y, and coef_const with the formula
 //      coef_x * x + coef_y * y + coef_const = 0.
 // The function returns the unique intersection point between them. If this
-// intersection point does not exist, the function returns the point (-1, -1),
-// which is always outside of any graticule grid cell.
+// intersection point does not exist, the function returns the point called
+// OUT_OF_RANGE, which is always outside of any graticule grid cell.
 Point calc_intersection(
     const Point a,
     const Point b,
@@ -25,7 +33,7 @@ Point calc_intersection(
     const Point* p = boost::get<Point>(&*result);
     if (p) return (*p);
   }
-  return Point(-1.0, -1.0);
+  return OUT_OF_RANGE;
 }
 
 // This function takes points `a` and `b` as arguments, which define a
@@ -70,7 +78,7 @@ void add_diag_inter(
     // and x = lx. Gentle and antigentle diagonals appear in graticules near
     // y = 0 and y = ly.
     Point inter = calc_intersection(a, b, slope, -1.0, d);
-    if (inter != Point(-1, -1) &&
+    if (inter != OUT_OF_RANGE &&
         ((abs(slope) == 2 && (inter.x() < 0.5 || inter.x() > (lx - 0.5))) ||
          (abs(slope) == 0.5 && (inter.y() < 0.5 || inter.y() > (ly - 0.5))) ||
          (abs(slope) == 1 && inter.x() >= 0.5 && inter.x() <= (lx - 0.5) &&
@@ -134,7 +142,9 @@ std::vector<Point> densification_points(
   double x_end = b.x();
   for (double x = x_start; x <= x_end; x += (x == 0.0) ? 0.5 : 1.0) {
     Point inter = calc_intersection(a, b, 1.0, 0.0, -x);
-    if (inter != Point(-1, -1)) temp_intersections.insert(inter);
+    if (inter != OUT_OF_RANGE) {
+      temp_intersections.insert(inter);
+    }
   }
 
   // Get horizontal intersections
@@ -142,7 +152,9 @@ std::vector<Point> densification_points(
   double y_end = std::max(a.y(), b.y());
   for (double y = y_start; y <= y_end; y += (y == 0.0) ? 0.5 : 1.0) {
     Point inter = calc_intersection(a, b, 0.0, 1.0, -y);
-    if (inter != Point(-1, -1)) temp_intersections.insert(inter);
+    if (inter != OUT_OF_RANGE) {
+      temp_intersections.insert(inter);
+    }
   }
 
   // Get bottom-left to top-right diagonal intersections
