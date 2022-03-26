@@ -40,7 +40,7 @@ argparse::ArgumentParser parsed_arguments(
   // Optional argument accepting long grid side length (unsigned int) as
   // input. Default value declared in "constants.h"
   arguments.add_argument("-N", "--n_graticule_rows_or_cols")
-  .default_value(default_max_n_graticule_rows_or_cols)
+  .default_value(default_long_graticule_length)
   .scan<'u', unsigned int>()
   .help(
     "Integer: Number of grid cells along longer Cartesian coordinate axis");
@@ -55,7 +55,7 @@ argparse::ArgumentParser parsed_arguments(
   .help("Boolean: produce SVG/PS image of input and output?")
   .default_value(false)
   .implicit_value(true);
-  
+
   arguments.add_argument("-p", "--image_format_ps")
   .help("Boolean: use .ps format for images?")
   .default_value(false)
@@ -70,7 +70,7 @@ argparse::ArgumentParser parsed_arguments(
   .help("Boolean: include graticules in images?")
   .default_value(false)
   .implicit_value(true);
-  
+
   arguments.add_argument("-h", "--graticule_heatmap_image")
   .help("Boolean: produce graticule heatmap images *_graticule_heatmap.svg/ps?")
   .default_value(false)
