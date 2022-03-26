@@ -56,28 +56,31 @@ void check_geojson_validity(const nlohmann::json j)
   return;
 }
 
-std::pair<GeoDiv, bool> json_to_geodiv(const std::string id,
-                                       const nlohmann::json json_coords_raw,
-                                       const bool is_polygon)
-{
+std::pair<GeoDiv, bool> json_to_geodiv(
+    const std::string id,
+    const nlohmann::json json_coords_raw,
+    const bool is_polygon
+) {
   GeoDiv gd(id);
-
-  // Exterior ring is clockwise oriented?
-  bool erico;
   nlohmann::json json_coords;
   if (is_polygon) {
     json_coords["0"] = json_coords_raw;
   } else {
     json_coords = json_coords_raw;
   }
+  bool erico;  // Exterior ring is clockwise oriented?
   for (const auto &json_pgn_holes_container : json_coords) {
 
     // Store exterior ring in CGAL format
     Polygon ext_ring;
     const auto jphc_ext = json_pgn_holes_container[0];
     for (unsigned int j = 0; j < jphc_ext.size() - 1; ++j) {
-      ext_ring.push_back(Point(static_cast<double>(jphc_ext[j][0]),
-                               static_cast<double>(jphc_ext[j][1])));
+      ext_ring.push_back(
+        Point(
+          static_cast<double>(jphc_ext[j][0]),
+          static_cast<double>(jphc_ext[j][1])
+        )
+      );
     }
 
     // CGAL considers a polygon as simple only if first vertex and last vertex
@@ -85,8 +88,12 @@ std::pair<GeoDiv, bool> json_to_geodiv(const std::string id,
     const auto last_index = jphc_ext.size() - 1;
     if (jphc_ext[0][0] != jphc_ext[last_index][0] ||
         jphc_ext[0][1] != jphc_ext[last_index][1]) {
-      ext_ring.push_back(Point(static_cast<double>(jphc_ext[last_index][0]),
-                               static_cast<double>(jphc_ext[last_index][1])));
+      ext_ring.push_back(
+        Point(
+          static_cast<double>(jphc_ext[last_index][0]),
+          static_cast<double>(jphc_ext[last_index][1])
+        )
+      );
     }
     if (!ext_ring.is_simple()) {
       std::cerr << "ERROR: exterior ring not a simple polygon" << std::endl;
@@ -113,15 +120,22 @@ std::pair<GeoDiv, bool> json_to_geodiv(const std::string id,
       Polygon int_ring;
       const auto jphc_int = json_pgn_holes_container[i];
       for (unsigned int j = 0; j < jphc_int.size() - 1; ++j) {
-        int_ring.push_back(Point(static_cast<double>(jphc_int[j][0]),
-                                 static_cast<double>(jphc_int[j][1])));
+        int_ring.push_back(
+          Point(
+            static_cast<double>(jphc_int[j][0]),
+            static_cast<double>(jphc_int[j][1])
+          )
+        );
       }
       const unsigned int last_index = jphc_int.size() - 1;
       if (jphc_int[0][0] != jphc_int[last_index][0] ||
           jphc_int[0][1] != jphc_int[last_index][1]) {
         int_ring.push_back(
-          Point(static_cast<double>(jphc_int[last_index][0]),
-                static_cast<double>(jphc_int[last_index][1])));
+          Point(
+            static_cast<double>(jphc_int[last_index][0]),
+            static_cast<double>(jphc_int[last_index][1])
+          )
+        );
       }
       if (!int_ring.is_simple()) {
         std::cerr << "ERROR: interior ring not a simple polygon" << std::endl;
@@ -132,23 +146,26 @@ std::pair<GeoDiv, bool> json_to_geodiv(const std::string id,
       }
       int_ring_v.push_back(int_ring);
     }
-    const Polygon_with_holes pwh(ext_ring,
-                                 int_ring_v.begin(),
-                                 int_ring_v.end());
+    const Polygon_with_holes pwh(
+      ext_ring,
+      int_ring_v.begin(),
+      int_ring_v.end()
+    );
     gd.push_back(pwh);
   }
   return std::pair<GeoDiv, bool>(gd, erico);
 }
 
 void print_properties_map(
-  const std::map<std::string, std::vector<std::string> > properties_map,
-  const unsigned long chosen_number)
-{
+    const std::map<std::string, std::vector<std::string> > properties_map,
+    const unsigned long chosen_number
+) {
   const unsigned int max_n_printed_values = 5;
   const auto value_vec = properties_map.begin()->second;
   const unsigned int n_printed_values = std::min(
     value_vec.size(),
-    static_cast<unsigned long>(max_n_printed_values));
+    static_cast<unsigned long>(max_n_printed_values)
+  );
   unsigned int i = 0;
   for (const auto &[key, val] : properties_map) {
     ++i;
@@ -167,16 +184,19 @@ void print_properties_map(
   return;
 }
 
-void CartogramInfo::read_geojson(const std::string geometry_file_name,
-                                 const bool make_csv,
-                                 std::string *crs)
-{
+void CartogramInfo::read_geojson(
+    const std::string geometry_file_name,
+    const bool make_csv,
+    std::string *crs
+) {
   // Open file
   std::ifstream in_file(geometry_file_name);
   if (!in_file) {
-    throw std::system_error(errno,
-                            std::system_category(),
-                            "failed to open " + geometry_file_name);
+    throw std::system_error(
+            errno,
+            std::system_category(),
+            "failed to open " + geometry_file_name
+    );
   }
 
   // Parse JSON
@@ -244,9 +264,11 @@ void CartogramInfo::read_geojson(const std::string geometry_file_name,
             _Exit(18);
           }
           ids_in_geojson.insert(id);
-          const auto gd_and_orientation = json_to_geodiv(id,
-                                         geometry["coordinates"],
-                                         is_polygon);
+          const auto gd_and_orientation = json_to_geodiv(
+            id,
+            geometry["coordinates"],
+            is_polygon
+          );
           inset_state.push_back(gd_and_orientation.first);
           original_ext_ring_is_clockwise_ = gd_and_orientation.second;
         }
@@ -270,8 +292,8 @@ void CartogramInfo::read_geojson(const std::string geometry_file_name,
         }
         const auto value_vec = properties_map[key];
         const bool value_not_inside =
-          std::find(value_vec.begin(), value_vec.end(), value) ==
-          value_vec.end();
+          std::find(value_vec.begin(), value_vec.end(), value)
+          == value_vec.end();
         if (value != "null" && !value.empty() && value_not_inside) {
           properties_map[key].push_back(value);
         }
@@ -296,7 +318,9 @@ void CartogramInfo::read_geojson(const std::string geometry_file_name,
       std::cerr << "These are the unique identifiers and their values:\n"
                 << std::endl;
       print_properties_map(
-        viable_properties_map, viable_properties_map.size() + 1);
+        viable_properties_map,
+        viable_properties_map.size() + 1
+      );
       std::cerr << viable_properties_map.size() + 1 << ". All\n" << std::endl;
       while (std::cin.fail() ||
              chosen_number < 1 ||
@@ -322,7 +346,9 @@ void CartogramInfo::read_geojson(const std::string geometry_file_name,
     } else {
       std::cerr << "Only one unique identifier found: ";
       print_properties_map(
-        viable_properties_map, viable_properties_map.size() + 1);
+        viable_properties_map,
+        viable_properties_map.size() + 1
+      );
       std::cerr << std::endl;
       ++chosen_number;
     }
@@ -348,14 +374,17 @@ void CartogramInfo::read_geojson(const std::string geometry_file_name,
     const auto csv_name = map_name_ + ".csv";
     out_file_csv.open(csv_name);
     if (!out_file_csv) {
-      throw std::system_error(errno,
-                              std::system_category(),
-                              "failed to open template_from_geojson.csv");
+      throw std::system_error(
+              errno,
+              std::system_category(),
+              "failed to open template_from_geojson.csv"
+      );
     }
 
     // Each vector of strings will represent one row
     std::vector<std::vector<std::string> > csv_rows(
-      chosen_identifiers.begin()->second.size() + 1);
+      chosen_identifiers.begin()->second.size() + 1
+    );
 
     // Converting map into a vector
     unsigned int column = 0;
@@ -392,10 +421,13 @@ void CartogramInfo::read_geojson(const std::string geometry_file_name,
   // Check whether all IDs in visual_variable_file appear in GeoJSON
   const auto ids_in_vv_file = ids_in_visual_variables_file_;
   std::set<std::string> ids_not_in_geojson;
-  std::set_difference(ids_in_vv_file.begin(), ids_in_vv_file.end(),
-                      ids_in_geojson.begin(), ids_in_geojson.end(),
-                      std::inserter(ids_not_in_geojson,
-                                    ids_not_in_geojson.end()));
+  std::set_difference(
+    ids_in_vv_file.begin(),
+    ids_in_vv_file.end(),
+    ids_in_geojson.begin(),
+    ids_in_geojson.end(),
+    std::inserter(ids_not_in_geojson, ids_not_in_geojson.end())
+  );
   if (!ids_not_in_geojson.empty()) {
     std::cerr << "ERROR: Mismatch between GeoJSON and "
               << visual_variable_file_
@@ -411,9 +443,13 @@ void CartogramInfo::read_geojson(const std::string geometry_file_name,
 
   // Check whether all IDs in GeoJSON appear in visual_variable_file
   std::set<std::string> ids_not_in_vv;
-  std::set_difference(ids_in_geojson.begin(), ids_in_geojson.end(),
-                      ids_in_vv_file.begin(), ids_in_vv_file.end(),
-                      std::inserter(ids_not_in_vv, ids_not_in_vv.end()));
+  std::set_difference(
+    ids_in_geojson.begin(),
+    ids_in_geojson.end(),
+    ids_in_vv_file.begin(),
+    ids_in_vv_file.end(),
+    std::inserter(ids_not_in_vv, ids_not_in_vv.end())
+  );
   if (!ids_not_in_vv.empty()) {
     std::cerr << "ERROR: Mismatch between GeoJSON and "
               << visual_variable_file_
