@@ -102,7 +102,7 @@ public:
   const std::string inset_name() const;
   nlohmann::json inset_to_geojson(bool) const;
   const std::vector<Segment> intersecting_segments(unsigned int) const;
-  std::vector<std::vector<intersection> > intersections_with_rays_parallel_to(
+  std::vector<std::vector<intersection> > intersec_with_parallel_to(
     char,
     unsigned int
   ) const;

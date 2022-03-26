@@ -1,14 +1,14 @@
 #include "inset_state.h"
 #include "constants.h"
 
-// TODO: THE OUTPUT FROM intersections_with_rays_parallel_to() ALWAYS
+// TODO: THE OUTPUT FROM intersec_with_parallel_to() ALWAYS
 // SEEM TO COME WITH A NEED TO SORT AFTERWARDS. SHOULD SORTING BECOME PART of
-// intersections_with_rays_parallel_to() TO SAVE TYPING ELSEWHERE?
+// intersec_with_parallel_to() TO SAVE TYPING ELSEWHERE?
 
-std::vector<std::vector<intersection> >
-InsetState::intersections_with_rays_parallel_to(
+std::vector<std::vector<intersection> > InsetState::intersec_with_parallel_to(
     char axis,
-    unsigned int resolution) const
+    unsigned int resolution
+) const
 {
   if (axis != 'x' && axis != 'y') {
     std::cerr << "Invalid axis in "
@@ -128,7 +128,7 @@ void InsetState::create_contiguity_graph(unsigned int resolution)
   // Calculate horizontal and vertical scanlines
   for (char axis : {'x', 'y'}) {
     const std::vector<std::vector<intersection> > scanlines =
-      intersections_with_rays_parallel_to(axis, resolution);
+      intersec_with_parallel_to(axis, resolution);
     const unsigned int grid_length = (axis == 'x' ? ly_ : lx_);
 
     // Iterate over rows (if axis is 'x') or columns
@@ -171,13 +171,14 @@ void InsetState::create_contiguity_graph(unsigned int resolution)
 }
 
 // Returns line segments highlighting intersection points using scans above
-const std::vector<Segment>
-InsetState::intersecting_segments(unsigned int resolution) const
+const std::vector<Segment> InsetState::intersecting_segments(
+    unsigned int resolution
+) const
 {
   std::vector<Segment> int_segments;
   for (char axis : {'x', 'y'}) {
     const std::vector<std::vector<intersection> > scanlines =
-      intersections_with_rays_parallel_to(axis, resolution);
+      intersec_with_parallel_to(axis, resolution);
     const unsigned int grid_length = (axis == 'x' ? ly_ : lx_);
 
     // Iterate over rows (if axis is 'x') or columns
