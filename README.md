@@ -94,9 +94,9 @@ Using lesser cores than you have is recommended so that your computer still has 
 
 ### Troubleshooting
 
-- If compilation was previously working for you, and seems to have suddenly stopped working, you may remove the `build` directory with `rm -rf build` and run the installation commands again.
+- If compilation suddenly stopped working for you, you may remove the `build` directory with `rm -rf build` and run the installation commands again.
 - If running `cmake -B build` gives you an error, it is likely that a dependency was not installed correctly. Rerun the appropriate commands above to install the required dependencies and try again.
-- If you get a error which mentions permission issues, try running the command that gave you the error with `sudo` prefixed, as done with `sudo make install -C build` above.
+- If you get an error which mentions permission issues, try running the command that gave you the error with `sudo` prefixed, as done with `sudo make install -C build` above.
 
 ### Usage
 
@@ -143,4 +143,4 @@ Upon successful uninstallation, the following will be outputted:
 
     > Built target uninstall
 
-Further, running `cartogram` should no longer work
+Further, running `cartogram` should no longer work.
