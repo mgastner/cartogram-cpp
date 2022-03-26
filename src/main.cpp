@@ -1,3 +1,7 @@
+#include <chrono>
+#include <cmath>
+#include <iostream>
+
 #include "albers_projection.h"
 #include "blur_density.h"
 #include "cartogram_info.h"
@@ -11,29 +15,22 @@
 #include "read_csv.h"
 #include "read_geojson.h"
 #include "rescale_map.h"
-#include "smyth_projection.h"
 #include "simplify_inset.h"
+#include "smyth_projection.h"
 #include "write_geojson.h"
 #include "write_image.h"
 #include "xy_point.h"
-#include "parse_arguments.h"
-#include <chrono>
-#include <iostream>
-#include <cmath>
 
-typedef  std::chrono::steady_clock::time_point time_point;
-typedef  std::chrono::steady_clock clock_time;
-typedef  std::chrono::milliseconds ms;
+typedef std::chrono::steady_clock::time_point time_point;
+typedef std::chrono::steady_clock clock_time;
+typedef std::chrono::milliseconds ms;
 
 template <typename T>
-std::chrono::milliseconds inMilliseconds(T duration)
-{
-    return std::chrono::duration_cast<std::chrono::milliseconds>(duration);
+std::chrono::milliseconds inMilliseconds(T duration) {
+  return std::chrono::duration_cast<std::chrono::milliseconds>(duration);
 }
 
-int main(const int argc, const char *argv[])
-{
-
+int main(const int argc, const char *argv[]) {
   // Start of main function time
   time_point start_main = clock_time::now();
   std::string geo_file_name, visual_file_name;  // Default values
@@ -55,36 +52,31 @@ int main(const int argc, const char *argv[])
   bool simplify;
 
   // Other boolean values that are needed to parse the command line arguments
-  bool make_csv,
-       produce_map_image,
-       image_format_ps,
-       output_equal_area,
-       output_to_stdout,
-       plot_density,
-       plot_graticule,
-       plot_graticule_heatmap,
-       plot_intersections;
+  bool make_csv, produce_map_image, image_format_ps, output_equal_area,
+      output_to_stdout, plot_density, plot_graticule, plot_graticule_heatmap,
+      plot_intersections, crop;
 
   // Parse command-line arguments
   argparse::ArgumentParser arguments = parsed_arguments(
-    argc,
-    argv,
-    geo_file_name,
-    visual_file_name,
-    long_graticule_length,
-    target_points_per_inset,
-    world,
-    triangulation,
-    simplify,
-    make_csv,
-    produce_map_image,
-    image_format_ps,
-    output_equal_area,
-    output_to_stdout,
-    plot_density,
-    plot_graticule,
-    plot_graticule_heatmap,
-    plot_intersections);
+      argc,
+      argv,
+      geo_file_name,
+      visual_file_name,
+      long_graticule_length,
+      target_points_per_inset,
+      world,
+      triangulation,
+      simplify,
+      make_csv,
+      produce_map_image,
+      image_format_ps,
+      output_equal_area,
+      output_to_stdout,
+      plot_density,
+      plot_graticule,
+      plot_graticule_heatmap,
+      plot_intersections,
+      crop);
 
   // Initialize cart_info. It contains all information about the cartogram
   // that needs to be handled by functions called from main().
@@ -104,24 +96,16 @@ int main(const int argc, const char *argv[])
   time_point start_parse = clock_time::now();
 
   if (!make_csv) {
-
     // Read visual variables (e.g. area, color) from CSV
     try {
       read_csv(arguments, &cart_info);
-    } catch (const std::system_error& e) {
-      std::cerr << "ERROR: "
-                << e.what()
-                << " ("
-                << e.code()
-                << ")"
+    } catch (const std::system_error &e) {
+      std::cerr << "ERROR: " << e.what() << " (" << e.code() << ")"
                 << std::endl;
       return EXIT_FAILURE;
-    } catch (const std::runtime_error& e) {
-
+    } catch (const std::runtime_error &e) {
       // If there is an error, it is probably because of an invalid CSV file
-      std::cerr << "ERROR: "
-                << e.what()
-                << std::endl;
+      std::cerr << "ERROR: " << e.what() << std::endl;
       return EXIT_FAILURE;
     }
   }
@@ -131,13 +115,8 @@ int main(const int argc, const char *argv[])
   std::string crs = "+proj=longlat";
   try {
     read_geojson(geo_file_name, make_csv, &crs, &cart_info);
-  } catch (const std::system_error& e) {
-    std::cerr << "ERROR: "
-              << e.what()
-              << " ("
-              << e.code()
-              << ")"
-              << std::endl;
+  } catch (const std::system_error &e) {
+    std::cerr << "ERROR: " << e.what() << " (" << e.code() << ")" << std::endl;
     return EXIT_FAILURE;
   }
 
@@ -152,7 +131,6 @@ int main(const int argc, const char *argv[])
   // Store total number of GeoDivs to monitor progress
   double total_geo_divs = 0;
   for (const auto &inset_info : *cart_info.ref_to_inset_states()) {
-
     // `auto` will automatically deduce the const qualifier
     auto &inset_state = inset_info.second;
     total_geo_divs += inset_state.n_geo_divs();
@@ -163,17 +141,12 @@ int main(const int argc, const char *argv[])
 
   // Project map and ensure that all holes are inside polygons
   for (auto &[inset_pos, inset_state] : *cart_info.ref_to_inset_states()) {
-
     // Check for errors in the input topology
     try {
       holes_inside_polygons(&inset_state);
       rings_are_simple(&inset_state);
-    } catch (const std::system_error& e) {
-      std::cerr << "ERROR: "
-                << e.what()
-                << " ("
-                << e.code()
-                << ")"
+    } catch (const std::system_error &e) {
+      std::cerr << "ERROR: " << e.what() << " (" << e.code() << ")"
                 << std::endl;
       return EXIT_FAILURE;
     }
@@ -187,11 +160,9 @@ int main(const int argc, const char *argv[])
     // to longitude and lattitude projection. "urn:ogc:def:crs:OGC:1.3:CRS84"
     // is one such entry.
     const Bbox bb = inset_state.bbox();
-    if (bb.xmin() >= -180.0 && bb.xmax() <= 180.0 &&
-        bb.ymin() >= -90.0 && bb.ymax() <= 90.0 &&
-        (crs == "+proj=longlat" ||
-         crs == "urn:ogc:def:crs:OGC:1.3:CRS84")) {
-
+    if (bb.xmin() >= -180.0 && bb.xmax() <= 180.0 && bb.ymin() >= -90.0 &&
+        bb.ymax() <= 90.0 &&
+        (crs == "+proj=longlat" || crs == "urn:ogc:def:crs:OGC:1.3:CRS84")) {
       // If yes, transform the coordinates with the Albers projection if the
       // input map is not a world map. Otherwise, use the Smyth-Craster
       // projection.
@@ -218,34 +189,30 @@ int main(const int argc, const char *argv[])
 
   // Iterate over insets
   for (auto &[inset_pos, inset_state] : *cart_info.ref_to_inset_states()) {
-
     // Determine the name of the inset
     std::string inset_name = map_name;
     if (cart_info.n_insets() > 1) {
       inset_name = inset_name + "_" + inset_pos;
-      std::cerr << "\nWorking on inset at position: "
-                << inset_pos
-                << std::endl;
+      std::cerr << "\nWorking on inset at position: " << inset_pos << std::endl;
     }
     inset_state.set_inset_name(inset_name);
     if (simplify) {
-
       // Simplification reduces the number of points used to represent the
       // GeoDivs in the inset, thereby reducing output file sizes and run
       // times
-      simplify_inset(&inset_state,
-                     target_points_per_inset);
+      simplify_inset(&inset_state, target_points_per_inset);
     }
     if (output_equal_area) {
-      normalize_inset_area(&inset_state,
-                           cart_info.cart_total_target_area(),
-                           output_equal_area);
+      normalize_inset_area(
+          &inset_state,
+          cart_info.cart_total_target_area(),
+          output_equal_area);
     } else {
-
       // Rescale map to fit into a rectangular box [0, lx] * [0, ly]
-      rescale_map(long_graticule_length,
-                  &inset_state,
-                  cart_info.is_world_map());
+      rescale_map(
+          long_graticule_length,
+          &inset_state,
+          cart_info.is_world_map());
 
       // Store original coordinates
       inset_state.store_original_geo_divs();
@@ -270,15 +237,19 @@ int main(const int argc, const char *argv[])
         std::string input_filename = inset_state.inset_name();
 
         // Update filename with graticule info
-        plot_graticule ? input_filename += "_input_graticule" :
-                        input_filename += "_input";
+        plot_graticule ? input_filename += "_input_graticule"
+                       : input_filename += "_input";
 
         // Update extension
         image_format_ps ? input_filename += ".ps" : input_filename += ".svg";
 
         std::cerr << "Writing " << input_filename << std::endl;
-        write_map_image(input_filename, true, plot_graticule, image_format_ps,
-                       &inset_state);
+        write_map_image(
+            input_filename,
+            true,
+            plot_graticule,
+            image_format_ps,
+            &inset_state);
       }
 
       // We make the approximation that the progress towards generating the
@@ -293,16 +264,15 @@ int main(const int argc, const char *argv[])
       while (inset_state.n_finished_integrations() < max_integrations &&
              inset_state.max_area_error().value > max_permitted_area_error) {
         std::cerr << "Integration number "
-                  << inset_state.n_finished_integrations()
-                  << std::endl;
+                  << inset_state.n_finished_integrations() << std::endl;
 
         // Calculate progress percentage. We assume that the maximum area
         // error is typically reduced to 1/5 of the previous value.
         const double ratio_actual_to_permitted_max_area_error =
-          inset_state.max_area_error().value / max_permitted_area_error;
-        const double n_predicted_integrations =
-          std::max((log(ratio_actual_to_permitted_max_area_error) / log(5)),
-                   1.0);
+            inset_state.max_area_error().value / max_permitted_area_error;
+        const double n_predicted_integrations = std::max(
+            (log(ratio_actual_to_permitted_max_area_error) / log(5)),
+            1.0);
 
         // Blur density to speed up the numerics in flatten_density() below.
         // We slowly reduce the blur width so that the areas can reach their
@@ -313,7 +283,7 @@ int main(const int argc, const char *argv[])
         // temporary fix, we set blur_width to be always positive, regardless
         // of the number of integrations.
         double blur_width =
-          std::pow(2.0, 5 - int(inset_state.n_finished_integrations()));
+            std::pow(2.0, 5 - int(inset_state.n_finished_integrations()));
         // if (inset_state.n_finished_integrations() < max_integrations) {
         //   blur_width =
         //     std::pow(2.0, 5 - int(inset_state.n_finished_integrations()));
@@ -322,18 +292,20 @@ int main(const int argc, const char *argv[])
         // }
         std::cerr << "blur_width = " << blur_width << std::endl;
 
-        inset_state.fill_with_density(plot_density, plot_graticule_heatmap,
-                                      image_format_ps);
+        inset_state.fill_with_density(
+            plot_density,
+            plot_graticule_heatmap,
+            image_format_ps);
         if (blur_width > 0.0) {
           blur_density(blur_width, plot_density, image_format_ps, &inset_state);
         }
         if (plot_intersections) {
-          inset_state.write_intersections_image(intersections_resolution,
-                                                image_format_ps);
+          inset_state.write_intersections_image(
+              intersections_resolution,
+              image_format_ps);
         }
         flatten_density(&inset_state);
         if (triangulation) {
-
           // Choose diagonals that are inside graticule cells
           fill_graticule_diagonals(&inset_state);
 
@@ -346,17 +318,14 @@ int main(const int argc, const char *argv[])
           project(&inset_state);
         }
         if (simplify) {
-          simplify_inset(&inset_state,
-                         target_points_per_inset);
+          simplify_inset(&inset_state, target_points_per_inset);
         }
         inset_state.increment_integration();
 
         // Update area errors
         inset_state.set_area_errors();
-        std::cerr << "max. area err: "
-                  << inset_state.max_area_error().value
-                  << ", GeoDiv: "
-                  << inset_state.max_area_error().geo_div
+        std::cerr << "max. area err: " << inset_state.max_area_error().value
+                  << ", GeoDiv: " << inset_state.max_area_error().geo_div
                   << std::endl;
         std::cerr << "Progress: "
                   << progress + (inset_max_frac / n_predicted_integrations)
@@ -368,17 +337,15 @@ int main(const int argc, const char *argv[])
       time_point end_integration = clock_time::now();
 
       // Add integration time to the map
-      insets_integration_times[inset_pos] = inMilliseconds(end_integration -
-                                                    start_integration);
+      insets_integration_times[inset_pos] =
+          inMilliseconds(end_integration - start_integration);
       progress += inset_max_frac;
-      std::cerr << "Finished inset "
-                << inset_pos
-                << "\nProgress: "
-                << progress
+      std::cerr << "Finished inset " << inset_pos << "\nProgress: " << progress
                 << std::endl;
       if (plot_intersections) {
-        inset_state.write_intersections_image(intersections_resolution,
-                                              image_format_ps);
+        inset_state.write_intersections_image(
+            intersections_resolution,
+            image_format_ps);
       }
 
       // Print PS files of cartogram
@@ -386,56 +353,66 @@ int main(const int argc, const char *argv[])
         std::string output_filename = inset_state.inset_name();
 
         // Update filename with graticule info
-        plot_graticule ? output_filename += "_output_graticule" :
-                        output_filename += "_output";
+        plot_graticule ? output_filename += "_output_graticule"
+                       : output_filename += "_output";
 
         // Update extension
         image_format_ps ? output_filename += ".ps" : output_filename += ".svg";
 
-        std::cerr << "Writing "
-                  << output_filename << std::endl;
-        write_map_image(output_filename, true, plot_graticule, image_format_ps,
-                       &inset_state);
+        std::cerr << "Writing " << output_filename << std::endl;
+        write_map_image(
+            output_filename,
+            true,
+            plot_graticule,
+            image_format_ps,
+            &inset_state);
       }
 
       if (plot_graticule_heatmap) {
-
         // Produce equal-area graticule heatmap
-        std::string output_filename = inset_state.inset_name()
-                                    + "_equal_area_graticule_heatmap";
+        std::string output_filename =
+            inset_state.inset_name() + "_equal_area_graticule_heatmap";
 
         // Update extension
         image_format_ps ? output_filename += ".ps" : output_filename += ".svg";
         std::cerr << "Writing " << output_filename << std::endl;
-        write_graticule_heatmap_image(output_filename, true, image_format_ps,
-                                      &inset_state);
+        write_graticule_heatmap_image(
+            output_filename,
+            true,
+            image_format_ps,
+            crop,
+            &inset_state);
 
         // Produce cartogram graticule heatmap
-        output_filename = inset_state.inset_name() + "_cartogram_graticule_heatmap";
+        output_filename =
+            inset_state.inset_name() + "_cartogram_graticule_heatmap";
 
         // Update extension
         image_format_ps ? output_filename += ".ps" : output_filename += ".svg";
 
         std::cerr << "Writing " << output_filename << std::endl;
-        write_graticule_heatmap_image(output_filename, false, image_format_ps,
-                                    &inset_state);
+        write_graticule_heatmap_image(
+            output_filename,
+            false,
+            image_format_ps,
+            crop,
+            &inset_state);
       }
       if (world) {
         const auto cart_json = cgal_to_json(&cart_info);
         std::string output_file_name =
-          map_name + "_cartogram_in_smyth_projection.geojson";
-        write_geojson(cart_json,
-                      geo_file_name,
-                      output_file_name,
-                      std::cout,
-                      output_to_stdout,
-                      &cart_info);
+            map_name + "_cartogram_in_smyth_projection.geojson";
+        write_geojson(
+            cart_json,
+            geo_file_name,
+            output_file_name,
+            std::cout,
+            output_to_stdout,
+            &cart_info);
         project_from_smyth_equal_surface(&inset_state);
       } else {
-
         // Rescale insets in correct proportion to each other
-        normalize_inset_area(&inset_state,
-                             cart_info.cart_total_target_area());
+        normalize_inset_area(&inset_state, cart_info.cart_total_target_area());
       }
 
       // Clean up after finishing all Fourier transforms for this inset
@@ -466,23 +443,21 @@ int main(const int argc, const char *argv[])
     output_file_name = map_name + "_cartogram.geojson";
   }
   const auto cart_json = cgal_to_json(&cart_info);
-  write_geojson(cart_json,
-                geo_file_name,
-                output_file_name,
-                std::cout,
-                output_to_stdout,
-                &cart_info);
+  write_geojson(
+      cart_json,
+      geo_file_name,
+      output_file_name,
+      std::cout,
+      output_to_stdout,
+      &cart_info);
 
   // End of main function time
   time_point end_main = clock_time::now();
 
   // Calculate differences in time
-  ms parsing_time = inMilliseconds(
-    end_parse - start_parse);
-  ms albers_proj_time = inMilliseconds(
-    end_albers_proj - start_albers_proj);
-  ms total_time = inMilliseconds(
-    end_main - start_main);
+  ms parsing_time = inMilliseconds(end_parse - start_parse);
+  ms albers_proj_time = inMilliseconds(end_albers_proj - start_albers_proj);
+  ms total_time = inMilliseconds(end_main - start_main);
 
   // Show Time Report
   std::cerr << std::endl;

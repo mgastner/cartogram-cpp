@@ -23,6 +23,7 @@ argparse::ArgumentParser parsed_arguments(
   bool &plot_density,
   bool &plot_graticule,
   bool &plot_graticule_heatmap,
-  bool &plot_intersections);
+  bool &plot_intersections,
+  bool &crop);
 
 #endif

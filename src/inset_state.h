@@ -1,14 +1,15 @@
 #ifndef INSET_STATE_H_
 #define INSET_STATE_H_
 
+#include <boost/multi_array.hpp>
+#include <map>
+#include <vector>
+
 #include "colors.h"
 #include "ft_real_2d.h"
 #include "geo_div.h"
-#include "xy_point.h"
 #include "intersection.h"
-#include <vector>
-#include <boost/multi_array.hpp>
-#include <map>
+#include "xy_point.h"
 
 struct max_area_error_info {
   double value;
@@ -16,19 +17,24 @@ struct max_area_error_info {
 };
 
 class InsetState {
-private:
+ private:
   std::unordered_map<std::string, double> area_errors_;
   Bbox bbox_;  // Bounding box
   fftw_plan bwd_plan_for_rho_;
   std::unordered_map<std::string, Color> colors_;
-  
+
   // Scaling factor to convert albers unit to 512*512 unit
   double latt_const_;
-  
+
   // Cumulative cartogram projection
   boost::multi_array<XYPoint, 2> cum_proj_;
   fftw_plan fwd_plan_for_rho_;
-  std::vector<GeoDiv> geo_divs_, geo_divs_original_;  // Geographic divisions in this inset
+
+  // Geographic divisions in this inset
+  std::vector<GeoDiv> geo_divs_;
+
+  // Copy of original data
+  std::vector<GeoDiv> geo_divs_original_;
 
   // Chosen diagonal for each graticule cell
   boost::multi_array<int, 2> graticule_diagonals_;
@@ -48,14 +54,14 @@ private:
   FTReal2d rho_init_, rho_ft_;
   std::unordered_map<std::string, double> target_areas_;
 
-  // Vertical adjacency graph
-  std::vector<std::vector<intersection> > vertical_adj_;
+  // Vertical adjacency graph std::vector<std::vector<intersection> >
+  // vertical_adj_;
 
   // Make default contructor private so that only
   // InsetState(const std::string) can be called as constructor
   InsetState();
 
-public:
+ public:
   explicit InsetState(const std::string);  // Constructor
   double area_error_at(const std::string) const;
   void auto_color();  // Automatically color GeoDivs
@@ -69,11 +75,13 @@ public:
   void destroy_fftw_plans_for_rho();
   void execute_fftw_bwd_plan() const;
   void execute_fftw_fwd_plan() const;
-  void fill_with_density(const bool, const bool, const bool);  // Fill map with density, using scanlines
+
+  // Fill map with density, using scanlines
+  void fill_with_density(const bool, const bool, const bool);
   const std::vector<GeoDiv> geo_divs() const;
   const std::vector<GeoDiv> geo_divs_original() const;
-  const std::vector<std::vector<intersection> >
-    horizontal_scans(unsigned int) const;
+  const std::vector<std::vector<intersection>> horizontal_scans(
+      unsigned int) const;
   void increment_integration();
   void initialize_cum_proj();
   void initialize_original_proj();
@@ -81,14 +89,15 @@ public:
   void insert_color(const std::string, const std::string);
   void insert_label(const std::string, const std::string);
   void insert_target_area(const std::string, const double);
-  void insert_whether_input_target_area_is_missing(const std::string,
-                                                   const bool);
+  void insert_whether_input_target_area_is_missing(
+      const std::string,
+      const bool);
   const std::string inset_name() const;
   const std::vector<Segment> intersecting_segments(unsigned int) const;
-  std::vector<std::vector<intersection> >
-    intersections_with_rays_parallel_to_axis(char, unsigned int) const;
+  std::vector<std::vector<intersection>>
+  intersections_with_rays_parallel_to_axis(char, unsigned int) const;
   bool is_input_target_area_missing(const std::string) const;
-  std::string label_at(const std::string) const;
+      std::string label_at(const std::string) const;
   double latt_const() const;
   unsigned int lx() const;
   unsigned int ly() const;
@@ -102,7 +111,7 @@ public:
   void push_back(const GeoDiv);
   boost::multi_array<XYPoint, 2> *ref_to_cum_proj();
   boost::multi_array<XYPoint, 2> *ref_to_original_proj();
-  
+
   std::vector<GeoDiv> *ref_to_geo_divs();
   std::vector<GeoDiv> *ref_to_geo_divs_original();
   boost::multi_array<int, 2> *ref_to_graticule_diagonals();
