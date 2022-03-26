@@ -13,17 +13,13 @@ void CartogramInfo::read_csv(argparse::ArgumentParser arguments)
   // Find index of column with IDs. If no ID column header was passed with the
   // command-line flag --id, the ID column is assumed to have index 0.
   auto is_id_header = arguments.present<std::string>("-D");
-  std::string id_header;
   int id_col = 0;
   if (is_id_header) {
-    id_header = *is_id_header;
-    id_col = reader.index_of(id_header);
+    id_header_ = *is_id_header;
+    id_col = reader.index_of(id_header_);
   } else {
-    id_header = reader.get_col_names()[0];
+    id_header_ = reader.get_col_names()[0];
   }
-
-  // Store header name of identifiers to read GeoJSON
-  id_header_ = id_header;
 
   // Find index of column with target areas. If no area column header was
   // passed with the command-line flag --area, the area column is assumed to
@@ -126,12 +122,8 @@ void CartogramInfo::read_csv(argparse::ArgumentParser arguments)
       }
 
       // If unrecognized, set inset position to "C"
-      std::unordered_set<std::string> permitted_inset_pos {"C",
-                                                           "L",
-                                                           "R",
-                                                           "T",
-                                                           "B"};
-      if (!permitted_inset_pos.contains(inset_pos)) {
+      std::unordered_set<std::string> permitted_pos {"C", "L", "R", "T", "B"};
+      if (!permitted_pos.contains(inset_pos)) {
         std::cerr << "Unrecognized inset position : "
                   << inset_pos_original
                   << " for Region: "
@@ -150,8 +142,9 @@ void CartogramInfo::read_csv(argparse::ArgumentParser arguments)
     // Create inset_state for inset_pos unless it already exists
     if (!inset_pos_set.contains(inset_pos)) {
       InsetState inset_state(inset_pos);
-      inset_states_.insert(std::pair<std::string, InsetState>(inset_pos,
-                                                              inset_state));
+      inset_states_.insert(
+        std::pair<std::string, InsetState>(inset_pos, inset_state)
+      );
       inset_pos_set.insert(inset_pos);
     }
 
