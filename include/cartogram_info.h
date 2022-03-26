@@ -12,6 +12,7 @@ private:
   std::string id_header_;
   std::set<std::string> ids_in_visual_variables_file_;
   std::map<std::string, InsetState> inset_states_;
+  bool is_world_map_;
   std::string map_name_;
 
   // TODO: We assume that either all external rings are counterclockwise or
@@ -19,17 +20,16 @@ private:
   // in the wild, but it would still be sensible to allow cases where there
   // are external rings with opposite winding directions.
   bool original_ext_ring_is_clockwise_;
-  bool is_world_map_;
   std::string visual_variable_file_;
-
   nlohmann::json cgal_to_json();
 
 public:
   explicit CartogramInfo(const bool, const std::string);
   double cart_total_target_area() const;
   bool is_world_map() const;
-  unsigned int n_insets() const;
+  const std::string map_name() const;
   unsigned int n_geo_divs() const;
+  unsigned int n_insets() const;
   bool original_ext_ring_is_clockwise() const;
   void read_csv(argparse::ArgumentParser);
   void read_geojson(const std::string, const bool, std::string*);
@@ -37,7 +37,6 @@ public:
   void replace_missing_and_zero_target_areas();
   void set_map_name(const std::string);
   void shift_insets_to_target_position();
-  const std::string map_name() const;
   void write_geojson(std::string, std::string, std::ostream &, bool);
 };
 #endif
