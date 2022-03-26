@@ -32,7 +32,7 @@ void InsetState::fill_with_density(bool plot_density)
   // graticule lines.
   const unsigned int resolution = default_resolution;
   auto intersections_with_rays =
-    intersections_with_rays_parallel_to_axis('x', resolution);
+    intersections_with_rays_parallel_to('x', resolution);
 
   // Determine rho's numerator and denominator:
   // - rho_num is the sum of (weight * target_density) for each segment of a

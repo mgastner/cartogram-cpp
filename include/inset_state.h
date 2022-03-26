@@ -44,7 +44,7 @@ private:
   boost::multi_array<XYPoint, 2> proj_;  // Cartogram projection
 
   // Rasterized density and its Fourier transform
-  FTReal2d rho_init_, rho_ft_;
+  FTReal2d rho_ft_, rho_init_;
   std::unordered_map<std::string, double> target_areas_;
 
   // Vertical adjacency graph
@@ -59,10 +59,10 @@ private:
 
 public:
   explicit InsetState(const std::string);  // Constructor
-  double area_error_at(const std::string) const;
   void adjust_for_dual_hemisphere();
   void apply_albers_projection();
   void apply_smyth_craster_projection();
+  double area_error_at(const std::string) const;
   void auto_color();  // Automatically color GeoDivs
   Bbox bbox() const;
   void blur_density(const double, bool);
@@ -86,21 +86,26 @@ public:
 
   const std::vector<GeoDiv> geo_divs() const;
   void holes_inside_polygons();
-  const std::vector<std::vector<intersection> >
-    horizontal_scans(unsigned int) const;
+  const std::vector<std::vector<intersection> > horizontal_scans(
+    unsigned int
+  ) const;
   void increment_integration();
   void initialize_cum_proj();
   void insert_color(const std::string, const Color);
   void insert_color(const std::string, const std::string);
   void insert_label(const std::string, const std::string);
   void insert_target_area(const std::string, const double);
-  void insert_whether_input_target_area_is_missing(const std::string,
-                                                   const bool);
+  void insert_whether_input_target_area_is_missing(
+    const std::string,
+    const bool
+  );
   const std::string inset_name() const;
   nlohmann::json inset_to_geojson(bool) const;
   const std::vector<Segment> intersecting_segments(unsigned int) const;
-  std::vector<std::vector<intersection> >
-    intersections_with_rays_parallel_to_axis(char, unsigned int) const;
+  std::vector<std::vector<intersection> > intersections_with_rays_parallel_to(
+    char,
+    unsigned int
+  ) const;
   bool is_input_target_area_missing(const std::string) const;
   std::string label_at(const std::string) const;
   unsigned int lx() const;
@@ -109,9 +114,9 @@ public:
   struct max_area_error_info max_area_error() const;
   unsigned int n_finished_integrations() const;
   unsigned int n_geo_divs() const;
+  void normalize_inset_area(double total_cart_target_area, bool = false);
   unsigned long n_points() const;
   unsigned int n_rings() const;
-  void normalize_inset_area(double total_cart_target_area, bool = false);
   const std::string pos() const;
   void project();
   Point projected_point(const Point);
@@ -128,24 +133,30 @@ public:
   void set_grid_dimensions(const unsigned int, const unsigned int);
   void set_inset_name(const std::string);
   void simplify(const unsigned int);
-  bool target_area_is_missing(const std::string) const;
   double target_area_at(const std::string) const;
+  bool target_area_is_missing(const std::string) const;
   double total_inset_area() const;
   double total_target_area() const;
+  std::array<Point, 3> transformed_triangle(const std::array<Point, 3>);
 
   // Apply given function to all points
   void transform_points(std::function<Point(Point)>);
-
-  // Functions for project.cpp
-  std::array<Point, 3> transformed_triangle(const std::array<Point, 3>);
   std::array<Point, 3> untransformed_triangle(const Point);
 
   // Cairo functions
-  void write_cairo_polygons_to_png(const std::string,
-                                   const bool, const bool, const bool);
-  void write_cairo_polygons_to_ps(const std::string,
-                                  const bool, const bool, const bool);
   void write_cairo_map(const std::string, const bool);
+  void write_cairo_polygons_to_png(
+    const std::string,
+    const bool,
+    const bool,
+    const bool
+  );
+  void write_cairo_polygons_to_ps(
+    const std::string,
+    const bool,
+    const bool,
+    const bool
+  );
 
   // Functions to write map to eps
   void write_density_to_eps(const std::string, const double *);

@@ -1,17 +1,19 @@
 #include "inset_state.h"
 #include "constants.h"
 
-// TODO: THE OUTPUT FROM intersections_with_rays_parallel_to_axis() ALWAYS
+// TODO: THE OUTPUT FROM intersections_with_rays_parallel_to() ALWAYS
 // SEEM TO COME WITH A NEED TO SORT AFTERWARDS. SHOULD SORTING BECOME PART of
-// intersections_with_rays_parallel_to_axis() TO SAVE TYPING ELSEWHERE?
+// intersections_with_rays_parallel_to() TO SAVE TYPING ELSEWHERE?
 
 std::vector<std::vector<intersection> >
-InsetState::intersections_with_rays_parallel_to_axis(
-  char axis,
-  unsigned int resolution) const
+InsetState::intersections_with_rays_parallel_to(
+    char axis,
+    unsigned int resolution) const
 {
   if (axis != 'x' && axis != 'y') {
-    std::cerr << "Invalid axis in intersections_with_rays_parallel_to_axis()"
+    std::cerr << "Invalid axis in "
+              << __func__
+              << "()"
               << std::endl;
     exit(984320);
   }
@@ -126,7 +128,7 @@ void InsetState::create_contiguity_graph(unsigned int resolution)
   // Calculate horizontal and vertical scanlines
   for (char axis : {'x', 'y'}) {
     const std::vector<std::vector<intersection> > scanlines =
-      intersections_with_rays_parallel_to_axis(axis, resolution);
+      intersections_with_rays_parallel_to(axis, resolution);
     const unsigned int grid_length = (axis == 'x' ? ly_ : lx_);
 
     // Iterate over rows (if axis is 'x') or columns
@@ -175,7 +177,7 @@ InsetState::intersecting_segments(unsigned int resolution) const
   std::vector<Segment> int_segments;
   for (char axis : {'x', 'y'}) {
     const std::vector<std::vector<intersection> > scanlines =
-      intersections_with_rays_parallel_to_axis(axis, resolution);
+      intersections_with_rays_parallel_to(axis, resolution);
     const unsigned int grid_length = (axis == 'x' ? ly_ : lx_);
 
     // Iterate over rows (if axis is 'x') or columns
@@ -204,13 +206,13 @@ InsetState::intersecting_segments(unsigned int resolution) const
               temp = Segment(
                 Point(intersections[l + 1].x(), ray),
                 Point(intersections[l + 2].x(), ray)
-                );
+              );
               int_segments.push_back(temp);
             } else if (intersections[l + 1].y() != intersections[l + 2].y()) {
               temp = Segment(
                 Point(ray, intersections[l + 1].y()),
                 Point(ray, intersections[l + 2].y())
-                );
+              );
               int_segments.push_back(temp);
             }
           }
