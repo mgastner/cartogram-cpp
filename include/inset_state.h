@@ -69,8 +69,8 @@ public:
   void check_topology();
   int chosen_diag(const Point v[4], unsigned int *);
   const Color color_at(const std::string) const;
-  bool colors_empty() const;
   bool color_found(const std::string) const;
+  bool colors_empty() const;
   unsigned int colors_size() const;
   void create_contiguity_graph(unsigned int);
   void densify_geo_divs();

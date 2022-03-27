@@ -32,14 +32,14 @@ Bbox InsetState::bbox() const
   return inset_bb;
 }
 
-bool InsetState::color_found(const std::string id) const
-{
-  return colors_.count(id);
-}
-
 const Color InsetState::color_at(const std::string id) const
 {
   return colors_.at(id);
+}
+
+bool InsetState::color_found(const std::string id) const
+{
+  return colors_.count(id);
 }
 
 bool InsetState::colors_empty() const
@@ -129,9 +129,9 @@ void InsetState::insert_target_area(const std::string id, const double area)
 }
 
 void InsetState::insert_whether_input_target_area_is_missing(
-  const std::string id,
-  const bool is_missing)
-{
+    const std::string id,
+    const bool is_missing
+) {
   is_input_target_area_missing_.insert(
     std::pair<std::string, bool>(id, is_missing));
   return;
@@ -159,14 +159,24 @@ unsigned int InsetState::ly() const
 
 void InsetState::make_fftw_plans_for_rho()
 {
-  fwd_plan_for_rho_ =
-    fftw_plan_r2r_2d(lx_, ly_,
-                     rho_init_.as_1d_array(), rho_ft_.as_1d_array(),
-                     FFTW_REDFT10, FFTW_REDFT10, FFTW_ESTIMATE);
-  bwd_plan_for_rho_ =
-    fftw_plan_r2r_2d(lx_, ly_,
-                     rho_ft_.as_1d_array(), rho_init_.as_1d_array(),
-                     FFTW_REDFT01, FFTW_REDFT01, FFTW_ESTIMATE);
+  fwd_plan_for_rho_ = fftw_plan_r2r_2d(
+    lx_,
+    ly_,
+    rho_init_.as_1d_array(),
+    rho_ft_.as_1d_array(),
+    FFTW_REDFT10,
+    FFTW_REDFT10,
+    FFTW_ESTIMATE
+  );
+  bwd_plan_for_rho_ = fftw_plan_r2r_2d(
+    lx_,
+    ly_,
+    rho_ft_.as_1d_array(),
+    rho_init_.as_1d_array(),
+    FFTW_REDFT01,
+    FFTW_REDFT01,
+    FFTW_ESTIMATE
+  );
   return;
 }
 
@@ -192,7 +202,6 @@ unsigned int InsetState::n_geo_divs() const
 {
   return geo_divs_.size();
 }
-
 
 unsigned long InsetState::n_points() const
 {
@@ -258,8 +267,9 @@ void InsetState::set_area_errors()
 }
 
 void InsetState::set_grid_dimensions(
-  const unsigned int lx, const unsigned int ly)
-{
+    const unsigned int lx,
+    const unsigned int ly
+) {
   lx_ = lx;
   ly_ = ly;
   return;
