@@ -1,9 +1,10 @@
 #include "constants.h"
 #include "inset_state.h"
 
-void InsetState::rescale_map(unsigned int max_n_graticule_rows_or_cols,
-                             bool is_world_map)
-{
+void InsetState::rescale_map(
+    unsigned int max_n_graticule_rows_or_cols,
+    bool is_world_map
+) {
   double padding = (is_world_map ?  1.0 : padding_unless_world);
   Bbox bb;
   if (is_world_map) {
@@ -31,8 +32,8 @@ void InsetState::rescale_map(unsigned int max_n_graticule_rows_or_cols,
   // Ensure that the grid dimensions lx and ly are integer powers of 2
   unsigned int lx, ly;
   if ((max_n_graticule_rows_or_cols <= 0) ||
-      ((max_n_graticule_rows_or_cols &
-        (~max_n_graticule_rows_or_cols + 1)) != max_n_graticule_rows_or_cols)) {
+      ((max_n_graticule_rows_or_cols & (~max_n_graticule_rows_or_cols + 1))
+       != max_n_graticule_rows_or_cols)) {
     std::cerr << "ERROR: max_n_graticule_rows_or_cols must be an integer"
               << "power of 2."
               << std::endl;
@@ -52,17 +53,27 @@ void InsetState::rescale_map(unsigned int max_n_graticule_rows_or_cols,
     new_xmax = 0.5*(bb.xmax()+bb.xmin()) + 0.5*lx*latt_const;
     new_xmin = 0.5*(bb.xmax()+bb.xmin()) - 0.5*lx*latt_const;
   }
-  std::cerr << "Rescaling to " << lx << "-by-" << ly
-            << " grid with bounding box" << std::endl;
-  std::cerr << "\t("
-            << new_xmin << ", " << new_ymin << ", "
-            << new_xmax << ", " << new_ymax << ")"
+  std::cerr << "Rescaling to "
+            << lx
+            << "-by-"
+            << ly
+            << " grid with bounding box\n\t("
+            << new_xmin
+            << ", "
+            << new_ymin
+            << ", "
+            << new_xmax
+            << ", "
+            << new_ymax
+            << ")"
             << std::endl;
   set_grid_dimensions(lx, ly);
 
   // Rescale and translate all GeoDiv coordinates
-  const Transformation translate(CGAL::TRANSLATION,
-                           CGAL::Vector_2<Scd>(-new_xmin, -new_ymin));
+  const Transformation translate(
+    CGAL::TRANSLATION,
+    CGAL::Vector_2<Scd>(-new_xmin, -new_ymin)
+  );
   const Transformation scale(CGAL::SCALING, (1.0/latt_const));
   for (auto &gd : geo_divs_) {
     for (auto &pwh : *gd.ref_to_polygons_with_holes()) {
@@ -78,24 +89,26 @@ void InsetState::rescale_map(unsigned int max_n_graticule_rows_or_cols,
   return;
 }
 
-void InsetState::normalize_inset_area(double total_cart_target_area,
-                                      bool equal_area)
-{
+void InsetState::normalize_inset_area(
+    double total_cart_target_area,
+    bool equal_area
+) {
   const auto bb = bbox();
 
-  // Calculate scale_factor value to make insets proportional to each other
-  const double inset_area_prop =
-    total_target_area() / total_cart_target_area;
+  // Calculate scale_factor that makes inset areas proportional to their
+  // target areas on the cartogram
+  const double inset_area_prop = total_target_area() / total_cart_target_area;
   const double scale_factor =
-    equal_area ?
-    1.0 :
-    sqrt(inset_area_prop / total_inset_area());
+    equal_area ? 1.0 : sqrt(inset_area_prop / total_inset_area());
 
   // Rescale and translate all GeoDiv coordinates
   const Transformation translate(
     CGAL::TRANSLATION,
-    CGAL::Vector_2<Scd>(-(bb.xmin() + bb.xmax()) / 2,
-                          -(bb.ymin() + bb.ymax()) / 2));
+    CGAL::Vector_2<Scd>(
+      -(bb.xmin() + bb.xmax()) / 2,
+      -(bb.ymin() + bb.ymax()) / 2
+    )
+  );
   const Transformation scale(CGAL::SCALING, scale_factor);
   for (auto &gd : geo_divs_) {
     for (auto &pwh : *gd.ref_to_polygons_with_holes()) {
