@@ -1,11 +1,10 @@
-#include "../cartogram_info.h"
-#include "../inset_state.h"
-#include "../write_image.h"
+#include "cartogram_info.h"
+#include "inset_state.h"
 
-void InsetState::fill_with_density(const bool plot_density, 
-                                  const bool plot_graticule_heatmap,
-                                  const bool image_format_ps)
-{
+void InsetState::fill_with_density(
+    const bool plot_density,
+    const bool plot_graticule_heatmap,
+    const bool image_format_ps) {
   // We assume that target areas that were zero or missing in the input have
   // already been replaced by
   // CartogramInfo::replace_missing_and_zero_target_areas()
@@ -25,17 +24,14 @@ void InsetState::fill_with_density(const bool plot_density,
   // filled with the mean_density.
 
   // TODO: rho_num and rho_den could be a boost::multi_array<double, 2>.
-  std::vector<std::vector<double> >
-  rho_num(lx_, std::vector<double> (ly_, 0));
-  std::vector<std::vector<double> >
-  rho_den(lx_, std::vector<double> (ly_, 0));
+  std::vector<std::vector<double> > rho_num(lx_, std::vector<double>(ly_, 0));
+  std::vector<std::vector<double> > rho_den(lx_, std::vector<double>(ly_, 0));
 
   // Resolution with which we sample polygons. "resolution" is the number of
   // horizontal "test rays" between each of the ly consecutive horizontal
   // graticule lines.
   const unsigned int resolution = default_resolution;
-  auto intersections_with_rays =
-    intersections_with_rays_parallel_to_axis('x', resolution);
+  auto intersections_with_rays = intersec_with_parallel_to('x', resolution);
 
   // Determine rho's numerator and denominator:
   // - rho_num is the sum of (weight * target_density) for each segment of a
@@ -44,14 +40,12 @@ void InsetState::fill_with_density(const bool plot_density,
   // The weight of a segment of a ray that is inside a GeoDiv is equal to
   // (length of the segment inside the geo_div) * (area error of the geodiv).
   for (unsigned int k = 0; k < ly_; ++k) {
-
     // Iterate over each of the rays between the graticule lines y = k and
     // y = k+1
-    for (double y = k + 0.5/resolution; y < k + 1; y += 1.0/resolution) {
-
+    for (double y = k + 0.5 / resolution; y < k + 1; y += 1.0 / resolution) {
       // Intersections for one ray
       auto intersections_at_y =
-        intersections_with_rays[round((y - 0.5/resolution) * resolution)];
+          intersections_with_rays[round((y - 0.5 / resolution) * resolution)];
 
       // Sort intersections in ascending order
       std::sort(intersections_at_y.begin(), intersections_at_y.end());
@@ -68,13 +62,12 @@ void InsetState::fill_with_density(const bool plot_density,
         const double right_x = intersections_at_y[i + 1].x();
         if (left_x != right_x) {
           if (ceil(left_x) == ceil(right_x)) {
-
             // The intersections are in the same graticule cell. The ray
             // enters and leaves a GeoDiv in this cell. We weigh the density
             // of the cell by the GeoDiv's area error.
             const double weight =
-              area_error_at(intersections_at_y[i].geo_div_id) *
-              (right_x - left_x);
+                area_error_at(intersections_at_y[i].geo_div_id) *
+                (right_x - left_x);
             const double target_dens = intersections_at_y[i].target_density;
             rho_num[ceil(left_x) - 1][k] += weight * target_dens;
             rho_den[ceil(left_x) - 1][k] += weight;
@@ -85,10 +78,10 @@ void InsetState::fill_with_density(const bool plot_density,
         // the graticule cell is inside the GeoDiv
         const unsigned int last_x = intersections_at_y.back().x();
         const double last_weight =
-          area_error_at(intersections_at_y.back().geo_div_id) *
-          (ceil(last_x) - last_x);
+            area_error_at(intersections_at_y.back().geo_div_id) *
+            (ceil(last_x) - last_x);
         const double last_target_density =
-          intersections_at_y.back().target_density;
+            intersections_at_y.back().target_density;
         rho_num[ceil(last_x) - 1][k] += last_weight * last_target_density;
         rho_den[ceil(last_x) - 1][k] += last_weight;
       }
@@ -102,7 +95,6 @@ void InsetState::fill_with_density(const bool plot_density,
         // TODO: Decide whether to comment out? (probably not)
         if (intersections_at_y[i].ray_enters ==
             intersections_at_y[i + 1].ray_enters) {
-
           // Highlight where intersection is present
           std::cerr << "\nInvalid Geometry!" << std::endl;
           std::cerr << "Intersection of Polygons/Holes/Geodivs" << std::endl;
@@ -147,27 +139,30 @@ void InsetState::fill_with_density(const bool plot_density,
       }
     }
   }
-  if (plot_graticule_heatmap and n_finished_integrations() == 0){
-  std::string file_name =
-      inset_name_ +
-      "_piecewise_density_" +
-      std::to_string(n_finished_integrations());
-    
+  if (plot_graticule_heatmap and n_finished_integrations() == 0) {
+    std::string file_name = inset_name_ + "_piecewise_density_" +
+        std::to_string(n_finished_integrations());
+
     // Update extension
     image_format_ps ? file_name += ".ps" : file_name += ".svg";
 
-    write_density_image(file_name, rho_init_.as_1d_array(),
-                         plot_graticule_heatmap, image_format_ps, this);
+    write_density_image(
+        file_name,
+        rho_init_.as_1d_array(),
+        plot_graticule_heatmap,
+        image_format_ps,
+        this);
   }
-  
+
   if (plot_density) {
-    std::string file_name =
-      inset_name_ +
-      "_unblurred_density_" +
-      std::to_string(n_finished_integrations());
+    std::string file_name = inset_name_ + "_unblurred_density_" +
+        std::to_string(n_finished_integrations());
     std::cerr << "Writing " << file_name << std::endl;
-    write_density_image(file_name, rho_init_.as_1d_array(),
-                      plot_graticule_heatmap, image_format_ps, this);
+    write_density_image(
+        file_name,
+        rho_init_.as_1d_array(),
+        plot_graticule_heatmap,
+        image_format_ps);
   }
   execute_fftw_fwd_plan();
   return;

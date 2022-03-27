@@ -2,6 +2,7 @@
 #define CARTOGRAM_INFO_H_
 
 #include "inset_state.h"
+#include "argparse.hpp"
 #include "constants.h"
 #include <vector>
 
@@ -11,6 +12,7 @@ private:
   std::string id_header_;
   std::set<std::string> ids_in_visual_variables_file_;
   std::map<std::string, InsetState> inset_states_;
+  bool is_world_map_;
   std::string map_name_;
 
   // TODO: We assume that either all external rings are counterclockwise or
@@ -18,28 +20,23 @@ private:
   // in the wild, but it would still be sensible to allow cases where there
   // are external rings with opposite winding directions.
   bool original_ext_ring_is_clockwise_;
-  bool is_world_map_;
   std::string visual_variable_file_;
+  nlohmann::json cgal_to_json();
 
 public:
   explicit CartogramInfo(const bool, const std::string);
   double cart_total_target_area() const;
-  const std::string id_header() const;
-  const std::set<std::string> ids_in_visual_variables_file() const;
-  void insert_gd_into_inset(const std::string, const std::string);
-  void insert_id_in_visual_variables_file(const std::string);
-  void insert_inset_state(const std::string, const InsetState);
-  const std::string inset_at_gd(const std::string) const;
-  const std::map<std::string, InsetState> inset_states() const;
   bool is_world_map() const;
+  const std::string map_name() const;
+  unsigned int n_geo_divs() const;
   unsigned int n_insets() const;
   bool original_ext_ring_is_clockwise() const;
+  void read_csv(argparse::ArgumentParser);
+  void read_geojson(const std::string, const bool, std::string*);
   std::map<std::string, InsetState> *ref_to_inset_states();
   void replace_missing_and_zero_target_areas();
-  void set_id_header(const std::string);
-  void set_original_ext_ring_is_clockwise(const bool);
-  const std::string visual_variable_file() const;
   void set_map_name(const std::string);
-  const std::string map_name() const;
+  void shift_insets_to_target_position();
+  void write_geojson(std::string, std::string, std::ostream &, bool);
 };
 #endif

@@ -1,12 +1,7 @@
 #include "cartogram_info.h"
-#include "constants.h"
-#include "inset_state.h"
 #include "csv.hpp"
-#include "argparse.hpp"
-#include <iostream>
 
-void read_csv(argparse::ArgumentParser arguments,
-              CartogramInfo *cart_info)
+void CartogramInfo::read_csv(argparse::ArgumentParser arguments)
 {
 
   // Retrieve CSV Name.
@@ -18,17 +13,13 @@ void read_csv(argparse::ArgumentParser arguments,
   // Find index of column with IDs. If no ID column header was passed with the
   // command-line flag --id, the ID column is assumed to have index 0.
   auto is_id_header = arguments.present<std::string>("-D");
-  std::string id_header;
   int id_col = 0;
   if (is_id_header) {
-    id_header = *is_id_header;
-    id_col = reader.index_of(id_header);
+    id_header_ = *is_id_header;
+    id_col = reader.index_of(id_header_);
   } else {
-    id_header = reader.get_col_names()[0];
+    id_header_ = reader.get_col_names()[0];
   }
-
-  // Store header name of identifiers to read GeoJSON
-  cart_info->set_id_header(id_header);
 
   // Find index of column with target areas. If no area column header was
   // passed with the command-line flag --area, the area column is assumed to
@@ -68,14 +59,14 @@ void read_csv(argparse::ArgumentParser arguments,
 
     // Read ID of geographic division
     std::string id = row[id_col].get();
-    if (cart_info->ids_in_visual_variables_file().contains(id)) {
+    if (ids_in_visual_variables_file_.contains(id)) {
       std::cerr << "ERROR: ID "
                 << id
                 << " appears more than once in CSV"
                 << std::endl;
       _Exit(301);
     }
-    cart_info->insert_id_in_visual_variables_file(id);
+    ids_in_visual_variables_file_.insert(id);
 
     // Get target area
     csv::CSVField area_field = row[area_col];
@@ -131,12 +122,8 @@ void read_csv(argparse::ArgumentParser arguments,
       }
 
       // If unrecognized, set inset position to "C"
-      std::unordered_set<std::string> permitted_inset_pos {"C",
-                                                           "L",
-                                                           "R",
-                                                           "T",
-                                                           "B"};
-      if (!permitted_inset_pos.contains(inset_pos)) {
+      std::unordered_set<std::string> permitted_pos {"C", "L", "R", "T", "B"};
+      if (!permitted_pos.contains(inset_pos)) {
         std::cerr << "Unrecognized inset position : "
                   << inset_pos_original
                   << " for Region: "
@@ -150,19 +137,19 @@ void read_csv(argparse::ArgumentParser arguments,
     }
 
     // Associate GeoDiv ID with inset positon
-    cart_info->insert_gd_into_inset(id, inset_pos);
+    gd_to_inset_.insert(std::pair<std::string, std::string>(id, inset_pos));
 
     // Create inset_state for inset_pos unless it already exists
     if (!inset_pos_set.contains(inset_pos)) {
       InsetState inset_state(inset_pos);
-      cart_info->insert_inset_state(inset_pos, inset_state);
+      inset_states_.insert(
+        std::pair<std::string, InsetState>(inset_pos, inset_state)
+      );
       inset_pos_set.insert(inset_pos);
     }
 
     // Insert target area and color
-    std::map<std::string, InsetState> *inset_states =
-      cart_info->ref_to_inset_states();
-    InsetState *inset_state = &inset_states->at(inset_pos);
+    InsetState *inset_state = &inset_states_.at(inset_pos);
     inset_state->insert_target_area(id, area);
     if (color != "") {
       inset_state->insert_color(id, color);

@@ -1,12 +1,11 @@
-#include "cartogram_info.h"
 #include "inset_state.h"
 #include "round_point.h"
 #include <CGAL/Boolean_set_operations_2.h>
 
 // Returns error if there are holes not inside their respective polygons
-void holes_inside_polygons(InsetState *inset_state)
+void InsetState::holes_inside_polygons()
 {
-  for (const auto &gd : inset_state->geo_divs()) {
+  for (const auto &gd : geo_divs_) {
     for (const auto &pwh : gd.polygons_with_holes()) {
       const auto ext_ring = pwh.outer_boundary();
       for (auto h = pwh.holes_begin(); h != pwh.holes_end(); ++h) {
@@ -49,9 +48,9 @@ bool duplicates(std::vector<Point> v) {
   return false;
 }
 
-void rings_are_simple(InsetState *inset_state)
+void InsetState::rings_are_simple()
 {
-  for (const auto &gd : inset_state->geo_divs()) {
+  for (const auto &gd : geo_divs_) {
     for (const auto &pwh : gd.polygons_with_holes()) {
       const auto ext_ring = pwh.outer_boundary();
       if (!ext_ring.is_simple()) {
@@ -71,4 +70,10 @@ void rings_are_simple(InsetState *inset_state)
     }
   }
   return;
+}
+
+void InsetState::check_topology()
+{
+  holes_inside_polygons();
+  rings_are_simple();
 }

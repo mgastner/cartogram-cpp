@@ -1,7 +1,7 @@
 #include <iostream>
 
-#include "argparse.hpp"
 #include "constants.h"
+#include "parse_arguments.h"
 
 argparse::ArgumentParser parsed_arguments(
     const int argc,
@@ -22,7 +22,8 @@ argparse::ArgumentParser parsed_arguments(
     bool &plot_graticule,
     bool &plot_graticule_heatmap,
     bool &plot_intersections,
-    bool &crop) {
+    bool &crop)
+{
   // Create parser for arguments using argparse.
   // From https://github.com/p-ranav/argparse
   argparse::ArgumentParser arguments("./cartogram", "1.0");
@@ -40,11 +41,11 @@ argparse::ArgumentParser parsed_arguments(
   // Optional argument accepting long grid side length (unsigned int) as
   // input. Default value declared in "constants.h"
   arguments.add_argument("-N", "--n_graticule_rows_or_cols")
-      .default_value(default_long_graticule_length)
-      .scan<'u', unsigned int>()
-      .help(
-          "Integer: Number of grid cells along longer Cartesian coordinate "
-          "axis");
+  .default_value(default_long_graticule_length)
+  .scan<'u', unsigned int>()
+  .help(
+    "Integer: Number of grid cells along longer Cartesian coordinate axis"
+  );
 
   // Optional boolean arguments
   arguments.add_argument("-w", "--world")
@@ -105,11 +106,11 @@ argparse::ArgumentParser parsed_arguments(
       .implicit_value(true);
 
   arguments.add_argument("-P", "--n_points")
-      .help(
-          "Integer: If simplification enabled, target number of points per "
-          "inset")
-      .default_value(default_target_points_per_inset)
-      .scan<'u', unsigned int>();
+  .help(
+    "Integer: If simplification enabled, target number of points per inset"
+  )
+  .default_value(default_target_points_per_inset)
+  .scan<'u', unsigned int>();
 
   arguments.add_argument("-m", "--make_csv")
       .help("Boolean: create CSV file from given GeoJSON?")
@@ -196,9 +197,8 @@ argparse::ArgumentParser parsed_arguments(
     // GeoJSON file not provided
     std::cerr << arguments << std::endl;
     std::cerr << "ERROR: No Geometry file provided!" << std::endl;
-    std::cerr
-        << "Please provide a geometry file in the standard GeoJSON format."
-        << std::endl;
+    std::cerr << "Please provide a geometry file in standard GeoJSON format."
+              << std::endl;
     _Exit(16);
   }
 
