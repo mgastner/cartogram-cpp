@@ -5,8 +5,8 @@
 
 void print_albers_bbox(Bbox bb)
 {
-  std::cerr << "Bounding box of Albers-transformed map:\n";
-  std::cerr << "\tx_min = "
+  std::cerr << "Bounding box of Albers-transformed map:\n"
+            << "\tx_min = "
             << bb.xmin()
             << ", y_min = "
             << bb.ymin()
@@ -71,12 +71,13 @@ void InsetState::adjust_for_dual_hemisphere()
   return;
 }
 
-Point point_after_albers_projection(Point coords,
-                                   double lambda_0,
-                                   double phi_0,
-                                   double phi_1,
-                                   double phi_2)
-{
+Point point_after_albers_projection(
+    Point coords,
+    double lambda_0,
+    double phi_0,
+    double phi_1,
+    double phi_2
+) {
   const double lon_in_radians = (coords.x() * pi) / 180;
   const double lat_in_radians = (coords.y() * pi) / 180;
   double x, y;
@@ -126,18 +127,14 @@ void InsetState::apply_albers_projection()
   const double phi_1 = 0.5 * (phi_0 + max_lat);
   const double phi_2 = 0.5 * (phi_0 + min_lat);
 
-  // Specialise/curry point_after_albers_projection such that it only requires
+  // Specialize/curry point_after_albers_projection() s0 that it only requires
   // one argument (Point p1).
   std::function<Point(Point)> lambda =
     [=](Point p1) {
-      return point_after_albers_projection(p1,
-                                           lambda_0,
-                                           phi_0,
-                                           phi_1,
-                                           phi_2);
+      return point_after_albers_projection(p1, lambda_0, phi_0, phi_1, phi_2);
     };
 
-  // Apply "lambda" to all points
+  // Apply `lambda` to all points
   transform_points(lambda);
   return;
 }
