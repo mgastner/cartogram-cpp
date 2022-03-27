@@ -1,7 +1,8 @@
 #include "inset_state.h"
 
-nlohmann::json InsetState::inset_to_geojson(bool original_ext_ring_is_clockwise)
-  const
+nlohmann::json InsetState::inset_to_geojson(
+    bool original_ext_ring_is_clockwise
+) const
 {
   nlohmann::json inset_container;
   for (const auto &gd : geo_divs_) {
@@ -35,6 +36,9 @@ nlohmann::json InsetState::inset_to_geojson(bool original_ext_ring_is_clockwise)
 
       // Get holes of polygon with holes
       for (auto h = pwh.holes_begin(); h != pwh.holes_end(); ++h) {
+
+        // We make a copy called `hole` of *h so that `reverse_orientation()`
+        // does not change the original hole
         Polygon hole = *h;
 
         // Set hole to counter-clockwise if it was originally like that
