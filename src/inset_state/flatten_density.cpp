@@ -6,16 +6,17 @@
 
 // Function to calculate the velocity at the grid points (x, y) with x =
 // 0.5, 1.5, ..., lx-0.5 and y = 0.5, 1.5, ..., ly-0.5 at time t
-void calculate_velocity(double t,
-                        FTReal2d &grid_fluxx_init,
-                        FTReal2d &grid_fluxy_init,
-                        FTReal2d &rho_ft,
-                        FTReal2d &rho_init_,
-                        boost::multi_array<double, 2> *grid_vx,
-                        boost::multi_array<double, 2> *grid_vy,
-                        const unsigned int lx,
-                        const unsigned int ly)
-{
+void calculate_velocity(
+    double t,
+    FTReal2d &grid_fluxx_init,
+    FTReal2d &grid_fluxy_init,
+    FTReal2d &rho_ft,
+    FTReal2d &rho_init_,
+    boost::multi_array<double, 2> *grid_vx,
+    boost::multi_array<double, 2> *grid_vy,
+    const unsigned int lx,
+    const unsigned int ly
+) {
   double rho;
 
 #pragma omp parallel for private(rho)
@@ -29,12 +30,13 @@ void calculate_velocity(double t,
   return;
 }
 
-bool all_points_are_in_domain(double delta_t,
-                              boost::multi_array<XYPoint, 2> *proj,
-                              boost::multi_array<XYPoint, 2> *v_intp,
-                              const unsigned int lx,
-                              const unsigned int ly)
-{
+bool all_points_are_in_domain(
+    double delta_t,
+    boost::multi_array<XYPoint, 2> *proj,
+    boost::multi_array<XYPoint, 2> *v_intp,
+    const unsigned int lx,
+    const unsigned int ly
+) {
   // Return false if and only if there exists a point that would be outside
   // [0, lx] x [0, ly]
   for (unsigned int i = 0; i < lx; ++i) {
@@ -143,11 +145,17 @@ void InsetState::flatten_density()
 
   // Integrate
   while (t < 1.0) {
-    calculate_velocity(t,
-                       grid_fluxx_init, grid_fluxy_init,
-                       rho_ft_, rho_init_,
-                       &grid_vx, &grid_vy,
-                       lx_, ly_);
+    calculate_velocity(
+      t,
+      grid_fluxx_init,
+      grid_fluxy_init,
+      rho_ft_,
+      rho_init_,
+      &grid_vx,
+      &grid_vy,
+      lx_,
+      ly_
+    );
 #pragma omp parallel for
     for (unsigned int i = 0; i < lx_; ++i) {
       for (unsigned int j = 0; j < ly_; ++j) {
@@ -157,14 +165,22 @@ void InsetState::flatten_density()
         // is inside the rectangle [0, lx_] x [0, ly_]. This fact guarantees
         // that interpolate_bilinearly() is given a point that cannot cause it
         // to fail.
-        v_intp[i][j].x =
-          interpolate_bilinearly(proj_[i][j].x, proj_[i][j].y,
-                                 &grid_vx, 'x',
-                                 lx_, ly_);
-        v_intp[i][j].y =
-          interpolate_bilinearly(proj_[i][j].x, proj_[i][j].y,
-                                 &grid_vy, 'y',
-                                 lx_, ly_);
+        v_intp[i][j].x = interpolate_bilinearly(
+          proj_[i][j].x,
+          proj_[i][j].y,
+          &grid_vx,
+          'x',
+          lx_,
+          ly_
+        );
+        v_intp[i][j].y = interpolate_bilinearly(
+          proj_[i][j].x,
+          proj_[i][j].y,
+          &grid_vy,
+          'y',
+          lx_,
+          ly_
+        );
       }
     }
     bool accept = false;
@@ -185,11 +201,17 @@ void InsetState::flatten_density()
       //                        y + 0.5*delta_t*v_y(x,y,t),
       //                        t + 0.5*delta_t)
       // and similarly for y.
-      calculate_velocity(t + 0.5*delta_t,
-                         grid_fluxx_init, grid_fluxy_init,
-                         rho_ft_, rho_init_,
-                         &grid_vx, &grid_vy,
-                         lx_, ly_);
+      calculate_velocity(
+        t + 0.5*delta_t,
+        grid_fluxx_init,
+        grid_fluxy_init,
+        rho_ft_,
+        rho_init_,
+        &grid_vx,
+        &grid_vy,
+        lx_,
+        ly_
+      );
 
       // Make sure we do not pass a point outside [0, lx_] x [0, ly_] to
       // interpolate_bilinearly(). Otherwise decrease the time step below and
@@ -202,18 +224,22 @@ void InsetState::flatten_density()
 #pragma omp parallel for
         for (unsigned int i = 0; i < lx_; ++i) {
           for (unsigned int j = 0; j < ly_; ++j) {
-            v_intp_half[i][j].x =
-              interpolate_bilinearly(
-                proj_[i][j].x + 0.5*delta_t*v_intp[i][j].x,
-                proj_[i][j].y + 0.5*delta_t*v_intp[i][j].y,
-                &grid_vx, 'x',
-                lx_, ly_);
-            v_intp_half[i][j].y =
-              interpolate_bilinearly(
-                proj_[i][j].x + 0.5*delta_t*v_intp[i][j].x,
-                proj_[i][j].y + 0.5*delta_t*v_intp[i][j].y,
-                &grid_vy, 'y',
-                lx_, ly_);
+            v_intp_half[i][j].x = interpolate_bilinearly(
+              proj_[i][j].x + 0.5*delta_t*v_intp[i][j].x,
+              proj_[i][j].y + 0.5*delta_t*v_intp[i][j].y,
+              &grid_vx,
+              'x',
+              lx_,
+              ly_
+            );
+            v_intp_half[i][j].y = interpolate_bilinearly(
+              proj_[i][j].x + 0.5*delta_t*v_intp[i][j].x,
+              proj_[i][j].y + 0.5*delta_t*v_intp[i][j].y,
+              &grid_vy,
+              'y',
+              lx_,
+              ly_
+            );
             mid[i][j].x = proj_[i][j].x + v_intp_half[i][j].x * delta_t;
             mid[i][j].y = proj_[i][j].y + v_intp_half[i][j].y * delta_t;
 
@@ -222,9 +248,10 @@ void InsetState::flatten_density()
             // abs_tol. Neither should we accept the integration step if one
             // of the positions wandered out of the domain. If one of these
             // problems occurred, decrease the time step.
-            if ((mid[i][j].x-eul[i][j].x) * (mid[i][j].x-eul[i][j].x) +
-                (mid[i][j].y-eul[i][j].y) * (mid[i][j].y-eul[i][j].y)
-                > abs_tol ||
+            const double sq_dist =
+              (mid[i][j].x-eul[i][j].x) * (mid[i][j].x-eul[i][j].x)
+              + (mid[i][j].y-eul[i][j].y) * (mid[i][j].y-eul[i][j].y);
+            if (sq_dist > abs_tol ||
                 mid[i][j].x < 0.0 || mid[i][j].x > lx_ ||
                 mid[i][j].y < 0.0 || mid[i][j].y > ly_) {
               accept = false;
