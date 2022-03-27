@@ -15,13 +15,14 @@
 // determined by continuing the function value at 0.5 (or lx-0.5 or ly-0.5)
 // all the way to the edge (i.e. the slope is 0 consistent with a cosine
 // transform).
-double interpolate_bilinearly(const double x,
-                              const double y,
-                              const boost::multi_array<double, 2> *grid,
-                              const char zero,
-                              const unsigned int lx,
-                              const unsigned int ly)
-{
+double interpolate_bilinearly(
+    const double x,
+    const double y,
+    const boost::multi_array<double, 2> *grid,
+    const char zero,
+    const unsigned int lx,
+    const unsigned int ly
+) {
   if (x < 0 || x > lx || y < 0 || y > ly) {
     std::cerr << "ERROR: coordinate outside bounding box in "
               << __func__
@@ -105,8 +106,8 @@ double interpolate_bilinearly(const double x,
   } else {
     fx1y1 = (*grid)[static_cast<int>(x1)][static_cast<int>(y1)];
   }
-  return (1.0-delta_x)*(1.0-delta_y)*fx0y0 +
-         (1.0-delta_x)*delta_y*fx0y1 +
-         delta_x*(1.0-delta_y)*fx1y0 +
-         delta_x*delta_y*fx1y1;
+  return (1.0-delta_x)*(1.0-delta_y)*fx0y0
+         + (1.0-delta_x)*delta_y*fx0y1
+         + delta_x*(1.0-delta_y)*fx1y0
+         + delta_x*delta_y*fx1y1;
 }
