@@ -1,4 +1,4 @@
-// TODO: What happens if two polygons have touching lines but the corner
+// TODO: What happens if two polygons have touching lines, but the corner
 // points are not identical in both lines?
 
 #include "inset_state.h"
@@ -9,10 +9,11 @@
 // with a given non-simplified polygon
 constexpr int no_matching_simpl_pgn = -1;
 
-bool contains_vertices_in_order(const Polygon non_simpl_pgn,
-                                const Polygon simpl_pgn,
-                                const Bbox simpl_bb)
-{
+bool contains_vertices_in_order(
+    const Polygon non_simpl_pgn,
+    const Polygon simpl_pgn,
+    const Bbox simpl_bb
+) {
   // Return true if and only if
   // - the non-simplified polygon contains all vertices in the simplified
   //   polygon and
@@ -37,9 +38,11 @@ bool contains_vertices_in_order(const Polygon non_simpl_pgn,
   }
   std::vector<unsigned int> indices;
   for (const auto &simpl_pt : simpl_pgn) {
-    const auto non_simpl_it = std::find(non_simpl_pgn.vertices_begin(),
-                                        non_simpl_pgn.vertices_end(),
-                                        simpl_pt);
+    const auto non_simpl_it = std::find(
+      non_simpl_pgn.vertices_begin(),
+      non_simpl_pgn.vertices_end(),
+      simpl_pt
+    );
 
     // Return false if there is no matching vertex in the non-simplified
     // polygon
@@ -54,20 +57,23 @@ bool contains_vertices_in_order(const Polygon non_simpl_pgn,
   return std::is_sorted(indices.begin(), indices.end());
 }
 
-int simplified_polygon_index(const Polygon non_simpl_pgn,
-                             const std::vector<Polygon> *simpl_pgns,
-                             const std::vector<Bbox> *simpl_bboxes,
-                             std::list<unsigned int> *unmatched)
-{
+int simplified_polygon_index(
+    const Polygon non_simpl_pgn,
+    const std::vector<Polygon> *simpl_pgns,
+    const std::vector<Bbox> *simpl_bboxes,
+    std::list<unsigned int> *unmatched
+) {
   // Return index of simplified polygon that corresponds to a non-simplified
   // polygon. We pass a vector of the bounding boxes of the simplified
   // polygons as an argument so that the bounding boxes do not need to be
   // calculated repeatedly. We maintain a list of hitherto unmatched polygon
   // indices to avoid unnecessary iterations.
   for (const auto &i : *unmatched) {
-    if (contains_vertices_in_order(non_simpl_pgn,
-                                   simpl_pgns->at(i),
-                                   simpl_bboxes->at(i))) {
+    if (contains_vertices_in_order(
+          non_simpl_pgn,
+          simpl_pgns->at(i),
+          simpl_bboxes->at(i))
+    ) {
       unmatched->remove(i);
       return i;
     }
@@ -79,7 +85,6 @@ void InsetState::simplify(const unsigned int target_points_per_inset)
 {
   const unsigned int n_pts_before = n_points();
   std::cerr << n_pts_before << " points in inset. ";
-
   if (n_pts_before <= target_points_per_inset) {
     std::cerr << "No need for simplification." << std::endl;
     return;
@@ -99,9 +104,10 @@ void InsetState::simplify(const unsigned int target_points_per_inset)
   }
 
   // Simplify polygons
-  const unsigned long target_pts =
-    std::max(target_points_per_inset,
-             min_points_per_ring * n_rings());
+  const unsigned long target_pts = std::max(
+    target_points_per_inset,
+    min_points_per_ring * n_rings()
+  );
   const double ratio = static_cast<double>(target_pts) / n_pts_before;
   PS::simplify(ct, Cost(), Stop(ratio));
 
@@ -113,8 +119,10 @@ void InsetState::simplify(const unsigned int target_points_per_inset)
 
     // First and last point in the constraint are identical. We remove the
     // last point to make the polygon simple.
-    const Polygon ct_as_pgn(ct.points_in_constraint_begin(*it),
-                            --ct.points_in_constraint_end(*it));
+    const Polygon ct_as_pgn(
+      ct.points_in_constraint_begin(*it),
+      --ct.points_in_constraint_end(*it)
+    );
     simpl_pgns.push_back(ct_as_pgn);
     simpl_bboxes.push_back(ct_as_pgn.bbox());
   }
@@ -122,38 +130,43 @@ void InsetState::simplify(const unsigned int target_points_per_inset)
   // Match non-simplified polygon to its simplified counterpart
   std::list<unsigned int> unmatched(
     boost::counting_iterator<unsigned int>(0U),
-    boost::counting_iterator<unsigned int>(simpl_pgns.size()));
+    boost::counting_iterator<unsigned int>(simpl_pgns.size())
+  );
   std::vector<int> matching_simpl_pgn;
   for (const auto &gd : geo_divs_) {
     for (const auto &pwh : gd.polygons_with_holes()) {
-      const int ext_index = simplified_polygon_index(pwh.outer_boundary(),
-                                                     &simpl_pgns,
-                                                     &simpl_bboxes,
-                                                     &unmatched);
+      const int ext_index = simplified_polygon_index(
+        pwh.outer_boundary(),
+        &simpl_pgns,
+        &simpl_bboxes,
+        &unmatched
+      );
       matching_simpl_pgn.push_back(ext_index);
       for (auto h = pwh.holes_begin(); h != pwh.holes_end(); ++h) {
-        const int hole_index = simplified_polygon_index(*h,
-                                                        &simpl_pgns,
-                                                        &simpl_bboxes,
-                                                        &unmatched);
+        const int hole_index = simplified_polygon_index(
+          *h,
+          &simpl_pgns,
+          &simpl_bboxes,
+          &unmatched
+        );
         matching_simpl_pgn.push_back(hole_index);
       }
     }
   }
 
   // Sanity check
-  if (std::find(matching_simpl_pgn.begin(),
-                matching_simpl_pgn.end(),
-                no_matching_simpl_pgn) != matching_simpl_pgn.end() ||
+  if (std::find(
+        matching_simpl_pgn.begin(),
+        matching_simpl_pgn.end(),
+        no_matching_simpl_pgn
+      ) != matching_simpl_pgn.end() ||
       !unmatched.empty()) {
     std::cerr << "ERROR: Unmatched polygon in "
               << __func__
               << "()."
               << std::endl;
     for (const auto &u : unmatched) {
-      std::cerr << "Unmatched polygon: "
-                << u
-                << std::endl;
+      std::cerr << "Unmatched polygon: " << u << std::endl;
       for (const auto &pt : simpl_pgns[u]) {
         std::cerr << pt << std::endl;
       }
