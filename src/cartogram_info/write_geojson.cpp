@@ -1,13 +1,15 @@
 #include "cartogram_info.h"
 #include <fstream>
 
+// Function that returns coordinates of the end points of a "divider" line
+// segment used to separate between different insets
 std::vector<double> divider_points(double x1, double y1, double x2, double y2)
 {
   // Ratio between first divider point to (x2, y2) distance and
   // (x1, y1) : (x2, y2) distance
   double ratio = divider_length + (1.0 - divider_length) / 2;
 
-  //Calculate divider points
+  // Calculate divider points
   double x1d = ratio * x1 + (1.0 - ratio) * x2;
   double x2d = ratio * x2 + (1.0 - ratio) * x1;
   double y1d = ratio * y1 + (1.0 - ratio) * y2;
@@ -21,15 +23,17 @@ nlohmann::json CartogramInfo::cgal_to_json()
 {
   nlohmann::json container = nlohmann::json::array();
 
-  // Insert each Inset into container
+  // Insert each inset into `container`
   for (const auto &[inset_pos, inset_state] : inset_states_) {
     nlohmann::json inset_container =
       inset_state.inset_to_geojson(original_ext_ring_is_clockwise_);
 
     // Insert all elements inside the inset_container (concatenate JSON arrays)
-    container.insert(container.end(),
-                     inset_container.begin(),
-                     inset_container.end());
+    container.insert(
+      container.end(),
+      inset_container.begin(),
+      inset_container.end()
+    );
   }
 
   // Get joint bounding box for all insets.
@@ -38,15 +42,16 @@ nlohmann::json CartogramInfo::cgal_to_json()
   double bb_xmax = -dbl_inf;
   double bb_ymax = -dbl_inf;
 
-  // Get maximum ymax and minimum ymin for "L", "C", "R" &
-  // maximum xmax and minimum xmin for "T", "C", "B" insets
-  // to facilitate divider line calculations
+  // Get the joint minimum and maximum y-coordinates for the insets "L", "C",
+  // and "R". Also get the joint minimum and maximum x-coordinates for the
+  // insets "T", "C", and "B". These coordinates are needed to facilitate
+  // calculations for the positions of the divider lines.
   double min_xmin_tcb = dbl_inf;
   double min_ymin_lcr = dbl_inf;
   double max_xmax_tcb = -dbl_inf;
   double max_ymax_lcr = -dbl_inf;
 
-  // Get central inset bbox for later use on divider lines
+  // Get bounding box of central inset
   Bbox inset_c_bb;
   for (const auto &[inset_pos, inset_state] : inset_states_) {
     Bbox inset_bb = inset_state.bbox();
@@ -76,50 +81,60 @@ nlohmann::json CartogramInfo::cgal_to_json()
     return container;
   }
 
-  // Container to store divider lines for go-cart.io
+  // Container to store divider lines
   nlohmann::json divider_container;
 
   // Insert divider lines between all insets
   for (const auto &[inset_pos, inset_state] : inset_states_) {
     Bbox inset_bb = inset_state.bbox();
-    if (inset_pos == "R") {
-      divider_container.push_back(divider_points((inset_bb.xmin()
-                                                 + inset_c_bb.xmax()) / 2,
-                                                 max_ymax_lcr,
-                                                 (inset_bb.xmin()
-                                                 + inset_c_bb.xmax()) / 2,
-                                                 min_ymin_lcr));
-    } else if (inset_pos == "L") {
-      divider_container.push_back(divider_points((inset_bb.xmax()
-                                                 + inset_c_bb.xmin()) / 2,
-                                                 max_ymax_lcr,
-                                                 (inset_bb.xmax()
-                                                 + inset_c_bb.xmin()) / 2,
-                                                 min_ymin_lcr));
-    } else if (inset_pos == "T") {
-      divider_container.push_back(divider_points(min_xmin_tcb,
-                                                 (inset_bb.ymin()
-                                                 + inset_c_bb.ymax()) / 2,
-                                                 max_xmax_tcb,
-                                                 (inset_bb.ymin()
-                                                 + inset_c_bb.ymax()) / 2));
+    if (inset_pos == "T") {
+      divider_container.push_back(
+        divider_points(
+          min_xmin_tcb,
+          (inset_bb.ymin() + inset_c_bb.ymax()) / 2,
+          max_xmax_tcb,
+          (inset_bb.ymin() + inset_c_bb.ymax()) / 2
+        )
+      );
     } else if (inset_pos == "B") {
-      divider_container.push_back(divider_points(min_xmin_tcb,
-                                                 (inset_bb.ymax()
-                                                 + inset_c_bb.ymin()) / 2,
-                                                 max_xmax_tcb,
-                                                 (inset_bb.ymax()
-                                                 + inset_c_bb.ymin()) / 2));
+      divider_container.push_back(
+        divider_points(
+          min_xmin_tcb,
+          (inset_bb.ymax() + inset_c_bb.ymin()) / 2,
+          max_xmax_tcb,
+          (inset_bb.ymax() + inset_c_bb.ymin()) / 2
+        )
+      );
+    } else if (inset_pos == "L") {
+      divider_container.push_back(
+        divider_points(
+          (inset_bb.xmax() + inset_c_bb.xmin()) / 2,
+          max_ymax_lcr,
+          (inset_bb.xmax() + inset_c_bb.xmin()) / 2,
+          min_ymin_lcr
+        )
+      );
+    } else if (inset_pos == "R") {
+      divider_container.push_back(
+        divider_points(
+          (inset_bb.xmin() + inset_c_bb.xmax()) / 2,
+          max_ymax_lcr,
+          (inset_bb.xmin() + inset_c_bb.xmax()) / 2,
+          min_ymin_lcr
+        )
+      );
     }
   }
+  container.push_back(divider_container);
   return container;
 }
 
-void CartogramInfo::write_geojson(std::string old_geo_file_name,
-                                  std::string new_geo_file_name,
-                                  std::ostream &new_geo_stream,
-                                  bool output_to_stdout)
-{
+void CartogramInfo::write_geojson(
+    std::string old_geo_file_name,
+    std::string new_geo_file_name,
+    std::ostream &new_geo_stream,
+    bool output_to_stdout
+) {
   std::ifstream old_file(old_geo_file_name);
   nlohmann::json old_json;
   old_file >> old_json;
@@ -131,8 +146,7 @@ void CartogramInfo::write_geojson(std::string old_geo_file_name,
   // in an std::map.
   std::map<std::string, unsigned int> index_of_id_in_old_json;
   for (unsigned int index = 0; index < old_json["features"].size(); ++index) {
-    std::string id =
-      old_json["features"][index]["properties"][id_header_];
+    std::string id = old_json["features"][index]["properties"][id_header_];
     std::pair<std::string, unsigned int> pair(id, index);
     index_of_id_in_old_json.insert(pair);
   }
@@ -155,9 +169,7 @@ void CartogramInfo::write_geojson(std::string old_geo_file_name,
     new_json["features"][i]["geometry"]["type"] = "MultiPolygon";
 
     // Iterate over Polygon_with_holes in the GeoDiv
-    for (unsigned int j = 0;
-         j < container[i]["coordinates"].size();
-         ++j) {
+    for (unsigned int j = 0; j < container[i]["coordinates"].size(); ++j) {
 
       // Iterate over exterior ring and holes in the Polygon_with_holes
       for (unsigned int k = 0;
