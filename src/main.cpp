@@ -12,7 +12,6 @@ int main(const int argc, const char *argv[])
 
   // Target number of points to retain after simplification
   unsigned int target_points_per_inset = default_target_points_per_inset;
-
   bool world;  // World maps need special projections
 
   // Another cartogram projection method based on triangulation of graticule
@@ -49,7 +48,8 @@ int main(const int argc, const char *argv[])
     plot_density,
     plot_graticule,
     plot_intersections,
-    plot_polygons);
+    plot_polygons
+  );
 
   // Initialize cart_info. It contains all information about the cartogram
   // that needs to be handled by functions called from main().
@@ -138,8 +138,7 @@ int main(const int argc, const char *argv[])
     const Bbox bb = inset_state.bbox();
     if (bb.xmin() >= -180.0 && bb.xmax() <= 180.0 &&
         bb.ymin() >= -90.0 && bb.ymax() <= 90.0 &&
-        (crs == "+proj=longlat" ||
-         crs == "urn:ogc:def:crs:OGC:1.3:CRS84")) {
+        (crs == "+proj=longlat" || crs == "urn:ogc:def:crs:OGC:1.3:CRS84")) {
 
       // If yes, transform the coordinates with the Albers projection if the
       // input map is not a world map. Otherwise, use the Smyth-Craster
@@ -179,12 +178,17 @@ int main(const int argc, const char *argv[])
       inset_state.simplify(target_points_per_inset);
     }
     if (output_equal_area) {
-      inset_state.normalize_inset_area(cart_info.cart_total_target_area(), 
-                                       output_equal_area);
+      inset_state.normalize_inset_area(
+        cart_info.cart_total_target_area(),
+        output_equal_area
+      );
     } else {
 
       // Rescale map to fit into a rectangular box [0, lx] * [0, ly]
-      inset_state.rescale_map(long_graticule_length, cart_info.is_world_map());
+      inset_state.rescale_map(
+        long_graticule_length,
+        cart_info.is_world_map()
+      );
 
       // Set up Fourier transforms
       const unsigned int lx = inset_state.lx();
@@ -228,9 +232,10 @@ int main(const int argc, const char *argv[])
         // error is typically reduced to 1/5 of the previous value.
         const double ratio_actual_to_permitted_max_area_error =
           inset_state.max_area_error().value / max_permitted_area_error;
-        const double n_predicted_integrations =
-          std::max((log(ratio_actual_to_permitted_max_area_error) / log(5)),
-                   1.0);
+        const double n_predicted_integrations = std::max(
+          (log(ratio_actual_to_permitted_max_area_error) / log(5)),
+          1.0
+        );
 
         // Blur density to speed up the numerics in flatten_density() below.
         // We slowly reduce the blur width so that the areas can reach their
@@ -281,8 +286,7 @@ int main(const int argc, const char *argv[])
                   << inset_state.max_area_error().value
                   << ", GeoDiv: "
                   << inset_state.max_area_error().geo_div
-                  << std::endl;
-        std::cerr << "Progress: "
+                  << "\nProgress: "
                   << progress + (inset_max_frac / n_predicted_integrations)
                   << std::endl
                   << std::endl;
@@ -310,10 +314,12 @@ int main(const int argc, const char *argv[])
       if (world) {
         std::string output_file_name =
           map_name + "_cartogram_in_smyth_projection.geojson";
-        cart_info.write_geojson(geo_file_name,
-                                output_file_name,
-                                std::cout,
-                                output_to_stdout);
+        cart_info.write_geojson(
+          geo_file_name,
+          output_file_name,
+          std::cout,
+          output_to_stdout
+        );
         inset_state.revert_smyth_craster_projection();
       } else {
 
@@ -338,9 +344,11 @@ int main(const int argc, const char *argv[])
   } else {
     output_file_name = map_name + "_cartogram.geojson";
   }
-  cart_info.write_geojson(geo_file_name,
-                          output_file_name,
-                          std::cout,
-                          output_to_stdout);
+  cart_info.write_geojson(
+    geo_file_name,
+    output_file_name,
+    std::cout,
+    output_to_stdout
+  );
   return EXIT_SUCCESS;
 }
