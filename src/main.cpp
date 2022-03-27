@@ -119,8 +119,8 @@ int main(const int argc, const char *argv[])
     // is one such entry.
     const Bbox bb = inset_state.bbox();
     if (
-      bb.xmin() >= -180.0 && bb.xmax() <= 180.0 && bb.ymin() >= -90.0 &&
-      bb.ymax() <= 90.0 &&
+      (bb.xmin() >= -180.0 && bb.xmax() <= 180.0) &&
+      (bb.ymin() >= -90.0 && bb.ymax() <= 90.0) &&
       (crs == "+proj=longlat" || crs == "urn:ogc:def:crs:OGC:1.3:CRS84")) {
 
       // If yes, transform the coordinates with the Albers projection if the
