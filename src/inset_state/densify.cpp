@@ -1,7 +1,7 @@
-#include "../inset_state.h"
-#include "../constants.h"
+#include "inset_state.h"
+#include "constants.h"
 #include <CGAL/intersections.h>
-#include "../round_point.h"
+#include "round_point.h"
 
 // This function takes two lines as input:
 // - line `a`, defined by points a1 and a2.
@@ -255,6 +255,7 @@ void InsetState::densify_geo_divs()
     }
     geodivs_dens.push_back(gd_dens);
   }
-  set_geo_divs(geodivs_dens);
+  geo_divs_.clear();
+  geo_divs_ = geodivs_dens;
   return;
 }

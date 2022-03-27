@@ -1,5 +1,5 @@
-#include "../inset_state.h"
-#include "../constants.h"
+#include "inset_state.h"
+#include "constants.h"
 
 InsetState::InsetState(std::string pos) : pos_(pos)
 {
@@ -32,14 +32,14 @@ Bbox InsetState::bbox() const
   return inset_bb;
 }
 
-bool InsetState::color_found(const std::string id) const
-{
-  return colors_.count(id);
-}
-
 const Color InsetState::color_at(const std::string id) const
 {
   return colors_.at(id);
+}
+
+bool InsetState::color_found(const std::string id) const
+{
+  return colors_.count(id);
 }
 
 bool InsetState::colors_empty() const
@@ -129,9 +129,9 @@ void InsetState::insert_target_area(const std::string id, const double area)
 }
 
 void InsetState::insert_whether_input_target_area_is_missing(
-  const std::string id,
-  const bool is_missing)
-{
+    const std::string id,
+    const bool is_missing
+) {
   is_input_target_area_missing_.insert(
     std::pair<std::string, bool>(id, is_missing));
   return;
@@ -159,14 +159,24 @@ unsigned int InsetState::ly() const
 
 void InsetState::make_fftw_plans_for_rho()
 {
-  fwd_plan_for_rho_ =
-    fftw_plan_r2r_2d(lx_, ly_,
-                     rho_init_.as_1d_array(), rho_ft_.as_1d_array(),
-                     FFTW_REDFT10, FFTW_REDFT10, FFTW_ESTIMATE);
-  bwd_plan_for_rho_ =
-    fftw_plan_r2r_2d(lx_, ly_,
-                     rho_ft_.as_1d_array(), rho_init_.as_1d_array(),
-                     FFTW_REDFT01, FFTW_REDFT01, FFTW_ESTIMATE);
+  fwd_plan_for_rho_ = fftw_plan_r2r_2d(
+    lx_,
+    ly_,
+    rho_init_.as_1d_array(),
+    rho_ft_.as_1d_array(),
+    FFTW_REDFT10,
+    FFTW_REDFT10,
+    FFTW_ESTIMATE
+  );
+  bwd_plan_for_rho_ = fftw_plan_r2r_2d(
+    lx_,
+    ly_,
+    rho_ft_.as_1d_array(),
+    rho_init_.as_1d_array(),
+    FFTW_REDFT01,
+    FFTW_REDFT01,
+    FFTW_ESTIMATE
+  );
   return;
 }
 
@@ -192,7 +202,6 @@ unsigned int InsetState::n_geo_divs() const
 {
   return geo_divs_.size();
 }
-
 
 unsigned long InsetState::n_points() const
 {
@@ -221,26 +230,6 @@ void InsetState::push_back(const GeoDiv gd)
 {
   geo_divs_.push_back(gd);
   return;
-}
-
-boost::multi_array<XYPoint, 2> *InsetState::ref_to_cum_proj()
-{
-  return &cum_proj_;
-}
-
-std::vector<GeoDiv> *InsetState::ref_to_geo_divs()
-{
-  return &geo_divs_;
-}
-
-boost::multi_array<int, 2> *InsetState::ref_to_graticule_diagonals()
-{
-  return &graticule_diagonals_;
-}
-
-boost::multi_array<XYPoint, 2> *InsetState::ref_to_proj()
-{
-  return &proj_;
 }
 
 FTReal2d *InsetState::ref_to_rho_ft()
@@ -277,16 +266,10 @@ void InsetState::set_area_errors()
   return;
 }
 
-void InsetState::set_geo_divs(const std::vector<GeoDiv> geo_divs_new)
-{
-  geo_divs_.clear();
-  geo_divs_ = geo_divs_new;
-  return;
-}
-
 void InsetState::set_grid_dimensions(
-  const unsigned int lx, const unsigned int ly)
-{
+    const unsigned int lx,
+    const unsigned int ly
+) {
   lx_ = lx;
   ly_ = ly;
   return;
@@ -295,12 +278,6 @@ void InsetState::set_grid_dimensions(
 void InsetState::set_inset_name(const std::string inset_name)
 {
   inset_name_ = inset_name;
-  return;
-}
-
-void InsetState::set_pos(const std::string pos)
-{
-  pos_ = pos;
   return;
 }
 
@@ -339,4 +316,37 @@ std::string InsetState::label_at(const std::string id) const
     return "";
   }
   return labels_.at(id);
+}
+
+void InsetState::transform_points(std::function<Point(Point)> transform_point)
+{
+  // Iterate over GeoDivs
+  for (auto &gd : geo_divs_) {
+
+    // Iterate over Polygon_with_holes
+    for (auto &pwh : *gd.ref_to_polygons_with_holes()) {
+
+      // Get outer boundary
+      auto &outer_boundary = *(&pwh.outer_boundary());
+
+      // Iterate over outer boundary's coordinates
+      for (auto &coords_outer : outer_boundary) {
+
+        // Assign outer boundary's coordinates to transformed coordinates
+        coords_outer = transform_point(coords_outer);
+      }
+
+      // Iterate over holes
+      for (auto h = pwh.holes_begin(); h != pwh.holes_end(); ++h) {
+
+        // Iterate over hole's coordinates
+        for (auto &coords_hole : *h) {
+
+          // Assign hole's coordinates to transformed coordinates
+          coords_hole = transform_point(coords_hole);
+        }
+      }
+    }
+  }
+  return;
 }
