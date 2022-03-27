@@ -8,7 +8,7 @@ void InsetState::auto_color()
 {
   std::vector<Color> palette;
 
-  // Using default Palette for now
+  // Using default palette for now
   // From https://colorbrewer2.org/
   palette.push_back(Color(27, 158, 119));  // turquoise
   palette.push_back(Color(117, 112, 179));  // purple
@@ -22,23 +22,22 @@ void InsetState::auto_color()
   // Find resolution
   const unsigned int resolution = default_resolution;
 
-  // Creating full continuity graph based on vertical and horizontal scanlines
+  // Create continuity graph based on vertical and horizontal scanlines
   create_contiguity_graph(resolution);
 
-  // Count to maximize colors used. This changes the starting color that
-  // the algorithm choses for each GeoDiv.
+  // Count colors used
   unsigned int count = 0;
 
   // If coloring was unsuccessful, we restrict ourselves to a smaller count.
   // We begin by using as many colors as possible.
   int max_i = palette.size();
 
-  // Iterating until we are able to color the entire map
+  // Iterate until we are able to color the entire map
   while (colors_.size() < n_geo_divs() && max_i >= 0) {
     for (const auto &gd : geo_divs_) {
 
-      // Iterating over all possible colors
-      for (size_t i = (count % max_i); i < palette.size(); ++i) {
+      // Iterate over all possible colors
+      for (unsigned int i = (count % max_i); i < palette.size(); ++i) {
         const Color c = palette[i];
         bool shared_color = false;
 
