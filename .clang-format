@@ -1,16 +1,17 @@
 ﻿---
-BasedOnStyle: Google
-AlignAfterOpenBracket: AlwaysBreak
+BasedOnStyle: LLVM
+IndentWidth: 2
+ColumnLimit: 80
+AlignAfterOpenBracket: BlockIndent
 AlignConsecutiveMacros: 'false'
 AlignConsecutiveAssignments: 'false'
 AlignConsecutiveDeclarations: 'false'
 AlignEscapedNewlines: Left
-AlignOperands: 'false'
 AlignTrailingComments: 'false'
 AllowAllArgumentsOnNextLine: 'false'
 AllowAllConstructorInitializersOnNextLine: 'false'
 AllowAllParametersOfDeclarationOnNextLine: 'false'
-AllowShortBlocksOnASingleLine: 'false'
+AllowShortBlocksOnASingleLine: Empty
 AllowShortCaseLabelsOnASingleLine: 'true'
 AllowShortFunctionsOnASingleLine: None
 AllowShortIfStatementsOnASingleLine: Never
@@ -21,8 +22,9 @@ AlwaysBreakBeforeMultilineStrings: 'true'
 BinPackArguments: 'false'
 BinPackParameters: 'false'
 BreakBeforeBinaryOperators: None
+BreakBeforeBraces: Stroustrup
+ContinuationIndentWidth: 2
 SpacesInSquareBrackets: 'false'
 Standard: Auto
 UseTab: Never
-
 ...

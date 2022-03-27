@@ -146,23 +146,22 @@ void InsetState::fill_with_density(
     // Update extension
     image_format_ps ? file_name += ".ps" : file_name += ".svg";
 
-    write_density_image(
-        file_name,
-        rho_init_.as_1d_array(),
-        plot_graticule_heatmap,
-        image_format_ps,
-        this);
+    // write_density_image(
+    //     file_name,
+    //     rho_init_.as_1d_array(),
+    //     plot_graticule_heatmap,
+    //     image_format_ps);
   }
 
   if (plot_density) {
     std::string file_name = inset_name_ + "_unblurred_density_" +
         std::to_string(n_finished_integrations());
     std::cerr << "Writing " << file_name << std::endl;
-    write_density_image(
-        file_name,
-        rho_init_.as_1d_array(),
-        plot_graticule_heatmap,
-        image_format_ps);
+    // write_density_image(
+    //     file_name,
+    //     rho_init_.as_1d_array(),
+    //     plot_graticule_heatmap,
+    //     image_format_ps);
   }
   execute_fftw_fwd_plan();
   return;

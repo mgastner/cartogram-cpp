@@ -5,6 +5,7 @@
 #include "cartogram_info.h"
 #include "constants.h"
 #include "parse_arguments.h"
+
 typedef std::chrono::steady_clock::time_point time_point;
 typedef std::chrono::steady_clock clock_time;
 typedef std::chrono::milliseconds ms;
@@ -25,7 +26,7 @@ int main(const int argc, const char *argv[]) {
 
   // Target number of points to retain after simplification
   unsigned int target_points_per_inset = default_target_points_per_inset;
-  bool world;  // World maps need special projections
+  bool world; // World maps need special projections
 
   // Another cartogram projection method based on triangulation of graticule
   // cells. It can eliminate intersections that occur when the projected
@@ -37,30 +38,31 @@ int main(const int argc, const char *argv[]) {
 
   // Other boolean values that are needed to parse the command line arguments
   bool make_csv, produce_map_image, image_format_ps, output_equal_area,
-      output_to_stdout, plot_density, plot_graticule, plot_graticule_heatmap,
-      plot_intersections, crop;
+    output_to_stdout, plot_density, plot_graticule, plot_graticule_heatmap,
+    plot_intersections, crop;
 
   // Parse command-line arguments
   argparse::ArgumentParser arguments = parsed_arguments(
-      argc,
-      argv,
-      geo_file_name,
-      visual_file_name,
-      long_graticule_length,
-      target_points_per_inset,
-      world,
-      triangulation,
-      simplify,
-      make_csv,
-      produce_map_image,
-      image_format_ps,
-      output_equal_area,
-      output_to_stdout,
-      plot_density,
-      plot_graticule,
-      plot_graticule_heatmap,
-      plot_intersections,
-      crop);
+    argc,
+    argv,
+    geo_file_name,
+    visual_file_name,
+    long_graticule_length,
+    target_points_per_inset,
+    world,
+    triangulation,
+    simplify,
+    make_csv,
+    produce_map_image,
+    image_format_ps,
+    output_equal_area,
+    output_to_stdout,
+    plot_density,
+    plot_graticule,
+    plot_graticule_heatmap,
+    plot_intersections,
+    crop
+  );
 
   // Initialize cart_info. It contains all information about the cartogram
   // that needs to be handled by functions called from main().
@@ -155,10 +157,7 @@ int main(const int argc, const char *argv[]) {
     // to longitude and lattitude projection. "urn:ogc:def:crs:OGC:1.3:CRS84"
     // is one such entry.
     const Bbox bb = inset_state.bbox();
-    if (bb.xmin() >= -180.0 && bb.xmax() <= 180.0 &&
-        bb.ymin() >= -90.0 && bb.ymax() <= 90.0 &&
-        (crs == "+proj=longlat" || crs == "urn:ogc:def:crs:OGC:1.3:CRS84")) {
-
+    if (bb.xmin() >= -180.0 && bb.xmax() <= 180.0 && bb.ymin() >= -90.0 && bb.ymax() <= 90.0 && (crs == "+proj=longlat" || crs == "urn:ogc:def:crs:OGC:1.3:CRS84")) {
       // If yes, transform the coordinates with the Albers projection if the
       // input map is not a world map. Otherwise, use the Smyth-Craster
       // projection.
@@ -167,7 +166,8 @@ int main(const int argc, const char *argv[]) {
       } else {
         inset_state.apply_albers_projection();
       }
-    } else if (output_equal_area) {
+    }
+    else if (output_equal_area) {
       std::cerr << "ERROR: Input GeoJSON is not a longitude-latitude map."
                 << std::endl;
       return EXIT_FAILURE;
@@ -295,9 +295,9 @@ int main(const int argc, const char *argv[]) {
           inset_state.blur_density(blur_width, plot_density, image_format_ps);
         }
         if (plot_intersections) {
-          inset_state.write_intersections_image(
-              intersections_resolution,
-              image_format_ps);
+          // inset_state.write_intersections_image(
+          //     intersections_resolution,
+          //     image_format_ps);
         }
         inset_state.flatten_density();
         if (triangulation) {
@@ -339,9 +339,9 @@ int main(const int argc, const char *argv[]) {
       std::cerr << "Finished inset " << inset_pos << "\nProgress: " << progress
                 << std::endl;
       if (plot_intersections) {
-        inset_state.write_intersections_image(
-            intersections_resolution,
-            image_format_ps);
+      //   inset_state.write_intersections_image(
+      //       intersections_resolution,
+      //       image_format_ps);
       }
 
       // Print PS files of cartogram
@@ -356,12 +356,12 @@ int main(const int argc, const char *argv[]) {
         image_format_ps ? output_filename += ".ps" : output_filename += ".svg";
 
         std::cerr << "Writing " << output_filename << std::endl;
-        write_map_image(
-            output_filename,
-            true,
-            plot_graticule,
-            image_format_ps,
-            &inset_state);
+        // write_map_image(
+        //     output_filename,
+        //     true,
+        //     plot_graticule,
+        //     image_format_ps,
+        //     &inset_state);
       }
 
       if (plot_graticule_heatmap) {
@@ -372,12 +372,12 @@ int main(const int argc, const char *argv[]) {
         // Update extension
         image_format_ps ? output_filename += ".ps" : output_filename += ".svg";
         std::cerr << "Writing " << output_filename << std::endl;
-        write_graticule_heatmap_image(
-            output_filename,
-            true,
-            image_format_ps,
-            crop,
-            &inset_state);
+        // write_graticule_heatmap_image(
+        //     output_filename,
+        //     true,
+        //     image_format_ps,
+        //     crop,
+        //     &inset_state);
 
         // Produce cartogram graticule heatmap
         output_filename =
@@ -387,12 +387,12 @@ int main(const int argc, const char *argv[]) {
         image_format_ps ? output_filename += ".ps" : output_filename += ".svg";
 
         std::cerr << "Writing " << output_filename << std::endl;
-        write_graticule_heatmap_image(
-            output_filename,
-            false,
-            image_format_ps,
-            crop,
-            &inset_state);
+        // write_graticule_heatmap_image(
+        //     output_filename,
+        //     false,
+        //     image_format_ps,
+        //     crop,
+        //     &inset_state);
         std::cerr << "Writing "
                   << output_filename << std::endl;
         inset_state.write_cairo_map(output_filename, plot_graticule);
@@ -426,7 +426,7 @@ int main(const int argc, const char *argv[]) {
     // Update extension
     image_format_ps ? output_filename += ".ps" : output_filename += ".svg";
     std::cerr << "Writing " << output_filename << std::endl;
-    write_density_bar_image(output_filename, image_format_ps);
+    // write_density_bar_image(output_filename, image_format_ps);
   }
 
   // Shift insets so that they do not overlap
