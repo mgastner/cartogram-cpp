@@ -1,7 +1,7 @@
-#include "../inset_state.h"
-#include "../constants.h"
+#include "inset_state.h"
+#include "constants.h"
 #include <CGAL/intersections.h>
-#include "../round_point.h"
+#include "round_point.h"
 
 // A point location at (-1, -1) is a sign that a point is not on the
 // [0, lx]-by-[0, ly] grid used for calculating the density to be equalized
@@ -260,6 +260,7 @@ void InsetState::densify_geo_divs()
     }
     geodivs_dens.push_back(gd_dens);
   }
-  set_geo_divs(geodivs_dens);
+  geo_divs_.clear();
+  geo_divs_ = geodivs_dens;
   return;
 }

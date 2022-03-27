@@ -1,11 +1,11 @@
 #include "constants.h"
-#include "cartogram_info.h"
 #include "inset_state.h"
 #include <fstream>
 
 void write_eps_header_and_definitions(std::ofstream &eps_file,
                                       const std::string eps_name,
-                                      const InsetState *inset_state)
+                                      const unsigned int lx,
+                                      const unsigned int ly)
 {
   // Current time
   time_t tt;
@@ -21,8 +21,8 @@ void write_eps_header_and_definitions(std::ofstream &eps_file,
   eps_file << "%%CreationDate: " << asctime(ti);
   eps_file << "%%Pages: 1\n";
   eps_file << "%%BoundingBox: 0 0 "
-           << inset_state->lx() << " "
-           << inset_state->ly() << "\n";
+           << lx << " "
+           << ly << "\n";
   eps_file << "%%Magnification: 1.0000\n";
   eps_file << "%%EndComments\n";
 
@@ -51,14 +51,13 @@ void write_eps_header_and_definitions(std::ofstream &eps_file,
   return;
 }
 
-void write_polygons_to_eps(std::ofstream &eps_file,
-                           const bool fill_polygons,
-                           const bool colors,
-                           const InsetState *inset_state)
+void InsetState::write_polygons_to_eps(std::ofstream &eps_file,
+                                       const bool fill_polygons,
+                                       const bool colors)
 {
-  eps_file << 0.001 * std::min(inset_state->lx(), inset_state->ly())
+  eps_file << 0.001 * std::min(lx_, ly_)
            << " slw\n";
-  for (const auto &gd : inset_state->geo_divs()) {
+  for (const auto &gd : geo_divs_) {
     for (const auto &pwh : gd.polygons_with_holes()) {
       const Polygon ext_ring = pwh.outer_boundary();
 
@@ -88,7 +87,7 @@ void write_polygons_to_eps(std::ofstream &eps_file,
         eps_file << "gsave\n";
 
         // Check whether target area was initially missing
-        if (inset_state->is_input_target_area_missing(gd.id())) {
+        if (is_input_target_area_missing(gd.id())) {
 
           // Fill path with dark grey
           eps_file << "0.9375 0.9375 0.9375 srgb f\n";
@@ -96,7 +95,7 @@ void write_polygons_to_eps(std::ofstream &eps_file,
         } else if (colors) {
 
           // Get color
-          Color col = inset_state->color_at(gd.id());
+          Color col = color_at(gd.id());
 
           // Fill path
           eps_file << col.eps() << "srgb f\n";
@@ -118,34 +117,32 @@ void write_polygons_to_eps(std::ofstream &eps_file,
   return;
 }
 
-void write_graticule_to_eps(std::ofstream &eps_file, InsetState *inset_state)
+void InsetState::write_graticule_to_eps(std::ofstream &eps_file)
 {
-  const boost::multi_array<XYPoint, 2> &cum_proj =
-    *inset_state->ref_to_cum_proj();
   const unsigned int graticule_line_spacing = 7;
 
   // Set line width of graticule lines
-  eps_file << 0.0005 * std::min(inset_state->lx(), inset_state->ly())
+  eps_file << 0.0005 * std::min(lx_, ly_)
            << " slw\n";
 
   // Vertical graticule lines
   for (unsigned int i = 0;
-       i <= inset_state->lx();
+       i <= lx_;
        i += graticule_line_spacing) {
-    eps_file << cum_proj[i][0].x << " " << cum_proj[i][0].y << " m\n";
-    for (unsigned int j = 1; j < inset_state->ly(); ++j) {
-      eps_file << cum_proj[i][j].x << " " << cum_proj[i][j].y << " l\n";
+    eps_file << cum_proj_[i][0].x << " " << cum_proj_[i][0].y << " m\n";
+    for (unsigned int j = 1; j < ly_; ++j) {
+      eps_file << cum_proj_[i][j].x << " " << cum_proj_[i][j].y << " l\n";
     }
     eps_file << "s\n";
   }
 
   // Horizontal graticule lines
   for (unsigned int j = 0;
-       j <= inset_state->ly();
+       j <= ly_;
        j += graticule_line_spacing) {
-    eps_file << cum_proj[0][j].x << " " << cum_proj[0][j].y << " m\n";
-    for (unsigned int i = 1; i < inset_state->lx(); ++i) {
-      eps_file << cum_proj[i][j].x << " " << cum_proj[i][j].y << " l\n";
+    eps_file << cum_proj_[0][j].x << " " << cum_proj_[0][j].y << " m\n";
+    for (unsigned int i = 1; i < lx_; ++i) {
+      eps_file << cum_proj_[i][j].x << " " << cum_proj_[i][j].y << " l\n";
     }
     eps_file << "s\n";
   }
@@ -153,22 +150,20 @@ void write_graticule_to_eps(std::ofstream &eps_file, InsetState *inset_state)
 }
 
 
-void write_map_to_eps(const std::string eps_name,
-                      const bool plot_graticule,
-                      InsetState *inset_state)
+void InsetState::write_map_to_eps(const std::string eps_name,
+                                  const bool plot_graticule)
 {
   std::ofstream eps_file(eps_name);
-  write_eps_header_and_definitions(eps_file, eps_name, inset_state);
+  write_eps_header_and_definitions(eps_file, eps_name, lx_, ly_);
 
   // Check whether all GeoDivs are colored
   const bool has_colors =
-    (inset_state->colors_size() == inset_state->n_geo_divs());
+    (colors_size() == n_geo_divs());
   write_polygons_to_eps(eps_file,
-                        true,  // Whether to fill polygons with default color
-                        has_colors,
-                        inset_state);
+                        true,  // Fill polygons with default color?
+                        has_colors);  // Fill polygons with assigned assigned?
   if (plot_graticule) {
-    write_graticule_to_eps(eps_file, inset_state);
+    write_graticule_to_eps(eps_file);
   }
   eps_file << "showpage\n";
   eps_file << "%%EOF\n";
@@ -251,28 +246,27 @@ void heatmap_color(const double dens,
   return;
 }
 
-void write_density_to_eps(const std::string eps_name,
-                          const double *density,
-                          InsetState *inset_state)
+void InsetState::write_density_to_eps(const std::string eps_name,
+                                      const double *density)
 {
   std::ofstream eps_file(eps_name);
-  write_eps_header_and_definitions(eps_file, eps_name, inset_state);
+  write_eps_header_and_definitions(eps_file, eps_name, lx_, ly_);
 
   // Determine range of densities
   double dens_min = dbl_inf;
   double dens_mean = 0.0;
   double dens_max = -dbl_inf;
-  const unsigned int n_grid_cells = inset_state->lx() * inset_state->ly();
+  const unsigned int n_grid_cells = lx_ * ly_;
   for (unsigned int k = 0; k < n_grid_cells; ++k) {
     dens_min = std::min(density[k], dens_min);
     dens_mean += density[k];
     dens_max = std::max(density[k], dens_max);
   }
   dens_mean /= n_grid_cells;
-  for (unsigned int i = 0; i < inset_state->lx(); ++i) {
-    for (unsigned int j = 0; j < inset_state->ly(); ++j) {
+  for (unsigned int i = 0; i < lx_; ++i) {
+    for (unsigned int j = 0; j < ly_; ++j) {
       double r, g, b;
-      heatmap_color(density[i*inset_state->ly() + j],
+      heatmap_color(density[i*ly_ + j],
                     dens_min,
                     dens_mean,
                     dens_max,
@@ -282,9 +276,9 @@ void write_density_to_eps(const std::string eps_name,
     }
   }
   write_polygons_to_eps(eps_file,
-                        false,  // Whether to fill polygons with default color
-                        false,  // Whether to fill polygons with default color
-                        inset_state);
+                        false,  // Fill polygons with default color?
+                        false);  // Fill polygons with assigned colors?
+
   eps_file << "showpage\n";
   eps_file << "%%EOF\n";
   eps_file.close();
@@ -305,11 +299,10 @@ void InsetState::write_intersections_to_eps(unsigned int res)
   // Printing intersections to EPS if intersections present
   std::cerr << "Writing " << eps_name << std::endl;
   std::ofstream eps_file(eps_name);
-  write_eps_header_and_definitions(eps_file, eps_name, this);
+  write_eps_header_and_definitions(eps_file, eps_name, lx_, ly_);
   write_polygons_to_eps(eps_file,
-                        false,  // Whether to fill polygons with default color
-                        false,  // Whether to fill polygons with assigned color
-                        this);
+                        false,  // Fill polygons with default color?
+                        false);  // Fill polygons with assigned colors?
 
   // Set line width of intersection lines
   eps_file << 0.0001 * std::min(lx_, ly_)

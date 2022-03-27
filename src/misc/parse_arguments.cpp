@@ -1,26 +1,26 @@
 #include "constants.h"
-#include "argparse.hpp"
+#include "parse_arguments.h"
 #include <iostream>
 
 argparse::ArgumentParser parsed_arguments(
-  const int argc,
-  const char *argv[],
-  std::string &geo_file_name,
-  std::string &visual_file_name,
-  unsigned int
-  &max_n_graticule_rows_or_cols,
-  unsigned int &target_points_per_inset,
-  bool &world,
-  bool &triangulation,
-  bool &simplify,
-  bool &make_csv,
-  bool &output_equal_area,
-  bool &output_to_stdout,
-  bool &plot_density,
-  bool &plot_graticule,
-  bool &plot_intersections,
-  bool &plot_polygons)
-{
+    const int argc,
+    const char *argv[],
+    std::string &geo_file_name,
+    std::string &visual_file_name,
+    unsigned int
+    &max_n_graticule_rows_or_cols,
+    unsigned int &target_points_per_inset,
+    bool &world,
+    bool &triangulation,
+    bool &simplify,
+    bool &make_csv,
+    bool &output_equal_area,
+    bool &output_to_stdout,
+    bool &plot_density,
+    bool &plot_graticule,
+    bool &plot_intersections,
+    bool &plot_polygons
+) {
   // Create parser for arguments using argparse.
   // From https://github.com/p-ranav/argparse
   argparse::ArgumentParser arguments("./cartogram", "1.0");
@@ -41,7 +41,8 @@ argparse::ArgumentParser parsed_arguments(
   .default_value(default_long_graticule_length)
   .scan<'u', unsigned int>()
   .help(
-    "Integer: Number of grid cells along longer Cartesian coordinate axis");
+    "Integer: Number of grid cells along longer Cartesian coordinate axis"
+  );
 
   // Optional boolean arguments
   arguments.add_argument("-w", "--world")
@@ -85,7 +86,9 @@ argparse::ArgumentParser parsed_arguments(
   .implicit_value(true);
 
   arguments.add_argument("-P", "--n_points")
-  .help("Integer: If simplification enabled, target number of points per inset")
+  .help(
+    "Integer: If simplification enabled, target number of points per inset"
+  )
   .default_value(default_target_points_per_inset)
   .scan<'u', unsigned int>();
 
@@ -174,8 +177,7 @@ argparse::ArgumentParser parsed_arguments(
     // GeoJSON file not provided
     std::cerr << arguments << std::endl;
     std::cerr << "ERROR: No Geometry file provided!" << std::endl;
-    std::cerr <<
-      "Please provide a geometry file in the standard GeoJSON format."
+    std::cerr << "Please provide a geometry file in standard GeoJSON format."
               << std::endl;
     _Exit(16);
   }

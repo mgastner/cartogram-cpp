@@ -49,8 +49,10 @@ Point rounded_point(
     const unsigned int lx,
     const unsigned int ly
 ) {
-  return Point(rounded_to_bicimal(a.x(), lx, ly),
-               rounded_to_bicimal(a.y(), lx, ly));
+  return Point(
+    rounded_to_bicimal(a.x(), lx, ly),
+    rounded_to_bicimal(a.y(), lx, ly)
+  );
 }
 
 XYPoint rounded_XYpoint(
@@ -58,6 +60,8 @@ XYPoint rounded_XYpoint(
     const unsigned int lx,
     const unsigned int ly
 ) {
-  return XYPoint(rounded_to_bicimal(a.x, lx, ly),
-                 rounded_to_bicimal(a.y, lx, ly));
+  return XYPoint(
+    rounded_to_bicimal(a.x, lx, ly),
+    rounded_to_bicimal(a.y, lx, ly)
+  );
 }

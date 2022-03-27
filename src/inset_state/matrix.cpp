@@ -1,6 +1,5 @@
 #include "constants.h"
 #include "matrix.h"
-#include "inset_state.h"
 
 // TODO: IT WOULD BE LESS TYPING TO DEFINE Matrix AS A
 // boost::multi_array<double, 2>. THEN WE COULD WRITE THE IDENTITY MATRIX AS
@@ -59,9 +58,9 @@ void Matrix::scale(const double multiplier)
 // Determinant
 double Matrix::det() const
 {
-  return p11 * ((p22 * p33) - (p23 * p32)) -
-         p12 * ((p21 * p33) - (p23 * p31)) +
-         p13 * ((p21 * p32) - (p22 * p31));
+  return p11 * ((p22 * p33) - (p23 * p32))
+         - p12 * ((p21 * p33) - (p23 * p31))
+         + p13 * ((p21 * p32) - (p22 * p31));
 }
 
 Matrix Matrix::adjugate() const

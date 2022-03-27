@@ -1,6 +1,5 @@
-#include "../cartogram_info.h"
-#include "../write_eps.h"
-#include "../inset_state.h"
+#include "cartogram_info.h"
+#include "inset_state.h"
 
 void InsetState::fill_with_density(bool plot_density)
 {
@@ -23,17 +22,20 @@ void InsetState::fill_with_density(bool plot_density)
   // filled with the mean_density.
 
   // TODO: rho_num and rho_den could be a boost::multi_array<double, 2>.
-  std::vector<std::vector<double> >
-  rho_num(lx_, std::vector<double> (ly_, 0));
-  std::vector<std::vector<double> >
-  rho_den(lx_, std::vector<double> (ly_, 0));
+  std::vector<std::vector<double> > rho_num(
+    lx_,
+    std::vector<double> (ly_, 0)
+  );
+  std::vector<std::vector<double> > rho_den(
+    lx_,
+    std::vector<double> (ly_, 0)
+  );
 
   // Resolution with which we sample polygons. "resolution" is the number of
   // horizontal "test rays" between each of the ly consecutive horizontal
   // graticule lines.
   const unsigned int resolution = default_resolution;
-  auto intersections_with_rays =
-    intersections_with_rays_parallel_to_axis('x', resolution);
+  auto intersections_with_rays = intersec_with_parallel_to('x', resolution);
 
   // Determine rho's numerator and denominator:
   // - rho_num is the sum of (weight * target_density) for each segment of a
@@ -152,7 +154,7 @@ void InsetState::fill_with_density(bool plot_density)
       std::to_string(n_finished_integrations()) +
       ".eps";
     std::cerr << "Writing " << file_name << std::endl;
-    write_density_to_eps(file_name, rho_init_.as_1d_array(), this);
+    write_density_to_eps(file_name, rho_init_.as_1d_array());
   }
   execute_fftw_fwd_plan();
   return;
