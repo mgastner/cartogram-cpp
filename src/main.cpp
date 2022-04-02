@@ -377,17 +377,6 @@ int main(const int argc, const char *argv[])
         std::cerr << "Writing " << output_filename << std::endl;
         // inset_state.write_cairo_map(output_filename, plot_graticule);
       }
-      
-        // Output a density heatmap's bar
-      if (plot_density) {
-        std::string output_filename = "density_bar";
-
-        // Update extension
-        image_format_ps ? output_filename += ".ps" : output_filename += ".svg";
-        std::cerr << "Writing " << output_filename << std::endl;
-        inset_state.write_density_bar_image(output_filename, image_format_ps);
-      }
-      
       if (world) {
         std::string output_file_name =
           map_name + "_cartogram_in_smyth_projection.geojson";
@@ -407,6 +396,16 @@ int main(const int argc, const char *argv[])
       inset_state.ref_to_rho_init()->free();
       inset_state.ref_to_rho_ft()->free();
     } // End of loop over insets
+  }
+
+  // Output a density heatmap's bar
+  if (plot_density) {
+    std::string output_filename = "density_bar";
+
+    // Update extension
+    image_format_ps ? output_filename += ".ps" : output_filename += ".svg";
+    std::cerr << "Writing " << output_filename << std::endl;
+    // write_density_bar_image(output_filename, image_format_ps);
   }
 
   // Shift insets so that they do not overlap
