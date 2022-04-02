@@ -1,8 +1,7 @@
-#include "constants.h"
-#include "inset_state.h"
-#include <cairo/cairo-ps.h>
-#include <cairo/cairo-pdf.h>
-#include <iostream>
+// #include "constants.h"
+// #include <cairo/cairo-ps.h>
+// #include <cairo/cairo-pdf.h>
+// #include <iostream>
 
 // TODO: IS THERE A CGAL WAY OF DETERMINING WHETHER THE LABEL'S BOUNDING
 //       BOX IS COMPLETELY CONTAINED IN THE POLYGON?

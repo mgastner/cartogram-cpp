@@ -1,6 +1,5 @@
-#include "constants.h"
-#include "inset_state.h"
-#include <fstream>
+// #include "constants.h"
+// #include <fstream>
 
 void write_eps_header_and_definitions(std::ofstream &eps_file,
                                       const std::string eps_name,
