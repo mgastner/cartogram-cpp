@@ -191,8 +191,12 @@ int main(const int argc, const char *argv[])
         cart_info.cart_total_target_area(),
         output_equal_area);
     } else {
+
       // Rescale map to fit into a rectangular box [0, lx] * [0, ly]
       inset_state.rescale_map(long_graticule_length, cart_info.is_world_map());
+
+      // Store original coordinates
+      inset_state.store_original_geo_divs();
 
       // Set up Fourier transforms
       const unsigned int lx = inset_state.lx();
@@ -337,12 +341,11 @@ int main(const int argc, const char *argv[])
         image_format_ps ? output_filename += ".ps" : output_filename += ".svg";
 
         std::cerr << "Writing " << output_filename << std::endl;
-        // write_map_image(
-        //     output_filename,
-        //     true,
-        //     plot_graticule,
-        //     image_format_ps,
-        //     &inset_state);
+        inset_state.write_map_image(
+            output_filename,
+            true,
+            plot_graticule,
+            image_format_ps);
       }
 
       if (plot_graticule_heatmap) {
@@ -353,12 +356,11 @@ int main(const int argc, const char *argv[])
         // Update extension
         image_format_ps ? output_filename += ".ps" : output_filename += ".svg";
         std::cerr << "Writing " << output_filename << std::endl;
-        // write_graticule_heatmap_image(
-        //     output_filename,
-        //     true,
-        //     image_format_ps,
-        //     crop,
-        //     &inset_state);
+        inset_state.write_graticule_heatmap_image(
+            output_filename,
+            true,
+            image_format_ps,
+            crop);
 
         // Produce cartogram graticule heatmap
         output_filename =
@@ -368,13 +370,12 @@ int main(const int argc, const char *argv[])
         image_format_ps ? output_filename += ".ps" : output_filename += ".svg";
 
         std::cerr << "Writing " << output_filename << std::endl;
-        // write_graticule_heatmap_image(
-        //     output_filename,
-        //     false,
-        //     image_format_ps,
-        //     crop,
-        //     &inset_state);
-        std::cerr << "Writing " << output_filename << std::endl;
+        inset_state.write_graticule_heatmap_image(
+          output_filename,
+          true,
+          image_format_ps,
+          crop);
+        // std::cerr << "Writing " << output_filename << std::endl;
         // inset_state.write_cairo_map(output_filename, plot_graticule);
       }
       if (world) {

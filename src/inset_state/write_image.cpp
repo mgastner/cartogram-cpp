@@ -283,7 +283,7 @@ void write_graticule_heatmap_bar_to_cairo_surface(
   std::vector<std::pair<double, double>> minor_ticks,
   const unsigned int ly)
 {
-  const int n_gradident_bars = 500;
+  const int n_gradient_bars = 500;
 
   // get bar coordinates
   const double xmin_bar = bbox_bar.xmin();
@@ -295,9 +295,9 @@ void write_graticule_heatmap_bar_to_cairo_surface(
 
   // calculate individual bar gradient segment property
   const double gradient_segment_height =
-    (ymax_bar - ymin_bar) / n_gradident_bars;
+    (ymax_bar - ymin_bar) / n_gradient_bars;
   const double gradient_segment_value =
-    (max_value - min_value) / n_gradident_bars;
+    (max_value - min_value) / n_gradient_bars;
 
   // Draw the outer bar lines
   cairo_set_source_rgb(cr, 0.0, 0.0, 0.0);
@@ -981,7 +981,7 @@ void write_density_bar_to_cairo_surface(
   Bbox bbox_bar,
   const unsigned int ly)
 {
-  const int n_gradident_bars = 500;
+  const int n_gradient_bars = 500;
 
   // get bar coordinates
   const double xmin_bar = bbox_bar.xmin();
@@ -998,9 +998,9 @@ void write_density_bar_to_cairo_surface(
 
   // calculate individual bar gradient segment property
   const double gradient_segment_height =
-    (ymax_bar - ymin_bar) / n_gradident_bars;
+    (ymax_bar - ymin_bar) / n_gradient_bars;
   const double gradient_segment_value =
-    (max_value - min_value) / n_gradident_bars;
+    abs(max_value - min_value) / n_gradient_bars;
 
   // Draw the outer bar lines
   cairo_set_source_rgb(cr, 0.0, 0.0, 0.0);
@@ -1080,9 +1080,9 @@ void write_density_bar_image(std::string filename, const bool image_format_ps)
   }
 
   write_density_bar_to_cairo_surface(
+    -3,
     0,
-    50,
-    100,
+    3,
     cr,
     Bbox(20.0, 15.0, 35.0, 165.0),
     200);
@@ -1099,7 +1099,7 @@ void InsetState::write_density_image(
   const bool image_format_ps)
 {
   // Whether to draw bar on the cairo surface
-  const bool draw_bar = false;
+  const bool draw_bar = true;
   cairo_surface_t *surface;
 
   // Create a cairo surface
@@ -1232,9 +1232,9 @@ void InsetState::write_density_image(
 
   if (draw_bar) {
     write_density_bar_to_cairo_surface(
-      dens_min,
-      dens_mean,
-      dens_max,
+      -3,
+      0,
+      3,
       cr,
       bbox_bar,
       ly_);

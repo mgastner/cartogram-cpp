@@ -239,6 +239,7 @@ public:
     const bool plot_graticule_heatmap,
     const bool image_format_ps);
   void write_intersections_image(unsigned int res, const bool image_format_ps);
+  void write_density_bar_image(std::string filename, const bool image_format_ps);
 };
 
 #endif

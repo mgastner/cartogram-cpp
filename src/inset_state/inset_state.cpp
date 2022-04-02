@@ -372,3 +372,7 @@ void InsetState::transform_points(std::function<Point(Point)> transform_point)
   }
   return;
 }
+
+void InsetState::store_original_geo_divs() {
+  geo_divs_original_ = geo_divs_;
+}

@@ -53,6 +53,7 @@ void InsetState::rescale_map(
     new_xmax = 0.5*(bb.xmax()+bb.xmin()) + 0.5*lx*latt_const;
     new_xmin = 0.5*(bb.xmax()+bb.xmin()) - 0.5*lx*latt_const;
   }
+  latt_const_ = latt_const;
   std::cerr << "Rescaling to "
             << lx
             << "-by-"
