@@ -208,6 +208,9 @@ public:
 
   // Functions to write map to eps
   // void write_density_to_eps(const std::string, const double *);
+  void write_density_bar_image(
+    const std::string filename,
+    const bool image_format_ps);
   void write_graticule_heatmap_image(
     const std::string filename,
     const bool plot_equal_area_map,

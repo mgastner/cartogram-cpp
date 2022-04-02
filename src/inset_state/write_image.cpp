@@ -1063,7 +1063,9 @@ void write_density_bar_to_cairo_surface(
 }
 
 // This function creates a simple SVG/PS file with a density bar
-void write_density_bar_image(std::string filename, const bool image_format_ps)
+void InsetState::write_density_bar_image(
+  const std::string filename,
+  const bool image_format_ps)
 {
   // Create a cairo surface
   cairo_surface_t *surface;
