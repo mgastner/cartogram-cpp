@@ -27,6 +27,11 @@ private:
   fftw_plan bwd_plan_for_rho_;
   std::unordered_map<std::string, Color> colors_;
 
+  // Unblurred density mean, min, max
+  double dens_min_;
+  double dens_mean_;
+  double dens_max_;
+
   // Scaling factor to convert albers unit to 512*512 unit
   double latt_const_;
 
