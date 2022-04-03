@@ -7,6 +7,7 @@
 #include <cairo/cairo-svg.h>
 #include <cairo/cairo.h>
 #include <iostream>
+#include <string>
 
 void write_ps_header(const std::string filename, cairo_surface_t *surface)
 {
@@ -1049,48 +1050,52 @@ void write_density_bar_to_cairo_surface(
   cairo_move_to(cr, xmin_bar - bar_width / 2 - 1, ly - (ymax_bar + 15));
   cairo_show_text(cr, "Density");
 
+  // const double min_value, const double mean_value, const double max_value;
   // Write "High" top right of bar
-  cairo_move_to(cr, xmax_bar + 5, ly - ymax_bar + 3);
-  cairo_show_text(cr, "High");
+  cairo_move_to(cr, xmax_bar + 5, ly - ymax_bar + 5);
+  cairo_show_text(cr, std::to_string(max_value).c_str());
+  // cairo_show_text(cr, "High");
 
   // Write "Low" bottom right of bar
-  cairo_move_to(cr, xmax_bar + 5, ly - ymin_bar + 3);
-  cairo_show_text(cr, "Low");
+  cairo_move_to(cr, xmax_bar + 5, ly - ymin_bar + 5);
+  cairo_show_text(cr, std::to_string(min_value).c_str());
+  // cairo_show_text(cr, "Low");
 
   // Write "Mean" beside ymean_bar
-  cairo_move_to(cr, xmax_bar + 5, ly - ymean_bar + 3);
-  cairo_show_text(cr, "Mean");
+  cairo_move_to(cr, xmax_bar + 5, ly - ymean_bar + 5);
+  cairo_show_text(cr, std::to_string(mean_value).c_str());
+  // cairo_show_text(cr, "Mean");
 }
 
 // This function creates a simple SVG/PS file with a density bar
-void write_density_bar_image(std::string filename, const bool image_format_ps)
-{
-  // Create a cairo surface
-  cairo_surface_t *surface;
+// void write_density_bar_image(std::string filename, const bool image_format_ps)
+// {
+//   // Create a cairo surface
+//   cairo_surface_t *surface;
 
-  // Create a cairo surface
-  image_format_ps
-    ? surface = cairo_ps_surface_create(filename.c_str(), 80, 200)
-    : surface = cairo_svg_surface_create(filename.c_str(), 80, 200);
-  cairo_t *cr = cairo_create(surface);
+//   // Create a cairo surface
+//   image_format_ps
+//     ? surface = cairo_ps_surface_create(filename.c_str(), 80, 200)
+//     : surface = cairo_svg_surface_create(filename.c_str(), 80, 200);
+//   cairo_t *cr = cairo_create(surface);
 
-  // Write header
-  if (image_format_ps) {
-    write_ps_header(filename, surface);
-  }
+//   // Write header
+//   if (image_format_ps) {
+//     write_ps_header(filename, surface);
+//   }
 
-  write_density_bar_to_cairo_surface(
-    -3,
-    0,
-    3,
-    cr,
-    Bbox(20.0, 15.0, 35.0, 165.0),
-    200);
+//   write_density_bar_to_cairo_surface(
+//     -3,
+//     0,
+//     3,
+//     cr,
+//     Bbox(20.0, 15.0, 35.0, 165.0),
+//     200);
 
-  cairo_show_page(cr);
-  cairo_surface_destroy(surface);
-  cairo_destroy(cr);
-}
+//   cairo_show_page(cr);
+//   cairo_surface_destroy(surface);
+//   cairo_destroy(cr);
+// }
 
 void InsetState::write_density_image(
   const std::string filename,
@@ -1230,14 +1235,43 @@ void InsetState::write_density_image(
   }
   write_polygons_to_cairo_surface(cr, false, false, false);
 
-  if (draw_bar) {
+  if (draw_bar && !plot_graticule_heatmap) {
+
     write_density_bar_to_cairo_surface(
-      -3,
+      dens_min - dens_mean,
       0,
-      3,
+      dens_max - dens_mean,
       cr,
       bbox_bar,
       ly_);
+
+    std::string bar_filename = "bar_" + filename;
+
+      // Create a cairo surface
+      cairo_surface_t *bar_surface;
+
+      // Create a cairo bar_surface
+      image_format_ps
+        ? bar_surface = cairo_ps_surface_create(bar_filename.c_str(), 80, 200)
+        : bar_surface = cairo_svg_surface_create(bar_filename.c_str(), 80, 200);
+      cairo_t *bar_cr = cairo_create(bar_surface);
+
+      // Write header
+      if (image_format_ps) {
+        write_ps_header(bar_filename, bar_surface);
+      }
+
+      write_density_bar_to_cairo_surface(
+        dens_min - dens_mean,
+        0,
+        dens_max - dens_mean,
+        bar_cr,
+        bbox_bar,
+        ly_);
+
+      cairo_show_page(bar_cr);
+      cairo_surface_destroy(bar_surface);
+      cairo_destroy(bar_cr);
   }
 
   cairo_show_page(cr);
