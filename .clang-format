@@ -25,6 +25,7 @@ BreakBeforeBinaryOperators: None
 BreakBeforeBraces: Linux
 ContinuationIndentWidth: 2
 IncludeBlocks: Regroup
+SpacesBeforeTrailingComments: 2
 SpacesInSquareBrackets: false
 Standard: Auto
 UseTab: Never
