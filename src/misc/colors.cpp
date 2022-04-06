@@ -1,11 +1,9 @@
 #include "colors.h"
+
 #include <iostream>
 #include <sstream>
 
-Color::Color(int red, int green, int blue) :
-  r(red),
-  g(green),
-  b(blue)
+Color::Color(double red, double green, double blue) : r(red), g(green), b(blue)
 {
   return;
 }
@@ -14,8 +12,11 @@ Color::Color(std::string color_as_string)
 {
 
   // Make sure colors are case-insensitive
-  std::transform(color_as_string.begin(), color_as_string.end(),
-                 color_as_string.begin(), ::tolower);
+  std::transform(
+    color_as_string.begin(),
+    color_as_string.end(),
+    color_as_string.begin(),
+    ::tolower);
   if (html_colors.find(color_as_string) != html_colors.end()) {
 
     // HTML color in hexadecimal format
@@ -28,9 +29,9 @@ Color::Color(std::string color_as_string)
 
     // From https://gist.github.com/bert/998020
     int hex_int = stoi(color_as_string, nullptr, 16);
-    r = ((hex_int >> 16) & 0xFF); // Extract the RR byte
-    g = ((hex_int >> 8) & 0xFF); // Extract the GG byte
-    b = ((hex_int) & 0xFF); // Extract the BB byte
+    r = ((hex_int >> 16) & 0xFF); // Extract RR byte
+    g = ((hex_int >> 8) & 0xFF); // Extract GG byte
+    b = (hex_int & 0xFF); // Extract BB byte
   } else if ("rgb" == color_as_string.substr(0, 3)) {
 
     // RGB value
@@ -65,21 +66,16 @@ Color::Color(std::string color_as_string)
     g = 255;
     b = 255;
     std::cerr << "WARNING: Color in wrong format. "
-              << "Please refer to README.md!"
-              << std::endl;
+              << "Please refer to README.md!" << std::endl;
     std::cerr << "Color: " << color_as_string << std::endl;
   }
+  r /= 255;
+  g /= 255;
+  b /= 255;
   return;
 }
 
 std::string Color::eps()
 {
-  std::string temp;
-  temp.append(std::to_string(static_cast<double>(r) / 255.0));
-  temp.append(" ");
-  temp.append(std::to_string(static_cast<double>(g) / 255.0));
-  temp.append(" ");
-  temp.append(std::to_string(static_cast<double>(b) / 255.0));
-  temp.append(" ");
-  return temp;
+  return std::to_string(r) + " " + std::to_string(g) + " " + std::to_string(b);
 }

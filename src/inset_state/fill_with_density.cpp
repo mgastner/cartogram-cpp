@@ -1,5 +1,6 @@
 #include "cartogram_info.h"
 #include "inset_state.h"
+
 #include <fstream>
 
 void InsetState::fill_with_density(
@@ -143,45 +144,41 @@ void InsetState::fill_with_density(
     }
   }
 
+  // Determine range of densities
+  double dens_min = dbl_inf;
+  double dens_max = -dbl_inf;
+
+  for (unsigned int i = 0; i < lx_; ++i) {
+    for (unsigned int j = 0; j < ly_; ++j) {
+      dens_min = std::min(rho_init_(i, j), dens_min);
+      dens_max = std::max(rho_init_(i, j), dens_max);
+    }
+  }
+  dens_min_ = dens_min;
+  dens_mean_ = mean_density;
+  dens_max_ = dens_max;
+
   // Print density into csv
-  {
-
-    std::string file_name = inset_name_ + "_density_" +
-                            std::to_string(n_finished_integrations());
-
-
+  if (false) {
+    std::string file_name =
+      inset_name_ + "_density_" + std::to_string(n_finished_integrations());
     std::ofstream f_csv;
-    f_csv.open(file_name + ".csv");
-
-    // Determine range of densities
-    double dens_min = dbl_inf;
-    double dens_mean = 0.0;
-    double dens_max = -dbl_inf;
-
     for (unsigned int i = 0; i < lx_; ++i) {
       for (unsigned int j = 0; j < ly_; ++j) {
         f_csv << rho_init_(i, j);
         if (j < ly_ - 1) {
           f_csv << ", ";
         }
-        dens_min = std::min(rho_init_(i, j), dens_min);
-        dens_mean += rho_init_(i, j);
-        dens_max = std::max(rho_init_(i, j), dens_max);
       }
       f_csv << "\n";
     }
-    dens_mean /= (lx_ * ly_);
-
+    f_csv.open(file_name + ".csv");
     f_csv.close();
-
     std::ofstream f_txt;
     f_txt.open(file_name + ".txt");
-    f_txt << "Minimum Density: " << dens_min << "\n";
-    f_txt << "Mean Density: " << dens_mean << "\n";
-    f_txt << "Maximum Density: " << dens_max << "\n";
-    dens_min_ = dens_min;
-    dens_mean_ = dens_mean;
-    dens_max_ = dens_max;
+    f_txt << "Minimum Density: " << dens_min_ << "\n";
+    f_txt << "Mean Density: " << dens_mean_ << "\n";
+    f_txt << "Maximum Density: " << dens_max_ << "\n";
   }
 
   if (plot_graticule_heatmap) {

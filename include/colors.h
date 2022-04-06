@@ -2,35 +2,54 @@
 #define COLORS_H_
 
 #include <cstdint>
-#include <unordered_map>
 #include <string>
-
-// Color struct for storing double RGB values between 0 to 1
-struct Color_dbl {
-  double r;
-  double g;
-  double b;
-};
+#include <unordered_map>
 
 struct Color {
 
-  // red, green, blue values out of 255
-  int r;
-  int g;
-  int b;
-  Color();
-  Color(int, int, int);
-  Color(std::string);
+  // red, green, blue values between 0 to 1
+  double r;
+  double g;
+  double b;
+
+  // Defaults to white
+  Color() {r = 1.0; g = 1.0; b = 1.0;};
+  Color(double red, double green, double blue);
+  Color(std::string color_as_string);
   std::string eps();
 
-  bool operator == (const Color& rhs) const
+  bool operator==(const Color &rhs) const
   {
-      return (r == rhs.r && g == rhs.g && b == rhs.b);
+    return (r == rhs.r && g == rhs.g && b == rhs.b);
+  }
+
+  // Getter
+  double operator()(const char c) const
+  {
+    switch (c) {
+    case 'r': return r;
+    case 'g': return g;
+    case 'b': return b;
+    // Return -1.0 (incorrect color)
+    default: return -1.0;
+    }
+  }
+
+  // Setter
+  double &operator()(const char c)
+  {
+    switch (c) {
+    case 'r': return r;
+    case 'g': return g;
+    case 'b': return b;
+
+    // Return r by default
+    default: return r;
+    }
   }
 };
 
-static std::unordered_map<std::string, std::string> html_colors =
-{
+static std::unordered_map<std::string, std::string> html_colors = {
 
   // From https://en.wikipedia.org/wiki/Web_colors
   // Shades of pink
@@ -193,7 +212,6 @@ static std::unordered_map<std::string, std::string> html_colors =
   {"darkgray", "#A9A9A9"},
   {"silver", "#C0C0C0"},
   {"lightgray", "#D3D3D3"},
-  {"gainsboro", "#DCDCDC"}
-};
+  {"gainsboro", "#DCDCDC"}};
 
 #endif

@@ -108,7 +108,7 @@ public:
 
   const std::vector<GeoDiv> geo_divs() const;
   const std::vector<GeoDiv> geo_divs_original() const;
-  std::vector<std::vector<Color_dbl>>
+  std::vector<std::vector<Color>>
   graticule_cell_colors(unsigned int cell_width);
   Polygon graticule_cell_edge_points(
     unsigned int x,

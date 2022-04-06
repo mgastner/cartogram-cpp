@@ -97,7 +97,7 @@ void InsetState::write_polygons_to_eps(std::ofstream &eps_file,
           Color col = color_at(gd.id());
 
           // Fill path
-          eps_file << col.eps() << "srgb f\n";
+          eps_file << col.eps() << " srgb f\n";
 
         } else if (fill_polygons) {
 

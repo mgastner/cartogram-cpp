@@ -3,6 +3,7 @@
 #include "constants.h"
 #include "inset_state.h"
 
+#include <array>
 #include <cairo/cairo-ps.h>
 #include <cairo/cairo-svg.h>
 #include <cairo/cairo.h>
@@ -10,6 +11,7 @@
 #include <iostream>
 #include <sstream>
 #include <string>
+#include <vector>
 
 void write_ps_header(const std::string filename, cairo_surface_t *surface)
 {
@@ -208,50 +210,122 @@ InsetState::max_and_min_graticule_cell_area_index(unsigned int cell_width)
   return std::make_pair(Point(max_i, max_j), Point(min_i, min_j));
 }
 
-void graticule_cell_color(
+// Functions deal with colors
+Color interpolate_color(
+  const double x,
+  const double xmin,
+  const double xmax,
+  const Color ymin,
+  const Color ymax)
+{
+  Color interpolated_color;
+  // Interpolate color for red, green and blue value
+  for (char c : {'r', 'g', 'b'}) {
+    interpolated_color(c) =
+      ((x - xmin) * ymax(c) + (xmax - x) * ymin(c)) / (xmax - xmin);
+  }
+  return interpolated_color;
+}
+
+Color heatmap_color(
+  const double dens,
+  const double dens_min,
+  const double dens_mean,
+  const double dens_max)
+{
+
+  // Assign possible categories for red, green, blue
+  const std::vector<Color> colors = {
+    Color(0.33, 0.19, 0.02),
+    Color(0.55, 0.32, 0.04),
+    Color(0.75, 0.51, 0.18),
+    Color(0.87, 0.76, 0.49),
+    Color(0.96, 0.91, 0.76),
+    Color(0.99, 0.96, 0.89),
+    Color(0.78, 0.92, 0.90),
+    Color(0.50, 0.80, 0.76),
+    Color(0.21, 0.59, 0.56),
+    Color(0.00, 0.40, 0.37),
+    Color(0.00, 0.24, 0.19)};
+  int n_categories = colors.size();
+  double xmin, xmax;
+  int color_category;
+
+  // If no discernible difference between dens and miniimum density, set lowest
+  if (std::fabs(dens - dens_min) <= dbl_resolution) {
+    return colors[n_categories - 1];
+  }
+
+  // Choose color category
+  if (dens >= dens_max) {
+    return colors[0];
+  } else if (dens > dens_mean) {
+    color_category = 5 * (dens_max - dens) / (dens_max - dens_mean);
+    xmax = dens_max - 0.2 * color_category * (dens_max - dens_mean);
+    xmin = xmax - 0.2 * (dens_max - dens_mean);
+
+    // Assign color category 0 if dens_max and dens are very close
+    color_category = std::max(color_category, 0);
+  } else if (dens > dens_min) {
+    color_category = 5 * (dens_mean - dens) / (dens_mean - dens_min) + 5;
+    xmax = dens_mean - 0.2 * (color_category - 5) * (dens_mean - dens_min);
+    xmin = xmax - 0.2 * (dens_mean - dens_min);
+
+    // Assign color category 9 if dens_min and dens are very close
+    color_category = std::min(color_category, n_categories - 2);
+  } else {
+    return colors[n_categories - 1];
+  }
+  return interpolate_color(
+    dens,
+    xmin,
+    xmax,
+    colors[color_category + 1],
+    colors[color_category]);
+}
+
+Color graticule_cell_color(
   const double area,
   const double max_area,
-  const double min_area,
-  double *r,
-  double *g,
-  double *b)
+  const double min_area)
 {
   // Assign possible categories for red, green, blue
-  const double red[] =
-    {1.000, 0.996, 0.988, 0.988, 0.984, 0.937, 0.796, 0.647, 0.404};
-  const double green[] =
-    {0.961, 0.878, 0.733, 0.572, 0.416, 0.231, 0.094, 0.058, 0.000};
-  const double blue[] =
-    {0.941, 0.824, 0.631, 0.447, 0.290, 0.173, 0.114, 0.082, 0.050};
+  const std::vector<Color> colors = {
+    Color(1.000, 0.961, 0.941),
+    Color(0.996, 0.878, 0.824),
+    Color(0.988, 0.733, 0.631),
+    Color(0.988, 0.572, 0.447),
+    Color(0.984, 0.416, 0.290),
+    Color(0.937, 0.231, 0.173),
+    Color(0.796, 0.094, 0.114),
+    Color(0.647, 0.058, 0.082),
+    Color(0.404, 0.000, 0.050)};
+  int n_categories = colors.size();
 
   // Normalize area to [0,1] and make it logarithmic
   double ratio = (log(area) - log(min_area)) / (log(max_area) - log(min_area));
 
   // Determine color category
-  double category = fmax(0, ratio * 8 - 10e-6);
-  double xmin = floor(category);
-  double xmax = ceil(category);
+  double category = fmax(0, ratio * (n_categories - 1) - 10e-6);
+  int xmin = floor(category);
+  int xmax = ceil(category);
 
   if (area == max_area) {
-    *r = red[8];
-    *g = green[8];
-    *b = blue[8];
-    return;
+    return colors[n_categories - 1];
   } else if (area == min_area) {
-    *r = red[0];
-    *g = green[0];
-    *b = blue[0];
-    return;
+    return colors[0];
   } else {
-    *r = red[int(xmin)] + (red[int(xmax)] - red[int(xmin)]) * (category - xmin);
-    *g = green[int(xmin)] +
-         (green[int(xmax)] - green[int(xmin)]) * (category - xmin);
-    *b =
-      blue[int(xmin)] + (blue[int(xmax)] - blue[int(xmin)]) * (category - xmin);
+    Color interpolated_color;
+    for (char c : {'r', 'g', 'b'}) {
+      interpolated_color(c) =
+        colors[xmin](c) +
+        (colors[xmax](c) - colors[xmin](c)) * (category - xmin);
+    }
+    return interpolated_color;
   }
 }
 
-std::vector<std::vector<Color_dbl>>
+std::vector<std::vector<Color>>
 InsetState::graticule_cell_colors(unsigned int cell_width)
 {
 
@@ -260,18 +334,15 @@ InsetState::graticule_cell_colors(unsigned int cell_width)
   std::tie(max_area, min_area) = max_and_min_graticule_cell_area(cell_width);
 
   // Initialize colors
-  std::vector<std::vector<Color_dbl>> colors(
+  std::vector<std::vector<Color>> colors(
     lx_ - cell_width,
-    std::vector<Color_dbl>(ly_ - cell_width));
+    std::vector<Color>(ly_ - cell_width));
 
   // Iterate over graticule cells
   for (unsigned int i = 0; i < lx_ - cell_width; i += cell_width) {
     for (unsigned int j = 0; j < ly_ - cell_width; j += cell_width) {
       const double area = graticule_cell_area(i, j, cell_width);
-      double r, g, b;
-      graticule_cell_color(area, max_area, min_area, &r, &g, &b);
-      Color_dbl color = {r, g, b};
-      colors[i][j] = color;
+      colors[i][j] = graticule_cell_color(area, max_area, min_area);
     }
   }
   return colors;
@@ -316,15 +387,11 @@ void write_graticule_heatmap_bar_to_cairo_surface(
   double value_at_gradient_segment = min_value;
 
   for (double y = ymin_bar; y <= ymax_bar; y += gradient_segment_height) {
-    double r, g, b;
-    graticule_cell_color(
+    Color color = graticule_cell_color(
       exp(value_at_gradient_segment),
       exp(max_value),
-      exp(min_value),
-      &r,
-      &g,
-      &b);
-    cairo_set_source_rgb(cr, r, g, b);
+      exp(min_value));
+    cairo_set_source_rgb(cr, color.r, color.g, color.b);
     cairo_rectangle(cr, xmin_bar, ly - y, bar_width, gradient_segment_height);
     cairo_fill(cr);
     value_at_gradient_segment += gradient_segment_value;
@@ -592,7 +659,7 @@ void InsetState::write_polygons_to_cairo_surface(
           const Color col = color_at(gd.id());
 
           // Fill path
-          cairo_set_source_rgb(cr, col.r / 255.0, col.g / 255.0, col.b / 255.0);
+          cairo_set_source_rgb(cr, col.r, col.g, col.b);
         } else if (fill_polygons) {
           // Fill path with default color
           cairo_set_source_rgb(cr, 0.96, 0.92, 0.70);
@@ -901,89 +968,6 @@ void InsetState::write_graticule_heatmap_image(
   cairo_destroy(cr);
 }
 
-// Functions to show a scalar field called "density" as a heat map
-double interpolate_for_heatmap(
-  const double x,
-  const double xmin,
-  const double xmax,
-  const double ymin,
-  const double ymax)
-{
-  return ((x - xmin) * ymax + (xmax - x) * ymin) / (xmax - xmin);
-}
-
-void heatmap_color(
-  const double dens,
-  const double dens_min,
-  const double dens_mean,
-  const double dens_max,
-  double *r,
-  double *g,
-  double *b)
-{
-  // Assign possible categories for red, green, blue
-  const double red[] =
-    {0.33, 0.55, 0.75, 0.87, 0.96, 0.99, 0.78, 0.50, 0.21, 0.00, 0.00};
-  const double green[] =
-    {0.19, 0.32, 0.51, 0.76, 0.91, 0.96, 0.92, 0.80, 0.59, 0.40, 0.24};
-  const double blue[] =
-    {0.02, 0.04, 0.18, 0.49, 0.76, 0.89, 0.90, 0.76, 0.56, 0.37, 0.19};
-  double xmin, xmax;
-  int color_category;
-
-  if (std::fabs(dens - dens_min) <= dbl_resolution) {
-    *r = red[10];
-    *g = green[10];
-    *b = blue[10];
-    return;
-  }
-
-  // Choose color category
-  if (dens >= dens_max) {
-    *r = red[0];
-    *g = green[0];
-    *b = blue[0];
-    return;
-  } else if (dens > dens_mean) {
-    color_category = 5 * (dens_max - dens) / (dens_max - dens_mean);
-    xmax = dens_max - 0.2 * color_category * (dens_max - dens_mean);
-    xmin = xmax - 0.2 * (dens_max - dens_mean);
-
-    // Assign color category 0 if dens_max and dens are very close
-    color_category = std::max(color_category, 0);
-  } else if (dens > dens_min) {
-    color_category = 5 * (dens_mean - dens) / (dens_mean - dens_min) + 5;
-    xmax = dens_mean - 0.2 * (color_category - 5) * (dens_mean - dens_min);
-    xmin = xmax - 0.2 * (dens_mean - dens_min);
-
-    // Assign color category 9 if dens_min and dens are very close
-    color_category = std::min(color_category, 9);
-  } else {
-    *r = red[10];
-    *g = green[10];
-    *b = blue[10];
-    return;
-  }
-  *r = interpolate_for_heatmap(
-    dens,
-    xmin,
-    xmax,
-    red[color_category + 1],
-    red[color_category]);
-  *g = interpolate_for_heatmap(
-    dens,
-    xmin,
-    xmax,
-    green[color_category + 1],
-    green[color_category]);
-  *b = interpolate_for_heatmap(
-    dens,
-    xmin,
-    xmax,
-    blue[color_category + 1],
-    blue[color_category]);
-}
-
 // Function to show the density bar on the cairo surface
 void write_density_bar_to_cairo_surface(
   const double min_value,
@@ -1028,16 +1012,12 @@ void write_density_bar_to_cairo_surface(
   double value_at_gradient_segment = min_value;
 
   for (double y = ymin_bar; y <= ymax_bar; y += gradient_segment_height) {
-    double r, g, b;
-    heatmap_color(
+    Color color = heatmap_color(
       value_at_gradient_segment,
       min_value,
       mean_value,
-      max_value,
-      &r,
-      &g,
-      &b);
-    cairo_set_source_rgb(cr, r, g, b);
+      max_value);
+    cairo_set_source_rgb(cr, color.r, color.g, color.b);
     cairo_rectangle(cr, xmin_bar, ly - y, bar_width, gradient_segment_height);
     cairo_fill(cr);
     value_at_gradient_segment += gradient_segment_value;
@@ -1175,18 +1155,11 @@ void InsetState::write_density_image(
           for (unsigned int j = gd_bbox.ymin(); j < gd_bbox.ymax();
                j += cell_width) {
 
-            double r, g, b;
-
             // Values here used are "Max target area per km" and
             // "Min target area per km", which is obtained by running the
             // code with the "plot_graticule_heatmap" -h flag set to true
-            graticule_cell_color(
-              density[i * ly_ + j],
-              dens_max,
-              dens_min,
-              &r,
-              &g,
-              &b);
+            Color color =
+              graticule_cell_color(density[i * ly_ + j], dens_max, dens_min);
 
             // Get four points of the square
             double x_min = i - 0.5 * sq_overlap;
@@ -1199,7 +1172,7 @@ void InsetState::write_density_image(
             cairo_line_to(cr, x_max, ly_ - y_max);
             cairo_line_to(cr, x_min, ly_ - y_max);
 
-            cairo_set_source_rgb(cr, r, g, b);
+            cairo_set_source_rgb(cr, color.r, color.g, color.b);
             cairo_fill(cr);
             cairo_set_source_rgb(cr, 0, 0, 0);
             cairo_stroke(cr);
@@ -1217,15 +1190,8 @@ void InsetState::write_density_image(
   } else {
     for (unsigned int i = 0; i < lx_; ++i) {
       for (unsigned int j = 0; j < ly_; ++j) {
-        double r, g, b;
-        heatmap_color(
-          density[i * ly_ + j],
-          dens_min,
-          dens_mean,
-          dens_max,
-          &r,
-          &g,
-          &b);
+        Color color =
+          heatmap_color(density[i * ly_ + j], dens_min, dens_mean, dens_max);
 
         // Get four points of the square
         double x_min = i - 0.5 * sq_overlap;
@@ -1238,7 +1204,7 @@ void InsetState::write_density_image(
         cairo_line_to(cr, x_max, ly_ - y_max);
         cairo_line_to(cr, x_min, ly_ - y_max);
 
-        cairo_set_source_rgb(cr, r, g, b);
+        cairo_set_source_rgb(cr, color.r, color.g, color.b);
         cairo_fill(cr);
         cairo_set_source_rgb(cr, 0, 0, 0);
         cairo_stroke(cr);
