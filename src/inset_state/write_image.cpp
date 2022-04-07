@@ -8,6 +8,7 @@
 #include <cairo/cairo-svg.h>
 #include <cairo/cairo.h>
 #include <cmath>
+#include <cstring>
 #include <iostream>
 #include <sstream>
 #include <string>
@@ -227,6 +228,7 @@ Color interpolate_color(
   return interpolated_color;
 }
 
+// Diverging colour palette, mean accounted for
 Color heatmap_color(
   const double dens,
   const double dens_min,
@@ -236,22 +238,52 @@ Color heatmap_color(
 
   // Assign possible categories for red, green, blue
   const std::vector<Color> colors = {
-    Color(0.33, 0.19, 0.02),
-    Color(0.55, 0.32, 0.04),
-    Color(0.75, 0.51, 0.18),
-    Color(0.87, 0.76, 0.49),
-    Color(0.96, 0.91, 0.76),
-    Color(0.99, 0.96, 0.89),
-    Color(0.78, 0.92, 0.90),
-    Color(0.50, 0.80, 0.76),
-    Color(0.21, 0.59, 0.56),
-    Color(0.00, 0.40, 0.37),
-    Color(0.00, 0.24, 0.19)};
+
+    // Red to blue
+    Color("#67001f"),
+    Color("#b2182b"),
+    Color("#d6604d"),
+    Color("#f4a582"),
+    Color("#fddbc7"),
+    Color("#f7f7f7"),
+    Color("#d1e5f0"),
+    Color("#92c5de"),
+    Color("#4393c3"),
+    Color("#2166ac"),
+    Color("#053061")
+
+    // // Turqoise to brown
+    // Color("#543005"),
+    // Color("#8c510a"),
+    // Color("#bf812d"),
+    // Color("#dfc27d"),
+    // Color("#f6e8c3"),
+    // Color("#f5f5f5"),
+    // Color("#c7eae5"),
+    // Color("#80cdc1"),
+    // Color("#35978f"),
+    // Color("#01665e"),
+    // Color("#003c30")
+
+    // // Original
+    // Color(0.33, 0.19, 0.02),
+    // Color(0.55, 0.32, 0.04),
+    // Color(0.75, 0.51, 0.18),
+    // Color(0.87, 0.76, 0.49),
+    // Color(0.96, 0.91, 0.76),
+    // Color(0.99, 0.96, 0.89),
+    // Color(0.78, 0.92, 0.90),
+    // Color(0.50, 0.80, 0.76),
+    // Color(0.21, 0.59, 0.56),
+    // Color(0.00, 0.40, 0.37),
+    // Color(0.00, 0.24, 0.19)
+  };
   int n_categories = colors.size();
   double xmin, xmax;
   int color_category;
 
-  // If no discernible difference between dens and miniimum density, set lowest
+  // If no discernible difference between dens and miniimum density, set
+  // lowest
   if (std::fabs(dens - dens_min) <= dbl_resolution) {
     return colors[n_categories - 1];
   }
@@ -284,6 +316,7 @@ Color heatmap_color(
     colors[color_category]);
 }
 
+// Sequential colour palette, mean not accounted for
 Color graticule_cell_color(
   const double area,
   const double max_area,
@@ -291,15 +324,40 @@ Color graticule_cell_color(
 {
   // Assign possible categories for red, green, blue
   const std::vector<Color> colors = {
-    Color(1.000, 0.961, 0.941),
-    Color(0.996, 0.878, 0.824),
-    Color(0.988, 0.733, 0.631),
-    Color(0.988, 0.572, 0.447),
-    Color(0.984, 0.416, 0.290),
-    Color(0.937, 0.231, 0.173),
-    Color(0.796, 0.094, 0.114),
-    Color(0.647, 0.058, 0.082),
-    Color(0.404, 0.000, 0.050)};
+
+    // White to purple
+    Color("#fcfbfd"),
+    Color("#efedf5"),
+    Color("#dadaeb"),
+    Color("#bcbddc"),
+    Color("#9e9ac8"),
+    Color("#807dba"),
+    Color("#6a51a3"),
+    Color("#54278f"),
+    Color("#3f007d")
+
+    // White to green
+    // Color("#f7fcf5"),
+    // Color("#e5f5e0"),
+    // Color("#c7e9c0"),
+    // Color("#a1d99b"),
+    // Color("#74c476"),
+    // Color("#41ab5d"),
+    // Color("#238b45"),
+    // Color("#006d2c"),
+    // Color("#00441b")
+
+    // // White to red
+    // Color(1.000, 0.961, 0.941),
+    // Color(0.996, 0.878, 0.824),
+    // Color(0.988, 0.733, 0.631),
+    // Color(0.988, 0.572, 0.447),
+    // Color(0.984, 0.416, 0.290),
+    // Color(0.937, 0.231, 0.173),
+    // Color(0.796, 0.094, 0.114),
+    // Color(0.647, 0.058, 0.082),
+    // Color(0.404, 0.000, 0.050)
+  };
   int n_categories = colors.size();
 
   // Normalize area to [0,1] and make it logarithmic
@@ -444,9 +502,12 @@ void write_graticule_heatmap_bar_to_cairo_surface(
   cairo_set_line_width(cr, 1.0);
   std::string bar_text_top = "Cases per";
   std::string bar_text_bottom = "km²";
-  cairo_move_to(cr, (xmin_bar + xmax_bar) / 2 - 16, ly - ymax_bar - 13.5);
+  cairo_move_to(
+    cr,
+    (xmin_bar + xmax_bar) / 2 - 16,
+    ly - ymax_bar - (font_size * 2.0));
   cairo_show_text(cr, bar_text_top.c_str());
-  cairo_move_to(cr, (xmin_bar + xmax_bar) / 2 - 5.5, ly - ymax_bar - 5);
+  cairo_move_to(cr, (xmin_bar + xmax_bar) / 2 - 5.5, ly - ymax_bar - font_size);
   cairo_show_text(cr, bar_text_bottom.c_str());
 }
 
@@ -1025,6 +1086,7 @@ void write_density_bar_to_cairo_surface(
 
   // Draw the mean line
   cairo_set_source_rgb(cr, 0.0, 0.0, 0.0);
+  cairo_set_line_width(cr, 0.9);
   cairo_move_to(cr, xmin_bar + bar_width / 2, ly - ymean_bar);
   cairo_line_to(cr, xmax_bar, ly - ymean_bar);
   cairo_stroke(cr);
@@ -1043,26 +1105,73 @@ void write_density_bar_to_cairo_surface(
   cairo_move_to(
     cr,
     xmin_bar - bar_width / 2 - 1,
-    ly - (ymax_bar + font_size * 1.2));
-  cairo_show_text(cr, "Density");
+    ly - ymax_bar - (font_size * 3.0));
+  cairo_show_text(cr, "Residual");
+  cairo_move_to(
+    cr,
+    xmin_bar - bar_width / 2 - 1,
+    ly - ymax_bar - (font_size * 2.0));
+  cairo_show_text(cr, "Density (km²)");
 
-  std::stringstream ss;
-
+  std::string temp = std::to_string(max_value);
   // const double min_value, const double mean_value, const double max_value;
   // Write "High" top right of bar
-  cairo_move_to(cr, xmax_bar + 5, ly - ymax_bar + font_size / 2.0);
-  cairo_show_text(cr, std::to_string(max_value).c_str());
+  cairo_move_to(cr, xmax_bar + 5, ly - ymax_bar);
+  cairo_show_text(cr, temp.substr(0, temp.size() - 4).c_str());
+
   // cairo_show_text(cr, "High");
 
   // Write "Low" bottom right of bar
-  cairo_move_to(cr, xmax_bar + 5, ly - ymin_bar + font_size / 2.0);
-  cairo_show_text(cr, std::to_string(min_value).c_str());
+  temp = std::to_string(min_value);
+  cairo_move_to(cr, xmax_bar + 5, ly - ymin_bar + (font_size / 2.0));
+  cairo_show_text(cr, temp.substr(0, temp.size() - 4).c_str());
   // cairo_show_text(cr, "Low");
 
   // Write "Mean" beside ymean_bar
-  cairo_move_to(cr, xmax_bar + 5, ly - ymean_bar + font_size / 2.0);
-  cairo_show_text(cr, std::to_string(mean_value).c_str());
-  // cairo_show_text(cr, "Mean");
+  temp = std::to_string(mean_value);
+  cairo_move_to(cr, xmax_bar + 5, ly - ymean_bar + (font_size / 4.0));
+  cairo_show_text(cr, temp.substr(0, temp.size() - 4).c_str());
+
+  font_size /= 2;
+  // Draw remaining ticks
+  long long magnitude = std::pow(10, floor(std::log10(max_value)));
+
+  if (max_value < magnitude * 5) {
+    magnitude /= 2;
+  }
+  if (magnitude > 1) {
+    cairo_set_line_width(cr, 0.7);
+    double bar_ratio = (ymax_bar - ymin_bar) / (max_value - min_value);
+    for (unsigned int i = magnitude; i < max_value - 0.1 * magnitude;
+         i += magnitude) {
+      double tick = bar_ratio * (i - min_value) + ymin_bar;
+      cairo_move_to(cr, xmax_bar - bar_width / 4, ly - tick);
+      cairo_line_to(cr, xmax_bar, ly - tick);
+      cairo_stroke(cr);
+      cairo_move_to(
+        cr,
+        xmax_bar + bar_width / 4,
+        ly - tick + (font_size / 2.0));
+      cairo_show_text(cr, std::to_string(i).c_str());
+    }
+    for (long long i = -magnitude; i > min_value; i -= magnitude) {
+      double tick = bar_ratio * (i - min_value) + ymin_bar;
+      cairo_move_to(cr, xmax_bar - bar_width / 4, ly - tick);
+      cairo_line_to(cr, xmax_bar, ly - tick);
+      cairo_stroke(cr);
+      cairo_move_to(
+        cr,
+        xmax_bar + bar_width / 4,
+        ly - tick + (font_size / 2.0));
+      cairo_show_text(cr, std::to_string(i).c_str());
+    }
+  }
+  // for (unsigned int i = magnitude; i < min_value; i -= magnitude) {
+  //   double tick = bar_ratio * (i - min_value) + ymin_bar;
+  //   cairo_move_to(cr, xmin_bar + bar_width / 2, ly - tick);
+  //   cairo_line_to(cr, xmax_bar, ly - tick);
+  //   cairo_stroke(cr);
+  // }
 }
 
 // This function creates a simple SVG/PS file with a density bar
@@ -1244,7 +1353,8 @@ void InsetState::write_density_image(
       0,
       dens_max - dens_mean,
       bar_cr,
-      Bbox(20.0, 15.0, 35.0, 165.0),
+      // Bbox(20.0, 15.0, 35.0, 165.0),
+      Bbox(75.0, 200.0, 95.0, 350.0),
       ly_);
 
     cairo_show_page(bar_cr);
