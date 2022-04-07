@@ -948,9 +948,11 @@ void InsetState::write_graticule_heatmap_image(
   const bool image_format_ps,
   const bool crop)
 {
-  cairo_surface_t *surface;
+  // Whether to draw bar on the cairo surface
+  const bool draw_bar = true;
 
   // Create a cairo surface
+  cairo_surface_t *surface;
   image_format_ps
     ? surface = cairo_ps_surface_create(filename.c_str(), lx_, ly_)
     : surface = cairo_svg_surface_create(filename.c_str(), lx_, ly_);
@@ -1024,6 +1026,36 @@ void InsetState::write_graticule_heatmap_image(
     major_ticks,
     minor_ticks,
     ly_);
+
+  if (draw_bar) {
+    std::string bar_filename = "bar_" + filename;
+
+    // Create a cairo bar_surface
+    cairo_surface_t *bar_surface;
+    image_format_ps
+      ? bar_surface = cairo_ps_surface_create(bar_filename.c_str(), 160, 400)
+      : bar_surface = cairo_svg_surface_create(bar_filename.c_str(), 160, 400);
+    cairo_t *bar_cr = cairo_create(bar_surface);
+
+    // Write header
+    if (image_format_ps) {
+      write_ps_header(bar_filename, bar_surface);
+    }
+
+    // Write bar
+    write_graticule_heatmap_bar_to_cairo_surface(
+      min_area_cell_point_area,
+      max_area_cell_point_area,
+      bar_cr,
+      Bbox(75.0, 200.0, 95.0, 350.0),
+      major_ticks,
+      minor_ticks,
+      ly_);
+
+    cairo_show_page(bar_cr);
+    cairo_surface_destroy(bar_surface);
+    cairo_destroy(bar_cr);
+  }
   cairo_show_page(cr);
   cairo_surface_destroy(surface);
   cairo_destroy(cr);
