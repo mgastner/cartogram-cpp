@@ -181,7 +181,7 @@ void InsetState::fill_with_density(
     f_txt << "Maximum Density: " << dens_max_ << "\n";
   }
 
-  if (plot_graticule_heatmap) {
+  if (plot_graticule_heatmap && n_finished_integrations_ == 0) {
     std::string file_name = inset_name_ + "_piecewise_density_" +
                             std::to_string(n_finished_integrations());
 
