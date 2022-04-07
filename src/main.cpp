@@ -27,7 +27,7 @@ int main(const int argc, const char *argv[])
 
   // Target number of points to retain after simplification
   unsigned int target_points_per_inset = default_target_points_per_inset;
-  bool world; // World maps need special projections
+  bool world;  // World maps need special projections
 
   // Another cartogram projection method based on triangulation of graticule
   // cells. It can eliminate intersections that occur when the projected
@@ -263,12 +263,15 @@ int main(const int argc, const char *argv[])
         // increasing again and eventually lead to an invalid graticule cell
         // error when projecting with triangulation. Investigate why. As a
         // temporary fix, we set blur_width to be always positive, regardless
-        // of the number of integrations.
-        double blur_width =
-          std::pow(2.0, 5 - int(inset_state.n_finished_integrations()));
+        // of the number of integrations. This error also seems to occur when
+        // the starting blur width is too low to begin with.
+        // TODO: Add option to customise starting blur width.
+        double blur_width = std::pow(
+          2.0,
+          3 - static_cast<unsigned int>(inset_state.n_finished_integrations()));
         // if (inset_state.n_finished_integrations() < max_integrations) {
         //   blur_width =
-        //     std::pow(2.0, 5 - int(inset_state.n_finished_integrations()));
+        //     std::pow(2.0, 3 - int(inset_state.n_finished_integrations()));
         // } else {
         //   blur_width = 0.0;
         // }
@@ -282,12 +285,13 @@ int main(const int argc, const char *argv[])
           inset_state.blur_density(blur_width, plot_density, image_format_ps);
         }
         if (plot_intersections) {
-          // inset_state.write_intersections_image(
-          //     intersections_resolution,
-          //     image_format_ps);
+          inset_state.write_intersections_image(
+            intersections_resolution,
+            image_format_ps);
         }
         inset_state.flatten_density();
         if (triangulation) {
+
           // Choose diagonals that are inside graticule cells
           inset_state.fill_graticule_diagonals();
 
@@ -324,9 +328,9 @@ int main(const int argc, const char *argv[])
       std::cerr << "Finished inset " << inset_pos << "\nProgress: " << progress
                 << std::endl;
       if (plot_intersections) {
-        //   inset_state.write_intersections_image(
-        //       intersections_resolution,
-        //       image_format_ps);
+        inset_state.write_intersections_image(
+          intersections_resolution,
+          image_format_ps);
       }
 
       // Print PS files of cartogram
@@ -342,10 +346,10 @@ int main(const int argc, const char *argv[])
 
         std::cerr << "Writing " << output_filename << std::endl;
         inset_state.write_map_image(
-            output_filename,
-            true,
-            plot_graticule,
-            image_format_ps);
+          output_filename,
+          true,
+          plot_graticule,
+          image_format_ps);
       }
 
       if (plot_graticule_heatmap) {
@@ -357,10 +361,10 @@ int main(const int argc, const char *argv[])
         image_format_ps ? output_filename += ".ps" : output_filename += ".svg";
         std::cerr << "Writing " << output_filename << std::endl;
         inset_state.write_graticule_heatmap_image(
-            output_filename,
-            true,
-            image_format_ps,
-            crop);
+          output_filename,
+          true,
+          image_format_ps,
+          crop);
 
         // Produce cartogram graticule heatmap
         output_filename =
@@ -396,7 +400,7 @@ int main(const int argc, const char *argv[])
       inset_state.destroy_fftw_plans_for_rho();
       inset_state.ref_to_rho_init()->free();
       inset_state.ref_to_rho_ft()->free();
-    } // End of loop over insets
+    }  // End of loop over insets
   }
 
   // Output a density heatmap's bar
