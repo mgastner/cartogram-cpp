@@ -14,7 +14,7 @@ int main(const int argc, const char *argv[])
 
   // Target number of points to retain after simplification
   unsigned int target_points_per_inset = default_target_points_per_inset;
-  bool world; // World maps need special projections
+  bool world;  // World maps need special projections
 
   // Another cartogram projection method based on triangulation of graticule
   // cells. It can eliminate intersections that occur when the projected
