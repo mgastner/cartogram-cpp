@@ -443,6 +443,7 @@ void write_graticule_heatmap_bar_to_cairo_surface(
 
   // Draw the gradient segment rectangles
   double value_at_gradient_segment = min_value;
+  double overlap = 0.1;
 
   for (double y = ymin_bar; y <= ymax_bar; y += gradient_segment_height) {
     Color color = graticule_cell_color(
@@ -450,7 +451,12 @@ void write_graticule_heatmap_bar_to_cairo_surface(
       exp(max_value),
       exp(min_value));
     cairo_set_source_rgb(cr, color.r, color.g, color.b);
-    cairo_rectangle(cr, xmin_bar, ly - y, bar_width, gradient_segment_height);
+    cairo_rectangle(
+      cr,
+      xmin_bar,
+      ly - y - overlap,
+      bar_width,
+      gradient_segment_height + overlap);
     cairo_fill(cr);
     value_at_gradient_segment += gradient_segment_value;
   }
@@ -1108,6 +1114,7 @@ void write_density_bar_to_cairo_surface(
 
   // Draw the gradient segment rectangles
   double value_at_gradient_segment = min_value;
+  double overlap = 0.1;
 
   for (double y = ymin_bar; y <= ymax_bar; y += gradient_segment_height) {
     Color color = heatmap_color(
@@ -1116,7 +1123,12 @@ void write_density_bar_to_cairo_surface(
       mean_value,
       max_value);
     cairo_set_source_rgb(cr, color.r, color.g, color.b);
-    cairo_rectangle(cr, xmin_bar, ly - y, bar_width, gradient_segment_height);
+    cairo_rectangle(
+      cr,
+      xmin_bar,
+      ly - y - overlap,
+      bar_width,
+      gradient_segment_height + overlap);
     cairo_fill(cr);
     value_at_gradient_segment += gradient_segment_value;
   }
