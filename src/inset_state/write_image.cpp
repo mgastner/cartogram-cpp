@@ -424,22 +424,19 @@ void write_graticule_heatmap_bar_to_cairo_surface(
   const double ymax_bar = bbox_bar.ymax();
 
   const double bar_width = xmax_bar - xmin_bar;
-
-  // calculate individual bar gradient segment property
-  const double gradient_segment_height =
-    (ymax_bar - ymin_bar) / n_gradient_bars;
-  const double gradient_segment_value =
-    (max_value - min_value) / n_gradient_bars;
+  const double bar_height = ymax_bar - ymin_bar;
 
   // Draw the outer bar lines
   cairo_set_source_rgb(cr, 0.0, 0.0, 0.0);
   cairo_set_line_width(cr, 1.0);
-  cairo_move_to(cr, xmin_bar, ly - ymin_bar);
-  cairo_line_to(cr, xmax_bar, ly - ymin_bar);
-  cairo_line_to(cr, xmax_bar, ly - ymax_bar);
-  cairo_line_to(cr, xmin_bar, ly - ymax_bar);
-  cairo_line_to(cr, xmin_bar, ly - ymin_bar);
+  cairo_rectangle(cr, xmin_bar, ymin_bar, bar_width, -bar_height);
   cairo_stroke(cr);
+
+  // Calculate individual bar gradient segment property
+  const double gradient_segment_height =
+    (ymax_bar - ymin_bar) / n_gradient_bars;
+  const double gradient_segment_value =
+    (max_value - min_value) / n_gradient_bars;
 
   // Draw the gradient segment rectangles
   double value_at_gradient_segment = min_value;
@@ -1058,10 +1055,10 @@ void InsetState::write_graticule_heatmap_image(
       min_area_cell_point_area,
       max_area_cell_point_area,
       bar_cr,
-      Bbox(75.0, 200.0, 95.0, 350.0),
+      Bbox(75, 200, 95, 350),
       major_ticks,
       minor_ticks,
-      ly_);
+      400);
 
     cairo_show_page(bar_cr);
     cairo_surface_destroy(bar_surface);
@@ -1090,6 +1087,13 @@ void write_density_bar_to_cairo_surface(
   const double ymax_bar = bbox_bar.ymax();
 
   const double bar_width = xmax_bar - xmin_bar;
+  const double bar_height = ymax_bar - ymin_bar;
+
+  // Draw the outer bar lines
+  cairo_set_source_rgb(cr, 0.0, 0.0, 0.0);
+  cairo_set_line_width(cr, 1.0);
+  cairo_rectangle(cr, xmin_bar, ymin_bar, bar_width, -bar_height);
+  cairo_stroke(cr);
 
   // position of mean line along bar
   const double ymean_bar = ((ymax_bar - ymin_bar) / (max_value - min_value)) *
@@ -1101,16 +1105,6 @@ void write_density_bar_to_cairo_surface(
     (ymax_bar - ymin_bar) / n_gradient_bars;
   const double gradient_segment_value =
     abs(max_value - min_value) / n_gradient_bars;
-
-  // Draw the outer bar lines
-  cairo_set_source_rgb(cr, 0.0, 0.0, 0.0);
-  cairo_set_line_width(cr, 1.0);
-  cairo_move_to(cr, xmin_bar, ly - ymin_bar);
-  cairo_line_to(cr, xmin_bar, ly - ymax_bar);
-  cairo_line_to(cr, xmax_bar, ly - ymax_bar);
-  cairo_line_to(cr, xmax_bar, ly - ymin_bar);
-  cairo_line_to(cr, xmin_bar, ly - ymin_bar);
-  cairo_stroke(cr);
 
   // Draw the gradient segment rectangles
   double value_at_gradient_segment = min_value;
@@ -1187,7 +1181,7 @@ void write_density_bar_to_cairo_surface(
   // std::abs(min_value)); Draw remaining ticks
   long long magnitude = std::pow(10, floor(std::log10(max_value)));
 
-  if (max_value > magnitude * 5) {
+  if (max_value > magnitude * 4) {
     magnitude *= 2;
   } else if (max_value < magnitude * 2 && std::abs(min_value) < magnitude * 2) {
     magnitude /= 2;
@@ -1409,8 +1403,8 @@ void InsetState::write_density_image(
       0,
       dens_max - dens_mean,
       bar_cr,
-      Bbox(75.0, 200.0, 95.0, 350.0),
-      ly_);
+      Bbox(75, 200, 95, 350),
+      400);
 
     cairo_show_page(bar_cr);
     cairo_surface_destroy(bar_surface);

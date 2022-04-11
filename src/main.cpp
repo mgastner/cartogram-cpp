@@ -267,7 +267,7 @@ int main(const int argc, const char *argv[])
         // the starting blur width is too low to begin with.
         // TODO: Add option to customise starting blur width.
         double blur_width = std::pow(
-          3.0,
+          2.0,
           3 - static_cast<unsigned int>(inset_state.n_finished_integrations()));
         // if (inset_state.n_finished_integrations() < max_integrations) {
         //   blur_width =
