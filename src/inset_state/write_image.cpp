@@ -473,7 +473,7 @@ void write_graticule_heatmap_bar_to_cairo_surface(
 
   // Draw the ticks and nice_numbers
   cairo_set_source_rgb(cr, 0.0, 0.0, 0.0);
-  cairo_set_line_width(cr, .9);
+  cairo_set_line_width(cr, 1.1);
   for (auto tick : major_ticks) {
     double area = tick.first;
     int NiceNumber = tick.second;
@@ -489,7 +489,7 @@ void write_graticule_heatmap_bar_to_cairo_surface(
       cairo_stroke(cr);
     }
   }
-  cairo_set_line_width(cr, .7);
+  cairo_set_line_width(cr, 0.75);
   for (auto ticks : minor_ticks) {
     double area = ticks.first;
     if (area > min_value and area < max_value) {
@@ -1106,9 +1106,9 @@ void write_density_bar_to_cairo_surface(
   cairo_set_source_rgb(cr, 0.0, 0.0, 0.0);
   cairo_set_line_width(cr, 1.0);
   cairo_move_to(cr, xmin_bar, ly - ymin_bar);
-  cairo_line_to(cr, xmax_bar, ly - ymin_bar);
-  cairo_line_to(cr, xmax_bar, ly - ymax_bar);
   cairo_line_to(cr, xmin_bar, ly - ymax_bar);
+  cairo_line_to(cr, xmax_bar, ly - ymax_bar);
+  cairo_line_to(cr, xmax_bar, ly - ymin_bar);
   cairo_line_to(cr, xmin_bar, ly - ymin_bar);
   cairo_stroke(cr);
 
@@ -1160,7 +1160,7 @@ void write_density_bar_to_cairo_surface(
     cr,
     xmin_bar - bar_width / 2 - 1,
     ly - ymax_bar - (font_size * 2.0));
-  cairo_show_text(cr, "Density (km²)");
+  cairo_show_text(cr, "Density (km⁻²)");
 
   std::string temp = std::to_string(max_value);
   // const double min_value, const double mean_value, const double max_value;
@@ -1187,12 +1187,13 @@ void write_density_bar_to_cairo_surface(
   // std::abs(min_value)); Draw remaining ticks
   long long magnitude = std::pow(10, floor(std::log10(max_value)));
 
-  if (max_value < magnitude * 2 && std::abs(min_value) < magnitude * 2) {
-    magnitude /= 4;
-  } else if (max_value < magnitude * 5 && std::abs(min_value) < magnitude * 5) {
+  if (max_value > magnitude * 5) {
+    magnitude *= 2;
+  } else if (max_value < magnitude * 2 && std::abs(min_value) < magnitude * 2) {
     magnitude /= 2;
   }
-  if (magnitude >= 0.5) {
+
+  if (magnitude >= 0.1) {
     cairo_set_line_width(cr, 0.7);
     double bar_ratio = (ymax_bar - ymin_bar) / (max_value - min_value);
 
