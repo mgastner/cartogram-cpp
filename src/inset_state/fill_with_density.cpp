@@ -1,7 +1,12 @@
 #include "cartogram_info.h"
 #include "inset_state.h"
 
-void InsetState::fill_with_density(bool plot_density)
+#include <fstream>
+
+void InsetState::fill_with_density(
+  const bool plot_density,
+  const bool plot_graticule_heatmap,
+  const bool image_format_ps)
 {
   // We assume that target areas that were zero or missing in the input have
   // already been replaced by
@@ -22,14 +27,8 @@ void InsetState::fill_with_density(bool plot_density)
   // filled with the mean_density.
 
   // TODO: rho_num and rho_den could be a boost::multi_array<double, 2>.
-  std::vector<std::vector<double> > rho_num(
-    lx_,
-    std::vector<double> (ly_, 0)
-  );
-  std::vector<std::vector<double> > rho_den(
-    lx_,
-    std::vector<double> (ly_, 0)
-  );
+  std::vector<std::vector<double> > rho_num(lx_, std::vector<double>(ly_, 0));
+  std::vector<std::vector<double> > rho_den(lx_, std::vector<double>(ly_, 0));
 
   // Resolution with which we sample polygons. "resolution" is the number of
   // horizontal "test rays" between each of the ly consecutive horizontal
@@ -44,14 +43,12 @@ void InsetState::fill_with_density(bool plot_density)
   // The weight of a segment of a ray that is inside a GeoDiv is equal to
   // (length of the segment inside the geo_div) * (area error of the geodiv).
   for (unsigned int k = 0; k < ly_; ++k) {
-
     // Iterate over each of the rays between the graticule lines y = k and
     // y = k+1
-    for (double y = k + 0.5/resolution; y < k + 1; y += 1.0/resolution) {
-
+    for (double y = k + 0.5 / resolution; y < k + 1; y += 1.0 / resolution) {
       // Intersections for one ray
       auto intersections_at_y =
-        intersections_with_rays[round((y - 0.5/resolution) * resolution)];
+        intersections_with_rays[round((y - 0.5 / resolution) * resolution)];
 
       // Sort intersections in ascending order
       std::sort(intersections_at_y.begin(), intersections_at_y.end());
@@ -66,12 +63,11 @@ void InsetState::fill_with_density(bool plot_density)
       for (unsigned int i = 1; i + 1 < intersections_at_y.size(); i += 2) {
         const double left_x = intersections_at_y[i].x();
         const double right_x = intersections_at_y[i + 1].x();
+        // The intersections are in the same graticule cell. The ray
+        // enters and leaves a GeoDiv in this cell. We weigh the density
+        // of the cell by the GeoDiv's area error.
         if (left_x != right_x) {
           if (ceil(left_x) == ceil(right_x)) {
-
-            // The intersections are in the same graticule cell. The ray
-            // enters and leaves a GeoDiv in this cell. We weigh the density
-            // of the cell by the GeoDiv's area error.
             const double weight =
               area_error_at(intersections_at_y[i].geo_div_id) *
               (right_x - left_x);
@@ -100,9 +96,9 @@ void InsetState::fill_with_density(bool plot_density)
 
         // Check for intersection of polygons, holes and GeoDivs
         // TODO: Decide whether to comment out? (probably not)
-        if (intersections_at_y[i].ray_enters ==
-            intersections_at_y[i + 1].ray_enters) {
-
+        if (
+          intersections_at_y[i].ray_enters ==
+          intersections_at_y[i + 1].ray_enters) {
           // Highlight where intersection is present
           std::cerr << "\nInvalid Geometry!" << std::endl;
           std::cerr << "Intersection of Polygons/Holes/Geodivs" << std::endl;
@@ -147,14 +143,69 @@ void InsetState::fill_with_density(bool plot_density)
       }
     }
   }
-  if (plot_density) {
+
+  // Determine range of densities
+  double dens_min = dbl_inf;
+  double dens_max = -dbl_inf;
+
+  for (unsigned int i = 0; i < lx_; ++i) {
+    for (unsigned int j = 0; j < ly_; ++j) {
+      dens_min = std::min(rho_init_(i, j), dens_min);
+      dens_max = std::max(rho_init_(i, j), dens_max);
+    }
+  }
+  dens_min_ = dens_min;
+  dens_mean_ = mean_density;
+  dens_max_ = dens_max;
+
+  // Print density into csv
+  if (false) {
     std::string file_name =
-      inset_name_ +
-      "_unblurred_density_" +
-      std::to_string(n_finished_integrations()) +
-      ".eps";
+      inset_name_ + "_density_" + std::to_string(n_finished_integrations());
+    std::ofstream f_csv;
+    for (unsigned int i = 0; i < lx_; ++i) {
+      for (unsigned int j = 0; j < ly_; ++j) {
+        f_csv << rho_init_(i, j);
+        if (j < ly_ - 1) {
+          f_csv << ", ";
+        }
+      }
+      f_csv << "\n";
+    }
+    f_csv.open(file_name + ".csv");
+    f_csv.close();
+    std::ofstream f_txt;
+    f_txt.open(file_name + ".txt");
+    f_txt << "Minimum Density: " << dens_min_ << "\n";
+    f_txt << "Mean Density: " << dens_mean_ << "\n";
+    f_txt << "Maximum Density: " << dens_max_ << "\n";
+  }
+
+  if (plot_graticule_heatmap && n_finished_integrations_ == 0) {
+    std::string file_name = inset_name_ + "_piecewise_density_" +
+                            std::to_string(n_finished_integrations());
+
+    // Update extension
+    image_format_ps ? file_name += ".ps" : file_name += ".svg";
+
+    write_density_image(
+      file_name,
+      rho_init_.as_1d_array(),
+      plot_graticule_heatmap,
+      image_format_ps);
+  }
+
+  if (plot_density) {
+    std::string file_name = inset_name_ + "_unblurred_density_" +
+                            std::to_string(n_finished_integrations());
+    image_format_ps ? file_name += ".ps" : file_name += ".svg";
+
     std::cerr << "Writing " << file_name << std::endl;
-    write_density_to_eps(file_name, rho_init_.as_1d_array());
+    write_density_image(
+      file_name,
+      rho_init_.as_1d_array(),
+      false,
+      image_format_ps);
   }
   execute_fftw_fwd_plan();
   return;

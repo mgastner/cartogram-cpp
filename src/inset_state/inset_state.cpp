@@ -76,6 +76,11 @@ const std::vector<GeoDiv> InsetState::geo_divs() const
   return geo_divs_;
 }
 
+const std::vector<GeoDiv> InsetState::geo_divs_original() const
+{
+  return geo_divs_original_;
+}
+
 void InsetState::increment_integration()
 {
   n_finished_integrations_ += 1;
@@ -91,6 +96,18 @@ void InsetState::initialize_cum_proj()
       cum_proj_[i][j].y = j + 0.5;
     }
   }
+}
+
+void InsetState::initialize_original_proj()
+{
+  original_proj_.resize(boost::extents[lx_][ly_]);
+  for (unsigned int i = 0; i < lx_; ++i) {
+    for (unsigned int j = 0; j < ly_; ++j) {
+      original_proj_[i][j].x = i + 0.5;
+      original_proj_[i][j].y = j + 0.5;
+    }
+  }
+  return;
 }
 
 void InsetState::insert_color(const std::string id, const Color c)
@@ -145,6 +162,11 @@ const std::string InsetState::inset_name() const
 bool InsetState::is_input_target_area_missing(const std::string id) const
 {
   return is_input_target_area_missing_.at(id);
+}
+
+double InsetState::latt_const() const
+{
+  return latt_const_;
 }
 
 unsigned int InsetState::lx() const
@@ -349,4 +371,8 @@ void InsetState::transform_points(std::function<Point(Point)> transform_point)
     }
   }
   return;
+}
+
+void InsetState::store_original_geo_divs() {
+  geo_divs_original_ = geo_divs_;
 }

@@ -16,7 +16,7 @@ color() { tput setaf $1; cat; tput sgr0; }
 # From https://unix.stackexchange.com/questions/462515/
 # check-command-line-arguments
 if [ $# -eq 0 ] || [ -z "$1" ]; then
-  cli="-pst"
+  cli="-epst"
 else
   cli="$1"
 fi

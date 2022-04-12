@@ -17,6 +17,7 @@ class GeoDiv {
     const std::set<std::string> adjacent_geodivs() const;
     void adjacent_to(const std::string);
     double area() const;
+    Bbox bbox() const;
     const std::string id() const;
     const std::vector<Segment> intersections(unsigned int) const;
     const Polygon_with_holes largest_polygon_with_holes() const;

@@ -1,7 +1,7 @@
-#include "constants.h"
 #include "cartogram_info.h"
-#include "inset_state.h"
 #include "colors.h"
+#include "constants.h"
+#include "inset_state.h"
 
 // Function to automatically color topology based on contiguity graph
 void InsetState::auto_color()
@@ -9,15 +9,16 @@ void InsetState::auto_color()
   std::vector<Color> palette;
 
   // Using default palette for now
-  // From https://colorbrewer2.org/
-  palette.push_back(Color(27, 158, 119));  // turquoise
-  palette.push_back(Color(117, 112, 179));  // purple
-  palette.push_back(Color(231, 41, 138));  // pinkish-magenta
-  palette.push_back(Color(102, 166, 30));  // green
-  palette.push_back(Color(230, 171, 2));  // yellow
-  palette.push_back(Color(217, 95, 2));  // redish-orange
-  palette.push_back(Color(102, 102, 102));  // dark grey
-  palette.push_back(Color(166, 118, 29));  // mustard-brown
+  // TODO: Accept palette from user
+  // From https://colorbrewer2.org/#type=qualitative&scheme=Set3&n=8
+  palette.push_back(Color("#8dd3c7"));  // green
+  palette.push_back(Color("#ffffb3"));  // yellow
+  palette.push_back(Color("#bebada"));  // purple
+  palette.push_back(Color("#fb8072"));  // red
+  palette.push_back(Color("#80b1d3"));  // blue
+  palette.push_back(Color("#fdb462"));  // orange
+  palette.push_back(Color("#b3de69"));  // green
+  palette.push_back(Color("#fccde5"));  // pink
 
   // Find resolution
   const unsigned int resolution = default_resolution;

@@ -30,6 +30,23 @@ double GeoDiv::area() const
   return a;
 }
 
+// Find joint bounding for all polygons with holes in this geo_div
+Bbox GeoDiv::bbox() const {
+  double geo_div_xmin = dbl_inf;
+  double geo_div_xmax = -dbl_inf;
+  double geo_div_ymin = dbl_inf;
+  double geo_div_ymax = -dbl_inf;
+  for (const auto &pwh : polygons_with_holes_) {
+    const auto bb = pwh.bbox();
+    geo_div_xmin = std::min(bb.xmin(), geo_div_xmin);
+    geo_div_ymin = std::min(bb.ymin(), geo_div_ymin);
+    geo_div_xmax = std::max(bb.xmax(), geo_div_xmax);
+    geo_div_ymax = std::max(bb.ymax(), geo_div_ymax);
+  }
+  Bbox geo_div_bbox(geo_div_xmin, geo_div_ymin, geo_div_xmax, geo_div_ymax);
+  return geo_div_bbox;
+}
+
 const std::string GeoDiv::id() const
 {
   return id_;
@@ -109,6 +126,17 @@ Point GeoDiv::point_on_surface_of_polygon_with_holes(
                     epsilon,
                     id_,
                     'x');
+
+  // Store hole intersections
+  for (auto hci = pwh.holes_begin(); hci != pwh.holes_end(); ++hci) {
+    add_intersections(intersections,
+                    *hci,
+                    line_y,
+                    0,
+                    epsilon,
+                    id_,
+                    'x');
+  }
   std::sort(intersections.begin(), intersections.end());
 
   // Assign directions (i.e., whether the line is entering or leaving the

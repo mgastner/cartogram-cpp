@@ -12,6 +12,7 @@ constexpr unsigned int max_integrations = 100;
 constexpr double max_permitted_area_error = 0.01;
 constexpr double padding_unless_world = 1.5;
 constexpr double pi = std::numbers::pi;
+constexpr double earth_surface_area = 510.1e6;
 
 // The resolution represents the number of rays to shoot through each cell
 // (see inset_state/scanline_graph.cpp).
@@ -42,5 +43,8 @@ constexpr double max_font_size = 10.0;
 // Threshold as a fraction of non-na and non-zero total area for a target
 // area to be considered "too small"
 constexpr double small_area_threshold_frac = 2e-5;
+
+// Graticule cell width/height
+constexpr unsigned int graticule_width = 7;
 
 #endif
