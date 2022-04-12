@@ -11,14 +11,38 @@ void InsetState::auto_color()
   // Using default palette for now
   // TODO: Accept palette from user
   // From https://colorbrewer2.org/#type=qualitative&scheme=Set3&n=8
-  palette.push_back(Color("#8dd3c7"));  // green
-  palette.push_back(Color("#ffffb3"));  // yellow
-  palette.push_back(Color("#bebada"));  // purple
-  palette.push_back(Color("#fb8072"));  // red
-  palette.push_back(Color("#80b1d3"));  // blue
-  palette.push_back(Color("#fdb462"));  // orange
-  palette.push_back(Color("#b3de69"));  // green
-  palette.push_back(Color("#fccde5"));  // pink
+  // palette.push_back(Color("#8dd3c7"));  // green
+  // palette.push_back(Color("#ffffb3"));  // yellow
+  // palette.push_back(Color("#bebada"));  // purple
+  // palette.push_back(Color("#fb8072"));  // red
+  // palette.push_back(Color("#80b1d3"));  // blue
+  // palette.push_back(Color("#fdb462"));  // orange
+  // palette.push_back(Color("#b3de69"));  // green
+  // palette.push_back(Color("#fccde5"));  // pink
+
+  // Second color bar
+  // palette.push_back(Color("#a6cee3"));  // light blue
+  // palette.push_back(Color("#b2df8a"));  // light green
+  // palette.push_back(Color("#fb9a99"));  // light red
+  // palette.push_back(Color("#fdbf6f"));  // light orange
+  // palette.push_back(Color("#cab2d6"));  // light purple
+  // palette.push_back(Color("#33a02c"));  // dark green
+  // palette.push_back(Color("#1f78b4"));  // dark blue
+  // palette.push_back(Color("#e31a1c"));  // dark red
+  // palette.push_back(Color("#ff7f00"));  // dark orange
+  // palette.push_back(Color("#6a3d9a"));  // dark purple
+  // palette.push_back(Color("#ffff99"));  // yellow
+  // palette.push_back(Color("#b15928"));  // brown
+
+  // From https://flatuicolors.com/palette/defo
+  palette.push_back(Color("#e74c3c"));  // red
+  palette.push_back(Color("#f1c40f"));  // yellow
+  palette.push_back(Color("#34495e"));  // dark blue
+  palette.push_back(Color("#e67e22"));  // orange
+  palette.push_back(Color("#9b59b6"));  // amethyst
+  palette.push_back(Color("#2ecc71"));  // green
+  palette.push_back(Color("#3498db"));  // light blue
+  palette.push_back(Color("#1abc9c"));  // turqiose
 
   // Find resolution
   const unsigned int resolution = default_resolution;

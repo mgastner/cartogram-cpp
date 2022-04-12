@@ -306,6 +306,10 @@ int main(const int argc, const char *argv[])
         if (simplify) {
           inset_state.simplify(target_points_per_inset);
         }
+
+        // Make psuedo-mosaic cartogram
+        inset_state.write_mosaic(image_format_ps);
+
         inset_state.increment_integration();
 
         // Update area errors
@@ -382,6 +386,10 @@ int main(const int argc, const char *argv[])
         // std::cerr << "Writing " << output_filename << std::endl;
         // inset_state.write_cairo_map(output_filename, plot_graticule);
       }
+
+      // Make psuedo-mosaic cartogram
+      inset_state.write_mosaic(image_format_ps);
+
       if (world) {
         std::string output_file_name =
           map_name + "_cartogram_in_smyth_projection.geojson";

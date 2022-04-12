@@ -1464,3 +1464,78 @@ void InsetState::write_intersections_image(
   cairo_surface_destroy(surface);
   cairo_destroy(cr);
 }
+
+void InsetState::write_mosaic(const bool image_format_ps)
+{
+  std::string filename =
+    inset_name() + "_mosiac_" + std::to_string(n_finished_integrations());
+
+  // Update extension
+  image_format_ps ? filename += ".ps" : filename += ".svg";
+
+  std::cerr << "Writing " << filename << std::endl;
+
+  // Whether to draw bar on the cairo surface
+  cairo_surface_t *surface;
+
+  // Create a cairo surface
+  image_format_ps
+    ? surface = cairo_ps_surface_create(filename.c_str(), lx_, ly_)
+    : surface = cairo_svg_surface_create(filename.c_str(), lx_, ly_);
+  cairo_t *cr = cairo_create(surface);
+
+  // Write header
+  if (image_format_ps) {
+    write_ps_header(filename, surface);
+  }
+
+  unsigned int fineness = 2;
+
+  cairo_set_line_width(cr, (fineness / 15.0));
+
+  // Get horizontal scans
+  auto intersections_with_rays = intersec_with_parallel_to('x', 1);
+
+  // Iterate over each horizontal graticule line
+  for (unsigned int y = 0; y < ly_; y += fineness) {
+    auto intersections_at_y = intersections_with_rays[y];
+
+    // Sort intersections in ascending order
+    std::sort(intersections_at_y.begin(), intersections_at_y.end());
+
+    // Fill GeoDivs by iterating over intersections
+    for (unsigned int i = 0; i < intersections_at_y.size(); i += 2) {
+      const double left_x = intersections_at_y[i].x();
+      const double right_x = intersections_at_y[i + 1].x();
+
+      // Fill each cell between intersections
+      // TODO: WE ENCOUNTERED ISSUES WITH THE NEXT FOR_LOOP; THUS, WE
+      // TEMPORARILY REPLACED IT WITH THE VERSION COMMENTED-OUT BELOW.
+      // HOWEVER, NONE OF OUR CURRENT EXAMPLES EXHIBIT THIS PROBLEM.
+      // for (unsigned int x = std::max(ceil(left_x), 1.0);
+      //                   x <= std::max(ceil(right_x), 1.0);
+      //                   ++x) {
+      unsigned int from =
+        ceil(left_x) - (static_cast<unsigned int>(ceil(left_x)) % fineness);
+      unsigned int to =
+        ceil(right_x) - (static_cast<unsigned int>(ceil(right_x)) % fineness);
+
+      for (unsigned int x = from; x <= to; x += fineness) {
+        const Color col = color_at(intersections_at_y[i].geo_div_id);
+
+        // Square at x, y
+        cairo_set_source_rgb(cr, col.r, col.g, col.b);
+        cairo_rectangle(cr, x, y, fineness, fineness);
+        cairo_fill_preserve(cr);
+
+        // Outline
+        cairo_set_source_rgb(cr, 0.25, 0.25, 0.25);
+        cairo_stroke(cr);
+      }
+    }
+  }
+
+  cairo_show_page(cr);
+  cairo_surface_destroy(surface);
+  cairo_destroy(cr);
+}

@@ -23,7 +23,7 @@ class InsetState
 {
 private:
   std::unordered_map<std::string, double> area_errors_;
-  Bbox bbox_; // Bounding box
+  Bbox bbox_;  // Bounding box
   fftw_plan bwd_plan_for_rho_;
   std::unordered_map<std::string, Color> colors_;
 
@@ -52,12 +52,12 @@ private:
   std::string inset_name_;
   std::unordered_map<std::string, bool> is_input_target_area_missing_;
   std::unordered_map<std::string, std::string> labels_;
-  unsigned int lx_, ly_; // Lattice dimensions
-  unsigned int new_xmin_, new_ymin_; // Map translation vector
+  unsigned int lx_, ly_;  // Lattice dimensions
+  unsigned int new_xmin_, new_ymin_;  // Map translation vector
   unsigned int n_finished_integrations_;
-  std::string pos_; // Position of inset ("C", "T" etc.)
-  boost::multi_array<XYPoint, 2> proj_; // Cartogram projection
-  boost::multi_array<XYPoint, 2> original_proj_; // Original projection
+  std::string pos_;  // Position of inset ("C", "T" etc.)
+  boost::multi_array<XYPoint, 2> proj_;  // Cartogram projection
+  boost::multi_array<XYPoint, 2> original_proj_;  // Original projection
 
   // Rasterized density and its Fourier transform
   FTReal2d rho_ft_, rho_init_;
@@ -71,12 +71,12 @@ private:
   InsetState();
 
 public:
-  explicit InsetState(const std::string); // Constructor
+  explicit InsetState(const std::string);  // Constructor
   void adjust_for_dual_hemisphere();
   void apply_albers_projection();
   void apply_smyth_craster_projection();
   double area_error_at(const std::string) const;
-  void auto_color(); // Automatically color GeoDivs
+  void auto_color();  // Automatically color GeoDivs
   Bbox bbox() const;
   void blur_density(
     const double blur_width,
@@ -244,7 +244,9 @@ public:
     const bool plot_graticule_heatmap,
     const bool image_format_ps);
   void write_intersections_image(unsigned int res, const bool image_format_ps);
-  void write_density_bar_image(std::string filename, const bool image_format_ps);
+  void
+  write_density_bar_image(std::string filename, const bool image_format_ps);
+  void write_mosaic(const bool image_format_ps);
 };
 
 #endif
