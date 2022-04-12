@@ -248,6 +248,9 @@ int main(const int argc, const char *argv[])
         std::cerr << "Integration number "
                   << inset_state.n_finished_integrations() << std::endl;
 
+        // Make psuedo-mosaic cartogram
+        inset_state.write_mosaic(image_format_ps);
+
         // Calculate progress percentage. We assume that the maximum area
         // error is typically reduced to 1/5 of the previous value.
         const double ratio_actual_to_permitted_max_area_error =
@@ -306,9 +309,6 @@ int main(const int argc, const char *argv[])
         if (simplify) {
           inset_state.simplify(target_points_per_inset);
         }
-
-        // Make psuedo-mosaic cartogram
-        inset_state.write_mosaic(image_format_ps);
 
         inset_state.increment_integration();
 

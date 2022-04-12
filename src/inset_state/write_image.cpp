@@ -1489,7 +1489,7 @@ void InsetState::write_mosaic(const bool image_format_ps)
     write_ps_header(filename, surface);
   }
 
-  unsigned int fineness = 2;
+  unsigned int fineness = 4;
 
   cairo_set_line_width(cr, (fineness / 15.0));
 
