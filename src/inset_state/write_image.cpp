@@ -1154,7 +1154,7 @@ void write_density_bar_to_cairo_surface(
     cr,
     xmin_bar - bar_width / 2 - 1,
     ly - ymax_bar - (font_size * 2.0));
-  cairo_show_text(cr, "Density (km⁻²)");
+  cairo_show_text(cr, "Density (km-²)");
 
   std::string temp = std::to_string(max_value);
   // const double min_value, const double mean_value, const double max_value;
@@ -1171,7 +1171,11 @@ void write_density_bar_to_cairo_surface(
   // cairo_show_text(cr, "Low");
 
   // Write "Mean" beside ymean_bar
-  temp = std::to_string(mean_value);
+  if (mean_value == 0.0) {
+    temp = "0";
+  } else {
+    temp = std::to_string(mean_value);
+  }
   cairo_move_to(cr, xmax_bar + 5, ly - ymean_bar + (font_size / 4.0));
   cairo_show_text(cr, temp.substr(0, temp.size() - 4).c_str());
 
