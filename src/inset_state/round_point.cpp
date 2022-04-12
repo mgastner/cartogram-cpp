@@ -20,6 +20,9 @@ bool almost_equal(const double a, const double b) {
 bool points_almost_equal(const Point a, const Point b) {
   return (almost_equal(a.x(), b.x()) && almost_equal(a.y(), b.y()));
 }
+bool point_less_than(const Point a, const Point b) {
+  return !(points_almost_equal(a, b) || a >= b);
+}
 bool xy_points_almost_equal(const XYPoint a, const XYPoint b) {
   return (almost_equal(a.x, b.x) && almost_equal(a.y, b.y));
 }

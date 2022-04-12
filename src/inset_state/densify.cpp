@@ -3,36 +3,92 @@
 #include <CGAL/intersections.h>
 #include "round_point.h"
 
-// This function takes two lines as input:
-// - line `a`, defined by points a1 and a2.
-// - line `b`, defined by points b1 and b2.
-// The function returns the intersection between them. If the two lines are
-// parallel or are the same, the function returns the point (-1, -1), which
-// is always outside of any graticule grid cell.
-Point calc_intersection(Segment s1, Segment s2) {
+// A point location at (-1, -1) is a sign that a point is not on the
+// [0, lx]-by-[0, ly] grid used for calculating the density to be equalized
 
-  // TODO: I am unsure why this is needed. Duplicate points would be removed
-  // either way.
-  // Check if any segment is undefined (i.e., defined by identical points)
-  // if (a1 == a2 || b1 == b2) {
-  //   std::cerr << "ERROR: End points of line segment are identical"
-  //             << std::endl;
-  //   _Exit(EXIT_FAILURE);
-  // }
+// TODO: Is there a way to avoid #define? The apparent alternative
+// `constexpr out_of_range(-1.0, -1.0);` does not work because "the
+// type 'const Point' ... is not literal".
+#define OUT_OF_RANGE Point(-1.0, -1.0)
 
-  // Return segment intersection if it exists
-  const auto result = CGAL::intersection(s1, s2);
+// This function has the following as parameters:
+// - a segment defined by points a and b.
+// - a line defined by coef_x, coef_y, and coef_const with the formula
+//      coef_x * x + coef_y * y + coef_const = 0.
+// The function returns the unique intersection point between them. If this
+// intersection point does not exist, the function returns the point called
+// OUT_OF_RANGE, which is always outside of any graticule grid cell.
+Point calc_intersection(
+    const Point a,
+    const Point b,
+    const double coef_x,
+    const double coef_y,
+    const double coef_const
+) {
+  const auto result = CGAL::intersection(
+    Line(coef_x, coef_y, coef_const),
+    Segment(a, b)
+  );
   if (result) {
-    if (const Point* p = boost::get<Point>(&*result)) {
-      return (*p);
-    }
+    const Point* p = boost::get<Point>(&*result);
+    if (p) return (*p);
   }
-
-  // Value outside grid cell indicating that no intersection was found
-  return Point(-1, -1);
+  return OUT_OF_RANGE;
 }
 
-// TODO: If a or b are themselves intersection points (e.g. if pt1.x is an
+// This function takes points `a` and `b` as arguments, which define a
+// segment. The function also takes the following arguments, which define the
+// types of diagonals for which we will calculate intersections:
+// - slope: the slope of every diagonal.
+// - base_intercept: the intercept that is the closest to 0 of a diagonal
+//   on the grid. This value is either 0, 0.25, or 0.5.
+// - step: what we need to add to each diagonal's intercept to obtain the
+//   next diagonal.
+void add_diag_inter(
+    std::set<Point, decltype(point_less_than)*> *intersections,
+    const Point a,
+    const Point b,
+    double slope,
+    double base_intercept,
+    double step,
+    const unsigned int lx,
+    const unsigned int ly
+) {
+  double intercept_start =
+    floor(std::min(a.y() - slope * a.x(), b.y() - slope * b.x()))
+    + base_intercept;
+  double intercept_end =
+    std::max(a.y() - slope * a.x(), b.y() - slope * b.x());
+  for (double d = intercept_start; d <= intercept_end; d += step) {
+
+    // We consider four types of diagonals:
+    // - 'normal': y = x + d,
+    // - 'antinormal': y = -x + d,
+    // - 'steep': y = 2x + d + base_intercept
+    //      (where base_intercept = 0.5),
+    // - 'antisteep': y = -2x + d + base_intercept
+    //      (where base_intercept = 0.5),
+    // - 'gentle': y = 0.5x + d + base_intercept,
+    //      (where base_intercept = 0.25),
+    // - 'antigentle': y = -0.5x + d + base_intercept,
+    //      (where base_intercept = 0.25),
+    // where d is the double increasing by `step` after each iteration of the
+    // loop.
+    // Steep and antisteep diagonals appear in graticule cells near x = 0
+    // and x = lx. Gentle and antigentle diagonals appear in graticules near
+    // y = 0 and y = ly.
+    Point inter = calc_intersection(a, b, slope, -1.0, d);
+    if (inter != OUT_OF_RANGE &&
+        ((abs(slope) == 2 && (inter.x() < 0.5 || inter.x() > (lx - 0.5))) ||
+         (abs(slope) == 0.5 && (inter.y() < 0.5 || inter.y() > (ly - 0.5))) ||
+         (abs(slope) == 1 && inter.x() >= 0.5 && inter.x() <= (lx - 0.5) &&
+          inter.y() >= 0.5 && inter.y() <= (ly - 0.5)))) {
+      (*intersections).insert(inter);
+    }
+  }
+}
+
+// TODO: If a or b are themselves intersection points (e.g., if pt1.x is an
 // integer plus 0.5), it appears to be included in the returned intersections.
 // Would this property cause the point to be included twice in the line
 // segment (once when the end point is the argument pt1 and a second time when
@@ -44,11 +100,12 @@ Point calc_intersection(Segment s1, Segment s2) {
 // function also returns all intersections with the diagonals of these
 // graticule cells. The function assumes that graticule cells start at
 // (0.5, 0.5).
-std::vector<Point> densification_points(const Point pt1,
-                                        const Point pt2,
-                                        const unsigned int lx,
-                                        const unsigned int ly)
-{
+std::vector<Point> densification_points(
+    const Point pt1,
+    const Point pt2,
+    const unsigned int lx,
+    const unsigned int ly
+) {
   // If the input points are identical, return them without calculating
   // intersections
   if ((pt1.x() == pt2.x()) && (pt1.y() == pt2.y())) {
@@ -58,139 +115,85 @@ std::vector<Point> densification_points(const Point pt1,
     return points;
   }
 
-  // Vector for storing intersections before removing duplicates
-  std::vector<Point> temp_intersections;
+  // Ordered set for storing intersections before removing duplicates
+  std::set<Point, decltype(point_less_than)*> temp_intersections(
+    point_less_than
+  );
 
   // Store the leftmost point of p1 and pt2 as `a`. If both points have the
   // same x-coordinate, then store the lower point as `a`. The other point is
   // stored as `b`. The segments (a, b) and (b, a) describe the same segment.
   // However, if we flip the order of a and b, the resulting intersections are
   // not necessarily the same because of floating point errors.
-  Point a = pt1;
-  Point b = pt2;
-  if ((pt1[0] > pt2[0]) || ((pt1[0] == pt2[0]) && (pt1[1] > pt2[1]))) {
-    std::swap(a, b);
+
+  // TODO: IN THE COMMENT ABOVE, DOES THE REMARK ABOUT THE FLOATING-POINT
+  // ERRORS STILL APPLY AFTER SWITCHING TO SIMPLE CARTESIAN COORDINATES?
+  Point a, b;
+  if ((pt1.x() > pt2.x()) || ((pt1.x() == pt2.x()) && (pt1.y() > pt2.y()))) {
     a = pt2;
     b = pt1;
+  } else {
+    a = pt1;
+    b = pt2;
   }
-  temp_intersections.push_back(a);
-  temp_intersections.push_back(b);
-  Segment s1(a, b);
+  temp_intersections.insert(a);
+  temp_intersections.insert(b);
 
-  // Get bottom-left point of graticule cell containing `a`
-  const Point av0(std::max(0.0, floor(a.x() + 0.5) - 0.5),
-                  std::max(0.0, floor(a.y() + 0.5) - 0.5));
-
-  // Get bottom-left point of graticule cell containing `b`
-  const Point bv0(std::max(0.0, floor(b.x() + 0.5) - 0.5),
-                  std::max(0.0, floor(b.y() + 0.5) - 0.5));
-
-  // Get bottom-left (start_v) and top-right (end_v) graticule cells of the
-  // graticule cell rectangle (the smallest rectangular section of the
-  // graticule grid cell containing both points)
-  double y1 = av0.y();
-  double y2 = bv0.y();
-  if (a.y() > b.y()) {
-    std::swap(y1, y2);
-  }
-  Point start_v(av0.x(), y1);
-  Point end_v(bv0.x(), y2);
-
-  // Distance between left-most and right-most graticule cell
-  const unsigned int dist_x = std::ceil(end_v.x() - start_v.x());
-
-  // Distance between top and bottom graticule cell
-  const unsigned int dist_y = std::ceil(end_v.y() - start_v.y());
-
-  // Iterator variables for tracking current graticule cell in next for-loop
-  double current_graticule_x = start_v.x();
-  double current_graticule_y = start_v.y();
-
-  // TODO: IT IS INEFFICIENT TO RUN THE INTERSECTIONS OF THE LINE FROM a TO b
-  // WITH THE HORIZONTAL GRID LINES AND VERTICAL GRID LINES IN EACH ITERATION
-  // OF THE NESTED LOOP BELOW. IT WOULD BE BETTER TO HAVE A NON-NESTED LOOP
-  // OVER EACH HORIZONTAL LINE IN THE RANGE, THEN A NON-NESTED LOOP OVER EACH
-  // VERTICAL LINE. FOR THE DIAGONALS, THIS PROCEDURE IS A LITTLE BIT
-  // TRICKIER; AT THE EDGES THE DIAGONALS ARE NOT STRAIGHT CONTINUATIONS OF
-  // THE ADJOINING DIAGONALS. STILL, THERE IS A PROBABLY A WAY TO GET
-  // INTERSECTIONS WITH THE 'MAIN' DIAGONALS ADN TREAT THE EDGE CASES
-  // SEPARATELY.
-
-  // Iterate over each row, from bottom to top
-  for (unsigned int i = 0; i <= dist_y; ++i) {
-
-    // Iterate over each column, from left to right
-    for (unsigned int j = 0; j <= dist_x; ++j) {
-
-      // Get points for the current graticule cell, in the following order:
-      // bottom-left, bottom-right, top-right, top-left
-      const Point v0(current_graticule_x, current_graticule_y);
-      const Point v1(v0.x() == 0.0 ? 0.5 : std::min(double(lx), v0.x() + 1.0),
-                     v0.y());
-      const Point v2(v1.x(),
-                     v0.y() == 0.0 ? 0.5 : std::min(double(ly), v0.y() + 1.0));
-      const Point v3(v0.x(), v2.y());
-
-      // Store intersections of line segment from `a` to `b` with graticule
-      // lines and diagonals
-      std::vector<Point> graticule_intersections;
-
-      // Bottom intersection
-      graticule_intersections.push_back(calc_intersection(s1, Segment(v0, v1)));
-
-      // Left intersection
-      graticule_intersections.push_back(calc_intersection(s1, Segment(v0, v3)));
-
-      // Right intersection
-      graticule_intersections.push_back(calc_intersection(s1, Segment(v1, v2)));
-
-      // Top intersection
-      graticule_intersections.push_back(calc_intersection(s1, Segment(v3, v2)));
-
-      // Diagonal intersections
-      graticule_intersections.push_back(calc_intersection(s1, Segment(v0, v2)));
-      graticule_intersections.push_back(calc_intersection(s1, Segment(v3, v1)));
-
-      // Add only those intersections that are between `a` and `b`. Usually,
-      // it is enough to check that the x-coordinate of the intersection is
-      // between a.x and b.x. However, in some edge cases, it is possible that
-      // the x-coordinate is between a.x and b.x, but the y coordinate
-      // is not between a.y and b.y (e.g. if the line from a to b is
-      // vertical).
-      for (const auto &inter : graticule_intersections) {
-        if (((a.x() <= inter.x() && inter.x() <= b.x()) ||
-             (b.x() <= inter.x() && inter.x() <= a.x())) &&
-            ((a.y() <= inter.y() && inter.y() <= b.y()) ||
-             (b.y() <= inter.y() && inter.y() <= a.y()))) {
-          temp_intersections.push_back(rounded_point(inter, lx, ly));
-        }
-      }
-
-      // If the current graticule cell touches the left edge, add 0.5 to
-      // obtain the next graticule cell. Otherwise, add 1.0.
-      current_graticule_x += (current_graticule_x == 0.0) ? 0.5 : 1.0;
-    }
-    current_graticule_x = start_v.x();
-
-    // If the current row touches the bottom edge, add 0.5 to
-    // obtain the next row. Otherwise, add 1.0.
-    current_graticule_y += (current_graticule_y == 0.0) ? 0.5 : 1.0;
-  }
-
-  // Sort intersections
-  std::sort(temp_intersections.begin(), temp_intersections.end());
-
-  // TODO: IF temp_intersections WERE AN ORDERED SET, THERE WOULD BE NO NEED
-  // TO REMOVE DUPLICATES. HOWEVER, WE MUST KEEP IN MIND THAT WE MAY NEED TO
-  // PROVIDE std::set WITH A CUSTOM COMPARATOR FUNCTION
-  // Eliminate duplicates
-  std::vector<Point> intersections;
-  intersections.push_back(temp_intersections[0]);
-  for (unsigned int i = 1; i < temp_intersections.size(); ++i) {
-    if (temp_intersections[i - 1] != temp_intersections[i]) {
-      intersections.push_back(temp_intersections[i]);
+  // Get vertical intersections
+  double x_start = floor(a.x() + 0.5) + 0.5;
+  double x_end = b.x();
+  for (double x = x_start; x <= x_end; x += (x == 0.0) ? 0.5 : 1.0) {
+    Point inter = calc_intersection(a, b, 1.0, 0.0, -x);
+    if (inter != OUT_OF_RANGE) {
+      temp_intersections.insert(inter);
     }
   }
+
+  // Get horizontal intersections
+  double y_start = floor(std::min(a.y(), b.y()) + 0.5) + 0.5;
+  double y_end = std::max(a.y(), b.y());
+  for (double y = y_start; y <= y_end; y += (y == 0.0) ? 0.5 : 1.0) {
+    Point inter = calc_intersection(a, b, 0.0, 1.0, -y);
+    if (inter != OUT_OF_RANGE) {
+      temp_intersections.insert(inter);
+    }
+  }
+
+  // Get bottom-left to top-right diagonal intersections
+  add_diag_inter(&temp_intersections, a, b, 1.0, 0.0, 1.0, lx, ly);
+
+  // Get top-left to bottom-right diagonal intersections
+  add_diag_inter(&temp_intersections, a, b, -1.0, 0.0, 1.0, lx, ly);
+
+  // Add edge diagonals when at least one point is near the edge of the grid
+  if (a.x() < 0.5 ||
+      b.x() < 0.5 ||
+      a.x() > (lx - 0.5) ||
+      b.x() > (lx - 0.5)) {
+
+    // Bottom-left to top-right edge diagonals
+    add_diag_inter(&temp_intersections, a, b, 2.0, 0.5, 1.0, lx, ly);
+
+    // Top-left to bottom-right edge diagonals
+    add_diag_inter(&temp_intersections, a, b, -2.0, 0.5, 1.0, lx, ly);
+  }
+  if (a.y() < 0.5 ||
+      b.y() < 0.5 ||
+      a.y() > (ly - 0.5) ||
+      b.y() > (ly - 0.5)) {
+
+    // Bottom-left to top-right edge diagonals
+    add_diag_inter(&temp_intersections, a, b, 0.5, 0.25, 0.5, lx, ly);
+
+    // Top-left to botom-right edge diagonals
+    add_diag_inter(&temp_intersections, a, b, -0.5, 0.25, 0.5, lx, ly);
+  }
+
+  // Create a Point vector from the set
+  std::vector<Point> intersections(
+    temp_intersections.begin(),
+    temp_intersections.end()
+  );
 
   // Reverse if needed
   if ((pt1.x() > pt2.x()) || ((pt1.x() == pt2.x()) && (pt1.y() > pt2.y()))) {
@@ -210,7 +213,7 @@ void InsetState::densify_geo_divs()
       Polygon outer_dens;
 
       // Iterate over each point in the outer boundary of the polygon
-      for (size_t i = 0; i < outer.size(); ++i) {
+      for (unsigned int i = 0; i < outer.size(); ++i) {
 
         // The segment defined by points `a` and `b` is to be densified.
         // `b` should be the point immediately after `a`, unless `a` is the
@@ -226,7 +229,7 @@ void InsetState::densify_geo_divs()
         // Push all points. Omit the last point because it will be included
         // in the next iteration. Otherwise, we would have duplicated points
         // in the polygon.
-        for (size_t i = 0; i < (outer_pts_dens.size() - 1); ++i) {
+        for (unsigned int i = 0; i < (outer_pts_dens.size() - 1); ++i) {
           outer_dens.push_back(outer_pts_dens[i]);
         }
       }
@@ -235,22 +238,24 @@ void InsetState::densify_geo_divs()
       // Iterate over each hole
       for (auto h = pwh.holes_begin(); h != pwh.holes_end(); ++h) {
         Polygon hole_dens;
-        for (size_t j = 0; j < h->size(); ++j) {
+        for (unsigned int j = 0; j < h->size(); ++j) {
 
           // `c` and `d` are determined in the same way as `a` and `b` above
           const Point c = (*h)[j];
           const Point d = (j == h->size() - 1) ? (*h)[0] : (*h)[j + 1];
           const std::vector<Point> hole_pts_dens =
             densification_points(c, d, lx_, ly_);
-          for (size_t i = 0; i < (hole_pts_dens.size() - 1); ++i) {
+          for (unsigned int i = 0; i < (hole_pts_dens.size() - 1); ++i) {
             hole_dens.push_back(hole_pts_dens[i]);
           }
         }
         holes_v_dens.push_back(hole_dens);
       }
-      const Polygon_with_holes pwh_dens(outer_dens,
-                                        holes_v_dens.begin(),
-                                        holes_v_dens.end());
+      const Polygon_with_holes pwh_dens(
+        outer_dens,
+        holes_v_dens.begin(),
+        holes_v_dens.end()
+      );
       gd_dens.push_back(pwh_dens);
     }
     geodivs_dens.push_back(gd_dens);
