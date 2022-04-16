@@ -268,7 +268,7 @@ int main(const int argc, const char *argv[])
         // TODO: Add option to customise starting blur width.
         double blur_width = std::pow(
           2.0,
-          3 - static_cast<unsigned int>(inset_state.n_finished_integrations()));
+          5 - static_cast<unsigned int>(inset_state.n_finished_integrations()));
         // if (inset_state.n_finished_integrations() < max_integrations) {
         //   blur_width =
         //     std::pow(2.0, 3 - int(inset_state.n_finished_integrations()));

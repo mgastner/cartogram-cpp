@@ -368,7 +368,7 @@ Color graticule_cell_color(
   int xmin = floor(category);
   int xmax = ceil(category);
 
-  if (area == max_area) {
+  if (area >= max_area) {
     return colors[n_categories - 1];
   } else if (area == min_area) {
     return colors[0];
@@ -796,9 +796,7 @@ InsetState::graticule_cell_area_km(const unsigned int i, const unsigned int j)
   const Polygon cell_edge_points_albers =
     transform_to_albers_coor(cell_edge_points);
   const double cell_area = cell_edge_points_albers.area();
-
   const double cell_area_km = albers_area_to_earth_area(cell_area);
-
   return cell_area_km;
 }
 
@@ -1279,13 +1277,13 @@ void InsetState::write_density_image(
 
   const Bbox bbox_bar = get_bbox_bar(15, 150);
 
-  // double each_graticule_cell_area_km = graticule_cell_area_km(0, 0);
   cairo_set_line_width(cr, 0);
 
   // Determine range of densities
   double dens_min = dens_min_;
   double dens_mean = dens_mean_;
   double dens_max = dens_max_;
+  double each_graticule_cell_area_km = graticule_cell_area_km(0, 0);
 
   // Crop it too
   if (plot_graticule_heatmap) {
@@ -1318,8 +1316,9 @@ void InsetState::write_density_image(
             // Values here used are "Max target area per km" and
             // "Min target area per km", which is obtained by running the
             // code with the "plot_graticule_heatmap" -h flag set to true
-            Color color =
-              graticule_cell_color(density[i * ly_ + j], dens_max, dens_min);
+            double target_area_km = density[i * ly_ + j] / each_graticule_cell_area_km;
+
+              Color color = graticule_cell_color(target_area_km, 660.058, 0.660816);
 
             // Get four points of the square
             double x_min = i - 0.5 * sq_overlap;
@@ -1347,7 +1346,9 @@ void InsetState::write_density_image(
         cairo_reset_clip(cr);
       }
     }
-  } else {
+  }
+  else
+  {
     for (unsigned int i = 0; i < lx_; ++i) {
       for (unsigned int j = 0; j < ly_; ++j) {
         Color color =
