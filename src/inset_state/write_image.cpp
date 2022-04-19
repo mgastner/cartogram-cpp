@@ -406,6 +406,21 @@ InsetState::graticule_cell_colors(unsigned int cell_width)
   return colors;
 }
 
+void right_aligned_text(
+  cairo_t *cr,
+  double number,
+  double x,
+  double y,
+  double font_size)
+{
+  std::string text = std::to_string(static_cast<int>(round(number)));
+  cairo_text_extents_t extents;
+  cairo_text_extents(cr, text.c_str(), &extents);
+  double move = extents.width;
+  cairo_move_to(cr, x - move - font_size * 0.8, y);
+  cairo_show_text(cr, text.c_str());
+}
+
 void write_graticule_heatmap_bar_to_cairo_surface(
   double min_value,
   double max_value,
@@ -483,13 +498,12 @@ void write_graticule_heatmap_bar_to_cairo_surface(
       cairo_line_to(cr, xmin_bar, ly - y);
 
       // Right-align text
-      std::string text = std::to_string(NiceNumber);
-      cairo_text_extents_t extents;
-      cairo_text_extents(cr, text.c_str(), &extents);
-      double move = extents.width;
-      cairo_move_to(cr, xmin_bar - move - font_size, ly - y + font_size / 2.0);
-      cairo_show_text(cr, text.c_str());
-      // cairo_stroke(cr);
+      right_aligned_text(
+        cr,
+        NiceNumber,
+        xmin_bar,
+        ly - y + font_size / 2.0,
+        font_size);
     }
   }
   cairo_set_line_width(cr, 0.75);
@@ -937,9 +951,7 @@ Bbox InsetState::get_bbox_bar(const double bar_width, const double bar_height)
   double ymin_bar = ymid_bar - bar_height / 2;
   double ymax_bar = ymid_bar + bar_height / 2;
 
-  const Bbox bbox_bar(xmin_bar, ymin_bar, xmax_bar, ymax_bar);
-
-  return bbox_bar;
+  return Bbox(xmin_bar, ymin_bar, xmax_bar, ymax_bar);
 }
 
 std::vector<int> get_nice_numbers_for_bar(const double max_target_area_per_km)
@@ -975,7 +987,7 @@ void InsetState::write_graticule_heatmap_image(
   const double total_ta = total_target_area();
   const double total_ia = total_inset_area();
 
-  const Bbox bbox_bar = get_bbox_bar(15, 150);
+  // const Bbox bbox_bar = get_bbox_bar(15, 150);
 
   // Get the max and min graticule cell area points
   Point max_area_cell_point, min_area_cell_point;
@@ -1065,7 +1077,7 @@ void InsetState::write_graticule_heatmap_image(
       min_area_cell_point_area,
       max_area_cell_point_area,
       bar_cr,
-      Bbox(75, 200, 95,350),
+      Bbox(75, 200, 95, 350),
       major_ticks,
       minor_ticks,
       400);
@@ -1154,7 +1166,7 @@ void write_density_bar_to_cairo_surface(
     CAIRO_FONT_WEIGHT_BOLD);
   cairo_set_font_size(cr, font_size);
 
-  // Write "Density" on top of bar
+  // Write residual density
   cairo_move_to(
     cr,
     xmin_bar - bar_width / 2 - 1,
@@ -1166,67 +1178,19 @@ void write_density_bar_to_cairo_surface(
     ly - ymax_bar - (font_size * 2.0));
   cairo_show_text(cr, "Density (km-²)");
 
-  std::string temp = std::to_string(max_value);
-  {
-    // Right-align text
-    std::string text = std::to_string(ceil(max_value)).substr(0, temp.size() - 7);
-    cairo_text_extents_t extents;
-    cairo_text_extents(cr, text.c_str(), &extents);
-    double move = extents.width;
-    cairo_move_to(cr, xmin_bar - move - font_size, ly - ymax_bar);
-    cairo_show_text(cr, text.c_str());
-  }
+  // Write max value at top of bar
+  right_aligned_text(cr, ceil(max_value), xmin_bar, ly - ymax_bar, font_size);
 
-  // const double min_value, const double mean_value, const double max_value;
-  // Write "High" top right of bar
-  // cairo_move_to(cr, xmax_bar + 5, ly - ymax_bar);
-  // cairo_show_text(cr, temp.substr(0, temp.size() - 4).c_str());
-
-  // cairo_show_text(cr, "High");
-
-  // Write "Low" bottom right of bar
-  {
-    // Right-align text
-    std::string text =
-      std::to_string(min_value).substr(0, temp.size() - 6);
-    cairo_text_extents_t extents;
-    cairo_text_extents(cr, text.c_str(), &extents);
-    double move = extents.width;
-    cairo_move_to(
-      cr,
-      xmin_bar - move - font_size,
-      ly - ymin_bar + (font_size / 2.0));
-    cairo_show_text(cr, text.c_str());
-  }
-  // cairo_show_text(cr, "Low");
+  // Write mean value
+  right_aligned_text(
+    cr,
+    mean_value,
+    xmin_bar,
+    ly - ymean_bar + (font_size / 4.0),
+    font_size);
 
   // Write "Mean" beside ymean_bar
-  if (mean_value == 0.0) {
-    temp = "0";
-  } else {
-    temp = std::to_string(std::roundf(mean_value));
-  }
-  {
-    // Right-align text
-    std::string text = temp;
-    // std::to_string(mean_value).substr(0, temp.size() - 7).c_str();
-    cairo_text_extents_t extents;
-    cairo_text_extents(cr, text.c_str(), &extents);
-    double move = extents.width;
-    cairo_move_to(
-      cr,
-      xmin_bar - move - font_size,
-      ly - ymean_bar + (font_size / 4.0));
-    cairo_show_text(cr, text.c_str());
-  }
 
-  // cairo_move_to(cr, xmax_bar + 5, ly - ymean_bar + (font_size / 4.0));
-  // cairo_show_text(cr, temp.substr(0, temp.size() - 4).c_str());
-
-  // font_size /= 2;
-
-  // double max_absolute_val = std::max(std::abs(max_value),
-  // std::abs(min_value)); Draw remaining ticks
   long long magnitude = std::pow(10, floor(std::log10(max_value)));
 
   if (max_value > magnitude * 4) {
@@ -1235,54 +1199,24 @@ void write_density_bar_to_cairo_surface(
     magnitude /= 2;
   }
 
+  // Highest magnitude
+  long long highest_mag =
+    magnitude * (static_cast<long long>(max_value) % magnitude);
+
   if (magnitude >= 0.1) {
     cairo_set_line_width(cr, 0.7);
     double bar_ratio = (ymax_bar - ymin_bar) / (max_value - min_value);
 
-    // Positive ticks
-    for (unsigned int i = magnitude; i < max_value - 0.2 * magnitude;
-         i += magnitude) {
-      double tick = bar_ratio * (i - min_value) + ymin_bar;
-      cairo_move_to(cr, xmin_bar + bar_width / 4, ly - tick);
-      cairo_line_to(cr, xmin_bar, ly - tick);
-      cairo_stroke(cr);
-      {
-        // Right-align text
-        std::string text = std::to_string(i);
-        cairo_text_extents_t extents;
-        cairo_text_extents(cr, text.c_str(), &extents);
-        double move = extents.width;
-        cairo_move_to(
-          cr,
-          xmin_bar - move - font_size,
-          ly - tick + (font_size / 2.0));
-        cairo_show_text(cr, text.c_str());
-      }
-    }
-
-    // Negative ticks
-    for (long long i = -magnitude; i > min_value + 0.2 * magnitude;
+    // Ticks
+    for (long long i = highest_mag; i > min_value + 0.2 * magnitude;
          i -= magnitude) {
-      double tick = bar_ratio * (i - min_value) + ymin_bar;
-      cairo_move_to(cr, xmin_bar + bar_width / 4, ly - tick);
-      cairo_line_to(cr, xmin_bar, ly - tick);
-      cairo_stroke(cr);
-      {
-        // Right-align text
-        std::string text = std::to_string(i);
-        cairo_text_extents_t extents;
-        cairo_text_extents(cr, text.c_str(), &extents);
-        double move = extents.width;
-        cairo_move_to(
-          cr,
-          xmin_bar - move - font_size,
-          ly - tick + (font_size / 2.0));
-        cairo_show_text(cr, text.c_str());
+      if (i != 0) {
+        double tick = bar_ratio * (i - min_value) + ymin_bar;
+        cairo_move_to(cr, xmin_bar + bar_width / 4, ly - tick);
+        cairo_line_to(cr, xmin_bar, ly - tick);
+        cairo_stroke(cr);
+        right_aligned_text(cr, i, xmin_bar, ly - tick + (font_size / 2.0), font_size);
       }
-      // cairo_move_to(
-      //   cr,
-      //   xmax_bar + bar_width / 4,
-      // cairo_show_text(cr, std::to_string(i).c_str());
     }
   }
 }
