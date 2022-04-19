@@ -245,7 +245,7 @@ Color heatmap_color(
     Color("#d6604d"),
     Color("#f4a582"),
     Color("#fddbc7"),
-    Color("#f7f7f7"),
+    Color("#ffffff"),
     Color("#d1e5f0"),
     Color("#92c5de"),
     Color("#4393c3"),
@@ -326,7 +326,7 @@ Color graticule_cell_color(
   const std::vector<Color> colors = {
 
     // White to purple
-    Color("#fcfbfd"),
+    Color("#ffffff"),
     Color("#efedf5"),
     Color("#dadaeb"),
     Color("#bcbddc"),
@@ -458,7 +458,7 @@ void write_graticule_heatmap_bar_to_cairo_surface(
     value_at_gradient_segment += gradient_segment_value;
   }
 
-  unsigned int font_size = 8;
+  unsigned int font_size = 10;
 
   // Set font properties
   cairo_select_font_face(
@@ -479,11 +479,17 @@ void write_graticule_heatmap_bar_to_cairo_surface(
         ((log(area) - log(min_value)) / (log(max_value) - log(min_value))) *
           (ymax_bar - ymin_bar) +
         ymin_bar;
-      cairo_move_to(cr, xmax_bar - 6, ly - y);
-      cairo_line_to(cr, xmax_bar, ly - y);
-      cairo_move_to(cr, xmax_bar + 1, ly - y + font_size / 2.0);
-      cairo_show_text(cr, std::to_string(NiceNumber).c_str());
-      cairo_stroke(cr);
+      cairo_move_to(cr, xmin_bar + 6, ly - y);
+      cairo_line_to(cr, xmin_bar, ly - y);
+
+      // Right-align text
+      std::string text = std::to_string(NiceNumber);
+      cairo_text_extents_t extents;
+      cairo_text_extents(cr, text.c_str(), &extents);
+      double move = extents.width;
+      cairo_move_to(cr, xmin_bar - move - font_size, ly - y + font_size / 2.0);
+      cairo_show_text(cr, text.c_str());
+      // cairo_stroke(cr);
     }
   }
   cairo_set_line_width(cr, 0.75);
@@ -495,8 +501,8 @@ void write_graticule_heatmap_bar_to_cairo_surface(
           (ymax_bar - ymin_bar) +
         ymin_bar;
 
-      cairo_move_to(cr, xmax_bar - 3, ly - y);
-      cairo_line_to(cr, xmax_bar, ly - y);
+      cairo_move_to(cr, xmin_bar + 3, ly - y);
+      cairo_line_to(cr, xmin_bar, ly - y);
       cairo_stroke(cr);
     }
   }
@@ -865,8 +871,14 @@ std::vector<std::pair<double, double>> get_minor_ticks(
   for (int i = 0; i < n_major_ticks - 1; i++) {
     double first_major_tick = (double)nice_numbers[i];
     double second_major_tick = (double)nice_numbers[i + 1];
-    double minor_tick_ratio =
-      (second_major_tick - first_major_tick) / (n_ticks_per_major - 1);
+    double minor_tick_ratio;
+    if (first_major_tick == 1.0) {
+      minor_tick_ratio =
+        (second_major_tick - first_major_tick) / (n_ticks_per_major - 2);
+    } else {
+      minor_tick_ratio =
+        (second_major_tick - first_major_tick) / (n_ticks_per_major - 1);
+    }
     for (int j = 1; j < n_ticks_per_major - 1; j++) {
       double minor_tick = first_major_tick + minor_tick_ratio * j;
       double NiceNumberRatio =
@@ -999,7 +1011,7 @@ void InsetState::write_graticule_heatmap_image(
   std::vector<std::pair<double, double>> major_ticks, minor_ticks;
 
   std::tie(major_ticks, minor_ticks) = get_ticks(
-    10,
+    9,
     min_target_area_per_km,
     max_target_area_per_km,
     min_area_cell_point_area,
@@ -1019,14 +1031,14 @@ void InsetState::write_graticule_heatmap_image(
 
   trim_graticule_heatmap(cr, 20);
 
-  write_graticule_heatmap_bar_to_cairo_surface(
-    min_area_cell_point_area,
-    max_area_cell_point_area,
-    cr,
-    bbox_bar,
-    major_ticks,
-    minor_ticks,
-    ly_);
+  // write_graticule_heatmap_bar_to_cairo_surface(
+  //   min_area_cell_point_area,
+  //   max_area_cell_point_area,
+  //   cr,
+  //   bbox_bar,
+  //   major_ticks,
+  //   minor_ticks,
+  //   ly_);
 
   if (draw_bar) {
     std::string bar_filename =
@@ -1053,7 +1065,7 @@ void InsetState::write_graticule_heatmap_image(
       min_area_cell_point_area,
       max_area_cell_point_area,
       bar_cr,
-      Bbox(75, 200, 95, 350),
+      Bbox(75, 200, 95,350),
       major_ticks,
       minor_ticks,
       400);
@@ -1128,11 +1140,11 @@ void write_density_bar_to_cairo_surface(
   // Draw the mean line
   cairo_set_source_rgb(cr, 0.0, 0.0, 0.0);
   cairo_set_line_width(cr, 0.9);
-  cairo_move_to(cr, xmin_bar + bar_width / 2, ly - ymean_bar);
-  cairo_line_to(cr, xmax_bar, ly - ymean_bar);
+  cairo_move_to(cr, xmax_bar - bar_width / 2, ly - ymean_bar);
+  cairo_line_to(cr, xmin_bar, ly - ymean_bar);
   cairo_stroke(cr);
 
-  unsigned int font_size = 8;
+  unsigned int font_size = 10;
 
   // Set font properties
   cairo_select_font_face(
@@ -1155,29 +1167,63 @@ void write_density_bar_to_cairo_surface(
   cairo_show_text(cr, "Density (km-²)");
 
   std::string temp = std::to_string(max_value);
+  {
+    // Right-align text
+    std::string text = std::to_string(ceil(max_value)).substr(0, temp.size() - 7);
+    cairo_text_extents_t extents;
+    cairo_text_extents(cr, text.c_str(), &extents);
+    double move = extents.width;
+    cairo_move_to(cr, xmin_bar - move - font_size, ly - ymax_bar);
+    cairo_show_text(cr, text.c_str());
+  }
+
   // const double min_value, const double mean_value, const double max_value;
   // Write "High" top right of bar
-  cairo_move_to(cr, xmax_bar + 5, ly - ymax_bar);
-  cairo_show_text(cr, temp.substr(0, temp.size() - 4).c_str());
+  // cairo_move_to(cr, xmax_bar + 5, ly - ymax_bar);
+  // cairo_show_text(cr, temp.substr(0, temp.size() - 4).c_str());
 
   // cairo_show_text(cr, "High");
 
   // Write "Low" bottom right of bar
-  temp = std::to_string(min_value);
-  cairo_move_to(cr, xmax_bar + 5, ly - ymin_bar + (font_size / 2.0));
-  cairo_show_text(cr, temp.substr(0, temp.size() - 4).c_str());
+  {
+    // Right-align text
+    std::string text =
+      std::to_string(min_value).substr(0, temp.size() - 6);
+    cairo_text_extents_t extents;
+    cairo_text_extents(cr, text.c_str(), &extents);
+    double move = extents.width;
+    cairo_move_to(
+      cr,
+      xmin_bar - move - font_size,
+      ly - ymin_bar + (font_size / 2.0));
+    cairo_show_text(cr, text.c_str());
+  }
   // cairo_show_text(cr, "Low");
 
   // Write "Mean" beside ymean_bar
   if (mean_value == 0.0) {
     temp = "0";
   } else {
-    temp = std::to_string(mean_value);
+    temp = std::to_string(std::roundf(mean_value));
   }
-  cairo_move_to(cr, xmax_bar + 5, ly - ymean_bar + (font_size / 4.0));
-  cairo_show_text(cr, temp.substr(0, temp.size() - 4).c_str());
+  {
+    // Right-align text
+    std::string text = temp;
+    // std::to_string(mean_value).substr(0, temp.size() - 7).c_str();
+    cairo_text_extents_t extents;
+    cairo_text_extents(cr, text.c_str(), &extents);
+    double move = extents.width;
+    cairo_move_to(
+      cr,
+      xmin_bar - move - font_size,
+      ly - ymean_bar + (font_size / 4.0));
+    cairo_show_text(cr, text.c_str());
+  }
 
-  font_size /= 2;
+  // cairo_move_to(cr, xmax_bar + 5, ly - ymean_bar + (font_size / 4.0));
+  // cairo_show_text(cr, temp.substr(0, temp.size() - 4).c_str());
+
+  // font_size /= 2;
 
   // double max_absolute_val = std::max(std::abs(max_value),
   // std::abs(min_value)); Draw remaining ticks
@@ -1197,28 +1243,46 @@ void write_density_bar_to_cairo_surface(
     for (unsigned int i = magnitude; i < max_value - 0.2 * magnitude;
          i += magnitude) {
       double tick = bar_ratio * (i - min_value) + ymin_bar;
-      cairo_move_to(cr, xmax_bar - bar_width / 4, ly - tick);
-      cairo_line_to(cr, xmax_bar, ly - tick);
+      cairo_move_to(cr, xmin_bar + bar_width / 4, ly - tick);
+      cairo_line_to(cr, xmin_bar, ly - tick);
       cairo_stroke(cr);
-      cairo_move_to(
-        cr,
-        xmax_bar + bar_width / 4,
-        ly - tick + (font_size / 2.0));
-      cairo_show_text(cr, std::to_string(i).c_str());
+      {
+        // Right-align text
+        std::string text = std::to_string(i);
+        cairo_text_extents_t extents;
+        cairo_text_extents(cr, text.c_str(), &extents);
+        double move = extents.width;
+        cairo_move_to(
+          cr,
+          xmin_bar - move - font_size,
+          ly - tick + (font_size / 2.0));
+        cairo_show_text(cr, text.c_str());
+      }
     }
 
     // Negative ticks
     for (long long i = -magnitude; i > min_value + 0.2 * magnitude;
          i -= magnitude) {
       double tick = bar_ratio * (i - min_value) + ymin_bar;
-      cairo_move_to(cr, xmax_bar - bar_width / 4, ly - tick);
-      cairo_line_to(cr, xmax_bar, ly - tick);
+      cairo_move_to(cr, xmin_bar + bar_width / 4, ly - tick);
+      cairo_line_to(cr, xmin_bar, ly - tick);
       cairo_stroke(cr);
-      cairo_move_to(
-        cr,
-        xmax_bar + bar_width / 4,
-        ly - tick + (font_size / 2.0));
-      cairo_show_text(cr, std::to_string(i).c_str());
+      {
+        // Right-align text
+        std::string text = std::to_string(i);
+        cairo_text_extents_t extents;
+        cairo_text_extents(cr, text.c_str(), &extents);
+        double move = extents.width;
+        cairo_move_to(
+          cr,
+          xmin_bar - move - font_size,
+          ly - tick + (font_size / 2.0));
+        cairo_show_text(cr, text.c_str());
+      }
+      // cairo_move_to(
+      //   cr,
+      //   xmax_bar + bar_width / 4,
+      // cairo_show_text(cr, std::to_string(i).c_str());
     }
   }
 }
@@ -1316,9 +1380,11 @@ void InsetState::write_density_image(
             // Values here used are "Max target area per km" and
             // "Min target area per km", which is obtained by running the
             // code with the "plot_graticule_heatmap" -h flag set to true
-            double target_area_km = density[i * ly_ + j] / each_graticule_cell_area_km;
+            double target_area_km =
+              density[i * ly_ + j] / each_graticule_cell_area_km;
 
-              Color color = graticule_cell_color(target_area_km, 660.058, 0.660816);
+            Color color =
+              graticule_cell_color(target_area_km, 660.058, 0.660816);
 
             // Get four points of the square
             double x_min = i - 0.5 * sq_overlap;
@@ -1346,9 +1412,7 @@ void InsetState::write_density_image(
         cairo_reset_clip(cr);
       }
     }
-  }
-  else
-  {
+  } else {
     for (unsigned int i = 0; i < lx_; ++i) {
       for (unsigned int j = 0; j < ly_; ++j) {
         Color color =
@@ -1376,13 +1440,13 @@ void InsetState::write_density_image(
 
   if (draw_bar && !plot_graticule_heatmap) {
 
-    write_density_bar_to_cairo_surface(
-      dens_min - dens_mean,
-      0,
-      dens_max - dens_mean,
-      cr,
-      bbox_bar,
-      ly_);
+    // write_density_bar_to_cairo_surface(
+    //   dens_min - dens_mean,
+    //   0,
+    //   dens_max - dens_mean,
+    //   cr,
+    //   bbox_bar,
+    //   ly_);
 
     std::string bar_filename =
       "bar_" + filename.substr(0, filename.size() - 2) + "svg";
