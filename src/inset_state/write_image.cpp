@@ -366,7 +366,7 @@ Color graticule_cell_color(
   // Determine color category
   double category = fmax(0, ratio * (n_categories - 1) - 10e-6);
   int xmin = floor(category);
-  int xmax = ceil(category);
+  int xmax = std::ceil(category);
 
   if (area >= max_area) {
     return colors[n_categories - 1];
@@ -417,7 +417,7 @@ void right_aligned_text(
   cairo_text_extents_t extents;
   cairo_text_extents(cr, text.c_str(), &extents);
   double move = extents.width;
-  cairo_move_to(cr, x - move - font_size * 0.8, y);
+  cairo_move_to(cr, x - move - font_size * 0.6, y);
   cairo_show_text(cr, text.c_str());
 }
 
@@ -1179,7 +1179,7 @@ void write_density_bar_to_cairo_surface(
   cairo_show_text(cr, "Density (km-²)");
 
   // Write max value at top of bar
-  right_aligned_text(cr, ceil(max_value), xmin_bar, ly - ymax_bar, font_size);
+  right_aligned_text(cr, std::ceil(max_value), xmin_bar, ly - ymax_bar, font_size);
 
   // Write mean value
   right_aligned_text(
@@ -1189,9 +1189,24 @@ void write_density_bar_to_cairo_surface(
     ly - ymean_bar + (font_size / 4.0),
     font_size);
 
-  // Write "Mean" beside ymean_bar
+  // Write min_value
+  right_aligned_text(
+    cr,
+    min_value,
+    xmin_bar,
+    ly - ymin_bar + (font_size / 1.5),
+    font_size);
 
-  long long magnitude = std::pow(10, floor(std::log10(max_value)));
+  long long magnitude =
+    std::max(std::pow(10.0, std::floor(std::log10(max_value))), 1.0);
+
+  // Highest magnitude
+  long long highest_mag =
+    magnitude * (std::floor(max_value / magnitude));
+
+  if (highest_mag > max_value - (0.5 * magnitude)) {
+    highest_mag -= magnitude;
+  }
 
   if (max_value > magnitude * 4) {
     magnitude *= 2;
@@ -1199,23 +1214,24 @@ void write_density_bar_to_cairo_surface(
     magnitude /= 2;
   }
 
-  // Highest magnitude
-  long long highest_mag =
-    magnitude * (static_cast<long long>(max_value) % magnitude);
-
   if (magnitude >= 0.1) {
     cairo_set_line_width(cr, 0.7);
     double bar_ratio = (ymax_bar - ymin_bar) / (max_value - min_value);
 
     // Ticks
-    for (long long i = highest_mag; i > min_value + 0.2 * magnitude;
+    for (long long i = highest_mag; i - (0.5 * magnitude) > min_value;
          i -= magnitude) {
       if (i != 0) {
         double tick = bar_ratio * (i - min_value) + ymin_bar;
         cairo_move_to(cr, xmin_bar + bar_width / 4, ly - tick);
         cairo_line_to(cr, xmin_bar, ly - tick);
         cairo_stroke(cr);
-        right_aligned_text(cr, i, xmin_bar, ly - tick + (font_size / 2.0), font_size);
+        right_aligned_text(
+          cr,
+          i,
+          xmin_bar,
+          ly - tick + (font_size / 2.0),
+          font_size);
       }
     }
   }
@@ -1272,8 +1288,6 @@ void InsetState::write_density_image(
   if (image_format_ps) {
     write_ps_header(filename, surface);
   }
-
-  const Bbox bbox_bar = get_bbox_bar(15, 150);
 
   cairo_set_line_width(cr, 0);
 
@@ -1374,6 +1388,7 @@ void InsetState::write_density_image(
 
   if (draw_bar && !plot_graticule_heatmap) {
 
+    // const Bbox bbox_bar = get_bbox_bar(15, 150);
     // write_density_bar_to_cairo_surface(
     //   dens_min - dens_mean,
     //   0,
