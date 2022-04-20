@@ -240,30 +240,30 @@ Color heatmap_color(
   const std::vector<Color> colors = {
 
     // Red to blue
-    Color("#67001f"),
-    Color("#b2182b"),
-    Color("#d6604d"),
-    Color("#f4a582"),
-    Color("#fddbc7"),
-    Color("#ffffff"),
-    Color("#d1e5f0"),
-    Color("#92c5de"),
-    Color("#4393c3"),
-    Color("#2166ac"),
-    Color("#053061")
+    // Color("#67001f"),
+    // Color("#b2182b"),
+    // Color("#d6604d"),
+    // Color("#f4a582"),
+    // Color("#fddbc7"),
+    // Color("#ffffff"),
+    // Color("#d1e5f0"),
+    // Color("#92c5de"),
+    // Color("#4393c3"),
+    // Color("#2166ac"),
+    // Color("#053061")
 
     // // Turqoise to brown
-    // Color("#543005"),
-    // Color("#8c510a"),
-    // Color("#bf812d"),
-    // Color("#dfc27d"),
-    // Color("#f6e8c3"),
-    // Color("#f5f5f5"),
-    // Color("#c7eae5"),
-    // Color("#80cdc1"),
-    // Color("#35978f"),
-    // Color("#01665e"),
-    // Color("#003c30")
+    Color("#543005"),
+    Color("#8c510a"),
+    Color("#bf812d"),
+    Color("#dfc27d"),
+    Color("#f6e8c3"),
+    Color("#ffffff"),
+    Color("#c7eae5"),
+    Color("#80cdc1"),
+    Color("#35978f"),
+    Color("#01665e"),
+    Color("#003c30")
 
     // // Original
     // Color(0.33, 0.19, 0.02),
@@ -327,6 +327,7 @@ Color graticule_cell_color(
 
     // White to purple
     Color("#ffffff"),
+    // -Color("#f7f7f7"),
     Color("#efedf5"),
     Color("#dadaeb"),
     Color("#bcbddc"),
@@ -417,7 +418,7 @@ void right_aligned_text(
   cairo_text_extents_t extents;
   cairo_text_extents(cr, text.c_str(), &extents);
   double move = extents.width;
-  cairo_move_to(cr, x - move - font_size * 0.6, y);
+  cairo_move_to(cr, x - move - font_size * 0.75, y);
   cairo_show_text(cr, text.c_str());
 }
 
@@ -483,6 +484,9 @@ void write_graticule_heatmap_bar_to_cairo_surface(
     CAIRO_FONT_WEIGHT_BOLD);
   cairo_set_font_size(cr, font_size);
 
+  // Tick width outside bar
+  double half_tick_width = 4.0;
+
   // Draw the ticks and nice_numbers
   cairo_set_source_rgb(cr, 0.0, 0.0, 0.0);
   cairo_set_line_width(cr, 1.1);
@@ -494,19 +498,20 @@ void write_graticule_heatmap_bar_to_cairo_surface(
         ((log(area) - log(min_value)) / (log(max_value) - log(min_value))) *
           (ymax_bar - ymin_bar) +
         ymin_bar;
-      cairo_move_to(cr, xmin_bar + 6, ly - y);
-      cairo_line_to(cr, xmin_bar, ly - y);
+      cairo_move_to(cr, xmin_bar + half_tick_width, ly - y);
+      cairo_line_to(cr, xmin_bar - half_tick_width, ly - y);
 
       // Right-align text
       right_aligned_text(
         cr,
         NiceNumber,
-        xmin_bar,
+        xmin_bar - half_tick_width,
         ly - y + font_size / 2.0,
         font_size);
     }
   }
   cairo_set_line_width(cr, 0.75);
+  half_tick_width /= 2.0;
   for (auto ticks : minor_ticks) {
     double area = ticks.first;
     if (area > min_value and area < max_value) {
@@ -515,23 +520,23 @@ void write_graticule_heatmap_bar_to_cairo_surface(
           (ymax_bar - ymin_bar) +
         ymin_bar;
 
-      cairo_move_to(cr, xmin_bar + 3, ly - y);
-      cairo_line_to(cr, xmin_bar, ly - y);
+      cairo_move_to(cr, xmin_bar + half_tick_width, ly - y);
+      cairo_line_to(cr, xmin_bar - half_tick_width, ly - y);
       cairo_stroke(cr);
     }
   }
 
   // TODO: Use cairo_text_extents_t for precise placement of text
-  cairo_set_line_width(cr, 1.0);
-  std::string bar_text_top = "Cases per";
-  std::string bar_text_bottom = "km²";
-  cairo_move_to(
-    cr,
-    (xmin_bar + xmax_bar) / 2 - 16,
-    ly - ymax_bar - (font_size * 2.0));
-  cairo_show_text(cr, bar_text_top.c_str());
-  cairo_move_to(cr, (xmin_bar + xmax_bar) / 2 - 5.5, ly - ymax_bar - font_size);
-  cairo_show_text(cr, bar_text_bottom.c_str());
+  // cairo_set_line_width(cr, 1.0);
+  // std::string bar_text_top = "Cases per";
+  // std::string bar_text_bottom = "km²";
+  // cairo_move_to(
+  //   cr,
+  //   (xmin_bar + xmax_bar) / 2 - (font_size * 2),
+  //   ly - ymax_bar - (font_size * 2.0));
+  // cairo_show_text(cr, bar_text_top.c_str());
+  // cairo_move_to(cr, (xmin_bar + xmax_bar) / 2 - 5.5, ly - ymax_bar -
+  // font_size); cairo_show_text(cr, bar_text_bottom.c_str());
 }
 
 void InsetState::trim_graticule_heatmap(cairo_t *cr, double padding)
@@ -983,6 +988,16 @@ void InsetState::write_graticule_heatmap_image(
     : surface = cairo_svg_surface_create(filename.c_str(), lx_, ly_);
   cairo_t *cr = cairo_create(surface);
 
+  // Write header
+  if (image_format_ps) {
+    write_ps_header(filename, surface);
+  }
+
+  // White background
+  cairo_set_source_rgb(cr, 1.0, 1.0, 1.0);
+  cairo_rectangle(cr, 0, 0, lx_, ly_);
+  cairo_fill(cr);
+
   // Get inset areas
   const double total_ta = total_target_area();
   const double total_ia = total_inset_area();
@@ -1030,18 +1045,13 @@ void InsetState::write_graticule_heatmap_image(
     max_area_cell_point_area,
     nice_numbers);
 
-  // Write header
-  if (image_format_ps) {
-    write_ps_header(filename, surface);
-  }
-
   // Draw colors
   write_graticule_colors_to_cairo_surface(cr, plot_equal_area_map, crop);
 
   // Draw polygons without color
   write_polygons_to_cairo_surface(cr, false, false, plot_equal_area_map);
 
-  trim_graticule_heatmap(cr, 20);
+  // trim_graticule_heatmap(cr, 20);
 
   // write_graticule_heatmap_bar_to_cairo_surface(
   //   min_area_cell_point_area,
@@ -1118,9 +1128,10 @@ void write_density_bar_to_cairo_surface(
   cairo_stroke(cr);
 
   // position of mean line along bar
-  const double ymean_bar = ((ymax_bar - ymin_bar) / (max_value - min_value)) *
-                             (mean_value - min_value) +
-                           ymin_bar;
+  // const double ymean_bar = ((ymax_bar - ymin_bar) / (max_value - min_value))
+  // *
+  //                            (mean_value - min_value) +
+  //                          ymin_bar;
 
   // calculate individual bar gradient segment property
   const double gradient_segment_height =
@@ -1151,10 +1162,10 @@ void write_density_bar_to_cairo_surface(
 
   // Draw the mean line
   cairo_set_source_rgb(cr, 0.0, 0.0, 0.0);
-  cairo_set_line_width(cr, 0.9);
-  cairo_move_to(cr, xmax_bar - bar_width / 2, ly - ymean_bar);
-  cairo_line_to(cr, xmin_bar, ly - ymean_bar);
-  cairo_stroke(cr);
+  // cairo_set_line_width(cr, 0.9);
+  // cairo_move_to(cr, xmax_bar - bar_width / 2, ly - ymean_bar);
+  // cairo_line_to(cr, xmin_bar, ly - ymean_bar);
+  // cairo_stroke(cr);
 
   unsigned int font_size = 10;
 
@@ -1167,51 +1178,60 @@ void write_density_bar_to_cairo_surface(
   cairo_set_font_size(cr, font_size);
 
   // Write residual density
-  cairo_move_to(
-    cr,
-    xmin_bar - bar_width / 2 - 1,
-    ly - ymax_bar - (font_size * 3.0));
-  cairo_show_text(cr, "Residual");
-  cairo_move_to(
-    cr,
-    xmin_bar - bar_width / 2 - 1,
-    ly - ymax_bar - (font_size * 2.0));
-  cairo_show_text(cr, "Density (km-²)");
+  // cairo_move_to(
+  //   cr,
+  //   xmin_bar - bar_width / 2 - 1,
+  //   ly - ymax_bar - (font_size * 3.0));
+  // cairo_show_text(cr, "Residual");
+  // cairo_move_to(
+  //   cr,
+  //   xmin_bar - bar_width / 2 - 1,
+  //   ly - ymax_bar - (font_size * 2.0));
+  // cairo_show_text(cr, "Density (km-²)");
+
+  // Tick width outside bar
+  double half_tick_width = bar_width / 8.0;
 
   // Write max value at top of bar
-  right_aligned_text(cr, std::ceil(max_value), xmin_bar, ly - ymax_bar, font_size);
-
-  // Write mean value
   right_aligned_text(
     cr,
-    mean_value,
-    xmin_bar,
-    ly - ymean_bar + (font_size / 4.0),
+    std::floor(max_value),
+    xmin_bar - half_tick_width,
+    ly - ymax_bar,
     font_size);
+
+  // Write mean value
+  // right_aligned_text(
+  //   cr,
+  //   mean_value,
+  //   xmin_bar,
+  //   ly - ymean_bar + (font_size / 4.0),
+  //   font_size);
 
   // Write min_value
   right_aligned_text(
     cr,
-    min_value,
-    xmin_bar,
-    ly - ymin_bar + (font_size / 1.5),
+    std::ceil(min_value),
+    xmin_bar - half_tick_width,
+    ly - ymin_bar + (font_size * 1.2),
     font_size);
 
   long long magnitude =
     std::max(std::pow(10.0, std::floor(std::log10(max_value))), 1.0);
 
-  // Highest magnitude
-  long long highest_mag =
-    magnitude * (std::floor(max_value / magnitude));
+  long long original_mag = magnitude;
 
-  if (highest_mag > max_value - (0.5 * magnitude)) {
-    highest_mag -= magnitude;
-  }
-
-  if (max_value > magnitude * 4) {
+  if (max_value > magnitude * 4 || min_value < -magnitude * 4) {
     magnitude *= 2;
   } else if (max_value < magnitude * 2 && std::abs(min_value) < magnitude * 2) {
     magnitude /= 2;
+  }
+
+  // Highest magnitude
+  long long highest_mag = magnitude * (std::floor(max_value / magnitude));
+
+  if (highest_mag > max_value - (0.4 * original_mag)) {
+    highest_mag -= magnitude;
   }
 
   if (magnitude >= 0.1) {
@@ -1219,20 +1239,22 @@ void write_density_bar_to_cairo_surface(
     double bar_ratio = (ymax_bar - ymin_bar) / (max_value - min_value);
 
     // Ticks
-    for (long long i = highest_mag; i - (0.5 * magnitude) > min_value;
+    for (long long i = highest_mag;
+         i - (0.5 * magnitude) > min_value || i == mean_value;
          i -= magnitude) {
-      if (i != 0) {
-        double tick = bar_ratio * (i - min_value) + ymin_bar;
-        cairo_move_to(cr, xmin_bar + bar_width / 4, ly - tick);
-        cairo_line_to(cr, xmin_bar, ly - tick);
-        cairo_stroke(cr);
-        right_aligned_text(
-          cr,
-          i,
-          xmin_bar,
-          ly - tick + (font_size / 2.0),
-          font_size);
-      }
+      double tick = bar_ratio * (i - min_value) + ymin_bar;
+      // if (i == mean_value) {
+      //   tick += (font_size / 4.0);
+      // }
+      cairo_move_to(cr, xmin_bar + half_tick_width, ly - tick);
+      cairo_line_to(cr, xmin_bar - half_tick_width, ly - tick);
+      cairo_stroke(cr);
+      right_aligned_text(
+        cr,
+        i,
+        xmin_bar - half_tick_width,
+        ly - tick + (font_size / 2.0),
+        font_size);
     }
   }
 }
@@ -1288,6 +1310,11 @@ void InsetState::write_density_image(
   if (image_format_ps) {
     write_ps_header(filename, surface);
   }
+
+  // White background
+  cairo_set_source_rgb(cr, 1.0, 1.0, 1.0);
+  cairo_rectangle(cr, 0, 0, lx_, ly_);
+  cairo_fill(cr);
 
   cairo_set_line_width(cr, 0);
 
