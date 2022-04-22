@@ -138,7 +138,7 @@ void CartogramInfo::write_geojson(
   std::ifstream old_file(old_geo_file_name);
   nlohmann::json old_json;
   old_file >> old_json;
-  nlohmann::json new_json;
+  nlohmann::ordered_json new_json;
   const nlohmann::json container = cgal_to_json();
 
   // We must match the GeoDiv IDs in the container with the IDs in the input
@@ -151,6 +151,15 @@ void CartogramInfo::write_geojson(
     index_of_id_in_old_json.insert(pair);
   }
 
+  new_json["type"] = old_json["type"];
+  if (n_insets() == 1) {
+    new_json["bbox"] = container[(container.size() - 1)];
+  } else {
+    new_json["bbox"] = container[(container.size() - 2)];
+    new_json["divider_points"] = container[(container.size() - 1)];
+  }
+  // new_json.push_back({"crs", "custom"});
+
   // Iterate over GeoDivs and gd_ids in the container. The index
   // container.size()-2 is reserved for the bounding box, and the index
   // container.size()-1 is reserved for the divider lines. Thus, we must
@@ -158,14 +167,14 @@ void CartogramInfo::write_geojson(
   // n_geo_divs() elements
   for (unsigned int i = 0; i < n_geo_divs(); ++i) {
     unsigned int index = index_of_id_in_old_json.at(container[i]["gd_id"]);
-    new_json["features"][i]["properties"] =
-      old_json["features"][index]["properties"];
+    new_json["features"][i]["type"] = "Feature";
 
     // TODO: THE NEXT LINE CREATES A FIELD WITH VALUE null UNLESS THE
     // INPUT GEOJSON CONTAINED A FIELD CALLED id. THIS MAY BE NEEDED BY
     // cartogram_web, BUT, IN THE LONG RUN, WE WANT TO GET RID OF IT.
     new_json["features"][i]["id"] = old_json["features"][index]["id"];
-    new_json["features"][i]["type"] = "Feature";
+    new_json["features"][i]["properties"] =
+      old_json["features"][index]["properties"];
     new_json["features"][i]["geometry"]["type"] = "MultiPolygon";
 
     // Iterate over Polygon_with_holes in the GeoDiv
@@ -180,14 +189,7 @@ void CartogramInfo::write_geojson(
       }
     }
   }
-  if (n_insets() == 1) {
-    new_json.push_back({"bbox", container[(container.size() - 1)]});
-  } else {
-    new_json.push_back({"bbox", container[(container.size() - 2)]});
-    new_json.push_back({"divider_points", container[(container.size() - 1)]});
-  }
-  new_json.push_back({"crs", "custom"});
-  new_json.push_back({"type", old_json["type"]});
+  
   if (output_to_stdout) {
     new_geo_stream << new_json << std::endl;
   } else {
