@@ -180,10 +180,14 @@ void CartogramInfo::write_geojson(
       }
     }
   }
-  new_json.push_back({"type", old_json["type"]});
-  new_json.push_back({"bbox", container[(container.size() - 2)]});
+  if (n_insets() == 1) {
+    new_json.push_back({"bbox", container[(container.size() - 1)]});
+  } else {
+    new_json.push_back({"bbox", container[(container.size() - 2)]});
+    new_json.push_back({"divider_points", container[(container.size() - 1)]});
+  }
   new_json.push_back({"crs", "custom"});
-  new_json.push_back({"divider_points", container[(container.size() - 1)]});
+  new_json.push_back({"type", old_json["type"]});
   if (output_to_stdout) {
     new_geo_stream << new_json << std::endl;
   } else {
