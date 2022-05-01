@@ -2,7 +2,6 @@
 #include "constants.h"
 #include "parse_arguments.h"
 
-#include <cstdlib>
 #include <iostream>
 
 int main(const int argc, const char *argv[])
