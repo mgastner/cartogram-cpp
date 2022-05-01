@@ -1,0 +1,22 @@
+---
+BasedOnStyle: LLVM
+AlignAfterOpenBracket: AlwaysBreak
+AlignEscapedNewlines: Left
+AlignTrailingComments: false
+AllowAllArgumentsOnNextLine: false
+AllowAllConstructorInitializersOnNextLine: false
+AllowAllParametersOfDeclarationOnNextLine: false
+AllowShortBlocksOnASingleLine: Empty
+AllowShortFunctionsOnASingleLine: Empty
+AllowShortLambdasOnASingleLine: Empty
+AlwaysBreakBeforeMultilineStrings: true
+BinPackArguments: false
+BinPackParameters: false
+BreakBeforeBraces: Linux
+ColumnLimit: 79
+ContinuationIndentWidth: 2
+IncludeBlocks: Merge
+IndentWidth: 2
+PenaltyReturnTypeOnItsOwnLine: 1000
+SpacesBeforeTrailingComments: 2
+Standard: Auto
