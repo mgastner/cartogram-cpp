@@ -111,7 +111,9 @@ void InsetState::flatten_density()
   double dly = ly_;
 
   // We temporarily insert the Fourier coefficients for the x-components and
-  // y-components of the flux vector into grid_fluxx_init and grid_fluxy_init
+  // y-components of the flux vector into grid_fluxx_init and grid_fluxy_init.
+  // The reason for `+1` in `di+1` stems from the RODFT10 formula at:
+  // https://www.fftw.org/fftw3_doc/1d-Real_002dodd-DFTs-_0028DSTs_0029.html
   for (unsigned int i = 0; i < lx_-1; ++i) {
     double di = i;
     for (unsigned int j = 0; j < ly_; ++j) {
