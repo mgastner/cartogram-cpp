@@ -84,11 +84,13 @@ void add_diag_inter(
     // and x = lx. Gentle and antigentle diagonals appear in graticules near
     // y = 0 and y = ly.
     Point inter = calc_intersection(a, b, slope, -1.0, d);
+    bool on_left_or_right_edge = inter.x() < 0.5 || inter.x() > (lx - 0.5);
+    bool on_top_or_bottom_edge = inter.y() < 0.5 || inter.y() > (ly - 0.5);
     if (inter != OUT_OF_RANGE &&
-        ((abs(slope) == 2 && (inter.x() < 0.5 || inter.x() > (lx - 0.5))) ||
-         (abs(slope) == 0.5 && (inter.y() < 0.5 || inter.y() > (ly - 0.5))) ||
-         (abs(slope) == 1 && inter.x() >= 0.5 && inter.x() <= (lx - 0.5) &&
-          inter.y() >= 0.5 && inter.y() <= (ly - 0.5)))) {
+        ((abs(slope) == 2 && on_left_or_right_edge) ||
+         (abs(slope) == 0.5 && on_top_or_bottom_edge) ||
+         (abs(slope) == 1 &&
+          (on_left_or_right_edge == on_top_or_bottom_edge)))) {
       (*intersections).insert(inter);
     }
   }
