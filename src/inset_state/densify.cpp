@@ -30,6 +30,12 @@ Point calc_intersection(
     Segment(a, b)
   );
   if (result) {
+
+    // The result of CGAL::intersection can either be a segment,
+    // a point, or null, and the boost::optional wrapper is used
+    // to represent this. We only want point intersections, which we
+    // retrieve using boost::get. Where there is no point intersection,
+    // we get a null pointer.
     const Point* p = boost::get<Point>(&*result);
     if (p) return (*p);
   }
