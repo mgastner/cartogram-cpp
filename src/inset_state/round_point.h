@@ -6,6 +6,7 @@
 
 bool almost_equal(const double, const double);
 bool points_almost_equal(const Point, const Point);
+bool point_less_than(const Point, const Point);
 bool xy_points_almost_equal(const XYPoint, const XYPoint);
 double rounded_to_bicimal(
   const double,
