@@ -50,6 +50,7 @@ add_executable(
   src/inset_state/inset_state.cpp
   src/inset_state/interpolate_bilinearly.cpp
   src/inset_state/matrix.cpp
+  src/inset_state/min_ellipses.cpp
   src/inset_state/project.cpp
   src/inset_state/rescale_map.cpp
   src/inset_state/round_point.cpp

@@ -183,6 +183,9 @@ int main(const int argc, const char *argv[])
     // Rescale map to fit into a rectangular box [0, lx] * [0, ly]
     inset_state.rescale_map(long_graticule_length, cart_info.is_world_map());
 
+    inset_state.min_ellipses();
+    return EXIT_SUCCESS;
+
     // Set up Fourier transforms
     const unsigned int lx = inset_state.lx();
     const unsigned int ly = inset_state.ly();

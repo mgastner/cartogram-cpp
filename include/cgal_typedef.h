@@ -1,6 +1,8 @@
 #ifndef CGAL_TYPEDEF_H_
 #define CGAL_TYPEDEF_H_
 
+#include <CGAL/Min_ellipse_2.h>
+#include <CGAL/Min_ellipse_2_traits_2.h>
 #include <CGAL/Polygon_with_holes_2.h>
 #include <CGAL/Polyline_simplification_2/simplify.h>
 
@@ -12,6 +14,10 @@ typedef CGAL::Point_2<Scd> Point;
 typedef CGAL::Line_2<Scd> Line;
 typedef CGAL::Bbox_2 Bbox;
 typedef CGAL::Segment_2<Scd> Segment;
+
+// Minimum enclosing ellipse
+typedef  CGAL::Min_ellipse_2_traits_2<Scd>  Traits;
+typedef  CGAL::Min_ellipse_2<Traits> Min_ellipse;
 
 // Polyline simplification
 namespace PS = CGAL::Polyline_simplification_2;

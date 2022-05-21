@@ -112,6 +112,7 @@ public:
   unsigned int ly() const;
   void make_fftw_plans_for_rho();
   struct max_area_error_info max_area_error() const;
+  void min_ellipses();
   unsigned int n_finished_integrations() const;
   unsigned int n_geo_divs() const;
   void normalize_inset_area(double total_cart_target_area, bool = false);
