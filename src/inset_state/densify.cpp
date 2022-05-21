@@ -11,7 +11,7 @@
 // type 'const Point' ... is not literal".
 #define OUT_OF_RANGE Point(-1.0, -1.0)
 
-// This function has the following as parameters:
+// This function has the following parameters:
 // - a segment defined by points a and b.
 // - a line defined by coef_x, coef_y, and coef_const with the formula
 //      coef_x * x + coef_y * y + coef_const = 0.
@@ -31,11 +31,10 @@ Point calc_intersection(
   );
   if (result) {
 
-    // The result of CGAL::intersection can either be a segment,
-    // a point, or null, and the boost::optional wrapper is used
-    // to represent this. We only want point intersections, which we
-    // retrieve using boost::get. Where there is no point intersection,
-    // we get a null pointer.
+    // The result of CGAL::intersection can either be a segment, a point, or
+    // null. We only want point intersections, which we retrieve using
+    // boost::get(). Where there is no point intersection, we get a null
+    // pointer.
     const Point* p = boost::get<Point>(&*result);
     if (p) return (*p);
   }
@@ -224,9 +223,9 @@ void InsetState::densify_geo_divs()
       for (unsigned int i = 0; i < outer.size(); ++i) {
 
         // The segment defined by points `a` and `b` is to be densified.
-        // `b` should be the point immediately after `a`, unless `a` is the
-        // final point of the boundary, in which case `b` should be the first
-        // point.
+        // `b` should be the vertex of the boundary immediately after `a`,
+        // unless `a` is the final vertex of the boundary, in which case `b`
+        // should be the first vertex.
         const auto a = outer[i];
         const auto b = (i == outer.size() - 1) ? outer[0] : outer[i + 1];
 
