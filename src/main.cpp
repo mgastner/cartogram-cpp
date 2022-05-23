@@ -184,7 +184,6 @@ int main(const int argc, const char *argv[])
     inset_state.rescale_map(long_graticule_length, cart_info.is_world_map());
 
     inset_state.min_ellipses();
-    return EXIT_SUCCESS;
 
     // Set up Fourier transforms
     const unsigned int lx = inset_state.lx();
@@ -211,6 +210,8 @@ int main(const int argc, const char *argv[])
       std::cerr << "Writing " << input_filename << std::endl;
       inset_state.write_cairo_map(input_filename, plot_graticule);
     }
+
+    return EXIT_SUCCESS;
 
     // We make the approximation that the progress towards generating the
     // cartogram is proportional to the number of GeoDivs that are in the

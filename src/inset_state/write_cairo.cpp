@@ -135,6 +135,7 @@ void InsetState::write_polygons_to_cairo_surface(cairo_t *cr,
         ly_ - label_pt.y() - (extents.height / 2 + extents.y_bearing);
       cairo_move_to(cr, x, y);
       cairo_show_text(cr, label_char);
+      cairo_stroke(cr);
     }
   }
 
@@ -161,6 +162,20 @@ void InsetState::write_polygons_to_cairo_surface(cairo_t *cr,
       for (unsigned int i = 1; i < lx_; ++i) {
         cairo_line_to(cr, cum_proj_[i][j].x, ly_ - cum_proj_[i][j].y);
       }
+      cairo_stroke(cr);
+    }
+  }
+
+  // Plot minimum ellipses
+  for (const auto &gd : geo_divs_) {
+    for (const auto &ell : gd.min_ellipses()) {
+      cairo_arc(
+        cr,
+        ell.center.x(),
+        ly_ - ell.center.y(),
+        std::max(ell.semimajor, ell.semiminor),
+        0,
+        2 * pi);
       cairo_stroke(cr);
     }
   }

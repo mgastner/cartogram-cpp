@@ -263,7 +263,7 @@ void InsetState::densify_geo_divs()
         holes_v_dens.begin(),
         holes_v_dens.end()
       );
-      gd_dens.push_back(pwh_dens);
+      gd_dens.push_back_polygon_with_holes(pwh_dens);
     }
     geodivs_dens.push_back(gd_dens);
   }
