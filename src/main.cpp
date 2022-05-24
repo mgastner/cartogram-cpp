@@ -248,14 +248,6 @@ int main(const int argc, const char *argv[])
         std::cerr << "Integration number "
                   << inset_state.n_finished_integrations() << std::endl;
 
-        // Calculate progress percentage. We assume that the maximum area
-        // error is typically reduced to 1/5 of the previous value.
-        const double ratio_actual_to_permitted_max_area_error =
-          inset_state.max_area_error().value / max_permitted_area_error;
-        const double n_predicted_integrations = std::max(
-          (log(ratio_actual_to_permitted_max_area_error) / log(5)),
-          1.0);
-
         // Blur density to speed up the numerics in flatten_density() below.
         // We slowly reduce the blur width so that the areas can reach their
         // target values.
@@ -310,6 +302,15 @@ int main(const int argc, const char *argv[])
 
         // Update area errors
         inset_state.set_area_errors();
+        
+        // Calculate progress percentage. We assume that the maximum area
+        // error is typically reduced to 1/10 of the previous value.
+        const double ratio_actual_to_permitted_max_area_error = std::max(1.0,
+          inset_state.max_area_error().value / max_permitted_area_error);
+        const double n_predicted_integrations = std::max(
+          (log10(ratio_actual_to_permitted_max_area_error)),
+          1.0);
+          
         std::cerr << "max. area err: " << inset_state.max_area_error().value
                   << ", GeoDiv: " << inset_state.max_area_error().geo_div
                   << "\nProgress: "
