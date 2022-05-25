@@ -169,13 +169,17 @@ void InsetState::write_polygons_to_cairo_surface(cairo_t *cr,
   // Plot minimum ellipses
   for (const auto &gd : geo_divs_) {
     for (const auto &ell : gd.min_ellipses()) {
+      cairo_translate(cr, ell.center.x(), ly_ - ell.center.y());
+      cairo_rotate(cr, -ell.theta);
+      cairo_scale(cr, ell.semimajor, ell.semiminor);
       cairo_arc(
         cr,
-        ell.center.x(),
-        ly_ - ell.center.y(),
-        std::max(ell.semimajor, ell.semiminor),
+        0, //ly_ - ell.center.x(),
+        0, //ell.center.y(),
+        1, //std::max(ell.semimajor, ell.semiminor),
         0,
         2 * pi);
+      cairo_identity_matrix(cr);
       cairo_stroke(cr);
     }
   }

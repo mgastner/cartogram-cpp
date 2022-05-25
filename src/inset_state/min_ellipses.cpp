@@ -19,6 +19,20 @@ void InsetState::min_ellipses()
       // coefficients with those at
       // https://en.wikipedia.org/wiki/Ellipse#General_ellipse
       me2.ellipse().double_coefficients(a, c, b, d, e, f);
+
+      // If a < 0, we flip the signs of all coefficients so that we identify
+      // correctly which axis is the semimajor axis.
+      if (a < 0) {
+        a *= -1;
+        b *= -1;
+        c *= -1;
+        d *= -1;
+        e *= -1;
+        f *= -1;
+      }
+      std::cout << "Ellipse has coefficients: " << a << ", " << b << ", " << c
+                << ", " << d << ", " << e << ", " << f << std::endl;
+
       double denom = (b * b) - (4 * a * c);
       double fac1 =
         (a * e * e) + (c * d * d) - (b * d * e) + ((b * b - 4 * a * c) * f);
