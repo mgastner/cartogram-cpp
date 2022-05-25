@@ -56,7 +56,6 @@ add_executable(
   src/inset_state/scanline_graph.cpp
   src/inset_state/simplify_inset.cpp
   src/inset_state/smyth_projection.cpp
-  src/inset_state/smyth_projection.cpp
   src/inset_state/write_image.cpp
   src/inset_state/write_inset_to_geojson.cpp
   src/misc/colors.cpp
