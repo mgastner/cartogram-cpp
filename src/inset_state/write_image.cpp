@@ -18,7 +18,9 @@ void write_ps_header(const std::string filename, cairo_surface_t *surface)
 {
   const std::string title = "%%Title: " + filename;
   cairo_ps_surface_dsc_comment(surface, title.c_str());
-  cairo_ps_surface_dsc_comment(surface, "%%Creator: Michael T. Gastner et al.");
+  cairo_ps_surface_dsc_comment(
+    surface,
+    "%%Creator: Michael T. Gastner et al.");
   cairo_ps_surface_dsc_comment(surface, "%%For: Humanity");
   cairo_ps_surface_dsc_comment(surface, "%%Copyright: License CC BY");
   cairo_ps_surface_dsc_comment(surface, "%%Magnification: 1.0000");
@@ -42,8 +44,11 @@ bool all_points_inside_exterior_ring(
   return true;
 }
 
-double
-font_size(cairo_t *cr, const char *label, const Point label_pt, const GeoDiv gd)
+double font_size(
+  cairo_t *cr,
+  const char *label,
+  const Point label_pt,
+  const GeoDiv gd)
 {
   for (double fsize = max_font_size; fsize >= min_font_size; fsize -= 0.5) {
     cairo_set_font_size(cr, fsize);
@@ -162,8 +167,8 @@ double InsetState::graticule_cell_area(
 
 // Returns the largest and smallest graticule cell area to be used for
 // graticule heatmap generation
-std::pair<double, double>
-InsetState::max_and_min_graticule_cell_area(unsigned int cell_width)
+std::pair<double, double> InsetState::max_and_min_graticule_cell_area(
+  unsigned int cell_width)
 {
   // Initialize max and min area
   double max_area = -dbl_inf;
@@ -180,8 +185,8 @@ InsetState::max_and_min_graticule_cell_area(unsigned int cell_width)
   return std::make_pair(max_area, min_area);
 }
 
-std::pair<Point, Point>
-InsetState::max_and_min_graticule_cell_area_index(unsigned int cell_width)
+std::pair<Point, Point> InsetState::max_and_min_graticule_cell_area_index(
+  unsigned int cell_width)
 {
 
   // Initialize max and min area
@@ -384,8 +389,8 @@ Color graticule_cell_color(
   }
 }
 
-std::vector<std::vector<Color>>
-InsetState::graticule_cell_colors(unsigned int cell_width)
+std::vector<std::vector<Color>> InsetState::graticule_cell_colors(
+  unsigned int cell_width)
 {
 
   // Initialize max and min area
@@ -570,7 +575,10 @@ void InsetState::write_graticules_to_cairo_surface(cairo_t *cr)
     for (unsigned int j = 0; j < ly_ - graticule_width; j += graticule_width) {
       // Draw graticule cell by connecting edge points
       const Polygon cell_edge_points = graticule_cell_edge_points(i, j);
-      cairo_move_to(cr, cell_edge_points[0].x(), ly_ - cell_edge_points[0].y());
+      cairo_move_to(
+        cr,
+        cell_edge_points[0].x(),
+        ly_ - cell_edge_points[0].y());
       for (unsigned int k = 1; k < cell_edge_points.size(); ++k) {
         cairo_line_to(
           cr,
@@ -814,8 +822,9 @@ double albers_area_to_earth_area(const double albers_area)
   return (albers_area * earth_surface_area) / (4 * pi);
 }
 
-double
-InsetState::graticule_cell_area_km(const unsigned int i, const unsigned int j)
+double InsetState::graticule_cell_area_km(
+  const unsigned int i,
+  const unsigned int j)
 {
   Polygon cell_edge_points = graticule_cell_edge_points(i, j, 1, true);
   const Polygon cell_edge_points_albers =
@@ -903,9 +912,9 @@ std::vector<std::pair<double, double>> get_minor_ticks(
       double NiceNumberRatio =
         (minor_tick - min_target_area_per_km) /
         (max_target_area_per_km - min_target_area_per_km);
-      double area =
-        min_area_cell_point_area +
-        NiceNumberRatio * (max_area_cell_point_area - min_area_cell_point_area);
+      double area = min_area_cell_point_area +
+                    NiceNumberRatio *
+                      (max_area_cell_point_area - min_area_cell_point_area);
       minor_ticks.push_back(std::make_pair(area, minor_tick));
     }
   }
@@ -1072,9 +1081,9 @@ void InsetState::write_graticule_heatmap_image(
       cairo_svg_surface_create(bar_filename.c_str(), 160, 400);
     // cairo_surface_t *bar_surface;
     // image_format_ps
-    //   ? bar_surface = cairo_ps_surface_create(bar_filename.c_str(), 160, 400)
-    //   : bar_surface = cairo_svg_surface_create(bar_filename.c_str(), 160,
-    //   400);
+    //   ? bar_surface = cairo_ps_surface_create(bar_filename.c_str(), 160,
+    //   400) : bar_surface = cairo_svg_surface_create(bar_filename.c_str(),
+    //   160, 400);
     cairo_t *bar_cr = cairo_create(bar_surface);
 
     // Write header
@@ -1223,7 +1232,8 @@ void write_density_bar_to_cairo_surface(
 
   if (max_value > magnitude * 4 || min_value < -magnitude * 4) {
     magnitude *= 2;
-  } else if (max_value < magnitude * 2 && std::abs(min_value) < magnitude * 2) {
+  } else if (
+    max_value < magnitude * 2 && std::abs(min_value) < magnitude * 2) {
     magnitude /= 2;
   }
 
@@ -1433,9 +1443,9 @@ void InsetState::write_density_image(
       cairo_svg_surface_create(bar_filename.c_str(), 160, 400);
     // cairo_surface_t *bar_surface;
     // image_format_ps
-    //   ? bar_surface = cairo_ps_surface_create(bar_filename.c_str(), 160, 400)
-    //   : bar_surface = cairo_svg_surface_create(bar_filename.c_str(), 160,
-    //   400);
+    //   ? bar_surface = cairo_ps_surface_create(bar_filename.c_str(), 160,
+    //   400) : bar_surface = cairo_svg_surface_create(bar_filename.c_str(),
+    //   160, 400);
     cairo_t *bar_cr = cairo_create(bar_surface);
 
     // Write header

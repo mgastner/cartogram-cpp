@@ -177,7 +177,8 @@ int main(const int argc, const char *argv[])
     std::string inset_name = map_name;
     if (cart_info.n_insets() > 1) {
       inset_name = inset_name + "_" + inset_pos;
-      std::cerr << "\nWorking on inset at position: " << inset_pos << std::endl;
+      std::cerr << "\nWorking on inset at position: " << inset_pos
+                << std::endl;
     }
     inset_state.set_inset_name(inset_name);
     if (simplify) {
@@ -260,7 +261,8 @@ int main(const int argc, const char *argv[])
         // TODO: Add option to customise starting blur width.
         double blur_width = std::pow(
           2.0,
-          3 - static_cast<unsigned int>(inset_state.n_finished_integrations()));
+          3 -
+            static_cast<unsigned int>(inset_state.n_finished_integrations()));
         // if (inset_state.n_finished_integrations() < max_integrations) {
         //   blur_width =
         //     std::pow(2.0, 3 - int(inset_state.n_finished_integrations()));
@@ -302,15 +304,15 @@ int main(const int argc, const char *argv[])
 
         // Update area errors
         inset_state.set_area_errors();
-        
+
         // Calculate progress percentage. We assume that the maximum area
         // error is typically reduced to 1/10 of the previous value.
-        const double ratio_actual_to_permitted_max_area_error = std::max(1.0,
-          inset_state.max_area_error().value / max_permitted_area_error);
-        const double n_predicted_integrations = std::max(
-          (log10(ratio_actual_to_permitted_max_area_error)),
+        const double ratio_actual_to_permitted_max_area_error = std::max(
+          inset_state.max_area_error().value / max_permitted_area_error,
           1.0);
-          
+        const double n_predicted_integrations =
+          std::max((log10(ratio_actual_to_permitted_max_area_error)), 1.0);
+
         std::cerr << "max. area err: " << inset_state.max_area_error().value
                   << ", GeoDiv: " << inset_state.max_area_error().geo_div
                   << "\nProgress: "
