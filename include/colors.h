@@ -21,7 +21,6 @@ struct Color {
   };
   Color(double red, double green, double blue);
   Color(std::string color_as_string);
-  std::string eps();
 
   bool operator==(const Color &rhs) const
   {

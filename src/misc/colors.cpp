@@ -74,8 +74,3 @@ Color::Color(std::string color_as_string)
   b /= 255;
   return;
 }
-
-std::string Color::eps()
-{
-  return std::to_string(r) + " " + std::to_string(g) + " " + std::to_string(b);
-}
