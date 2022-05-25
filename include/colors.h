@@ -13,7 +13,12 @@ struct Color {
   double b;
 
   // Defaults to white
-  Color() {r = 1.0; g = 1.0; b = 1.0;};
+  Color()
+  {
+    r = 1.0;
+    g = 1.0;
+    b = 1.0;
+  };
   Color(double red, double green, double blue);
   Color(std::string color_as_string);
   std::string eps();
@@ -27,11 +32,16 @@ struct Color {
   double operator()(const char c) const
   {
     switch (c) {
-    case 'r': return r;
-    case 'g': return g;
-    case 'b': return b;
+    case 'r':
+      return r;
+    case 'g':
+      return g;
+    case 'b':
+      return b;
+      
     // Return -1.0 (incorrect color)
-    default: return -1.0;
+    default:
+      return -1.0;
     }
   }
 
@@ -39,12 +49,16 @@ struct Color {
   double &operator()(const char c)
   {
     switch (c) {
-    case 'r': return r;
-    case 'g': return g;
-    case 'b': return b;
+    case 'r':
+      return r;
+    case 'g':
+      return g;
+    case 'b':
+      return b;
 
     // Return r by default
-    default: return r;
+    default:
+      return r;
     }
   }
 };
