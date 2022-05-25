@@ -11,7 +11,7 @@ void calculate_velocity(
     FTReal2d &grid_fluxx_init,
     FTReal2d &grid_fluxy_init,
     FTReal2d &rho_ft,
-    FTReal2d &rho_init_,
+    FTReal2d &rho_init,
     boost::multi_array<double, 2> *grid_vx,
     boost::multi_array<double, 2> *grid_vy,
     const unsigned int lx,
@@ -22,7 +22,7 @@ void calculate_velocity(
 #pragma omp parallel for private(rho)
   for (unsigned int i = 0; i < lx; ++i) {
     for (unsigned int j = 0; j < ly; ++j) {
-      rho = rho_ft(0, 0) + (1.0 - t) * (rho_init_(i, j) - rho_ft(0,0));
+      rho = rho_ft(0, 0) + (1.0 - t) * (rho_init(i, j) - rho_ft(0,0));
       (*grid_vx)[i][j] = -grid_fluxx_init(i, j) / rho;
       (*grid_vy)[i][j] = -grid_fluxy_init(i, j) / rho;
     }
@@ -111,7 +111,9 @@ void InsetState::flatten_density()
   double dly = ly_;
 
   // We temporarily insert the Fourier coefficients for the x-components and
-  // y-components of the flux vector into grid_fluxx_init and grid_fluxy_init
+  // y-components of the flux vector into grid_fluxx_init and grid_fluxy_init.
+  // The reason for `+1` in `di+1` stems from the RODFT10 formula at:
+  // https://www.fftw.org/fftw3_doc/1d-Real_002dodd-DFTs-_0028DSTs_0029.html
   for (unsigned int i = 0; i < lx_-1; ++i) {
     double di = i;
     for (unsigned int j = 0; j < ly_; ++j) {

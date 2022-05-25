@@ -38,9 +38,11 @@ int main(const int argc, const char *argv[])
   bool simplify;
 
   // Other boolean values that are needed to parse the command line arguments
+
   bool make_csv, produce_map_image, image_format_ps, output_equal_area,
     output_to_stdout, plot_density, plot_graticule, plot_graticule_heatmap,
     plot_intersections, crop;
+
 
   // Parse command-line arguments
   argparse::ArgumentParser arguments = parsed_arguments(
@@ -63,6 +65,7 @@ int main(const int argc, const char *argv[])
     plot_graticule_heatmap,
     plot_intersections,
     crop);
+
 
   // Initialize cart_info. It contains all information about the cartogram
   // that needs to be handled by functions called from main().
@@ -92,6 +95,7 @@ int main(const int argc, const char *argv[])
                 << std::endl;
       return EXIT_FAILURE;
     } catch (const std::runtime_error &e) {
+
       // If there is an error, it is probably because of an invalid CSV file
       std::cerr << "ERROR reading CSV: " << e.what() << std::endl;
       return EXIT_FAILURE;
@@ -144,9 +148,10 @@ int main(const int argc, const char *argv[])
     // is one such entry.
     const Bbox bb = inset_state.bbox();
     if (
-      bb.xmin() >= -180.0 && bb.xmax() <= 180.0 && bb.ymin() >= -90.0 &&
-      bb.ymax() <= 90.0 &&
+      (bb.xmin() >= -180.0 && bb.xmax() <= 180.0) &&
+      (bb.ymin() >= -90.0 && bb.ymax() <= 90.0) &&
       (crs == "+proj=longlat" || crs == "urn:ogc:def:crs:OGC:1.3:CRS84")) {
+
       // If yes, transform the coordinates with the Albers projection if the
       // input map is not a world map. Otherwise, use the Smyth-Craster
       // projection.
@@ -159,6 +164,13 @@ int main(const int argc, const char *argv[])
       std::cerr << "ERROR: Input GeoJSON is not a longitude-latitude map."
                 << std::endl;
       return EXIT_FAILURE;
+    }
+    if (simplify) {
+
+      // Simplification reduces the number of points used to represent the
+      // GeoDivs in the inset, thereby reducing output file sizes and run
+      // times
+      inset_state.simplify(target_points_per_inset);
     }
   }
 
@@ -232,6 +244,9 @@ int main(const int argc, const char *argv[])
           plot_graticule,
           image_format_ps);
       }
+      std::cerr << "Writing " << input_filename << std::endl;
+      inset_state.write_cairo_map(input_filename, plot_graticule);
+    }
 
       // We make the approximation that the progress towards generating the
       // cartogram is proportional to the number of GeoDivs that are in the
@@ -328,6 +343,7 @@ int main(const int argc, const char *argv[])
       progress += inset_max_frac;
       std::cerr << "Finished inset " << inset_pos << "\nProgress: " << progress
                 << std::endl;
+
       if (plot_intersections) {
         inset_state.write_intersections_image(
           intersections_resolution,
@@ -393,14 +409,32 @@ int main(const int argc, const char *argv[])
       } else {
         // Rescale insets in correct proportion to each other
         inset_state.normalize_inset_area(cart_info.cart_total_target_area());
-      }
 
-      // Clean up after finishing all Fourier transforms for this inset
-      inset_state.destroy_fftw_plans_for_rho();
-      inset_state.ref_to_rho_init()->free();
-      inset_state.ref_to_rho_ft()->free();
-    }  // End of loop over insets
+      }
+      std::cerr << "Writing " << output_filename << std::endl;
+      inset_state.write_cairo_map(output_filename, plot_graticule);
+    }
+    if (world) {
+      std::string output_file_name =
+        map_name + "_cartogram_in_smyth_projection.geojson";
+      cart_info.write_geojson(
+        geo_file_name,
+        output_file_name,
+        std::cout,
+        output_to_stdout);
+      inset_state.revert_smyth_craster_projection();
+    } else {
+
+      // Rescale insets in correct proportion to each other
+      inset_state.normalize_inset_area(cart_info.cart_total_target_area());
+    }
+
+    // Clean up after finishing all Fourier transforms for this inset
+    inset_state.destroy_fftw_plans_for_rho();
+    inset_state.ref_to_rho_init()->free();
+    inset_state.ref_to_rho_ft()->free();
   }
+  // End of loop over insets
 
   // Output a density heatmap's bar
   if (plot_density) {
@@ -425,9 +459,10 @@ int main(const int argc, const char *argv[])
 
   cart_info.write_geojson(
     geo_file_name,
-    output_file_name,
+    map_name + "_cartogram.geojson",
     std::cout,
     output_to_stdout);
+
 
   // End of main function time
   time_point end_main = clock_time::now();
@@ -451,5 +486,6 @@ int main(const int argc, const char *argv[])
   }
   std::cerr << "Total time: " << total_time.count() << " ms" << std::endl;
   std::cerr << "*********************************" << std::endl;
+
   return EXIT_SUCCESS;
 }
