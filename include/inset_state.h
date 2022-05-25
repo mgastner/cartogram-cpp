@@ -57,7 +57,7 @@ private:
   unsigned int n_finished_integrations_;
   std::string pos_;  // Position of inset ("C", "T" etc.)
   boost::multi_array<XYPoint, 2> proj_;  // Cartogram projection
-  boost::multi_array<XYPoint, 2> original_proj_;  // Original projection
+  boost::multi_array<XYPoint, 2> identity_proj_;  // Original projection
 
   // Rasterized density and its Fourier transform
   FTReal2d rho_ft_, rho_init_;

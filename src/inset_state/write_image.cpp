@@ -122,7 +122,7 @@ Polygon InsetState::graticule_cell_edge_points(
 {
   Polygon cell_edge_points;
   const boost::multi_array<XYPoint, 2> &proj =
-    plot_equal_area_map ? original_proj_ : cum_proj_;
+    plot_equal_area_map ? identity_proj_ : cum_proj_;
 
   // Horizontal lower edge points
   for (unsigned int i = x; i < x + cell_width; ++i) {

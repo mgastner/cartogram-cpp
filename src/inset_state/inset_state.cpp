@@ -100,11 +100,11 @@ void InsetState::initialize_cum_proj()
 
 void InsetState::initialize_original_proj()
 {
-  original_proj_.resize(boost::extents[lx_][ly_]);
+  identity_proj_.resize(boost::extents[lx_][ly_]);
   for (unsigned int i = 0; i < lx_; ++i) {
     for (unsigned int j = 0; j < ly_; ++j) {
-      original_proj_[i][j].x = i + 0.5;
-      original_proj_[i][j].y = j + 0.5;
+      identity_proj_[i][j].x = i + 0.5;
+      identity_proj_[i][j].y = j + 0.5;
     }
   }
   return;
