@@ -14,7 +14,7 @@
 #include <string>
 #include <vector>
 
-// Graticule cell width/height
+// Grid cell width/height
 constexpr unsigned int plotted_cell_length = 7;
 
 void write_ps_header(const std::string filename, cairo_surface_t *surface)
@@ -112,9 +112,9 @@ void InsetState::write_labels_to_cairo_surface(cairo_t *cr)
   }
 }
 
-// Returns edge points of a graticule cell and treats
+// Returns edge points of a grid cell and treats
 // them as a polygon.
-Polygon InsetState::graticule_cell_edge_points(
+Polygon InsetState::grid_cell_edge_points(
   unsigned int x,
   unsigned int y,
   unsigned int cell_width = plotted_cell_length,
@@ -158,29 +158,29 @@ Polygon InsetState::graticule_cell_edge_points(
   return cell_edge_points;
 }
 
-// Returns graticule cell area based on edge points
-double InsetState::graticule_cell_area(
+// Returns grid cell area based on edge points
+double InsetState::grid_cell_area(
   unsigned int x,
   unsigned int y,
   unsigned int cell_width)
 {
   // Taking absolule to ensure we get the area irrespective of direction
-  return abs(graticule_cell_edge_points(x, y, cell_width).area());
+  return abs(grid_cell_edge_points(x, y, cell_width).area());
 }
 
-// Returns the largest and smallest graticule cell area to be used for
-// graticule heatmap generation
-std::pair<double, double> InsetState::max_and_min_graticule_cell_area(
+// Returns the largest and smallest grid cell area to be used for
+// grid heatmap generation
+std::pair<double, double> InsetState::max_and_min_grid_cell_area(
   unsigned int cell_width)
 {
   // Initialize max and min area
   double max_area = -dbl_inf;
   double min_area = dbl_inf;
 
-  // Iterate over graticule cells
+  // Iterate over grid cells
   for (unsigned int i = 0; i < lx_ - cell_width; i += cell_width) {
     for (unsigned int j = 0; j < ly_ - cell_width; j += cell_width) {
-      const double area = graticule_cell_area(i, j, cell_width);
+      const double area = grid_cell_area(i, j, cell_width);
       max_area = std::max(max_area, area);
       min_area = std::min(min_area, area);
     }
@@ -188,9 +188,9 @@ std::pair<double, double> InsetState::max_and_min_graticule_cell_area(
   return std::make_pair(max_area, min_area);
 }
 
-// Returns the index of largest and smallest graticule cell area to be used for
-// graticule heatmap generation
-std::pair<Point, Point> InsetState::max_and_min_graticule_cell_area_index(
+// Returns the index of largest and smallest grid cell area to be used for
+// grid heatmap generation
+std::pair<Point, Point> InsetState::max_and_min_grid_cell_area_index(
   unsigned int cell_width)
 {
   // Initialize max and min area
@@ -201,10 +201,10 @@ std::pair<Point, Point> InsetState::max_and_min_graticule_cell_area_index(
   unsigned int min_i = 0;
   unsigned int min_j = 0;
 
-  // Iterate over graticule cells
+  // Iterate over grid cells
   for (unsigned int i = 0; i < lx_ - cell_width; i += cell_width) {
     for (unsigned int j = 0; j < ly_ - cell_width; j += cell_width) {
-      const double area = graticule_cell_area(i, j, cell_width);
+      const double area = grid_cell_area(i, j, cell_width);
       if (area > max_area) {
         max_area = area;
         max_i = i;
@@ -326,7 +326,7 @@ Color heatmap_color(
 }
 
 // Sequential colour palette, mean not accounted for
-Color graticule_cell_color(
+Color grid_cell_color(
   const double area,
   const double max_area,
   const double min_area)
@@ -393,26 +393,26 @@ Color graticule_cell_color(
   }
 }
 
-// Calculates all graticule cell colors from cartogram map to be used in
-// the equal area graticule heatmap
-std::vector<std::vector<Color>> InsetState::graticule_cell_colors(
+// Calculates all grid cell colors from cartogram map to be used in
+// the equal area grid heatmap
+std::vector<std::vector<Color>> InsetState::grid_cell_colors(
   unsigned int cell_width)
 {
 
   // Initialize max and min area
   double max_area, min_area;
-  std::tie(max_area, min_area) = max_and_min_graticule_cell_area(cell_width);
+  std::tie(max_area, min_area) = max_and_min_grid_cell_area(cell_width);
 
   // Initialize colors
   std::vector<std::vector<Color>> colors(
     lx_ - cell_width,
     std::vector<Color>(ly_ - cell_width));
 
-  // Iterate over graticule cells
+  // Iterate over grid cells
   for (unsigned int i = 0; i < lx_ - cell_width; i += cell_width) {
     for (unsigned int j = 0; j < ly_ - cell_width; j += cell_width) {
-      const double area = graticule_cell_area(i, j, cell_width);
-      colors[i][j] = graticule_cell_color(area, max_area, min_area);
+      const double area = grid_cell_area(i, j, cell_width);
+      colors[i][j] = grid_cell_color(area, max_area, min_area);
     }
   }
   return colors;
@@ -433,7 +433,7 @@ void right_aligned_text(
   cairo_show_text(cr, text.c_str());
 }
 
-void write_graticule_heatmap_bar_to_cairo_surface(
+void write_grid_heatmap_bar_to_cairo_surface(
   double min_value,
   double max_value,
   cairo_t *cr,
@@ -470,7 +470,7 @@ void write_graticule_heatmap_bar_to_cairo_surface(
   double overlap = 0.1;
 
   for (double y = ymin_bar; y <= ymax_bar; y += gradient_segment_height) {
-    Color color = graticule_cell_color(
+    Color color = grid_cell_color(
       exp(value_at_gradient_segment),
       exp(max_value),
       exp(min_value));
@@ -551,7 +551,7 @@ void write_graticule_heatmap_bar_to_cairo_surface(
 }
 
 // Given padding, makes padding area white
-void InsetState::trim_graticule_heatmap(cairo_t *cr, double padding)
+void InsetState::trim_grid_heatmap(cairo_t *cr, double padding)
 {
   // Canvas dimension
   Bbox is_bbox = bbox();
@@ -569,22 +569,22 @@ void InsetState::trim_graticule_heatmap(cairo_t *cr, double padding)
   cairo_fill(cr);
 }
 
-// Writes graticule cells and colors them if required
-void InsetState::write_graticules_to_cairo_surface(cairo_t *cr)
+// Writes grid cells and colors them if required
+void InsetState::write_grids_to_cairo_surface(cairo_t *cr)
 {
 
-  // Set line width of graticule lines
+  // Set line width of grid lines
   cairo_set_line_width(cr, 5e-4 * std::min(lx_, ly_));
   cairo_set_source_rgb(cr, 0.0, 0.0, 0.0);
 
-  // Iterate over graticule cells
+  // Iterate over grid cells
   for (unsigned int i = 0; i < lx_ - plotted_cell_length;
        i += plotted_cell_length) {
     for (unsigned int j = 0; j < ly_ - plotted_cell_length;
          j += plotted_cell_length) {
 
-      // Draw graticule cell by connecting edge points
-      const Polygon cell_edge_points = graticule_cell_edge_points(i, j);
+      // Draw grid cell by connecting edge points
+      const Polygon cell_edge_points = grid_cell_edge_points(i, j);
       cairo_move_to(
         cr,
         cell_edge_points[0].x(),
@@ -600,7 +600,7 @@ void InsetState::write_graticules_to_cairo_surface(cairo_t *cr)
   }
 }
 
-void InsetState::write_graticule_colors_to_cairo_surface(
+void InsetState::write_grid_colors_to_cairo_surface(
   cairo_t *cr,
   bool plot_equal_area_map,
   bool crop)
@@ -608,27 +608,27 @@ void InsetState::write_graticule_colors_to_cairo_surface(
   unsigned int cell_width = 1;
 
   // Get colors
-  const auto colors = graticule_cell_colors(cell_width);
+  const auto colors = grid_cell_colors(cell_width);
 
-  // Set line width of graticule lines
+  // Set line width of grid lines
   cairo_set_line_width(cr, 5e-6 * std::min(lx_, ly_));
 
-  // Print the color of all graticule cells and exit
+  // Print the color of all grid cells and exit
   if (!crop) {
 
-    // Iterate over graticule cells
+    // Iterate over grid cells
     for (unsigned int i = 0; i < lx_ - cell_width; i += cell_width) {
       for (unsigned int j = 0; j < ly_ - cell_width; j += cell_width) {
-        // Set color of the border of the graticule polygon
+        // Set color of the border of the grid polygon
         cairo_set_source_rgb(
           cr,
           colors[i][j].r,
           colors[i][j].g,
           colors[i][j].b);
 
-        // Draw graticule cell by connecting edge points
+        // Draw grid cell by connecting edge points
         const Polygon cell_edge_points =
-          graticule_cell_edge_points(i, j, cell_width, plot_equal_area_map);
+          grid_cell_edge_points(i, j, cell_width, plot_equal_area_map);
         cairo_move_to(
           cr,
           cell_edge_points[0].x(),
@@ -640,7 +640,7 @@ void InsetState::write_graticule_colors_to_cairo_surface(
             ly_ - cell_edge_points[k].y());
         }
 
-        // Fill the graticule polygon with color
+        // Fill the grid polygon with color
         cairo_fill_preserve(cr);
         cairo_stroke(cr);
       }
@@ -679,30 +679,30 @@ void InsetState::write_graticule_colors_to_cairo_surface(
 
       Bbox gd_bbox = original_bboxes.at(gd.id());
 
-      // Iterate over graticule cells
+      // Iterate over grid cells
       for (unsigned int i = gd_bbox.xmin() - 1; i < gd_bbox.xmax() + 1;
            i += cell_width) {
         for (unsigned int j = gd_bbox.ymin() - 1; j < gd_bbox.ymax() + 1;
              j += cell_width) {
 
-          // Set color of the border of the graticule polygon
+          // Set color of the border of the grid polygon
           cairo_set_source_rgb(
             cr,
             colors[i][j].r,
             colors[i][j].g,
             colors[i][j].b);
 
-          // Draw graticule cells by connecting edge points
+          // Draw grid cells by connecting edge points
           const auto cell_edge_points =
-            graticule_cell_edge_points(i, j, cell_width, plot_equal_area_map);
+            grid_cell_edge_points(i, j, cell_width, plot_equal_area_map);
 
-          // Move to first graticule edge
+          // Move to first grid edge
           cairo_move_to(
             cr,
             cell_edge_points[0].x(),
             ly_ - cell_edge_points[0].y());
 
-          // Draw remaining graticule cells
+          // Draw remaining grid cells
           for (unsigned int k = 1; k < cell_edge_points.size(); ++k) {
             cairo_line_to(
               cr,
@@ -710,7 +710,7 @@ void InsetState::write_graticule_colors_to_cairo_surface(
               ly_ - cell_edge_points[k].y());
           }
 
-          // Fill the graticule polygon with color
+          // Fill the grid polygon with color
           cairo_fill_preserve(cr);
           cairo_stroke(cr);
         }
@@ -783,11 +783,11 @@ void InsetState::write_polygons_to_cairo_surface(
   }
 }
 
-// Outputs a SVG/PS file with polygons, labels, and graticules (if required)
+// Outputs a SVG/PS file with polygons, labels, and grids (if required)
 void InsetState::write_map_image(
   const std::string filename,
   const bool fill_polygons,
-  const bool plot_graticule,
+  const bool plot_grid,
   const bool image_format_ps)
 {
 
@@ -812,9 +812,9 @@ void InsetState::write_map_image(
   // Place labels
   write_labels_to_cairo_surface(cr);
 
-  // Draw graticule without color
-  if (plot_graticule) {
-    write_graticules_to_cairo_surface(cr);
+  // Draw grid without color
+  if (plot_grid) {
+    write_grids_to_cairo_surface(cr);
   }
   cairo_show_page(cr);
   cairo_surface_destroy(surface);
@@ -839,11 +839,11 @@ double albers_area_to_earth_area(const double albers_area)
   return (albers_area * earth_surface_area) / (4 * pi);
 }
 
-double InsetState::graticule_cell_area_km(
+double InsetState::grid_cell_area_km(
   const unsigned int i,
   const unsigned int j)
 {
-  Polygon cell_edge_points = graticule_cell_edge_points(i, j, 1, true);
+  Polygon cell_edge_points = grid_cell_edge_points(i, j, 1, true);
   const Polygon cell_edge_points_albers =
     transform_to_albers_coor(cell_edge_points);
   const double cell_area = cell_edge_points_albers.area();
@@ -851,13 +851,13 @@ double InsetState::graticule_cell_area_km(
   return cell_area_km;
 }
 
-double InsetState::graticule_cell_target_area(
+double InsetState::grid_cell_target_area(
   const unsigned int i,
   const unsigned int j,
   const double total_target_area,
   const double total_inset_area)
 {
-  const Polygon cell_edge_points = graticule_cell_edge_points(i, j, 1, false);
+  const Polygon cell_edge_points = grid_cell_edge_points(i, j, 1, false);
   const double cell_area = cell_edge_points.area();
 
   const double cell_target_area =
@@ -866,15 +866,15 @@ double InsetState::graticule_cell_target_area(
   return cell_target_area;
 }
 
-double InsetState::graticule_cell_target_area_per_km(
+double InsetState::grid_cell_target_area_per_km(
   const unsigned int i,
   const unsigned int j,
   const double total_target_area,
   const double total_inset_area)
 {
   const double cell_target_area =
-    graticule_cell_target_area(i, j, total_target_area, total_inset_area);
-  const double cell_area_km = graticule_cell_area_km(i, j);
+    grid_cell_target_area(i, j, total_target_area, total_inset_area);
+  const double cell_area_km = grid_cell_area_km(i, j);
 
   const double cell_target_area_per_km = cell_target_area / cell_area_km;
 
@@ -997,8 +997,8 @@ std::vector<int> get_nice_numbers_for_bar(const double max_target_area_per_km)
   return nice_numbers;
 }
 
-// Outputs a SVG/PS file of graticule heatmap
-void InsetState::write_graticule_heatmap_image(
+// Outputs a SVG/PS file of grid heatmap
+void InsetState::write_grid_heatmap_image(
   const std::string filename,
   const bool plot_equal_area_map,
   const bool image_format_ps,
@@ -1030,24 +1030,24 @@ void InsetState::write_graticule_heatmap_image(
 
   // const Bbox bbox_bar = get_bbox_bar(15, 150);
 
-  // Get the max and min graticule cell area points
+  // Get the max and min grid cell area points
   Point max_area_cell_point, min_area_cell_point;
 
   std::tie(max_area_cell_point, min_area_cell_point) =
-    max_and_min_graticule_cell_area_index(1);
+    max_and_min_grid_cell_area_index(1);
 
   const double max_area_cell_point_area =
-    graticule_cell_area(max_area_cell_point.x(), max_area_cell_point.y(), 1);
+    grid_cell_area(max_area_cell_point.x(), max_area_cell_point.y(), 1);
   const double min_area_cell_point_area =
-    graticule_cell_area(min_area_cell_point.x(), min_area_cell_point.y(), 1);
+    grid_cell_area(min_area_cell_point.x(), min_area_cell_point.y(), 1);
 
-  // Get the max and min graticule cell target area per km
-  double max_target_area_per_km = graticule_cell_target_area_per_km(
+  // Get the max and min grid cell target area per km
+  double max_target_area_per_km = grid_cell_target_area_per_km(
     max_area_cell_point.x(),
     max_area_cell_point.y(),
     total_ta,
     total_ia);
-  double min_target_area_per_km = graticule_cell_target_area_per_km(
+  double min_target_area_per_km = grid_cell_target_area_per_km(
     min_area_cell_point.x(),
     min_area_cell_point.y(),
     total_ta,
@@ -1076,14 +1076,14 @@ void InsetState::write_graticule_heatmap_image(
     nice_numbers);
 
   // Draw colors
-  write_graticule_colors_to_cairo_surface(cr, plot_equal_area_map, crop);
+  write_grid_colors_to_cairo_surface(cr, plot_equal_area_map, crop);
 
   // Draw polygons without color
   write_polygons_to_cairo_surface(cr, false, false, plot_equal_area_map);
 
-  // trim_graticule_heatmap(cr, 20);
+  // trim_grid_heatmap(cr, 20);
 
-  // write_graticule_heatmap_bar_to_cairo_surface(
+  // write_grid_heatmap_bar_to_cairo_surface(
   //   min_area_cell_point_area,
   //   max_area_cell_point_area,
   //   cr,
@@ -1109,7 +1109,7 @@ void InsetState::write_graticule_heatmap_image(
     }
 
     // Write bar
-    write_graticule_heatmap_bar_to_cairo_surface(
+    write_grid_heatmap_bar_to_cairo_surface(
       min_area_cell_point_area,
       max_area_cell_point_area,
       bar_cr,
@@ -1289,7 +1289,7 @@ void write_density_bar_to_cairo_surface(
 void InsetState::write_density_image(
   const std::string filename,
   const double *density,
-  const bool plot_graticule_heatmap,
+  const bool plot_grid_heatmap,
   const bool image_format_ps)
 {
   // Whether to draw bar on the cairo surface
@@ -1317,10 +1317,10 @@ void InsetState::write_density_image(
   const double dens_min = dens_min_;
   const double dens_mean = dens_mean_;
   const double dens_max = dens_max_;
-  const double each_graticule_cell_area_km = graticule_cell_area_km(0, 0);
+  const double each_grid_cell_area_km = grid_cell_area_km(0, 0);
 
   // Crop it too
-  if (plot_graticule_heatmap) {
+  if (plot_grid_heatmap) {
     unsigned int cell_width = 1;
 
     // Clip to shape and print in sequential scale
@@ -1341,21 +1341,21 @@ void InsetState::write_density_image(
 
         Bbox gd_bbox = gd.bbox();
 
-        // Iterate over graticule cells
+        // Iterate over grid cells
         for (unsigned int i = gd_bbox.xmin(); i < gd_bbox.xmax();
              i += cell_width) {
           for (unsigned int j = gd_bbox.ymin(); j < gd_bbox.ymax();
                j += cell_width) {
 
             double target_area_km =
-              density[i * ly_ + j] / each_graticule_cell_area_km;
+              density[i * ly_ + j] / each_grid_cell_area_km;
 
             // Values here used are "Max target area per km" and
             // "Min target area per km", which is obtained by running the
-            // code with the "plot_graticule_heatmap" -h flag set to true
+            // code with the "plot_grid_heatmap" -h flag set to true
             // Update here for new map
             Color color =
-              graticule_cell_color(target_area_km, 660.058, 0.660816);
+              grid_cell_color(target_area_km, 660.058, 0.660816);
 
             // Get four points of the square
             double x_min = i - 0.5 * sq_overlap;
@@ -1373,7 +1373,7 @@ void InsetState::write_density_image(
             cairo_set_source_rgb(cr, 0, 0, 0);
             cairo_stroke(cr);
 
-            // Fill the graticule polygon with color
+            // Fill the grid polygon with color
             cairo_fill_preserve(cr);
             cairo_stroke(cr);
           }
@@ -1409,7 +1409,7 @@ void InsetState::write_density_image(
   }
   write_polygons_to_cairo_surface(cr, false, false, false);
 
-  if (draw_bar && !plot_graticule_heatmap) {
+  if (draw_bar && !plot_grid_heatmap) {
     std::string bar_filename = "bar_" + filename;
 
     // Create a cairo bar_surface

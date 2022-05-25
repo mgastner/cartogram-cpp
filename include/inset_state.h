@@ -45,8 +45,8 @@ private:
   // Copy of original data
   std::vector<GeoDiv> geo_divs_original_;
 
-  // Chosen diagonal for each graticule cell
-  boost::multi_array<int, 2> graticule_diagonals_;
+  // Chosen diagonal for each grid cell
+  boost::multi_array<int, 2> grid_diagonals_;
 
   // Map name. Inset position is appended to the name if n_insets > 2.
   std::string inset_name_;
@@ -94,13 +94,13 @@ public:
   void execute_fftw_bwd_plan() const;
   void execute_fftw_fwd_plan() const;
   void exit_if_not_on_grid_or_edge(const Point p1) const;
-  void fill_graticule_diagonals();
+  void fill_grid_diagonals();
 
   // Density functions
   // Fill map with density, using scanlines
   void fill_with_density(
     const bool plot_density,
-    const bool plot_graticule_heatmap,
+    const bool plot_grid_heatmap,
     const bool image_format_ps);
 
   // Flatten said density with integration
@@ -108,25 +108,25 @@ public:
 
   const std::vector<GeoDiv> geo_divs() const;
   const std::vector<GeoDiv> geo_divs_original() const;
-  std::vector<std::vector<Color>> graticule_cell_colors(
+  std::vector<std::vector<Color>> grid_cell_colors(
     unsigned int cell_width);
-  Polygon graticule_cell_edge_points(
+  Polygon grid_cell_edge_points(
     unsigned int x,
     unsigned int y,
     unsigned int cell_width,
     bool plot_equal_area_map);
-  double graticule_cell_target_area(
+  double grid_cell_target_area(
     const unsigned int i,
     const unsigned int j,
     const double total_target_area,
     const double total_inset_area);
-  double graticule_cell_area(
+  double grid_cell_area(
     unsigned int x,
     unsigned int y,
     unsigned int cell_width);
-  double graticule_cell_area_km(const unsigned int i, const unsigned int j);
+  double grid_cell_area_km(const unsigned int i, const unsigned int j);
   void holes_inside_polygons();
-  double graticule_cell_target_area_per_km(
+  double grid_cell_target_area_per_km(
     const unsigned int i,
     const unsigned int j,
     const double total_target_area,
@@ -158,9 +158,9 @@ public:
   unsigned int ly() const;
   void make_fftw_plans_for_rho();
   max_area_error_info max_area_error() const;
-  std::pair<double, double> max_and_min_graticule_cell_area(
+  std::pair<double, double> max_and_min_grid_cell_area(
     unsigned int cell_width);
-  std::pair<Point, Point> max_and_min_graticule_cell_area_index(
+  std::pair<Point, Point> max_and_min_grid_cell_area_index(
     unsigned int cell_width);
   unsigned int n_finished_integrations() const;
   unsigned int n_geo_divs() const;
@@ -195,7 +195,7 @@ public:
 
   // Apply given function to all points
   void transform_points(std::function<Point(Point)>);
-  void trim_graticule_heatmap(cairo_t *cr, double padding);
+  void trim_grid_heatmap(cairo_t *cr, double padding);
   std::array<Point, 3> untransformed_triangle(const Point);
 
   // Cairo functions
@@ -217,23 +217,23 @@ public:
 
   // Functions to write map to eps
   // void write_density_to_eps(const std::string, const double *);
-  void write_graticule_heatmap_image(
+  void write_grid_heatmap_image(
     const std::string filename,
     const bool plot_equal_area_map,
     const bool image_format_ps,
     const bool crop);
-  void write_graticules_to_cairo_surface(cairo_t *cr);
-  void write_graticule_colors_to_cairo_surface(
+  void write_grids_to_cairo_surface(cairo_t *cr);
+  void write_grid_colors_to_cairo_surface(
     cairo_t *cr,
     bool plot_equal_area_map,
     bool crop);
-  // void write_graticule_to_eps(std::ofstream &);
+  // void write_grid_to_eps(std::ofstream &);
   // void write_intersections_to_eps(unsigned int);
   // void write_map_to_eps(const std::string, const bool);
   void write_map_image(
     const std::string filename,
     const bool fill_polygons,
-    const bool plot_graticule,
+    const bool plot_grid,
     const bool image_format_ps);
   // void write_polygons_to_eps(std::ofstream &, const bool, const bool);
   void write_polygons_to_cairo_surface(
@@ -245,7 +245,7 @@ public:
   void write_density_image(
     const std::string filename,
     const double *density,
-    const bool plot_graticule_heatmap,
+    const bool plot_grid_heatmap,
     const bool image_format_ps);
   void write_intersections_image(unsigned int res, const bool image_format_ps);
   void write_density_bar_image(

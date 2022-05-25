@@ -4,7 +4,7 @@
 #include <limits>
 #include <numbers>
 
-constexpr unsigned int default_long_graticule_length = 512;
+constexpr unsigned int default_long_grid_length = 512;
 constexpr double dbl_epsilon = std::numeric_limits<double>::epsilon();
 constexpr double dbl_inf = std::numeric_limits<double>::infinity();
 constexpr double dbl_resolution = 1e-8;
@@ -16,7 +16,7 @@ constexpr double earth_surface_area = 510.1e6;
 
 // The resolution represents the number of rays to shoot through each cell
 // (see inset_state/scanline_graph.cpp).
-// default_resolution is used for filling graticule cells with density.
+// default_resolution is used for filling grid cells with density.
 // intersection_resolution is used to specify the number of scanlines shown
 // in output files showing intersections.
 constexpr unsigned int default_resolution = 16;

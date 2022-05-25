@@ -2,7 +2,7 @@
 #include "inset_state.h"
 
 void InsetState::rescale_map(
-    unsigned int max_n_graticule_rows_or_cols,
+    unsigned int max_n_grid_rows_or_cols,
     bool is_world_map
 ) {
   double padding = (is_world_map ?  1.0 : padding_unless_world);
@@ -31,23 +31,23 @@ void InsetState::rescale_map(
 
   // Ensure that the grid dimensions lx and ly are integer powers of 2
   unsigned int lx, ly;
-  if ((max_n_graticule_rows_or_cols <= 0) ||
-      ((max_n_graticule_rows_or_cols & (~max_n_graticule_rows_or_cols + 1))
-       != max_n_graticule_rows_or_cols)) {
-    std::cerr << "ERROR: max_n_graticule_rows_or_cols must be an integer"
+  if ((max_n_grid_rows_or_cols <= 0) ||
+      ((max_n_grid_rows_or_cols & (~max_n_grid_rows_or_cols + 1))
+       != max_n_grid_rows_or_cols)) {
+    std::cerr << "ERROR: max_n_grid_rows_or_cols must be an integer"
               << "power of 2."
               << std::endl;
     _Exit(15);
   }
   double latt_const;
   if (bb.xmax()-bb.xmin() > bb.ymax()-bb.ymin()) {
-    lx = max_n_graticule_rows_or_cols;
+    lx = max_n_grid_rows_or_cols;
     latt_const = (new_xmax-new_xmin) / lx;
     ly = 1 << static_cast<int>(ceil(log2((new_ymax-new_ymin) / latt_const)));
     new_ymax = 0.5*(bb.ymax()+bb.ymin()) + 0.5*ly*latt_const;
     new_ymin = 0.5*(bb.ymax()+bb.ymin()) - 0.5*ly*latt_const;
   } else {
-    ly = max_n_graticule_rows_or_cols;
+    ly = max_n_grid_rows_or_cols;
     latt_const = (new_ymax-new_ymin) / ly;
     lx = 1 << static_cast<int>(ceil(log2((new_xmax-new_xmin) / latt_const)));
     new_xmax = 0.5*(bb.xmax()+bb.xmin()) + 0.5*lx*latt_const;

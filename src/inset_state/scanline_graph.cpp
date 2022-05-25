@@ -43,7 +43,7 @@ std::vector<std::vector<intersection> > InsetState::intersec_with_parallel_to(
       for (unsigned int k = floor(min_lim) - 1; k <= ceil(max_lim) + 1; ++k) {
 
         // If the rays are in x-direction, iterate over each ray between the
-        // graticule lines y = k and y = k+1. Otherwise, iterate over each
+        // grid lines y = k and y = k+1. Otherwise, iterate over each
         // ray between x = k and x = k+1.
         for (double ray = k + 0.5/resolution;
              ray < k + 1;

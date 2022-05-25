@@ -5,7 +5,7 @@
 
 void InsetState::fill_with_density(
   const bool plot_density,
-  const bool plot_graticule_heatmap,
+  const bool plot_grid_heatmap,
   const bool image_format_ps)
 {
   // We assume that target areas that were zero or missing in the input have
@@ -20,10 +20,10 @@ void InsetState::fill_with_density(
     }
   }
 
-  // Density numerator and denominator for each graticule cell. The density of
-  // a graticule cell can be calculated with (rho_num / rho_den). We initially
-  // assign zero to all elements because we assume that all graticule cells
-  // are outside any GeoDiv. Any graticule cell where rho_den is zero will be
+  // Density numerator and denominator for each grid cell. The density of
+  // a grid cell can be calculated with (rho_num / rho_den). We initially
+  // assign zero to all elements because we assume that all grid cells
+  // are outside any GeoDiv. Any grid cell where rho_den is zero will be
   // filled with the mean_density.
 
   // TODO: rho_num and rho_den could be a boost::multi_array<double, 2>.
@@ -32,7 +32,7 @@ void InsetState::fill_with_density(
 
   // Resolution with which we sample polygons. "resolution" is the number of
   // horizontal "test rays" between each of the ly consecutive horizontal
-  // graticule lines.
+  // grid lines.
   const unsigned int resolution = default_resolution;
   auto intersections_with_rays = intersec_with_parallel_to('x', resolution);
 
@@ -43,7 +43,7 @@ void InsetState::fill_with_density(
   // The weight of a segment of a ray that is inside a GeoDiv is equal to
   // (length of the segment inside the geo_div) * (area error of the geodiv).
   for (unsigned int k = 0; k < ly_; ++k) {
-    // Iterate over each of the rays between the graticule lines y = k and
+    // Iterate over each of the rays between the grid lines y = k and
     // y = k+1
     for (double y = k + 0.5 / resolution; y < k + 1; y += 1.0 / resolution) {
       // Intersections for one ray
@@ -63,7 +63,7 @@ void InsetState::fill_with_density(
       for (unsigned int i = 1; i + 1 < intersections_at_y.size(); i += 2) {
         const double left_x = intersections_at_y[i].x();
         const double right_x = intersections_at_y[i + 1].x();
-        // The intersections are in the same graticule cell. The ray
+        // The intersections are in the same grid cell. The ray
         // enters and leaves a GeoDiv in this cell. We weigh the density
         // of the cell by the GeoDiv's area error.
         if (left_x != right_x) {
@@ -78,7 +78,7 @@ void InsetState::fill_with_density(
         }
 
         // Fill last exiting intersection with GeoDiv where part of ray inside
-        // the graticule cell is inside the GeoDiv
+        // the grid cell is inside the GeoDiv
         const unsigned int last_x = intersections_at_y.back().x();
         const double last_weight =
           area_error_at(intersections_at_y.back().geo_div_id) *
@@ -181,7 +181,7 @@ void InsetState::fill_with_density(
     f_txt << "Maximum Density: " << dens_max_ << "\n";
   }
 
-  if (plot_graticule_heatmap && n_finished_integrations_ == 0) {
+  if (plot_grid_heatmap && n_finished_integrations_ == 0) {
     std::string file_name = inset_name_ + "_piecewise_density_" +
                             std::to_string(n_finished_integrations());
 
@@ -191,7 +191,7 @@ void InsetState::fill_with_density(
     write_density_image(
       file_name,
       rho_init_.as_1d_array(),
-      plot_graticule_heatmap,
+      plot_grid_heatmap,
       image_format_ps);
   }
 

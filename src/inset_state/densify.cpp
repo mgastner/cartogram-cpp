@@ -17,7 +17,7 @@
 //      coef_x * x + coef_y * y + coef_const = 0.
 // The function returns the unique intersection point between them. If this
 // intersection point does not exist, the function returns the point called
-// OUT_OF_RANGE, which is always outside of any graticule grid cell.
+// OUT_OF_RANGE, which is always outside of any grid cell.
 Point calc_intersection(
     const Point a,
     const Point b,
@@ -79,8 +79,8 @@ void add_diag_inter(
     //      (where base_intercept = 0.25),
     // where d is the double increasing by `step` after each iteration of the
     // loop.
-    // Steep and antisteep diagonals appear in graticule cells near x = 0
-    // and x = lx. Gentle and antigentle diagonals appear in graticules near
+    // Steep and antisteep diagonals appear in grid cells near x = 0
+    // and x = lx. Gentle and antigentle diagonals appear in grids near
     // y = 0 and y = ly.
     Point inter = calc_intersection(a, b, slope, -1.0, d);
     bool on_left_or_right_edge = inter.x() < 0.5 || inter.x() > (lx - 0.5);
@@ -103,9 +103,9 @@ void add_diag_inter(
 
 // This function takes two points (called pt1 and pt2) and returns all
 // horizontal and vertical intersections of the line segment between pt1 and
-// pt2 with a graticule whose graticule lines are placed one unit apart. The
+// pt2 with a grid whose grid lines are placed one unit apart. The
 // function also returns all intersections with the diagonals of these
-// graticule cells. The function assumes that graticule cells start at
+// grid cells. The function assumes that grid cells start at
 // (0.5, 0.5).
 std::vector<Point> densification_points(
     const Point pt1,

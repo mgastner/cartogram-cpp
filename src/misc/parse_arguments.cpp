@@ -8,7 +8,7 @@ argparse::ArgumentParser parsed_arguments(
     const char *argv[],
     std::string &geo_file_name,
     std::string &visual_file_name,
-    unsigned int &max_n_graticule_rows_or_cols,
+    unsigned int &max_n_grid_rows_or_cols,
     unsigned int &target_points_per_inset,
     bool &world,
     bool &triangulation,
@@ -19,8 +19,8 @@ argparse::ArgumentParser parsed_arguments(
     bool &output_equal_area,
     bool &output_to_stdout,
     bool &plot_density,
-    bool &plot_graticule,
-    bool &plot_graticule_heatmap,
+    bool &plot_grid,
+    bool &plot_grid_heatmap,
     bool &plot_intersections,
     bool &crop)
 {
@@ -40,8 +40,8 @@ argparse::ArgumentParser parsed_arguments(
 
   // Optional argument accepting long grid side length (unsigned int) as
   // input. Default value declared in "constants.h"
-  arguments.add_argument("-N", "--n_graticule_rows_or_cols")
-  .default_value(default_long_graticule_length)
+  arguments.add_argument("-N", "--n_grid_rows_or_cols")
+  .default_value(default_long_grid_length)
   .scan<'u', unsigned int>()
   .help(
     "Integer: Number of grid cells along longer Cartesian coordinate axis"
@@ -68,20 +68,20 @@ argparse::ArgumentParser parsed_arguments(
       .default_value(false)
       .implicit_value(true);
 
-  arguments.add_argument("-g", "--add_graticules_to_image")
-      .help("Boolean: include graticules in images?")
+  arguments.add_argument("-g", "--add_grids_to_image")
+      .help("Boolean: include grids in images?")
       .default_value(false)
       .implicit_value(true);
 
-  arguments.add_argument("-h", "--graticule_heatmap_image")
+  arguments.add_argument("-h", "--grid_heatmap_image")
       .help(
-          "Boolean: produce graticule heatmap images "
-          "*_graticule_heatmap.svg/ps?")
+          "Boolean: produce grid heatmap images "
+          "*_grid_heatmap.svg/ps?")
       .default_value(false)
       .implicit_value(true);
 
   arguments.add_argument("-c", "--crop")
-      .help("Boolean: crop graticule heatmap image?")
+      .help("Boolean: crop grid heatmap image?")
       .default_value(false)
       .implicit_value(true);
 
@@ -152,7 +152,7 @@ argparse::ArgumentParser parsed_arguments(
   }
 
   // Set long grid-side length
-  max_n_graticule_rows_or_cols = arguments.get<unsigned int>("-N");
+  max_n_grid_rows_or_cols = arguments.get<unsigned int>("-N");
 
   // Set target_points_per_inset
   target_points_per_inset = arguments.get<unsigned int>("-P");
@@ -176,8 +176,8 @@ argparse::ArgumentParser parsed_arguments(
   output_equal_area = arguments.get<bool>("-q");
   output_to_stdout = arguments.get<bool>("-o");
   plot_density = arguments.get<bool>("-d");
-  plot_graticule = arguments.get<bool>("-g");
-  plot_graticule_heatmap = arguments.get<bool>("-h");
+  plot_grid = arguments.get<bool>("-g");
+  plot_grid_heatmap = arguments.get<bool>("-h");
   plot_intersections = arguments.get<bool>("-i");
 
   // Check whether n_points is specified but --simplify not passed

@@ -23,15 +23,15 @@ int main(const int argc, const char *argv[])
   std::string geo_file_name, visual_file_name;
 
   // Default number of grid cells along longer Cartesian coordinate axis
-  unsigned int long_graticule_length = default_long_graticule_length;
+  unsigned int long_grid_length = default_long_grid_length;
 
   // Target number of points to retain after simplification
   unsigned int target_points_per_inset = default_target_points_per_inset;
   bool world;  // World maps need special projections
 
-  // Another cartogram projection method based on triangulation of graticule
+  // Another cartogram projection method based on triangulation of grid
   // cells. It can eliminate intersections that occur when the projected
-  // graticule lines are strongly curved.
+  // grid lines are strongly curved.
   bool triangulation;
 
   // Shall the polygons be simplified?
@@ -40,9 +40,8 @@ int main(const int argc, const char *argv[])
   // Other boolean values that are needed to parse the command line arguments
 
   bool make_csv, produce_map_image, image_format_ps, output_equal_area,
-    output_to_stdout, plot_density, plot_graticule, plot_graticule_heatmap,
+    output_to_stdout, plot_density, plot_grid, plot_grid_heatmap,
     plot_intersections, crop;
-
 
   // Parse command-line arguments
   argparse::ArgumentParser arguments = parsed_arguments(
@@ -50,7 +49,7 @@ int main(const int argc, const char *argv[])
     argv,
     geo_file_name,
     visual_file_name,
-    long_graticule_length,
+    long_grid_length,
     target_points_per_inset,
     world,
     triangulation,
@@ -61,11 +60,10 @@ int main(const int argc, const char *argv[])
     output_equal_area,
     output_to_stdout,
     plot_density,
-    plot_graticule,
-    plot_graticule_heatmap,
+    plot_grid,
+    plot_grid_heatmap,
     plot_intersections,
     crop);
-
 
   // Initialize cart_info. It contains all information about the cartogram
   // that needs to be handled by functions called from main().
@@ -160,7 +158,7 @@ int main(const int argc, const char *argv[])
       } else {
         inset_state.apply_albers_projection();
       }
-    } else if (output_equal_area || plot_graticule_heatmap) {
+    } else if (output_equal_area || plot_grid_heatmap) {
       std::cerr << "ERROR: Input GeoJSON is not a longitude-latitude map."
                 << std::endl;
       return EXIT_FAILURE;
@@ -179,8 +177,8 @@ int main(const int argc, const char *argv[])
 
   // Replace missing and zero target areas with absolute values
   cart_info.replace_missing_and_zero_target_areas();
-  
-   // Project and exit
+
+  // Project and exit
   if (output_equal_area) {
 
     // Normalize areas
@@ -201,10 +199,10 @@ int main(const int argc, const char *argv[])
       output_to_stdout);
     return EXIT_SUCCESS;
   }
-  
+
   // Create map to store duration of each inset integrations
   std::map<std::string, ms> insets_integration_times;
-  
+
   // Iterate over insets
   for (auto &[inset_pos, inset_state] : *cart_info.ref_to_inset_states()) {
     // Determine the name of the inset
@@ -217,7 +215,7 @@ int main(const int argc, const char *argv[])
     inset_state.set_inset_name(inset_name);
 
     // Rescale map to fit into a rectangular box [0, lx] * [0, ly]
-    inset_state.rescale_map(long_graticule_length, cart_info.is_world_map());
+    inset_state.rescale_map(long_grid_length, cart_info.is_world_map());
 
     // Store original coordinates
     inset_state.store_original_geo_divs();
@@ -241,19 +239,15 @@ int main(const int argc, const char *argv[])
     if (produce_map_image) {
       std::string input_filename = inset_state.inset_name();
 
-      // Update filename with graticule info
-      plot_graticule ? input_filename += "_input_graticule"
-                      : input_filename += "_input";
+      // Update filename with grid info
+      plot_grid ? input_filename += "_input_grid" : input_filename += "_input";
 
       // Update extension
       image_format_ps ? input_filename += ".ps" : input_filename += ".svg";
 
       std::cerr << "Writing " << input_filename << std::endl;
-      inset_state.write_map_image(
-        input_filename,
-        true,
-        plot_graticule,
-        image_format_ps);
+      inset_state
+        .write_map_image(input_filename, true, plot_grid, image_format_ps);
     }
 
     // We make the approximation that the progress towards generating the
@@ -266,7 +260,7 @@ int main(const int argc, const char *argv[])
 
     // Start map integration
     while (inset_state.n_finished_integrations() < max_integrations &&
-            inset_state.max_area_error().value > max_permitted_area_error) {
+           inset_state.max_area_error().value > max_permitted_area_error) {
       std::cerr << "Integration number "
                 << inset_state.n_finished_integrations() << std::endl;
 
@@ -274,7 +268,7 @@ int main(const int argc, const char *argv[])
       // We slowly reduce the blur width so that the areas can reach their
       // target values.
       // TODO: whenever blur_width hits 0, the maximum area error will start
-      // increasing again and eventually lead to an invalid graticule cell
+      // increasing again and eventually lead to an invalid grid cell
       // error when projecting with triangulation. Investigate why. As a
       // temporary fix, we set blur_width to be always positive, regardless
       // of the number of integrations. This error also seems to occur when
@@ -292,7 +286,7 @@ int main(const int argc, const char *argv[])
 
       inset_state.fill_with_density(
         plot_density,
-        plot_graticule_heatmap,
+        plot_grid_heatmap,
         image_format_ps);
       if (blur_width > 0.0) {
         inset_state.blur_density(blur_width, plot_density, image_format_ps);
@@ -305,8 +299,8 @@ int main(const int argc, const char *argv[])
       inset_state.flatten_density();
       if (triangulation) {
 
-        // Choose diagonals that are inside graticule cells
-        inset_state.fill_graticule_diagonals();
+        // Choose diagonals that are inside grid cells
+        inset_state.fill_grid_diagonals();
 
         // Densify map
         inset_state.densify_geo_divs();
@@ -360,44 +354,40 @@ int main(const int argc, const char *argv[])
     if (produce_map_image) {
       std::string output_filename = inset_state.inset_name();
 
-      // Update filename with graticule info
-      plot_graticule ? output_filename += "_output_graticule"
-                      : output_filename += "_output";
+      // Update filename with grid info
+      plot_grid ? output_filename += "_output_grid"
+                : output_filename += "_output";
 
       // Update extension
       image_format_ps ? output_filename += ".ps" : output_filename += ".svg";
 
       std::cerr << "Writing " << output_filename << std::endl;
-      inset_state.write_map_image(
-        output_filename,
-        true,
-        plot_graticule,
-        image_format_ps);
+      inset_state
+        .write_map_image(output_filename, true, plot_grid, image_format_ps);
     }
 
-    if (plot_graticule_heatmap) {
-      // Produce equal-area graticule heatmap
+    if (plot_grid_heatmap) {
+      // Produce equal-area grid heatmap
       std::string output_filename =
-        inset_state.inset_name() + "_equal_area_graticule_heatmap";
+        inset_state.inset_name() + "_equal_area_grid_heatmap";
 
       // Update extension
       image_format_ps ? output_filename += ".ps" : output_filename += ".svg";
       std::cerr << "Writing " << output_filename << std::endl;
-      inset_state.write_graticule_heatmap_image(
+      inset_state.write_grid_heatmap_image(
         output_filename,
         true,
         image_format_ps,
         crop);
 
-      // Produce cartogram graticule heatmap
-      output_filename =
-        inset_state.inset_name() + "_cartogram_graticule_heatmap";
+      // Produce cartogram grid heatmap
+      output_filename = inset_state.inset_name() + "_cartogram_grid_heatmap";
 
       // Update extension
       image_format_ps ? output_filename += ".ps" : output_filename += ".svg";
 
       std::cerr << "Writing " << output_filename << std::endl;
-      inset_state.write_graticule_heatmap_image(
+      inset_state.write_grid_heatmap_image(
         output_filename,
         false,
         image_format_ps,
@@ -466,7 +456,6 @@ int main(const int argc, const char *argv[])
     std::cout,
     output_to_stdout);
 
-
   // End of main function time
   time_point end_main = clock_time::now();
 
@@ -479,8 +468,8 @@ int main(const int argc, const char *argv[])
   std::cerr << std::endl;
   std::cerr << "********** Time Report **********" << std::endl;
   std::cerr << "Parsing time: " << parsing_time.count() << " ms" << std::endl;
-  std::cerr << "Projection & Simplification (if any) time: " << proj_sim_time.count() << " ms"
-            << std::endl;
+  std::cerr << "Projection & Simplification (if any) time: "
+            << proj_sim_time.count() << " ms" << std::endl;
 
   // Iterate over the map and print integration times
   for (auto [inset_pos, inset_integration_time] : insets_integration_times) {
