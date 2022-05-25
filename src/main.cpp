@@ -155,7 +155,7 @@ int main(const int argc, const char *argv[])
       } else {
         inset_state.apply_albers_projection();
       }
-    } else if (output_equal_area) {
+    } else if (output_equal_area || plot_graticule_heatmap) {
       std::cerr << "ERROR: Input GeoJSON is not a longitude-latitude map."
                 << std::endl;
       return EXIT_FAILURE;
