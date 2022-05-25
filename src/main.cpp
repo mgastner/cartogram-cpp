@@ -124,8 +124,8 @@ int main(const int argc, const char *argv[])
   // Store total number of GeoDivs to monitor progress
   double total_geo_divs = cart_info.n_geo_divs();
 
-  // Albers projection start time
-  time_point start_albers_proj = clock_time::now();
+  // Projection and simplification start time
+  time_point start_proj_sim = clock_time::now();
 
   // Project map and ensure that all holes are inside polygons
   for (auto &[inset_pos, inset_state] : *cart_info.ref_to_inset_states()) {
@@ -175,7 +175,7 @@ int main(const int argc, const char *argv[])
   }
 
   // Albers projection end time
-  time_point end_albers_proj = clock_time::now();
+  time_point end_proj_sim = clock_time::now();
 
   // Replace missing and zero target areas with absolute values
   cart_info.replace_missing_and_zero_target_areas();
@@ -472,14 +472,14 @@ int main(const int argc, const char *argv[])
 
   // Calculate differences in time
   ms parsing_time = inMilliseconds(end_parse - start_parse);
-  ms albers_proj_time = inMilliseconds(end_albers_proj - start_albers_proj);
+  ms proj_sim_time = inMilliseconds(end_proj_sim - start_proj_sim);
   ms total_time = inMilliseconds(end_main - start_main);
 
   // Show Time Report
   std::cerr << std::endl;
   std::cerr << "********** Time Report **********" << std::endl;
   std::cerr << "Parsing time: " << parsing_time.count() << " ms" << std::endl;
-  std::cerr << "Albers projection time: " << albers_proj_time.count() << " ms"
+  std::cerr << "Projection & Simplification (if any) time: " << proj_sim_time.count() << " ms"
             << std::endl;
 
   // Iterate over the map and print integration times
