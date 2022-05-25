@@ -188,10 +188,11 @@ std::pair<double, double> InsetState::max_and_min_graticule_cell_area(
   return std::make_pair(max_area, min_area);
 }
 
+// Returns the index of largest and smallest graticule cell area to be used for
+// graticule heatmap generation
 std::pair<Point, Point> InsetState::max_and_min_graticule_cell_area_index(
   unsigned int cell_width)
 {
-
   // Initialize max and min area
   double max_area = -dbl_inf;
   double min_area = dbl_inf;
@@ -392,6 +393,8 @@ Color graticule_cell_color(
   }
 }
 
+// Calculates all graticule cell colors from cartogram map to be used in
+// the equal area graticule heatmap
 std::vector<std::vector<Color>> InsetState::graticule_cell_colors(
   unsigned int cell_width)
 {
@@ -547,6 +550,7 @@ void write_graticule_heatmap_bar_to_cairo_surface(
   // font_size); cairo_show_text(cr, bar_text_bottom.c_str());
 }
 
+// Given padding, makes padding area white
 void InsetState::trim_graticule_heatmap(cairo_t *cr, double padding)
 {
   // Canvas dimension
@@ -574,8 +578,11 @@ void InsetState::write_graticules_to_cairo_surface(cairo_t *cr)
   cairo_set_source_rgb(cr, 0.0, 0.0, 0.0);
 
   // Iterate over graticule cells
-  for (unsigned int i = 0; i < lx_ - plotted_cell_length; i += plotted_cell_length) {
-    for (unsigned int j = 0; j < ly_ - plotted_cell_length; j += plotted_cell_length) {
+  for (unsigned int i = 0; i < lx_ - plotted_cell_length;
+       i += plotted_cell_length) {
+    for (unsigned int j = 0; j < ly_ - plotted_cell_length;
+         j += plotted_cell_length) {
+
       // Draw graticule cell by connecting edge points
       const Polygon cell_edge_points = graticule_cell_edge_points(i, j);
       cairo_move_to(
@@ -752,15 +759,18 @@ void InsetState::write_polygons_to_cairo_surface(
       }
       if (colors || fill_polygons) {
         if (is_input_target_area_missing(gd.id())) {
+
           // Fill path with dark gray
           cairo_set_source_rgb(cr, 0.9375, 0.9375, 0.9375);
         } else if (colors) {
+
           // Get color
           const Color col = color_at(gd.id());
 
           // Fill path
           cairo_set_source_rgb(cr, col.r, col.g, col.b);
         } else if (fill_polygons) {
+
           // Fill path with default color
           cairo_set_source_rgb(cr, 0.96, 0.92, 0.70);
         }
@@ -811,6 +821,8 @@ void InsetState::write_map_image(
   cairo_destroy(cr);
 }
 
+// Given coordinates in 512 by 512 coordinate system, returns the corresponding
+// coordinates in the albers projection coordinate system
 Polygon InsetState::transform_to_albers_coor(Polygon edge_points)
 {
   Transformation scale(CGAL::SCALING, latt_const_);
@@ -820,6 +832,8 @@ Polygon InsetState::transform_to_albers_coor(Polygon edge_points)
   return cell_edge_points_albers;
 }
 
+// Given area in the albers projection coordinate system, returns the
+// corresponding area in the square km^2
 double albers_area_to_earth_area(const double albers_area)
 {
   return (albers_area * earth_surface_area) / (4 * pi);
@@ -1038,11 +1052,15 @@ void InsetState::write_graticule_heatmap_image(
     min_area_cell_point.y(),
     total_ta,
     total_ia);
-  std::cerr << std::endl;
-  std::cerr << "Max target area per km: " << max_target_area_per_km
-            << std::endl;
-  std::cerr << "Min target area per km: " << min_target_area_per_km
-            << std::endl;
+
+  if (plot_equal_area_map) {
+    std::cerr << std::endl;
+    std::cerr << "Max target area per km: " << max_target_area_per_km
+              << std::endl;
+    std::cerr << "Min target area per km: " << min_target_area_per_km
+              << std::endl
+              << std::endl;
+  }
 
   std::vector<int> nice_numbers =
     get_nice_numbers_for_bar(max_target_area_per_km);
@@ -1075,24 +1093,20 @@ void InsetState::write_graticule_heatmap_image(
   //   ly_);
 
   if (draw_bar) {
-    std::string bar_filename =
-      "bar_" + filename.substr(0, filename.size() - 2) + "svg";
-    // std::string bar_filename = "bar_" + filename;
+    std::string bar_filename = "bar_" + filename;
 
     // Create a cairo bar_surface
     cairo_surface_t *bar_surface =
-      cairo_svg_surface_create(bar_filename.c_str(), 160, 400);
-    // cairo_surface_t *bar_surface;
-    // image_format_ps
-    //   ? bar_surface = cairo_ps_surface_create(bar_filename.c_str(), 160,
-    //   400) : bar_surface = cairo_svg_surface_create(bar_filename.c_str(),
-    //   160, 400);
+      (image_format_ps
+         ? cairo_ps_surface_create(bar_filename.c_str(), 160, 400)
+         : cairo_svg_surface_create(bar_filename.c_str(), 160, 400));
+
     cairo_t *bar_cr = cairo_create(bar_surface);
 
     // Write header
-    // if (image_format_ps) {
-    //   write_ps_header(bar_filename, bar_surface);
-    // }
+    if (image_format_ps) {
+      write_ps_header(bar_filename, bar_surface);
+    }
 
     // Write bar
     write_graticule_heatmap_bar_to_cairo_surface(
@@ -1272,37 +1286,6 @@ void write_density_bar_to_cairo_surface(
   }
 }
 
-// This function creates a simple SVG/PS file with a density bar
-// void write_density_bar_image(std::string filename, const bool
-// image_format_ps)
-// {
-//   // Create a cairo surface
-//   cairo_surface_t *surface;
-
-//   // Create a cairo surface
-//   image_format_ps
-//     ? surface = cairo_ps_surface_create(filename.c_str(), 80, 200)
-//     : surface = cairo_svg_surface_create(filename.c_str(), 80, 200);
-//   cairo_t *cr = cairo_create(surface);
-
-//   // Write header
-//   if (image_format_ps) {
-//     write_ps_header(filename, surface);
-//   }
-
-//   write_density_bar_to_cairo_surface(
-//     -3,
-//     0,
-//     3,
-//     cr,
-//     Bbox(20.0, 15.0, 35.0, 165.0),
-//     200);
-
-//   cairo_show_page(cr);
-//   cairo_surface_destroy(surface);
-//   cairo_destroy(cr);
-// }
-
 void InsetState::write_density_image(
   const std::string filename,
   const double *density,
@@ -1311,12 +1294,11 @@ void InsetState::write_density_image(
 {
   // Whether to draw bar on the cairo surface
   const bool draw_bar = true;
-  cairo_surface_t *surface;
+  cairo_surface_t *surface =
+    (image_format_ps ? cairo_ps_surface_create(filename.c_str(), lx_, ly_)
+                     : cairo_svg_surface_create(filename.c_str(), lx_, ly_));
 
   // Create a cairo surface
-  image_format_ps
-    ? surface = cairo_ps_surface_create(filename.c_str(), lx_, ly_)
-    : surface = cairo_svg_surface_create(filename.c_str(), lx_, ly_);
   cairo_t *cr = cairo_create(surface);
 
   // Write header
@@ -1332,10 +1314,10 @@ void InsetState::write_density_image(
   cairo_set_line_width(cr, 0);
 
   // Determine range of densities
-  double dens_min = dens_min_;
-  double dens_mean = dens_mean_;
-  double dens_max = dens_max_;
-  double each_graticule_cell_area_km = graticule_cell_area_km(0, 0);
+  const double dens_min = dens_min_;
+  const double dens_mean = dens_mean_;
+  const double dens_max = dens_max_;
+  const double each_graticule_cell_area_km = graticule_cell_area_km(0, 0);
 
   // Crop it too
   if (plot_graticule_heatmap) {
@@ -1365,12 +1347,13 @@ void InsetState::write_density_image(
           for (unsigned int j = gd_bbox.ymin(); j < gd_bbox.ymax();
                j += cell_width) {
 
-            // Values here used are "Max target area per km" and
-            // "Min target area per km", which is obtained by running the
-            // code with the "plot_graticule_heatmap" -h flag set to true
             double target_area_km =
               density[i * ly_ + j] / each_graticule_cell_area_km;
 
+            // Values here used are "Max target area per km" and
+            // "Min target area per km", which is obtained by running the
+            // code with the "plot_graticule_heatmap" -h flag set to true
+            // Update here for new map
             Color color =
               graticule_cell_color(target_area_km, 660.058, 0.660816);
 
@@ -1427,34 +1410,21 @@ void InsetState::write_density_image(
   write_polygons_to_cairo_surface(cr, false, false, false);
 
   if (draw_bar && !plot_graticule_heatmap) {
-
-    // const Bbox bbox_bar = get_bbox_bar(15, 150);
-    // write_density_bar_to_cairo_surface(
-    //   dens_min - dens_mean,
-    //   0,
-    //   dens_max - dens_mean,
-    //   cr,
-    //   bbox_bar,
-    //   ly_);
-
-    std::string bar_filename =
-      "bar_" + filename.substr(0, filename.size() - 2) + "svg";
-    // std::string bar_filename = "bar_" + filename;
+    std::string bar_filename = "bar_" + filename;
 
     // Create a cairo bar_surface
     cairo_surface_t *bar_surface =
-      cairo_svg_surface_create(bar_filename.c_str(), 160, 400);
-    // cairo_surface_t *bar_surface;
-    // image_format_ps
-    //   ? bar_surface = cairo_ps_surface_create(bar_filename.c_str(), 160,
-    //   400) : bar_surface = cairo_svg_surface_create(bar_filename.c_str(),
-    //   160, 400);
+      (image_format_ps
+         ? cairo_ps_surface_create(bar_filename.c_str(), 160, 400)
+         : cairo_svg_surface_create(bar_filename.c_str(), 160, 400));
+
     cairo_t *bar_cr = cairo_create(bar_surface);
 
-    // Write header
-    // if (image_format_ps) {
-    //   write_ps_header(bar_filename, bar_surface);
-    // }
+    // Write header 
+    if (image_format_ps)
+    {
+      write_ps_header(bar_filename, bar_surface);
+    }
 
     write_density_bar_to_cairo_surface(
       dens_min - dens_mean,
