@@ -179,10 +179,32 @@ int main(const int argc, const char *argv[])
 
   // Replace missing and zero target areas with absolute values
   cart_info.replace_missing_and_zero_target_areas();
+  
+   // Project and exit
+  if (output_equal_area) {
 
+    // Normalize areas
+    for (auto &[inset_pos, inset_state] : *cart_info.ref_to_inset_states()) {
+      inset_state.normalize_inset_area(
+        cart_info.cart_total_target_area(),
+        output_equal_area);
+    }
+
+    // Shift insets so that they do not overlap
+    cart_info.shift_insets_to_target_position();
+
+    // Output to GeoJSON
+    cart_info.write_geojson(
+      geo_file_name,
+      map_name + "_equal_area.geojson",
+      std::cout,
+      output_to_stdout);
+    return EXIT_SUCCESS;
+  }
+  
   // Create map to store duration of each inset integrations
   std::map<std::string, ms> insets_integration_times;
-
+  
   // Iterate over insets
   for (auto &[inset_pos, inset_state] : *cart_info.ref_to_inset_states()) {
     // Determine the name of the inset
@@ -193,227 +215,208 @@ int main(const int argc, const char *argv[])
                 << std::endl;
     }
     inset_state.set_inset_name(inset_name);
-    if (simplify) {
-      // Simplification reduces the number of points used to represent the
-      // GeoDivs in the inset, thereby reducing output file sizes and run
-      // times
-      inset_state.simplify(target_points_per_inset);
+
+    // Rescale map to fit into a rectangular box [0, lx] * [0, ly]
+    inset_state.rescale_map(long_graticule_length, cart_info.is_world_map());
+
+    // Store original coordinates
+    inset_state.store_original_geo_divs();
+
+    // Set up Fourier transforms
+    const unsigned int lx = inset_state.lx();
+    const unsigned int ly = inset_state.ly();
+    inset_state.ref_to_rho_init()->allocate(lx, ly);
+    inset_state.ref_to_rho_ft()->allocate(lx, ly);
+    inset_state.make_fftw_plans_for_rho();
+    inset_state.initialize_cum_proj();
+    inset_state.initialize_identity_proj();
+    inset_state.set_area_errors();
+
+    // Automatically color GeoDivs if no colors are provided
+    if (inset_state.colors_empty()) {
+      inset_state.auto_color();
     }
-    if (output_equal_area) {
-      inset_state.normalize_inset_area(
-        cart_info.cart_total_target_area(),
-        output_equal_area);
-    } else {
 
-      // Rescale map to fit into a rectangular box [0, lx] * [0, ly]
-      inset_state.rescale_map(long_graticule_length, cart_info.is_world_map());
+    // Write PNG and PS files if requested by command-line option
+    if (produce_map_image) {
+      std::string input_filename = inset_state.inset_name();
 
-      // Store original coordinates
-      inset_state.store_original_geo_divs();
+      // Update filename with graticule info
+      plot_graticule ? input_filename += "_input_graticule"
+                      : input_filename += "_input";
 
-      // Set up Fourier transforms
-      const unsigned int lx = inset_state.lx();
-      const unsigned int ly = inset_state.ly();
-      inset_state.ref_to_rho_init()->allocate(lx, ly);
-      inset_state.ref_to_rho_ft()->allocate(lx, ly);
-      inset_state.make_fftw_plans_for_rho();
-      inset_state.initialize_cum_proj();
-      inset_state.initialize_identity_proj();
-      inset_state.set_area_errors();
+      // Update extension
+      image_format_ps ? input_filename += ".ps" : input_filename += ".svg";
 
-      // Automatically color GeoDivs if no colors are provided
-      if (inset_state.colors_empty()) {
-        inset_state.auto_color();
-      }
-
-      // Write PNG and PS files if requested by command-line option
-      if (produce_map_image) {
-        std::string input_filename = inset_state.inset_name();
-
-        // Update filename with graticule info
-        plot_graticule ? input_filename += "_input_graticule"
-                       : input_filename += "_input";
-
-        // Update extension
-        image_format_ps ? input_filename += ".ps" : input_filename += ".svg";
-
-        std::cerr << "Writing " << input_filename << std::endl;
-        inset_state.write_map_image(
-          input_filename,
-          true,
-          plot_graticule,
-          image_format_ps);
-      }
       std::cerr << "Writing " << input_filename << std::endl;
-      inset_state.write_cairo_map(input_filename, plot_graticule);
+      inset_state.write_map_image(
+        input_filename,
+        true,
+        plot_graticule,
+        image_format_ps);
     }
 
-      // We make the approximation that the progress towards generating the
-      // cartogram is proportional to the number of GeoDivs that are in the
-      // finished insets
-      const double inset_max_frac = inset_state.n_geo_divs() / total_geo_divs;
+    // We make the approximation that the progress towards generating the
+    // cartogram is proportional to the number of GeoDivs that are in the
+    // finished insets
+    const double inset_max_frac = inset_state.n_geo_divs() / total_geo_divs;
 
-      // Integration start time
-      time_point start_integration = clock_time::now();
+    // Integration start time
+    time_point start_integration = clock_time::now();
 
-      // Start map integration
-      while (inset_state.n_finished_integrations() < max_integrations &&
-             inset_state.max_area_error().value > max_permitted_area_error) {
-        std::cerr << "Integration number "
-                  << inset_state.n_finished_integrations() << std::endl;
+    // Start map integration
+    while (inset_state.n_finished_integrations() < max_integrations &&
+            inset_state.max_area_error().value > max_permitted_area_error) {
+      std::cerr << "Integration number "
+                << inset_state.n_finished_integrations() << std::endl;
 
-        // Blur density to speed up the numerics in flatten_density() below.
-        // We slowly reduce the blur width so that the areas can reach their
-        // target values.
-        // TODO: whenever blur_width hits 0, the maximum area error will start
-        // increasing again and eventually lead to an invalid graticule cell
-        // error when projecting with triangulation. Investigate why. As a
-        // temporary fix, we set blur_width to be always positive, regardless
-        // of the number of integrations. This error also seems to occur when
-        // the starting blur width is too low to begin with.
-        // TODO: Add option to customise starting blur width.
-        double blur_width = std::pow(
-          2.0,
-          3 -
-            static_cast<unsigned int>(inset_state.n_finished_integrations()));
-        // if (inset_state.n_finished_integrations() < max_integrations) {
-        //   blur_width =
-        //     std::pow(2.0, 3 - int(inset_state.n_finished_integrations()));
-        // } else {
-        //   blur_width = 0.0;
-        // }
-        std::cerr << "blur_width = " << blur_width << std::endl;
+      // Blur density to speed up the numerics in flatten_density() below.
+      // We slowly reduce the blur width so that the areas can reach their
+      // target values.
+      // TODO: whenever blur_width hits 0, the maximum area error will start
+      // increasing again and eventually lead to an invalid graticule cell
+      // error when projecting with triangulation. Investigate why. As a
+      // temporary fix, we set blur_width to be always positive, regardless
+      // of the number of integrations. This error also seems to occur when
+      // the starting blur width is too low to begin with.
+      // TODO: Add option to customise starting blur width.
+      double blur_width =
+        std::pow(2.0, 5 - int(inset_state.n_finished_integrations()));
+      // if (inset_state.n_finished_integrations() < max_integrations) {
+      //   blur_width =
+      //     std::pow(2.0, 3 - int(inset_state.n_finished_integrations()));
+      // } else {
+      //   blur_width = 0.0;
+      // }
+      std::cerr << "blur_width = " << blur_width << std::endl;
 
-        inset_state.fill_with_density(
-          plot_density,
-          plot_graticule_heatmap,
-          image_format_ps);
-        if (blur_width > 0.0) {
-          inset_state.blur_density(blur_width, plot_density, image_format_ps);
-        }
-        if (plot_intersections) {
-          inset_state.write_intersections_image(
-            intersections_resolution,
-            image_format_ps);
-        }
-        inset_state.flatten_density();
-        if (triangulation) {
-
-          // Choose diagonals that are inside graticule cells
-          inset_state.fill_graticule_diagonals();
-
-          // Densify map
-          inset_state.densify_geo_divs();
-
-          // Project with triangulation
-          inset_state.project_with_triangulation();
-        } else {
-          inset_state.project();
-        }
-        if (simplify) {
-          inset_state.simplify(target_points_per_inset);
-        }
-        inset_state.increment_integration();
-
-        // Update area errors
-        inset_state.set_area_errors();
-
-        // Calculate progress percentage. We assume that the maximum area
-        // error is typically reduced to 1/10 of the previous value.
-        const double ratio_actual_to_permitted_max_area_error = std::max(
-          inset_state.max_area_error().value / max_permitted_area_error,
-          1.0);
-        const double n_predicted_integrations =
-          std::max((log10(ratio_actual_to_permitted_max_area_error)), 1.0);
-
-        std::cerr << "max. area err: " << inset_state.max_area_error().value
-                  << ", GeoDiv: " << inset_state.max_area_error().geo_div
-                  << "\nProgress: "
-                  << progress + (inset_max_frac / n_predicted_integrations)
-                  << std::endl
-                  << std::endl;
+      inset_state.fill_with_density(
+        plot_density,
+        plot_graticule_heatmap,
+        image_format_ps);
+      if (blur_width > 0.0) {
+        inset_state.blur_density(blur_width, plot_density, image_format_ps);
       }
-
-      // Integration end time
-      time_point end_integration = clock_time::now();
-
-      // Add integration time to the map
-      insets_integration_times[inset_pos] =
-        inMilliseconds(end_integration - start_integration);
-      progress += inset_max_frac;
-      std::cerr << "Finished inset " << inset_pos << "\nProgress: " << progress
-                << std::endl;
-
       if (plot_intersections) {
         inset_state.write_intersections_image(
           intersections_resolution,
           image_format_ps);
       }
+      inset_state.flatten_density();
+      if (triangulation) {
 
-      // Print PS files of cartogram
-      if (produce_map_image) {
-        std::string output_filename = inset_state.inset_name();
+        // Choose diagonals that are inside graticule cells
+        inset_state.fill_graticule_diagonals();
 
-        // Update filename with graticule info
-        plot_graticule ? output_filename += "_output_graticule"
-                       : output_filename += "_output";
+        // Densify map
+        inset_state.densify_geo_divs();
 
-        // Update extension
-        image_format_ps ? output_filename += ".ps" : output_filename += ".svg";
-
-        std::cerr << "Writing " << output_filename << std::endl;
-        inset_state.write_map_image(
-          output_filename,
-          true,
-          plot_graticule,
-          image_format_ps);
-      }
-
-      if (plot_graticule_heatmap) {
-        // Produce equal-area graticule heatmap
-        std::string output_filename =
-          inset_state.inset_name() + "_equal_area_graticule_heatmap";
-
-        // Update extension
-        image_format_ps ? output_filename += ".ps" : output_filename += ".svg";
-        std::cerr << "Writing " << output_filename << std::endl;
-        inset_state.write_graticule_heatmap_image(
-          output_filename,
-          true,
-          image_format_ps,
-          crop);
-
-        // Produce cartogram graticule heatmap
-        output_filename =
-          inset_state.inset_name() + "_cartogram_graticule_heatmap";
-
-        // Update extension
-        image_format_ps ? output_filename += ".ps" : output_filename += ".svg";
-
-        std::cerr << "Writing " << output_filename << std::endl;
-        inset_state.write_graticule_heatmap_image(
-          output_filename,
-          false,
-          image_format_ps,
-          crop);
-      }
-      if (world) {
-        std::string output_file_name =
-          map_name + "_cartogram_in_smyth_projection.geojson";
-        cart_info.write_geojson(
-          geo_file_name,
-          output_file_name,
-          std::cout,
-          output_to_stdout);
-        inset_state.revert_smyth_craster_projection();
+        // Project with triangulation
+        inset_state.project_with_triangulation();
       } else {
-        // Rescale insets in correct proportion to each other
-        inset_state.normalize_inset_area(cart_info.cart_total_target_area());
-
+        inset_state.project();
       }
-      std::cerr << "Writing " << output_filename << std::endl;
-      inset_state.write_cairo_map(output_filename, plot_graticule);
+      if (simplify) {
+        inset_state.simplify(target_points_per_inset);
+      }
+      inset_state.increment_integration();
+
+      // Update area errors
+      inset_state.set_area_errors();
+
+      // Calculate progress percentage. We assume that the maximum area
+      // error is typically reduced to 1/10 of the previous value.
+      const double ratio_actual_to_permitted_max_area_error = std::max(
+        inset_state.max_area_error().value / max_permitted_area_error,
+        1.0);
+      const double n_predicted_integrations =
+        std::max((log10(ratio_actual_to_permitted_max_area_error)), 1.0);
+
+      std::cerr << "max. area err: " << inset_state.max_area_error().value
+                << ", GeoDiv: " << inset_state.max_area_error().geo_div
+                << "\nProgress: "
+                << progress + (inset_max_frac / n_predicted_integrations)
+                << std::endl
+                << std::endl;
     }
+
+    // Integration end time
+    time_point end_integration = clock_time::now();
+
+    // Add integration time to the map
+    insets_integration_times[inset_pos] =
+      inMilliseconds(end_integration - start_integration);
+    progress += inset_max_frac;
+    std::cerr << "Finished inset " << inset_pos << "\nProgress: " << progress
+              << std::endl;
+
+    if (plot_intersections) {
+      inset_state.write_intersections_image(
+        intersections_resolution,
+        image_format_ps);
+    }
+
+    // Print PS files of cartogram
+    if (produce_map_image) {
+      std::string output_filename = inset_state.inset_name();
+
+      // Update filename with graticule info
+      plot_graticule ? output_filename += "_output_graticule"
+                      : output_filename += "_output";
+
+      // Update extension
+      image_format_ps ? output_filename += ".ps" : output_filename += ".svg";
+
+      std::cerr << "Writing " << output_filename << std::endl;
+      inset_state.write_map_image(
+        output_filename,
+        true,
+        plot_graticule,
+        image_format_ps);
+    }
+
+    if (plot_graticule_heatmap) {
+      // Produce equal-area graticule heatmap
+      std::string output_filename =
+        inset_state.inset_name() + "_equal_area_graticule_heatmap";
+
+      // Update extension
+      image_format_ps ? output_filename += ".ps" : output_filename += ".svg";
+      std::cerr << "Writing " << output_filename << std::endl;
+      inset_state.write_graticule_heatmap_image(
+        output_filename,
+        true,
+        image_format_ps,
+        crop);
+
+      // Produce cartogram graticule heatmap
+      output_filename =
+        inset_state.inset_name() + "_cartogram_graticule_heatmap";
+
+      // Update extension
+      image_format_ps ? output_filename += ".ps" : output_filename += ".svg";
+
+      std::cerr << "Writing " << output_filename << std::endl;
+      inset_state.write_graticule_heatmap_image(
+        output_filename,
+        false,
+        image_format_ps,
+        crop);
+    }
+    if (world) {
+      std::string output_file_name =
+        map_name + "_cartogram_in_smyth_projection.geojson";
+      cart_info.write_geojson(
+        geo_file_name,
+        output_file_name,
+        std::cout,
+        output_to_stdout);
+      inset_state.revert_smyth_craster_projection();
+    } else {
+      // Rescale insets in correct proportion to each other
+      inset_state.normalize_inset_area(cart_info.cart_total_target_area());
+    }
+
     if (world) {
       std::string output_file_name =
         map_name + "_cartogram_in_smyth_projection.geojson";
