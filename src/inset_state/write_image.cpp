@@ -14,6 +14,9 @@
 #include <string>
 #include <vector>
 
+// Graticule cell width/height
+constexpr unsigned int plotted_cell_length = 7;
+
 void write_ps_header(const std::string filename, cairo_surface_t *surface)
 {
   const std::string title = "%%Title: " + filename;
@@ -114,7 +117,7 @@ void InsetState::write_labels_to_cairo_surface(cairo_t *cr)
 Polygon InsetState::graticule_cell_edge_points(
   unsigned int x,
   unsigned int y,
-  unsigned int cell_width = graticule_width,
+  unsigned int cell_width = plotted_cell_length,
   bool plot_equal_area_map = false)
 {
   Polygon cell_edge_points;
@@ -571,8 +574,8 @@ void InsetState::write_graticules_to_cairo_surface(cairo_t *cr)
   cairo_set_source_rgb(cr, 0.0, 0.0, 0.0);
 
   // Iterate over graticule cells
-  for (unsigned int i = 0; i < lx_ - graticule_width; i += graticule_width) {
-    for (unsigned int j = 0; j < ly_ - graticule_width; j += graticule_width) {
+  for (unsigned int i = 0; i < lx_ - plotted_cell_length; i += plotted_cell_length) {
+    for (unsigned int j = 0; j < ly_ - plotted_cell_length; j += plotted_cell_length) {
       // Draw graticule cell by connecting edge points
       const Polygon cell_edge_points = graticule_cell_edge_points(i, j);
       cairo_move_to(
