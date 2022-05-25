@@ -107,7 +107,6 @@ public:
   void flatten_density();
 
   const std::vector<GeoDiv> geo_divs() const;
-  const std::vector<GeoDiv> geo_divs_original() const;
   std::vector<std::vector<Color>> grid_cell_colors(
     unsigned int cell_width);
   Polygon grid_cell_edge_points(

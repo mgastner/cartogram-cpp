@@ -76,11 +76,6 @@ const std::vector<GeoDiv> InsetState::geo_divs() const
   return geo_divs_;
 }
 
-const std::vector<GeoDiv> InsetState::geo_divs_original() const
-{
-  return geo_divs_original_;
-}
-
 void InsetState::increment_integration()
 {
   n_finished_integrations_ += 1;
