@@ -98,7 +98,7 @@ void InsetState::initialize_cum_proj()
   }
 }
 
-void InsetState::initialize_original_proj()
+void InsetState::initialize_identity_proj()
 {
   identity_proj_.resize(boost::extents[lx_][ly_]);
   for (unsigned int i = 0; i < lx_; ++i) {

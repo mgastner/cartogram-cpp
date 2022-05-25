@@ -137,7 +137,7 @@ public:
     unsigned int) const;
   void increment_integration();
   void initialize_cum_proj();
-  void initialize_original_proj();
+  void initialize_identity_proj();
   void insert_color(const std::string, const Color);
   void insert_color(const std::string, const std::string);
   void insert_label(const std::string, const std::string);
