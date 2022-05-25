@@ -7,7 +7,7 @@
 
 struct Color {
 
-  // red, green, blue values between 0 to 1
+  // red, green, blue values between 0 and 1
   double r;
   double g;
   double b;
