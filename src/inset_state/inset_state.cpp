@@ -129,9 +129,9 @@ void InsetState::insert_target_area(const std::string id, const double area)
 }
 
 void InsetState::insert_whether_input_target_area_is_missing(
-    const std::string id,
-    const bool is_missing
-) {
+  const std::string id,
+  const bool is_missing)
+{
   is_input_target_area_missing_.insert(
     std::pair<std::string, bool>(id, is_missing));
   return;
@@ -166,8 +166,7 @@ void InsetState::make_fftw_plans_for_rho()
     rho_ft_.as_1d_array(),
     FFTW_REDFT10,
     FFTW_REDFT10,
-    FFTW_ESTIMATE
-  );
+    FFTW_ESTIMATE);
   bwd_plan_for_rho_ = fftw_plan_r2r_2d(
     lx_,
     ly_,
@@ -175,8 +174,7 @@ void InsetState::make_fftw_plans_for_rho()
     rho_init_.as_1d_array(),
     FFTW_REDFT01,
     FFTW_REDFT01,
-    FFTW_ESTIMATE
-  );
+    FFTW_ESTIMATE);
   return;
 }
 
@@ -215,7 +213,7 @@ unsigned long InsetState::n_points() const
 unsigned int InsetState::n_rings() const
 {
   unsigned int n_rings = 0;
-  for (const auto &gd: geo_divs_) {
+  for (const auto &gd : geo_divs_) {
     n_rings += gd.n_rings();
   }
   return n_rings;
@@ -267,9 +265,9 @@ void InsetState::set_area_errors()
 }
 
 void InsetState::set_grid_dimensions(
-    const unsigned int lx,
-    const unsigned int ly
-) {
+  const unsigned int lx,
+  const unsigned int ly)
+{
   lx_ = lx;
   ly_ = ly;
   return;

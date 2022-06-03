@@ -183,8 +183,6 @@ int main(const int argc, const char *argv[])
     // Rescale map to fit into a rectangular box [0, lx] * [0, ly]
     inset_state.rescale_map(long_graticule_length, cart_info.is_world_map());
 
-    inset_state.min_ellipses();
-
     // Set up Fourier transforms
     const unsigned int lx = inset_state.lx();
     const unsigned int ly = inset_state.ly();
@@ -193,6 +191,11 @@ int main(const int argc, const char *argv[])
     inset_state.make_fftw_plans_for_rho();
     inset_state.initialize_cum_proj();
     inset_state.set_area_errors();
+
+    inset_state.min_ellipses();
+    inset_state.fill_with_ellipse_density(plot_density);
+    
+    return EXIT_SUCCESS;
 
     // Automatically color GeoDivs if no colors are provided
     if (inset_state.colors_empty()) {
@@ -210,8 +213,6 @@ int main(const int argc, const char *argv[])
       std::cerr << "Writing " << input_filename << std::endl;
       inset_state.write_cairo_map(input_filename, plot_graticule);
     }
-
-    return EXIT_SUCCESS;
 
     // We make the approximation that the progress towards generating the
     // cartogram is proportional to the number of GeoDivs that are in the

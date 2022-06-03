@@ -18,7 +18,8 @@ struct max_area_error_info {
   std::string geo_div;
 };
 
-class InsetState {
+class InsetState
+{
 private:
   std::unordered_map<std::string, double> area_errors_;
   Bbox bbox_;  // Bounding box
@@ -51,8 +52,11 @@ private:
   std::vector<std::vector<intersection> > vertical_adj_;
 
   // Create cairo surface
-  void write_polygons_to_cairo_surface(cairo_t *, const bool,
-                                       const bool, const bool);
+  void write_polygons_to_cairo_surface(
+    cairo_t *,
+    const bool,
+    const bool,
+    const bool);
   // Make default contructor private so that only
   // InsetState(const std::string) can be called as constructor
   InsetState();
@@ -75,6 +79,7 @@ public:
   void create_contiguity_graph(unsigned int);
   void densify_geo_divs();
   void destroy_fftw_plans_for_rho();
+  double delta_rho(Ellipse, double, double, double, double);
   void execute_fftw_bwd_plan() const;
   void execute_fftw_fwd_plan() const;
   void exit_if_not_on_grid_or_edge(const Point p1) const;
@@ -82,13 +87,13 @@ public:
 
   // Density functions
   void fill_with_density(bool);  // Fill map with density, using scanlines
+  void fill_with_ellipse_density(bool);
   void flatten_density();  // Flatten said density with integration
 
   const std::vector<GeoDiv> geo_divs() const;
   void holes_inside_polygons();
   const std::vector<std::vector<intersection> > horizontal_scans(
-    unsigned int
-  ) const;
+    unsigned int) const;
   void increment_integration();
   void initialize_cum_proj();
   void insert_color(const std::string, const Color);
@@ -97,15 +102,13 @@ public:
   void insert_target_area(const std::string, const double);
   void insert_whether_input_target_area_is_missing(
     const std::string,
-    const bool
-  );
+    const bool);
   const std::string inset_name() const;
   nlohmann::json inset_to_geojson(bool) const;
   const std::vector<Segment> intersecting_segments(unsigned int) const;
   std::vector<std::vector<intersection> > intersec_with_parallel_to(
     char,
-    unsigned int
-  ) const;
+    unsigned int) const;
   bool is_input_target_area_missing(const std::string) const;
   std::string label_at(const std::string) const;
   unsigned int lx() const;
@@ -150,14 +153,12 @@ public:
     const std::string,
     const bool,
     const bool,
-    const bool
-  );
+    const bool);
   void write_cairo_polygons_to_ps(
     const std::string,
     const bool,
     const bool,
-    const bool
-  );
+    const bool);
 
   // Functions to write map to eps
   void write_density_to_eps(const std::string, const double *);
