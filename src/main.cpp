@@ -194,8 +194,6 @@ int main(const int argc, const char *argv[])
 
     inset_state.min_ellipses();
     inset_state.fill_with_ellipse_density(plot_density);
-    
-    return EXIT_SUCCESS;
 
     // Automatically color GeoDivs if no colors are provided
     if (inset_state.colors_empty()) {
@@ -213,6 +211,37 @@ int main(const int argc, const char *argv[])
       std::cerr << "Writing " << input_filename << std::endl;
       inset_state.write_cairo_map(input_filename, plot_graticule);
     }
+
+    // DELETE AFTER DEBUGGING
+    inset_state.execute_fftw_fwd_plan();
+    inset_state.flatten_density();
+    if (triangulation) {
+      inset_state.fill_graticule_diagonals();
+      inset_state.densify_geo_divs();
+      inset_state.project_with_triangulation();
+    } else {
+      inset_state.project();
+    }
+    if (simplify) {
+      inset_state.simplify(target_points_per_inset);
+    }
+    if (plot_polygons) {
+      std::string output_filename = inset_state.inset_name();
+      if (plot_graticule) {
+        output_filename += "_output_graticule";
+      } else {
+        output_filename += "_output";
+      }
+      std::cerr << "Writing " << output_filename << std::endl;
+      inset_state.write_cairo_map(output_filename, plot_graticule);
+    }
+    cart_info.write_geojson(
+      geo_file_name,
+      map_name + "_cartogram.geojson",
+      std::cout,
+      output_to_stdout);
+    return EXIT_SUCCESS;
+
 
     // We make the approximation that the progress towards generating the
     // cartogram is proportional to the number of GeoDivs that are in the

@@ -7,22 +7,22 @@
 // Function to calculate the velocity at the grid points (x, y) with x =
 // 0.5, 1.5, ..., lx-0.5 and y = 0.5, 1.5, ..., ly-0.5 at time t
 void calculate_velocity(
-    double t,
-    FTReal2d &grid_fluxx_init,
-    FTReal2d &grid_fluxy_init,
-    FTReal2d &rho_ft,
-    FTReal2d &rho_init_,
-    boost::multi_array<double, 2> *grid_vx,
-    boost::multi_array<double, 2> *grid_vy,
-    const unsigned int lx,
-    const unsigned int ly
-) {
+  double t,
+  FTReal2d &grid_fluxx_init,
+  FTReal2d &grid_fluxy_init,
+  FTReal2d &rho_ft,
+  FTReal2d &rho_init_,
+  boost::multi_array<double, 2> *grid_vx,
+  boost::multi_array<double, 2> *grid_vy,
+  const unsigned int lx,
+  const unsigned int ly)
+{
   double rho;
 
 #pragma omp parallel for private(rho)
   for (unsigned int i = 0; i < lx; ++i) {
     for (unsigned int j = 0; j < ly; ++j) {
-      rho = rho_ft(0, 0) + (1.0 - t) * (rho_init_(i, j) - rho_ft(0,0));
+      rho = rho_ft(0, 0) + (1.0 - t) * (rho_init_(i, j) - rho_ft(0, 0));
       (*grid_vx)[i][j] = -grid_fluxx_init(i, j) / rho;
       (*grid_vy)[i][j] = -grid_fluxy_init(i, j) / rho;
     }
@@ -31,12 +31,12 @@ void calculate_velocity(
 }
 
 bool all_points_are_in_domain(
-    double delta_t,
-    boost::multi_array<XYPoint, 2> *proj,
-    boost::multi_array<XYPoint, 2> *v_intp,
-    const unsigned int lx,
-    const unsigned int ly
-) {
+  double delta_t,
+  boost::multi_array<XYPoint, 2> *proj,
+  boost::multi_array<XYPoint, 2> *v_intp,
+  const unsigned int lx,
+  const unsigned int ly)
+{
   // Return false if and only if there exists a point that would be outside
   // [0, lx] x [0, ly]
   for (unsigned int i = 0; i < lx; ++i) {
@@ -104,8 +104,8 @@ void InsetState::flatten_density()
   boost::multi_array<XYPoint, 2> v_intp_half(boost::extents[lx_][ly_]);
 
   // Initialize the Fourier transforms of gridvx[] and gridvy[] at
-  // every point on the lx_-times-ly_ grid at t = 0. We must typecast lx_ and ly_
-  // as double-precision numbers. Otherwise the ratios in the denominator
+  // every point on the lx_-times-ly_ grid at t = 0. We must typecast lx_ and
+  // ly_ as double-precision numbers. Otherwise the ratios in the denominator
   // will evaluate as zero.
   double dlx = lx_;
   double dly = ly_;
@@ -114,27 +114,27 @@ void InsetState::flatten_density()
   // y-components of the flux vector into grid_fluxx_init and grid_fluxy_init.
   // The reason for `+1` in `di+1` stems from the RODFT10 formula at:
   // https://www.fftw.org/fftw3_doc/1d-Real_002dodd-DFTs-_0028DSTs_0029.html
-  for (unsigned int i = 0; i < lx_-1; ++i) {
+  for (unsigned int i = 0; i < lx_ - 1; ++i) {
     double di = i;
     for (unsigned int j = 0; j < ly_; ++j) {
-      double denom = pi * ((di+1)/dlx + (j/(di+1)) * (j/dly) * (dlx/dly));
-      grid_fluxx_init(i, j) =
-        -rho_ft_(i+1, j) / denom;
+      double denom =
+        pi * ((di + 1) / dlx + (j / (di + 1)) * (j / dly) * (dlx / dly));
+      grid_fluxx_init(i, j) = -rho_ft_(i + 1, j) / denom;
     }
   }
   for (unsigned int j = 0; j < ly_; ++j) {
-    grid_fluxx_init(lx_-1, j) = 0.0;
+    grid_fluxx_init(lx_ - 1, j) = 0.0;
   }
-  for (unsigned int i=0; i<lx_; ++i) {
+  for (unsigned int i = 0; i < lx_; ++i) {
     double di = i;
-    for (unsigned int j = 0; j < ly_-1; ++j) {
-      double denom = pi * ((di/(j+1)) * (di/dlx) * (dly/dlx) + (j+1)/dly);
-      grid_fluxy_init(i, j) =
-        -rho_ft_(i, j+1) / denom;
+    for (unsigned int j = 0; j < ly_ - 1; ++j) {
+      double denom =
+        pi * ((di / (j + 1)) * (di / dlx) * (dly / dlx) + (j + 1) / dly);
+      grid_fluxy_init(i, j) = -rho_ft_(i, j + 1) / denom;
     }
   }
-  for (unsigned int i=0; i<lx_; ++i) {
-    grid_fluxy_init(i, ly_-1) = 0.0;
+  for (unsigned int i = 0; i < lx_; ++i) {
+    grid_fluxy_init(i, ly_ - 1) = 0.0;
   }
 
   // Compute the flux vector and store the result in grid_fluxx_init and
@@ -156,8 +156,7 @@ void InsetState::flatten_density()
       &grid_vx,
       &grid_vy,
       lx_,
-      ly_
-    );
+      ly_);
 #pragma omp parallel for
     for (unsigned int i = 0; i < lx_; ++i) {
       for (unsigned int j = 0; j < ly_; ++j) {
@@ -173,16 +172,14 @@ void InsetState::flatten_density()
           &grid_vx,
           'x',
           lx_,
-          ly_
-        );
+          ly_);
         v_intp[i][j].y = interpolate_bilinearly(
           proj_[i][j].x,
           proj_[i][j].y,
           &grid_vy,
           'y',
           lx_,
-          ly_
-        );
+          ly_);
       }
     }
     bool accept = false;
@@ -204,7 +201,7 @@ void InsetState::flatten_density()
       //                        t + 0.5*delta_t)
       // and similarly for y.
       calculate_velocity(
-        t + 0.5*delta_t,
+        t + 0.5 * delta_t,
         grid_fluxx_init,
         grid_fluxy_init,
         rho_ft_,
@@ -212,8 +209,7 @@ void InsetState::flatten_density()
         &grid_vx,
         &grid_vy,
         lx_,
-        ly_
-      );
+        ly_);
 
       // Make sure we do not pass a point outside [0, lx_] x [0, ly_] to
       // interpolate_bilinearly(). Otherwise decrease the time step below and
@@ -227,21 +223,19 @@ void InsetState::flatten_density()
         for (unsigned int i = 0; i < lx_; ++i) {
           for (unsigned int j = 0; j < ly_; ++j) {
             v_intp_half[i][j].x = interpolate_bilinearly(
-              proj_[i][j].x + 0.5*delta_t*v_intp[i][j].x,
-              proj_[i][j].y + 0.5*delta_t*v_intp[i][j].y,
+              proj_[i][j].x + 0.5 * delta_t * v_intp[i][j].x,
+              proj_[i][j].y + 0.5 * delta_t * v_intp[i][j].y,
               &grid_vx,
               'x',
               lx_,
-              ly_
-            );
+              ly_);
             v_intp_half[i][j].y = interpolate_bilinearly(
-              proj_[i][j].x + 0.5*delta_t*v_intp[i][j].x,
-              proj_[i][j].y + 0.5*delta_t*v_intp[i][j].y,
+              proj_[i][j].x + 0.5 * delta_t * v_intp[i][j].x,
+              proj_[i][j].y + 0.5 * delta_t * v_intp[i][j].y,
               &grid_vy,
               'y',
               lx_,
-              ly_
-            );
+              ly_);
             mid[i][j].x = proj_[i][j].x + v_intp_half[i][j].x * delta_t;
             mid[i][j].y = proj_[i][j].y + v_intp_half[i][j].y * delta_t;
 
@@ -251,11 +245,11 @@ void InsetState::flatten_density()
             // of the positions wandered out of the domain. If one of these
             // problems occurred, decrease the time step.
             const double sq_dist =
-              (mid[i][j].x-eul[i][j].x) * (mid[i][j].x-eul[i][j].x)
-              + (mid[i][j].y-eul[i][j].y) * (mid[i][j].y-eul[i][j].y);
-            if (sq_dist > abs_tol ||
-                mid[i][j].x < 0.0 || mid[i][j].x > lx_ ||
-                mid[i][j].y < 0.0 || mid[i][j].y > ly_) {
+              (mid[i][j].x - eul[i][j].x) * (mid[i][j].x - eul[i][j].x) +
+              (mid[i][j].y - eul[i][j].y) * (mid[i][j].y - eul[i][j].y);
+            if (
+              sq_dist > abs_tol || mid[i][j].x < 0.0 || mid[i][j].x > lx_ ||
+              mid[i][j].y < 0.0 || mid[i][j].y > ly_) {
               accept = false;
             }
           }
@@ -268,13 +262,8 @@ void InsetState::flatten_density()
 
     // Control ouput
     if (iter % 10 == 0) {
-      std::cerr << "iter = "
-                << iter
-                << ", t = "
-                << t
-                << ", delta_t = "
-                << delta_t
-                << "\n";
+      std::cerr << "iter = " << iter << ", t = " << t
+                << ", delta_t = " << delta_t << "\n";
     }
 
     // When we get here, the integration step was accepted
@@ -283,6 +272,14 @@ void InsetState::flatten_density()
     proj_ = mid;
     delta_t *= inc_after_acc;  // Try a larger step next time
   }
+
+//  for (unsigned int i = 0; i < lx_; ++i) {
+//    for (unsigned int j = 0; j < ly_; ++j) {
+//      std::cerr << "proj[" << i << "][" << j << "] = (" << proj_[i][j].x
+//                << ", " << proj_[i][j].y << ")\n";
+//    }
+//  }
+
   grid_fluxx_init.destroy_fftw_plan();
   grid_fluxy_init.destroy_fftw_plan();
   grid_fluxx_init.free();
