@@ -336,7 +336,6 @@ Color grid_cell_color(
 
     // White to purple
     Color("#ffffff"),
-    // -Color("#f7f7f7"),
     Color("#efedf5"),
     Color("#dadaeb"),
     Color("#bcbddc"),
@@ -347,7 +346,7 @@ Color grid_cell_color(
     Color("#3f007d")
 
     // White to green
-    // Color("#f7fcf5"),
+    // Color("#ffffff"),
     // Color("#e5f5e0"),
     // Color("#c7e9c0"),
     // Color("#a1d99b"),
@@ -1420,7 +1419,7 @@ void InsetState::write_density_image(
 
     cairo_t *bar_cr = cairo_create(bar_surface);
 
-    // Write header 
+    // Write header
     if (image_format_ps)
     {
       write_ps_header(bar_filename, bar_surface);

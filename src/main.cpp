@@ -407,21 +407,6 @@ int main(const int argc, const char *argv[])
       inset_state.normalize_inset_area(cart_info.cart_total_target_area());
     }
 
-    if (world) {
-      std::string output_file_name =
-        map_name + "_cartogram_in_smyth_projection.geojson";
-      cart_info.write_geojson(
-        geo_file_name,
-        output_file_name,
-        std::cout,
-        output_to_stdout);
-      inset_state.revert_smyth_craster_projection();
-    } else {
-
-      // Rescale insets in correct proportion to each other
-      inset_state.normalize_inset_area(cart_info.cart_total_target_area());
-    }
-
     // Clean up after finishing all Fourier transforms for this inset
     inset_state.destroy_fftw_plans_for_rho();
     inset_state.ref_to_rho_init()->free();
@@ -443,13 +428,6 @@ int main(const int argc, const char *argv[])
   cart_info.shift_insets_to_target_position();
 
   // Output to GeoJSON
-  std::string output_file_name;
-  if (output_equal_area) {
-    output_file_name = map_name + "_equal_area.geojson";
-  } else {
-    output_file_name = map_name + "_cartogram.geojson";
-  }
-
   cart_info.write_geojson(
     geo_file_name,
     map_name + "_cartogram.geojson",
