@@ -60,12 +60,6 @@ void InsetState::min_ellipses()
           ell.theta = atan((c - a - inner_sqrt) / b);
         }
       }
-      std::cout << "ellipse has semimajor axis " << ell.semimajor << ",\n";
-      std::cout << "            semiminor axis " << ell.semiminor << ",\n";
-      std::cout << "            center (" << ell.center.x() << ", "
-                << ell.center.y() << "),\n";
-      std::cout << "            theta = " << 180 * ell.theta / pi
-                << " degrees." << std::endl;
       gd.push_back_ellipse(ell);
     }
   }
@@ -75,18 +69,18 @@ double InsetState::delta_rho(
   Ellipse ell,
   double r_tilde_sq,
   double rho_p,
-  double mean_density,
+  double rho_mean,
   double pwh_area)
 {
-  if (r_tilde_sq >= 4 * XI * XI) {
+  double xi_sq = XI * XI;
+  if (r_tilde_sq >= 4 * xi_sq) {
     return 0.0;
   }
-  double xi_to_6 = XI * XI * XI * XI * XI * XI;
-  double prefac = ((rho_p - mean_density) * pwh_area) /
+  double xi_to_6 = xi_sq * xi_sq * xi_sq;
+  double prefac = ((rho_p - rho_mean) * pwh_area) /
                   (16 * pi * ell.semimajor * ell.semiminor * xi_to_6);
-  double polynomial = -r_tilde_sq * r_tilde_sq * r_tilde_sq +
-                      9 * r_tilde_sq * r_tilde_sq * XI * XI -
-                      24 * r_tilde_sq * XI * XI * XI * XI + 16 * xi_to_6;
+  double postfac = r_tilde_sq - 4 * xi_sq;
+  double polynomial = -(r_tilde_sq - xi_sq) * postfac * postfac;
   return prefac * polynomial;
 }
 
@@ -98,10 +92,8 @@ void InsetState::fill_with_ellipse_density(bool plot_density)
       rho_init_(i, j) = 0.0;
     }
   }
-  double mean_density = total_target_area() / total_inset_area();
+  double rho_mean = total_target_area() / total_inset_area();
   for (auto gd : geo_divs_) {
-    std::cout << gd.id() << std::endl;
-    std::cout << gd.n_rings() << std::endl;
     double rho_p = target_area_at(gd.id()) / gd.area();
     for (unsigned int pgon = 0; pgon < gd.n_polygons_with_holes(); ++pgon) {
       Ellipse ell = gd.min_ellipses()[pgon];
@@ -131,7 +123,7 @@ void InsetState::fill_with_ellipse_density(bool plot_density)
               rho_init_(
                 static_cast<unsigned int>(x_grid),
                 static_cast<unsigned int>(y_grid)) +=
-                delta_rho(ell, r_tilde_sq, rho_p, mean_density, pwh_area);
+                delta_rho(ell, r_tilde_sq, rho_p, rho_mean, pwh_area);
             }
           }
         }
@@ -139,51 +131,29 @@ void InsetState::fill_with_ellipse_density(bool plot_density)
     }
   }
 
-  // Scale rho_init_ so that
-  // - the minimum is equal to depletion_factor * mean_density, where
-  //   0 < depletion_factor < 1, and
-  // - the mean is equal to mean_density.
-
+  // Scale rho_init_ so that the integration works. For example, negative
+  // density must be avoided.
   double rho_min = dbl_inf;
-  double rho_mean = 0.0;
   double rho_max = -dbl_inf;
   for (unsigned int i = 0; i < lx_; ++i) {
     for (unsigned int j = 0; j < ly_; ++j) {
       rho_min = std::min(rho_min, rho_init_(i, j));
-      rho_mean += rho_init_(i, j);
       rho_max = std::max(rho_max, rho_init_(i, j));
     }
   }
-  rho_mean /= (lx_ * ly_);
-  std::cout << "rho_min = " << rho_min << std::endl;
-  std::cout << "rho_mean = " << rho_mean << std::endl;
-  std::cout << "rho_max = " << rho_max << std::endl;
-
-  double depletion_factor = 0.95;
-  double a = ((1.0 - depletion_factor) * mean_density) / (rho_mean - rho_min);
-  double b = mean_density * (depletion_factor * rho_mean - rho_min) /
-             (rho_mean - rho_min);
+  double acceptable_min = -0.2 * rho_mean;
+  double acceptable_max = 0.2 * rho_mean;
+  double nu = 1.0;
+  if (rho_min < acceptable_min || rho_max > acceptable_max) {
+    double nu_min = acceptable_min / rho_min;
+    double nu_max = acceptable_max / rho_max;
+    nu = (nu_min < nu_max) ? nu_min : nu_max;
+  }
   for (unsigned int i = 0; i < lx_; ++i) {
     for (unsigned int j = 0; j < ly_; ++j) {
-      rho_init_(i, j) = a * rho_init_(i, j) + b;
+      rho_init_(i, j) = nu * rho_init_(i, j) + rho_mean;
     }
   }
-
-  rho_min = dbl_inf;
-  rho_mean = 0.0;
-  rho_max = -dbl_inf;
-  for (unsigned int i = 0; i < lx_; ++i) {
-    for (unsigned int j = 0; j < ly_; ++j) {
-      rho_min = std::min(rho_min, rho_init_(i, j));
-      rho_mean += rho_init_(i, j);
-      rho_max = std::max(rho_max, rho_init_(i, j));
-    }
-  }
-  rho_mean /= (lx_ * ly_);
-  std::cout << "rho_min = " << rho_min << std::endl;
-  std::cout << "rho_mean = " << rho_mean << std::endl;
-  std::cout << "rho_max = " << rho_max << std::endl;
-
   if (plot_density) {
     std::string file_name = inset_name_ + "_ellipse_density_" +
                             std::to_string(n_finished_integrations_) + ".eps";
