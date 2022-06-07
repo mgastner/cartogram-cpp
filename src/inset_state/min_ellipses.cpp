@@ -84,7 +84,18 @@ double InsetState::delta_rho(
   return prefac * polynomial;
 }
 
-void InsetState::fill_with_ellipse_density(bool plot_density)
+double InsetState::ellipse_flux_prefactor(
+  Ellipse ell,
+  double rho_tilde,
+  double rho_p,
+  double rho_mean,
+  double pwh_area,
+  double nu)
+{
+  return 0.0;
+}
+
+void InsetState::fill_with_ellipse_density_and_flux(bool plot_density)
 {
   std::cout << "In fill_with_ellipse_density()" << std::endl;
   for (unsigned int i = 0; i < lx_; i++) {
