@@ -80,6 +80,13 @@ public:
   void densify_geo_divs();
   void destroy_fftw_plans_for_rho();
   double delta_rho(Ellipse, double, double, double, double);
+  double ellipse_flux_prefactor(
+    Ellipse,
+    double,
+    double,
+    double,
+    double,
+    double);
   void execute_fftw_bwd_plan() const;
   void execute_fftw_fwd_plan() const;
   void exit_if_not_on_grid_or_edge(const Point p1) const;
@@ -87,7 +94,7 @@ public:
 
   // Density functions
   void fill_with_density(bool);  // Fill map with density, using scanlines
-  void fill_with_ellipse_density(bool);
+  void fill_with_ellipse_density_and_flux(bool);
   void flatten_density();  // Flatten said density with integration
 
   const std::vector<GeoDiv> geo_divs() const;
