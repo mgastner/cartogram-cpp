@@ -286,6 +286,44 @@ void InsetState::write_density_to_eps(
   return;
 }
 
+void InsetState::write_fluxxx_to_eps(
+  const std::string eps_name,
+  const boost::multi_array<double, 2> grid_fluxx,
+  const boost::multi_array<double, 2> grid_fluxy)
+{
+  std::ofstream eps_file(eps_name);
+  write_eps_header_and_definitions(eps_file, eps_name, lx_, ly_);
+
+  // Determine maximum flux
+  double max_flux_sq = -dbl_inf;
+  for (unsigned int i = 0; i < lx_; ++i) {
+    for (unsigned int j = 0; j < ly_; ++j) {
+      max_flux_sq = std::max(
+        max_flux_sq,
+        grid_fluxx[i][j] * grid_fluxx[i][j] +
+          grid_fluxy[i][j] * grid_fluxy[i][j]);
+    }
+  }
+  std::cout << "max_flux = " << sqrt(max_flux_sq) << std::endl;
+  std::cout << "max_flux = " << sqrt(max_flux_sq) << std::endl;
+
+  for (unsigned int i = 0; i < lx_; i += 7) {
+    for (unsigned int j = 0; j < ly_; j += 7) {
+      eps_file << "n " << i << " " << j << " m " << 10 * grid_fluxx[i][j] << " "
+               << 10 * grid_fluxy[i][j] << " rl c s" << std::endl;
+    }
+  }
+  write_polygons_to_eps(
+    eps_file,
+    false,  // Fill polygons with default color?
+    false);  // Fill polygons with assigned colors?
+
+  eps_file << "showpage\n";
+  eps_file << "%%EOF\n";
+  eps_file.close();
+  return;
+}
+
 void InsetState::write_intersections_to_eps(unsigned int res)
 {
   std::string eps_name = inset_name() + "_intersections_" +

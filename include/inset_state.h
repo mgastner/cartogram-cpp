@@ -94,7 +94,7 @@ public:
 
   // Density functions
   void fill_with_density(bool);  // Fill map with density, using scanlines
-  void fill_with_ellipse_density_and_flux(bool);
+  void fill_with_ellipse_density_and_flux(bool, bool);
   void flatten_density();  // Flatten said density with integration
 
   const std::vector<GeoDiv> geo_divs() const;
@@ -169,6 +169,10 @@ public:
 
   // Functions to write map to eps
   void write_density_to_eps(const std::string, const double *);
+  void write_fluxxx_to_eps(
+    const std::string,
+    const boost::multi_array<double, 2>,
+    const boost::multi_array<double, 2>);
   void write_graticule_to_eps(std::ofstream &);
   void write_intersections_to_eps(unsigned int);
   void write_map_to_eps(const std::string, const bool);

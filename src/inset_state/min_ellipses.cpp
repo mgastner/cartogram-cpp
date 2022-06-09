@@ -86,18 +86,26 @@ double InsetState::delta_rho(
 
 double InsetState::ellipse_flux_prefactor(
   Ellipse ell,
-  double rho_tilde,
+  double r_tilde_sq,
   double rho_p,
   double rho_mean,
   double pwh_area,
   double nu)
 {
-  return 0.0;
+  double xi_sq = XI * XI;
+  if (r_tilde_sq >= 4 * xi_sq) {
+    return 0.0;
+  }
+  double xi_to_6 = xi_sq * xi_sq * xi_sq;
+  return nu * pwh_area * (rho_p - rho_mean) * (4 * xi_sq - r_tilde_sq) /
+         (128 * pi * ell.semimajor * ell.semiminor * xi_to_6);
 }
 
-void InsetState::fill_with_ellipse_density_and_flux(bool plot_density)
+void InsetState::fill_with_ellipse_density_and_flux(
+  bool plot_density,
+  bool plot_flux)
 {
-  std::cout << "In fill_with_ellipse_density()" << std::endl;
+  std::cout << "In fill_with_ellipse_density_and_flux()" << std::endl;
   for (unsigned int i = 0; i < lx_; i++) {
     for (unsigned int j = 0; j < ly_; j++) {
       rho_init_(i, j) = 0.0;
@@ -170,5 +178,83 @@ void InsetState::fill_with_ellipse_density_and_flux(bool plot_density)
                             std::to_string(n_finished_integrations_) + ".eps";
     std::cerr << "Writing " << file_name << std::endl;
     write_density_to_eps(file_name, rho_init_.as_1d_array());
+  }
+
+  // Flux
+  boost::multi_array<double, 2> grid_fluxx(boost::extents[lx_][ly_]);
+  boost::multi_array<double, 2> grid_fluxy(boost::extents[lx_][ly_]);
+  for (unsigned int i = 0; i < lx_; i++) {
+    for (unsigned int j = 0; j < ly_; j++) {
+      grid_fluxx[i][j] = 0.0;
+      grid_fluxy[i][j] = 0.0;
+    }
+  }
+  for (auto gd : geo_divs_) {
+    double rho_p = target_area_at(gd.id()) / gd.area();
+    for (unsigned int pgon = 0; pgon < gd.n_polygons_with_holes(); ++pgon) {
+      Ellipse ell = gd.min_ellipses()[pgon];
+      Polygon_with_holes pwh = gd.polygons_with_holes()[pgon];
+      const auto ext_ring = pwh.outer_boundary();
+      double pwh_area = ext_ring.area();
+      for (auto h = pwh.holes_begin(); h != pwh.holes_end(); ++h) {
+        pwh_area += h->area();
+      }
+      double cos_theta = cos(ell.theta);
+      double sin_theta = sin(ell.theta);
+      for (double x_grid = 0.5; x_grid < lx_; ++x_grid) {
+        for (double y_grid = 0.5; y_grid < ly_; ++y_grid) {
+          // for (int i = -2; i <= 2; ++i) {
+          for (int i = 0; i <= 0; ++i) {
+            double x = ((i + abs(i) % 2) * static_cast<int>(lx_)) +
+                       (x_grid * (i % 2 == 0 ? 1 : -1));
+            // for (int j = -2; j <= 2; ++j) {
+            for (int j = 0; j <= 0; ++j) {
+              double y = ((j + abs(j) % 2) * static_cast<int>(ly_)) +
+                         (y_grid * (j % 2 == 0 ? 1 : -1));
+              double x_tilde = ((x - ell.center.x()) * cos_theta +
+                                (y - ell.center.y()) * sin_theta) /
+                               ell.semimajor;
+              double y_tilde = ((-(x - ell.center.x()) * sin_theta) +
+                                (y - ell.center.y()) * cos_theta) /
+                               ell.semiminor;
+              double r_tilde_sq = (x_tilde * x_tilde) + (y_tilde * y_tilde);
+              double prefac = ellipse_flux_prefactor(
+                ell,
+                r_tilde_sq,
+                rho_p,
+                rho_mean,
+                pwh_area,
+                nu);
+              double flux_tilde_x = prefac * x_tilde;
+              double flux_tilde_y = prefac * y_tilde;
+              double flux_x = ell.semimajor * flux_tilde_x * cos_theta -
+                              ell.semiminor * flux_tilde_y * sin_theta;
+              double flux_y = ell.semimajor * flux_tilde_x * sin_theta +
+                              ell.semiminor * flux_tilde_y * cos_theta;
+              grid_fluxx[x_grid][y_grid] += flux_x;
+              grid_fluxy[x_grid][y_grid] += flux_y;
+            }
+          }
+        }
+      }
+    }
+  }
+  if (plot_flux) {
+    //    std::string file_name = inset_name_ + "_ellipse_fluxx_" +
+    //                            std::to_string(n_finished_integrations_) +
+    //                            ".eps";
+    //    std::cerr << "Writing " << file_name << std::endl;
+    //    write_flux_to_eps(file_name, grid_fluxx);
+    //
+    //    file_name = inset_name_ + "_ellipse_fluxy_" +
+    //                std::to_string(n_finished_integrations_) + ".eps";
+    //    std::cerr << "Writing " << file_name << std::endl;
+    //    write_flux_to_eps(file_name, grid_fluxy);
+
+
+    std::string file_name = inset_name_ + "_ellipse_fluxxx_" +
+                            std::to_string(n_finished_integrations_) + ".eps";
+    std::cerr << "Writing " << file_name << std::endl;
+    write_fluxxx_to_eps(file_name, grid_fluxx, grid_fluxy);
   }
 }
