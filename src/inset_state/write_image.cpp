@@ -850,6 +850,11 @@ double InsetState::grid_cell_area_km(
   return cell_area_km;
 }
 
+// Polygon InsetState::get_km_legend(double legend_area_sq_km) {
+//   // sqrt(target_area / area)
+//   // area from grid_cell_area_km(0, 0)
+// }
+
 double InsetState::grid_cell_target_area(
   const unsigned int i,
   const unsigned int j,
@@ -864,6 +869,12 @@ double InsetState::grid_cell_target_area(
 
   return cell_target_area;
 }
+
+// Polygon InsetState::get_visual_variable_legend(double legend_visual_variable)
+// {
+//   // sqrt(target_area / area)
+//   // area from grid_cell_area_km(0, 0)
+// }
 
 double InsetState::grid_cell_target_area_per_km(
   const unsigned int i,
