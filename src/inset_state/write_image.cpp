@@ -862,7 +862,7 @@ std::pair<double, unsigned int> InsetState::get_km_legend_length()
 
   // 5% of the total area, rounded up to the nearest power of 10
   unsigned int legend_area =
-    pow(10.0, ceil(std::log10(total_inset_area() * 0.02)));
+    pow(10.0, ceil(std::log10((total_inset_area()) * 0.01)));
 
   std::cout << "Total inset area: " << total_inset_area() << std::endl;
 
