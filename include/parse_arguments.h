@@ -14,6 +14,7 @@ argparse::ArgumentParser parsed_arguments(
   unsigned int &target_points_per_inset,
   bool &world,
   bool &triangulation,
+  bool &qtdt_method,
   bool &simplification,
   bool &make_csv,
   bool &output_equal_area,

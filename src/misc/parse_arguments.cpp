@@ -12,6 +12,7 @@ argparse::ArgumentParser parsed_arguments(
     unsigned int &target_points_per_inset,
     bool &world,
     bool &triangulation,
+    bool &qtdt_method,
     bool &simplify,
     bool &make_csv,
     bool &output_equal_area,
@@ -79,6 +80,11 @@ argparse::ArgumentParser parsed_arguments(
   .help("Boolean: Project the cartogram using the triangulation method?")
   .default_value(false)
   .implicit_value(true);
+  
+  arguments.add_argument("-Q", "--qtdt_method")
+  .help("Boolean: Use Quadtree-Delaunay Triangulation Method?")
+  .default_value(false)
+  .implicit_value(true);
 
   arguments.add_argument("-s", "--simplify")
   .help("Boolean: Shall the polygons be simplified?")
@@ -141,6 +147,7 @@ argparse::ArgumentParser parsed_arguments(
   // Set boolean values
   world = arguments.get<bool>("-w");
   triangulation = arguments.get<bool>("-t");
+  qtdt_method = arguments.get<bool>("-Q");
   simplify = arguments.get<bool>("-s");
   if (!triangulation && simplify) {
 

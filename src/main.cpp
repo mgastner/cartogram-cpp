@@ -1,11 +1,25 @@
 #include "cartogram_info.h"
 #include "constants.h"
 #include "parse_arguments.h"
-
+#include <chrono>
 #include <iostream>
+
+// Cpp Chrono for timing
+typedef std::chrono::steady_clock::time_point time_point;
+typedef std::chrono::steady_clock clock_time;
+typedef std::chrono::milliseconds ms;
+
+template <typename T> std::chrono::milliseconds inMilliseconds(T duration)
+{
+  return std::chrono::duration_cast<std::chrono::milliseconds>(duration);
+}
 
 int main(const int argc, const char *argv[])
 {
+
+  // Start of main function time
+  time_point start_main = clock_time::now();
+
   std::string geo_file_name, visual_file_name;
 
   // Default number of grid cells along longer Cartesian coordinate axis
@@ -19,6 +33,9 @@ int main(const int argc, const char *argv[])
   // cells. It can eliminate intersections that occur when the projected
   // graticule lines are strongly curved.
   bool triangulation;
+
+  // Use Quadtree-Delaunay Triangulations
+  bool qtdt_method;
 
   // Shall the polygons be simplified?
   bool simplify;
@@ -37,6 +54,7 @@ int main(const int argc, const char *argv[])
     target_points_per_inset,
     world,
     triangulation,
+    qtdt_method,
     simplify,
     make_csv,
     output_equal_area,
@@ -95,6 +113,9 @@ int main(const int argc, const char *argv[])
 
   // Store total number of GeoDivs to monitor progress
   double total_geo_divs = cart_info.n_geo_divs();
+
+  // Create map to store duration of each inset integrations
+  std::map<std::string, ms> insets_integration_times;
 
   // Project map and ensure that all holes are inside polygons
   for (auto &[inset_pos, inset_state] : *cart_info.ref_to_inset_states()) {
@@ -176,7 +197,8 @@ int main(const int argc, const char *argv[])
     std::string inset_name = map_name;
     if (cart_info.n_insets() > 1) {
       inset_name = inset_name + "_" + inset_pos;
-      std::cerr << "\nWorking on inset at position: " << inset_pos << std::endl;
+      std::cerr << "\nWorking on inset at position: " << inset_pos
+                << std::endl;
     }
     inset_state.set_inset_name(inset_name);
 
@@ -214,9 +236,42 @@ int main(const int argc, const char *argv[])
     // finished insets
     const double inset_max_frac = inset_state.n_geo_divs() / total_geo_divs;
 
+    if (simplify) {
+      inset_state.simplify(target_points_per_inset);
+    }
+
+    // Integration start time
+    time_point start_integration = clock_time::now();
+
     // Start map integration
-    while (inset_state.n_finished_integrations() < max_integrations &&
+    while (inset_state.n_finished_integrations() < 10 &&
            inset_state.max_area_error().value > max_permitted_area_error) {
+
+      if (qtdt_method) {
+        // Create the deluanay triangulation
+        inset_state.create_delaunay_t();
+      }
+
+      // inset_state.draw_quadtree(inset_state.inset_name() + "_"
+      // + std::to_string(inset_state.n_finished_integrations()));
+
+      //     cart_info.write_geojson(
+      //   geo_file_name,
+      //   map_name + "_" +
+      //   std::to_string(inset_state.n_finished_integrations())+
+      //   "_sim_cartogram.geojson", std::cout, output_to_stdout);
+
+      // inset_state.densify_geo_divs();
+
+      // inset_state.draw_quadtree(inset_state.inset_name() + "_dense_"
+      // + std::to_string(inset_state.n_finished_integrations()));
+
+      // cart_info.write_geojson(
+      //   geo_file_name,
+      //   map_name + "_" +
+      //   std::to_string(inset_state.n_finished_integrations())+
+      //   "_cartogram.geojson", std::cout, output_to_stdout);
+
       std::cerr << "Integration number "
                 << inset_state.n_finished_integrations() << std::endl;
 
@@ -224,8 +279,9 @@ int main(const int argc, const char *argv[])
       // error is typically reduced to 1/5 of the previous value.
       const double ratio_actual_to_permitted_max_area_error =
         inset_state.max_area_error().value / max_permitted_area_error;
-      const double n_predicted_integrations =
-        std::max((log(ratio_actual_to_permitted_max_area_error) / log(5)), 1.0);
+      const double n_predicted_integrations = std::max(
+        (log(ratio_actual_to_permitted_max_area_error) / log(5)),
+        1.0);
 
       // Blur density to speed up the numerics in flatten_density() below.
       // We slowly reduce the blur width so that the areas can reach their
@@ -251,8 +307,17 @@ int main(const int argc, const char *argv[])
       if (plot_intersections) {
         inset_state.write_intersections_to_eps(intersections_resolution);
       }
-      inset_state.flatten_density();
-      if (triangulation) {
+
+      if (qtdt_method) {
+        inset_state.flatten_density_with_node_vertices();
+      } else {
+        inset_state.flatten_density();
+      }
+
+      if (qtdt_method) {
+        // inset_state.densify_geo_divs_using_delaunay_triangulation();
+        inset_state.project_with_delaunay_triangulation();
+      } else if (triangulation) {
 
         // Choose diagonals that are inside graticule cells
         inset_state.fill_graticule_diagonals();
@@ -265,6 +330,7 @@ int main(const int argc, const char *argv[])
       } else {
         inset_state.project();
       }
+
       if (simplify) {
         inset_state.simplify(target_points_per_inset);
       }
@@ -279,6 +345,14 @@ int main(const int argc, const char *argv[])
                 << std::endl
                 << std::endl;
     }
+
+    // Integration end time
+    time_point end_integration = clock_time::now();
+
+    // Add integration time to the map
+    insets_integration_times[inset_pos] =
+      inMilliseconds(end_integration - start_integration);
+
     progress += inset_max_frac;
     std::cerr << "Finished inset " << inset_pos << "\nProgress: " << progress
               << std::endl;
@@ -326,6 +400,24 @@ int main(const int argc, const char *argv[])
     map_name + "_cartogram.geojson",
     std::cout,
     output_to_stdout);
+
+  // End of main function time
+  time_point end_main = clock_time::now();
+
+  ms total_time = inMilliseconds(end_main - start_main);
+
+  // Show Time Report
+  std::cerr << std::endl;
+  std::cerr << "********** Time Report **********" << std::endl;
+
+  // Iterate over the map and print integration times
+  for (auto [inset_pos, inset_integration_time] : insets_integration_times) {
+    std::cerr << "Integration time for inset " << inset_pos << ": "
+              << inset_integration_time.count() << " ms" << std::endl;
+  }
+
+  std::cerr << "Total time: " << total_time.count() << " ms" << std::endl;
+  std::cerr << "*********************************" << std::endl;
 
   return EXIT_SUCCESS;
 }
