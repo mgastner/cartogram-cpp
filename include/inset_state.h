@@ -28,6 +28,10 @@ private:
 
   // Cumulative cartogram projection
   boost::multi_array<XYPoint, 2> cum_proj_;
+
+  boost::multi_array<double, 2> ellipse_fluxx_;
+  boost::multi_array<double, 2> ellipse_fluxy_;
+
   fftw_plan fwd_plan_for_rho_;
   std::vector<GeoDiv> geo_divs_;  // Geographic divisions in this inset
 
@@ -169,7 +173,7 @@ public:
 
   // Functions to write map to eps
   void write_density_to_eps(const std::string, const double *);
-  void write_fluxxx_to_eps(
+  void write_flux_to_eps(
     const std::string,
     const boost::multi_array<double, 2>,
     const boost::multi_array<double, 2>);

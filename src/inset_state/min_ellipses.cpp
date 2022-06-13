@@ -112,10 +112,27 @@ void InsetState::fill_with_ellipse_density_and_flux(
     }
   }
   double rho_mean = total_target_area() / total_inset_area();
+
+  std::cout << "rho_mean = " << rho_mean << std::endl;
+
   for (auto gd : geo_divs_) {
-    double rho_p = target_area_at(gd.id()) / gd.area();
+    //    double rho_p = (target_area_at(gd.id()) / total_target_area()) *
+    //                   (total_inset_area() / gd.area());
+
+    double rho_p = (target_area_at(gd.id()) / gd.area());
+
+    std::cout << "total_target_area = " << total_target_area() << std::endl;
+    std::cout << "total_inset_area = " << total_inset_area() << std::endl;
+    std::cout << "target_area = " << target_area_at(gd.id()) << std::endl;
+    std::cout << "gd.area = " << gd.area() << std::endl;
+    std::cout << "rho_p = " << rho_p << std::endl;
+
     for (unsigned int pgon = 0; pgon < gd.n_polygons_with_holes(); ++pgon) {
       Ellipse ell = gd.min_ellipses()[pgon];
+
+      std::cout << "ellipse area = " << pi * ell.semimajor * ell.semimajor
+                << std::endl;
+
       Polygon_with_holes pwh = gd.polygons_with_holes()[pgon];
       const auto ext_ring = pwh.outer_boundary();
       double pwh_area = ext_ring.area();
@@ -160,13 +177,19 @@ void InsetState::fill_with_ellipse_density_and_flux(
       rho_max = std::max(rho_max, rho_init_(i, j));
     }
   }
+
+  std::cout << "pos A: rho_min = " << rho_min << ", rho_max = " << rho_max
+            << std::endl;
+
   double acceptable_min = -0.2 * rho_mean;
   double acceptable_max = 0.2 * rho_mean;
   double nu = 1.0;
   if (rho_min < acceptable_min || rho_max > acceptable_max) {
     double nu_min = acceptable_min / rho_min;
     double nu_max = acceptable_max / rho_max;
-    nu = (nu_min < nu_max) ? nu_min : nu_max;
+    if (std::max(nu_min, nu_max) < 1.0) {
+      nu = (nu_min < nu_max) ? nu_min : nu_max;
+    }
   }
   for (unsigned int i = 0; i < lx_; ++i) {
     for (unsigned int j = 0; j < ly_; ++j) {
@@ -181,12 +204,17 @@ void InsetState::fill_with_ellipse_density_and_flux(
   }
 
   // Flux
-  boost::multi_array<double, 2> grid_fluxx(boost::extents[lx_][ly_]);
-  boost::multi_array<double, 2> grid_fluxy(boost::extents[lx_][ly_]);
+  // Initialize array if running for the first time
+  if (ellipse_fluxx_.shape()[0] != lx_ || ellipse_fluxx_.shape()[1] != ly_) {
+    ellipse_fluxx_.resize(boost::extents[lx_][ly_]);
+  }
+  if (ellipse_fluxy_.shape()[0] != lx_ || ellipse_fluxy_.shape()[1] != ly_) {
+    ellipse_fluxy_.resize(boost::extents[lx_][ly_]);
+  }
   for (unsigned int i = 0; i < lx_; i++) {
     for (unsigned int j = 0; j < ly_; j++) {
-      grid_fluxx[i][j] = 0.0;
-      grid_fluxy[i][j] = 0.0;
+      ellipse_fluxx_[i][j] = 0.0;
+      ellipse_fluxy_[i][j] = 0.0;
     }
   }
   for (auto gd : geo_divs_) {
@@ -203,12 +231,10 @@ void InsetState::fill_with_ellipse_density_and_flux(
       double sin_theta = sin(ell.theta);
       for (double x_grid = 0.5; x_grid < lx_; ++x_grid) {
         for (double y_grid = 0.5; y_grid < ly_; ++y_grid) {
-          // for (int i = -2; i <= 2; ++i) {
-          for (int i = 0; i <= 0; ++i) {
+          for (int i = -2; i <= 2; ++i) {
             double x = ((i + abs(i) % 2) * static_cast<int>(lx_)) +
                        (x_grid * (i % 2 == 0 ? 1 : -1));
-            // for (int j = -2; j <= 2; ++j) {
-            for (int j = 0; j <= 0; ++j) {
+            for (int j = -2; j <= 2; ++j) {
               double y = ((j + abs(j) % 2) * static_cast<int>(ly_)) +
                          (y_grid * (j % 2 == 0 ? 1 : -1));
               double x_tilde = ((x - ell.center.x()) * cos_theta +
@@ -231,8 +257,8 @@ void InsetState::fill_with_ellipse_density_and_flux(
                               ell.semiminor * flux_tilde_y * sin_theta;
               double flux_y = ell.semimajor * flux_tilde_x * sin_theta +
                               ell.semiminor * flux_tilde_y * cos_theta;
-              grid_fluxx[x_grid][y_grid] += flux_x;
-              grid_fluxy[x_grid][y_grid] += flux_y;
+              ellipse_fluxx_[x_grid][y_grid] += (i % 2 == 0 ? 1 : -1) * flux_x;
+              ellipse_fluxy_[x_grid][y_grid] += (j % 2 == 0 ? 1 : -1) * flux_y;
             }
           }
         }
@@ -240,21 +266,9 @@ void InsetState::fill_with_ellipse_density_and_flux(
     }
   }
   if (plot_flux) {
-    //    std::string file_name = inset_name_ + "_ellipse_fluxx_" +
-    //                            std::to_string(n_finished_integrations_) +
-    //                            ".eps";
-    //    std::cerr << "Writing " << file_name << std::endl;
-    //    write_flux_to_eps(file_name, grid_fluxx);
-    //
-    //    file_name = inset_name_ + "_ellipse_fluxy_" +
-    //                std::to_string(n_finished_integrations_) + ".eps";
-    //    std::cerr << "Writing " << file_name << std::endl;
-    //    write_flux_to_eps(file_name, grid_fluxy);
-
-
-    std::string file_name = inset_name_ + "_ellipse_fluxxx_" +
+    std::string file_name = inset_name_ + "_ellipse_flux_" +
                             std::to_string(n_finished_integrations_) + ".eps";
     std::cerr << "Writing " << file_name << std::endl;
-    write_fluxxx_to_eps(file_name, grid_fluxx, grid_fluxy);
+    write_flux_to_eps(file_name, ellipse_fluxx_, ellipse_fluxy_);
   }
 }

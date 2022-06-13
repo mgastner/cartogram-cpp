@@ -286,7 +286,7 @@ void InsetState::write_density_to_eps(
   return;
 }
 
-void InsetState::write_fluxxx_to_eps(
+void InsetState::write_flux_to_eps(
   const std::string eps_name,
   const boost::multi_array<double, 2> grid_fluxx,
   const boost::multi_array<double, 2> grid_fluxy)
@@ -304,13 +304,15 @@ void InsetState::write_fluxxx_to_eps(
           grid_fluxy[i][j] * grid_fluxy[i][j]);
     }
   }
-  std::cout << "max_flux = " << sqrt(max_flux_sq) << std::endl;
+  double max_flux = sqrt(max_flux_sq);
   std::cout << "max_flux = " << sqrt(max_flux_sq) << std::endl;
 
+  eps_file << "0.1 slw\n";
   for (unsigned int i = 0; i < lx_; i += 7) {
     for (unsigned int j = 0; j < ly_; j += 7) {
-      eps_file << "n " << i << " " << j << " m " << 10 * grid_fluxx[i][j] << " "
-               << 10 * grid_fluxy[i][j] << " rl c s" << std::endl;
+      eps_file << i << " " << j << " 0.5 0 360 arc f\n";
+      eps_file << "n " << i << " " << j << " m " << grid_fluxx[i][j] / max_flux
+               << " " << 2 * grid_fluxy[i][j] / max_flux << " rl c s\n";
     }
   }
   write_polygons_to_eps(

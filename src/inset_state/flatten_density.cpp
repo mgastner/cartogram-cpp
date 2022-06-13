@@ -19,6 +19,9 @@ void calculate_velocity(
 {
   double rho;
 
+  std::cout << "rho_init_(256, 256) = " << rho_init_(256, 256)
+            << std::endl;
+
 #pragma omp parallel for private(rho)
   for (unsigned int i = 0; i < lx; ++i) {
     for (unsigned int j = 0; j < ly; ++j) {
@@ -56,6 +59,7 @@ bool all_points_are_in_domain(
 void InsetState::flatten_density()
 {
   std::cerr << "In flatten_density()" << std::endl;
+  std::cout << "rho_ft_[0][0] = " << rho_ft_(0, 0) << std::endl;
 
   // Constants for the numerical integrator
   const double inc_after_acc = 1.1;
@@ -141,6 +145,39 @@ void InsetState::flatten_density()
   // grid_fluxy_init
   grid_fluxx_init.execute_fftw_plan();
   grid_fluxy_init.execute_fftw_plan();
+
+  for (unsigned int i = 0; i < lx_; ++i) {
+    for (unsigned int j = 0; j < ly_; ++j) {
+      if (grid_fluxx_init(i, j) > 0.0) {
+        std::cout << "ellipse_flux[" << i << "][" << j << "] = ("
+                  << ellipse_fluxx_[i][j] << ", " << ellipse_fluxy_[i][j]
+                  << "), grid_fluxx_init = " << grid_fluxx_init(i, j) << "\n";
+      }
+    }
+  }
+
+  boost::multi_array<double, 2> auxx(boost::extents[lx_][ly_]);
+  boost::multi_array<double, 2> auxy(boost::extents[lx_][ly_]);
+  for (unsigned int i = 0; i < lx_; ++i) {
+    for (unsigned int j = 0; j < ly_; ++j) {
+      auxx[i][j] = -1e-8 * grid_fluxx_init(i, j);
+      auxy[i][j] = -1e-8 * grid_fluxy_init(i, j);
+    }
+  }
+  std::string file_name = inset_name_ + "_ellipse_aux_" +
+                          std::to_string(n_finished_integrations_) + ".eps";
+  std::cerr << "Writing " << file_name << std::endl;
+  write_flux_to_eps(file_name, auxx, auxy);
+
+  //  for (unsigned int i = 0; i < lx_; ++i) {
+  //    for (unsigned int j = 0; j < ly_; ++j) {
+  //      if (grid_fluxx_init(i, j) < 0.0) {
+  //        std::cout << "grid_fluxx_init(" << i << ", " << j
+  //                  << ") = " << grid_fluxx_init(i, j) << "\n";
+  //      }
+  //    }
+  //  }
+
   double t = 0.0;
   double delta_t = 1e-2;  // Initial time step.
   unsigned int iter = 0;
@@ -273,12 +310,12 @@ void InsetState::flatten_density()
     delta_t *= inc_after_acc;  // Try a larger step next time
   }
 
-//  for (unsigned int i = 0; i < lx_; ++i) {
-//    for (unsigned int j = 0; j < ly_; ++j) {
-//      std::cerr << "proj[" << i << "][" << j << "] = (" << proj_[i][j].x
-//                << ", " << proj_[i][j].y << ")\n";
-//    }
-//  }
+  //  for (unsigned int i = 0; i < lx_; ++i) {
+  //    for (unsigned int j = 0; j < ly_; ++j) {
+  //      std::cerr << "proj[" << i << "][" << j << "] = (" << proj_[i][j].x
+  //                << ", " << proj_[i][j].y << ")\n";
+  //    }
+  //  }
 
   grid_fluxx_init.destroy_fftw_plan();
   grid_fluxy_init.destroy_fftw_plan();
