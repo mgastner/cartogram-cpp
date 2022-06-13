@@ -860,16 +860,12 @@ double InsetState::grid_cell_area_km(
 std::pair<double, unsigned int> InsetState::get_km_legend_length()
 {
 
-  // 5% of the total area, rounded up to the nearest power of 10
-  unsigned int legend_area =
-    pow(10.0, ceil(std::log10((total_inset_area()) * 0.01)));
-
-  std::cout << "Total inset area: " << total_inset_area() << std::endl;
-
+  // 1% of the total area, rounded up to the nearest power of 10
   double min_length = 0.02 * ((lx() + ly()) / 2.0);
   double max_length = 0.06 * ((lx() + ly()) / 2.0);
-
   double unit_square_area = grid_cell_area_km();
+  unsigned int legend_area =
+    pow(10.0, ceil(std::log10(total_inset_area() * 0.01)));
   double length = sqrt(legend_area / unit_square_area);
 
   while (length < min_length) {
@@ -903,9 +899,7 @@ double InsetState::grid_cell_target_area(
 std::pair<double, unsigned int> InsetState::get_visual_variable_legend_length()
 {
   unsigned int legend_area =
-    pow(10.0, ceil(std::log10(total_target_area() * 0.02)));
-
-  std::cout << "Total target area: " << total_target_area() << std::endl;
+    pow(10.0, ceil(std::log10(total_target_area() * 0.01)));
 
   double unit_square_area = total_target_area() / total_inset_area();
   double min_length = 0.02 * ((lx() + ly()) / 2.0);
@@ -1356,7 +1350,7 @@ void InsetState::write_legend_to_cairo_surface(cairo_t *cr, bool equal_area_map)
   double legend_length = legend_info.first;
   unsigned int legend_value = legend_info.second;
   cairo_set_line_width(cr, 1);
-  Color color("slategray");
+  Color color("black");
   cairo_set_source_rgb(cr, color.r, color.g, color.b);
   cairo_rectangle(
     cr,
@@ -1364,13 +1358,26 @@ void InsetState::write_legend_to_cairo_surface(cairo_t *cr, bool equal_area_map)
     legend_pos.y(),
     legend_length,
     legend_length);
-  cairo_fill(cr);
+  cairo_stroke(cr);
 
   double x = legend_pos.x() + (legend_length * 1.25);
   double y = legend_pos.y() + (legend_length * 0.5);
 
+  unsigned int font_size = 12;
+  cairo_select_font_face(
+    cr,
+    "Sans",
+    CAIRO_FONT_SLANT_NORMAL,
+    CAIRO_FONT_WEIGHT_BOLD);
+  cairo_set_font_size(cr, font_size);
   std::string legend_label = std::to_string(legend_value);
-  cairo_move_to(cr, x, y);
+
+  // Add known units
+  if (equal_area_map) {
+    legend_label += " km²";
+  }
+
+  cairo_move_to(cr, x, y + (font_size / 2.0));
   cairo_show_text(cr, legend_label.c_str());
 }
 
