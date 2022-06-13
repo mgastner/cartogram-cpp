@@ -7,6 +7,7 @@
 #include <CGAL/Quadtree.h>
 #include <CGAL/Orthtree_traits_d.h>
 #include <CGAL/Delaunay_triangulation_2.h>
+#include <CGAL/Barycentric_coordinates_2.h>
 
 
 typedef CGAL::Simple_cartesian<double> Scd;
@@ -25,6 +26,9 @@ typedef CGAL::Orthtree<CGAL::Orthtree_traits_2<Scd>, std::vector<Point>> Quadtre
 typedef CGAL::Delaunay_triangulation_2<Scd> Delaunay;
 typedef Delaunay::Line_face_circulator Line_face_circulator;
 typedef Delaunay::Face_handle Face_handle;
+
+// Barycentric coordinates
+namespace BC = CGAL::Barycentric_coordinates;
 
 
 // Polyline simplification
