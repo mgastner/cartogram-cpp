@@ -7,6 +7,66 @@ InsetState::InsetState(std::string pos) : pos_(pos)
   return;
 }
 
+void InsetState::create_delaunay_t() {
+  
+  // Get all the points of the map
+  std::vector<Point> points;
+  for (auto gd : geo_divs_) {
+    for (auto pwh : gd.polygons_with_holes()) {
+      Polygon ext_ring = pwh.outer_boundary();
+
+      // Get exterior ring coordinates
+      for (unsigned int i = 0; i < ext_ring.size(); ++i) {
+        points.emplace_back(ext_ring[i][0],  ext_ring[i][1]);
+      }
+
+      // Get holes of polygon with holes
+      for (auto hci = pwh.holes_begin(); hci != pwh.holes_end(); ++hci) {
+        Polygon hole = *hci;
+        for (unsigned int i = 0; i < hole.size(); ++i) {
+          points.emplace_back(hole[i][0], hole[i][1]);
+        }
+      }
+    }
+  }
+  
+  // Add four lx by ly bounding box points
+  points.emplace_back(0, 0);
+  points.emplace_back(0, ly_);
+  points.emplace_back(lx_, 0);
+  points.emplace_back(lx_, ly_);
+  
+  // Create the quadtree and grade it
+  Quadtree qt(points, Quadtree::PointMap(), 1);
+  qt.refine(9, 10); // (maximum depth, spltting condition: max number of points per node)
+  // qt.grade();
+  
+  // Clear corner points from last iteration
+  unique_quadtree_corners_.clear();
+  
+  // Get unique quadtree corners
+  // TODO: A only leaf node traversal possible. Use that to optimize this.
+  for (Quadtree::Node &node :
+       qt.traverse<CGAL::Orthtrees::Preorder_traversal>()) {
+    if (node.is_leaf()) {
+      Bbox bbox = qt.bbox(node);  // Get bbox of the node
+  
+      // Insert the four vertex of the bbox into the corners set
+      unique_quadtree_corners_.insert(Point(bbox.xmin(), bbox.ymin()));
+      unique_quadtree_corners_.insert(Point(bbox.xmax(), bbox.ymax()));
+      unique_quadtree_corners_.insert(Point(bbox.xmin(), bbox.ymax()));
+      unique_quadtree_corners_.insert(Point(bbox.xmax(), bbox.ymin()));
+    }
+  }
+  
+  std::cerr << "Number of unique corners: " << unique_quadtree_corners_.size() << std::endl;
+  
+  // Create the delaunay triangulation
+  Delaunay dt;
+  dt.insert(unique_quadtree_corners_.begin(), unique_quadtree_corners_.end());
+  dt_ = dt;
+}
+
 double InsetState::area_error_at(const std::string id) const
 {
   return area_errors_.at(id);
