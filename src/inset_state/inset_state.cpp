@@ -1,5 +1,6 @@
 #include "inset_state.h"
 #include "constants.h"
+#include "round_point.h"
 
 InsetState::InsetState(std::string pos) : pos_(pos)
 {
@@ -8,7 +9,7 @@ InsetState::InsetState(std::string pos) : pos_(pos)
 }
 
 void InsetState::create_delaunay_t() {
-  
+
   // Get all the points of the map
   std::vector<Point> points;
   for (auto gd : geo_divs_) {
@@ -29,28 +30,28 @@ void InsetState::create_delaunay_t() {
       }
     }
   }
-  
+
   // Add four lx by ly bounding box points
   points.emplace_back(0, 0);
   points.emplace_back(0, ly_);
   points.emplace_back(lx_, 0);
   points.emplace_back(lx_, ly_);
-  
+
   // Create the quadtree and grade it
   Quadtree qt(points, Quadtree::PointMap(), 1);
   qt.refine(9, 10); // (maximum depth, spltting condition: max number of points per node)
   // qt.grade();
-  
+
   // Clear corner points from last iteration
   unique_quadtree_corners_.clear();
-  
+
   // Get unique quadtree corners
   // TODO: A only leaf node traversal possible. Use that to optimize this.
   for (Quadtree::Node &node :
        qt.traverse<CGAL::Orthtrees::Preorder_traversal>()) {
     if (node.is_leaf()) {
       Bbox bbox = qt.bbox(node);  // Get bbox of the node
-  
+
       // Insert the four vertex of the bbox into the corners set
       unique_quadtree_corners_.insert(Point(bbox.xmin(), bbox.ymin()));
       unique_quadtree_corners_.insert(Point(bbox.xmax(), bbox.ymax()));
@@ -58,9 +59,9 @@ void InsetState::create_delaunay_t() {
       unique_quadtree_corners_.insert(Point(bbox.xmax(), bbox.ymin()));
     }
   }
-  
+
   std::cerr << "Number of unique corners: " << unique_quadtree_corners_.size() << std::endl;
-  
+
   // Create the delaunay triangulation
   Delaunay dt;
   dt.insert(unique_quadtree_corners_.begin(), unique_quadtree_corners_.end());
@@ -408,5 +409,17 @@ void InsetState::transform_points(std::function<Point(Point)> transform_point)
       }
     }
   }
+  return;
+}
+
+void InsetState::round_points() {
+
+  // Specialise rounded_point with lx_ and ly_
+  std::function<Point(Point)> lambda = [lx = lx_, ly = ly_](Point p1) {
+    return rounded_point(p1, lx, ly);
+  };
+
+  // Apply `lambda` to all points
+  transform_points(lambda);
   return;
 }
