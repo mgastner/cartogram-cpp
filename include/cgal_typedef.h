@@ -3,6 +3,11 @@
 
 #include <CGAL/Polygon_with_holes_2.h>
 #include <CGAL/Polyline_simplification_2/simplify.h>
+#include <CGAL/Orthtree.h>
+#include <CGAL/Quadtree.h>
+#include <CGAL/Orthtree_traits_d.h>
+#include <CGAL/Delaunay_triangulation_2.h>
+
 
 typedef CGAL::Simple_cartesian<double> Scd;
 typedef CGAL::Polygon_2<Scd> Polygon;
@@ -12,6 +17,15 @@ typedef CGAL::Point_2<Scd> Point;
 typedef CGAL::Line_2<Scd> Line;
 typedef CGAL::Bbox_2 Bbox;
 typedef CGAL::Segment_2<Scd> Segment;
+
+// Quadtree
+typedef CGAL::Orthtree<CGAL::Orthtree_traits_2<Scd>, std::vector<Point>> Quadtree;
+
+// Delaunay triangulation
+typedef CGAL::Delaunay_triangulation_2<Scd> Delaunay;
+typedef Delaunay::Line_face_circulator Line_face_circulator;
+typedef Delaunay::Face_handle Face_handle;
+
 
 // Polyline simplification
 namespace PS = CGAL::Polyline_simplification_2;
