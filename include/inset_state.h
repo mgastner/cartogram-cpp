@@ -6,7 +6,6 @@
 #include "geo_div.h"
 #include "intersection.h"
 #include "xy_point.h"
-
 #include <boost/multi_array.hpp>
 #include <cairo/cairo.h>
 #include <functional>
@@ -107,8 +106,7 @@ public:
   void flatten_density();
 
   const std::vector<GeoDiv> geo_divs() const;
-  std::vector<std::vector<Color>> grid_cell_colors(
-    unsigned int cell_width);
+  std::vector<std::vector<Color>> grid_cell_colors(unsigned int cell_width);
   Polygon grid_cell_edge_points(
     unsigned int x,
     unsigned int y,
@@ -131,6 +129,9 @@ public:
     const double total_target_area,
     const double total_inset_area);
   Bbox get_bbox_bar(const double bar_width, const double bar_height);
+
+  std::pair<double, unsigned int> get_km_legend_length();
+  std::pair<double, unsigned int> get_visual_variable_legend_length();
 
   const std::vector<std::vector<intersection>> horizontal_scans(
     unsigned int) const;
@@ -233,7 +234,9 @@ public:
     const std::string filename,
     const bool fill_polygons,
     const bool plot_grid,
-    const bool image_format_ps);
+    const bool plot_labels,
+    const bool image_format_ps,
+    const bool equal_area_map);
   // void write_polygons_to_eps(std::ofstream &, const bool, const bool);
   void write_polygons_to_cairo_surface(
     cairo_t *cr,
@@ -250,6 +253,7 @@ public:
   void write_density_bar_image(
     std::string filename,
     const bool image_format_ps);
+  void write_legend_to_cairo_surface(cairo_t *cr, bool equal_area_map);
 };
 
 #endif

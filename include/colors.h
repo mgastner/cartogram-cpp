@@ -37,7 +37,7 @@ struct Color {
       return g;
     case 'b':
       return b;
-      
+
     // Return -1.0 (incorrect color)
     default:
       return -1.0;

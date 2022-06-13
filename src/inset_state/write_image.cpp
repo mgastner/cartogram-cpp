@@ -2,7 +2,6 @@
 #include "colors.h"
 #include "constants.h"
 #include "inset_state.h"
-
 #include <array>
 #include <cairo/cairo-ps.h>
 #include <cairo/cairo-svg.h>
@@ -12,6 +11,7 @@
 #include <iostream>
 #include <sstream>
 #include <string>
+#include <utility>
 #include <vector>
 
 // Grid cell width/height
@@ -787,7 +787,9 @@ void InsetState::write_map_image(
   const std::string filename,
   const bool fill_polygons,
   const bool plot_grid,
-  const bool image_format_ps)
+  const bool plot_labels,
+  const bool image_format_ps,
+  const bool equal_area_map)
 {
 
   // Check whether the map has all GeoDivs colored
@@ -809,7 +811,12 @@ void InsetState::write_map_image(
   write_polygons_to_cairo_surface(cr, fill_polygons, colors, false);
 
   // Place labels
-  write_labels_to_cairo_surface(cr);
+  if (plot_labels) {
+    write_labels_to_cairo_surface(cr);
+  }
+
+  // Add legend
+  write_legend_to_cairo_surface(cr, equal_area_map);
 
   // Draw grid without color
   if (plot_grid) {
@@ -839,8 +846,8 @@ double albers_area_to_earth_area(const double albers_area)
 }
 
 double InsetState::grid_cell_area_km(
-  const unsigned int i,
-  const unsigned int j)
+  const unsigned int i = 0,
+  const unsigned int j = 0)
 {
   Polygon cell_edge_points = grid_cell_edge_points(i, j, 1, true);
   const Polygon cell_edge_points_albers =
@@ -850,10 +857,33 @@ double InsetState::grid_cell_area_km(
   return cell_area_km;
 }
 
-// Polygon InsetState::get_km_legend(double legend_area_sq_km) {
-//   // sqrt(target_area / area)
-//   // area from grid_cell_area_km(0, 0)
-// }
+std::pair<double, unsigned int> InsetState::get_km_legend_length()
+{
+
+  // 5% of the total area, rounded up to the nearest power of 10
+  unsigned int legend_area =
+    pow(10.0, ceil(std::log10(total_inset_area() * 0.02)));
+
+  std::cout << "Total inset area: " << total_inset_area() << std::endl;
+
+  double min_length = 0.02 * ((lx() + ly()) / 2.0);
+  double max_length = 0.06 * ((lx() + ly()) / 2.0);
+
+  double unit_square_area = grid_cell_area_km();
+  double length = sqrt(legend_area / unit_square_area);
+
+  while (length < min_length) {
+    length *= 2;
+    legend_area *= 4;
+  }
+
+  while (length > max_length) {
+    length /= 2;
+    legend_area /= 4;
+  }
+
+  return std::pair<double, unsigned int>(length, legend_area);
+}
 
 double InsetState::grid_cell_target_area(
   const unsigned int i,
@@ -870,11 +900,30 @@ double InsetState::grid_cell_target_area(
   return cell_target_area;
 }
 
-// Polygon InsetState::get_visual_variable_legend(double legend_visual_variable)
-// {
-//   // sqrt(target_area / area)
-//   // area from grid_cell_area_km(0, 0)
-// }
+std::pair<double, unsigned int> InsetState::get_visual_variable_legend_length()
+{
+  unsigned int legend_area =
+    pow(10.0, ceil(std::log10(total_target_area() * 0.02)));
+
+  std::cout << "Total target area: " << total_target_area() << std::endl;
+
+  double unit_square_area = total_target_area() / total_inset_area();
+  double min_length = 0.02 * ((lx() + ly()) / 2.0);
+  double max_length = 0.06 * ((lx() + ly()) / 2.0);
+  double length = sqrt(legend_area / unit_square_area);
+
+  while (length < min_length) {
+    length *= 2;
+    legend_area *= 4;
+  }
+
+  while (length > max_length) {
+    length /= 2;
+    legend_area /= 4;
+  }
+
+  return std::pair<double, unsigned int>(length, legend_area);
+}
 
 double InsetState::grid_cell_target_area_per_km(
   const unsigned int i,
@@ -1296,6 +1345,35 @@ void write_density_bar_to_cairo_surface(
   }
 }
 
+void InsetState::write_legend_to_cairo_surface(cairo_t *cr, bool equal_area_map)
+{
+  std::pair<double, unsigned int> legend_info =
+    equal_area_map ? get_km_legend_length()
+                        : get_visual_variable_legend_length();
+
+  Bbox bb = bbox();
+  Point legend_pos(bb.xmin() * 0.5, bb.ymin() * 0.5);
+  double legend_length = legend_info.first;
+  unsigned int legend_value = legend_info.second;
+  cairo_set_line_width(cr, 1);
+  Color color("slategray");
+  cairo_set_source_rgb(cr, color.r, color.g, color.b);
+  cairo_rectangle(
+    cr,
+    legend_pos.x(),
+    legend_pos.y(),
+    legend_length,
+    legend_length);
+  cairo_fill(cr);
+
+  double x = legend_pos.x() + (legend_length * 1.25);
+  double y = legend_pos.y() + (legend_length * 0.5);
+
+  std::string legend_label = std::to_string(legend_value);
+  cairo_move_to(cr, x, y);
+  cairo_show_text(cr, legend_label.c_str());
+}
+
 void InsetState::write_density_image(
   const std::string filename,
   const double *density,
@@ -1364,8 +1442,7 @@ void InsetState::write_density_image(
             // "Min target area per km", which is obtained by running the
             // code with the "plot_grid_heatmap" -h flag set to true
             // Update here for new map
-            Color color =
-              grid_cell_color(target_area_km, 660.058, 0.660816);
+            Color color = grid_cell_color(target_area_km, 660.058, 0.660816);
 
             // Get four points of the square
             double x_min = i - 0.5 * sq_overlap;
@@ -1431,8 +1508,7 @@ void InsetState::write_density_image(
     cairo_t *bar_cr = cairo_create(bar_surface);
 
     // Write header
-    if (image_format_ps)
-    {
+    if (image_format_ps) {
       write_ps_header(bar_filename, bar_surface);
     }
 

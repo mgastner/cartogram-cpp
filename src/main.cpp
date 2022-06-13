@@ -247,7 +247,7 @@ int main(const int argc, const char *argv[])
 
       std::cerr << "Writing " << input_filename << std::endl;
       inset_state
-        .write_map_image(input_filename, true, plot_grid, image_format_ps);
+        .write_map_image(input_filename, true, plot_grid, false, image_format_ps, true);
     }
 
     // We make the approximation that the progress towards generating the
@@ -363,7 +363,7 @@ int main(const int argc, const char *argv[])
 
       std::cerr << "Writing " << output_filename << std::endl;
       inset_state
-        .write_map_image(output_filename, true, plot_grid, image_format_ps);
+        .write_map_image(output_filename, true, plot_grid, false, image_format_ps, false);
     }
 
     if (plot_grid_heatmap) {
