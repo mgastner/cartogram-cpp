@@ -120,9 +120,6 @@ int main(const int argc, const char *argv[])
   // Project map and ensure that all holes are inside polygons
   for (auto &[inset_pos, inset_state] : *cart_info.ref_to_inset_states()) {
 
-    // Round all the points
-    inset_state.round_points();
-
     // Check for errors in the input topology
     try {
       inset_state.check_topology();
@@ -242,6 +239,9 @@ int main(const int argc, const char *argv[])
     if (simplify) {
       inset_state.simplify(target_points_per_inset);
     }
+
+    // Round all the points
+    inset_state.round_points();
 
     // Integration start time
     time_point start_integration = clock_time::now();
