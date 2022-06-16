@@ -121,11 +121,11 @@ void add_diag_inter(
 // graticule cells. The function assumes that graticule cells start at
 // (0.5, 0.5).
 std::vector<Point> densification_points(
-    const Point pt1,
-    const Point pt2,
-    const unsigned int lx,
-    const unsigned int ly
-) {
+  const Point pt1,
+  const Point pt2,
+  const unsigned int lx,
+  const unsigned int ly)
+{
   // If the input points are identical, return them without calculating
   // intersections
   if ((pt1.x() == pt2.x()) && (pt1.y() == pt2.y())) {
@@ -136,9 +136,8 @@ std::vector<Point> densification_points(
   }
 
   // Ordered set for storing intersections before removing duplicates
-  std::set<Point, decltype(point_less_than)*> temp_intersections(
-    point_less_than
-  );
+  std::set<Point, decltype(point_less_than) *> temp_intersections(
+    point_less_than);
 
   // Store the leftmost point of p1 and pt2 as `a`. If both points have the
   // same x-coordinate, then store the lower point as `a`. The other point is
@@ -186,10 +185,7 @@ std::vector<Point> densification_points(
   add_diag_inter(&temp_intersections, a, b, -1.0, 0.0, 1.0, lx, ly);
 
   // Add edge diagonals when at least one point is near the edge of the grid
-  if (a.x() < 0.5 ||
-      b.x() < 0.5 ||
-      a.x() > (lx - 0.5) ||
-      b.x() > (lx - 0.5)) {
+  if (a.x() < 0.5 || b.x() < 0.5 || a.x() > (lx - 0.5) || b.x() > (lx - 0.5)) {
 
     // Bottom-left to top-right edge diagonals
     add_diag_inter(&temp_intersections, a, b, 2.0, 0.5, 1.0, lx, ly);
@@ -197,10 +193,7 @@ std::vector<Point> densification_points(
     // Top-left to bottom-right edge diagonals
     add_diag_inter(&temp_intersections, a, b, -2.0, 0.5, 1.0, lx, ly);
   }
-  if (a.y() < 0.5 ||
-      b.y() < 0.5 ||
-      a.y() > (ly - 0.5) ||
-      b.y() > (ly - 0.5)) {
+  if (a.y() < 0.5 || b.y() < 0.5 || a.y() > (ly - 0.5) || b.y() > (ly - 0.5)) {
 
     // Bottom-left to top-right edge diagonals
     add_diag_inter(&temp_intersections, a, b, 0.5, 0.25, 0.5, lx, ly);
@@ -212,8 +205,7 @@ std::vector<Point> densification_points(
   // Create a Point vector from the set
   std::vector<Point> intersections(
     temp_intersections.begin(),
-    temp_intersections.end()
-  );
+    temp_intersections.end());
 
   // Reverse if needed
   if ((pt1.x() > pt2.x()) || ((pt1.x() == pt2.x()) && (pt1.y() > pt2.y()))) {
@@ -274,8 +266,7 @@ void InsetState::densify_geo_divs()
       const Polygon_with_holes pwh_dens(
         outer_dens,
         holes_v_dens.begin(),
-        holes_v_dens.end()
-      );
+        holes_v_dens.end());
       gd_dens.push_back(pwh_dens);
     }
     geodivs_dens.push_back(gd_dens);
@@ -286,28 +277,35 @@ void InsetState::densify_geo_divs()
 }
 
 std::vector<Point> densification_points_with_delaunay_triangulation(
-  const Point pt1,
-  const Point pt2,
+  Point pt1,
+  Point pt2,
   const Delaunay &dt)
 {
+  // set precision to 15
+  //  std::cout << std::setprecision(15);
+
+  // std::cout << pt1 << " " << pt2 << std::endl;
+  pt1 = rounded_point(pt1, 512, 512);
+  pt2 = rounded_point(pt2, 512, 512);
+  // std::cout << pt1 << " : " << pt2 << std::endl;
+
   std::vector<Point> dens_points;
-  std::unordered_set<Point> dens_set_points;
+
+  // keep track of visited segements
+  std::unordered_set<Scd::Segment_2> vis_seg;
+
   // If the input points are identical, return them without calculating
   // intersections
   if ((pt1.x() == pt2.x()) && (pt1.y() == pt2.y())) {
-    dens_points.push_back(pt1);
-    dens_points.push_back(pt2);
-    return dens_points;
+    return {pt1, pt2};
   }
 
-  // If they are inside the same triangle then continue
   Face_handle f1 = dt.locate(pt1);
   Face_handle f2 = dt.locate(pt2);
 
+  // If they are inside the same triangle then return original points
   if (f1 == f2) {
-    dens_points.push_back(pt1);
-    dens_points.push_back(pt2);
-    return dens_points;
+    return {pt1, pt2};
   }
 
   bool f1_first = false, found_a_face = false, found_both_face = false;
@@ -318,24 +316,29 @@ std::vector<Point> densification_points_with_delaunay_triangulation(
 
   Line_face_circulator lfc_begin = lfc;  // we store the begining iterator
 
+  // std::cout << std::endl << "Intersected by: " << segment << std::endl <<
+  // std::endl;
+
   if (lfc_begin != 0) {
     do {
       Face_handle fh = lfc;
 
       if (found_a_face) {
         if (f1 == fh or f2 == fh) {  // if current face is second face
-          found_both_face = true;
+          break;
         }
       } else {  // have not found a matching face yet
-        if (fh == f1) {
+        if (fh == f1) { // we start with pt2 point
           f1_first = true;
           found_a_face = true;
+
           // add the pt1 to the list of densification points
-          dens_set_points.insert(pt1);
-        } else if (fh == f2) {
+          dens_points.push_back(pt1);
+        } else if (fh == f2) { // we start with pt2 point
           found_a_face = true;
+          
           // add the pt2 to the list of densification points
-          dens_set_points.insert(pt2);
+          dens_points.push_back(pt2);
         } else {
           ++lfc;
           continue;
@@ -352,31 +355,28 @@ std::vector<Point> densification_points_with_delaunay_triangulation(
       Scd::Segment_2 s2(triangle.vertex(1), triangle.vertex(2));
       Scd::Segment_2 s3(triangle.vertex(2), triangle.vertex(0));
 
-      // for(Scd::Segment_2 seg: {s1, s2, s3}) {
-      //   if(seg.has_on(segment.source()) && seg.has_on(segment.target())) {
-      //     dens_set_points.insert(seg.source());
-      //     dens_set_points.insert(seg.target());
-      //   }
-      // check intersection with segment
-      Scd::Point_2 pt_intersec;
-      if (CGAL::do_intersect(segment, s1)) {
-        CGAL::Object p = CGAL::intersection(segment, s1);
-        if (CGAL::assign(pt_intersec, p)) {
-          dens_set_points.insert(pt_intersec);
+      for (Scd::Segment_2 seg : {s1, s2, s3}) {
+        Scd::Segment_2 seg_rev(seg.target(), seg.source());
+
+        if (
+          vis_seg.find(seg) != vis_seg.end() ||
+          vis_seg.find(seg_rev) != vis_seg.end()) {
+          continue;
         }
-      }
-      if (CGAL::do_intersect(segment, s2)) {
-        // insert intersected point
-        CGAL::Object p = CGAL::intersection(segment, s2);
-        if (CGAL::assign(pt_intersec, p)) {
-          dens_set_points.insert(pt_intersec);
-        }
-      }
-      if (CGAL::do_intersect(segment, s3)) {
-        // insert intersected point
-        CGAL::Object p = CGAL::intersection(segment, s3);
-        if (CGAL::assign(pt_intersec, p)) {
-          dens_set_points.insert(pt_intersec);
+        
+        vis_seg.insert(seg);
+        vis_seg.insert(seg_rev);
+        
+        Point pt_intersec;
+        if (CGAL::do_intersect(segment, seg)) {
+          CGAL::Object p = CGAL::intersection(segment, seg);
+          if (CGAL::assign(pt_intersec, p)) {
+            // std::cout << "Segment of Triangle: " << seg << std::endl;
+            // std::cout << "Intersection: " << pt_intersec << std::endl;
+            
+            // TODO: get 512 number from lx and ly
+            dens_points.push_back(rounded_point(pt_intersec, 512, 512));
+          }
         }
       }
 
@@ -385,29 +385,27 @@ std::vector<Point> densification_points_with_delaunay_triangulation(
     } while (lfc != lfc_begin && !found_both_face);
   }
 
-  if (dens_set_points.size() <= 1) {
-    dens_points.push_back(pt1);
-    dens_points.push_back(pt2);
-    return dens_points;
+  if (dens_points.size() <= 1) {
+    return {pt1, pt2};
   }
 
   if (f1_first) {
-    dens_set_points.insert(pt2);
+    dens_points.push_back(pt2);
   } else {
-    dens_set_points.insert(pt1);
+    dens_points.push_back(pt1);
   }
-  
-  // unordered_set to vector
-  for (auto it = dens_set_points.begin(); it != dens_set_points.end(); ++it) {
-    dens_points.push_back(*it);
-  }
+
+  // std::cout << "Dens Points: " << dens_points << std::endl;
 
   if (dens_points[0] != pt1) {
     reverse(dens_points.begin(), dens_points.end());
   }
 
-  assert(dens_points[0] == pt1);
-  assert(dens_points[dens_points.size() - 1] == pt2);
+  if (dens_points[0] != pt1 || dens_points[dens_points.size() - 1] != pt2) {
+    return {pt1, pt2};
+  }
+
+  // std::cout << dens_points << std::endl;
 
   return dens_points;
 }
@@ -447,28 +445,17 @@ void InsetState::densify_geo_divs_using_delaunay_triangulation()
       // Iterate over each hole
       for (auto h = pwh.holes_begin(); h != pwh.holes_end(); ++h) {
         Polygon hole_dens;
-        Polygon h_rev;
-        for (auto p = h->begin(); p != h->end(); ++p) {
-          h_rev.push_back(*p);
-        }
-        h_rev.reverse_orientation();
-
-        // std::cout << "h_rev[8] = " << h_rev[8] << std::endl;
-        // std::cout << "*h[8] = " << (*h)[8] << std::endl;
-
         for (unsigned int j = 0; j < h->size(); ++j) {
 
           // `c` and `d` are determined in the same way as `a` and `b` above
-          const Point c = (h_rev)[j];
-          const Point d =
-            (j == h_rev.size() - 1) ? (h_rev)[0] : (h_rev)[j + 1];
+          const Point c = (*h)[j];
+          const Point d = (j == h->size() - 1) ? (*h)[0] : (*h)[j + 1];
           const std::vector<Point> hole_pts_dens =
             densification_points_with_delaunay_triangulation(c, d, dt_);
           for (unsigned int i = 0; i < (hole_pts_dens.size() - 1); ++i) {
             hole_dens.push_back(hole_pts_dens[i]);
           }
         }
-        std::reverse(hole_dens.begin(), hole_dens.end());
         holes_v_dens.push_back(hole_dens);
       }
       const Polygon_with_holes pwh_dens(
