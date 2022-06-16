@@ -1,6 +1,7 @@
 #include "inset_state.h"
 #include "constants.h"
 #include "round_point.h"
+#include <cmath>
 
 InsetState::InsetState(std::string pos) : pos_(pos)
 {
@@ -8,7 +9,8 @@ InsetState::InsetState(std::string pos) : pos_(pos)
   return;
 }
 
-void InsetState::create_delaunay_t() {
+void InsetState::create_delaunay_t()
+{
 
   // Get all the points of the map
   std::vector<Point> points;
@@ -18,7 +20,7 @@ void InsetState::create_delaunay_t() {
 
       // Get exterior ring coordinates
       for (unsigned int i = 0; i < ext_ring.size(); ++i) {
-        points.emplace_back(ext_ring[i][0],  ext_ring[i][1]);
+        points.emplace_back(ext_ring[i][0], ext_ring[i][1]);
       }
 
       // Get holes of polygon with holes
@@ -39,8 +41,16 @@ void InsetState::create_delaunay_t() {
 
   // Create the quadtree and grade it
   Quadtree qt(points, Quadtree::PointMap(), 1);
-  qt.refine(9, 10); // (maximum depth, spltting condition: max number of points per node)
+  int depth = std::max(log2(lx_), log2(ly_));
+
+  std::cerr << "Using Quadtree Depth: " << depth << std::endl;
+
+  qt.refine(
+    depth,
+    9);  // (maximum depth, spltting condition: max number of points per node)
   // qt.grade();
+  
+  std::cerr << "Quadtree root node bounding box: " << qt.bbox(qt.root()) << std::endl;
 
   // Clear corner points from last iteration
   unique_quadtree_corners_.clear();
@@ -52,6 +62,13 @@ void InsetState::create_delaunay_t() {
     if (node.is_leaf()) {
       Bbox bbox = qt.bbox(node);  // Get bbox of the node
 
+      // check if points are between lx_ and ly_
+      if (
+        bbox.xmin() < 0 || bbox.xmax() > lx_ || bbox.ymin() < 0 ||
+        bbox.ymax() > ly_) {
+        continue;
+      }
+
       // Insert the four vertex of the bbox into the corners set
       unique_quadtree_corners_.insert(Point(bbox.xmin(), bbox.ymin()));
       unique_quadtree_corners_.insert(Point(bbox.xmax(), bbox.ymax()));
@@ -59,13 +76,23 @@ void InsetState::create_delaunay_t() {
       unique_quadtree_corners_.insert(Point(bbox.xmax(), bbox.ymin()));
     }
   }
+  
+  // Add lx by ly bounding box corner points in case they are omitted due to 
+  // quadtree structure
+  unique_quadtree_corners_.insert(Point(0, 0));
+  unique_quadtree_corners_.insert(Point(0, ly_));
+  unique_quadtree_corners_.insert(Point(lx_, 0));
+  unique_quadtree_corners_.insert(Point(lx_, ly_));
 
-  std::cerr << "Number of unique corners: " << unique_quadtree_corners_.size() << std::endl;
+  std::cerr << "Number of unique corners: " << unique_quadtree_corners_.size()
+            << std::endl;
 
   // Create the delaunay triangulation
   Delaunay dt;
   dt.insert(unique_quadtree_corners_.begin(), unique_quadtree_corners_.end());
   dt_ = dt;
+  std::cerr << "Number of Delaunay Triangles: " << dt_.number_of_faces()
+            << std::endl;
 }
 
 double InsetState::area_error_at(const std::string id) const
@@ -190,9 +217,9 @@ void InsetState::insert_target_area(const std::string id, const double area)
 }
 
 void InsetState::insert_whether_input_target_area_is_missing(
-    const std::string id,
-    const bool is_missing
-) {
+  const std::string id,
+  const bool is_missing)
+{
   is_input_target_area_missing_.insert(
     std::pair<std::string, bool>(id, is_missing));
   return;
@@ -227,8 +254,7 @@ void InsetState::make_fftw_plans_for_rho()
     rho_ft_.as_1d_array(),
     FFTW_REDFT10,
     FFTW_REDFT10,
-    FFTW_ESTIMATE
-  );
+    FFTW_ESTIMATE);
   bwd_plan_for_rho_ = fftw_plan_r2r_2d(
     lx_,
     ly_,
@@ -236,8 +262,7 @@ void InsetState::make_fftw_plans_for_rho()
     rho_init_.as_1d_array(),
     FFTW_REDFT01,
     FFTW_REDFT01,
-    FFTW_ESTIMATE
-  );
+    FFTW_ESTIMATE);
   return;
 }
 
@@ -276,7 +301,7 @@ unsigned long InsetState::n_points() const
 unsigned int InsetState::n_rings() const
 {
   unsigned int n_rings = 0;
-  for (const auto &gd: geo_divs_) {
+  for (const auto &gd : geo_divs_) {
     n_rings += gd.n_rings();
   }
   return n_rings;
@@ -328,9 +353,9 @@ void InsetState::set_area_errors()
 }
 
 void InsetState::set_grid_dimensions(
-    const unsigned int lx,
-    const unsigned int ly
-) {
+  const unsigned int lx,
+  const unsigned int ly)
+{
   lx_ = lx;
   ly_ = ly;
   return;
@@ -412,7 +437,8 @@ void InsetState::transform_points(std::function<Point(Point)> transform_point)
   return;
 }
 
-void InsetState::round_points() {
+void InsetState::round_points()
+{
 
   // Specialise rounded_point with lx_ and ly_
   std::function<Point(Point)> lambda = [lx = lx_, ly = ly_](Point p1) {
