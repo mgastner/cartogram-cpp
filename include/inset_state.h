@@ -157,7 +157,7 @@ public:
   bool target_area_is_missing(const std::string) const;
   double total_inset_area() const;
   double total_target_area() const;
-  std::array<Point, 3> transformed_triangle(const std::array<Point, 3>);
+  std::array<Point, 3> transformed_triangle(const std::array<Point, 3>&);
 
   // Apply given function to all points
   void transform_points(std::function<Point(Point)>);

@@ -234,7 +234,7 @@ void InsetState::fill_graticule_diagonals()
 }
 
 std::array<Point, 3> InsetState::transformed_triangle(
-  const std::array<Point, 3> tri)
+  const std::array<Point, 3> &tri)
 {
   std::array<Point, 3> transf_tri;
   for (unsigned int i = 0; i < 3; ++i) {
@@ -251,7 +251,7 @@ std::array<Point, 3> InsetState::transformed_triangle(
 // This function is needed because, sometimes,
 // `triangle.bounded_side(Point(x, y)) == CGAL::ON_BOUNDARY` does not return
 // `true` even if the point is on the boundary.
-bool is_on_triangle_boundary(const Point pt, const Polygon triangle)
+bool is_on_triangle_boundary(const Point pt, const Polygon &triangle)
 {
   for (unsigned int i = 0; i < triangle.size(); ++i) {
     const auto t1 = triangle[i];
@@ -362,8 +362,8 @@ std::array<Point, 3> InsetState::untransformed_triangle(const Point pt)
 }
 
 Point affine_trans(
-  const std::array<Point, 3> tri,
-  const std::array<Point, 3> org_tri,
+  const std::array<Point, 3> &tri,
+  const std::array<Point, 3> &org_tri,
   const Point pt)
 {
   // For each point, we make the following transformation. Suppose we find
