@@ -256,9 +256,9 @@ int main(const int argc, const char *argv[])
       }
 
       // Draw the resultant quadtree
-      inset_state.draw_quadtree(
-        inset_state.inset_name() + "_" +
-        std::to_string(inset_state.n_finished_integrations()));
+      // inset_state.draw_quadtree(
+      //   inset_state.inset_name() + "_" +
+      //   std::to_string(inset_state.n_finished_integrations()));
 
       //     cart_info.write_geojson(
       //   geo_file_name,
