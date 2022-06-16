@@ -416,7 +416,6 @@ void InsetState::flatten_density_with_node_vertices()
       ly_
     );
     
-// #pragma omp parallel for
     for (const auto &[key, val] : proj_map_){
 
       // We know, either because of the initialization or because of the
@@ -449,8 +448,6 @@ void InsetState::flatten_density_with_node_vertices()
     while (!accept) {
 
       // Simple Euler step.
-
-// #pragma omp parallel for
       for (const auto &[key, val] : proj_map_) {
         Point eul_val(
           val.x() + v_intp[key].x() * delta_t,
@@ -483,8 +480,6 @@ void InsetState::flatten_density_with_node_vertices()
       if (accept) {
 
         // Okay, we can run interpolate_bilinearly()
-
-// #pragma omp parallel for
         for (const auto &[key, val] : proj_map_){
           Point v_intp_half_val(
             interpolate_bilinearly(
