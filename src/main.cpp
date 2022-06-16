@@ -241,13 +241,13 @@ int main(const int argc, const char *argv[])
     }
 
     // Round all the points
-    inset_state.round_points();
+    // inset_state.round_points();
 
     // Integration start time
     time_point start_integration = clock_time::now();
 
     // Start map integration
-    while (inset_state.n_finished_integrations() < 10 &&
+    while (inset_state.n_finished_integrations() < max_integrations &&
            inset_state.max_area_error().value > max_permitted_area_error) {
 
       if (qtdt_method) {
@@ -255,16 +255,16 @@ int main(const int argc, const char *argv[])
         inset_state.create_delaunay_t();
       }
 
-      // inset_state.draw_quadtree(inset_state.inset_name() + "_"
-      // + std::to_string(inset_state.n_finished_integrations()));
+      // Draw the resultant quadtree
+      inset_state.draw_quadtree(
+        inset_state.inset_name() + "_" +
+        std::to_string(inset_state.n_finished_integrations()));
 
       //     cart_info.write_geojson(
       //   geo_file_name,
       //   map_name + "_" +
       //   std::to_string(inset_state.n_finished_integrations())+
       //   "_sim_cartogram.geojson", std::cout, output_to_stdout);
-
-      // inset_state.densify_geo_divs();
 
       // inset_state.draw_quadtree(inset_state.inset_name() + "_dense_"
       // + std::to_string(inset_state.n_finished_integrations()));
@@ -318,7 +318,22 @@ int main(const int argc, const char *argv[])
       }
 
       if (qtdt_method) {
+
+        // Uncomment to densify using delaunay triangulation (experimental)
         // inset_state.densify_geo_divs_using_delaunay_triangulation();
+
+        // draw resultant densified quadtree
+        //   inset_state.draw_quadtree(inset_state.inset_name() + "_densified_"
+        // + std::to_string(inset_state.n_finished_integrations()));
+
+        // Write the GeoJSON for the resultant densified map
+        // cart_info.write_geojson(
+        //   geo_file_name,
+        //   map_name + "_" +
+        //   std::to_string(inset_state.n_finished_integrations())+
+        //   "_densified_cartogram.geojson", std::cout, output_to_stdout);
+
+        // Projecting with delaunay triangulation
         inset_state.project_with_delaunay_triangulation();
       } else if (triangulation) {
 
