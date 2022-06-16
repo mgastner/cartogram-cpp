@@ -324,7 +324,7 @@ void InsetState::flatten_density_with_node_vertices()
   const double abs_tol = (std::min(lx_, ly_) * 1e-6);
 
   for (Point pt : unique_quadtree_corners_){
-    proj_map_.insert_or_assign(pt, pt);
+    proj_qd_.triangle_transformation.insert_or_assign(pt, pt);
   }
 
   // Allocate memory for the velocity grid
@@ -416,7 +416,7 @@ void InsetState::flatten_density_with_node_vertices()
       ly_
     );
     
-    for (const auto &[key, val] : proj_map_){
+    for (const auto &[key, val] : proj_qd_.triangle_transformation){
 
       // We know, either because of the initialization or because of the
       // check at the end of the last iteration, that (proj_.x, proj_.y)
@@ -448,7 +448,7 @@ void InsetState::flatten_density_with_node_vertices()
     while (!accept) {
 
       // Simple Euler step.
-      for (const auto &[key, val] : proj_map_) {
+      for (const auto &[key, val] : proj_qd_.triangle_transformation) {
         Point eul_val(
           val.x() + v_intp[key].x() * delta_t,
           val.y() + v_intp[key].y() * delta_t
@@ -476,11 +476,11 @@ void InsetState::flatten_density_with_node_vertices()
       // Make sure we do not pass a point outside [0, lx_] x [0, ly_] to
       // interpolate_bilinearly(). Otherwise decrease the time step below and
       // try again.
-      accept = all_map_points_are_in_domain(delta_t, &proj_map_, &v_intp, lx_, ly_);
+      accept = all_map_points_are_in_domain(delta_t, &proj_qd_.triangle_transformation, &v_intp, lx_, ly_);
       if (accept) {
 
         // Okay, we can run interpolate_bilinearly()
-        for (const auto &[key, val] : proj_map_){
+        for (const auto &[key, val] : proj_qd_.triangle_transformation){
           Point v_intp_half_val(
             interpolate_bilinearly(
               val.x() + 0.5 * delta_t * v_intp[key].x(),
@@ -540,7 +540,10 @@ void InsetState::flatten_density_with_node_vertices()
     // When we get here, the integration step was accepted
     t += delta_t;
     ++iter;
-    proj_map_ = mid;
+    
+    // Update the proj sequence map
+    proj_qd_.triangle_transformation = mid;
+    proj_sequence_.push_back(proj_qd_);
     delta_t *= inc_after_acc;  // Try a larger step next time
   }
   grid_fluxx_init.destroy_fftw_plan();

@@ -13,6 +13,7 @@
 #include <nlohmann/json.hpp>
 #include <vector>
 
+// TODO: Transfer this struct to colors.h
 struct color {
   double r, g, b;
 };
@@ -22,14 +23,19 @@ struct max_area_error_info {
   std::string geo_div;
 };
 
+struct proj_qd { // quadtree-delaunay projection
+    Delaunay dt; 
+    std::unordered_map<Point, Point> triangle_transformation;
+};
+
 class InsetState
 {
 private:
   std::unordered_map<std::string, double> area_errors_;
   std::unordered_set<Point> unique_quadtree_corners_;
-  Delaunay dt_;
-  std::unordered_map<Point, Point> proj_map_;  // Cartogram projection using
-                                               // quadtree corners
+  proj_qd proj_qd_;
+  std::vector<proj_qd> proj_sequence_;
+  
   Bbox bbox_;  // Bounding box
   fftw_plan bwd_plan_for_rho_;
   std::unordered_map<std::string, Color> colors_;

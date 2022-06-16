@@ -90,8 +90,8 @@ void InsetState::create_delaunay_t()
   // Create the delaunay triangulation
   Delaunay dt;
   dt.insert(unique_quadtree_corners_.begin(), unique_quadtree_corners_.end());
-  dt_ = dt;
-  std::cerr << "Number of Delaunay Triangles: " << dt_.number_of_faces()
+  proj_qd_.dt = dt;
+  std::cerr << "Number of Delaunay Triangles: " << dt.number_of_faces()
             << std::endl;
 }
 

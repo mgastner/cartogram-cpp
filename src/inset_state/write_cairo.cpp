@@ -83,7 +83,7 @@ void InsetState::draw_quadtree(const std::string filename) {
     ly_);
   cairo_t *cr = cairo_create(surface);
   write_ps_header((filename + "_dt_test.ps"), surface);
-  triangles_to_cairo(cr, dt_, color{0.0, 0.0, 0.0});
+  triangles_to_cairo(cr, proj_qd_.dt, color{0.0, 0.0, 0.0});
   write_polygon_points_cairo_surface(cr, color{1.0, 0.0, 0.0});
   cairo_show_page(cr);
   cairo_surface_destroy(surface);
