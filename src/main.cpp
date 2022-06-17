@@ -266,15 +266,6 @@ int main(const int argc, const char *argv[])
       //   std::to_string(inset_state.n_finished_integrations())+
       //   "_sim_cartogram.geojson", std::cout, output_to_stdout);
 
-      // inset_state.draw_quadtree(inset_state.inset_name() + "_dense_"
-      // + std::to_string(inset_state.n_finished_integrations()));
-
-      // cart_info.write_geojson(
-      //   geo_file_name,
-      //   map_name + "_" +
-      //   std::to_string(inset_state.n_finished_integrations())+
-      //   "_cartogram.geojson", std::cout, output_to_stdout);
-
       std::cerr << "Integration number "
                 << inset_state.n_finished_integrations() << std::endl;
 
@@ -319,20 +310,21 @@ int main(const int argc, const char *argv[])
 
       if (qtdt_method) {
 
-        // Uncomment to densify using delaunay triangulation (experimental)
-        // inset_state.densify_geo_divs_using_delaunay_triangulation();
+        if (simplify) {
+          inset_state.densify_geo_divs_using_delaunay_triangulation();
 
-        // draw resultant densified quadtree
-        //   inset_state.draw_quadtree(inset_state.inset_name() + "_densified_"
-        // + std::to_string(inset_state.n_finished_integrations()));
+          // // draw resultant densified quadtree
+          //   inset_state.draw_quadtree(inset_state.inset_name() +
+          //   "_densified_"
+          // + std::to_string(inset_state.n_finished_integrations()));
 
-        // Write the GeoJSON for the resultant densified map
-        // cart_info.write_geojson(
-        //   geo_file_name,
-        //   map_name + "_" +
-        //   std::to_string(inset_state.n_finished_integrations())+
-        //   "_densified_cartogram.geojson", std::cout, output_to_stdout);
-
+          // // Write the GeoJSON for the resultant densified map
+          // cart_info.write_geojson(
+          //   geo_file_name,
+          //   map_name + "_" +
+          //   std::to_string(inset_state.n_finished_integrations())+
+          //   "_densified_cartogram.geojson", std::cout, output_to_stdout);
+        }
         // Projecting with delaunay triangulation
         inset_state.project_with_delaunay_triangulation();
       } else if (triangulation) {
