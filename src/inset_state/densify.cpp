@@ -3,17 +3,17 @@
 #include "round_point.h"
 #include <CGAL/intersections.h>
 
-// For printing a vector
+// For printing a vector (debugging purposes)
 template <typename A>
 std::ostream &operator<<(std::ostream &cout, std::vector<A> const &v)
 {
-  std::cout << "[";
+  cout << "[";
   for (int i = 0; i < int(v.size()); i++) {
     if (i)
-      std::cout << ", ";
-    std::cout << v[i];
+      cout << ", ";
+    cout << v[i];
   }
-  return std::cout << "]";
+  return cout << "]";
 }
 
 // A point location at (-1, -1) is a sign that a point is not on the
@@ -281,14 +281,6 @@ std::vector<Point> densification_points_with_delaunay_triangulation(
   Point pt2,
   const Delaunay &dt)
 {
-  // set precision to 15
-  //  std::cout << std::setprecision(15);
-
-  // std::cout << pt1 << " " << pt2 << std::endl;
-  pt1 = rounded_point(pt1, 512, 512);
-  pt2 = rounded_point(pt2, 512, 512);
-  // std::cout << pt1 << " : " << pt2 << std::endl;
-
   std::vector<Point> dens_points;
 
   // keep track of visited segements
@@ -296,7 +288,7 @@ std::vector<Point> densification_points_with_delaunay_triangulation(
 
   // If the input points are identical, return them without calculating
   // intersections
-  if ((pt1.x() == pt2.x()) && (pt1.y() == pt2.y())) {
+  if (points_almost_equal(pt1, pt2)) {
     return {pt1, pt2};
   }
 
@@ -308,17 +300,14 @@ std::vector<Point> densification_points_with_delaunay_triangulation(
     return {pt1, pt2};
   }
 
-  bool f1_first = false, found_a_face = false, found_both_face = false;
-
-  Scd::Segment_2 segment(pt1, pt2);
+  Scd::Segment_2 segment(pt1, pt2);  // segment to be densified
 
   Line_face_circulator lfc = dt.line_walk(pt1, pt2);
 
   Line_face_circulator lfc_begin = lfc;  // we store the begining iterator
 
-  // std::cout << std::endl << "Intersected by: " << segment << std::endl <<
-  // std::endl;
-
+  // keeping track of states
+  bool f1_first = false, found_a_face = false, found_both_face = false;
   if (lfc_begin != 0) {
     do {
       Face_handle fh = lfc;
@@ -328,15 +317,15 @@ std::vector<Point> densification_points_with_delaunay_triangulation(
           break;
         }
       } else {  // have not found a matching face yet
-        if (fh == f1) { // we start with pt2 point
+        if (fh == f1) {  // we start with pt2 point
           f1_first = true;
           found_a_face = true;
 
           // add the pt1 to the list of densification points
           dens_points.push_back(pt1);
-        } else if (fh == f2) { // we start with pt2 point
+        } else if (fh == f2) {  // we start with pt2 point
           found_a_face = true;
-          
+
           // add the pt2 to the list of densification points
           dens_points.push_back(pt2);
         } else {
@@ -345,37 +334,39 @@ std::vector<Point> densification_points_with_delaunay_triangulation(
         }
       }
 
-      Scd::Triangle_2 triangle(
-        fh->vertex(0)->point(),
-        fh->vertex(1)->point(),
-        fh->vertex(2)->point());
-
       // create three segments from the triangle
-      Scd::Segment_2 s1(triangle.vertex(0), triangle.vertex(1));
-      Scd::Segment_2 s2(triangle.vertex(1), triangle.vertex(2));
-      Scd::Segment_2 s3(triangle.vertex(2), triangle.vertex(0));
+      Scd::Segment_2 s1(fh->vertex(0)->point(), fh->vertex(1)->point());
+      Scd::Segment_2 s2(fh->vertex(1)->point(), fh->vertex(2)->point());
+      Scd::Segment_2 s3(fh->vertex(2)->point(), fh->vertex(0)->point());
 
-      for (Scd::Segment_2 seg : {s1, s2, s3}) {
-        Scd::Segment_2 seg_rev(seg.target(), seg.source());
+      for (Scd::Segment_2 tri_seg : {s1, s2, s3}) {
+        Scd::Segment_2 tri_seg_rev(tri_seg.target(), tri_seg.source());
 
+        // if the segment is already visited, continue
         if (
-          vis_seg.find(seg) != vis_seg.end() ||
-          vis_seg.find(seg_rev) != vis_seg.end()) {
+          vis_seg.find(tri_seg) != vis_seg.end() ||
+          vis_seg.find(tri_seg_rev) != vis_seg.end()) {
           continue;
         }
-        
-        vis_seg.insert(seg);
-        vis_seg.insert(seg_rev);
-        
+
+        // Update the visited segments
+        vis_seg.insert(tri_seg);
+        vis_seg.insert(tri_seg_rev);
+
         Point pt_intersec;
-        if (CGAL::do_intersect(segment, seg)) {
-          CGAL::Object p = CGAL::intersection(segment, seg);
+        if (CGAL::do_intersect(segment, tri_seg)) {
+          CGAL::Object p = CGAL::intersection(segment, tri_seg);
           if (CGAL::assign(pt_intersec, p)) {
-            // std::cout << "Segment of Triangle: " << seg << std::endl;
-            // std::cout << "Intersection: " << pt_intersec << std::endl;
-            
-            // TODO: get 512 number from lx and ly
-            dens_points.push_back(rounded_point(pt_intersec, 512, 512));
+
+            // round to 11 decimal places
+            const unsigned int precision = 15;
+            pt_intersec = Point(
+              std::round(pt_intersec.x() * (1 << precision)) /
+                (1 << precision),
+              std::round(pt_intersec.y() * (1 << precision)) /
+                (1 << precision));
+
+            dens_points.push_back(pt_intersec);
           }
         }
       }
@@ -395,17 +386,15 @@ std::vector<Point> densification_points_with_delaunay_triangulation(
     dens_points.push_back(pt1);
   }
 
-  // std::cout << "Dens Points: " << dens_points << std::endl;
-
+  // if densification points are reversed order, reverse them
   if (dens_points[0] != pt1) {
     reverse(dens_points.begin(), dens_points.end());
   }
 
+  // check validity of densification points
   if (dens_points[0] != pt1 || dens_points[dens_points.size() - 1] != pt2) {
     return {pt1, pt2};
   }
-
-  // std::cout << dens_points << std::endl;
 
   return dens_points;
 }
@@ -451,7 +440,10 @@ void InsetState::densify_geo_divs_using_delaunay_triangulation()
           const Point c = (*h)[j];
           const Point d = (j == h->size() - 1) ? (*h)[0] : (*h)[j + 1];
           const std::vector<Point> hole_pts_dens =
-            densification_points_with_delaunay_triangulation(c, d, proj_qd_.dt);
+            densification_points_with_delaunay_triangulation(
+              c,
+              d,
+              proj_qd_.dt);
           for (unsigned int i = 0; i < (hole_pts_dens.size() - 1); ++i) {
             hole_dens.push_back(hole_pts_dens[i]);
           }
