@@ -97,7 +97,8 @@ double InsetState::ellipse_flux_prefactor(
     return 0.0;
   }
   double xi_to_6 = xi_sq * xi_sq * xi_sq;
-  return nu * pwh_area * (rho_p - rho_mean) * (4 * xi_sq - r_tilde_sq) /
+  return nu * pwh_area * (rho_p - rho_mean) * (4 * xi_sq - r_tilde_sq) *
+         (4 * xi_sq - r_tilde_sq) * (4 * xi_sq - r_tilde_sq) /
          (128 * pi * ell.semimajor * ell.semiminor * xi_to_6);
 }
 
@@ -196,6 +197,24 @@ void InsetState::fill_with_ellipse_density_and_flux(
       rho_init_(i, j) = nu * rho_init_(i, j) + rho_mean;
     }
   }
+
+  // Because we do not call blur_width(), the density that is expected by
+  // flatten_density() must be multiplied by 4 * lx_ * ly_.
+
+  boost::multi_array<double, 2> rho_tmp(boost::extents[lx_][ly_]);
+  for (unsigned int i = 0; i < lx_; ++i) {
+    for (unsigned int j = 0; j < ly_; ++j) {
+      rho_tmp[i][j] = 4 * lx_ * ly_ * rho_init_(i, j);
+    }
+  }
+  double rho_tmp_mean = 0.0;
+  for (unsigned int i = 0; i < lx_; ++i) {
+    for (unsigned int j = 0; j < ly_; ++j) {
+      rho_tmp_mean = rho_tmp[i][j];
+    }
+  }
+  std::cout << "rho_tmp_mean = " << rho_tmp_mean << std::endl;
+
   if (plot_density) {
     std::string file_name = inset_name_ + "_ellipse_density_" +
                             std::to_string(n_finished_integrations_) + ".eps";
@@ -218,7 +237,10 @@ void InsetState::fill_with_ellipse_density_and_flux(
     }
   }
   for (auto gd : geo_divs_) {
-    double rho_p = target_area_at(gd.id()) / gd.area();
+
+    // I multiply with 4 * lx_ * ly_ because we pass rho_tmp as density,
+    // not rho_init_.
+    double rho_p = 4 * lx_ * ly_ * target_area_at(gd.id()) / gd.area();
     for (unsigned int pgon = 0; pgon < gd.n_polygons_with_holes(); ++pgon) {
       Ellipse ell = gd.min_ellipses()[pgon];
       Polygon_with_holes pwh = gd.polygons_with_holes()[pgon];
@@ -248,7 +270,7 @@ void InsetState::fill_with_ellipse_density_and_flux(
                 ell,
                 r_tilde_sq,
                 rho_p,
-                rho_mean,
+                rho_tmp_mean,
                 pwh_area,
                 nu);
               double flux_tilde_x = prefac * x_tilde;

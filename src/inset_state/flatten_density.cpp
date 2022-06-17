@@ -19,15 +19,14 @@ void calculate_velocity(
 {
   double rho;
 
-  std::cout << "rho_init_(256, 256) = " << rho_init_(256, 256)
-            << std::endl;
+  std::cout << "rho_init_(256, 256) = " << rho_init_(256, 256) << std::endl;
 
 #pragma omp parallel for private(rho)
   for (unsigned int i = 0; i < lx; ++i) {
     for (unsigned int j = 0; j < ly; ++j) {
       rho = rho_ft(0, 0) + (1.0 - t) * (rho_init_(i, j) - rho_ft(0, 0));
-      (*grid_vx)[i][j] = -grid_fluxx_init(i, j) / rho;
-      (*grid_vy)[i][j] = -grid_fluxy_init(i, j) / rho;
+      (*grid_vx)[i][j] = grid_fluxx_init(i, j) / rho;
+      (*grid_vy)[i][j] = grid_fluxy_init(i, j) / rho;
     }
   }
   return;
@@ -123,7 +122,7 @@ void InsetState::flatten_density()
     for (unsigned int j = 0; j < ly_; ++j) {
       double denom =
         pi * ((di + 1) / dlx + (j / (di + 1)) * (j / dly) * (dlx / dly));
-      grid_fluxx_init(i, j) = -rho_ft_(i + 1, j) / denom;
+      grid_fluxx_init(i, j) = rho_ft_(i + 1, j) / denom;
     }
   }
   for (unsigned int j = 0; j < ly_; ++j) {
@@ -134,7 +133,7 @@ void InsetState::flatten_density()
     for (unsigned int j = 0; j < ly_ - 1; ++j) {
       double denom =
         pi * ((di / (j + 1)) * (di / dlx) * (dly / dlx) + (j + 1) / dly);
-      grid_fluxy_init(i, j) = -rho_ft_(i, j + 1) / denom;
+      grid_fluxy_init(i, j) = rho_ft_(i, j + 1) / denom;
     }
   }
   for (unsigned int i = 0; i < lx_; ++i) {
@@ -151,7 +150,8 @@ void InsetState::flatten_density()
       if (grid_fluxx_init(i, j) > 0.0) {
         std::cout << "ellipse_flux[" << i << "][" << j << "] = ("
                   << ellipse_fluxx_[i][j] << ", " << ellipse_fluxy_[i][j]
-                  << "), grid_fluxx_init = " << grid_fluxx_init(i, j) << "\n";
+                  << "), grid_flux_init = (" << grid_fluxx_init(i, j) << ", "
+                  << grid_fluxy_init(i, j) << ")\n";
       }
     }
   }
