@@ -277,8 +277,8 @@ void InsetState::densify_geo_divs()
 }
 
 std::vector<Point> densification_points_with_delaunay_t(
-  Point pt1,
-  Point pt2,
+  const Point pt1,
+  const Point pt2,
   const Delaunay &dt)
 {
   std::vector<Point> dens_points;
@@ -338,7 +338,7 @@ std::vector<Point> densification_points_with_delaunay_t(
       Segment s2(fh->vertex(1)->point(), fh->vertex(2)->point());
       Segment s3(fh->vertex(2)->point(), fh->vertex(0)->point());
 
-      for (Segment tri_seg : {s1, s2, s3}) {
+      for (const Segment &tri_seg : {s1, s2, s3}) {
         Segment tri_seg_rev(tri_seg.target(), tri_seg.source());
 
         // if the segment is already visited, continue

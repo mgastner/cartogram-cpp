@@ -19,8 +19,8 @@ void InsetState::create_delaunay_t()
   points.reserve(8192);
   points.max_load_factor(0.5);
 
-  for (auto gd : geo_divs_) {
-    for (auto pwh : gd.polygons_with_holes()) {
+  for (const auto &gd : geo_divs_) {
+    for (const auto &pwh : gd.polygons_with_holes()) {
       Polygon ext_ring = pwh.outer_boundary();
 
       // Get exterior ring coordinates
@@ -30,7 +30,7 @@ void InsetState::create_delaunay_t()
 
       // Get holes of polygon with holes
       for (auto hci = pwh.holes_begin(); hci != pwh.holes_end(); ++hci) {
-        Polygon hole = *hci;
+        const Polygon hole = *hci;
         for (unsigned int i = 0; i < hole.size(); ++i) {
           points.insert(Point(hole[i][0], hole[i][1]));
         }
@@ -53,7 +53,7 @@ void InsetState::create_delaunay_t()
   Quadtree qt(points_vec, Quadtree::PointMap(), 1);
   int depth = std::max(log2(lx_), log2(ly_));
 
-  std::cerr << "Using Quadtree Depth: " << depth << std::endl;
+  std::cerr << "Using Quadtree depth: " << depth << std::endl;
 
   qt.refine(
     depth,
