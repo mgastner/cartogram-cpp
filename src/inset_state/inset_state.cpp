@@ -77,7 +77,7 @@ void InsetState::create_delaunay_t()
     }
   }
   
-  // Add lx by ly bounding box corner points in case they are omitted due to 
+  // Add boundary points of mapping domain in case they are omitted due to 
   // quadtree structure
   unique_quadtree_corners_.insert(Point(0, 0));
   unique_quadtree_corners_.insert(Point(0, ly_));
@@ -87,7 +87,7 @@ void InsetState::create_delaunay_t()
   std::cerr << "Number of unique corners: " << unique_quadtree_corners_.size()
             << std::endl;
 
-  // Create the delaunay triangulation
+  // Create the Delaunay triangulation
   Delaunay dt;
   dt.insert(unique_quadtree_corners_.begin(), unique_quadtree_corners_.end());
   proj_qd_.dt = dt;
