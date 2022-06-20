@@ -307,7 +307,7 @@ std::vector<Point> densification_points_with_delaunay_t(
   Line_face_circulator lfc_begin = lfc;  // we store the begining iterator
 
   // keeping track of states
-  bool f1_first = false, found_a_face = false, found_both_face = false;
+  bool f1_first = false, found_a_face = false, found_both_faces = false;
   if (lfc_begin != 0) {
     do {
       Face_handle fh = lfc;
@@ -373,7 +373,7 @@ std::vector<Point> densification_points_with_delaunay_t(
 
       // move the iterator to the next one
       ++lfc;
-    } while (lfc != lfc_begin && !found_both_face);
+    } while (lfc != lfc_begin && !found_both_faces);
   }
 
   if (dens_points.size() <= 1) {
