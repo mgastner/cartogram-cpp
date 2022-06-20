@@ -284,7 +284,7 @@ std::vector<Point> densification_points_with_delaunay_t(
   std::vector<Point> dens_points;
 
   // keep track of visited segements
-  std::unordered_set<Scd::Segment_2> vis_seg;
+  std::unordered_set<Segment> vis_seg;
 
   // If the input points are identical, return them without calculating
   // intersections
@@ -300,7 +300,7 @@ std::vector<Point> densification_points_with_delaunay_t(
     return {pt1, pt2};
   }
 
-  Scd::Segment_2 segment(pt1, pt2);  // segment to be densified
+  Segment segment(pt1, pt2);  // segment to be densified
 
   Line_face_circulator lfc = dt.line_walk(pt1, pt2);
 
@@ -335,12 +335,12 @@ std::vector<Point> densification_points_with_delaunay_t(
       }
 
       // create three segments from the triangle
-      Scd::Segment_2 s1(fh->vertex(0)->point(), fh->vertex(1)->point());
-      Scd::Segment_2 s2(fh->vertex(1)->point(), fh->vertex(2)->point());
-      Scd::Segment_2 s3(fh->vertex(2)->point(), fh->vertex(0)->point());
+      Segment s1(fh->vertex(0)->point(), fh->vertex(1)->point());
+      Segment s2(fh->vertex(1)->point(), fh->vertex(2)->point());
+      Segment s3(fh->vertex(2)->point(), fh->vertex(0)->point());
 
-      for (Scd::Segment_2 tri_seg : {s1, s2, s3}) {
-        Scd::Segment_2 tri_seg_rev(tri_seg.target(), tri_seg.source());
+      for (Segment tri_seg : {s1, s2, s3}) {
+        Segment tri_seg_rev(tri_seg.target(), tri_seg.source());
 
         // if the segment is already visited, continue
         if (
