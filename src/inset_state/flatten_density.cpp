@@ -323,6 +323,9 @@ void InsetState::flatten_density_with_node_vertices()
   const double dec_after_not_acc = 0.75;
   const double abs_tol = (std::min(lx_, ly_) * 1e-6);
 
+  // Clear previous triangle transformation data
+  proj_qd_.triangle_transformation.clear();
+
   for (Point pt : unique_quadtree_corners_){
     proj_qd_.triangle_transformation.insert_or_assign(pt, pt);
   }
