@@ -33,7 +33,7 @@ void InsetState::create_delaunay_t()
     }
   }
 
-  // Add four lx by ly bounding box points
+  // Add boundary points of mapping domain
   points.emplace_back(0, 0);
   points.emplace_back(0, ly_);
   points.emplace_back(lx_, 0);
