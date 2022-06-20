@@ -67,25 +67,24 @@ void InsetState::create_delaunay_t()
   unique_quadtree_corners_.clear();
 
   // Get unique quadtree corners
-  // TODO: A only leaf node traversal possible. Use that to optimize this.
   for (Quadtree::Node &node :
-       qt.traverse<CGAL::Orthtrees::Preorder_traversal>()) {
-    if (node.is_leaf()) {
-      Bbox bbox = qt.bbox(node);  // Get bbox of the node
+       qt.traverse<CGAL::Orthtrees::Leaves_traversal>()) {
+        
+    // Get bbox of the leaf node
+    const Bbox bbox = qt.bbox(node);
 
-      // check if points are between lx_ and ly_
-      if (
-        bbox.xmin() < 0 || bbox.xmax() > lx_ || bbox.ymin() < 0 ||
-        bbox.ymax() > ly_) {
-        continue;
-      }
-
-      // Insert the four vertex of the bbox into the corners set
-      unique_quadtree_corners_.insert(Point(bbox.xmin(), bbox.ymin()));
-      unique_quadtree_corners_.insert(Point(bbox.xmax(), bbox.ymax()));
-      unique_quadtree_corners_.insert(Point(bbox.xmin(), bbox.ymax()));
-      unique_quadtree_corners_.insert(Point(bbox.xmax(), bbox.ymin()));
+    // check if points are between lx_ and ly_
+    if (
+      bbox.xmin() < 0 || bbox.xmax() > lx_ || bbox.ymin() < 0 ||
+      bbox.ymax() > ly_) {
+      continue;
     }
+
+    // Insert the four vertices of the bbox into the corners set
+    unique_quadtree_corners_.insert(Point(bbox.xmin(), bbox.ymin()));
+    unique_quadtree_corners_.insert(Point(bbox.xmax(), bbox.ymax()));
+    unique_quadtree_corners_.insert(Point(bbox.xmin(), bbox.ymax()));
+    unique_quadtree_corners_.insert(Point(bbox.xmax(), bbox.ymin()));
   }
 
   // Add boundary points of mapping domain in case they are omitted due to
