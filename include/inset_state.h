@@ -183,7 +183,7 @@ public:
   void write_intersections_to_eps(unsigned int);
   void write_map_to_eps(const std::string, const bool);
   void write_polygons_to_eps(std::ofstream &, const bool, const bool);
-  void write_polygon_points_cairo_surface(cairo_t *, color);
+  void write_polygon_points_on_cairo_surface(cairo_t *, color);
 };
 
 #endif

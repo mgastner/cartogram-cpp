@@ -4,7 +4,7 @@
 #include <cairo/cairo-pdf.h>
 #include <iostream>
 
-void triangles_to_cairo(cairo_t *cr, Delaunay &dt, color clr)
+void write_triangles_on_cairo_surface(cairo_t *cr, Delaunay &dt, color clr)
 {
   // Draw the triangles
   for (Delaunay::Finite_faces_iterator fit = dt.finite_faces_begin();
@@ -40,7 +40,7 @@ void write_ps_header(std::string filename, cairo_surface_t *surface)
   cairo_ps_surface_dsc_comment(surface, "%%Magnification: 1.0000");
 }
 
-void draw_point_on_cairo_surface(cairo_t *cr, Point pt, color clr)
+void write_point_on_cairo_surface(cairo_t *cr, Point pt, color clr)
 {
   cairo_set_source_rgb(cr, clr.r, clr.g, clr.b);
   cairo_move_to(cr, pt.x(), 512 - pt.y());
@@ -50,7 +50,7 @@ void draw_point_on_cairo_surface(cairo_t *cr, Point pt, color clr)
 }
 
 
-void InsetState::write_polygon_points_cairo_surface(cairo_t *cr, color clr)
+void InsetState::write_polygon_points_on_cairo_surface(cairo_t *cr, color clr)
 {
   cairo_set_source_rgb(cr, clr.r, clr.g, clr.b);
   cairo_set_line_cap(cr, CAIRO_LINE_CAP_ROUND);
@@ -62,14 +62,14 @@ void InsetState::write_polygon_points_cairo_surface(cairo_t *cr, color clr)
 
       // Plot each point in exterior ring
       for (unsigned int i = 0; i < ext_ring.size(); ++i) {
-        draw_point_on_cairo_surface(cr, ext_ring[i], clr);
+        write_point_on_cairo_surface(cr, ext_ring[i], clr);
       }
 
       // Plot holes
       for (auto hci = pwh.holes_begin(); hci != pwh.holes_end(); ++hci) {
         Polygon hole = *hci;
         for (unsigned int i = 1; i <= hole.size(); ++i) {
-          draw_point_on_cairo_surface(cr, hole[i], clr);
+          write_point_on_cairo_surface(cr, hole[i], clr);
         }
       }
     }
@@ -83,8 +83,8 @@ void InsetState::write_quadtree(const std::string filename) {
     ly_);
   cairo_t *cr = cairo_create(surface);
   write_ps_header((filename + "_dt_test.ps"), surface);
-  triangles_to_cairo(cr, proj_qd_.dt, color{0.0, 0.0, 0.0});
-  write_polygon_points_cairo_surface(cr, color{1.0, 0.0, 0.0});
+  write_triangles_on_cairo_surface(cr, proj_qd_.dt, color{0.0, 0.0, 0.0});
+  write_polygon_points_on_cairo_surface(cr, color{1.0, 0.0, 0.0});
   cairo_show_page(cr);
   cairo_surface_destroy(surface);
   cairo_destroy(cr);
