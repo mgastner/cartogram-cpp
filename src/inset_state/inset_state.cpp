@@ -16,8 +16,8 @@ void InsetState::create_delaunay_t()
   std::unordered_set<Point> points;
 
   // Avoid collisions in hash table
-  points.reserve(16384);
-  points.max_load_factor(0.25);
+  points.reserve(8192);
+  points.max_load_factor(0.5);
 
   for (auto gd : geo_divs_) {
     for (auto pwh : gd.polygons_with_holes()) {
