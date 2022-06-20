@@ -76,7 +76,7 @@ void InsetState::write_polygon_points_cairo_surface(cairo_t *cr, color clr)
   }
 }
 
-void InsetState::draw_quadtree(const std::string filename) {
+void InsetState::write_quadtree(const std::string filename) {
   cairo_surface_t *surface = cairo_ps_surface_create(
     (filename + "_dt_test.ps").c_str(),
     lx_,

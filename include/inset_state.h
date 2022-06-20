@@ -177,7 +177,7 @@ public:
     const bool);
 
   // Functions to write map to eps
-  void draw_quadtree(const std::string);
+  void write_quadtree(const std::string);
   void write_density_to_eps(const std::string, const double *);
   void write_graticule_to_eps(std::ofstream &);
   void write_intersections_to_eps(unsigned int);

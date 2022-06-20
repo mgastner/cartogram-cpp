@@ -256,7 +256,7 @@ int main(const int argc, const char *argv[])
       }
 
       // Draw the resultant quadtree
-      // inset_state.draw_quadtree(
+      // inset_state.write_quadtree(
       //   inset_state.inset_name() + "_" +
       //   std::to_string(inset_state.n_finished_integrations()));
 
@@ -314,7 +314,7 @@ int main(const int argc, const char *argv[])
           inset_state.densify_geo_divs_using_delaunay_t();
 
           // // draw resultant densified quadtree
-          //   inset_state.draw_quadtree(inset_state.inset_name() +
+          //   inset_state.write_quadtree(inset_state.inset_name() +
           //   "_densified_"
           // + std::to_string(inset_state.n_finished_integrations()));
 
