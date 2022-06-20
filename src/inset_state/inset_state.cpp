@@ -48,7 +48,7 @@ void InsetState::create_delaunay_t()
   qt.refine(
     depth,
     9);  // (maximum depth, spltting condition: max number of points per node)
-  // qt.grade();
+  qt.grade();
   
   std::cerr << "Quadtree root node bounding box: " << qt.bbox(qt.root()) << std::endl;
 
