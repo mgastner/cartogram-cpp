@@ -541,11 +541,15 @@ void InsetState::flatten_density_with_node_vertices()
     t += delta_t;
     ++iter;
     
-    // Update the proj sequence map
+    // Update the triangle transformation map
     proj_qd_.triangle_transformation = mid;
-    proj_sequence_.push_back(proj_qd_);
     delta_t *= inc_after_acc;  // Try a larger step next time
   }
+  
+  // Add current proj to proj_sequence vector
+  proj_sequence_.push_back(proj_qd_);
+  
+  // Clean up
   grid_fluxx_init.destroy_fftw_plan();
   grid_fluxy_init.destroy_fftw_plan();
   grid_fluxx_init.free();
