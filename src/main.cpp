@@ -253,11 +253,14 @@ int main(const int argc, const char *argv[])
         inset_state.create_delaunay_t();
 
         if (plot_quadtree) {
-          
-          // Draw the resultant quadtree
-          inset_state.write_quadtree(
+          const std::string quadtree_filename =
             inset_state.inset_name() + "_" +
-            std::to_string(inset_state.n_finished_integrations()) + "_quadtree");
+            std::to_string(inset_state.n_finished_integrations()) +
+            "_quadtree";
+
+          std::cerr << "Writing " << quadtree_filename << std::endl;
+          // Draw the resultant quadtree
+          inset_state.write_quadtree(quadtree_filename);
         }
       }
 
