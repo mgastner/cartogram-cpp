@@ -93,7 +93,7 @@ public:
   unsigned int colors_size() const;
   void create_contiguity_graph(unsigned int);
   void densify_geo_divs();
-  void densify_geo_divs_using_delaunay_triangulation();
+  void densify_geo_divs_using_delaunay_t();
   void destroy_fftw_plans_for_rho();
   void execute_fftw_bwd_plan() const;
   void execute_fftw_fwd_plan() const;
@@ -139,7 +139,7 @@ public:
   void project();
   Point projected_point(const Point);
   Point projected_point_with_triangulation(const Point);
-  void project_with_delaunay_triangulation();
+  void project_with_delaunay_t();
   void project_with_triangulation();
   void push_back(const GeoDiv);
   FTReal2d *ref_to_rho_ft();

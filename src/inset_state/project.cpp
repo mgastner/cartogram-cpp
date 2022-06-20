@@ -105,7 +105,7 @@ Point interpolate_point_with_barycentric_coordinates(
   return p_proj;
 }
 
-void InsetState::project_with_delaunay_triangulation()
+void InsetState::project_with_delaunay_t()
 {
   std::function<Point(Point)> lambda_bary = [&dt = proj_qd_.dt,
                                              &proj_map = proj_qd_.triangle_transformation](Point p1) {

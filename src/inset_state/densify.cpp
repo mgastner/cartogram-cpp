@@ -276,7 +276,7 @@ void InsetState::densify_geo_divs()
   return;
 }
 
-std::vector<Point> densification_points_with_delaunay_triangulation(
+std::vector<Point> densification_points_with_delaunay_t(
   Point pt1,
   Point pt2,
   const Delaunay &dt)
@@ -399,7 +399,7 @@ std::vector<Point> densification_points_with_delaunay_triangulation(
   return dens_points;
 }
 
-void InsetState::densify_geo_divs_using_delaunay_triangulation()
+void InsetState::densify_geo_divs_using_delaunay_t()
 {
   std::cerr << "Densifying using Delaunay Triangulation" << std::endl;
   std::vector<GeoDiv> geodivs_dens;
@@ -420,7 +420,7 @@ void InsetState::densify_geo_divs_using_delaunay_triangulation()
         const auto b = (i == outer.size() - 1) ? outer[0] : outer[i + 1];
         // Densify the segment
         const std::vector<Point> outer_pts_dens =
-          densification_points_with_delaunay_triangulation(a, b, proj_qd_.dt);
+          densification_points_with_delaunay_t(a, b, proj_qd_.dt);
 
         // Push all points. Omit the last point because it will be included
         // in the next iteration. Otherwise, we would have duplicated points
@@ -440,7 +440,7 @@ void InsetState::densify_geo_divs_using_delaunay_triangulation()
           const Point c = (*h)[j];
           const Point d = (j == h->size() - 1) ? (*h)[0] : (*h)[j + 1];
           const std::vector<Point> hole_pts_dens =
-            densification_points_with_delaunay_triangulation(
+            densification_points_with_delaunay_t(
               c,
               d,
               proj_qd_.dt);

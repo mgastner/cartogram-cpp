@@ -311,7 +311,7 @@ int main(const int argc, const char *argv[])
       if (qtdt_method) {
 
         if (simplify) {
-          inset_state.densify_geo_divs_using_delaunay_triangulation();
+          inset_state.densify_geo_divs_using_delaunay_t();
 
           // // draw resultant densified quadtree
           //   inset_state.draw_quadtree(inset_state.inset_name() +
@@ -326,7 +326,7 @@ int main(const int argc, const char *argv[])
           //   "_densified_cartogram.geojson", std::cout, output_to_stdout);
         }
         // Projecting with delaunay triangulation
-        inset_state.project_with_delaunay_triangulation();
+        inset_state.project_with_delaunay_t();
       } else if (triangulation) {
 
         // Choose diagonals that are inside graticule cells
