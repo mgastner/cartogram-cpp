@@ -316,7 +316,7 @@ bool all_map_points_are_in_domain(
 // Return a map of initial quadtree point to point 
 void InsetState::flatten_density_with_node_vertices()
 {
-  std::cerr << "In flatten_density()" << std::endl;
+  std::cerr << "In flatten_density_with_node_vertices()" << std::endl;
 
   // Constants for the numerical integrator
   const double inc_after_acc = 1.1;
@@ -342,24 +342,19 @@ void InsetState::flatten_density_with_node_vertices()
   // eul[i][j] will be the new position of proj_[i][j] proposed by a simple
   // Euler step: move a full time interval delta_t with the velocity at time t
   // and position (proj_[i][j].x, proj_[i][j].y)
-  // boost::multi_array<XYPoint, 2> eul(boost::extents[lx_][ly_]);
   std::unordered_map<Point, Point> eul;
 
   // mid[i][j] will be the new displacement proposed by the midpoint
   // method (see comment below for the formula)
-  // TO-DO: REPLACE WITH A MAP.
-  // boost::multi_array<XYPoint, 2> mid(boost::extents[lx_][ly_]);
   std::unordered_map<Point, Point> mid;
 
   // (vx_intp, vy_intp) will be the velocity at position (proj_.x, proj_.y) at
   // time t
-  // boost::multi_array<XYPoint, 2> v_intp(boost::extents[lx_][ly_]);
   std::unordered_map<Point, Point> v_intp;
 
   // (vx_intp_half, vy_intp_half) will be the velocity at the midpoint
   // (proj_.x + 0.5*delta_t*vx_intp, proj_.y + 0.5*delta_t*vy_intp) at time
   // t + 0.5*delta_t
-  // boost::multi_array<XYPoint, 2> v_intp_half(boost::extents[lx_][ly_]);
   std::unordered_map<Point, Point> v_intp_half;
 
   // Initialize the Fourier transforms of gridvx[] and gridvy[] at
