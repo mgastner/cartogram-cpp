@@ -20,7 +20,8 @@ argparse::ArgumentParser parsed_arguments(
     bool &plot_density,
     bool &plot_graticule,
     bool &plot_intersections,
-    bool &plot_polygons
+    bool &plot_polygons,
+    bool &plot_quadtree
 ) {
   // Create parser for arguments using argparse.
   // From https://github.com/p-ranav/argparse
@@ -53,6 +54,11 @@ argparse::ArgumentParser parsed_arguments(
 
   arguments.add_argument("-p", "--plot_polygons")
   .help("Boolean: make EPS image of input and output?")
+  .default_value(false)
+  .implicit_value(true);
+  
+  arguments.add_argument("-T", "--quadtree_to_ps")
+  .help("Boolean: make PS images of Quadtree-Delaunay Triangulation?")
   .default_value(false)
   .implicit_value(true);
 
@@ -165,6 +171,7 @@ argparse::ArgumentParser parsed_arguments(
   plot_graticule = arguments.get<bool>("-g");
   plot_intersections = arguments.get<bool>("-i");
   plot_polygons = arguments.get<bool>("-p");
+  plot_quadtree = arguments.get<bool>("-T");
 
   // Check whether n_points is specified but --simplify not passed
   if (arguments.is_used("-P") && !arguments.is_used("-s")) {
@@ -172,6 +179,15 @@ argparse::ArgumentParser parsed_arguments(
     std::cerr << "Polygons will not be simplified." << std::endl;
     std::cerr << "To enable simplification, pass the -s flag." << std::endl;
     std::cerr << arguments << std::endl;
+  }
+  
+  // Check whether n_points is specified but --simplify not passed
+  if (arguments.is_used("-T") && !arguments.is_used("-Q")) {
+    std::cerr << "ERROR: --qtdt_method flag not passed!" << std::endl;
+    std::cerr << "QTDT method is necessary for Quadtree images." << std::endl;
+    std::cerr << "To use qtdt method, pass the -Q flag." << std::endl;
+    std::cerr << arguments << std::endl;
+    _Exit(17);
   }
 
   // Print names of geometry and visual-variables files used

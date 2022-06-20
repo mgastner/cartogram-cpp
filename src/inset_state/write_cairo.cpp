@@ -78,11 +78,11 @@ void InsetState::write_polygon_points_on_cairo_surface(cairo_t *cr, color clr)
 
 void InsetState::write_quadtree(const std::string filename) {
   cairo_surface_t *surface = cairo_ps_surface_create(
-    (filename + "_dt_test.ps").c_str(),
+    (filename + ".ps").c_str(),
     lx_,
     ly_);
   cairo_t *cr = cairo_create(surface);
-  write_ps_header((filename + "_dt_test.ps"), surface);
+  write_ps_header((filename + ".ps"), surface);
   write_triangles_on_cairo_surface(cr, proj_qd_.dt, color{0.0, 0.0, 0.0});
   write_polygon_points_on_cairo_surface(cr, color{1.0, 0.0, 0.0});
   cairo_show_page(cr);

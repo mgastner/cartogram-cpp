@@ -22,6 +22,7 @@ argparse::ArgumentParser parsed_arguments(
   bool &plot_density,
   bool &plot_graticule,
   bool &plot_intersections,
-  bool &plot_polygons);
+  bool &plot_polygons,
+  bool &plot_quadtree);
 
 #endif

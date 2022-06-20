@@ -42,7 +42,7 @@ int main(const int argc, const char *argv[])
 
   // Other boolean values that are needed to parse the command line arguments
   bool make_csv, output_equal_area, output_to_stdout, plot_density,
-    plot_graticule, plot_intersections, plot_polygons;
+    plot_graticule, plot_intersections, plot_polygons, plot_quadtree;
 
   // Parse command-line arguments
   argparse::ArgumentParser arguments = parsed_arguments(
@@ -62,7 +62,8 @@ int main(const int argc, const char *argv[])
     plot_density,
     plot_graticule,
     plot_intersections,
-    plot_polygons);
+    plot_polygons,
+    plot_quadtree);
 
   // Initialize cart_info. It contains all information about the cartogram
   // that needs to be handled by functions called from main().
@@ -240,9 +241,6 @@ int main(const int argc, const char *argv[])
       inset_state.simplify(target_points_per_inset);
     }
 
-    // Round all the points
-    // inset_state.round_points();
-
     // Integration start time
     time_point start_integration = clock_time::now();
 
@@ -253,18 +251,15 @@ int main(const int argc, const char *argv[])
       if (qtdt_method) {
         // Create the deluanay triangulation
         inset_state.create_delaunay_t();
+
+        if (plot_quadtree) {
+          
+          // Draw the resultant quadtree
+          inset_state.write_quadtree(
+            inset_state.inset_name() + "_" +
+            std::to_string(inset_state.n_finished_integrations()) + "_quadtree");
+        }
       }
-
-      // Draw the resultant quadtree
-      // inset_state.write_quadtree(
-      //   inset_state.inset_name() + "_" +
-      //   std::to_string(inset_state.n_finished_integrations()));
-
-      //     cart_info.write_geojson(
-      //   geo_file_name,
-      //   map_name + "_" +
-      //   std::to_string(inset_state.n_finished_integrations())+
-      //   "_sim_cartogram.geojson", std::cout, output_to_stdout);
 
       std::cerr << "Integration number "
                 << inset_state.n_finished_integrations() << std::endl;
@@ -312,18 +307,6 @@ int main(const int argc, const char *argv[])
 
         if (simplify) {
           inset_state.densify_geo_divs_using_delaunay_t();
-
-          // // draw resultant densified quadtree
-          //   inset_state.write_quadtree(inset_state.inset_name() +
-          //   "_densified_"
-          // + std::to_string(inset_state.n_finished_integrations()));
-
-          // // Write the GeoJSON for the resultant densified map
-          // cart_info.write_geojson(
-          //   geo_file_name,
-          //   map_name + "_" +
-          //   std::to_string(inset_state.n_finished_integrations())+
-          //   "_densified_cartogram.geojson", std::cout, output_to_stdout);
         }
         // Projecting with delaunay triangulation
         inset_state.project_with_delaunay_t();
