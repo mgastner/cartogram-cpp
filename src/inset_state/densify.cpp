@@ -316,22 +316,21 @@ std::vector<Point> densification_points_with_delaunay_t(
         if (f1 == fh or f2 == fh) {  // if current face is second face
           break;
         }
-      } else {  // have not found a matching face yet
-        if (fh == f1) {  // we start with pt2 point
-          f1_first = true;
-          found_a_face = true;
+      } else if (fh == f1) {  // have not found a matching face yet; we start
+                              // with pt2 point
+        f1_first = true;
+        found_a_face = true;
 
-          // add the pt1 to the list of densification points
-          dens_points.push_back(pt1);
-        } else if (fh == f2) {  // we start with pt2 point
-          found_a_face = true;
+        // add the pt1 to the list of densification points
+        dens_points.push_back(pt1);
+      } else if (fh == f2) {  // we start with pt2 point
+        found_a_face = true;
 
-          // add the pt2 to the list of densification points
-          dens_points.push_back(pt2);
-        } else {
-          ++lfc;
-          continue;
-        }
+        // add the pt2 to the list of densification points
+        dens_points.push_back(pt2);
+      } else {  // the face does not intersect the segment
+        ++lfc;
+        continue;
       }
 
       // create three segments from the triangle
@@ -440,10 +439,7 @@ void InsetState::densify_geo_divs_using_delaunay_t()
           const Point c = (*h)[j];
           const Point d = (j == h->size() - 1) ? (*h)[0] : (*h)[j + 1];
           const std::vector<Point> hole_pts_dens =
-            densification_points_with_delaunay_t(
-              c,
-              d,
-              proj_qd_.dt);
+            densification_points_with_delaunay_t(c, d, proj_qd_.dt);
           for (unsigned int i = 0; i < (hole_pts_dens.size() - 1); ++i) {
             hole_dens.push_back(hole_pts_dens[i]);
           }
