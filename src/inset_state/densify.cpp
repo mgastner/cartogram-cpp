@@ -357,7 +357,7 @@ std::vector<Point> densification_points_with_delaunay_t(
           CGAL::Object p = CGAL::intersection(segment, tri_seg);
           if (CGAL::assign(pt_intersec, p)) {
 
-            // round to 11 decimal places
+            // round to 15 bicimal places
             const unsigned int precision = 15;
             pt_intersec = Point(
               std::round(pt_intersec.x() * (1 << precision)) /
@@ -385,7 +385,7 @@ std::vector<Point> densification_points_with_delaunay_t(
     dens_points.push_back(pt1);
   }
 
-  // if densification points are reversed order, reverse them
+  // if densification points are in reverse order, reverse them
   if (dens_points[0] != pt1) {
     reverse(dens_points.begin(), dens_points.end());
   }
