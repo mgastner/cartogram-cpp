@@ -192,6 +192,9 @@ int main(const int argc, const char *argv[])
     inset_state.initialize_cum_proj();
     inset_state.set_area_errors();
 
+    // Store initial inset area to calculate area drift
+    inset_state.store_initial_area();
+
     // Automatically color GeoDivs if no colors are provided
     if (inset_state.colors_empty()) {
       inset_state.auto_color();
@@ -269,6 +272,7 @@ int main(const int argc, const char *argv[])
         inset_state.simplify(target_points_per_inset);
       }
       inset_state.increment_integration();
+      inset_state.print_area_drift();
 
       // Update area errors
       inset_state.set_area_errors();
