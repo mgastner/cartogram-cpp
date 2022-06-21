@@ -7,6 +7,7 @@
 // Cpp Chrono for timing
 typedef std::chrono::steady_clock::time_point time_point;
 typedef std::chrono::steady_clock clock_time;
+typedef clock_time::duration duration;
 typedef std::chrono::milliseconds ms;
 
 template <typename T> std::chrono::milliseconds inMilliseconds(T duration)
@@ -117,6 +118,14 @@ int main(const int argc, const char *argv[])
 
   // Create map to store duration of each inset integrations
   std::map<std::string, ms> insets_integration_times;
+
+  // Keep track of total time
+  ms duration_initial_simplification = inMilliseconds(duration::zero()),
+     duration_simplification = inMilliseconds(duration::zero()),
+     duration_densification = inMilliseconds(duration::zero()),
+     duration_flatten_density = inMilliseconds(duration::zero()),
+     duration_fill_density = inMilliseconds(duration::zero()),
+     duration_qtdt = inMilliseconds(duration::zero());
 
   // Project map and ensure that all holes are inside polygons
   for (auto &[inset_pos, inset_state] : *cart_info.ref_to_inset_states()) {
@@ -237,9 +246,14 @@ int main(const int argc, const char *argv[])
     // finished insets
     const double inset_max_frac = inset_state.n_geo_divs() / total_geo_divs;
 
+    // Initial Simplification time
+    time_point start_initial_simplification = clock_time::now();
     if (simplify) {
       inset_state.simplify(target_points_per_inset);
     }
+    time_point end_initial_simplification = clock_time::now();
+    duration_initial_simplification += inMilliseconds(
+      end_initial_simplification - start_initial_simplification);
 
     // Integration start time
     time_point start_integration = clock_time::now();
@@ -249,8 +263,12 @@ int main(const int argc, const char *argv[])
            inset_state.max_area_error().value > max_permitted_area_error) {
 
       if (qtdt_method) {
+        time_point start_delaunay_t = clock_time::now();
+
         // Create the deluanay triangulation
         inset_state.create_delaunay_t();
+        time_point end_delaunay_t = clock_time::now();
+        duration_qtdt += inMilliseconds(end_delaunay_t - start_delaunay_t);
 
         if (plot_quadtree) {
           const std::string quadtree_filename =
@@ -292,7 +310,14 @@ int main(const int argc, const char *argv[])
       //   blur_width = 0.0;
       // }
       std::cerr << "blur_width = " << blur_width << std::endl;
+
+      // Fill with density time tracking
+      time_point start_fill_density = clock_time::now();
       inset_state.fill_with_density(plot_density);
+      time_point end_fill_density = clock_time::now();
+      duration_fill_density +=
+        inMilliseconds(end_fill_density - start_fill_density);
+
       if (blur_width > 0.0) {
         inset_state.blur_density(blur_width, plot_density);
       }
@@ -300,26 +325,36 @@ int main(const int argc, const char *argv[])
         inset_state.write_intersections_to_eps(intersections_resolution);
       }
 
+      time_point start_flatten_density = clock_time::now();
       if (qtdt_method) {
         inset_state.flatten_density_with_node_vertices();
       } else {
         inset_state.flatten_density();
       }
+      time_point end_flatten_density = clock_time::now();
+      duration_flatten_density +=
+        inMilliseconds(end_flatten_density - start_flatten_density);
 
       if (qtdt_method) {
 
         if (simplify) {
+          time_point start_densify = clock_time::now();
           inset_state.densify_geo_divs_using_delaunay_t();
+          time_point end_densify = clock_time::now();
+          duration_densification +=
+            inMilliseconds(end_densify - start_densify);
         }
         // Projecting with delaunay triangulation
         inset_state.project_with_delaunay_t();
       } else if (triangulation) {
-
+        time_point start_densify = clock_time::now();
         // Choose diagonals that are inside graticule cells
         inset_state.fill_graticule_diagonals();
 
         // Densify map
         inset_state.densify_geo_divs();
+        time_point end_densify = clock_time::now();
+        duration_densification += inMilliseconds(end_densify - start_densify);
 
         // Project with triangulation
         inset_state.project_with_triangulation();
@@ -328,7 +363,11 @@ int main(const int argc, const char *argv[])
       }
 
       if (simplify) {
+        time_point start_simplify = clock_time::now();
         inset_state.simplify(target_points_per_inset);
+        time_point end_simplify = clock_time::now();
+        duration_simplification +=
+          inMilliseconds(end_simplify - start_simplify);
       }
       inset_state.increment_integration();
 
@@ -400,19 +439,34 @@ int main(const int argc, const char *argv[])
   // End of main function time
   time_point end_main = clock_time::now();
 
-  ms total_time = inMilliseconds(end_main - start_main);
-
   // Show Time Report
   std::cerr << std::endl;
   std::cerr << "********** Time Report **********" << std::endl;
 
   // Iterate over the map and print integration times
   for (auto [inset_pos, inset_integration_time] : insets_integration_times) {
-    std::cerr << "Integration time for inset " << inset_pos << ": "
+    std::cerr << "Integration Time for Inset " << inset_pos << ": "
               << inset_integration_time.count() << " ms" << std::endl;
   }
-
-  std::cerr << "Total time: " << total_time.count() << " ms" << std::endl;
+  if (qtdt_method) {
+    std::cerr << "Quadtree-Delaunay T. Time: " << duration_qtdt.count()
+              << " ms" << std::endl;
+  }
+  if (simplify) {
+    std::cerr << "Initial Simplification Time: "
+              << duration_initial_simplification.count() << " ms" << std::endl;
+    std::cerr << "Simplification Time: " << duration_simplification.count()
+              << " ms" << std::endl;
+    std::cerr << "Densification Time: " << duration_densification.count()
+              << " ms" << std::endl;
+  }
+  std::cerr << "Flatten Density Time: " << duration_flatten_density.count()
+            << " ms" << std::endl;
+  std::cerr << "Fill with Density Time: " << duration_fill_density.count()
+            << " ms" << std::endl;
+  std::cerr << "--------------------------------" << std::endl;
+  std::cerr << "Total Time: " << inMilliseconds(end_main - start_main).count()
+            << " ms" << std::endl;
   std::cerr << "*********************************" << std::endl;
 
   return EXIT_SUCCESS;
