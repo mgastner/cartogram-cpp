@@ -125,6 +125,7 @@ public:
   void push_back(const GeoDiv);
   FTReal2d *ref_to_rho_ft();
   FTReal2d *ref_to_rho_init();
+  void remove_tiny_polygons();
   void replace_target_area(const std::string, const double);
   void rescale_map(unsigned int, bool);
   void revert_smyth_craster_projection();

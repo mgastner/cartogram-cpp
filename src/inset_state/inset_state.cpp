@@ -1,5 +1,6 @@
 #include "inset_state.h"
 #include "constants.h"
+#include <iostream>
 
 InsetState::InsetState(std::string pos) : pos_(pos)
 {
@@ -240,6 +241,35 @@ FTReal2d *InsetState::ref_to_rho_ft()
 FTReal2d *InsetState::ref_to_rho_init()
 {
   return &rho_init_;
+}
+
+void InsetState::remove_tiny_polygons()
+{
+
+  double threshold = total_inset_area() * 0.01;
+  std::vector<GeoDiv> geo_divs_cleaned;
+
+  // Iterate over GeoDivs
+  for (auto &gd : geo_divs_) {
+    GeoDiv gd_cleaned(gd.id());
+
+    // Sort polygons with holes according to area
+    gd.sort_pwh();
+
+    const auto &pwhs = gd.polygons_with_holes();
+
+    // Iterate over Polygon_with_holes
+    for (unsigned int i = 0; i < pwhs.size(); ++i) {
+
+      if (i == 0 || pwh_area(pwhs[i]) > threshold) {
+        gd_cleaned.push_back(pwhs[i]);
+      }
+    }
+    geo_divs_cleaned.push_back(gd_cleaned);
+  }
+  geo_divs_.clear();
+  geo_divs_ = geo_divs_cleaned;
+  return;
 }
 
 void InsetState::replace_target_area(const std::string id, const double area)
