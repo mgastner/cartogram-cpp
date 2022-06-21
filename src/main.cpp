@@ -218,6 +218,7 @@ int main(const int argc, const char *argv[])
     const double inset_max_frac = inset_state.n_geo_divs() / total_geo_divs;
 
     // Start map integration
+    // TODO: Add condition for area drift
     while (inset_state.n_finished_integrations() < max_integrations &&
            inset_state.max_area_error().value > max_permitted_area_error) {
       std::cerr << "Integration number "
