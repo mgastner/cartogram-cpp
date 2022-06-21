@@ -33,6 +33,9 @@ private:
   // Chosen diagonal for each graticule cell
   boost::multi_array<int, 2> graticule_diagonals_;
 
+  // Variable to store initial inset area before integration
+  double initial_area_;
+
   // Map name. Inset position is appended to the name if n_insets > 2.
   std::string inset_name_;
   std::unordered_map<std::string, bool> is_input_target_area_missing_;
@@ -123,6 +126,10 @@ public:
   Point projected_point_with_triangulation(const Point);
   void project_with_triangulation();
   void push_back(const GeoDiv);
+
+  // Print difference between current area and initial area
+  double print_area_drift() const;
+
   FTReal2d *ref_to_rho_ft();
   FTReal2d *ref_to_rho_init();
   void replace_target_area(const std::string, const double);
@@ -132,6 +139,7 @@ public:
   void set_area_errors();
   void set_grid_dimensions(const unsigned int, const unsigned int);
   void set_inset_name(const std::string);
+  void store_initial_area();
   void simplify(const unsigned int);
   double target_area_at(const std::string) const;
   bool target_area_is_missing(const std::string) const;

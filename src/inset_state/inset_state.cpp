@@ -226,6 +226,13 @@ const std::string InsetState::pos() const
   return pos_;
 }
 
+void InsetState::print_area_drift() const
+{
+  double curr_area = total_inset_area();
+  std::cout << "Area drift: " << ((curr_area / initial_area_) * 100) - 100;
+  std::cout << "%" << std::endl;
+}
+
 void InsetState::push_back(const GeoDiv gd)
 {
   geo_divs_.push_back(gd);
@@ -279,6 +286,11 @@ void InsetState::set_inset_name(const std::string inset_name)
 {
   inset_name_ = inset_name;
   return;
+}
+
+void InsetState::store_initial_area()
+{
+  initial_area_ = total_inset_area();
 }
 
 bool InsetState::target_area_is_missing(const std::string id) const
