@@ -6,7 +6,11 @@ void InsetState::fill_with_density(bool plot_density)
   // We assume that target areas that were zero or missing in the input have
   // already been replaced by
   // CartogramInfo::replace_missing_and_zero_target_areas()
-  double mean_density = total_target_area() / total_inset_area();
+  double area = total_inset_area();
+  double mean_density = total_target_area() / area;
+
+  // Correct mean density if any area drift is present
+  mean_density *= (area / initial_area_);
 
   // Initially assign zero to all densities
   for (unsigned int i = 0; i < lx_; ++i) {
