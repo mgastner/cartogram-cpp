@@ -1,4 +1,5 @@
 #include "geo_div.h"
+#include "cgal_typedef.h"
 #include "xy_point.h"
 #include "constants.h"
 
@@ -21,11 +22,7 @@ double GeoDiv::area() const
 {
   double a = 0.0;
   for (const auto &pwh : polygons_with_holes()) {
-    const auto ext_ring = pwh.outer_boundary();
-    a += ext_ring.area();
-    for (auto h = pwh.holes_begin(); h != pwh.holes_end(); ++h) {
-      a += h->area();
-    }
+    a += pwh_area(pwh);
   }
   return a;
 }
@@ -157,4 +154,9 @@ void GeoDiv::push_back(const Polygon_with_holes pwh)
 std::vector<Polygon_with_holes> *GeoDiv::ref_to_polygons_with_holes()
 {
   return &polygons_with_holes_;
+}
+
+void GeoDiv::sort_pwh()
+{
+  std::sort(polygons_with_holes_.begin(), polygons_with_holes_.end(), compare_pwh);
 }
