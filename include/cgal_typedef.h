@@ -27,4 +27,7 @@ typedef CGAL::Constrained_triangulation_plus_2<CDT> CT;
 typedef PS::Stop_below_count_ratio_threshold Stop;
 typedef PS::Squared_distance_cost Cost;
 
+double pwh_area(const Polygon_with_holes &pwh);
+bool compare_pwh(const Polygon_with_holes &pwh1, const Polygon_with_holes &pwh2);
+
 #endif
