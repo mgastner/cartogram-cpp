@@ -209,6 +209,9 @@ int main(const int argc, const char *argv[])
       inset_state.write_cairo_map(input_filename, plot_graticule);
     }
 
+    // Remove tiny polygons below threshold
+    inset_state.remove_tiny_polygons();
+
     // We make the approximation that the progress towards generating the
     // cartogram is proportional to the number of GeoDivs that are in the
     // finished insets
