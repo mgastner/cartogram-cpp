@@ -256,8 +256,8 @@ void InsetState::write_density_to_eps(
   }
   dens_mean /= n_grid_cells;
 
-  std::cout << "density range: [" << dens_min << ", " << dens_max << "]"
-            << ", mean = " << dens_mean << std::endl;
+//  std::cout << "density range: [" << dens_min << ", " << dens_max << "]"
+//            << ", mean = " << dens_mean << std::endl;
 
   for (unsigned int i = 0; i < lx_; ++i) {
     for (unsigned int j = 0; j < ly_; ++j) {
@@ -305,7 +305,7 @@ void InsetState::write_flux_to_eps(
     }
   }
   double max_flux = sqrt(max_flux_sq);
-  std::cout << "max_flux = " << sqrt(max_flux_sq) << std::endl;
+  //std::cout << "max_flux = " << sqrt(max_flux_sq) << std::endl;
 
   eps_file << "0.1 slw\n";
   for (unsigned int i = 0; i < lx_; i += 7) {

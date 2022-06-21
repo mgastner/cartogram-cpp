@@ -19,7 +19,7 @@ void calculate_velocity(
 {
   double rho;
 
-  std::cout << "rho_init_(256, 256) = " << rho_init_(256, 256) << std::endl;
+  //std::cout << "rho_init_(256, 256) = " << rho_init_(256, 256) << std::endl;
 
 #pragma omp parallel for private(rho)
   for (unsigned int i = 0; i < lx; ++i) {
@@ -57,8 +57,8 @@ bool all_points_are_in_domain(
 // method
 void InsetState::flatten_density()
 {
-  std::cerr << "In flatten_density()" << std::endl;
-  std::cout << "rho_ft_[0][0] = " << rho_ft_(0, 0) << std::endl;
+  //std::cerr << "In flatten_density()" << std::endl;
+  //std::cout << "rho_ft_[0][0] = " << rho_ft_(0, 0) << std::endl;
 
   // Constants for the numerical integrator
   const double inc_after_acc = 1.1;
@@ -145,16 +145,16 @@ void InsetState::flatten_density()
   grid_fluxx_init.execute_fftw_plan();
   grid_fluxy_init.execute_fftw_plan();
 
-  for (unsigned int i = 0; i < lx_; ++i) {
-    for (unsigned int j = 0; j < ly_; ++j) {
-      if (grid_fluxx_init(i, j) > 0.0) {
-        std::cout << "ellipse_flux[" << i << "][" << j << "] = ("
-                  << ellipse_fluxx_[i][j] << ", " << ellipse_fluxy_[i][j]
-                  << "), grid_flux_init = (" << grid_fluxx_init(i, j) << ", "
-                  << grid_fluxy_init(i, j) << ")\n";
-      }
-    }
-  }
+//  for (unsigned int i = 0; i < lx_; ++i) {
+//    for (unsigned int j = 0; j < ly_; ++j) {
+//      if (grid_fluxx_init(i, j) > 0.0) {
+//        std::cout << "ellipse_flux[" << i << "][" << j << "] = ("
+//                  << ellipse_fluxx_[i][j] << ", " << ellipse_fluxy_[i][j]
+//                  << "), grid_flux_init = (" << grid_fluxx_init(i, j) << ", "
+//                  << grid_fluxy_init(i, j) << ")\n";
+//      }
+//    }
+//  }
 
   boost::multi_array<double, 2> auxx(boost::extents[lx_][ly_]);
   boost::multi_array<double, 2> auxy(boost::extents[lx_][ly_]);

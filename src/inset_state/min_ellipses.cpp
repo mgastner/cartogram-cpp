@@ -6,7 +6,7 @@
 void InsetState::min_ellipses()
 {
   for (auto &gd : geo_divs_) {
-    std::cout << "gd " << gd.id() << std::endl;
+    //std::cout << "gd " << gd.id() << std::endl;
     for (const auto &pwh : gd.polygons_with_holes()) {
       auto ext_ring = pwh.outer_boundary();
       Ellipse ell;
@@ -106,7 +106,7 @@ void InsetState::fill_with_ellipse_density_and_flux(
   bool plot_density,
   bool plot_flux)
 {
-  std::cout << "In fill_with_ellipse_density_and_flux()" << std::endl;
+  //std::cout << "In fill_with_ellipse_density_and_flux()" << std::endl;
   for (unsigned int i = 0; i < lx_; i++) {
     for (unsigned int j = 0; j < ly_; j++) {
       rho_init_(i, j) = 0.0;
@@ -114,7 +114,7 @@ void InsetState::fill_with_ellipse_density_and_flux(
   }
   double rho_mean = total_target_area() / total_inset_area();
 
-  std::cout << "rho_mean = " << rho_mean << std::endl;
+  //std::cout << "rho_mean = " << rho_mean << std::endl;
 
   for (auto gd : geo_divs_) {
     //    double rho_p = (target_area_at(gd.id()) / total_target_area()) *
@@ -122,17 +122,17 @@ void InsetState::fill_with_ellipse_density_and_flux(
 
     double rho_p = (target_area_at(gd.id()) / gd.area());
 
-    std::cout << "total_target_area = " << total_target_area() << std::endl;
-    std::cout << "total_inset_area = " << total_inset_area() << std::endl;
-    std::cout << "target_area = " << target_area_at(gd.id()) << std::endl;
-    std::cout << "gd.area = " << gd.area() << std::endl;
-    std::cout << "rho_p = " << rho_p << std::endl;
+    //std::cout << "total_target_area = " << total_target_area() << std::endl;
+    //std::cout << "total_inset_area = " << total_inset_area() << std::endl;
+    //std::cout << "target_area = " << target_area_at(gd.id()) << std::endl;
+    //std::cout << "gd.area = " << gd.area() << std::endl;
+    //std::cout << "rho_p = " << rho_p << std::endl;
 
     for (unsigned int pgon = 0; pgon < gd.n_polygons_with_holes(); ++pgon) {
       Ellipse ell = gd.min_ellipses()[pgon];
 
-      std::cout << "ellipse area = " << pi * ell.semimajor * ell.semimajor
-                << std::endl;
+      //std::cout << "ellipse area = " << pi * ell.semimajor * ell.semimajor
+      //          << std::endl;
 
       Polygon_with_holes pwh = gd.polygons_with_holes()[pgon];
       const auto ext_ring = pwh.outer_boundary();
@@ -178,10 +178,6 @@ void InsetState::fill_with_ellipse_density_and_flux(
       rho_max = std::max(rho_max, rho_init_(i, j));
     }
   }
-
-  std::cout << "pos A: rho_min = " << rho_min << ", rho_max = " << rho_max
-            << std::endl;
-
   double acceptable_min = -0.2 * rho_mean;
   double acceptable_max = 0.2 * rho_mean;
   double nu = 1.0;
@@ -213,7 +209,7 @@ void InsetState::fill_with_ellipse_density_and_flux(
       rho_tmp_mean = rho_tmp[i][j];
     }
   }
-  std::cout << "rho_tmp_mean = " << rho_tmp_mean << std::endl;
+  //std::cout << "rho_tmp_mean = " << rho_tmp_mean << std::endl;
 
   if (plot_density) {
     std::string file_name = inset_name_ + "_ellipse_density_" +
