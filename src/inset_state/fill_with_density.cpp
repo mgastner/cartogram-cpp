@@ -8,6 +8,7 @@ void InsetState::fill_with_density(bool plot_density)
   // CartogramInfo::replace_missing_and_zero_target_areas()
   double mean_density = total_target_area() / total_inset_area();
 
+#pragma omp parallel for collapse(2)
   // Initially assign zero to all densities
   for (unsigned int i = 0; i < lx_; ++i) {
     for (unsigned int j = 0; j < ly_; ++j) {
@@ -22,14 +23,8 @@ void InsetState::fill_with_density(bool plot_density)
   // filled with the mean_density.
 
   // TODO: rho_num and rho_den could be a boost::multi_array<double, 2>.
-  std::vector<std::vector<double> > rho_num(
-    lx_,
-    std::vector<double> (ly_, 0)
-  );
-  std::vector<std::vector<double> > rho_den(
-    lx_,
-    std::vector<double> (ly_, 0)
-  );
+  std::vector<std::vector<double> > rho_num(lx_, std::vector<double>(ly_, 0));
+  std::vector<std::vector<double> > rho_den(lx_, std::vector<double>(ly_, 0));
 
   // Resolution with which we sample polygons. "resolution" is the number of
   // horizontal "test rays" between each of the ly consecutive horizontal
@@ -43,15 +38,17 @@ void InsetState::fill_with_density(bool plot_density)
   // - rho_den is the sum of the weights of a ray that is inside a GeoDiv.
   // The weight of a segment of a ray that is inside a GeoDiv is equal to
   // (length of the segment inside the geo_div) * (area error of the geodiv).
+
+#pragma omp parallel for
   for (unsigned int k = 0; k < ly_; ++k) {
 
     // Iterate over each of the rays between the graticule lines y = k and
     // y = k+1
-    for (double y = k + 0.5/resolution; y < k + 1; y += 1.0/resolution) {
+    for (double y = k + 0.5 / resolution; y < k + 1; y += 1.0 / resolution) {
 
       // Intersections for one ray
       auto intersections_at_y =
-        intersections_with_rays[round((y - 0.5/resolution) * resolution)];
+        intersections_with_rays[round((y - 0.5 / resolution) * resolution)];
 
       // Sort intersections in ascending order
       std::sort(intersections_at_y.begin(), intersections_at_y.end());
@@ -100,8 +97,9 @@ void InsetState::fill_with_density(bool plot_density)
 
         // Check for intersection of polygons, holes and GeoDivs
         // TODO: Decide whether to comment out? (probably not)
-        if (intersections_at_y[i].ray_enters ==
-            intersections_at_y[i + 1].ray_enters) {
+        if (
+          intersections_at_y[i].ray_enters ==
+          intersections_at_y[i + 1].ray_enters) {
 
           // Highlight where intersection is present
           std::cerr << "\nInvalid Geometry!" << std::endl;
@@ -113,13 +111,14 @@ void InsetState::fill_with_density(bool plot_density)
           // _Exit(8026519);
         }
 
-        // Fill each cell between intersections
-        // TODO: WE ENCOUNTERED ISSUES WITH THE NEXT FOR_LOOP; THUS, WE
-        // TEMPORARILY REPLACED IT WITH THE VERSION COMMENTED-OUT BELOW.
-        // HOWEVER, NONE OF OUR CURRENT EXAMPLES EXHIBIT THIS PROBLEM.
-        // for (unsigned int m = std::max(ceil(left_x), 1.0);
-        //                   m <= std::max(ceil(right_x), 1.0);
-        //                   ++m) {
+// Fill each cell between intersections
+// TODO: WE ENCOUNTERED ISSUES WITH THE NEXT FOR_LOOP; THUS, WE
+// TEMPORARILY REPLACED IT WITH THE VERSION COMMENTED-OUT BELOW.
+// HOWEVER, NONE OF OUR CURRENT EXAMPLES EXHIBIT THIS PROBLEM.
+// for (unsigned int m = std::max(ceil(left_x), 1.0);
+//                   m <= std::max(ceil(right_x), 1.0);
+//                   ++m) {
+#pragma omp parallel for
         for (unsigned int m = ceil(left_x); m <= ceil(right_x); ++m) {
           double weight = area_error_at(intersections_at_y[i].geo_div_id);
           if (ceil(left_x) == ceil(right_x)) {
@@ -138,6 +137,7 @@ void InsetState::fill_with_density(bool plot_density)
   }
 
   // Fill rho_init with the ratio of rho_num to rho_den
+#pragma omp parallel for collapse(2)
   for (unsigned int i = 0; i < lx_; ++i) {
     for (unsigned int j = 0; j < ly_; ++j) {
       if (rho_den[i][j] == 0) {
@@ -148,11 +148,8 @@ void InsetState::fill_with_density(bool plot_density)
     }
   }
   if (plot_density) {
-    std::string file_name =
-      inset_name_ +
-      "_unblurred_density_" +
-      std::to_string(n_finished_integrations()) +
-      ".eps";
+    std::string file_name = inset_name_ + "_unblurred_density_" +
+                            std::to_string(n_finished_integrations()) + ".eps";
     std::cerr << "Writing " << file_name << std::endl;
     write_density_to_eps(file_name, rho_init_.as_1d_array());
   }
