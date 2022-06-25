@@ -38,7 +38,7 @@ class intersection {
 };
 
 void add_intersections(std::vector<intersection> &,
-                       const Polygon,
+                       const Polygon &,
                        const double,
                        const double,
                        const double,

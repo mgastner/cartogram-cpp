@@ -1,10 +1,108 @@
 #include "inset_state.h"
 #include "constants.h"
+#include "round_point.h"
+#include <cmath>
 
 InsetState::InsetState(std::string pos) : pos_(pos)
 {
   n_finished_integrations_ = 0;
   return;
+}
+
+void InsetState::create_delaunay_t()
+{
+
+  // Get all the points of the map in a unordered_map to remove duplicates
+  std::unordered_set<Point> points;
+
+  // Avoid collisions in hash table
+  points.reserve(8192);
+  points.max_load_factor(0.5);
+
+  for (const auto &gd : geo_divs_) {
+    for (const auto &pwh : gd.polygons_with_holes()) {
+      Polygon ext_ring = pwh.outer_boundary();
+
+      // Get exterior ring coordinates
+      for (unsigned int i = 0; i < ext_ring.size(); ++i) {
+        points.insert(Point(ext_ring[i][0], ext_ring[i][1]));
+      }
+
+      // Get holes of polygon with holes
+      for (auto hci = pwh.holes_begin(); hci != pwh.holes_end(); ++hci) {
+        const Polygon hole = *hci;
+        for (unsigned int i = 0; i < hole.size(); ++i) {
+          points.insert(Point(hole[i][0], hole[i][1]));
+        }
+      }
+    }
+  }
+
+  // Add boundary points of mapping domain
+  points.insert(Point(0, 0));
+  points.insert(Point(0, ly_));
+  points.insert(Point(lx_, 0));
+  points.insert(Point(lx_, ly_));
+
+  std::vector<Point> points_vec;
+
+  // Copy points of unordered_set to vector
+  std::copy(points.begin(), points.end(), std::back_inserter(points_vec));
+
+  // Create the quadtree and grade it
+  Quadtree qt(points_vec, Quadtree::PointMap(), 1);
+  int depth = std::max(log2(lx_), log2(ly_));
+
+  std::cerr << "Using Quadtree depth: " << depth << std::endl;
+
+  qt.refine(
+    depth,
+    9);  // (maximum depth, spltting condition: max number of points per node)
+  qt.grade();
+
+  std::cerr << "Quadtree root node bounding box: " << qt.bbox(qt.root())
+            << std::endl;
+
+  // Clear corner points from last iteration
+  unique_quadtree_corners_.clear();
+
+  // Get unique quadtree corners
+  for (Quadtree::Node &node :
+       qt.traverse<CGAL::Orthtrees::Leaves_traversal>()) {
+        
+    // Get bbox of the leaf node
+    const Bbox bbox = qt.bbox(node);
+
+    // check if points are between lx_ and ly_
+    if (
+      bbox.xmin() < 0 || bbox.xmax() > lx_ || bbox.ymin() < 0 ||
+      bbox.ymax() > ly_) {
+      continue;
+    }
+
+    // Insert the four vertices of the bbox into the corners set
+    unique_quadtree_corners_.insert(Point(bbox.xmin(), bbox.ymin()));
+    unique_quadtree_corners_.insert(Point(bbox.xmax(), bbox.ymax()));
+    unique_quadtree_corners_.insert(Point(bbox.xmin(), bbox.ymax()));
+    unique_quadtree_corners_.insert(Point(bbox.xmax(), bbox.ymin()));
+  }
+
+  // Add boundary points of mapping domain in case they are omitted due to
+  // quadtree structure
+  unique_quadtree_corners_.insert(Point(0, 0));
+  unique_quadtree_corners_.insert(Point(0, ly_));
+  unique_quadtree_corners_.insert(Point(lx_, 0));
+  unique_quadtree_corners_.insert(Point(lx_, ly_));
+
+  std::cerr << "Number of unique corners: " << unique_quadtree_corners_.size()
+            << std::endl;
+
+  // Create the Delaunay triangulation
+  Delaunay dt;
+  dt.insert(unique_quadtree_corners_.begin(), unique_quadtree_corners_.end());
+  proj_qd_.dt = dt;
+  std::cerr << "Number of Delaunay triangles: " << dt.number_of_faces()
+            << std::endl;
 }
 
 double InsetState::area_error_at(const std::string id) const
@@ -346,5 +444,18 @@ void InsetState::transform_points(std::function<Point(Point)> transform_point)
       }
     }
   }
+  return;
+}
+
+void InsetState::round_points()
+{
+
+  // Specialise rounded_point with lx_ and ly_
+  std::function<Point(Point)> lambda = [lx = lx_, ly = ly_](Point p1) {
+    return rounded_point(p1, lx, ly);
+  };
+
+  // Apply `lambda` to all points
+  transform_points(lambda);
   return;
 }

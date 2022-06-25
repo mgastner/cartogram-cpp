@@ -10,9 +10,9 @@
 constexpr int no_matching_simpl_pgn = -1;
 
 bool contains_vertices_in_order(
-    const Polygon non_simpl_pgn,
-    const Polygon simpl_pgn,
-    const Bbox simpl_bb
+    const Polygon &non_simpl_pgn,
+    const Polygon &simpl_pgn,
+    const Bbox &simpl_bb
 ) {
   // Return true if and only if
   // - the non-simplified polygon contains all vertices in the simplified
@@ -58,7 +58,7 @@ bool contains_vertices_in_order(
 }
 
 int simplified_polygon_index(
-    const Polygon non_simpl_pgn,
+    const Polygon &non_simpl_pgn,
     const std::vector<Polygon> *simpl_pgns,
     const std::vector<Bbox> *simpl_bboxes,
     std::list<unsigned int> *unmatched

@@ -62,7 +62,7 @@ bool intersection::ray_intersects(XYPoint a,
 // This function adds intersections between a ray and a polygon to
 // `intersections`
 void add_intersections(std::vector<intersection> &intersections,
-                       const Polygon pgn,
+                       const Polygon &pgn,
                        const double ray,
                        const double target_density,
                        const double epsilon,

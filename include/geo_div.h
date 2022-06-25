@@ -14,7 +14,6 @@ private:
   std::vector<Ellipse> min_ellipses_;
   std::vector<Polygon_with_holes> polygons_with_holes_;
   GeoDiv();
-
 public:
   explicit GeoDiv(const std::string);
   const std::set<std::string> adjacent_geodivs() const;
@@ -28,7 +27,7 @@ public:
   unsigned int n_polygons_with_holes() const;
   unsigned int n_rings() const;
   Point point_on_surface_of_geodiv() const;
-  Point point_on_surface_of_polygon_with_holes(const Polygon_with_holes) const;
+  Point point_on_surface_of_polygon_with_holes(const Polygon_with_holes&) const;
   const std::vector<Polygon_with_holes> polygons_with_holes() const;
   void push_back_ellipse(Ellipse);
   void push_back_polygon_with_holes(const Polygon_with_holes);

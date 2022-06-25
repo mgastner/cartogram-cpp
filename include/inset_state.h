@@ -13,15 +13,29 @@
 #include <nlohmann/json.hpp>
 #include <vector>
 
+// TODO: Transfer this struct to colors.h
+struct color {
+  double r, g, b;
+};
+
 struct max_area_error_info {
   double value;
   std::string geo_div;
+};
+
+struct proj_qd { // quadtree-delaunay projection
+    Delaunay dt; 
+    std::unordered_map<Point, Point> triangle_transformation;
 };
 
 class InsetState
 {
 private:
   std::unordered_map<std::string, double> area_errors_;
+  std::unordered_set<Point> unique_quadtree_corners_;
+  proj_qd proj_qd_;
+  std::vector<proj_qd> proj_sequence_;
+  
   Bbox bbox_;  // Bounding box
   fftw_plan bwd_plan_for_rho_;
   std::unordered_map<std::string, Color> colors_;
@@ -67,6 +81,7 @@ private:
 
 public:
   explicit InsetState(const std::string);  // Constructor
+  void create_delaunay_t();
   void adjust_for_dual_hemisphere();
   void apply_albers_projection();
   void apply_smyth_craster_projection();
@@ -82,6 +97,7 @@ public:
   unsigned int colors_size() const;
   void create_contiguity_graph(unsigned int);
   void densify_geo_divs();
+  void densify_geo_divs_using_delaunay_t();
   void destroy_fftw_plans_for_rho();
   double delta_rho(Ellipse, double, double, double, double);
   double ellipse_flux_prefactor(
@@ -100,6 +116,7 @@ public:
   void fill_with_density(bool);  // Fill map with density, using scanlines
   void fill_with_ellipse_density_and_flux(bool, bool);
   void flatten_density();  // Flatten said density with integration
+  void flatten_density_with_node_vertices();
 
   const std::vector<GeoDiv> geo_divs() const;
   void holes_inside_polygons();
@@ -136,6 +153,7 @@ public:
   void project();
   Point projected_point(const Point);
   Point projected_point_with_triangulation(const Point);
+  void project_with_delaunay_t();
   void project_with_triangulation();
   void push_back(const GeoDiv);
   FTReal2d *ref_to_rho_ft();
@@ -144,6 +162,7 @@ public:
   void rescale_map(unsigned int, bool);
   void revert_smyth_craster_projection();
   void rings_are_simple();
+  void round_points();
   void set_area_errors();
   void set_grid_dimensions(const unsigned int, const unsigned int);
   void set_inset_name(const std::string);
@@ -152,7 +171,7 @@ public:
   bool target_area_is_missing(const std::string) const;
   double total_inset_area() const;
   double total_target_area() const;
-  std::array<Point, 3> transformed_triangle(const std::array<Point, 3>);
+  std::array<Point, 3> transformed_triangle(const std::array<Point, 3>&);
 
   // Apply given function to all points
   void transform_points(std::function<Point(Point)>);
@@ -172,6 +191,7 @@ public:
     const bool);
 
   // Functions to write map to eps
+  void write_quadtree(const std::string);
   void write_density_to_eps(const std::string, const double *);
   void write_flux_to_eps(
     const std::string,
@@ -181,6 +201,7 @@ public:
   void write_intersections_to_eps(unsigned int);
   void write_map_to_eps(const std::string, const bool);
   void write_polygons_to_eps(std::ofstream &, const bool, const bool);
+  void write_polygon_points_on_cairo_surface(cairo_t *, color);
 };
 
 #endif

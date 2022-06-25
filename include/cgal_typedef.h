@@ -3,12 +3,16 @@
 
 #include <CGAL/Min_ellipse_2.h>
 #include <CGAL/Min_ellipse_2_traits_2.h>
-//#include <CGAL/Min_sphere_of_spheres_d.h>
-//#include <CGAL/Min_sphere_of_points_d_traits_2.h>
 #include <CGAL/Min_circle_2.h>
 #include <CGAL/Min_circle_2_traits_2.h>
 #include <CGAL/Polygon_with_holes_2.h>
 #include <CGAL/Polyline_simplification_2/simplify.h>
+#include <CGAL/Orthtree.h>
+#include <CGAL/Quadtree.h>
+#include <CGAL/Orthtree_traits_d.h>
+#include <CGAL/Delaunay_triangulation_2.h>
+#include <CGAL/Barycentric_coordinates_2.h>
+
 
 typedef CGAL::Simple_cartesian<double> Scd;
 typedef CGAL::Polygon_2<Scd> Polygon;
@@ -24,6 +28,17 @@ typedef  CGAL::Min_ellipse_2_traits_2<Scd>  Ellipse_traits;
 typedef  CGAL::Min_ellipse_2<Ellipse_traits> Min_ellipse;
 typedef  CGAL::Min_circle_2_traits_2<Scd>  Circle_traits;
 typedef  CGAL::Min_circle_2<Circle_traits> Min_circle;
+
+// Quadtree
+typedef CGAL::Orthtree<CGAL::Orthtree_traits_2<Scd>, std::vector<Point>> Quadtree;
+
+// Delaunay triangulation
+typedef CGAL::Delaunay_triangulation_2<Scd> Delaunay;
+typedef Delaunay::Line_face_circulator Line_face_circulator;
+typedef Delaunay::Face_handle Face_handle;
+
+// Barycentric coordinates
+namespace BC = CGAL::Barycentric_coordinates;
 
 // Polyline simplification
 namespace PS = CGAL::Polyline_simplification_2;

@@ -99,7 +99,7 @@ Point GeoDiv::point_on_surface_of_geodiv() const
 // https://gis.stackexchange.com/questions/76498/how-is-st-pointonsurface-
 // calculated
 Point GeoDiv::point_on_surface_of_polygon_with_holes(
-  const Polygon_with_holes pwh) const
+  const Polygon_with_holes &pwh) const
 {
   const auto bb = pwh.bbox();
   const double line_y = 0.5 * (bb.ymin() + bb.ymax());
