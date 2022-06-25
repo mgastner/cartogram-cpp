@@ -4,95 +4,39 @@ void InsetState::flatten_ellipse_density()
 {
   std::cerr << "In flatten_ellipse_density()" << std::endl;
 
-  //  // Constants for the numerical integrator
-  //  const double inc_after_acc = 1.1;
-  //  const double dec_after_not_acc = 0.75;
-  //  const double abs_tol = (std::min(lx_, ly_) * 1e-6);
-  //
-  //  // Clear previous triangle transformation data
-  //  proj_qd_.triangle_transformation.clear();
-  //
-  //  for (const Point &pt : unique_quadtree_corners_) {
-  //    proj_qd_.triangle_transformation.insert_or_assign(pt, pt);
-  //  }
-  //
-  //  // Allocate memory for the velocity grid
-  //  boost::multi_array<double, 2> grid_vx(boost::extents[lx_][ly_]);
-  //  boost::multi_array<double, 2> grid_vy(boost::extents[lx_][ly_]);
-  //
-  //  // Prepare Fourier transforms for the flux
-  //  FTReal2d grid_fluxx_init;
-  //  FTReal2d grid_fluxy_init;
-  //  grid_fluxx_init.allocate(lx_, ly_);
-  //  grid_fluxy_init.allocate(lx_, ly_);
-  //  grid_fluxx_init.make_fftw_plan(FFTW_RODFT01, FFTW_REDFT01);
-  //  grid_fluxy_init.make_fftw_plan(FFTW_REDFT01, FFTW_RODFT01);
-  //
-  //  // eul[i][j] will be the new position of proj_[i][j] proposed by a simple
-  //  // Euler step: move a full time interval delta_t with the velocity at
-  //  time t
-  //  // and position (proj_[i][j].x, proj_[i][j].y)
-  //  std::unordered_map<Point, Point> eul;
-  //
-  //  // mid[i][j] will be the new displacement proposed by the midpoint
-  //  // method (see comment below for the formula)
-  //  std::unordered_map<Point, Point> mid;
-  //
-  //  // (vx_intp, vy_intp) will be the velocity at position (proj_.x, proj_.y)
-  //  at
-  //  // time t
-  //  std::unordered_map<Point, Point> v_intp;
-  //
-  //  // (vx_intp_half, vy_intp_half) will be the velocity at the midpoint
-  //  // (proj_.x + 0.5*delta_t*vx_intp, proj_.y + 0.5*delta_t*vy_intp) at time
-  //  // t + 0.5*delta_t
-  //  std::unordered_map<Point, Point> v_intp_half;
-  //
-  //  // Initialize the Fourier transforms of gridvx[] and gridvy[] at
-  //  // every point on the lx_-times-ly_ grid at t = 0. We must typecast lx_
-  //  and
-  //  // ly_ as double-precision numbers. Otherwise the ratios in the
-  //  denominator
-  //  // will evaluate as zero.
-  //  double dlx = lx_;
-  //  double dly = ly_;
-  //
-  //  // We temporarily insert the Fourier coefficients for the x-components
-  //  and
-  //  // y-components of the flux vector into grid_fluxx_init and
-  //  grid_fluxy_init for (unsigned int i = 0; i < lx_ - 1; ++i) {
-  //    double di = i;
-  //    for (unsigned int j = 0; j < ly_; ++j) {
-  //      double denom =
-  //        pi * ((di + 1) / dlx + (j / (di + 1)) * (j / dly) * (dlx / dly));
-  //      grid_fluxx_init(i, j) = -rho_ft_(i + 1, j) / denom;
-  //    }
-  //  }
-  //  for (unsigned int j = 0; j < ly_; ++j) {
-  //    grid_fluxx_init(lx_ - 1, j) = 0.0;
-  //  }
-  //  for (unsigned int i = 0; i < lx_; ++i) {
-  //    double di = i;
-  //    for (unsigned int j = 0; j < ly_ - 1; ++j) {
-  //      double denom =
-  //        pi * ((di / (j + 1)) * (di / dlx) * (dly / dlx) + (j + 1) / dly);
-  //      grid_fluxy_init(i, j) = -rho_ft_(i, j + 1) / denom;
-  //    }
-  //  }
-  //  for (unsigned int i = 0; i < lx_; ++i) {
-  //    grid_fluxy_init(i, ly_ - 1) = 0.0;
-  //  }
-  //
-  //  // Compute the flux vector and store the result in grid_fluxx_init and
-  //  // grid_fluxy_init
-  //  grid_fluxx_init.execute_fftw_plan();
-  //  grid_fluxy_init.execute_fftw_plan();
-  //  double t = 0.0;
-  //  double delta_t = 1e-2;  // Initial time step.
-  //  unsigned int iter = 0;
-  //
-  //  // Integrate
-  //  while (t < 1.0) {
+  // Constants for the numerical integrator
+  const double inc_after_acc = 1.1;
+  const double dec_after_not_acc = 0.75;
+  const double abs_tol = (std::min(lx_, ly_) * 1e-6);
+
+  // Clear previous triangle transformation data
+  proj_qd_.triangle_transformation.clear();
+
+  for (const Point &pt : unique_quadtree_corners_) {
+    proj_qd_.triangle_transformation.insert_or_assign(pt, pt);
+  }
+
+  // eul[i][j] will be the new position of proj_[i][j] proposed by a simple
+  // Euler step: move a full time interval delta_t with the velocity at
+  // time t and position (proj_[i][j].x, proj_[i][j].y)
+  std::unordered_map<Point, Point> eul;
+
+  // mid[i][j] will be the new displacement proposed by the midpoint
+  // method (see comment below for the formula)
+  std::unordered_map<Point, Point> mid;
+
+  // Initial time and step size
+  double t = 0.0;
+  double delta_t = 1e-2;  // Initial time step.
+  unsigned int iter = 0;
+
+  // Integrate
+  while (t < 1.0) {
+    for (const auto &[key, val] : proj_qd_.triangle_transformation) {
+      // Calculate density, velocity and flux at (val.x(), val.y())
+      return;
+    }
+  }
   //    calculate_velocity(
   //      t,
   //      grid_fluxx_init,
@@ -104,7 +48,6 @@ void InsetState::flatten_ellipse_density()
   //      lx_,
   //      ly_);
   //
-  //    for (const auto &[key, val] : proj_qd_.triangle_transformation) {
   //
   //      // We know, either because of the initialization or because of the
   //      // check at the end of the last iteration, that (proj_.x, proj_.y)
