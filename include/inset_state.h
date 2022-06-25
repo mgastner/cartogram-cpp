@@ -116,6 +116,7 @@ public:
   void fill_with_density(bool);  // Fill map with density, using scanlines
   void fill_with_ellipse_density_and_flux(bool, bool);
   void flatten_density();  // Flatten said density with integration
+  void flatten_ellipse_density();
   void flatten_density_with_node_vertices();
 
   const std::vector<GeoDiv> geo_divs() const;
