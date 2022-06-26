@@ -225,7 +225,7 @@ int main(const int argc, const char *argv[])
     inset_state.set_area_errors();
 
     inset_state.min_ellipses();
-    inset_state.fill_with_ellipse_density_and_flux(plot_density, true);
+    //inset_state.fill_with_ellipse_density_and_flux(plot_density, true);
 
     // Automatically color GeoDivs if no colors are provided
     if (inset_state.colors_empty()) {

@@ -99,14 +99,6 @@ public:
   void densify_geo_divs();
   void densify_geo_divs_using_delaunay_t();
   void destroy_fftw_plans_for_rho();
-  double delta_rho(Ellipse, double, double, double, double);
-  double ellipse_flux_prefactor(
-    Ellipse,
-    double,
-    double,
-    double,
-    double,
-    double);
   void execute_fftw_bwd_plan() const;
   void execute_fftw_fwd_plan() const;
   void exit_if_not_on_grid_or_edge(const Point p1) const;

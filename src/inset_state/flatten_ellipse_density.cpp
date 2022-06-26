@@ -1,4 +1,109 @@
+#include "constants.h"
 #include "inset_state.h"
+
+#define XI (2)
+
+void InsetState::min_ellipses()
+{
+  for (auto &gd : geo_divs_) {
+    //std::cout << "gd " << gd.id() << std::endl;
+    for (const auto &pwh : gd.polygons_with_holes()) {
+      auto ext_ring = pwh.outer_boundary();
+      Ellipse ell;
+
+      // The minimum ellipse is not uniquely defined if there are fewer than
+      // 6 points, see:
+      // https://math.stackexchange.com/questions/3063610/how-many-points-are-needed-to-uniquely-define-an-ellipse
+      // In that case, we use the minimum circle instead of the minimum
+      // ellipse.
+      if (ext_ring.size() < 6) {
+        Min_circle mc(ext_ring.vertices_begin(), ext_ring.vertices_end());
+        ell.center = mc.circle().center();
+        ell.semimajor = sqrt(mc.circle().squared_radius());
+        ell.semiminor = ell.semimajor;
+        ell.cos_theta = 1.0;
+        ell.sin_theta = 0.0;
+      } else {
+        Min_ellipse me(
+          ext_ring.vertices_begin(),
+          ext_ring.vertices_end(),
+          true);
+        double a, b, c, d, e, f;
+
+        // Following example at
+        // https://doc.cgal.org/latest/Bounding_volumes/classCGAL_1_1Min__ellipse__2.html
+        // The order "a, c, b" is deliberate so that it is easier to match the
+        // coefficients with those at
+        // https://en.wikipedia.org/wiki/Ellipse#General_ellipse
+        me.ellipse().double_coefficients(a, c, b, d, e, f);
+
+        // If a < 0, we flip the signs of all coefficients so that we identify
+        // correctly which axis is the semimajor axis.
+        if (a < 0) {
+          a *= -1;
+          b *= -1;
+          c *= -1;
+          d *= -1;
+          e *= -1;
+          f *= -1;
+        }
+        double denom = (b * b) - (4 * a * c);
+        double fac1 =
+          (a * e * e) + (c * d * d) - (b * d * e) + ((b * b - 4 * a * c) * f);
+        double inner_sqrt = sqrt(((a - c) * (a - c)) + (b * b));
+        ell.semimajor = -sqrt(2 * fac1 * (a + c + inner_sqrt)) / denom;
+        ell.semiminor = -sqrt(2 * fac1 * (a + c - inner_sqrt)) / denom;
+        ell.center = Point(
+          ((2 * c * d) - (b * e)) / denom,
+          ((2 * a * e) - (b * d)) / denom);
+        double theta = (a < c) ? 0.0 : pi;
+        if (b != 0.0) {
+          theta = atan((c - a - inner_sqrt) / b);
+        }
+        ell.cos_theta = cos(theta);
+        ell.sin_theta = sin(theta);
+      }
+      gd.push_back_ellipse(ell);
+    }
+  }
+}
+
+double delta_rho_of_polygon(
+  Ellipse ell,
+  double r_tilde_sq,
+  double rho_p,
+  double rho_mean,
+  double pwh_area)
+{
+  double xi_sq = XI * XI;
+  if (r_tilde_sq >= 4 * xi_sq) {
+    return 0.0;
+  }
+  double xi_to_6 = xi_sq * xi_sq * xi_sq;
+  double prefac = ((rho_p - rho_mean) * pwh_area) /
+                  (16 * pi * ell.semimajor * ell.semiminor * xi_to_6);
+  double postfac = r_tilde_sq - 4 * xi_sq;
+  double polynomial = -(r_tilde_sq - xi_sq) * postfac * postfac;
+  return prefac * polynomial;
+}
+
+double ellipse_flux_prefactor(
+  Ellipse ell,
+  double r_tilde_sq,
+  double rho_p,
+  double rho_mean,
+  double pwh_area,
+  double nu)
+{
+  double xi_sq = XI * XI;
+  if (r_tilde_sq >= 4 * xi_sq) {
+    return 0.0;
+  }
+  double xi_to_6 = xi_sq * xi_sq * xi_sq;
+  return nu * pwh_area * (rho_p - rho_mean) * (4 * xi_sq - r_tilde_sq) *
+         (4 * xi_sq - r_tilde_sq) * (4 * xi_sq - r_tilde_sq) /
+         (128 * pi * ell.semimajor * ell.semiminor * xi_to_6);
+}
 
 void InsetState::flatten_ellipse_density()
 {
@@ -33,7 +138,7 @@ void InsetState::flatten_ellipse_density()
   // Integrate
   while (t < 1.0) {
     for (const auto &[key, val] : proj_qd_.triangle_transformation) {
-      // Calculate density, velocity and flux at (val.x(), val.y())
+      // Calculate density, flux and velocity at (val.x(), val.y())
       return;
     }
   }
