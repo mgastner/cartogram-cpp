@@ -1,12 +1,12 @@
 #include "constants.h"
 #include "inset_state.h"
 
-#define XI (2)
+constexpr double xi_sq(4.0);
 
 void InsetState::min_ellipses()
 {
   for (auto &gd : geo_divs_) {
-    //std::cout << "gd " << gd.id() << std::endl;
+    // std::cout << "gd " << gd.id() << std::endl;
     for (const auto &pwh : gd.polygons_with_holes()) {
       auto ext_ring = pwh.outer_boundary();
       Ellipse ell;
@@ -75,7 +75,6 @@ double delta_rho_of_polygon(
   double rho_mean,
   double pwh_area)
 {
-  double xi_sq = XI * XI;
   if (r_tilde_sq >= 4 * xi_sq) {
     return 0.0;
   }
@@ -87,6 +86,23 @@ double delta_rho_of_polygon(
   return prefac * polynomial;
 }
 
+double ellipse_density_prefactor(
+  Ellipse ell,
+  double rho_p,
+  double rho_mean,
+  double pwh_area,
+  double nu)
+{
+  return nu * pwh_area * (rho_p - rho_mean) /
+         (pi * ell.semimajor * ell.semiminor);
+}
+
+double ellipse_density_polynomial(double r_tilde_sq)
+{
+  (r_tilde_sq - xi_sq) * (r_tilde_sq - 4 * xi_sq) * (r_tilde_sq - 4 * xi_sq) /
+    (16 * xi_sq * xi_sq * xi_sq);
+}
+
 double ellipse_flux_prefactor(
   Ellipse ell,
   double r_tilde_sq,
@@ -95,7 +111,6 @@ double ellipse_flux_prefactor(
   double pwh_area,
   double nu)
 {
-  double xi_sq = XI * XI;
   if (r_tilde_sq >= 4 * xi_sq) {
     return 0.0;
   }
@@ -121,14 +136,55 @@ void InsetState::flatten_ellipse_density()
     proj_qd_.triangle_transformation.insert_or_assign(pt, pt);
   }
 
-  // eul[i][j] will be the new position of proj_[i][j] proposed by a simple
-  // Euler step: move a full time interval delta_t with the velocity at
-  // time t and position (proj_[i][j].x, proj_[i][j].y)
-  std::unordered_map<Point, Point> eul;
+  // TODO: Does the next line adjust rho_mean if the total inset area has
+  //       changed in previous runs of flatten_density() or
+  //       flatten_ellipse_density()?
+  double rho_mean = total_target_area() / total_inset_area();
+  std::cout << "rho_mean = " << rho_mean << std::endl;
 
-  // mid[i][j] will be the new displacement proposed by the midpoint
-  // method (see comment below for the formula)
-  std::unordered_map<Point, Point> mid;
+  // Determine attenuation factor nu that keeps density changes caused by
+  // any ellipse within a fraction f of the mean density.
+  double f = 0.1;
+  std::vector<Ellipse> ells;
+  std::vector<double> ell_density_prefactors;
+  for (auto gd : geo_divs_) {
+    double rho_p = (target_area_at(gd.id()) / gd.area());
+    for (unsigned int pgon = 0; pgon < gd.n_polygons_with_holes(); ++pgon) {
+      Polygon_with_holes pwh = gd.polygons_with_holes()[pgon];
+      const auto ext_ring = pwh.outer_boundary();
+      double pwh_area = ext_ring.area();
+      for (auto h = pwh.holes_begin(); h != pwh.holes_end(); ++h) {
+        pwh_area += h->area();
+      }
+      Ellipse ell = gd.min_ellipses()[pgon];
+      ells.push_back(ell);
+      ell_density_prefactors.push_back(
+        ellipse_density_prefactor(ell, rho_p, rho_mean, pwh_area, 1.0));
+    }
+  }
+  double rho_min = *std::min_element(
+    ell_density_prefactors.begin(),
+    ell_density_prefactors.end());
+  double rho_max = *std::max_element(
+    ell_density_prefactors.begin(),
+    ell_density_prefactors.end());
+  std::cout << "rho_min = " << rho_min << ", rho_max = " << rho_max
+            << std::endl;
+  double nu = 1.0;
+  double acceptable_min = -f * rho_mean;
+  double acceptable_max = f * rho_mean;
+  if (rho_min < acceptable_min || rho_max > acceptable_max) {
+    double nu_min = acceptable_min / rho_min;
+    double nu_max = acceptable_max / rho_max;
+    if (std::max(nu_min, nu_max) < 1.0) {
+      nu = (nu_min < nu_max) ? nu_min : nu_max;
+    }
+  }
+  std::cout << "nu = " << nu << std::endl;
+  for (unsigned int pgn_index; pgn_index < ell_density_prefactors.size();
+       ++pgn_index) {
+    ell_density_prefactors[pgn_index] *= nu;
+  }
 
   // Initial time and step size
   double t = 0.0;
@@ -137,8 +193,34 @@ void InsetState::flatten_ellipse_density()
 
   // Integrate
   while (t < 1.0) {
-    for (const auto &[key, val] : proj_qd_.triangle_transformation) {
-      // Calculate density, flux and velocity at (val.x(), val.y())
+    for (const auto &[start_pt, curr_pt] : proj_qd_.triangle_transformation) {
+
+      // Calculate density, flux and velocity at curr_pt
+      for (unsigned int pgn_index; pgn_index < ells.size(); ++pgn_index) {
+        auto ell = ells[pgn_index];
+        for (int i = -2; i <= 2; ++i) {
+          double x = ((i + abs(i) % 2) * static_cast<int>(lx_)) +
+                     (curr_pt.x() * (i % 2 == 0 ? 1 : -1));
+          for (int j = -2; j <= 2; ++j) {
+            double y = ((j + abs(j) % 2) * static_cast<int>(ly_)) +
+                       (curr_pt.y() * (j % 2 == 0 ? 1 : -1));
+            double x_tilde = ((x - ell.center.x()) * ell.cos_theta +
+                              (y - ell.center.y()) * ell.sin_theta) /
+                             ell.semimajor;
+            double y_tilde = ((-(x - ell.center.x()) * ell.sin_theta) +
+                              (y - ell.center.y()) * ell.cos_theta) /
+                             ell.semiminor;
+            double r_tilde_sq = (x_tilde * x_tilde) + (y_tilde * y_tilde);
+          }
+        }
+      }
+
+      // `eul` will be the new position of proj_[i][j] proposed by a simple
+      // Euler step: move a full time interval delta_t with the velocity at
+      // time t and position (proj_[i][j].x, proj_[i][j].y)
+
+      // `mid` will be the new displacement proposed by the midpoint
+      // method (see comment below for the formula)
       return;
     }
   }
@@ -156,13 +238,15 @@ void InsetState::flatten_ellipse_density()
   //
   //      // We know, either because of the initialization or because of the
   //      // check at the end of the last iteration, that (proj_.x, proj_.y)
-  //      // is inside the rectangle [0, lx_] x [0, ly_]. This fact guarantees
+  //      // is inside the rectangle [0, lx_] x [0, ly_]. This fact
+  //      guarantees
   //      // that interpolate_bilinearly() is given a point that cannot cause
   //      it
   //      // to fail.
   //      Point v_intp_val(
-  //        interpolate_bilinearly(val.x(), val.y(), &grid_vx, 'x', lx_, ly_),
-  //        interpolate_bilinearly(val.x(), val.y(), &grid_vy, 'y', lx_, ly_));
+  //        interpolate_bilinearly(val.x(), val.y(), &grid_vx, 'x', lx_,
+  //        ly_), interpolate_bilinearly(val.x(), val.y(), &grid_vy, 'y',
+  //        lx_, ly_));
   //      v_intp.insert_or_assign(key, v_intp_val);
   //    }
   //
@@ -230,15 +314,18 @@ void InsetState::flatten_ellipse_density()
   //
   //          // Do not accept the integration step if the maximum squared
   //          // difference between the Euler and midpoint proposals exceeds
-  //          // abs_tol. Neither should we accept the integration step if one
+  //          // abs_tol. Neither should we accept the integration step if
+  //          one
   //          // of the positions wandered out of the domain. If one of these
   //          // problems occurred, decrease the time step.
   //          const double sq_dist =
-  //            (mid[key].x() - eul[key].x()) * (mid[key].x() - eul[key].x()) +
-  //            (mid[key].y() - eul[key].y()) * (mid[key].y() - eul[key].y());
+  //            (mid[key].x() - eul[key].x()) * (mid[key].x() - eul[key].x())
+  //            + (mid[key].y() - eul[key].y()) * (mid[key].y() -
+  //            eul[key].y());
   //          if (
   //            sq_dist > abs_tol || mid[key].x() < 0.0 || mid[key].x() > lx_
-  //            || mid[key].y() < 0.0 || mid[key].y() > ly_) { accept = false;
+  //            || mid[key].y() < 0.0 || mid[key].y() > ly_) { accept =
+  //            false;
   //          }
   //        }
   //      }
