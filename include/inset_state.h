@@ -127,8 +127,8 @@ public:
   void project_with_triangulation();
   void push_back(const GeoDiv);
 
-  // Print difference between current area and initial area
-  void print_area_drift() const;
+  // Calculate difference between initial area and current area
+  double area_drift() const;
 
   FTReal2d *ref_to_rho_ft();
   FTReal2d *ref_to_rho_init();

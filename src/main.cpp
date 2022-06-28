@@ -220,7 +220,8 @@ int main(const int argc, const char *argv[])
     // Start map integration
     // TODO: Add condition for area drift
     while (inset_state.n_finished_integrations() < max_integrations &&
-           inset_state.max_area_error().value > max_permitted_area_error) {
+           (inset_state.max_area_error().value > max_permitted_area_error ||
+            std::abs(inset_state.area_drift() - 1.0) > 0.01)) {
       std::cerr << "Integration number "
                 << inset_state.n_finished_integrations() << std::endl;
 
@@ -273,7 +274,11 @@ int main(const int argc, const char *argv[])
         inset_state.simplify(target_points_per_inset);
       }
       inset_state.increment_integration();
-      inset_state.print_area_drift();
+
+      // Print area drift information
+      std::cerr << "Area drift: "
+                << (inset_state.area_drift() - 1.0) * 100.0 << "%"
+                << std::endl;
 
       // Update area errors
       inset_state.set_area_errors();
