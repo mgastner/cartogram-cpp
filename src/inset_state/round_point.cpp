@@ -37,7 +37,7 @@ double rounded_to_bicimal(
 ) {
   double whole;
   const double fractional = std::modf(d, &whole);
-  const unsigned int n_bicimals = 50 - std::bit_width(std::max(lx, ly));
+  const unsigned int n_bicimals = 40 - std::bit_width(std::max(lx, ly));
   const unsigned long int power_of_2 =
     (static_cast<unsigned long int>(1) << n_bicimals);
   const double bicimals = std::round(fractional * power_of_2)  / power_of_2;
