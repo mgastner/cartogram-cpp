@@ -277,9 +277,11 @@ void InsetState::densify_geo_divs()
 }
 
 std::vector<Point> densification_points_with_delaunay_t(
-  const Point pt1,
-  const Point pt2,
-  const Delaunay &dt)
+  const Point &pt1,
+  const Point &pt2,
+  const Delaunay &dt,
+  const unsigned int lx,
+  const unsigned int ly)
 {
   std::vector<Point> dens_points;
 
@@ -357,14 +359,8 @@ std::vector<Point> densification_points_with_delaunay_t(
           CGAL::Object p = CGAL::intersection(segment, tri_seg);
           if (CGAL::assign(pt_intersec, p)) {
 
-            // round to 15 bicimal places
-            const unsigned int precision = 15;
-            pt_intersec = Point(
-              std::round(pt_intersec.x() * (1 << precision)) /
-                (1 << precision),
-              std::round(pt_intersec.y() * (1 << precision)) /
-                (1 << precision));
-
+            // round the point before adding
+            pt_intersec = rounded_point(pt_intersec, lx, ly);
             dens_points.push_back(pt_intersec);
           }
         }
@@ -419,7 +415,7 @@ void InsetState::densify_geo_divs_using_delaunay_t()
         const auto b = (i == outer.size() - 1) ? outer[0] : outer[i + 1];
         // Densify the segment
         const std::vector<Point> outer_pts_dens =
-          densification_points_with_delaunay_t(a, b, proj_qd_.dt);
+          densification_points_with_delaunay_t(a, b, proj_qd_.dt, lx_, ly_);
 
         // Push all points. Omit the last point because it will be included
         // in the next iteration. Otherwise, we would have duplicated points
@@ -439,7 +435,7 @@ void InsetState::densify_geo_divs_using_delaunay_t()
           const Point c = (*h)[j];
           const Point d = (j == h->size() - 1) ? (*h)[0] : (*h)[j + 1];
           const std::vector<Point> hole_pts_dens =
-            densification_points_with_delaunay_t(c, d, proj_qd_.dt);
+            densification_points_with_delaunay_t(c, d, proj_qd_.dt, lx_, ly_);
           for (unsigned int i = 0; i < (hole_pts_dens.size() - 1); ++i) {
             hole_dens.push_back(hole_pts_dens[i]);
           }
