@@ -118,7 +118,6 @@ void InsetState::fill_with_density(bool plot_density)
 // for (unsigned int m = std::max(ceil(left_x), 1.0);
 //                   m <= std::max(ceil(right_x), 1.0);
 //                   ++m) {
-#pragma omp parallel for
         for (unsigned int m = ceil(left_x); m <= ceil(right_x); ++m) {
           double weight = area_error_at(intersections_at_y[i].geo_div_id);
           if (ceil(left_x) == ceil(right_x)) {
