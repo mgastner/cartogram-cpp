@@ -147,6 +147,7 @@ void InsetState::flatten_ellipse_density()
   double f = 0.1;
   std::vector<Ellipse> ells;
   std::vector<double> ell_density_prefactors;
+  std::vector<double> rho_p_vec;
   for (auto gd : geo_divs_) {
     double rho_p = (target_area_at(gd.id()) / gd.area());
     for (unsigned int pgon = 0; pgon < gd.n_polygons_with_holes(); ++pgon) {
@@ -160,6 +161,7 @@ void InsetState::flatten_ellipse_density()
       ells.push_back(ell);
       ell_density_prefactors.push_back(
         ellipse_density_prefactor(ell, rho_p, rho_mean, pwh_area, 1.0));
+      rho_p_vec.push_back(rho_p);
     }
   }
   double rho_min = *std::min_element(
@@ -194,6 +196,9 @@ void InsetState::flatten_ellipse_density()
   // Integrate
   while (t < 1.0) {
     for (const auto &[start_pt, curr_pt] : proj_qd_.triangle_transformation) {
+      double rho = 0.0;
+      double flux_x = 0.0;
+      double flux_y = 0.0;
 
       // Calculate density, flux and velocity at curr_pt
       for (unsigned int pgn_index; pgn_index < ells.size(); ++pgn_index) {
@@ -211,6 +216,14 @@ void InsetState::flatten_ellipse_density()
                               (y - ell.center.y()) * ell.cos_theta) /
                              ell.semiminor;
             double r_tilde_sq = (x_tilde * x_tilde) + (y_tilde * y_tilde);
+            rho += ell_density_prefactors[pgn_index] *
+                   ellipse_density_polynomial(r_tilde_sq);
+//            double ell_flux_prefactor ellipse_flux_prefactor(ell, r_tilde_sq,
+//              double rho_p,
+//              double rho_mean,
+//              double pwh_area,
+//              double nu)
+//            fluxx =
           }
         }
       }
