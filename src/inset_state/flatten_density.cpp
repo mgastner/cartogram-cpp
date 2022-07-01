@@ -18,12 +18,10 @@ void calculate_velocity(
     const unsigned int lx,
     const unsigned int ly
 ) {
-  double rho;
-
-#pragma omp parallel for private(rho)
+#pragma omp parallel for
   for (unsigned int i = 0; i < lx; ++i) {
     for (unsigned int j = 0; j < ly; ++j) {
-      rho = rho_ft(0, 0) + (1.0 - t) * (rho_init(i, j) - rho_ft(0,0));
+      double rho = rho_ft(0, 0) + (1.0 - t) * (rho_init(i, j) - rho_ft(0,0));
       (*grid_vx)[i][j] = -grid_fluxx_init(i, j) / rho;
       (*grid_vy)[i][j] = -grid_fluxy_init(i, j) / rho;
     }
@@ -40,16 +38,21 @@ bool all_points_are_in_domain(
 ) {
   // Return false if and only if there exists a point that would be outside
   // [0, lx] x [0, ly]
+  bool in_domain = true;
+  
+#pragma omp parallel for
   for (unsigned int i = 0; i < lx; ++i) {
     for (unsigned int j = 0; j < ly; ++j) {
-      double x = (*proj)[i][j].x + 0.5 * delta_t * (*v_intp)[i][j].x;
-      double y = (*proj)[i][j].y + 0.5 * delta_t * (*v_intp)[i][j].y;
-      if (x < 0.0 || x > lx || y < 0.0 || y > ly) {
-        return false;
+      if(in_domain) {
+        double x = (*proj)[i][j].x + 0.5 * delta_t * (*v_intp)[i][j].x;
+        double y = (*proj)[i][j].y + 0.5 * delta_t * (*v_intp)[i][j].y;
+        if (x < 0.0 || x > lx || y < 0.0 || y > ly) {
+          in_domain = false;
+        }
       }
     }
   }
-  return true;
+  return in_domain;
 }
 
 
@@ -68,6 +71,8 @@ void InsetState::flatten_density()
   if (proj_.shape()[0] != lx_ || proj_.shape()[1] != ly_) {
     proj_.resize(boost::extents[lx_][ly_]);
   }
+  
+#pragma omp parallel for
   for (unsigned int i = 0; i < lx_; ++i) {
     for (unsigned int j = 0; j < ly_; ++j) {
       proj_[i][j].x = i + 0.5;
@@ -116,6 +121,7 @@ void InsetState::flatten_density()
   // y-components of the flux vector into grid_fluxx_init and grid_fluxy_init.
   // The reason for `+1` in `di+1` stems from the RODFT10 formula at:
   // https://www.fftw.org/fftw3_doc/1d-Real_002dodd-DFTs-_0028DSTs_0029.html
+#pragma omp parallel for
   for (unsigned int i = 0; i < lx_-1; ++i) {
     double di = i;
     for (unsigned int j = 0; j < ly_; ++j) {
@@ -127,6 +133,7 @@ void InsetState::flatten_density()
   for (unsigned int j = 0; j < ly_; ++j) {
     grid_fluxx_init(lx_-1, j) = 0.0;
   }
+#pragma omp parallel for
   for (unsigned int i=0; i<lx_; ++i) {
     double di = i;
     for (unsigned int j = 0; j < ly_-1; ++j) {
@@ -369,6 +376,7 @@ void InsetState::flatten_density_with_node_vertices()
 
   // We temporarily insert the Fourier coefficients for the x-components and
   // y-components of the flux vector into grid_fluxx_init and grid_fluxy_init
+#pragma omp parallel for
   for (unsigned int i = 0; i < lx_-1; ++i) {
     double di = i;
     for (unsigned int j = 0; j < ly_; ++j) {
@@ -380,6 +388,7 @@ void InsetState::flatten_density_with_node_vertices()
   for (unsigned int j = 0; j < ly_; ++j) {
     grid_fluxx_init(lx_-1, j) = 0.0;
   }
+#pragma omp parallel for
   for (unsigned int i=0; i<lx_; ++i) {
     double di = i;
     for (unsigned int j = 0; j < ly_-1; ++j) {
