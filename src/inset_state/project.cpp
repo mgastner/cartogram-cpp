@@ -24,6 +24,8 @@ void InsetState::project()
   // Calculate displacement from proj array
   boost::multi_array<double, 2> xdisp(boost::extents[lx_][ly_]);
   boost::multi_array<double, 2> ydisp(boost::extents[lx_][ly_]);
+
+#pragma omp parallel for
   for (unsigned int i = 0; i < lx_; ++i) {
     for (unsigned int j = 0; j < ly_; ++j) {
       xdisp[i][j] = proj_[i][j].x - i - 0.5;
@@ -32,6 +34,7 @@ void InsetState::project()
   }
 
   // Cumulative projection
+#pragma omp parallel for
   for (unsigned int i = 0; i < lx_; ++i) {
     for (unsigned int j = 0; j < ly_; ++j) {
 
@@ -219,6 +222,8 @@ void InsetState::fill_graticule_diagonals()
     graticule_diagonals_.resize(boost::extents[lx_ - 1][ly_ - 1]);
   }
   unsigned int n_concave = 0;  // Count concave graticule cells
+  
+#pragma omp parallel for
   for (unsigned int i = 0; i < lx_ - 1; ++i) {
     for (unsigned int j = 0; j < ly_ - 1; ++j) {
       Point v[4];
@@ -435,6 +440,8 @@ void InsetState::project_with_triangulation()
   transform_points(lambda);
 
   // Cumulative projection
+  
+#pragma omp parallel for
   for (unsigned int i = 0; i < lx_; ++i) {
     for (unsigned int j = 0; j < ly_; ++j) {
       const Point old_cum_proj(cum_proj_[i][j].x, cum_proj_[i][j].y);
