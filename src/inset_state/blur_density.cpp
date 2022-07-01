@@ -5,6 +5,7 @@
 void InsetState::blur_density(const double blur_width, bool plot_density)
 {
   const double prefactor = -0.5 * blur_width * blur_width * pi * pi;
+#pragma omp parallel for
   for (unsigned int i = 0; i<lx_; ++i) {
     const double scaled_i = static_cast<double>(i) / lx_;
     const double scaled_i_squared = scaled_i * scaled_i;
