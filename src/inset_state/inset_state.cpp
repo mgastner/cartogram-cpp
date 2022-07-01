@@ -117,6 +117,7 @@ Bbox InsetState::bbox() const
   double inset_xmax = -dbl_inf;
   double inset_ymin = dbl_inf;
   double inset_ymax = -dbl_inf;
+#pragma omp parallel for
   for (const auto &gd : geo_divs_) {
     for (const auto &pwh : gd.polygons_with_holes()) {
       const auto bb = pwh.bbox();
@@ -183,6 +184,7 @@ void InsetState::increment_integration()
 void InsetState::initialize_cum_proj()
 {
   cum_proj_.resize(boost::extents[lx_][ly_]);
+#pragma omp parallel for
   for (unsigned int i = 0; i < lx_; ++i) {
     for (unsigned int j = 0; j < ly_; ++j) {
       cum_proj_[i][j].x = i + 0.5;
@@ -350,6 +352,7 @@ void InsetState::set_area_errors()
   // area_on_cartogram / target_area - 1
   double sum_target_area = 0.0;
   double sum_cart_area = 0.0;
+#pragma omp parallel for reduction(+:sum_target_area, sum_cart_area)
   for (const auto &gd : geo_divs_) {
     sum_target_area += target_area_at(gd.id());
     sum_cart_area += gd.area();
@@ -417,6 +420,7 @@ std::string InsetState::label_at(const std::string id) const
 void InsetState::transform_points(std::function<Point(Point)> transform_point)
 {
   // Iterate over GeoDivs
+#pragma omp parallel for
   for (auto &gd : geo_divs_) {
 
     // Iterate over Polygon_with_holes
