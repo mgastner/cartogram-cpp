@@ -357,6 +357,10 @@ std::vector<Point> densification_points_with_delaunay_t(
         Point pt_intersec;
         if (CGAL::do_intersect(segment, tri_seg)) {
           CGAL::Object p = CGAL::intersection(segment, tri_seg);
+
+          // The CGAL::Object p does not need to be a point, but could also be
+          // empty or a line. CGAL::assign() only returns `true` if p is a
+          // point.
           if (CGAL::assign(pt_intersec, p)) {
 
             // round the point before adding
