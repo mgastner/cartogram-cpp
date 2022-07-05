@@ -9,23 +9,24 @@ int main(const int argc, const char *argv[])
   std::string geo_file_name, visual_file_name;
 
   // Default number of grid cells along longer Cartesian coordinate axis
-  unsigned int long_graticule_length = default_long_graticule_length;
+  unsigned int long_graticule_length;
 
   // Target number of points to retain after simplification
-  unsigned int target_points_per_inset = default_target_points_per_inset;
+  unsigned int target_points_per_inset;
   bool world;  // World maps need special projections
 
   // Another cartogram projection method based on triangulation of graticule
   // cells. It can eliminate intersections that occur when the projected
   // graticule lines are strongly curved.
   bool triangulation;
-
-  // Shall the polygons be simplified?
-  bool simplify;
+  bool simplify;  // Shall the polygons be simplified?
 
   // Other boolean values that are needed to parse the command line arguments
   bool make_csv, output_equal_area, output_to_stdout, plot_density,
-    plot_graticule, plot_intersections, plot_polygons;
+    plot_graticule, plot_intersections, plot_polygons, remove_tiny_polygons;
+
+  // The proportion of the total area smaller than which polygons are removed
+  double minimum_polygon_area;
 
   // Parse command-line arguments
   argparse::ArgumentParser arguments = parsed_arguments(
@@ -44,7 +45,9 @@ int main(const int argc, const char *argv[])
     plot_density,
     plot_graticule,
     plot_intersections,
-    plot_polygons);
+    plot_polygons,
+    remove_tiny_polygons,
+    minimum_polygon_area);
 
   // Initialize cart_info. It contains all information about the cartogram
   // that needs to be handled by functions called from main().
@@ -210,7 +213,9 @@ int main(const int argc, const char *argv[])
     }
 
     // Remove tiny polygons below threshold
-    inset_state.remove_tiny_polygons();
+    if (remove_tiny_polygons) {
+      inset_state.remove_tiny_polygons(minimum_polygon_area);
+    }
 
     // We make the approximation that the progress towards generating the
     // cartogram is proportional to the number of GeoDivs that are in the

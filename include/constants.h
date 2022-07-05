@@ -25,6 +25,9 @@ constexpr unsigned int intersections_resolution = 1;
 constexpr unsigned int default_target_points_per_inset = 10000;
 constexpr unsigned int min_points_per_ring = 10;
 
+// Minimum size of polygons as proportion of total area
+constexpr double default_minimum_polygon_area = 0.0001;
+
 // Fraction of square side length by which squares on heatmap overlap
 constexpr double sq_overlap = 0.2;
 

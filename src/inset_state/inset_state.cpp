@@ -243,10 +243,10 @@ FTReal2d *InsetState::ref_to_rho_init()
   return &rho_init_;
 }
 
-void InsetState::remove_tiny_polygons()
+void InsetState::remove_tiny_polygons(const double &minimum_polygon_size)
 {
 
-  double threshold = total_inset_area() * 0.0001;
+  double threshold = total_inset_area() * minimum_polygon_size;
   std::vector<GeoDiv> geo_divs_cleaned;
 
   // Iterate over GeoDivs
