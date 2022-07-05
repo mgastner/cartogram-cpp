@@ -1,21 +1,7 @@
-#include "cartogram_info.h"
-#include "colors.h"
-#include "constants.h"
-#include "inset_state.h"
-#include <array>
-#include <cairo/cairo-ps.h>
-#include <cairo/cairo-svg.h>
-#include <cairo/cairo.h>
-#include <cmath>
-#include <cstring>
-#include <iostream>
-#include <sstream>
-#include <string>
-#include <utility>
-#include <vector>
+#include "write_image.h"
 
-// Grid cell width/height
-constexpr unsigned int plotted_cell_length = 7;
+// Grid cell width/height, as multiple of grid size of 1
+constexpr unsigned int plotted_cell_length = 8;
 
 void write_ps_header(const std::string filename, cairo_surface_t *surface)
 {
@@ -47,7 +33,7 @@ bool all_points_inside_exterior_ring(
   return true;
 }
 
-double font_size(
+double get_font_size(
   cairo_t *cr,
   const char *label,
   const Point label_pt,
@@ -96,7 +82,7 @@ void InsetState::write_labels_to_cairo_surface(cairo_t *cr)
     const Point label_pt = gd.point_on_surface_of_geodiv();
 
     // Get size of label
-    const double fsize = font_size(cr, label_char, label_pt, gd);
+    const double fsize = get_font_size(cr, label_char, label_pt, gd);
     cairo_text_extents_t extents;
 
     // Draw label only if appropriate size is found
@@ -834,7 +820,6 @@ Polygon InsetState::transform_to_albers_coor(Polygon edge_points)
   Transformation scale(CGAL::SCALING, latt_const_);
 
   Polygon cell_edge_points_albers = transform(scale, edge_points);
-
   return cell_edge_points_albers;
 }
 
@@ -1339,11 +1324,13 @@ void write_density_bar_to_cairo_surface(
   }
 }
 
-void InsetState::write_legend_to_cairo_surface(cairo_t *cr, bool equal_area_map)
+void InsetState::write_legend_to_cairo_surface(
+  cairo_t *cr,
+  bool equal_area_map)
 {
   std::pair<double, unsigned int> legend_info =
     equal_area_map ? get_km_legend_length()
-                        : get_visual_variable_legend_length();
+                   : get_visual_variable_legend_length();
 
   Bbox bb = bbox();
   Point legend_pos(bb.xmin() * 0.5, bb.ymin() * 0.5);
