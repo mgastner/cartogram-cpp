@@ -2,8 +2,8 @@
 #define COLORS_H_
 
 #include <cstdint>
-#include <unordered_map>
 #include <string>
+#include <unordered_map>
 
 struct Color {
 
@@ -16,14 +16,13 @@ struct Color {
   Color(std::string);
   std::string eps();
 
-  bool operator == (const Color& rhs) const
+  bool operator==(const Color &rhs) const
   {
-      return (r == rhs.r && g == rhs.g && b == rhs.b);
+    return (r == rhs.r && g == rhs.g && b == rhs.b);
   }
 };
 
-static std::unordered_map<std::string, std::string> html_colors =
-{
+static std::unordered_map<std::string, std::string> html_colors = {
 
   // From https://en.wikipedia.org/wiki/Web_colors
   // Shades of pink
@@ -186,7 +185,6 @@ static std::unordered_map<std::string, std::string> html_colors =
   {"darkgray", "#A9A9A9"},
   {"silver", "#C0C0C0"},
   {"lightgray", "#D3D3D3"},
-  {"gainsboro", "#DCDCDC"}
-};
+  {"gainsboro", "#DCDCDC"}};
 
 #endif
