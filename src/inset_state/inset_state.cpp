@@ -117,7 +117,7 @@ Bbox InsetState::bbox() const
   double inset_xmax = -dbl_inf;
   double inset_ymin = dbl_inf;
   double inset_ymax = -dbl_inf;
-#pragma omp parallel for
+#pragma omp parallel for reduction(min : inset_xmin, inset_ymin) reduction(max : inset_xmax, inset_ymax)
   for (const auto &gd : geo_divs_) {
     for (const auto &pwh : gd.polygons_with_holes()) {
       const auto bb = pwh.bbox();
