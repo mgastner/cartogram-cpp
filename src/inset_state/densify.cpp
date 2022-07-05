@@ -386,12 +386,14 @@ std::vector<Point> densification_points_with_delaunay_t(
   }
 
   // if densification points are in reverse order, reverse them
-  if (dens_points[0] != pt1) {
+  if (dens_points.front() != pt1) {
     reverse(dens_points.begin(), dens_points.end());
   }
 
-  // check validity of densification points
-  if (dens_points[0] != pt1 || dens_points[dens_points.size() - 1] != pt2) {
+  // check validity of densification points: in case the first and last
+  // points are not the originally given points, we consider the densificaiton
+  // points invalid and return the original points
+  if (dens_points.front() != pt1 || dens_points.back() != pt2) {
     return {pt1, pt2};
   }
 
