@@ -3,7 +3,6 @@
 #include "round_point.h"
 #include <boost/multi_array.hpp>
 #include <iostream>
-#include <vector>
 
 Point interpolate_point_bilinearly(
   Point p1,
@@ -16,7 +15,7 @@ Point interpolate_point_bilinearly(
     interpolate_bilinearly(p1.x(), p1.y(), xdisp, 'x', lx, ly);
   const double intp_y =
     interpolate_bilinearly(p1.x(), p1.y(), ydisp, 'y', lx, ly);
-  return Point(p1.x() + intp_x, p1.y() + intp_y);
+  return {p1.x() + intp_x, p1.y() + intp_y};
 }
 
 void InsetState::project()
@@ -25,7 +24,7 @@ void InsetState::project()
   boost::multi_array<double, 2> xdisp(boost::extents[lx_][ly_]);
   boost::multi_array<double, 2> ydisp(boost::extents[lx_][ly_]);
 
-#pragma omp parallel for
+#pragma omp parallel for default(none) shared(xdisp, ydisp)
   for (unsigned int i = 0; i < lx_; ++i) {
     for (unsigned int j = 0; j < ly_; ++j) {
       xdisp[i][j] = proj_[i][j].x - i - 0.5;
@@ -34,7 +33,7 @@ void InsetState::project()
   }
 
   // Cumulative projection
-#pragma omp parallel for
+#pragma omp parallel for default(none) shared(xdisp, ydisp)
   for (unsigned int i = 0; i < lx_; ++i) {
     for (unsigned int j = 0; j < ly_; ++j) {
 
@@ -61,8 +60,8 @@ void InsetState::project()
     }
   }
 
-  // Specialise/curry interpolate_point_bilinearly such that it only requires
-  // one argument (Point p1).
+  // Specialize (i.e., curry) interpolate_point_bilinearly() such that it only
+  // requires one argument (Point p1).
   std::function<Point(Point)> lambda =
     [&xdisp, &ydisp, lx = lx_, ly = ly_](Point p1) {
       return interpolate_point_bilinearly(p1, &xdisp, &ydisp, lx, ly);
@@ -70,7 +69,6 @@ void InsetState::project()
 
   // Apply "lambda" to all points
   transform_points(lambda);
-  return;
 }
 
 Point interpolate_point_with_barycentric_coordinates(
@@ -81,7 +79,7 @@ Point interpolate_point_with_barycentric_coordinates(
   // Find the triangle containing the point
   Face_handle fh = dt.locate(p);
 
-  // Get three vertices
+  // Get the three vertices
   Point v1 = fh->vertex(0)->point();
   Point v2 = fh->vertex(1)->point();
   Point v3 = fh->vertex(2)->point();
@@ -104,17 +102,16 @@ Point interpolate_point_with_barycentric_coordinates(
   const Point p_proj = Point(
     bary_x * v1_proj.x() + bary_y * v2_proj.x() + bary_z * v3_proj.x(),
     bary_x * v1_proj.y() + bary_y * v2_proj.y() + bary_z * v3_proj.y());
-
   return p_proj;
 }
 
 void InsetState::project_with_delaunay_t()
 {
-  std::function<Point(Point)> lambda_bary = [&dt = proj_qd_.dt,
-                                             &proj_map = proj_qd_.triangle_transformation](Point p1) {
-    return interpolate_point_with_barycentric_coordinates(p1, dt, &proj_map);
-  };
-
+  std::function<Point(Point)> lambda_bary =
+    [&dt = proj_qd_.dt,
+     &proj_map = proj_qd_.triangle_transformation](Point p1) {
+      return interpolate_point_with_barycentric_coordinates(p1, dt, &proj_map);
+    };
   transform_points(lambda_bary);
 }
 
@@ -130,7 +127,6 @@ void InsetState::exit_if_not_on_grid_or_edge(const Point p1) const
               << "\tpt = (" << p1.x() << ", " << p1.y() << ")" << std::endl;
     exit(1);
   }
-  return;
 }
 
 Point InsetState::projected_point(const Point p1)
@@ -142,15 +138,15 @@ Point InsetState::projected_point(const Point p1)
   const unsigned int proj_y = std::min(
     static_cast<unsigned int>(ly_) - 1,
     static_cast<unsigned int>(p1.y()));
-  return Point(
+  return {
     (p1.x() == 0.0 || p1.x() == lx_) ? p1.x() : proj_[proj_x][proj_y].x,
-    (p1.y() == 0.0 || p1.y() == ly_) ? p1.y() : proj_[proj_x][proj_y].y);
+    (p1.y() == 0.0 || p1.y() == ly_) ? p1.y() : proj_[proj_x][proj_y].y};
 }
 
 // TODO: chosen_diag() seems to be more naturally thought of as a boolean
-// than an integer.
+//       than an integer.
 
-// For a graticule cell with corners stored in the XYPoint array v, determine
+// For a graticule cell with corners stored in the Point array v, determine
 // whether the diagonal from v[0] to v[2] is inside the graticule cell. If
 // yes, return 0. Otherwise, if the diagonal from v[1] to v[3] is inside the
 // graticule cell, return 1. If neither of the two diagonals is inside the
@@ -184,8 +180,8 @@ int InsetState::chosen_diag(const Point v[4], unsigned int *num_concave)
 
   // Get the transformed graticule cell as a polygon
   Polygon trans_graticule;
-  for (unsigned int i = 0; i < 4; ++i) {
-    trans_graticule.push_back(tv[i]);
+  for (auto & i : tv) {
+    trans_graticule.push_back(i);
   }
 
   // Check if graticule cell is concave
@@ -222,8 +218,8 @@ void InsetState::fill_graticule_diagonals()
     graticule_diagonals_.resize(boost::extents[lx_ - 1][ly_ - 1]);
   }
   unsigned int n_concave = 0;  // Count concave graticule cells
-  
-#pragma omp parallel for
+
+#pragma omp parallel for default(none) shared(n_concave)
   for (unsigned int i = 0; i < lx_ - 1; ++i) {
     for (unsigned int j = 0; j < ly_ - 1; ++j) {
       Point v[4];
@@ -235,7 +231,6 @@ void InsetState::fill_graticule_diagonals()
     }
   }
   std::cerr << "Number of concave graticule cells: " << n_concave << std::endl;
-  return;
 }
 
 std::array<Point, 3> InsetState::transformed_triangle(
@@ -303,17 +298,17 @@ std::array<Point, 3> InsetState::untransformed_triangle(const Point pt)
   if (
     v[0].x() == 0.0 || v[0].y() == 0.0 || v[2].x() == lx_ || v[2].y() == ly_) {
 
-    // Case where the graticule is on the edge of the grid.
-    // We calculate the chosen diagonal, as graticule_diagonals does not store
-    // the diagonals for edge grid cells.
+    // Case when the graticule is on the edge of the grid.
+    // We calculate the chosen diagonal because graticule_diagonals_ does not
+    // store the diagonals for edge grid cells.
     unsigned int n_concave = 0;
     diag = chosen_diag(v, &n_concave);
   } else {
 
-    // Case where the graticule is not on the edge of the grid. We can find the
+    // Case when the graticule is not on the edge of the grid. We can find the
     // already computed chosen diagonal in graticule_diagonals_.
-    const unsigned int x = static_cast<unsigned int>(v[0].x());
-    const unsigned int y = static_cast<unsigned int>(v[0].y());
+    const auto x = static_cast<unsigned int>(v[0].x());
+    const auto y = static_cast<unsigned int>(v[0].y());
     diag = graticule_diagonals_[x][y];
   }
 
@@ -414,7 +409,7 @@ Point affine_trans(
 
 Point InsetState::projected_point_with_triangulation(const Point pt)
 {
-  // Get the untransformed triangle the point is in
+  // Get the untransformed triangle the point pt is in
   const auto old_triangle = untransformed_triangle(pt);
 
   // Get the coordinates of the transformed triangle
@@ -427,7 +422,6 @@ Point InsetState::projected_point_with_triangulation(const Point pt)
 
 void InsetState::project_with_triangulation()
 {
-
   // Store reference to current object and call member function
   // projected_point_with_triangulation
   // https://www.nextptr.com/tutorial/ta1430524603/
@@ -440,8 +434,7 @@ void InsetState::project_with_triangulation()
   transform_points(lambda);
 
   // Cumulative projection
-  
-#pragma omp parallel for
+#pragma omp parallel for default(none)
   for (unsigned int i = 0; i < lx_; ++i) {
     for (unsigned int j = 0; j < ly_; ++j) {
       const Point old_cum_proj(cum_proj_[i][j].x, cum_proj_[i][j].y);
@@ -451,5 +444,4 @@ void InsetState::project_with_triangulation()
       cum_proj_[i][j].y = new_cum_proj_pt.y();
     }
   }
-  return;
 }

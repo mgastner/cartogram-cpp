@@ -17,10 +17,8 @@ template <typename T> std::chrono::milliseconds inMilliseconds(T duration)
 
 int main(const int argc, const char *argv[])
 {
-
   // Start of main function time
   time_point start_main = clock_time::now();
-
   std::string geo_file_name, visual_file_name;
 
   // Default number of grid cells along longer Cartesian coordinate axis
@@ -30,15 +28,16 @@ int main(const int argc, const char *argv[])
   unsigned int target_points_per_inset = default_target_points_per_inset;
   bool world;  // World maps need special projections
 
-  // Another cartogram projection method based on triangulation of graticule
-  // cells. It can eliminate intersections that occur when the projected
-  // graticule lines are strongly curved.
+  // If `triangulation` is true, we apply a cartogram projection method based
+  // on the triangulation of graticule cells. It can eliminate intersections
+  // that occur when the projected graticule lines are strongly curved. Only
+  // use this method if the tracer points are an FTReal2d data structure.
   bool triangulation;
 
-  // Use Quadtree-Delaunay Triangulations
+  // Use Quadtree-Delaunay triangulation
   bool qtdt_method;
 
-  // Shall the polygons be simplified?
+  // Should the polygons be simplified?
   bool simplify;
 
   // Other boolean values that are needed to parse the command line arguments
@@ -66,7 +65,7 @@ int main(const int argc, const char *argv[])
     plot_polygons,
     plot_quadtree);
 
-  // Initialize cart_info. It contains all information about the cartogram
+  // Initialize cart_info. It contains all the information about the cartogram
   // that needs to be handled by functions called from main().
   CartogramInfo cart_info(world, visual_file_name);
 
@@ -79,11 +78,10 @@ int main(const int argc, const char *argv[])
     map_name = map_name.substr(0, map_name.find('.'));
   }
   std::cout << geo_file_name << "\n";
-
   cart_info.set_map_name(map_name);
   if (!make_csv) {
 
-    // Read visual variables (e.g. area, color) from CSV
+    // Read visual variables (e.g., area and color) from CSV
     try {
       cart_info.read_csv(arguments);
     } catch (const std::system_error &e) {
@@ -116,7 +114,7 @@ int main(const int argc, const char *argv[])
   // Store total number of GeoDivs to monitor progress
   double total_geo_divs = cart_info.n_geo_divs();
 
-  // Create map to store duration of each inset integrations
+  // Create an std::map to store duration of each inset integrations
   std::map<std::string, ms> insets_integration_times;
 
   // Keep track of total time
@@ -140,13 +138,13 @@ int main(const int argc, const char *argv[])
     }
 
     // Can the coordinates be interpreted as longitude and latitude?
-    // TODO: the "crs" field for GeoJSON files seems to be deprecated. However,
-    // in earlier specifications, the coordinate reference system used to be
-    // written in the format specified here:
-    // https://geojson.org/geojson-spec.html#coordinate-reference-system-objects.
-    // It may be a good idea to make a list of possible entries corresponding
-    // to longitude and lattitude projection. "urn:ogc:def:crs:OGC:1.3:CRS84"
-    // is one such entry.
+    // TODO: The "crs" field for GeoJSON files seems to be deprecated.
+    //       However, in earlier specifications, the coordinate reference
+    //       system used to be written in the format specified here:
+    //       https://geojson.org/geojson-spec.html#coordinate-reference-system-objects.
+    //       It may be a good idea to make a list of possible entries
+    //       corresponding to longitude and lattitude projection.
+    //       "urn:ogc:def:crs:OGC:1.3:CRS84" is one such entry.
     const Bbox bb = inset_state.bbox();
     if (
       (bb.xmin() >= -180.0 && bb.xmax() <= 180.0) &&
@@ -169,13 +167,13 @@ int main(const int argc, const char *argv[])
     if (simplify) {
 
       // Simplification reduces the number of points used to represent the
-      // GeoDivs in the inset, thereby reducing output file sizes and run
-      // times
+      // GeoDivs in the inset, thereby reducing output file sizes and
+      // run-times
       inset_state.simplify(target_points_per_inset);
     }
   }
 
-  // Replace missing and zero target areas with absolute values
+  // Replace missing and zero target areas with positive values
   cart_info.replace_missing_and_zero_target_areas();
 
   // Project and exit
@@ -246,7 +244,7 @@ int main(const int argc, const char *argv[])
     // finished insets
     const double inset_max_frac = inset_state.n_geo_divs() / total_geo_divs;
 
-    // Initial Simplification time
+    // Time for the initial simplification
     time_point start_initial_simplification = clock_time::now();
     if (simplify) {
       inset_state.simplify(target_points_per_inset);
@@ -261,11 +259,10 @@ int main(const int argc, const char *argv[])
     // Start map integration
     while (inset_state.n_finished_integrations() < max_integrations &&
            inset_state.max_area_error().value > max_permitted_area_error) {
-
       if (qtdt_method) {
         time_point start_delaunay_t = clock_time::now();
 
-        // Create the deluanay triangulation
+        // Create the Delaunay triangulation
         inset_state.create_delaunay_t();
         time_point end_delaunay_t = clock_time::now();
         duration_qtdt += inMilliseconds(end_delaunay_t - start_delaunay_t);
@@ -275,13 +272,12 @@ int main(const int argc, const char *argv[])
             inset_state.inset_name() + "_" +
             std::to_string(inset_state.n_finished_integrations()) +
             "_quadtree";
-
           std::cerr << "Writing " << quadtree_filename << std::endl;
+
           // Draw the resultant quadtree
           inset_state.write_quadtree(quadtree_filename);
         }
       }
-
       std::cerr << "Integration number "
                 << inset_state.n_finished_integrations() << std::endl;
 
@@ -297,10 +293,10 @@ int main(const int argc, const char *argv[])
       // We slowly reduce the blur width so that the areas can reach their
       // target values.
       // TODO: whenever blur_width hits 0, the maximum area error will start
-      // increasing again and eventually lead to an invalid graticule cell
-      // error when projecting with triangulation. Investigate why. As a
-      // temporary fix, we set blur_width to be always positive, regardless
-      // of the number of integrations.
+      //       increasing again and eventually lead to an invalid graticule
+      //       cell error when projecting with triangulation. Investigate why.
+      //       As a temporary fix, we set blur_width to be always positive,
+      //       regardless of the number of integrations.
       double blur_width =
         std::pow(2.0, 5 - int(inset_state.n_finished_integrations()));
       // if (inset_state.n_finished_integrations() < max_integrations) {
@@ -311,20 +307,18 @@ int main(const int argc, const char *argv[])
       // }
       std::cerr << "blur_width = " << blur_width << std::endl;
 
-      // Fill with density time tracking
+      // Track time needed for fill_with_density()
       time_point start_fill_density = clock_time::now();
       inset_state.fill_with_density(plot_density);
       time_point end_fill_density = clock_time::now();
       duration_fill_density +=
         inMilliseconds(end_fill_density - start_fill_density);
-
       if (blur_width > 0.0) {
         inset_state.blur_density(blur_width, plot_density);
       }
       if (plot_intersections) {
         inset_state.write_intersections_to_eps(intersections_resolution);
       }
-
       time_point start_flatten_density = clock_time::now();
       if (qtdt_method) {
         inset_state.flatten_density_with_node_vertices();
@@ -334,9 +328,7 @@ int main(const int argc, const char *argv[])
       time_point end_flatten_density = clock_time::now();
       duration_flatten_density +=
         inMilliseconds(end_flatten_density - start_flatten_density);
-
       if (qtdt_method) {
-
         if (simplify) {
           time_point start_densify = clock_time::now();
           inset_state.densify_geo_divs_using_delaunay_t();
@@ -344,10 +336,12 @@ int main(const int argc, const char *argv[])
           duration_densification +=
             inMilliseconds(end_densify - start_densify);
         }
-        // Projecting with delaunay triangulation
+
+        // Project using the Delaunay triangulation
         inset_state.project_with_delaunay_t();
       } else if (triangulation) {
         time_point start_densify = clock_time::now();
+
         // Choose diagonals that are inside graticule cells
         inset_state.fill_graticule_diagonals();
 
@@ -361,7 +355,6 @@ int main(const int argc, const char *argv[])
       } else {
         inset_state.project();
       }
-
       if (simplify) {
         time_point start_simplify = clock_time::now();
         inset_state.simplify(target_points_per_inset);
@@ -384,10 +377,9 @@ int main(const int argc, const char *argv[])
     // Integration end time
     time_point end_integration = clock_time::now();
 
-    // Add integration time to the map
+    // Store integration time
     insets_integration_times[inset_pos] =
       inMilliseconds(end_integration - start_integration);
-
     progress += inset_max_frac;
     std::cerr << "Finished inset " << inset_pos << "\nProgress: " << progress
               << std::endl;
@@ -423,8 +415,7 @@ int main(const int argc, const char *argv[])
     inset_state.destroy_fftw_plans_for_rho();
     inset_state.ref_to_rho_init()->free();
     inset_state.ref_to_rho_ft()->free();
-  }
-  // End of loop over insets
+  }  // End of loop over insets
 
   // Shift insets so that they do not overlap
   cart_info.shift_insets_to_target_position();
@@ -436,14 +427,14 @@ int main(const int argc, const char *argv[])
     std::cout,
     output_to_stdout);
 
-  // End of main function time
+  // Store time when main() ended
   time_point end_main = clock_time::now();
 
-  // Show Time Report
+  // Show time report
   std::cerr << std::endl;
   std::cerr << "********** Time Report **********" << std::endl;
 
-  // Iterate over the map and print integration times
+  // Print integration times
   for (auto [inset_pos, inset_integration_time] : insets_integration_times) {
     std::cerr << "Integration Time for Inset " << inset_pos << ": "
               << inset_integration_time.count() << " ms" << std::endl;
@@ -468,6 +459,5 @@ int main(const int argc, const char *argv[])
   std::cerr << "Total Time: " << inMilliseconds(end_main - start_main).count()
             << " ms" << std::endl;
   std::cerr << "*********************************" << std::endl;
-
   return EXIT_SUCCESS;
 }
