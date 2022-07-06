@@ -136,7 +136,7 @@ void InsetState::fill_with_density(bool plot_density)
   }
 
   // Fill rho_init with the ratio of rho_num to rho_den
-#pragma omp parallel for collapse(2)
+#pragma omp parallel for
   for (unsigned int i = 0; i < lx_; ++i) {
     for (unsigned int j = 0; j < ly_; ++j) {
       if (rho_den[i][j] == 0) {
