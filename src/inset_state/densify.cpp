@@ -1,4 +1,3 @@
-#include "constants.h"
 #include "inset_state.h"
 #include "round_point.h"
 #include <CGAL/intersections.h>
@@ -30,7 +29,7 @@ std::ostream &operator<<(std::ostream &cout, std::vector<A> const &v)
 //      coef_x * x + coef_y * y + coef_const = 0.
 // The function returns the unique intersection point between them. If this
 // intersection point does not exist, the function returns the point called
-// OUT_OF_RANGE, which is always outside of any graticule grid cell.
+// OUT_OF_RANGE, which is always outside any graticule grid cell.
 Point calc_intersection(
   const Point a,
   const Point b,
@@ -198,7 +197,7 @@ std::vector<Point> densification_points(
     // Bottom-left to top-right edge diagonals
     add_diag_inter(&temp_intersections, a, b, 0.5, 0.25, 0.5, lx, ly);
 
-    // Top-left to botom-right edge diagonals
+    // Top-left to bottom-right edge diagonals
     add_diag_inter(&temp_intersections, a, b, -0.5, 0.25, 0.5, lx, ly);
   }
 
@@ -241,8 +240,8 @@ void InsetState::densify_geo_divs()
         // Push all points. Omit the last point because it will be included
         // in the next iteration. Otherwise, we would have duplicated points
         // in the polygon.
-        for (unsigned int i = 0; i < (outer_pts_dens.size() - 1); ++i) {
-          outer_dens.push_back(outer_pts_dens[i]);
+        for (unsigned int j = 0; j < (outer_pts_dens.size() - 1); ++j) {
+          outer_dens.push_back(outer_pts_dens[j]);
         }
       }
       std::vector<Polygon> holes_v_dens;
@@ -273,7 +272,6 @@ void InsetState::densify_geo_divs()
   }
   geo_divs_.clear();
   geo_divs_ = geodivs_dens;
-  return;
 }
 
 std::vector<Point> densification_points_with_delaunay_t(
@@ -285,7 +283,7 @@ std::vector<Point> densification_points_with_delaunay_t(
 {
   std::vector<Point> dens_points;
 
-  // keep track of visited segements
+  // keep track of visited segments
   std::unordered_set<Segment> vis_seg;
 
   // If the input points are identical, return them without calculating
@@ -310,7 +308,7 @@ std::vector<Point> densification_points_with_delaunay_t(
 
   // keeping track of states
   bool f1_first = false, found_a_face = false;
-  if (lfc_begin != 0) {
+  if (lfc_begin != nullptr) {
     do {
       Face_handle fh = lfc;
 
@@ -426,8 +424,8 @@ void InsetState::densify_geo_divs_using_delaunay_t()
         // Push all points. Omit the last point because it will be included
         // in the next iteration. Otherwise, we would have duplicated points
         // in the polygon.
-        for (unsigned int i = 0; i < (outer_pts_dens.size() - 1); ++i) {
-          outer_dens.push_back(outer_pts_dens[i]);
+        for (unsigned int j = 0; j < (outer_pts_dens.size() - 1); ++j) {
+          outer_dens.push_back(outer_pts_dens[j]);
         }
       }
       std::vector<Polygon> holes_v_dens;
@@ -458,5 +456,4 @@ void InsetState::densify_geo_divs_using_delaunay_t()
   }
   geo_divs_.clear();
   geo_divs_ = geodivs_dens;
-  return;
 }

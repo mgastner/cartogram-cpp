@@ -1,9 +1,10 @@
 #include "intersection.h"
 
+intersection::intersection() = default;
+
 intersection::intersection(bool side)
     : is_x(side), ray_enters(false)  // Temporary value
 {
-  return;
 }
 
 double intersection::x() const
@@ -62,7 +63,7 @@ void add_intersections(
   const double ray,
   const double target_density,
   const double epsilon,
-  const std::string gd_id,
+  const std::string &gd_id,
   const char axis)
 {
   if (axis != 'x' && axis != 'y') {
@@ -70,8 +71,8 @@ void add_intersections(
     exit(984321);
   }
   XYPoint prev_point(pgn[pgn.size() - 1].x(), pgn[pgn.size() - 1].y());
-  for (unsigned int p = 0; p < pgn.size(); ++p) {
-    const XYPoint curr_point(pgn[p].x(), pgn[p].y());
+  for (auto p : pgn) {
+    const XYPoint curr_point(p.x(), p.y());
     intersection temp(axis == 'x');
     if (temp.ray_intersects(
           curr_point,

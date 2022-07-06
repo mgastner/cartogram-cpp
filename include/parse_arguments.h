@@ -6,7 +6,7 @@
 
 // Function to parse arguments and set variables in main()
 argparse::ArgumentParser parsed_arguments(
-  const int argc,
+  int argc,
   const char *argv[],
   std::string &geo_file_name,
   std::string &visual_file_name,

@@ -86,7 +86,12 @@ Point interpolate_point_with_barycentric_coordinates(
 
   // Calculate barycentric coordinates
   std::tuple<Scd::FT, Scd::FT, Scd::FT> bary_coor;
-  bary_coor = BC::triangle_coordinates_in_tuple_2<Point>(v1, v2, v3, p);
+  bary_coor =
+    CGAL::Barycentric_coordinates::triangle_coordinates_in_tuple_2<Point>(
+      v1,
+      v2,
+      v3,
+      p);
 
   // Get the barycentric coordinates
   const double bary_x = std::get<0>(bary_coor);
@@ -180,7 +185,7 @@ int InsetState::chosen_diag(const Point v[4], unsigned int *num_concave)
 
   // Get the transformed graticule cell as a polygon
   Polygon trans_graticule;
-  for (auto & i : tv) {
+  for (auto &i : tv) {
     trans_graticule.push_back(i);
   }
 

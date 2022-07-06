@@ -105,7 +105,7 @@ void InsetState::simplify(const unsigned int target_points_per_inset)
   const unsigned long target_pts =
     std::max(target_points_per_inset, min_points_per_ring * n_rings());
   const double ratio = static_cast<double>(target_pts) / n_pts_before;
-  PS::simplify(ct, Cost(), Stop(ratio));
+  CGAL::Polyline_simplification_2::simplify(ct, Cost(), Stop(ratio));
 
   // Store each constraint in ct as a polygon. Also store bounding box so
   // that we can match non-simplified and simplified polygons more quickly.

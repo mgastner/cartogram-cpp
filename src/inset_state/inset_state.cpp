@@ -4,6 +4,8 @@
 #include <cmath>
 #include <utility>
 
+InsetState::InsetState() = default;
+
 InsetState::InsetState(std::string pos) : pos_(std::move(pos))
 {
   n_finished_integrations_ = 0;
@@ -438,4 +440,3 @@ void InsetState::transform_points(
     }
   }
 }
-

@@ -1,5 +1,6 @@
 #include "constants.h"
 #include "inset_state.h"
+#include <cairo/cairo-pdf.h>
 #include <cairo/cairo-ps.h>
 #include <iostream>
 
@@ -12,10 +13,13 @@ void write_triangles_on_cairo_surface(cairo_t *cr, Delaunay &dt, color clr)
     Point p1 = fit->vertex(0)->point();
     Point p2 = fit->vertex(1)->point();
     Point p3 = fit->vertex(2)->point();
+
+    // set width of line
     cairo_set_line_width(cr, 0.05);
 
-    // Set color
+    // set color
     cairo_set_source_rgb(cr, clr.r, clr.g, clr.b);
+
     cairo_move_to(cr, p1.x(), 512 - p1.y());
     cairo_line_to(cr, p2.x(), 512 - p2.y());
     cairo_line_to(cr, p3.x(), 512 - p3.y());
@@ -50,11 +54,10 @@ void InsetState::write_polygon_points_on_cairo_surface(cairo_t *cr, color clr)
   cairo_set_source_rgb(cr, clr.r, clr.g, clr.b);
   cairo_set_line_cap(cr, CAIRO_LINE_CAP_ROUND);
   cairo_set_line_width(cr, 0.5);
-
   // Draw the shapes
   for (const auto &gd : geo_divs_) {
     for (const auto &pwh : gd.polygons_with_holes()) {
-      const auto &ext_ring = pwh.outer_boundary();
+      const auto ext_ring = pwh.outer_boundary();
 
       // Plot each point in exterior ring
       for (auto i : ext_ring) {
@@ -87,6 +90,7 @@ void InsetState::write_quadtree(const std::string &filename)
 
 // TODO: IS THERE A CGAL WAY OF DETERMINING WHETHER THE LABEL'S BOUNDING
 //       BOX IS COMPLETELY CONTAINED IN THE POLYGON?
+
 // TODO: SHOULD THE CRITERION FOR PRINTING A LABEL BE THAT IT FITS INSIDE THE
 //       POLYGON WITH HOLES? THAT CRITERION WOULD BE MORE RESTRICTIVE THAN
 //       FITTING INSIDE THE EXTERIOR RING.
@@ -94,21 +98,12 @@ bool all_points_inside_exterior_ring(
   const std::vector<Point> &pts,
   const Polygon_with_holes &pwh)
 {
-  // TODO: The next return statement is supposed to replace the for-loop
-  //       commented out below. I leave a copy of the for-loop for the time
-  //       being so that the old version can be restored if necessary. If the
-  //       construction with std::ranges::all_of() stands the test of time,
-  //       the for-loop should be removed.
-  return std::ranges::all_of(pts, [&pwh](const auto &pt) {
-    return pwh.outer_boundary().has_on_unbounded_side(pt);
-  });
-
-  //  for (const auto &pt : pts) {
-  //    if (pwh.outer_boundary().has_on_unbounded_side(pt)) {
-  //      return false;
-  //    }
-  //  }
-  //  return true;
+  for (const auto &pt : pts) {
+    if (pwh.outer_boundary().has_on_unbounded_side(pt)) {
+      return false;
+    }
+  }
+  return true;
 }
 
 double font_size(
@@ -117,10 +112,7 @@ double font_size(
   const Point label_pt,
   const GeoDiv &gd)
 {
-  for (unsigned int fsize_times_2 = 2 * max_font_size;
-       fsize_times_2 >= 2 * min_font_size;
-       ++fsize_times_2) {
-    double fsize = 0.5 * fsize_times_2;
+  for (double fsize = max_font_size; fsize >= min_font_size; fsize -= 0.5) {
     cairo_set_font_size(cr, fsize);
     cairo_text_extents_t extents;
     cairo_text_extents(cr, label, &extents);
@@ -160,7 +152,7 @@ void InsetState::write_polygons_to_cairo_surface(
   // Draw the shapes
   for (const auto &gd : geo_divs_) {
     for (const auto &pwh : gd.polygons_with_holes()) {
-      const auto& ext_ring = pwh.outer_boundary();
+      const auto ext_ring = pwh.outer_boundary();
 
       // Move to starting coordinates
       cairo_move_to(cr, ext_ring[0].x(), ly_ - ext_ring[0].y());
@@ -262,16 +254,18 @@ void InsetState::write_polygons_to_cairo_surface(
   }
 }
 
-// Write the map to a PNG file
+// Outputs a PNG file
 void InsetState::write_cairo_polygons_to_png(
-  const std::string& fname,
+  const std::string &fname,
   const bool fill_polygons,
   const bool colors,
   const bool plot_graticule)
 {
   const auto filename = fname.c_str();
-  cairo_surface_t *surface =
-    cairo_image_surface_create(CAIRO_FORMAT_ARGB32, static_cast<int>(lx_), static_cast<int>(ly_));
+  cairo_surface_t *surface = cairo_image_surface_create(
+    CAIRO_FORMAT_ARGB32,
+    static_cast<int>(lx_),
+    static_cast<int>(ly_));
   cairo_t *cr = cairo_create(surface);
   write_polygons_to_cairo_surface(cr, fill_polygons, colors, plot_graticule);
   cairo_surface_write_to_png(surface, filename);
@@ -279,9 +273,9 @@ void InsetState::write_cairo_polygons_to_png(
   cairo_surface_destroy(surface);
 }
 
-// Write the map to a PS file
+// Outputs a PS file
 void InsetState::write_cairo_polygons_to_ps(
-  const std::string& fname,
+  const std::string &fname,
   const bool fill_polygons,
   const bool colors,
   const bool plot_graticule)
@@ -306,16 +300,16 @@ void InsetState::write_cairo_polygons_to_ps(
 }
 
 // TODO: DO WE NEED THIS FUNCTION? WOULD IT NOT MAKE MORE SENSE TO ONLY PRINT
-//       FILE TYPES INDICATED BY COMMAND-LINE FLAGS?
-// Write both PNG and PS files
+// FILE TYPES INDICATED BY COMMAND-LINE FLAGS?
+// Outputs both png and ps files
 void InsetState::write_cairo_map(
-  const std::string& file_name,
+  const std::string &file_name,
   const bool plot_graticule)
 {
   const auto png_name = file_name + ".png";
   const auto ps_name = file_name + ".ps";
 
-  // Check whether color is set for each GeoDiv
+  // Check whether the has all GeoDivs colored
   const bool has_colors = (colors_size() == n_geo_divs());
   write_cairo_polygons_to_png(png_name, true, has_colors, plot_graticule);
   write_cairo_polygons_to_ps(ps_name, true, has_colors, plot_graticule);

@@ -114,7 +114,7 @@ int main(const int argc, const char *argv[])
   // Store total number of GeoDivs to monitor progress
   double total_geo_divs = cart_info.n_geo_divs();
 
-  // Create an std::map to store duration of each inset integrations
+  // Create std::map to store duration of each inset integrations
   std::map<std::string, ms> insets_integration_times;
 
   // Keep track of total time
