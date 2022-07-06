@@ -36,25 +36,27 @@ bool contains_vertices_in_order(
       non_simpl_bb.ymin() > simpl_bb.ymax()) {
     return false;
   }
-  std::vector<unsigned int> indices;
-  for (const auto &simpl_pt : simpl_pgn) {
-    const auto non_simpl_it = std::find(
-      non_simpl_pgn.vertices_begin(),
-      non_simpl_pgn.vertices_end(),
-      simpl_pt
-    );
-
-    // Return false if there is no matching vertex in the non-simplified
-    // polygon
-    if (non_simpl_it == non_simpl_pgn.vertices_end()) {
-      return false;
+  
+  // check if the vertices of the simplified polygon are contained in the
+  // non-simplified polygon efficiently
+  for (std::size_t i = 0, j = 0; i < simpl_pgn.size(); i++) {
+    Point sim_pt = simpl_pgn[i];
+    
+    // find the vertex in the non simplified polygon to the right
+    for (; j < non_simpl_pgn.size(); j++) {
+      Point non_sim_pt = non_simpl_pgn[j];
+      if (sim_pt == non_sim_pt) {
+        break;
+      }
     }
-    indices.push_back(distance(non_simpl_pgn.vertices_begin(), non_simpl_it));
-    if (!std::is_sorted(indices.begin(), indices.end())) {
+    
+    // if the vertex is not contained in the right side of non-simplified
+    // polygon
+    if (j == non_simpl_pgn.size()) {
       return false;
     }
   }
-  return std::is_sorted(indices.begin(), indices.end());
+  return true;
 }
 
 int simplified_polygon_index(
