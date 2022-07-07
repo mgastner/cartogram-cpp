@@ -1,7 +1,6 @@
 #include "geo_div.h"
-
-#include <utility>
 #include "constants.h"
+#include <utility>
 
 GeoDiv::GeoDiv(std::string i) : id_(std::move(i)) {}
 
@@ -103,6 +102,11 @@ Point GeoDiv::point_on_surface_of_polygon_with_holes(
     epsilon,
     id_,
     'x');
+
+  // Store hole intersections
+  for (auto hci = pwh.holes_begin(); hci != pwh.holes_end(); ++hci) {
+    add_intersections(intersections, *hci, line_y, 0, epsilon, id_, 'x');
+  }
   std::sort(intersections.begin(), intersections.end());
 
   // Assign directions (i.e., whether the line is entering or leaving the
