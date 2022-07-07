@@ -1,10 +1,11 @@
 #ifndef FT_REAL_2D_H_
 #define FT_REAL_2D_H_
 
-#include <fftw3.h>
 #include <cstddef>
+#include <fftw3.h>
 
-class FTReal2d {
+class FTReal2d
+{
 private:
   double *array_ = nullptr;
   unsigned int lx_ = 0, ly_ = 0;  // Lattice dimensions
@@ -20,10 +21,10 @@ public:
   void destroy_fftw_plan();
 
   // Setter for array elements
-  double &operator() (unsigned int, unsigned int);
+  double &operator()(unsigned int, unsigned int);
 
   // Getter for array elements
-  double operator() (unsigned int, unsigned int) const;
+  double operator()(unsigned int, unsigned int) const;
 };
 
 #endif

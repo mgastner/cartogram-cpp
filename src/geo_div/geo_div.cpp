@@ -9,7 +9,7 @@ std::set<std::string> GeoDiv::adjacent_geodivs() const
   return adjacent_geodivs_;
 }
 
-void GeoDiv::adjacent_to(const std::string& id)
+void GeoDiv::adjacent_to(const std::string &id)
 {
   adjacent_geodivs_.insert(id);
 }
@@ -18,7 +18,7 @@ double GeoDiv::area() const
 {
   double a = 0.0;
   for (const auto &pwh : polygons_with_holes()) {
-    const auto& ext_ring = pwh.outer_boundary();
+    const auto &ext_ring = pwh.outer_boundary();
     a += ext_ring.area();
     for (auto h = pwh.holes_begin(); h != pwh.holes_end(); ++h) {
       a += h->area();
@@ -38,7 +38,7 @@ Polygon_with_holes GeoDiv::largest_polygon_with_holes() const
   Polygon_with_holes largest_pwh;
   for (const auto &pwh : polygons_with_holes_) {
     double area = 0.0;
-    const auto& ext_ring = pwh.outer_boundary();
+    const auto &ext_ring = pwh.outer_boundary();
     area += ext_ring.area();
     for (auto h = pwh.holes_begin(); h != pwh.holes_end(); ++h) {
       area += h->area();
@@ -55,7 +55,7 @@ unsigned int GeoDiv::n_points() const
 {
   unsigned int n_points = 0;
   for (const auto &pwh : polygons_with_holes_) {
-    const auto& outer = pwh.outer_boundary();
+    const auto &outer = pwh.outer_boundary();
     n_points += outer.size();
     for (auto h = pwh.holes_begin(); h != pwh.holes_end(); ++h) {
       n_points += h->size();
@@ -146,7 +146,7 @@ std::vector<Polygon_with_holes> GeoDiv::polygons_with_holes() const
   return polygons_with_holes_;
 }
 
-void GeoDiv::push_back(const Polygon_with_holes& pwh)
+void GeoDiv::push_back(const Polygon_with_holes &pwh)
 {
   polygons_with_holes_.push_back(pwh);
 }

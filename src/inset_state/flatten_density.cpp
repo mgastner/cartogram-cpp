@@ -61,13 +61,13 @@ bool all_points_are_in_domain(
   ly)
   for (unsigned int i = 0; i < lx; ++i) {
     for (unsigned int j = 0; j < ly; ++j) {
-        double x = (*proj)[i][j].x + 0.5 * delta_t * (*v_intp)[i][j].x;
-        double y = (*proj)[i][j].y + 0.5 * delta_t * (*v_intp)[i][j].y;
-        if (x < 0.0 || x > lx || y < 0.0 || y > ly) {
-          in_domain = false;
-        }
+      double x = (*proj)[i][j].x + 0.5 * delta_t * (*v_intp)[i][j].x;
+      double y = (*proj)[i][j].y + 0.5 * delta_t * (*v_intp)[i][j].y;
+      if (x < 0.0 || x > lx || y < 0.0 || y > ly) {
+        in_domain = false;
       }
     }
+  }
   return in_domain;
 }
 

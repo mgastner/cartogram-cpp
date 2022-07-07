@@ -23,9 +23,9 @@ struct max_area_error_info {
   std::string geo_div;
 };
 
-struct proj_qd { // quadtree-delaunay projection
-    Delaunay dt; 
-    std::unordered_map<Point, Point> triangle_transformation;
+struct proj_qd {  // quadtree-delaunay projection
+  Delaunay dt;
+  std::unordered_map<Point, Point> triangle_transformation;
 };
 
 class InsetState
@@ -35,7 +35,7 @@ private:
   std::unordered_set<Point> unique_quadtree_corners_;
   proj_qd proj_qd_;
   std::vector<proj_qd> proj_sequence_;
-  
+
   Bbox bbox_;  // Bounding box
   fftw_plan bwd_plan_for_rho_{};
   std::unordered_map<std::string, Color> colors_;
@@ -65,11 +65,7 @@ private:
   std::vector<std::vector<intersection> > vertical_adj_;
 
   // Create cairo surface
-  void write_polygons_to_cairo_surface(
-    cairo_t *,
-    bool,
-    bool,
-    bool);
+  void write_polygons_to_cairo_surface(cairo_t *, bool, bool, bool);
   // Make default constructor private so that only
   // InsetState(const std::string) can be called as constructor
   InsetState();
@@ -80,14 +76,14 @@ public:
   void adjust_for_dual_hemisphere();
   void apply_albers_projection();
   void apply_smyth_craster_projection();
-  double area_error_at(const std::string&) const;
+  double area_error_at(const std::string &) const;
   void auto_color();  // Automatically color GeoDivs
   Bbox bbox() const;
   void blur_density(double, bool);
   void check_topology();
   int chosen_diag(const Point v[4], unsigned int *);
-  Color color_at(const std::string&) const;
-  bool color_found(const std::string&) const;
+  Color color_at(const std::string &) const;
+  bool color_found(const std::string &) const;
   bool colors_empty() const;
   unsigned int colors_size() const;
   void create_contiguity_graph(unsigned int);
@@ -108,21 +104,19 @@ public:
   void holes_inside_polygons();
   void increment_integration();
   void initialize_cum_proj();
-  void insert_color(const std::string&, Color);
-  void insert_color(const std::string&, std::string);
-  void insert_label(const std::string&, const std::string&);
-  void insert_target_area(const std::string&, double);
-  void insert_whether_input_target_area_is_missing(
-    const std::string&,
-    bool);
+  void insert_color(const std::string &, Color);
+  void insert_color(const std::string &, std::string);
+  void insert_label(const std::string &, const std::string &);
+  void insert_target_area(const std::string &, double);
+  void insert_whether_input_target_area_is_missing(const std::string &, bool);
   std::string inset_name() const;
   nlohmann::json inset_to_geojson(bool) const;
   const std::vector<Segment> intersecting_segments(unsigned int) const;
   std::vector<std::vector<intersection> > intersec_with_parallel_to(
     char,
     unsigned int) const;
-  bool is_input_target_area_missing(const std::string&) const;
-  std::string label_at(const std::string&) const;
+  bool is_input_target_area_missing(const std::string &) const;
+  std::string label_at(const std::string &) const;
   unsigned int lx() const;
   unsigned int ly() const;
   void make_fftw_plans_for_rho();
@@ -138,46 +132,38 @@ public:
   Point projected_point_with_triangulation(Point);
   void project_with_delaunay_t();
   void project_with_triangulation();
-  void push_back(const GeoDiv&);
+  void push_back(const GeoDiv &);
   FTReal2d *ref_to_rho_ft();
   FTReal2d *ref_to_rho_init();
-  void replace_target_area(const std::string&, double);
+  void replace_target_area(const std::string &, double);
   void rescale_map(unsigned int, bool);
   void revert_smyth_craster_projection();
   void rings_are_simple();
   void set_area_errors();
   void set_grid_dimensions(unsigned int, unsigned int);
-  void set_inset_name(const std::string&);
+  void set_inset_name(const std::string &);
   void simplify(unsigned int);
-  double target_area_at(const std::string&) const;
-  bool target_area_is_missing(const std::string&) const;
+  double target_area_at(const std::string &) const;
+  bool target_area_is_missing(const std::string &) const;
   double total_inset_area() const;
   double total_target_area() const;
-  std::array<Point, 3> transformed_triangle(const std::array<Point, 3>&);
+  std::array<Point, 3> transformed_triangle(const std::array<Point, 3> &);
 
   // Apply given function to all points
-  void transform_points(const std::function<Point(Point)>&);
+  void transform_points(const std::function<Point(Point)> &);
   std::array<Point, 3> untransformed_triangle(Point);
 
   // Cairo functions
-  void write_cairo_map(const std::string&, bool);
-  void write_cairo_polygons_to_png(
-    const std::string&,
-    bool,
-    bool,
-    bool);
-  void write_cairo_polygons_to_ps(
-    const std::string&,
-    bool,
-    bool,
-    bool);
+  void write_cairo_map(const std::string &, bool);
+  void write_cairo_polygons_to_png(const std::string &, bool, bool, bool);
+  void write_cairo_polygons_to_ps(const std::string &, bool, bool, bool);
 
   // Functions to write map to eps
-  void write_quadtree(const std::string&);
-  void write_density_to_eps(const std::string&, const double *);
+  void write_quadtree(const std::string &);
+  void write_density_to_eps(const std::string &, const double *);
   void write_graticule_to_eps(std::ofstream &);
   void write_intersections_to_eps(unsigned int);
-  void write_map_to_eps(const std::string&, bool);
+  void write_map_to_eps(const std::string &, bool);
   void write_polygons_to_eps(std::ofstream &, bool, bool);
   void write_polygon_points_on_cairo_surface(cairo_t *, color);
 };

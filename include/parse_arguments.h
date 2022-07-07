@@ -1,8 +1,8 @@
 #ifndef PARSE_ARGUMENTS_H_
 #define PARSE_ARGUMENTS_H_
 
-#include <iostream>
 #include "argparse.hpp"
+#include <iostream>
 
 // Function to parse arguments and set variables in main()
 argparse::ArgumentParser parsed_arguments(

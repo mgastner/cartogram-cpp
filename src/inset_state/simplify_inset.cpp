@@ -36,22 +36,23 @@ bool contains_vertices_in_order(
     non_simpl_bb.ymin() > simpl_bb.ymax()) {
     return false;
   }
-  
-  // check if the vertices of the simplified polygon are contained in the
+
+  // Check whether the vertices of the simplified polygon are contained in the
   // non-simplified polygon efficiently
-  for (std::size_t i = 0, j = 0; i < simpl_pgn.size(); i++) {
+  for (std::size_t i = 0, j = 0; i < simpl_pgn.size(); ++i) {
     Point sim_pt = simpl_pgn[i];
 
-    // find the vertex in the non simplified polygon to the right
-    for (; j < non_simpl_pgn.size(); j++) {
+    // Find the vertex in the non-simplified polygon to the right
+    for (; j < non_simpl_pgn.size(); ++j) {
       Point non_sim_pt = non_simpl_pgn[j];
       if (sim_pt == non_sim_pt) {
         break;
       }
     }
-    
-    // if the vertex is not contained in the right side of non-simplified
-    // polygon
+
+    // If the vertex is not contained on the right side of non-simplified
+    // polygon, we know that the order of the vertices in the simplified
+    // polygon does not match the order in the non-simplified one.
     if (j == non_simpl_pgn.size()) {
       return false;
     }
