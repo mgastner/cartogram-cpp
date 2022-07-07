@@ -53,10 +53,14 @@ bool all_points_are_in_domain(
   // `in_domain = false` with `in_domain = true`.
   // I am commenting out the #pragma to ensure correctness. Presumably
   // parallelization could be implemented with reduction.
-  // #pragma omp parallel for
+#pragma omp parallel for reduction(&&:in_domain) default(none) shared( \
+  delta_t,                                                             \
+  proj,                                                                \
+  v_intp,                                                              \
+  lx,                                                                  \
+  ly)
   for (unsigned int i = 0; i < lx; ++i) {
     for (unsigned int j = 0; j < ly; ++j) {
-      if (in_domain) {
         double x = (*proj)[i][j].x + 0.5 * delta_t * (*v_intp)[i][j].x;
         double y = (*proj)[i][j].y + 0.5 * delta_t * (*v_intp)[i][j].y;
         if (x < 0.0 || x > lx || y < 0.0 || y > ly) {
@@ -64,7 +68,6 @@ bool all_points_are_in_domain(
         }
       }
     }
-  }
   return in_domain;
 }
 
