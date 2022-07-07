@@ -8,7 +8,7 @@ void InsetState::fill_with_density(bool plot_density)
   // CartogramInfo::replace_missing_and_zero_target_areas()
   double mean_density = total_target_area() / total_inset_area();
 
-#pragma omp parallel for collapse(2) default(none)
+#pragma omp parallel for default(none)
   // Initially assign zero to all densities
   for (unsigned int i = 0; i < lx_; ++i) {
     for (unsigned int j = 0; j < ly_; ++j) {
@@ -140,8 +140,7 @@ void InsetState::fill_with_density(bool plot_density)
   }
 
   // Fill rho_init with the ratio of rho_num to rho_den
-#pragma omp parallel for collapse(2) default(none) \
-  shared(mean_density, rho_den, rho_num)
+#pragma omp parallel for default(none) shared(mean_density, rho_den, rho_num)
   for (unsigned int i = 0; i < lx_; ++i) {
     for (unsigned int j = 0; j < ly_; ++j) {
       if (rho_den[i][j] == 0) {
