@@ -193,7 +193,6 @@ int main(const int argc, const char *argv[])
     cart_info.write_geojson(
       geo_file_name,
       map_name + "_equal_area.geojson",
-      std::cout,
       output_to_stdout);
     return EXIT_SUCCESS;
   }
@@ -402,7 +401,6 @@ int main(const int argc, const char *argv[])
       cart_info.write_geojson(
         geo_file_name,
         output_file_name,
-        std::cout,
         output_to_stdout);
       inset_state.revert_smyth_craster_projection();
     } else {
@@ -424,7 +422,6 @@ int main(const int argc, const char *argv[])
   cart_info.write_geojson(
     geo_file_name,
     map_name + "_cartogram.geojson",
-    std::cout,
     output_to_stdout);
 
   // Store time when main() ended

@@ -37,6 +37,6 @@ public:
   void replace_missing_and_zero_target_areas();
   void set_map_name(const std::string);
   void shift_insets_to_target_position();
-  void write_geojson(std::string, std::string, std::ostream &, bool);
+  void write_geojson(std::string, std::string, bool);
 };
 #endif

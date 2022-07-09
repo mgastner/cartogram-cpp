@@ -132,7 +132,6 @@ nlohmann::json CartogramInfo::cgal_to_json()
 void CartogramInfo::write_geojson(
     std::string old_geo_file_name,
     std::string new_geo_file_name,
-    std::ostream &new_geo_stream,
     bool output_to_stdout
 ) {
   std::ifstream old_file(old_geo_file_name);
@@ -191,7 +190,7 @@ void CartogramInfo::write_geojson(
   }
   
   if (output_to_stdout) {
-    new_geo_stream << new_json << std::endl;
+    std::cout << new_json << std::endl;
   } else {
     std::ofstream o(new_geo_file_name);
     o << new_json << std::endl;
