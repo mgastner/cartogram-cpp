@@ -211,6 +211,12 @@ int main(const int argc, const char *argv[])
     // Rescale map to fit into a rectangular box [0, lx] * [0, ly]
     inset_state.rescale_map(long_graticule_length, cart_info.is_world_map());
 
+    if (output_to_stdout) {
+
+      // Store original coordinates
+      inset_state.store_original_geo_divs();
+    }
+
     // Set up Fourier transforms
     const unsigned int lx = inset_state.lx();
     const unsigned int ly = inset_state.ly();

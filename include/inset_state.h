@@ -43,7 +43,12 @@ private:
   // Cumulative cartogram projection
   boost::multi_array<XYPoint, 2> cum_proj_;
   fftw_plan fwd_plan_for_rho_{};
-  std::vector<GeoDiv> geo_divs_;  // Geographic divisions in this inset
+
+  // Geographic divisions in this inset
+  std::vector<GeoDiv> geo_divs_;
+
+  // Copy of original data
+  std::vector<GeoDiv> geo_divs_original_;
 
   // Chosen diagonal for each graticule cell
   boost::multi_array<int, 2> graticule_diagonals_;
@@ -143,6 +148,7 @@ public:
   void set_grid_dimensions(unsigned int, unsigned int);
   void set_inset_name(const std::string &);
   void simplify(unsigned int);
+  void store_original_geo_divs();
   double target_area_at(const std::string &) const;
   bool target_area_is_missing(const std::string &) const;
   double total_inset_area() const;

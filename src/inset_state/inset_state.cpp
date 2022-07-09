@@ -407,6 +407,11 @@ std::string InsetState::label_at(const std::string &id) const
   return labels_.at(id);
 }
 
+void InsetState::store_original_geo_divs()
+{
+  geo_divs_original_ = geo_divs_;
+}
+
 void InsetState::transform_points(
   const std::function<Point(Point)> &transform_point)
 {
