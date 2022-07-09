@@ -1,8 +1,8 @@
 #include "inset_state.h"
 #include "constants.h"
-#include <iostream>
 #include "round_point.h"
 #include <cmath>
+#include <iostream>
 #include <utility>
 
 InsetState::InsetState() = default;
@@ -360,7 +360,6 @@ void InsetState::remove_tiny_polygons(const double &minimum_polygon_size)
   }
   geo_divs_.clear();
   geo_divs_ = geo_divs_cleaned;
-  return;
 }
 
 void InsetState::replace_target_area(const std::string &id, const double area)

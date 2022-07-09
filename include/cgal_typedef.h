@@ -36,6 +36,8 @@ typedef CGAL::Polyline_simplification_2::Stop_below_count_ratio_threshold Stop;
 typedef CGAL::Polyline_simplification_2::Squared_distance_cost Cost;
 
 double pwh_area(const Polygon_with_holes &pwh);
-bool compare_pwh(const Polygon_with_holes &pwh1, const Polygon_with_holes &pwh2);
+bool compare_pwh(
+  const Polygon_with_holes &pwh1,
+  const Polygon_with_holes &pwh2);
 
 #endif

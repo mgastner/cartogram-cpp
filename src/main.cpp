@@ -206,7 +206,7 @@ int main(const int argc, const char *argv[])
     // Determine the name of the inset
     std::string inset_name = map_name;
     if (cart_info.n_insets() > 1) {
-      inset_name = inset_name + "_" + inset_pos;
+      inset_name += inset_pos;
       std::cerr << "\nWorking on inset at position: " << inset_pos
                 << std::endl;
     }

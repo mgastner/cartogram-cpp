@@ -2,10 +2,7 @@
 #include <iostream>
 #include <sstream>
 
-Color::Color(int red, int green, int blue) : r(red), g(green), b(blue)
-{
-  return;
-}
+Color::Color(int red, int green, int blue) : r(red), g(green), b(blue) {}
 
 Color::Color(std::string color_as_string)
 {
@@ -68,10 +65,9 @@ Color::Color(std::string color_as_string)
               << "Please refer to README.md!" << std::endl;
     std::cerr << "Color: " << color_as_string << std::endl;
   }
-  return;
 }
 
-std::string Color::eps()
+std::string Color::eps() const
 {
   std::string temp;
   temp.append(std::to_string(static_cast<double>(r) / 255.0));

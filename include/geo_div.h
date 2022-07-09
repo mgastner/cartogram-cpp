@@ -14,15 +14,13 @@ private:
   GeoDiv();
 
 public:
-  explicit GeoDiv(const std::string);
+  explicit GeoDiv(std::string);
   [[nodiscard]] std::set<std::string> adjacent_geodivs() const;
   void adjacent_to(const std::string &);
   [[nodiscard]] double area() const;
   [[nodiscard]] std::string id() const;
-  const std::vector<Segment> intersections(unsigned int) const;
   [[nodiscard]] Polygon_with_holes largest_polygon_with_holes() const;
   [[nodiscard]] unsigned int n_points() const;
-  unsigned int n_polygons_with_holes() const;
   [[nodiscard]] unsigned int n_rings() const;
   [[nodiscard]] Point point_on_surface_of_geodiv() const;
   [[nodiscard]] Point point_on_surface_of_polygon_with_holes(

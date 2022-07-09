@@ -13,8 +13,8 @@ struct Color {
   int b;
   Color();
   Color(int, int, int);
-  Color(std::string);
-  std::string eps();
+  explicit Color(std::string);
+  std::string eps() const;
 
   bool operator==(const Color &rhs) const
   {

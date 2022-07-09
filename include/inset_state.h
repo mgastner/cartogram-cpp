@@ -103,8 +103,6 @@ public:
 
   std::vector<GeoDiv> geo_divs() const;
   void holes_inside_polygons();
-  const std::vector<std::vector<intersection> > horizontal_scans(
-    unsigned int) const;
   void increment_integration();
   void initialize_cum_proj();
   void insert_color(const std::string &, Color);

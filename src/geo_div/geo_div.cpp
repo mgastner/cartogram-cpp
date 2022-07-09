@@ -1,6 +1,5 @@
 #include "geo_div.h"
 #include "cgal_typedef.h"
-#include "xy_point.h"
 #include "constants.h"
 #include <utility>
 
@@ -156,5 +155,8 @@ std::vector<Polygon_with_holes> *GeoDiv::ref_to_polygons_with_holes()
 
 void GeoDiv::sort_pwh()
 {
-  std::sort(polygons_with_holes_.begin(), polygons_with_holes_.end(), compare_pwh);
+  std::sort(
+    polygons_with_holes_.begin(),
+    polygons_with_holes_.end(),
+    compare_pwh);
 }
