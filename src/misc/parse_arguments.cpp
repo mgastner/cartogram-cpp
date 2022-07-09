@@ -8,7 +8,7 @@ argparse::ArgumentParser parsed_arguments(
   const char *argv[],
   std::string &geo_file_name,
   std::string &visual_file_name,
-  unsigned int &max_n_graticule_rows_or_cols,
+  unsigned int &max_n_grid_rows_or_cols,
   unsigned int &target_points_per_inset,
   bool &world,
   bool &triangulation,
@@ -138,7 +138,7 @@ argparse::ArgumentParser parsed_arguments(
   }
 
   // Set long grid-side length
-  max_n_graticule_rows_or_cols = arguments.get<unsigned int>("-N");
+  max_n_grid_rows_or_cols = arguments.get<unsigned int>("-N");
 
   // Set target_points_per_inset
   target_points_per_inset = arguments.get<unsigned int>("-P");
