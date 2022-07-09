@@ -77,7 +77,6 @@ int main(const int argc, const char *argv[])
   if (map_name.find('.') != std::string::npos) {
     map_name = map_name.substr(0, map_name.find('.'));
   }
-  std::cout << geo_file_name << "\n";
   cart_info.set_map_name(map_name);
   if (!make_csv) {
 

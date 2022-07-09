@@ -26,7 +26,7 @@ void CartogramInfo::read_csv(argparse::ArgumentParser arguments)
   // have index 1.
   int area_col = 1;
   if (auto area_header = arguments.present<std::string>("-A")) {
-    std::cout << "Area Header: " << *area_header << std::endl;
+    std::cerr << "Area Header: " << *area_header << std::endl;
     area_col = reader.index_of(*area_header);
   }
 
