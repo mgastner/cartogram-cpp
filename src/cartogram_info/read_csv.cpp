@@ -1,5 +1,6 @@
 #include "cartogram_info.h"
 #include "csv.hpp"
+#include <string>
 
 void CartogramInfo::read_csv(argparse::ArgumentParser arguments)
 {
@@ -77,9 +78,24 @@ void CartogramInfo::read_csv(argparse::ArgumentParser arguments)
         std::cerr << "ERROR: negative area in CSV" << std::endl;
         _Exit(101);
       }
-    } else {  // We get here if one of the areas is missing ("NA")
-      std::cerr << "area_field: " << area_field.get() << std::endl;
-      if (area_field.get().compare("NA") == 0) {
+    } else {
+
+      std::string area_as_str = area_field.get();
+
+      // With inspiration from:
+      // https://stackoverflow.com/questions/2684491/remove-commas-from-string
+      area_as_str.erase(
+        std::remove(area_as_str.begin(), area_as_str.end(), ','),
+        area_as_str.end());
+
+      // With inspiration from:
+      // https://stackoverflow.com/questions/4654636/how-to-determine-if-a-string-is-a-number-with-c
+      // !area_as_str.empty() && std::all_of(area_as_str.begin(), area_as_str.end(), ::isdigit);
+
+      std::cerr << "area_field: " << area_as_str << std::endl;
+
+      // We get here if one of the areas is missing ("NA")
+      if (area_as_str.compare("NA") == 0) {
         area = -1.0;  // Use negative area as sign of a missing value
       } else {
         std::cerr << "ERROR: Areas must be numeric or NA" << std::endl;
