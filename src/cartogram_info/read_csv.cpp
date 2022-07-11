@@ -61,9 +61,7 @@ void CartogramInfo::read_csv(argparse::ArgumentParser arguments)
     // Read ID of geographic division
     std::string id = row[id_col].get();
     if (ids_in_visual_variables_file_.contains(id)) {
-      std::cerr << "ERROR: ID "
-                << id
-                << " appears more than once in CSV"
+      std::cerr << "ERROR: ID " << id << " appears more than once in CSV"
                 << std::endl;
       _Exit(301);
     }
@@ -79,7 +77,6 @@ void CartogramInfo::read_csv(argparse::ArgumentParser arguments)
         _Exit(101);
       }
     } else {
-
       std::string area_as_str = area_field.get();
 
       // With inspiration from:
@@ -88,16 +85,19 @@ void CartogramInfo::read_csv(argparse::ArgumentParser arguments)
         std::remove(area_as_str.begin(), area_as_str.end(), ','),
         area_as_str.end());
 
+      // Check if areas is missing or "NA"
+      if (area_as_str.empty() || area_as_str.compare("NA") == 0) {
+        area = -1.0;  // Use negative area as sign of a missing value
+      }
       // With inspiration from:
       // https://stackoverflow.com/questions/4654636/how-to-determine-if-a-string-is-a-number-with-c
-      // !area_as_str.empty() && std::all_of(area_as_str.begin(), area_as_str.end(), ::isdigit);
-
-      std::cerr << "area_field: " << area_as_str << std::endl;
-
-      // We get here if one of the areas is missing ("NA")
-      if (area_as_str.compare("NA") == 0) {
-        area = -1.0;  // Use negative area as sign of a missing value
+      else if (std::all_of(
+                 area_as_str.begin(),
+                 area_as_str.end(),
+                 ::isdigit)) {
+        area = atof(area_as_str.c_str());
       } else {
+        std::cerr << "area_field: " << area_as_str << std::endl;
         std::cerr << "ERROR: Areas must be numeric or NA" << std::endl;
         _Exit(201);
       }
@@ -138,16 +138,11 @@ void CartogramInfo::read_csv(argparse::ArgumentParser arguments)
       }
 
       // If unrecognized, set inset position to "C"
-      std::unordered_set<std::string> permitted_pos {"C", "L", "R", "T", "B"};
+      std::unordered_set<std::string> permitted_pos{"C", "L", "R", "T", "B"};
       if (!permitted_pos.contains(inset_pos)) {
-        std::cerr << "Unrecognized inset position : "
-                  << inset_pos_original
-                  << " for Region: "
-                  << id
-                  << "\nSetting "
-                  << id
-                  << "\'s inset position to Center (C)."
-                  << std::endl;
+        std::cerr << "Unrecognized inset position : " << inset_pos_original
+                  << " for Region: " << id << "\nSetting " << id
+                  << "\'s inset position to Center (C)." << std::endl;
         inset_pos = "C";
       }
     }
@@ -159,8 +154,7 @@ void CartogramInfo::read_csv(argparse::ArgumentParser arguments)
     if (!inset_pos_set.contains(inset_pos)) {
       InsetState inset_state(inset_pos);
       inset_states_.insert(
-        std::pair<std::string, InsetState>(inset_pos, inset_state)
-      );
+        std::pair<std::string, InsetState>(inset_pos, inset_state));
       inset_pos_set.insert(inset_pos);
     }
 
