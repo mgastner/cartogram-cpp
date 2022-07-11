@@ -147,7 +147,7 @@ void CartogramInfo::read_csv(argparse::ArgumentParser arguments)
       }
     }
 
-    // Associate GeoDiv ID with inset positon
+    // Associate GeoDiv ID with inset position
     gd_to_inset_.insert(std::pair<std::string, std::string>(id, inset_pos));
 
     // Create inset_state for inset_pos unless it already exists
