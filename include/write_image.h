@@ -93,6 +93,17 @@ std::vector<std::pair<double, double>> get_minor_ticks(
   const double max_area_cell_point_area,
   std::vector<int> nice_numbers);
 
+std::pair<
+  std::vector<std::pair<double, double>>,
+  std::vector<std::pair<double, double>>>
+get_ticks(
+  const int n_ticks_per_major,
+  const double min_target_area_per_km,
+  const double max_target_area_per_km,
+  const double min_area_cell_point_area,
+  const double max_area_cell_point_area,
+  std::vector<int> nice_numbers);
+
 std::vector<int> get_nice_numbers_for_bar(const double max_target_area_per_km);
 
 #endif

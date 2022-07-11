@@ -1,7 +1,530 @@
 #include "write_image.h"
 
-// Grid cell width/height, as multiple of grid size of 1
-constexpr unsigned int plotted_cell_length = 8;
+// Outputs a SVG/PS file of grid heatmap
+void InsetState::write_grid_heatmap_image(
+  const std::string filename,
+  const bool plot_equal_area_map,
+  const bool image_format_ps,
+  const bool crop)
+{
+  // Whether to draw bar on the cairo surface
+  const bool draw_bar = true;
+
+  // Create a cairo surface
+  cairo_surface_t *surface;
+  image_format_ps
+    ? surface = cairo_ps_surface_create(filename.c_str(), lx_, ly_)
+    : surface = cairo_svg_surface_create(filename.c_str(), lx_, ly_);
+  cairo_t *cr = cairo_create(surface);
+
+  // Write header
+  if (image_format_ps) {
+    write_ps_header(filename, surface);
+  }
+
+  // White background
+  cairo_set_source_rgb(cr, 1.0, 1.0, 1.0);
+  cairo_rectangle(cr, 0, 0, lx_, ly_);
+  cairo_fill(cr);
+
+  // Get inset areas
+  const double total_ta = total_target_area();
+  const double total_ia = total_inset_area();
+
+  const Bbox bbox_bar = get_bbox_bar(15, 150);
+
+  // Get the max and min grid cell area points
+  Point max_area_cell_point, min_area_cell_point;
+
+  std::tie(max_area_cell_point, min_area_cell_point) =
+    max_and_min_grid_cell_area_index(1);
+
+  const double max_area_cell_point_area =
+    grid_cell_area(max_area_cell_point.x(), max_area_cell_point.y(), 1);
+  const double min_area_cell_point_area =
+    grid_cell_area(min_area_cell_point.x(), min_area_cell_point.y(), 1);
+
+  // Get the max and min grid cell target area per km
+  double max_target_area_per_km = grid_cell_target_area_per_km(
+    max_area_cell_point.x(),
+    max_area_cell_point.y(),
+    total_ta,
+    total_ia);
+  double min_target_area_per_km = grid_cell_target_area_per_km(
+    min_area_cell_point.x(),
+    min_area_cell_point.y(),
+    total_ta,
+    total_ia);
+
+  if (plot_equal_area_map) {
+    std::cerr << std::endl;
+    std::cerr << "Max target area per km: " << max_target_area_per_km
+              << std::endl;
+    std::cerr << "Min target area per km: " << min_target_area_per_km
+              << std::endl
+              << std::endl;
+  }
+
+  std::vector<int> nice_numbers =
+    get_nice_numbers_for_bar(max_target_area_per_km);
+
+  std::vector<std::pair<double, double>> major_ticks, minor_ticks;
+
+  std::tie(major_ticks, minor_ticks) = get_ticks(
+    9,
+    min_target_area_per_km,
+    max_target_area_per_km,
+    min_area_cell_point_area,
+    max_area_cell_point_area,
+    nice_numbers);
+
+  // Draw colors
+  write_grid_colors_to_cairo_surface(cr, plot_equal_area_map, crop);
+
+  // Draw polygons without color
+  write_polygons_to_cairo_surface(cr, false, false, plot_equal_area_map);
+
+  // trim_grid_heatmap(cr, 20);
+
+  if (draw_bar) {
+    std::string bar_filename = "bar_" + filename;
+
+    // Create a cairo bar_surface
+    cairo_surface_t *bar_surface =
+      (image_format_ps
+         ? cairo_ps_surface_create(bar_filename.c_str(), 160, 400)
+         : cairo_svg_surface_create(bar_filename.c_str(), 160, 400));
+
+    cairo_t *bar_cr = cairo_create(bar_surface);
+
+    // Write header
+    if (image_format_ps) {
+      write_ps_header(bar_filename, bar_surface);
+    }
+
+    // Write bar
+    write_grid_heatmap_bar_to_cairo_surface(
+      min_area_cell_point_area,
+      max_area_cell_point_area,
+      bar_cr,
+      Bbox(75, 200, 95, 350),
+      major_ticks,
+      minor_ticks,
+      400);
+
+    cairo_show_page(bar_cr);
+    cairo_surface_destroy(bar_surface);
+    cairo_destroy(bar_cr);
+  }
+  cairo_show_page(cr);
+  cairo_surface_destroy(surface);
+  cairo_destroy(cr);
+}
+
+// Function to show the density bar on the cairo surface
+void write_density_bar_to_cairo_surface(
+  const double min_value,
+  const double mean_value,
+  const double max_value,
+  cairo_t *cr,
+  Bbox bbox_bar,
+  const unsigned int ly)
+{
+  const int n_gradient_bars = 500;
+
+  // get bar coordinates
+  const double xmin_bar = bbox_bar.xmin();
+  const double xmax_bar = bbox_bar.xmax();
+  const double ymin_bar = bbox_bar.ymin();
+  const double ymax_bar = bbox_bar.ymax();
+
+  const double bar_width = xmax_bar - xmin_bar;
+  const double bar_height = ymax_bar - ymin_bar;
+
+  // Draw the outer bar lines
+  cairo_set_source_rgb(cr, 0.0, 0.0, 0.0);
+  cairo_set_line_width(cr, 1.0);
+  cairo_rectangle(cr, xmin_bar, ymin_bar, bar_width, -bar_height);
+  cairo_stroke(cr);
+
+  // position of mean line along bar
+  // const double ymean_bar = ((ymax_bar - ymin_bar) / (max_value - min_value))
+  // *
+  //                            (mean_value - min_value) +
+  //                          ymin_bar;
+
+  // calculate individual bar gradient segment property
+  const double gradient_segment_height =
+    (ymax_bar - ymin_bar) / n_gradient_bars;
+  const double gradient_segment_value =
+    abs(max_value - min_value) / n_gradient_bars;
+
+  // Draw the gradient segment rectangles
+  double value_at_gradient_segment = min_value;
+  double overlap = 0.1;
+
+  for (double y = ymin_bar; y <= ymax_bar; y += gradient_segment_height) {
+    Color color = heatmap_color(
+      value_at_gradient_segment,
+      min_value,
+      mean_value,
+      max_value);
+    cairo_set_source_rgb(cr, color.r, color.g, color.b);
+    cairo_rectangle(
+      cr,
+      xmin_bar,
+      ly - y - overlap,
+      bar_width,
+      gradient_segment_height + overlap);
+    cairo_fill(cr);
+    value_at_gradient_segment += gradient_segment_value;
+  }
+
+  // Draw the mean line
+  cairo_set_source_rgb(cr, 0.0, 0.0, 0.0);
+  // cairo_set_line_width(cr, 0.9);
+  // cairo_move_to(cr, xmax_bar - bar_width / 2, ly - ymean_bar);
+  // cairo_line_to(cr, xmin_bar, ly - ymean_bar);
+  // cairo_stroke(cr);
+
+  unsigned int font_size = 10;
+
+  // Set font properties
+  cairo_select_font_face(
+    cr,
+    "Sans",
+    CAIRO_FONT_SLANT_NORMAL,
+    CAIRO_FONT_WEIGHT_BOLD);
+  cairo_set_font_size(cr, font_size);
+
+  // Write residual density
+  // cairo_move_to(
+  //   cr,
+  //   xmin_bar - bar_width / 2 - 1,
+  //   ly - ymax_bar - (font_size * 3.0));
+  // cairo_show_text(cr, "Residual");
+  // cairo_move_to(
+  //   cr,
+  //   xmin_bar - bar_width / 2 - 1,
+  //   ly - ymax_bar - (font_size * 2.0));
+  // cairo_show_text(cr, "Density (km-²)");
+
+  // Tick width outside bar
+  double half_tick_width = bar_width / 8.0;
+
+  // Write max value at top of bar
+  right_aligned_text(
+    cr,
+    std::floor(max_value),
+    xmin_bar - half_tick_width,
+    ly - ymax_bar,
+    font_size);
+
+  // Write mean value
+  // right_aligned_text(
+  //   cr,
+  //   mean_value,
+  //   xmin_bar,
+  //   ly - ymean_bar + (font_size / 4.0),
+  //   font_size);
+
+  // Write min_value
+  right_aligned_text(
+    cr,
+    std::ceil(min_value),
+    xmin_bar - half_tick_width,
+    ly - ymin_bar + (font_size * 1.2),
+    font_size);
+
+  long long magnitude =
+    std::max(std::pow(10.0, std::floor(std::log10(max_value))), 1.0);
+
+  long long original_mag = magnitude;
+
+  if (max_value > magnitude * 4 || min_value < -magnitude * 4) {
+    magnitude *= 2;
+  } else if (
+    max_value < magnitude * 2 && std::abs(min_value) < magnitude * 2) {
+    magnitude /= 2;
+  }
+
+  // Highest magnitude
+  long long highest_mag = magnitude * (std::floor(max_value / magnitude));
+
+  if (highest_mag > max_value - (0.4 * original_mag)) {
+    highest_mag -= magnitude;
+  }
+
+  if (magnitude >= 0.1) {
+    cairo_set_line_width(cr, 0.7);
+    double bar_ratio = (ymax_bar - ymin_bar) / (max_value - min_value);
+
+    // Ticks
+    for (long long i = highest_mag;
+         i - (0.5 * magnitude) > min_value || i == mean_value;
+         i -= magnitude) {
+      double tick = bar_ratio * (i - min_value) + ymin_bar;
+      // if (i == mean_value) {
+      //   tick += (font_size / 4.0);
+      // }
+      cairo_move_to(cr, xmin_bar + half_tick_width, ly - tick);
+      cairo_line_to(cr, xmin_bar - half_tick_width, ly - tick);
+      cairo_stroke(cr);
+      right_aligned_text(
+        cr,
+        i,
+        xmin_bar - half_tick_width,
+        ly - tick + (font_size / 2.0),
+        font_size);
+    }
+  }
+}
+
+// Adds a square legend outside the map
+void InsetState::write_legend_to_cairo_surface(
+  cairo_t *cr,
+  bool equal_area_map)
+{
+  std::pair<double, unsigned int> legend_info =
+    equal_area_map ? get_km_legend_length()
+                   : get_visual_variable_legend_length();
+
+  Bbox bb = bbox();
+  Point legend_pos(bb.xmin() * 0.5, bb.ymin() * 0.5);
+  double legend_length = legend_info.first;
+  unsigned int legend_value = legend_info.second;
+  cairo_set_line_width(cr, 1);
+  Color color("black");
+  cairo_set_source_rgb(cr, color.r, color.g, color.b);
+  cairo_rectangle(
+    cr,
+    legend_pos.x(),
+    legend_pos.y(),
+    legend_length,
+    legend_length);
+  cairo_stroke(cr);
+
+  double x = legend_pos.x() + (legend_length * 1.25);
+  double y = legend_pos.y() + (legend_length * 0.5);
+
+  unsigned int font_size = 12;
+  cairo_select_font_face(
+    cr,
+    "Sans",
+    CAIRO_FONT_SLANT_NORMAL,
+    CAIRO_FONT_WEIGHT_BOLD);
+  cairo_set_font_size(cr, font_size);
+  std::string legend_label = std::to_string(legend_value);
+
+  // Add known units
+  if (equal_area_map) {
+    legend_label += " km²";
+  }
+
+  cairo_move_to(cr, x, y + (font_size / 2.0));
+  cairo_show_text(cr, legend_label.c_str());
+}
+
+void InsetState::write_density_image(
+  const std::string filename,
+  const double *density,
+  const bool plot_grid_heatmap,
+  const bool image_format_ps)
+{
+  // Whether to draw bar on the cairo surface
+  const bool draw_bar = true;
+  cairo_surface_t *surface =
+    (image_format_ps ? cairo_ps_surface_create(filename.c_str(), lx_, ly_)
+                     : cairo_svg_surface_create(filename.c_str(), lx_, ly_));
+
+  // Create a cairo surface
+  cairo_t *cr = cairo_create(surface);
+
+  // Write header
+  if (image_format_ps) {
+    write_ps_header(filename, surface);
+  }
+
+  // White background
+  cairo_set_source_rgb(cr, 1.0, 1.0, 1.0);
+  cairo_rectangle(cr, 0, 0, lx_, ly_);
+  cairo_fill(cr);
+
+  cairo_set_line_width(cr, 0);
+
+  // Determine range of densities
+  const double dens_min = dens_min_;
+  const double dens_mean = dens_mean_;
+  const double dens_max = dens_max_;
+  const double each_grid_cell_area_km = grid_cell_area_km(0, 0);
+
+  // Crop it too
+  if (plot_grid_heatmap) {
+    unsigned int cell_width = 1;
+
+    // Clip to shape and print in sequential scale
+    for (const auto &gd : geo_divs_) {
+      for (const auto &pwh : gd.polygons_with_holes()) {
+        const auto ext_ring = pwh.outer_boundary();
+        cairo_new_path(cr);
+        cairo_move_to(cr, ext_ring[0].x(), ly_ - ext_ring[0].y());
+
+        // Plot each point in exterior ring
+        for (unsigned int i = 1; i < ext_ring.size(); ++i) {
+          cairo_line_to(cr, ext_ring[i].x(), ly_ - ext_ring[i].y());
+        }
+
+        // Close entire path
+        cairo_close_path(cr);
+        cairo_clip(cr);
+
+        Bbox gd_bbox = gd.bbox();
+
+        // Iterate over grid cells
+        for (unsigned int i = gd_bbox.xmin(); i < gd_bbox.xmax();
+             i += cell_width) {
+          for (unsigned int j = gd_bbox.ymin(); j < gd_bbox.ymax();
+               j += cell_width) {
+
+            double target_area_km =
+              density[i * ly_ + j] / each_grid_cell_area_km;
+
+            // Values here used are "Max target area per km" and
+            // "Min target area per km", which is obtained by running the
+            // code with the "plot_grid_heatmap" -h flag set to true
+            // Update here for new map
+            Color color = grid_cell_color(target_area_km, 660.058, 0.660816);
+
+            // Get four points of the square
+            double x_min = i - 0.5 * sq_overlap;
+            double y_min = j - 0.5 * sq_overlap;
+            double x_max = i + 1 + 0.5 * sq_overlap;
+            double y_max = j + 1 + 0.5 * sq_overlap;
+
+            cairo_move_to(cr, x_min, ly_ - y_min);
+            cairo_line_to(cr, x_max, ly_ - y_min);
+            cairo_line_to(cr, x_max, ly_ - y_max);
+            cairo_line_to(cr, x_min, ly_ - y_max);
+
+            cairo_set_source_rgb(cr, color.r, color.g, color.b);
+            cairo_fill(cr);
+            cairo_set_source_rgb(cr, 0, 0, 0);
+            cairo_stroke(cr);
+
+            // Fill the grid polygon with color
+            cairo_fill_preserve(cr);
+            cairo_stroke(cr);
+          }
+        }
+
+        // Remove GeoDiv clip
+        cairo_reset_clip(cr);
+      }
+    }
+  } else {
+    for (unsigned int i = 0; i < lx_; ++i) {
+      for (unsigned int j = 0; j < ly_; ++j) {
+        Color color =
+          heatmap_color(density[i * ly_ + j], dens_min, dens_mean, dens_max);
+
+        // Get four points of the square
+        double x_min = i - 0.5 * sq_overlap;
+        double y_min = j - 0.5 * sq_overlap;
+        double x_max = i + 1 + 0.5 * sq_overlap;
+        double y_max = j + 1 + 0.5 * sq_overlap;
+
+        cairo_move_to(cr, x_min, ly_ - y_min);
+        cairo_line_to(cr, x_max, ly_ - y_min);
+        cairo_line_to(cr, x_max, ly_ - y_max);
+        cairo_line_to(cr, x_min, ly_ - y_max);
+
+        cairo_set_source_rgb(cr, color.r, color.g, color.b);
+        cairo_fill(cr);
+        cairo_set_source_rgb(cr, 0, 0, 0);
+        cairo_stroke(cr);
+      }
+    }
+  }
+  write_polygons_to_cairo_surface(cr, false, false, false);
+
+  if (draw_bar && !plot_grid_heatmap) {
+    std::string bar_filename = "bar_" + filename;
+
+    // Create a cairo bar_surface
+    cairo_surface_t *bar_surface =
+      (image_format_ps
+         ? cairo_ps_surface_create(bar_filename.c_str(), 160, 400)
+         : cairo_svg_surface_create(bar_filename.c_str(), 160, 400));
+
+    cairo_t *bar_cr = cairo_create(bar_surface);
+
+    // Write header
+    if (image_format_ps) {
+      write_ps_header(bar_filename, bar_surface);
+    }
+
+    write_density_bar_to_cairo_surface(
+      dens_min - dens_mean,
+      0,
+      dens_max - dens_mean,
+      bar_cr,
+      Bbox(75, 200, 95, 350),
+      400);
+
+    cairo_show_page(bar_cr);
+    cairo_surface_destroy(bar_surface);
+    cairo_destroy(bar_cr);
+  }
+
+  cairo_show_page(cr);
+  cairo_surface_destroy(surface);
+  cairo_destroy(cr);
+}
+
+void InsetState::write_intersections_image(
+  unsigned int res,
+  const bool image_format_ps)
+{
+  std::string filename = inset_name() + "_intersections_" +
+                         std::to_string(n_finished_integrations());
+
+  // Update extension
+  image_format_ps ? filename += ".ps" : filename += ".svg";
+
+  // Calculating intersections
+  std::vector<Segment> intersections = intersecting_segments(res);
+  cairo_surface_t *surface;
+
+  // Create a cairo surface
+  image_format_ps
+    ? surface = cairo_ps_surface_create(filename.c_str(), lx_, ly_)
+    : surface = cairo_svg_surface_create(filename.c_str(), lx_, ly_);
+  cairo_t *cr = cairo_create(surface);
+
+  // Write header
+  if (image_format_ps) {
+    write_ps_header(filename, surface);
+  }
+
+  write_polygons_to_cairo_surface(cr, false, false, false);
+
+  cairo_set_line_width(cr, 0.0001 * std::min(lx_, ly_));
+
+  for (auto seg : intersections) {
+    // Move to starting coordinates
+    cairo_move_to(cr, seg[0][0], ly_ - seg[0][1]);
+
+    // Draw line
+    cairo_line_to(cr, seg[1][0], ly_ - seg[1][1]);
+
+    // line with red and stroke
+    cairo_set_source_rgb(cr, 1, 0, 0);
+    cairo_stroke(cr);
+  }
+  cairo_show_page(cr);
+  cairo_surface_destroy(surface);
+  cairo_destroy(cr);
+}
 
 void write_ps_header(const std::string filename, cairo_surface_t *surface)
 {
@@ -521,18 +1044,6 @@ void write_grid_heatmap_bar_to_cairo_surface(
       cairo_stroke(cr);
     }
   }
-
-  // TODO: Use cairo_text_extents_t for precise placement of text
-  // cairo_set_line_width(cr, 1.0);
-  // std::string bar_text_top = "Cases per";
-  // std::string bar_text_bottom = "km²";
-  // cairo_move_to(
-  //   cr,
-  //   (xmin_bar + xmax_bar) / 2 - (font_size * 2),
-  //   ly - ymax_bar - (font_size * 2.0));
-  // cairo_show_text(cr, bar_text_top.c_str());
-  // cairo_move_to(cr, (xmin_bar + xmax_bar) / 2 - 5.5, ly - ymax_bar -
-  // font_size); cairo_show_text(cr, bar_text_bottom.c_str());
 }
 
 // Given padding, makes padding area white
@@ -1033,538 +1544,4 @@ std::vector<int> get_nice_numbers_for_bar(const double max_target_area_per_km)
     nice_numbers.push_back(NiceNumber);
   }
   return nice_numbers;
-}
-
-// Outputs a SVG/PS file of grid heatmap
-void InsetState::write_grid_heatmap_image(
-  const std::string filename,
-  const bool plot_equal_area_map,
-  const bool image_format_ps,
-  const bool crop)
-{
-  // Whether to draw bar on the cairo surface
-  const bool draw_bar = true;
-
-  // Create a cairo surface
-  cairo_surface_t *surface;
-  image_format_ps
-    ? surface = cairo_ps_surface_create(filename.c_str(), lx_, ly_)
-    : surface = cairo_svg_surface_create(filename.c_str(), lx_, ly_);
-  cairo_t *cr = cairo_create(surface);
-
-  // Write header
-  if (image_format_ps) {
-    write_ps_header(filename, surface);
-  }
-
-  // White background
-  cairo_set_source_rgb(cr, 1.0, 1.0, 1.0);
-  cairo_rectangle(cr, 0, 0, lx_, ly_);
-  cairo_fill(cr);
-
-  // Get inset areas
-  const double total_ta = total_target_area();
-  const double total_ia = total_inset_area();
-
-  // const Bbox bbox_bar = get_bbox_bar(15, 150);
-
-  // Get the max and min grid cell area points
-  Point max_area_cell_point, min_area_cell_point;
-
-  std::tie(max_area_cell_point, min_area_cell_point) =
-    max_and_min_grid_cell_area_index(1);
-
-  const double max_area_cell_point_area =
-    grid_cell_area(max_area_cell_point.x(), max_area_cell_point.y(), 1);
-  const double min_area_cell_point_area =
-    grid_cell_area(min_area_cell_point.x(), min_area_cell_point.y(), 1);
-
-  // Get the max and min grid cell target area per km
-  double max_target_area_per_km = grid_cell_target_area_per_km(
-    max_area_cell_point.x(),
-    max_area_cell_point.y(),
-    total_ta,
-    total_ia);
-  double min_target_area_per_km = grid_cell_target_area_per_km(
-    min_area_cell_point.x(),
-    min_area_cell_point.y(),
-    total_ta,
-    total_ia);
-
-  if (plot_equal_area_map) {
-    std::cerr << std::endl;
-    std::cerr << "Max target area per km: " << max_target_area_per_km
-              << std::endl;
-    std::cerr << "Min target area per km: " << min_target_area_per_km
-              << std::endl
-              << std::endl;
-  }
-
-  std::vector<int> nice_numbers =
-    get_nice_numbers_for_bar(max_target_area_per_km);
-
-  std::vector<std::pair<double, double>> major_ticks, minor_ticks;
-
-  std::tie(major_ticks, minor_ticks) = get_ticks(
-    9,
-    min_target_area_per_km,
-    max_target_area_per_km,
-    min_area_cell_point_area,
-    max_area_cell_point_area,
-    nice_numbers);
-
-  // Draw colors
-  write_grid_colors_to_cairo_surface(cr, plot_equal_area_map, crop);
-
-  // Draw polygons without color
-  write_polygons_to_cairo_surface(cr, false, false, plot_equal_area_map);
-
-  // trim_grid_heatmap(cr, 20);
-
-  // write_grid_heatmap_bar_to_cairo_surface(
-  //   min_area_cell_point_area,
-  //   max_area_cell_point_area,
-  //   cr,
-  //   bbox_bar,
-  //   major_ticks,
-  //   minor_ticks,
-  //   ly_);
-
-  if (draw_bar) {
-    std::string bar_filename = "bar_" + filename;
-
-    // Create a cairo bar_surface
-    cairo_surface_t *bar_surface =
-      (image_format_ps
-         ? cairo_ps_surface_create(bar_filename.c_str(), 160, 400)
-         : cairo_svg_surface_create(bar_filename.c_str(), 160, 400));
-
-    cairo_t *bar_cr = cairo_create(bar_surface);
-
-    // Write header
-    if (image_format_ps) {
-      write_ps_header(bar_filename, bar_surface);
-    }
-
-    // Write bar
-    write_grid_heatmap_bar_to_cairo_surface(
-      min_area_cell_point_area,
-      max_area_cell_point_area,
-      bar_cr,
-      Bbox(75, 200, 95, 350),
-      major_ticks,
-      minor_ticks,
-      400);
-
-    cairo_show_page(bar_cr);
-    cairo_surface_destroy(bar_surface);
-    cairo_destroy(bar_cr);
-  }
-  cairo_show_page(cr);
-  cairo_surface_destroy(surface);
-  cairo_destroy(cr);
-}
-
-// Function to show the density bar on the cairo surface
-void write_density_bar_to_cairo_surface(
-  const double min_value,
-  const double mean_value,
-  const double max_value,
-  cairo_t *cr,
-  Bbox bbox_bar,
-  const unsigned int ly)
-{
-  const int n_gradient_bars = 500;
-
-  // get bar coordinates
-  const double xmin_bar = bbox_bar.xmin();
-  const double xmax_bar = bbox_bar.xmax();
-  const double ymin_bar = bbox_bar.ymin();
-  const double ymax_bar = bbox_bar.ymax();
-
-  const double bar_width = xmax_bar - xmin_bar;
-  const double bar_height = ymax_bar - ymin_bar;
-
-  // Draw the outer bar lines
-  cairo_set_source_rgb(cr, 0.0, 0.0, 0.0);
-  cairo_set_line_width(cr, 1.0);
-  cairo_rectangle(cr, xmin_bar, ymin_bar, bar_width, -bar_height);
-  cairo_stroke(cr);
-
-  // position of mean line along bar
-  // const double ymean_bar = ((ymax_bar - ymin_bar) / (max_value - min_value))
-  // *
-  //                            (mean_value - min_value) +
-  //                          ymin_bar;
-
-  // calculate individual bar gradient segment property
-  const double gradient_segment_height =
-    (ymax_bar - ymin_bar) / n_gradient_bars;
-  const double gradient_segment_value =
-    abs(max_value - min_value) / n_gradient_bars;
-
-  // Draw the gradient segment rectangles
-  double value_at_gradient_segment = min_value;
-  double overlap = 0.1;
-
-  for (double y = ymin_bar; y <= ymax_bar; y += gradient_segment_height) {
-    Color color = heatmap_color(
-      value_at_gradient_segment,
-      min_value,
-      mean_value,
-      max_value);
-    cairo_set_source_rgb(cr, color.r, color.g, color.b);
-    cairo_rectangle(
-      cr,
-      xmin_bar,
-      ly - y - overlap,
-      bar_width,
-      gradient_segment_height + overlap);
-    cairo_fill(cr);
-    value_at_gradient_segment += gradient_segment_value;
-  }
-
-  // Draw the mean line
-  cairo_set_source_rgb(cr, 0.0, 0.0, 0.0);
-  // cairo_set_line_width(cr, 0.9);
-  // cairo_move_to(cr, xmax_bar - bar_width / 2, ly - ymean_bar);
-  // cairo_line_to(cr, xmin_bar, ly - ymean_bar);
-  // cairo_stroke(cr);
-
-  unsigned int font_size = 10;
-
-  // Set font properties
-  cairo_select_font_face(
-    cr,
-    "Sans",
-    CAIRO_FONT_SLANT_NORMAL,
-    CAIRO_FONT_WEIGHT_BOLD);
-  cairo_set_font_size(cr, font_size);
-
-  // Write residual density
-  // cairo_move_to(
-  //   cr,
-  //   xmin_bar - bar_width / 2 - 1,
-  //   ly - ymax_bar - (font_size * 3.0));
-  // cairo_show_text(cr, "Residual");
-  // cairo_move_to(
-  //   cr,
-  //   xmin_bar - bar_width / 2 - 1,
-  //   ly - ymax_bar - (font_size * 2.0));
-  // cairo_show_text(cr, "Density (km-²)");
-
-  // Tick width outside bar
-  double half_tick_width = bar_width / 8.0;
-
-  // Write max value at top of bar
-  right_aligned_text(
-    cr,
-    std::floor(max_value),
-    xmin_bar - half_tick_width,
-    ly - ymax_bar,
-    font_size);
-
-  // Write mean value
-  // right_aligned_text(
-  //   cr,
-  //   mean_value,
-  //   xmin_bar,
-  //   ly - ymean_bar + (font_size / 4.0),
-  //   font_size);
-
-  // Write min_value
-  right_aligned_text(
-    cr,
-    std::ceil(min_value),
-    xmin_bar - half_tick_width,
-    ly - ymin_bar + (font_size * 1.2),
-    font_size);
-
-  long long magnitude =
-    std::max(std::pow(10.0, std::floor(std::log10(max_value))), 1.0);
-
-  long long original_mag = magnitude;
-
-  if (max_value > magnitude * 4 || min_value < -magnitude * 4) {
-    magnitude *= 2;
-  } else if (
-    max_value < magnitude * 2 && std::abs(min_value) < magnitude * 2) {
-    magnitude /= 2;
-  }
-
-  // Highest magnitude
-  long long highest_mag = magnitude * (std::floor(max_value / magnitude));
-
-  if (highest_mag > max_value - (0.4 * original_mag)) {
-    highest_mag -= magnitude;
-  }
-
-  if (magnitude >= 0.1) {
-    cairo_set_line_width(cr, 0.7);
-    double bar_ratio = (ymax_bar - ymin_bar) / (max_value - min_value);
-
-    // Ticks
-    for (long long i = highest_mag;
-         i - (0.5 * magnitude) > min_value || i == mean_value;
-         i -= magnitude) {
-      double tick = bar_ratio * (i - min_value) + ymin_bar;
-      // if (i == mean_value) {
-      //   tick += (font_size / 4.0);
-      // }
-      cairo_move_to(cr, xmin_bar + half_tick_width, ly - tick);
-      cairo_line_to(cr, xmin_bar - half_tick_width, ly - tick);
-      cairo_stroke(cr);
-      right_aligned_text(
-        cr,
-        i,
-        xmin_bar - half_tick_width,
-        ly - tick + (font_size / 2.0),
-        font_size);
-    }
-  }
-}
-
-void InsetState::write_legend_to_cairo_surface(
-  cairo_t *cr,
-  bool equal_area_map)
-{
-  std::pair<double, unsigned int> legend_info =
-    equal_area_map ? get_km_legend_length()
-                   : get_visual_variable_legend_length();
-
-  Bbox bb = bbox();
-  Point legend_pos(bb.xmin() * 0.5, bb.ymin() * 0.5);
-  double legend_length = legend_info.first;
-  unsigned int legend_value = legend_info.second;
-  cairo_set_line_width(cr, 1);
-  Color color("black");
-  cairo_set_source_rgb(cr, color.r, color.g, color.b);
-  cairo_rectangle(
-    cr,
-    legend_pos.x(),
-    legend_pos.y(),
-    legend_length,
-    legend_length);
-  cairo_stroke(cr);
-
-  double x = legend_pos.x() + (legend_length * 1.25);
-  double y = legend_pos.y() + (legend_length * 0.5);
-
-  unsigned int font_size = 12;
-  cairo_select_font_face(
-    cr,
-    "Sans",
-    CAIRO_FONT_SLANT_NORMAL,
-    CAIRO_FONT_WEIGHT_BOLD);
-  cairo_set_font_size(cr, font_size);
-  std::string legend_label = std::to_string(legend_value);
-
-  // Add known units
-  if (equal_area_map) {
-    legend_label += " km²";
-  }
-
-  cairo_move_to(cr, x, y + (font_size / 2.0));
-  cairo_show_text(cr, legend_label.c_str());
-}
-
-void InsetState::write_density_image(
-  const std::string filename,
-  const double *density,
-  const bool plot_grid_heatmap,
-  const bool image_format_ps)
-{
-  // Whether to draw bar on the cairo surface
-  const bool draw_bar = true;
-  cairo_surface_t *surface =
-    (image_format_ps ? cairo_ps_surface_create(filename.c_str(), lx_, ly_)
-                     : cairo_svg_surface_create(filename.c_str(), lx_, ly_));
-
-  // Create a cairo surface
-  cairo_t *cr = cairo_create(surface);
-
-  // Write header
-  if (image_format_ps) {
-    write_ps_header(filename, surface);
-  }
-
-  // White background
-  cairo_set_source_rgb(cr, 1.0, 1.0, 1.0);
-  cairo_rectangle(cr, 0, 0, lx_, ly_);
-  cairo_fill(cr);
-
-  cairo_set_line_width(cr, 0);
-
-  // Determine range of densities
-  const double dens_min = dens_min_;
-  const double dens_mean = dens_mean_;
-  const double dens_max = dens_max_;
-  const double each_grid_cell_area_km = grid_cell_area_km(0, 0);
-
-  // Crop it too
-  if (plot_grid_heatmap) {
-    unsigned int cell_width = 1;
-
-    // Clip to shape and print in sequential scale
-    for (const auto &gd : geo_divs_) {
-      for (const auto &pwh : gd.polygons_with_holes()) {
-        const auto ext_ring = pwh.outer_boundary();
-        cairo_new_path(cr);
-        cairo_move_to(cr, ext_ring[0].x(), ly_ - ext_ring[0].y());
-
-        // Plot each point in exterior ring
-        for (unsigned int i = 1; i < ext_ring.size(); ++i) {
-          cairo_line_to(cr, ext_ring[i].x(), ly_ - ext_ring[i].y());
-        }
-
-        // Close entire path
-        cairo_close_path(cr);
-        cairo_clip(cr);
-
-        Bbox gd_bbox = gd.bbox();
-
-        // Iterate over grid cells
-        for (unsigned int i = gd_bbox.xmin(); i < gd_bbox.xmax();
-             i += cell_width) {
-          for (unsigned int j = gd_bbox.ymin(); j < gd_bbox.ymax();
-               j += cell_width) {
-
-            double target_area_km =
-              density[i * ly_ + j] / each_grid_cell_area_km;
-
-            // Values here used are "Max target area per km" and
-            // "Min target area per km", which is obtained by running the
-            // code with the "plot_grid_heatmap" -h flag set to true
-            // Update here for new map
-            Color color = grid_cell_color(target_area_km, 660.058, 0.660816);
-
-            // Get four points of the square
-            double x_min = i - 0.5 * sq_overlap;
-            double y_min = j - 0.5 * sq_overlap;
-            double x_max = i + 1 + 0.5 * sq_overlap;
-            double y_max = j + 1 + 0.5 * sq_overlap;
-
-            cairo_move_to(cr, x_min, ly_ - y_min);
-            cairo_line_to(cr, x_max, ly_ - y_min);
-            cairo_line_to(cr, x_max, ly_ - y_max);
-            cairo_line_to(cr, x_min, ly_ - y_max);
-
-            cairo_set_source_rgb(cr, color.r, color.g, color.b);
-            cairo_fill(cr);
-            cairo_set_source_rgb(cr, 0, 0, 0);
-            cairo_stroke(cr);
-
-            // Fill the grid polygon with color
-            cairo_fill_preserve(cr);
-            cairo_stroke(cr);
-          }
-        }
-
-        // Remove GeoDiv clip
-        cairo_reset_clip(cr);
-      }
-    }
-  } else {
-    for (unsigned int i = 0; i < lx_; ++i) {
-      for (unsigned int j = 0; j < ly_; ++j) {
-        Color color =
-          heatmap_color(density[i * ly_ + j], dens_min, dens_mean, dens_max);
-
-        // Get four points of the square
-        double x_min = i - 0.5 * sq_overlap;
-        double y_min = j - 0.5 * sq_overlap;
-        double x_max = i + 1 + 0.5 * sq_overlap;
-        double y_max = j + 1 + 0.5 * sq_overlap;
-
-        cairo_move_to(cr, x_min, ly_ - y_min);
-        cairo_line_to(cr, x_max, ly_ - y_min);
-        cairo_line_to(cr, x_max, ly_ - y_max);
-        cairo_line_to(cr, x_min, ly_ - y_max);
-
-        cairo_set_source_rgb(cr, color.r, color.g, color.b);
-        cairo_fill(cr);
-        cairo_set_source_rgb(cr, 0, 0, 0);
-        cairo_stroke(cr);
-      }
-    }
-  }
-  write_polygons_to_cairo_surface(cr, false, false, false);
-
-  if (draw_bar && !plot_grid_heatmap) {
-    std::string bar_filename = "bar_" + filename;
-
-    // Create a cairo bar_surface
-    cairo_surface_t *bar_surface =
-      (image_format_ps
-         ? cairo_ps_surface_create(bar_filename.c_str(), 160, 400)
-         : cairo_svg_surface_create(bar_filename.c_str(), 160, 400));
-
-    cairo_t *bar_cr = cairo_create(bar_surface);
-
-    // Write header
-    if (image_format_ps) {
-      write_ps_header(bar_filename, bar_surface);
-    }
-
-    write_density_bar_to_cairo_surface(
-      dens_min - dens_mean,
-      0,
-      dens_max - dens_mean,
-      bar_cr,
-      Bbox(75, 200, 95, 350),
-      400);
-
-    cairo_show_page(bar_cr);
-    cairo_surface_destroy(bar_surface);
-    cairo_destroy(bar_cr);
-  }
-
-  cairo_show_page(cr);
-  cairo_surface_destroy(surface);
-  cairo_destroy(cr);
-}
-
-void InsetState::write_intersections_image(
-  unsigned int res,
-  const bool image_format_ps)
-{
-  std::string filename = inset_name() + "_intersections_" +
-                         std::to_string(n_finished_integrations());
-
-  // Update extension
-  image_format_ps ? filename += ".ps" : filename += ".svg";
-
-  // Calculating intersections
-  std::vector<Segment> intersections = intersecting_segments(res);
-  cairo_surface_t *surface;
-
-  // Create a cairo surface
-  image_format_ps
-    ? surface = cairo_ps_surface_create(filename.c_str(), lx_, ly_)
-    : surface = cairo_svg_surface_create(filename.c_str(), lx_, ly_);
-  cairo_t *cr = cairo_create(surface);
-
-  // Write header
-  if (image_format_ps) {
-    write_ps_header(filename, surface);
-  }
-
-  write_polygons_to_cairo_surface(cr, false, false, false);
-
-  cairo_set_line_width(cr, 0.0001 * std::min(lx_, ly_));
-
-  for (auto seg : intersections) {
-    // Move to starting coordinates
-    cairo_move_to(cr, seg[0][0], ly_ - seg[0][1]);
-
-    // Draw line
-    cairo_line_to(cr, seg[1][0], ly_ - seg[1][1]);
-
-    // line with red and stroke
-    cairo_set_source_rgb(cr, 1, 0, 0);
-    cairo_stroke(cr);
-  }
-  cairo_show_page(cr);
-  cairo_surface_destroy(surface);
-  cairo_destroy(cr);
 }

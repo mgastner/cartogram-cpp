@@ -44,4 +44,7 @@ constexpr double max_font_size = 10.0;
 // area to be considered "too small"
 constexpr double small_area_threshold_frac = 2e-5;
 
+// Grid cell width/height, as multiple of grid size of 1, when plotting heatmap
+constexpr unsigned int plotted_cell_length = 8;
+
 #endif
