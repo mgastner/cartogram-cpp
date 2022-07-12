@@ -21,12 +21,15 @@ private:
   // are external rings with opposite winding directions.
   bool original_ext_ring_is_clockwise_;
   std::string visual_variable_file_;
-  nlohmann::json cgal_to_json();
+  nlohmann::json cgal_to_json(bool = false);
 
 public:
   explicit CartogramInfo(const bool, const std::string);
   double cart_total_target_area() const;
   bool is_world_map() const;
+  void json_to_geojson(const nlohmann::json &,
+    nlohmann::ordered_json &,
+    const nlohmann::json &);
   const std::string map_name() const;
   unsigned int n_geo_divs() const;
   unsigned int n_insets() const;

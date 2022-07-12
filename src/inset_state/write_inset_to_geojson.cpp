@@ -1,11 +1,13 @@
 #include "inset_state.h"
 
 nlohmann::json InsetState::inset_to_geojson(
-    bool original_ext_ring_is_clockwise
+    bool original_ext_ring_is_clockwise,
+    bool original_geo_divs_to_geojson
 ) const
 {
+  auto &geo_divs = original_geo_divs_to_geojson ? geo_divs_original_ : geo_divs_;
   nlohmann::json inset_container;
-  for (const auto &gd : geo_divs_) {
+  for (const auto &gd : geo_divs) {
     nlohmann::json gd_container;
     for (const auto &pwh : gd.polygons_with_holes()) {
 

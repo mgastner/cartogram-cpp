@@ -19,14 +19,15 @@ std::vector<double> divider_points(double x1, double y1, double x2, double y2)
   return {x1d, y1d, x2d, y2d};
 }
 
-nlohmann::json CartogramInfo::cgal_to_json()
+nlohmann::json CartogramInfo::cgal_to_json(bool original_geo_divs_to_geojson)
 {
   nlohmann::json container = nlohmann::json::array();
 
   // Insert each inset into `container`
   for (const auto &[inset_pos, inset_state] : inset_states_) {
     nlohmann::json inset_container =
-      inset_state.inset_to_geojson(original_ext_ring_is_clockwise_);
+      inset_state.inset_to_geojson(original_ext_ring_is_clockwise_,
+        original_geo_divs_to_geojson);
 
     // Insert all elements inside the inset_container (concatenate JSON arrays)
     container.insert(
@@ -129,17 +130,10 @@ nlohmann::json CartogramInfo::cgal_to_json()
   return container;
 }
 
-void CartogramInfo::write_geojson(
-    std::string old_geo_file_name,
-    std::string new_geo_file_name,
-    bool output_to_stdout
-) {
-  std::ifstream old_file(old_geo_file_name);
-  nlohmann::json old_json;
-  old_file >> old_json;
-  nlohmann::ordered_json new_json;
-  const nlohmann::json container = cgal_to_json();
-
+void CartogramInfo::json_to_geojson(const nlohmann::json &old_json,
+  nlohmann::ordered_json &new_json,
+  const nlohmann::json &container)
+{
   // We must match the GeoDiv IDs in the container with the IDs in the input
   // GeoJSON. For later convenience, we store the numeric indices for an ID
   // in an std::map.
@@ -188,6 +182,20 @@ void CartogramInfo::write_geojson(
       }
     }
   }
+}
+
+void CartogramInfo::write_geojson(
+    std::string old_geo_file_name,
+    std::string new_geo_file_name,
+    bool output_to_stdout
+) {
+  std::ifstream old_file(old_geo_file_name);
+  nlohmann::json old_json;
+  old_file >> old_json;
+  nlohmann::ordered_json new_json;
+  const nlohmann::json container = cgal_to_json();
+
+  json_to_geojson(old_json, new_json, container);
   
   if (output_to_stdout) {
     std::cout << new_json << std::endl;

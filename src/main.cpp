@@ -415,7 +415,6 @@ int main(const int argc, const char *argv[])
     }
     
      if (output_to_stdout) {
-      
       inset_state.fill_graticule_diagonals(true);
       inset_state.project_with_cum_proj();
     }
