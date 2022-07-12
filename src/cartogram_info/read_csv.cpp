@@ -76,26 +76,67 @@ void CartogramInfo::read_csv(argparse::ArgumentParser arguments)
         std::cerr << "ERROR: negative area in CSV" << std::endl;
         _Exit(101);
       }
-    } else {
+    }
+
+    // With inspiration from https://www.geeksforgeeks.org/string-find-in-cpp/
+    // and
+    // https://stackoverflow.com/questions/2340281/check-if-a-string-contains-a-string-in-c
+    else {
       std::string area_as_str = area_field.get();
+      char comma = ',';
+      char decimal = '.';
+      if (
+        area_as_str.find(comma) != std::string::npos &&
+        area_as_str.find(decimal) != std::string::npos) {
+        int comma_num = area_as_str.find(comma);
+        int decimal_num = area_as_str.find(decimal);
+        if (comma_num < decimal_num) {
+          area_as_str.erase(decimal_num - 1);
+        } else {
+          area_as_str.erase(comma_num - 1);
+        }
+        area = std::stod(area_as_str.c_str());
+      } else if (area_as_str.find(comma) != std::string::npos) {
+        int count_commas = 0;
+        for (int i = 0; i++;)
+          if (area_as_str[i] = comma)
+            count_commas++;
+        if (
+          count_commas == 1 &&
+          area_as_str.find(comma) + 3 > area_as_str.size()) {
+          area_as_str[area_as_str.find(comma)] = decimal;
 
-      // With inspiration from:
-      // https://stackoverflow.com/questions/2684491/remove-commas-from-string
-      area_as_str.erase(
-        std::remove(area_as_str.begin(), area_as_str.end(), ','),
-        area_as_str.end());
+        }
 
+        // With inspiration from:
+        // https://stackoverflow.com/questions/2684491/remove-commas-from-string
+        else {
+          area_as_str.erase(
+            std::remove(area_as_str.begin(), area_as_str.end(), comma),
+            area_as_str.end());
+        }
+        area = std::stod(area_as_str.c_str());
+      } else if (area_as_str.find(decimal) != std::string::npos) {
+        int count_decimals = 0;
+        for (int i = 0; i++;)
+          if (area_as_str[i] = decimal)
+            count_decimals++;
+        if (count_decimals > 1) {
+          area_as_str.erase(
+            std::remove(area_as_str.begin(), area_as_str.end(), decimal),
+            area_as_str.end());
+        }
+        area = std::stod(area_as_str.c_str());
+      }
       // Check if areas is missing or "NA"
-      if (area_as_str.empty() || area_as_str.compare("NA") == 0) {
+      else if (area_as_str.empty() || area_as_str.compare("NA") == 0) {
         area = -1.0;  // Use negative area as sign of a missing value
       }
+
       // With inspiration from:
       // https://stackoverflow.com/questions/4654636/how-to-determine-if-a-string-is-a-number-with-c
-      else if (std::all_of(
-                 area_as_str.begin(),
-                 area_as_str.end(),
-                 ::isdigit)) {
-        area = atof(area_as_str.c_str());
+      if (std::all_of(area_as_str.begin(), area_as_str.end(), ::isdigit)) {
+        area = std::stod(area_as_str.c_str());
       } else {
         std::cerr << "area_field: " << area_as_str << std::endl;
         std::cerr << "ERROR: Areas must be numeric or NA" << std::endl;
