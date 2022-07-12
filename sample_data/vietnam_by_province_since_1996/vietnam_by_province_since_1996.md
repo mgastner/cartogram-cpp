@@ -5,6 +5,7 @@ Global Administrative Areas (2012). GADM database of Global Administrative Areas
 Downloaded from https://geodata.ucdavis.edu/gadm/gadm4.0/kmz/gadm40_VNM_1.kmz on 4 July 2022.
 
 ### Code for simplification
+```
 library(rmapshaper)
 library(geojsonio)
 library(sf)
@@ -24,7 +25,8 @@ geojson_write(
   precision = NULL,
   convert_wgs84 = FALSE,
   crs = NULL)
-
+  ```
+  
 ## vietnam_population_2019.csv
 Source: General Statistics Office of Vietnam. Downloaded 30 June 2022 from https://www.gso.gov.vn/en/data-and-statistics/2020/11/completed-results-of-the-2019-viet-nam-population-and-housing-census/.
 

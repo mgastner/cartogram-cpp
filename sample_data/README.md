@@ -50,21 +50,23 @@ In each subdirectory, there should be:
   The name of the GeoJSON file should be:
 
   `(geographic_region)_by_(division)_(optional_descrip)_(year[s]).geojson`
+  This file should thus have the same name as its parent directory.
 - at least one CSV file for the population.
   CSV files for other statistics (e.g. GDP or members of parliament) can be
   optionally added.
   The minimal format of the CSV file should be:
 
-  | Region     | Population |
-  | :--------- | :--------- |
-  | Bruxelles  | 1208542    |
-  | Vlaanderen | 6589069    |
-  | Wallonie   | 3633795    |
+  | shapeName         | Population |
+  | :---------        | :--------- |
+  | Brussels-Capital  | 1208542    |
+  | Flanders          | 6589069    |
+  | Wallonia          | 3633795    |
 
   The column header for the divisions (e.g. `Region`) must match a key in the
   GeoJSON file.
-  The names of the divisions (e.g. Bruxelles etc.) must match the values in
-  the GeoJSON.
+  The names of the divisions (e.g. Wallonia etc.) must match the corresponding values 
+  in the GeoJSON.
+  There are additional examples available in the directory `sample_data`.
 
   CSV file names should follow the pattern:
 
