@@ -190,15 +190,21 @@ void CartogramInfo::write_geojson(
     bool output_to_stdout
 ) {
   std::ifstream old_file(old_geo_file_name);
-  nlohmann::json old_json;
+  nlohmann::json old_json, container;
   old_file >> old_json;
   nlohmann::ordered_json new_json;
-  const nlohmann::json container = cgal_to_json();
+  container = cgal_to_json(false);
 
   json_to_geojson(old_json, new_json, container);
   
   if (output_to_stdout) {
-    std::cout << new_json << std::endl;
+    nlohmann::ordered_json new_json_original;
+    nlohmann::json container_original, combined_json;
+    container_original = cgal_to_json(true);
+    json_to_geojson(old_json, new_json_original, container_original);
+    combined_json["Simplified"] = new_json;
+    combined_json["Original"] = new_json_original;
+    std::cout << combined_json << std::endl;
   } else {
     std::ofstream o(new_geo_file_name);
     o << new_json << std::endl;
