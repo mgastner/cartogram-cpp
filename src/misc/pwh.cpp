@@ -1,4 +1,4 @@
-#include "cgal_typedef.h"
+#include "pwh.h"
 
 double pwh_area(const Polygon_with_holes &pwh)
 {

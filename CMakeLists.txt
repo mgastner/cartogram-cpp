@@ -60,10 +60,10 @@ add_executable(
   src/inset_state/write_eps.cpp
   src/inset_state/write_inset_to_geojson.cpp
   src/misc/colors.cpp
-  src/misc/cgal_typedef.cpp
   src/misc/ft_real_2d.cpp
   src/misc/intersection.cpp
   src/misc/parse_arguments.cpp
+  src/misc/pwh.cpp
 )
 
 # Linking appropriate libraries required.

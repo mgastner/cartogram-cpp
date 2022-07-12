@@ -1,7 +1,9 @@
 #ifndef GEO_DIV_H_
 #define GEO_DIV_H_
 
+#include "cgal_typedef.h"
 #include "intersection.h"
+#include "pwh.h"
 #include <string>
 #include <vector>
 
