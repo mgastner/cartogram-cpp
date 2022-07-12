@@ -465,8 +465,6 @@ void InsetState::project_with_triangulation()
 
 void InsetState::project_with_cum_proj()
 {
-  fill_graticule_diagonals(true);
-
   std::function<Point(Point)> lambda = [&](Point p1) {
     return projected_point_with_triangulation(p1, true);
   };

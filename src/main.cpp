@@ -413,6 +413,12 @@ int main(const int argc, const char *argv[])
       // Rescale insets in correct proportion to each other
       inset_state.normalize_inset_area(cart_info.cart_total_target_area());
     }
+    
+     if (output_to_stdout) {
+      
+      inset_state.fill_graticule_diagonals(true);
+      inset_state.project_with_cum_proj();
+    }
 
     // Clean up after finishing all Fourier transforms for this inset
     inset_state.destroy_fftw_plans_for_rho();
