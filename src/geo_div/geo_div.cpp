@@ -115,8 +115,8 @@ Point GeoDiv::point_on_surface_of_polygon_with_holes(
     intersections[i].ray_enters = (i % 2 == 0);
   }
 
-  // TODO: USING target_density WHEN WE REALLY MEAN LINE LENGTH FEELS LIKE A
-  // BAD HACK. SHOULD WE RENAME THE DATA MEMBER target_density TO
+  // TODO: Using target_density when we really mean line length feels like a
+  // bad hack. should we rename the data member target_density to
   // value_in_geo_div?
   // Assign length of line segments using the target_density property of
   // intersections for line segment lengths
