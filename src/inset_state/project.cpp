@@ -134,8 +134,10 @@ void InsetState::exit_if_not_on_grid_or_edge(const Point p1) const
   }
 }
 
-Point InsetState::projected_point(const Point p1)
+Point InsetState::projected_point(const Point p1, bool project_original)
 {
+  auto &proj = project_original ? cum_proj_ : proj_;
+
   exit_if_not_on_grid_or_edge(p1);
   const unsigned int proj_x = std::min(
     static_cast<unsigned int>(lx_) - 1,
@@ -144,8 +146,8 @@ Point InsetState::projected_point(const Point p1)
     static_cast<unsigned int>(ly_) - 1,
     static_cast<unsigned int>(p1.y()));
   return {
-    (p1.x() == 0.0 || p1.x() == lx_) ? p1.x() : proj_[proj_x][proj_y].x,
-    (p1.y() == 0.0 || p1.y() == ly_) ? p1.y() : proj_[proj_x][proj_y].y};
+    (p1.x() == 0.0 || p1.x() == lx_) ? p1.x() : proj[proj_x][proj_y].x,
+    (p1.y() == 0.0 || p1.y() == ly_) ? p1.y() : proj[proj_x][proj_y].y};
 }
 
 // TODO: chosen_diag() seems to be more naturally thought of as a boolean
@@ -157,7 +159,10 @@ Point InsetState::projected_point(const Point p1)
 // graticule cell, return 1. If neither of the two diagonals is inside the
 // graticule cell, then the cell's topology is invalid; thus, we exit with an
 // error message.
-int InsetState::chosen_diag(const Point v[4], unsigned int *num_concave)
+int InsetState::chosen_diag(
+  const Point v[4],
+  unsigned int *num_concave,
+  bool project_original)
 {
   // The input v[i].x can only be 0, lx, or 0.5, 1.5, ..., lx-0.5. A similar
   // rule applies to the y-coordinates.
@@ -172,7 +177,7 @@ int InsetState::chosen_diag(const Point v[4], unsigned int *num_concave)
   // projected_point().
   Point tv[4];
   for (unsigned int i = 0; i < 4; ++i) {
-    tv[i] = projected_point(v[i]);
+    tv[i] = projected_point(v[i], project_original);
   }
 
   // Get the two possible midpoints
@@ -214,7 +219,7 @@ int InsetState::chosen_diag(const Point v[4], unsigned int *num_concave)
   exit(1);
 }
 
-void InsetState::fill_graticule_diagonals()
+void InsetState::fill_graticule_diagonals(bool project_original)
 {
   // Initialize array if running for the first time
   if (
@@ -224,7 +229,7 @@ void InsetState::fill_graticule_diagonals()
   }
   unsigned int n_concave = 0;  // Count concave graticule cells
 
-#pragma omp parallel for default(none) shared(n_concave)
+#pragma omp parallel for default(none) shared(n_concave, project_original)
   for (unsigned int i = 0; i < lx_ - 1; ++i) {
     for (unsigned int j = 0; j < ly_ - 1; ++j) {
       Point v[4];
@@ -232,19 +237,21 @@ void InsetState::fill_graticule_diagonals()
       v[1] = Point(double(i) + 1.5, double(j) + 0.5);
       v[2] = Point(double(i) + 1.5, double(j) + 1.5);
       v[3] = Point(double(i) + 0.5, double(j) + 1.5);
-      graticule_diagonals_[i][j] = chosen_diag(v, &n_concave);
+      graticule_diagonals_[i][j] =
+        chosen_diag(v, &n_concave, project_original);
     }
   }
   std::cerr << "Number of concave graticule cells: " << n_concave << std::endl;
 }
 
 std::array<Point, 3> InsetState::transformed_triangle(
-  const std::array<Point, 3> &tri)
+  const std::array<Point, 3> &tri,
+  bool project_original)
 {
   std::array<Point, 3> transf_tri;
   for (unsigned int i = 0; i < 3; ++i) {
     exit_if_not_on_grid_or_edge(tri[i]);
-    const auto transf_pt = projected_point(tri[i]);
+    const auto transf_pt = projected_point(tri[i], project_original);
     transf_tri[i] = transf_pt;
   }
   return transf_tri;
@@ -273,7 +280,9 @@ bool is_on_triangle_boundary(const Point pt, const Polygon &triangle)
 // Get the untransformed coordinates of the triangle in which the point `pt`
 // is located. After transformation, this triangle must be entirely inside
 // the transformed graticule cell.
-std::array<Point, 3> InsetState::untransformed_triangle(const Point pt)
+std::array<Point, 3> InsetState::untransformed_triangle(
+  const Point pt,
+  bool project_original)
 {
   if (pt.x() < 0 || pt.x() > lx_ || pt.y() < 0 || pt.y() > ly_) {
     CGAL::set_pretty_mode(std::cerr);
@@ -307,7 +316,7 @@ std::array<Point, 3> InsetState::untransformed_triangle(const Point pt)
     // We calculate the chosen diagonal because graticule_diagonals_ does not
     // store the diagonals for edge grid cells.
     unsigned int n_concave = 0;
-    diag = chosen_diag(v, &n_concave);
+    diag = chosen_diag(v, &n_concave, project_original);
   } else {
 
     // Case when the graticule is not on the edge of the grid. We can find the
@@ -412,13 +421,16 @@ Point affine_trans(
   return mT.transformed_point(pre);
 }
 
-Point InsetState::projected_point_with_triangulation(const Point pt)
+Point InsetState::projected_point_with_triangulation(
+  const Point pt,
+  bool project_original)
 {
   // Get the untransformed triangle the point pt is in
-  const auto old_triangle = untransformed_triangle(pt);
+  const auto old_triangle = untransformed_triangle(pt, project_original);
 
   // Get the coordinates of the transformed triangle
-  const auto new_triangle = transformed_triangle(old_triangle);
+  const auto new_triangle =
+    transformed_triangle(old_triangle, project_original);
 
   // Get the transformed point and return it
   const auto transformed_pt = affine_trans(new_triangle, old_triangle, pt);
@@ -449,4 +461,14 @@ void InsetState::project_with_triangulation()
       cum_proj_[i][j].y = new_cum_proj_pt.y();
     }
   }
+}
+
+void InsetState::project_with_cum_proj()
+{
+  std::function<Point(Point)> lambda = [&](Point p1) {
+    return projected_point_with_triangulation(p1, true);
+  };
+
+  // Transforming all points based on triangulation
+  transform_points(lambda, true);
 }

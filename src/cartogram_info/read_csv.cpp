@@ -2,11 +2,11 @@
 #include "csv.hpp"
 #include <string>
 
-void CartogramInfo::read_csv(argparse::ArgumentParser arguments)
+void CartogramInfo::read_csv(const argparse::ArgumentParser &arguments)
 {
 
   // Retrieve CSV Name.
-  std::string csv_name = arguments.get<std::string>("visual_variable_file");
+  auto csv_name = arguments.get<std::string>("visual_variable_file");
 
   // Open CSV Reader.
   csv::CSVReader reader(csv_name);
@@ -27,24 +27,24 @@ void CartogramInfo::read_csv(argparse::ArgumentParser arguments)
   // have index 1.
   int area_col = 1;
   if (auto area_header = arguments.present<std::string>("-A")) {
-    std::cout << "Area Header: " << *area_header << std::endl;
+    std::cerr << "Area Header: " << *area_header << std::endl;
     area_col = reader.index_of(*area_header);
   }
 
   // Find index of column with inset specifiers. If no inset column header was
   // passed with the command-line flag --inset, the header is assumed to be
   // "Inset".
-  std::string inset_header = arguments.get<std::string>("-I");
+  auto inset_header = arguments.get<std::string>("-I");
   int inset_col = reader.index_of(inset_header);
 
   // Find index of column with color specifiers. If no color column header was
   // passed with the command-line flag --color, the header is assumed to be
   // "Color".
-  std::string color_header = arguments.get<std::string>("-C");
+  auto color_header = arguments.get<std::string>("-C");
   int color_col = reader.index_of(color_header);
 
   // Default: "Label".
-  std::string label_header = arguments.get<std::string>("-L");
+  auto label_header = arguments.get<std::string>("-L");
   int label_col = reader.index_of(label_header);
 
   // Read CSV
@@ -86,7 +86,7 @@ void CartogramInfo::read_csv(argparse::ArgumentParser arguments)
         area_as_str.end());
 
       // Check if areas is missing or "NA"
-      if (area_as_str.empty() || area_as_str.compare("NA") == 0) {
+      if (area_as_str.empty() || area_as_str == "NA") {
         area = -1.0;  // Use negative area as sign of a missing value
       }
       // With inspiration from:
@@ -95,7 +95,7 @@ void CartogramInfo::read_csv(argparse::ArgumentParser arguments)
                  area_as_str.begin(),
                  area_as_str.end(),
                  ::isdigit)) {
-        area = atof(area_as_str.c_str());
+        area = std::stod(area_as_str);
       } else {
         std::cerr << "area_field: " << area_as_str << std::endl;
         std::cerr << "ERROR: Areas must be numeric or NA" << std::endl;
@@ -104,13 +104,13 @@ void CartogramInfo::read_csv(argparse::ArgumentParser arguments)
     }
 
     // Read color
-    std::string color = "";
+    std::string color;
     if (color_col != csv::CSV_NOT_FOUND) {
       color = row[color_col].get();
     }
 
     // Read Label
-    std::string label = "";
+    std::string label;
     if (label_col != csv::CSV_NOT_FOUND) {
       label = row[label_col].get();
     }
@@ -122,12 +122,12 @@ void CartogramInfo::read_csv(argparse::ArgumentParser arguments)
       std::string inset_pos_original = inset_pos;
 
       // Set to "C" if inset position is blank
-      if (inset_pos == "") {
+      if (inset_pos.empty()) {
         inset_pos = "C";
       }
 
       // Now we can process inputs like "center"/"left"/"right"
-      inset_pos = std::toupper(inset_pos[0]);
+      inset_pos = std::toupper(inset_pos[0], std::locale());
 
       // Enable user to give inset position "U"/"D" for top and bottom inset
       if (inset_pos == "U") {
@@ -161,12 +161,11 @@ void CartogramInfo::read_csv(argparse::ArgumentParser arguments)
     // Insert target area and color
     InsetState *inset_state = &inset_states_.at(inset_pos);
     inset_state->insert_target_area(id, area);
-    if (color != "") {
+    if (!color.empty()) {
       inset_state->insert_color(id, color);
     }
-    if (label != "") {
+    if (!label.empty()) {
       inset_state->insert_label(id, label);
     }
   }
-  return;
 }

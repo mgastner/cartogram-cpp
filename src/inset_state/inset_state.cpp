@@ -407,12 +407,21 @@ std::string InsetState::label_at(const std::string &id) const
   return labels_.at(id);
 }
 
-void InsetState::transform_points(
-  const std::function<Point(Point)> &transform_point)
+void InsetState::store_original_geo_divs()
 {
+  geo_divs_original_ = geo_divs_;
+}
+
+void InsetState::transform_points(
+  const std::function<Point(Point)> &transform_point,
+  bool project_original)
+{
+
+  auto &geo_divs = project_original ? geo_divs_original_ : geo_divs_;
+
   // Iterate over GeoDivs
-#pragma omp parallel for default(none) shared(transform_point)
-  for (auto &gd : geo_divs_) {
+#pragma omp parallel for default(none) shared(transform_point, geo_divs)
+  for (auto &gd : geo_divs) {
 
     // Iterate over Polygon_with_holes
     for (auto &pwh : *gd.ref_to_polygons_with_holes()) {
