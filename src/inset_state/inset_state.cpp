@@ -417,7 +417,7 @@ void InsetState::transform_points(
   bool project_original)
 {
 
-  auto geo_divs = project_original ? geo_divs_original_ : geo_divs_;
+  auto &geo_divs = project_original ? geo_divs_original_ : geo_divs_;
 
   // Iterate over GeoDivs
 #pragma omp parallel for default(none) shared(transform_point, geo_divs)

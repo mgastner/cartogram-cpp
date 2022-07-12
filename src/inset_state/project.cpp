@@ -136,7 +136,7 @@ void InsetState::exit_if_not_on_grid_or_edge(const Point p1) const
 
 Point InsetState::projected_point(const Point p1, bool project_original)
 {
-  auto proj = project_original ? cum_proj_ : proj_;
+  auto &proj = project_original ? cum_proj_ : proj_;
 
   exit_if_not_on_grid_or_edge(p1);
   const unsigned int proj_x = std::min(
