@@ -202,7 +202,7 @@ int main(const int argc, const char *argv[])
     // Determine the name of the inset
     std::string inset_name = map_name;
     if (cart_info.n_insets() > 1) {
-      inset_name = inset_name + "_" + inset_pos;
+      inset_name += "_" + inset_pos;
       std::cerr << "\nWorking on inset at position: " << inset_pos
                 << std::endl;
     }
@@ -413,8 +413,8 @@ int main(const int argc, const char *argv[])
       // Rescale insets in correct proportion to each other
       inset_state.normalize_inset_area(cart_info.cart_total_target_area());
     }
-    
-     if (output_to_stdout) {
+
+    if (output_to_stdout) {
       inset_state.fill_graticule_diagonals(true);
       inset_state.project_with_cum_proj();
     }

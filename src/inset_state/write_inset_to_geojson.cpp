@@ -1,11 +1,11 @@
 #include "inset_state.h"
 
 nlohmann::json InsetState::inset_to_geojson(
-    bool original_ext_ring_is_clockwise,
-    bool original_geo_divs_to_geojson
-) const
+  bool original_ext_ring_is_clockwise,
+  bool original_geo_divs_to_geojson) const
 {
-  auto &geo_divs = original_geo_divs_to_geojson ? geo_divs_original_ : geo_divs_;
+  auto &geo_divs =
+    original_geo_divs_to_geojson ? geo_divs_original_ : geo_divs_;
   nlohmann::json inset_container;
   for (const auto &gd : geo_divs) {
     nlohmann::json gd_container;
@@ -21,10 +21,10 @@ nlohmann::json InsetState::inset_to_geojson(
 
       // Get exterior ring coordinates
       nlohmann::json er_container;
-      for (unsigned int i = 0; i < ext_ring.size(); ++i) {
+      for (auto &i : ext_ring) {
         double arr[2];
-        arr[0] = ext_ring[i][0];
-        arr[1] = ext_ring[i][1];
+        arr[0] = i[0];
+        arr[1] = i[1];
         er_container.push_back(arr);
       }
 
@@ -50,10 +50,10 @@ nlohmann::json InsetState::inset_to_geojson(
 
         // Get hole coordinates
         nlohmann::json hole_container;
-        for (unsigned int i = 0; i < hole.size(); ++i) {
+        for (auto &i : hole) {
           double arr[2];
-          arr[0] = hole[i][0];
-          arr[1] = hole[i][1];
+          arr[0] = i[0];
+          arr[1] = i[1];
           hole_container.push_back(arr);
         }
 
