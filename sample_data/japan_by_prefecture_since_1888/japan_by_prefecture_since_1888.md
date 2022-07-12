@@ -12,7 +12,7 @@ library(rmapshaper)
 library(geojsonio)
 library(sf)
 library(mapview)
-jpn <- geojson_sf("~/japan_by_prefecture_since_1888/geoBoundaries-JPN-ADM1.geojson")
+jpn <- geojson_sf("https://raw.githubusercontent.com/wmgeolab/geoBoundaries/main/releaseData/gbOpen/JPN/ADM1/geoBoundaries-JPN-ADM1_simplified.geojson")
 target_n_pts_in_output <- 48500
 jpn_simp <- ms_simplify(jpn, keep = target_n_pts_in_output/npts(jpn))
 geojson_write(

@@ -1,6 +1,6 @@
 # Sources
 
-## australia_by_states_and_territories_since_1942.geojson
+## australia_by_state_and_territory_since_1942.geojson
 Runfola D, Anderson A, Baier H, Crittenden M, Dowker E, Fuhrig S, et al. (2020) 
 geoBoundaries: A global database of political administrative boundaries. 
 PLoS ONE 15(4): e0231866. https://doi.org/10.1371/journal.pone.0231866. 
@@ -12,7 +12,7 @@ library(rmapshaper)
 library(geojsonio)
 library(sf)
 library(mapview)
-aus <- geojson_sf("~/australia_by_states_and_territories_since_1942/geoBoundaries-AUS-ADM1.geojson")
+aus <- geojson_sf("https://raw.githubusercontent.com/wmgeolab/geoBoundaries/main/releaseData/gbOpen/AUS/ADM1/geoBoundaries-AUS-ADM1_simplified.geojson")
 target_n_pts_in_output <- 48500
 aus_simp <- ms_simplify(aus, keep = target_n_pts_in_output/npts(aus))
 geojson_write(

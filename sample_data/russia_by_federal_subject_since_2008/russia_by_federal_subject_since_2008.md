@@ -1,6 +1,6 @@
 # Sources
 
-## russia_by_federal_subjects_since_2008.geojson
+## russia_by_federal_subject_since_2008.geojson
 Runfola D, Anderson A, Baier H, Crittenden M, Dowker E, Fuhrig S, et al. (2020) 
 geoBoundaries: A global database of political administrative boundaries. 
 PLoS ONE 15(4): e0231866. https://doi.org/10.1371/journal.pone.0231866. 
@@ -8,7 +8,7 @@ Downloaded from: https://github.com/wmgeolab/geoBoundaries/tree/main/releaseData
 
 ### Code for simplification
 ```
-rus <- geojson_sf("~/russia_by_federal_subjects_since_2008/geoBoundaries-RUS-ADM1.geojson")
+rus <- geojson_sf("https://raw.githubusercontent.com/wmgeolab/geoBoundaries/main/releaseData/gbOpen/RUS/ADM1/geoBoundaries-RUS-ADM1_simplified.geojson")
 target_n_pts_in_output <- 48500
 npts(rus)
 rus_simp <- ms_simplify(rus, keep = target_n_pts_in_output/npts(rus))

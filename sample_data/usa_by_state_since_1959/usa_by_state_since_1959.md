@@ -8,7 +8,7 @@ Downloaded from: https://github.com/wmgeolab/geoBoundaries/tree/main/releaseData
 
 ### Code for simplification
 ```
-usa <- geojson_sf("~/usa_by_state_since_1959/geoBoundaries-usa-ADM1.geojson")
+usa <- geojson_sf("https://raw.githubusercontent.com/wmgeolab/geoBoundaries/main/releaseData/gbOpen/USA/ADM1/geoBoundaries-USA-ADM1_simplified.geojson")
 target_n_pts_in_output <- 48500
 npts(usa)
 usa_simp <- ms_simplify(usa, keep = target_n_pts_in_output/npts(usa))

@@ -12,7 +12,7 @@ library(rmapshaper)
 library(geojsonio)
 library(sf)
 library(mapview)
-bra <- geojson_sf("~/brazil_by_state_since_1988/geoBoundaries-BRA-ADM1.geojson")
+bra <- geojson_sf("https://raw.githubusercontent.com/wmgeolab/geoBoundaries/main/releaseData/gbOpen/BRA/ADM1/geoBoundaries-BRA-ADM1_simplified.geojson")
 target_n_pts_in_output <- 48500
 npts(bra)
 bra_simp <- ms_simplify(bra, keep = target_n_pts_in_output/npts(bra))
