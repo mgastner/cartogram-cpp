@@ -86,7 +86,7 @@ public:
   Bbox bbox() const;
   void blur_density(double, bool);
   void check_topology();
-  int chosen_diag(const Point v[4], unsigned int *);
+  int chosen_diag(const Point v[4], unsigned int *, bool = false);
   Color color_at(const std::string &) const;
   bool color_found(const std::string &) const;
   bool colors_empty() const;
@@ -98,7 +98,7 @@ public:
   void execute_fftw_bwd_plan() const;
   void execute_fftw_fwd_plan() const;
   void exit_if_not_on_grid_or_edge(Point p1) const;
-  void fill_graticule_diagonals();
+  void fill_graticule_diagonals(bool = false);
 
   // Density functions
   void fill_with_density(bool);  // Fill map with density, using scanlines
@@ -133,8 +133,9 @@ public:
   unsigned int n_rings() const;
   std::string pos() const;
   void project();
-  Point projected_point(Point);
-  Point projected_point_with_triangulation(Point);
+  Point projected_point(Point, bool = false);
+  Point projected_point_with_triangulation(Point, bool = false);
+  void project_with_cum_proj();
   void project_with_delaunay_t();
   void project_with_triangulation();
   void push_back(const GeoDiv &);
@@ -153,11 +154,13 @@ public:
   bool target_area_is_missing(const std::string &) const;
   double total_inset_area() const;
   double total_target_area() const;
-  std::array<Point, 3> transformed_triangle(const std::array<Point, 3> &);
+  std::array<Point, 3> transformed_triangle(
+    const std::array<Point, 3> &,
+    bool = false);
 
   // Apply given function to all points
-  void transform_points(const std::function<Point(Point)> &);
-  std::array<Point, 3> untransformed_triangle(Point);
+  void transform_points(const std::function<Point(Point)> &, bool = false);
+  std::array<Point, 3> untransformed_triangle(Point, bool = false);
 
   // Cairo functions
   void write_cairo_map(const std::string &, bool);
