@@ -85,42 +85,53 @@ void CartogramInfo::read_csv(argparse::ArgumentParser arguments)
       std::string area_as_str = area_field.get();
       char comma = ',';
       char decimal = '.';
+      
+      //Check for both commas AND decimals
       if (
         area_as_str.find(comma) != std::string::npos &&
         area_as_str.find(decimal) != std::string::npos) {
         int comma_num = area_as_str.find(comma);
         int decimal_num = area_as_str.find(decimal);
         if (comma_num < decimal_num) {
-          area_as_str.erase(decimal_num - 1);
+          area_as_str.erase(decimal_num, 3);
         } else {
-          area_as_str.erase(comma_num - 1);
+          area_as_str.erase(comma_num, 3);
         }
         area = std::stod(area_as_str.c_str());
-      } else if (area_as_str.find(comma) != std::string::npos) {
+      } 
+      
+      //Check for commas only
+      else if (area_as_str.find(comma) != std::string::npos) {
         int count_commas = 0;
         for (int i = 0; i++;)
           if (area_as_str[i] = comma)
             count_commas++;
+      //if there is only 1 comma, and there are only 2 numbers after the comma, convert to decimal
         if (
           count_commas == 1 &&
           area_as_str.find(comma) + 3 > area_as_str.size()) {
           area_as_str[area_as_str.find(comma)] = decimal;
-
         }
 
         // With inspiration from:
         // https://stackoverflow.com/questions/2684491/remove-commas-from-string
+        // Otherwise, remove all commas
         else {
           area_as_str.erase(
             std::remove(area_as_str.begin(), area_as_str.end(), comma),
             area_as_str.end());
         }
         area = std::stod(area_as_str.c_str());
-      } else if (area_as_str.find(decimal) != std::string::npos) {
+      } 
+      
+      // Check for only decimals
+      else if (area_as_str.find(decimal) != std::string::npos) {
         int count_decimals = 0;
         for (int i = 0; i++;)
           if (area_as_str[i] = decimal)
             count_decimals++;
+        
+        // If there is more than 1 decimal, remove all decimals
         if (count_decimals > 1) {
           area_as_str.erase(
             std::remove(area_as_str.begin(), area_as_str.end(), decimal),
