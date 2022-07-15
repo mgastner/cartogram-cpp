@@ -26,6 +26,7 @@ private:
 public:
   explicit CartogramInfo(const bool, const std::string);
   double cart_total_target_area() const;
+  double area() const;
   bool is_world_map() const;
   const std::string map_name() const;
   unsigned int n_geo_divs() const;
