@@ -30,6 +30,7 @@ public:
   const std::string map_name() const;
   unsigned int n_geo_divs() const;
   unsigned int n_insets() const;
+  void normalize_target_area();
   bool original_ext_ring_is_clockwise() const;
   void read_csv(argparse::ArgumentParser);
   void read_geojson(const std::string, const bool, std::string*);

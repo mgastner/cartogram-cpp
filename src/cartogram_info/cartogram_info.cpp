@@ -46,6 +46,11 @@ unsigned int CartogramInfo::n_insets() const
   return inset_states_.size();
 }
 
+void CartogramInfo::normalize_target_area()
+{
+  return;
+}
+
 bool CartogramInfo::original_ext_ring_is_clockwise() const
 {
   return original_ext_ring_is_clockwise_;

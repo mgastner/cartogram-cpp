@@ -176,6 +176,9 @@ int main(const int argc, const char *argv[])
   // Replace missing and zero target areas with positive values
   cart_info.replace_missing_and_zero_target_areas();
 
+  // Normalize total target area to be equal to initial area
+  cart_info.normalize_target_area();
+
   // Project and exit
   if (output_equal_area) {
 
