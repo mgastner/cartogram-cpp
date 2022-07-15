@@ -79,7 +79,6 @@ int main(const int argc, const char *argv[])
   if (map_name.find('.') != std::string::npos) {
     map_name = map_name.substr(0, map_name.find('.'));
   }
-  std::cout << geo_file_name << "\n";
   cart_info.set_map_name(map_name);
   if (!make_csv) {
 
@@ -195,7 +194,6 @@ int main(const int argc, const char *argv[])
     cart_info.write_geojson(
       geo_file_name,
       map_name + "_equal_area.geojson",
-      std::cout,
       output_to_stdout);
     return EXIT_SUCCESS;
   }
@@ -206,7 +204,7 @@ int main(const int argc, const char *argv[])
     // Determine the name of the inset
     std::string inset_name = map_name;
     if (cart_info.n_insets() > 1) {
-      inset_name += inset_pos;
+      inset_name += "_" + inset_pos;
       std::cerr << "\nWorking on inset at position: " << inset_pos
                 << std::endl;
     }
@@ -214,6 +212,12 @@ int main(const int argc, const char *argv[])
 
     // Rescale map to fit into a rectangular box [0, lx] * [0, ly]
     inset_state.rescale_map(max_n_grid_rows_or_cols, cart_info.is_world_map());
+
+    if (output_to_stdout) {
+
+      // Store original coordinates
+      inset_state.store_original_geo_divs();
+    }
 
     // Set up Fourier transforms
     const unsigned int lx = inset_state.lx();
@@ -409,13 +413,17 @@ int main(const int argc, const char *argv[])
       cart_info.write_geojson(
         geo_file_name,
         output_file_name,
-        std::cout,
         output_to_stdout);
       inset_state.revert_smyth_craster_projection();
     } else {
 
       // Rescale insets in correct proportion to each other
       inset_state.normalize_inset_area(cart_info.cart_total_target_area());
+    }
+
+    if (output_to_stdout) {
+      inset_state.fill_graticule_diagonals(true);
+      inset_state.project_with_cum_proj();
     }
 
     // Clean up after finishing all Fourier transforms for this inset
@@ -431,7 +439,6 @@ int main(const int argc, const char *argv[])
   cart_info.write_geojson(
     geo_file_name,
     map_name + "_cartogram.geojson",
-    std::cout,
     output_to_stdout);
 
   // Store time when main() ended

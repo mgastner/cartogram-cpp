@@ -43,7 +43,12 @@ private:
   // Cumulative cartogram projection
   boost::multi_array<XYPoint, 2> cum_proj_;
   fftw_plan fwd_plan_for_rho_{};
-  std::vector<GeoDiv> geo_divs_;  // Geographic divisions in this inset
+
+  // Geographic divisions in this inset
+  std::vector<GeoDiv> geo_divs_;
+
+  // Copy of original data
+  std::vector<GeoDiv> geo_divs_original_;
 
   // Chosen diagonal for each graticule cell
   boost::multi_array<int, 2> graticule_diagonals_;
@@ -82,7 +87,7 @@ public:
   Bbox bbox() const;
   void blur_density(double, bool);
   void check_topology();
-  int chosen_diag(const Point v[4], unsigned int *);
+  int chosen_diag(const Point v[4], unsigned int *, bool = false);
   Color color_at(const std::string &) const;
   bool color_found(const std::string &) const;
   bool colors_empty() const;
@@ -94,7 +99,7 @@ public:
   void execute_fftw_bwd_plan() const;
   void execute_fftw_fwd_plan() const;
   void exit_if_not_on_grid_or_edge(Point p1) const;
-  void fill_graticule_diagonals();
+  void fill_graticule_diagonals(bool = false);
 
   // Density functions
   void fill_with_density(bool);  // Fill map with density, using scanlines
@@ -111,7 +116,7 @@ public:
   void insert_target_area(const std::string &, double);
   void insert_whether_input_target_area_is_missing(const std::string &, bool);
   std::string inset_name() const;
-  nlohmann::json inset_to_geojson(bool) const;
+  nlohmann::json inset_to_geojson(bool, bool = false) const;
   const std::vector<Segment> intersecting_segments(unsigned int) const;
   std::vector<std::vector<intersection> > intersec_with_parallel_to(
     char,
@@ -129,8 +134,9 @@ public:
   unsigned int n_rings() const;
   std::string pos() const;
   void project();
-  Point projected_point(Point);
-  Point projected_point_with_triangulation(Point);
+  Point projected_point(Point, bool = false);
+  Point projected_point_with_triangulation(Point, bool = false);
+  void project_with_cum_proj();
   void project_with_delaunay_t();
   void project_with_triangulation();
   void push_back(const GeoDiv &);
@@ -145,15 +151,18 @@ public:
   void set_grid_dimensions(unsigned int, unsigned int);
   void set_inset_name(const std::string &);
   void simplify(unsigned int);
+  void store_original_geo_divs();
   double target_area_at(const std::string &) const;
   bool target_area_is_missing(const std::string &) const;
   double total_inset_area() const;
   double total_target_area() const;
-  std::array<Point, 3> transformed_triangle(const std::array<Point, 3> &);
+  std::array<Point, 3> transformed_triangle(
+    const std::array<Point, 3> &,
+    bool = false);
 
   // Apply given function to all points
-  void transform_points(const std::function<Point(Point)> &);
-  std::array<Point, 3> untransformed_triangle(Point);
+  void transform_points(const std::function<Point(Point)> &, bool = false);
+  std::array<Point, 3> untransformed_triangle(Point, bool = false);
 
   // Cairo functions
   void write_cairo_map(const std::string &, bool);

@@ -169,6 +169,16 @@ argparse::ArgumentParser parsed_arguments(
   plot_polygons = arguments.get<bool>("-p");
   plot_quadtree = arguments.get<bool>("-T");
 
+  if (arguments.is_used("-o") && !arguments.is_used("-s")) {
+    std::cerr << "ERROR: --simplify flag not passed!" << std::endl;
+    std::cerr
+      << "--output_to_stdout flag is only supported with simplification."
+      << std::endl;
+    std::cerr << "To enable simplification, pass the -s flag." << std::endl;
+    std::cerr << arguments << std::endl;
+    _Exit(18);
+  }
+
   // Check whether n_points is specified but --simplify not passed
   if (arguments.is_used("-P") && !arguments.is_used("-s")) {
     std::cerr << "WARNING: --simplify flag not passed!" << std::endl;
