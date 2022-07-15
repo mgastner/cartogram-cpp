@@ -71,6 +71,7 @@ private:
 
   // Create cairo surface
   void write_polygons_to_cairo_surface(cairo_t *, bool, bool, bool);
+
   // Make default constructor private so that only
   // InsetState(const std::string) can be called as constructor
   InsetState();
@@ -141,6 +142,7 @@ public:
   void push_back(const GeoDiv &);
   FTReal2d *ref_to_rho_ft();
   FTReal2d *ref_to_rho_init();
+  void remove_tiny_polygons(const double &minimum_polygon_size);
   void replace_target_area(const std::string &, double);
   void rescale_map(unsigned int, bool);
   void revert_smyth_craster_projection();
