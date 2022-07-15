@@ -73,85 +73,92 @@ void CartogramInfo::read_csv(argparse::ArgumentParser arguments)
     std::string area_as_str = area_field.get();
     char comma = ',';
     char decimal = '.';
+    long unsigned int string_size = area_as_str.length();
     if (area_field.is_num()) {
       area = area_field.get<double>();
       if (area < 0.0) {
         std::cerr << "ERROR: negative area in CSV" << std::endl;
         _Exit(101);
       }
-
-    //Check for both commas and decimals  
-    else if (
-        area_as_str.find(comma) != std::string::npos &&
-        area_as_str.find(decimal) != std::string::npos) {
-        int comma_num = area_as_str.find(comma);
-        int decimal_num = area_as_str.find(decimal);
-        if (comma_num < decimal_num) {
-          area_as_str.erase(decimal_num, 3);
-        } else {
-          area_as_str.erase(comma_num, 3);
-        }
-        if (std::all_of(area_as_str.begin(), area_as_str.end(), ::isdigit)) {
-        area = std::stod(area_as_str.c_str());
-      }
-      }   
+    }
     
-    //Check for commas only
-    else if (area_as_str.find(comma) != std::string::npos) {
-        std::cerr << "oops" << std::endl;
-        int count_commas = 0;
-        for (int i = 0; i++;)
-          if ((area_as_str[i] = comma)){
-            count_commas++;
-          }
+    // Check for both commas and decimals
+    else if (
+      (area_as_str.find(comma) != std::string::npos) &&
+      (area_as_str.find(decimal) != std::string::npos)) {
       
-      //if there is only 1 comma, and there are only 2 numbers after the comma, convert to decimal
-        if (
-          count_commas == 1 &&
-          area_as_str.find(comma) + 3 > area_as_str.size()) {
-          area_as_str[area_as_str.find(comma)] = decimal;
-        }
-
-        // With inspiration from:
-        // https://stackoverflow.com/questions/2684491/remove-commas-from-string
-        // Otherwise, remove all commas
-        else {
-          area_as_str.erase(
-            std::remove(area_as_str.begin(), area_as_str.end(), comma),
-            area_as_str.end());
-        }
-        if (std::all_of(area_as_str.begin(), area_as_str.end(), ::isdigit)) {
-        area = std::stod(area_as_str.c_str());
-      }
-      }
-       
-       // Check for only decimals
-      else if (area_as_str.find(decimal) != std::string::npos) {
-        int count_decimals = 0;
-        for (int i = 0; i++;)
-          if ((area_as_str[i] = decimal)){
-            count_decimals++;
-          }
-        // If there is more than 1 decimal, remove all decimals
-        if (count_decimals > 1) {
-          area_as_str.erase(
-            std::remove(area_as_str.begin(), area_as_str.end(), decimal),
-            area_as_str.end());
-        }
-       if (std::all_of(area_as_str.begin(), area_as_str.end(), ::isdigit)) {
-        area = std::stod(area_as_str.c_str());
-      }
-      }
+      // if commas come first, remove all commas
+      if (area_as_str.find(comma) < area_as_str.find(decimal)) {
+        area_as_str.erase(
+          std::remove(area_as_str.begin(), area_as_str.end(), comma),
+          area_as_str.end());
+      } 
       
-      // Check if areas is missing or "NA"
-      else if (area_as_str.empty() || area_as_str.compare("NA") == 0) {
-        area = -1.0;  // Use negative area as sign of a missing value
-      }
+      // Otherwise, remove decimals, then convert comma to decimal
       else {
-        std::cerr << "area_field: " << area_as_str << std::endl;
-        std::cerr << "ERROR: Areas must be numeric or NA" << std::endl;
-        _Exit(201);
+        area_as_str.erase(
+          std::remove(area_as_str.begin(), area_as_str.end(), decimal),
+          area_as_str.end());
+          area_as_str[area_as_str.find(comma)] = '.';
       }
+    }
+
+    // Check for commas only
+    else if (
+      (area_as_str.find(comma) != std::string::npos) &&
+      (area_as_str.find(decimal) == std::string::npos)) {
+      int count_commas = 0;
+      long unsigned int i;
+      for (i = 0; i < string_size; i++)
+        if ((area_as_str[i] == comma))
+          count_commas++;
+
+      // if there is only 1 comma, and there are only 2 numbers after the
+      // comma, convert to decimal
+      if ((count_commas = 1) && ((area_as_str.find(comma) + 4) > string_size)) {
+        area_as_str[area_as_str.find(comma)] = '.';
+      }
+
+      // With inspiration from:
+      // https://stackoverflow.com/questions/2684491/remove-commas-from-string
+      // Otherwise, remove all commas
+      else {
+        area_as_str.erase(
+          std::remove(area_as_str.begin(), area_as_str.end(), comma),
+          area_as_str.end());
+      }
+    }
+
+    // Check for decimals only
+    else if (
+      (area_as_str.find(decimal) != std::string::npos) &&
+      (area_as_str.find(comma) == std::string::npos)) {
+      int count_decimals = 0;
+      long unsigned int i = 0;
+      for (i = 0; i < string_size; i++)
+        if ((area_as_str[i] == decimal))
+          count_decimals++;
+
+      // If there is more than 1 decimal, remove all decimals
+      if (count_decimals > 1) {
+        area_as_str.erase(
+          std::remove(area_as_str.begin(), area_as_str.end(), decimal),
+          area_as_str.end());
+      }
+    }
+
+    // Check if areas is missing or "NA"
+    else if (area_as_str.empty() || area_as_str.compare("NA") == 0) {
+      area = -1.0;  // Use negative area as sign of a missing value
+    } 
+    else if (std::all_of(area_as_str.begin(), area_as_str.end(), ::isdigit)) {
+        area = std::stod(area_as_str.c_str());
+      }
+    
+    else {
+      std::cerr << "area_field: " << area_as_str << std::endl;
+      std::cerr << "ERROR: Areas must be numeric or NA" << std::endl;
+      _Exit(201);
     }
 
     // Read color
