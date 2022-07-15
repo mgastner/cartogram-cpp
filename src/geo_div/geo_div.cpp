@@ -3,6 +3,8 @@
 #include "constants.h"
 #include <utility>
 
+GeoDiv::GeoDiv() = default;
+
 GeoDiv::GeoDiv(std::string i) : id_(std::move(i)) {}
 
 std::set<std::string> GeoDiv::adjacent_geodivs() const

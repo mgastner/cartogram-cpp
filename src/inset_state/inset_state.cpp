@@ -5,7 +5,10 @@
 #include <iostream>
 #include <utility>
 
-InsetState::InsetState() = default;
+InsetState::InsetState()
+{
+  n_finished_integrations_ = 0;
+}
 
 InsetState::InsetState(std::string pos) : pos_(std::move(pos))
 {
@@ -21,7 +24,6 @@ void InsetState::create_delaunay_t()
   // Avoid collisions in hash table
   points.reserve(8192);
   points.max_load_factor(0.5);
-
   for (const auto &gd : geo_divs_) {
     for (const auto &pwh : gd.polygons_with_holes()) {
       Polygon ext_ring = pwh.outer_boundary();
@@ -46,7 +48,6 @@ void InsetState::create_delaunay_t()
   points.insert(Point(0, ly_));
   points.insert(Point(lx_, 0));
   points.insert(Point(lx_, ly_));
-
   std::vector<Point> points_vec;
 
   // Copy points of unordered_set to vector
@@ -346,12 +347,10 @@ void InsetState::remove_tiny_polygons(const double &minimum_polygon_size)
 
     // Sort polygons with holes according to area
     gd.sort_pwh();
-
     const auto &pwhs = gd.polygons_with_holes();
 
     // Iterate over Polygon_with_holes
     for (unsigned int i = 0; i < pwhs.size(); ++i) {
-
       if (i == 0 || pwh_area(pwhs[i]) > threshold) {
         gd_cleaned.push_back(pwhs[i]);
       }

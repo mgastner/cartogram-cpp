@@ -75,7 +75,6 @@ void InsetState::rescale_map(
       }
     }
   }
-  return;
 }
 
 void InsetState::normalize_inset_area(
@@ -108,5 +107,4 @@ void InsetState::normalize_inset_area(
       }
     }
   }
-  return;
 }

@@ -14,7 +14,7 @@ struct Color {
   Color();
   Color(int, int, int);
   explicit Color(std::string);
-  std::string eps() const;
+  [[nodiscard]] std::string eps() const;
 
   bool operator==(const Color &rhs) const
   {

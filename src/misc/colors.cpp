@@ -2,6 +2,14 @@
 #include <iostream>
 #include <sstream>
 
+Color::Color()
+{
+  // Solarized base2 (https://ethanschoonover.com/solarized/)
+  r = 238;
+  g = 232;
+  b = 213;
+}
+
 Color::Color(int red, int green, int blue) : r(red), g(green), b(blue) {}
 
 Color::Color(std::string color_as_string)
