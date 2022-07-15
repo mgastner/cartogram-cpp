@@ -62,7 +62,7 @@ In each subdirectory, there should be:
   | Flanders          | 6589069    |
   | Wallonia          | 3633795    |
 
-  The column header for the divisions (e.g. `Region`) must match a key in the
+  The column header for the divisions (e.g. `shapeName`) must match a key in the
   GeoJSON file.
   The names of the divisions (e.g. Wallonia etc.) must match the corresponding values 
   in the GeoJSON.
