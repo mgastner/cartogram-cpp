@@ -5,11 +5,10 @@ void InsetState::fill_with_density(bool plot_density)
 {
   // We assume that target areas that were zero or missing in the input have
   // already been replaced by
-  // CartogramInfo::replace_missing_and_zero_target_areas()
-  double mean_density = total_target_area() / total_inset_area();
-
-  // Correct mean density if any area drift is present
-  mean_density *= area_drift();
+  // CartogramInfo::replace_missing_and_zero_target_areas().
+  // We also correct for area drift, in case it is present.
+  double mean_density = (1.0 - (initial_area_ / (lx_ * ly_))) /
+                        (1.0 - (total_inset_area() / (lx_ * ly_)));
 
 #pragma omp parallel for default(none)
 

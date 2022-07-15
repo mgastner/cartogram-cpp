@@ -313,6 +313,24 @@ unsigned int InsetState::n_rings() const
   return n_rings;
 }
 
+void InsetState::normalize_target_area()
+{
+  double initial_area = total_inset_area();
+  double ta = total_target_area();
+
+  // Assign normalized target area to GeoDivs
+    for (const auto &gd : geo_divs_) {
+      double normalized_target_area =
+        (target_area_at(gd.id()) / ta) * initial_area;
+      replace_target_area(gd.id(), normalized_target_area);
+    }
+  // std::cout << "Area = " << area();
+  // std::cout << "Target area = " << cart_total_target_area();
+  // double hi;
+  // std::cin >> hi;
+  return;
+}
+
 std::string InsetState::pos() const
 {
   return pos_;

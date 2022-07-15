@@ -1,4 +1,5 @@
 #include "cartogram_info.h"
+#include <iostream>
 
 CartogramInfo::CartogramInfo(const bool w, const std::string v)
     : is_world_map_(w), visual_variable_file_(v)
@@ -57,24 +58,6 @@ unsigned int CartogramInfo::n_geo_divs() const
 unsigned int CartogramInfo::n_insets() const
 {
   return inset_states_.size();
-}
-
-void CartogramInfo::normalize_target_area()
-{
-  double initial_area = area();
-  double total_target_area = cart_total_target_area();
-
-  // Assign normalized target area to GeoDivs
-  for (auto &inset_info : inset_states_) {
-    auto &inset_state = inset_info.second;
-    for (const auto &gd : inset_state.geo_divs()) {
-      double normalized_target_area =
-        (inset_state.target_area_at(gd.id()) / total_target_area) *
-        initial_area;
-      inset_state.replace_target_area(gd.id(), normalized_target_area);
-    }
-  }
-  return;
 }
 
 bool CartogramInfo::original_ext_ring_is_clockwise() const

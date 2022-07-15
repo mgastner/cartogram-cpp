@@ -126,9 +126,10 @@ public:
   struct max_area_error_info max_area_error() const;
   unsigned int n_finished_integrations() const;
   unsigned int n_geo_divs() const;
-  void normalize_inset_area(double total_cart_target_area, bool = false);
   unsigned long n_points() const;
   unsigned int n_rings() const;
+  void normalize_inset_area(double total_cart_target_area, bool = false);
+  void normalize_target_area();
   std::string pos() const;
   void project();
   Point projected_point(Point);
