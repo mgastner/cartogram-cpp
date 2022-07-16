@@ -831,7 +831,7 @@ public:
     if (aArgs & default_arguments::help) {
       add_argument("-h", "--help")
         .action([&](const auto &) {
-          std::cout << help().str();
+          std::cerr << help().str();
           std::exit(0);
         })
         .default_value(false)
@@ -842,7 +842,7 @@ public:
     if (aArgs & default_arguments::version) {
       add_argument("-v", "--version")
         .action([&](const auto &) {
-          std::cout << mVersion;
+          std::cerr << mVersion;
           std::exit(0);
         })
         .default_value(false)
@@ -1048,7 +1048,7 @@ public:
   [[deprecated("Use cout << program; instead.  See also help().")]] std::string
   print_help() {
     auto out = help();
-    std::cout << out.rdbuf();
+    std::cerr << out.rdbuf();
     return out.str();
   }
 
