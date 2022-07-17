@@ -62,8 +62,8 @@ private:
   std::string pos_;  // Position of inset ("C", "T" etc.)
   boost::multi_array<XYPoint, 2> proj_;  // Cartogram projection
 
-  // Rasterized density and its Fourier transform
-  FTReal2d rho_ft_, rho_init_;
+  // Rasterized density, flux and its Fourier transform
+  FTReal2d rho_ft_, rho_init_, grid_fluxx_init_, grid_fluxy_init_;
   std::unordered_map<std::string, double> target_areas_;
 
   // Vertical adjacency graph
@@ -94,9 +94,11 @@ public:
   void create_contiguity_graph(unsigned int);
   void densify_geo_divs();
   void densify_geo_divs_using_delaunay_t();
+  void destroy_fftw_plans_for_flux();
   void destroy_fftw_plans_for_rho();
   void execute_fftw_bwd_plan() const;
   void execute_fftw_fwd_plan() const;
+  void execute_fftw_plans_for_flux();
   void exit_if_not_on_grid_or_edge(Point p1) const;
   void fill_graticule_diagonals(bool = false);
 
@@ -125,6 +127,7 @@ public:
   unsigned int lx() const;
   unsigned int ly() const;
   void make_fftw_plans_for_rho();
+  void make_fftw_plans_for_flux();
   struct max_area_error_info max_area_error() const;
   unsigned int n_finished_integrations() const;
   unsigned int n_geo_divs() const;
@@ -139,6 +142,8 @@ public:
   void project_with_delaunay_t();
   void project_with_triangulation();
   void push_back(const GeoDiv &);
+  FTReal2d *ref_to_fluxx_init();
+  FTReal2d *ref_to_fluxy_init();
   FTReal2d *ref_to_rho_ft();
   FTReal2d *ref_to_rho_init();
   void replace_target_area(const std::string &, double);

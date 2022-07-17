@@ -154,6 +154,12 @@ unsigned int InsetState::colors_size() const
   return colors_.size();
 }
 
+void InsetState::destroy_fftw_plans_for_flux()
+{
+  grid_fluxx_init_.destroy_fftw_plan();
+  grid_fluxy_init_.destroy_fftw_plan();
+}
+
 void InsetState::destroy_fftw_plans_for_rho()
 {
   fftw_destroy_plan(fwd_plan_for_rho_);
@@ -163,6 +169,12 @@ void InsetState::destroy_fftw_plans_for_rho()
 void InsetState::execute_fftw_bwd_plan() const
 {
   fftw_execute(bwd_plan_for_rho_);
+}
+
+void InsetState::execute_fftw_plans_for_flux()
+{
+  grid_fluxx_init_.execute_fftw_plan();
+  grid_fluxy_init_.execute_fftw_plan();
 }
 
 void InsetState::execute_fftw_fwd_plan() const
@@ -272,6 +284,12 @@ void InsetState::make_fftw_plans_for_rho()
     FFTW_ESTIMATE);
 }
 
+void InsetState::make_fftw_plans_for_flux()
+{
+  grid_fluxx_init_.make_fftw_plan(FFTW_RODFT01, FFTW_REDFT01);
+  grid_fluxy_init_.make_fftw_plan(FFTW_REDFT01, FFTW_RODFT01);
+}
+
 struct max_area_error_info InsetState::max_area_error() const
 {
   double value = -dbl_inf;
@@ -321,6 +339,16 @@ std::string InsetState::pos() const
 void InsetState::push_back(const GeoDiv &gd)
 {
   geo_divs_.push_back(gd);
+}
+
+FTReal2d *InsetState::ref_to_fluxx_init()
+{
+  return &grid_fluxx_init_;
+}
+
+FTReal2d *InsetState::ref_to_fluxy_init()
+{
+  return &grid_fluxy_init_;
 }
 
 FTReal2d *InsetState::ref_to_rho_ft()

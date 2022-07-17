@@ -229,7 +229,10 @@ int main(const int argc, const char *argv[])
     const unsigned int ly = inset_state.ly();
     inset_state.ref_to_rho_init()->allocate(lx, ly);
     inset_state.ref_to_rho_ft()->allocate(lx, ly);
+    inset_state.ref_to_fluxx_init()->allocate(lx, ly);
+    inset_state.ref_to_fluxy_init()->allocate(lx, ly);
     inset_state.make_fftw_plans_for_rho();
+    inset_state.make_fftw_plans_for_flux();
     inset_state.initialize_cum_proj();
     inset_state.set_area_errors();
 
@@ -427,8 +430,11 @@ int main(const int argc, const char *argv[])
 
     // Clean up after finishing all Fourier transforms for this inset
     inset_state.destroy_fftw_plans_for_rho();
+    inset_state.destroy_fftw_plans_for_flux();
     inset_state.ref_to_rho_init()->free();
     inset_state.ref_to_rho_ft()->free();
+    inset_state.ref_to_fluxx_init()->free();
+    inset_state.ref_to_fluxy_init()->free();
   }  // End of loop over insets
 
   // Shift insets so that they do not overlap

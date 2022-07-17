@@ -99,14 +99,6 @@ void InsetState::flatten_density()
   boost::multi_array<double, 2> grid_vx(boost::extents[lx_][ly_]);
   boost::multi_array<double, 2> grid_vy(boost::extents[lx_][ly_]);
 
-  // Prepare Fourier transforms for the flux
-  FTReal2d grid_fluxx_init;
-  FTReal2d grid_fluxy_init;
-  grid_fluxx_init.allocate(lx_, ly_);
-  grid_fluxy_init.allocate(lx_, ly_);
-  grid_fluxx_init.make_fftw_plan(FFTW_RODFT01, FFTW_REDFT01);
-  grid_fluxy_init.make_fftw_plan(FFTW_REDFT01, FFTW_RODFT01);
-
   // eul[i][j] will be the new position of proj_[i][j] proposed by a simple
   // Euler step: move a full time interval delta_t with the velocity at time t
   // and position (proj_[i][j].x, proj_[i][j].y)
@@ -142,11 +134,11 @@ void InsetState::flatten_density()
     for (unsigned int j = 0; j < ly_; ++j) {
       double denom =
         pi * ((di + 1) / dlx + (j / (di + 1)) * (j / dly) * (dlx / dly));
-      grid_fluxx_init(i, j) = -rho_ft_(i + 1, j) / denom;
+      grid_fluxx_init_(i, j) = -rho_ft_(i + 1, j) / denom;
     }
   }
   for (unsigned int j = 0; j < ly_; ++j) {
-    grid_fluxx_init(lx_ - 1, j) = 0.0;
+    grid_fluxx_init_(lx_ - 1, j) = 0.0;
   }
 #pragma omp parallel for
   for (unsigned int i = 0; i < lx_; ++i) {
@@ -154,17 +146,17 @@ void InsetState::flatten_density()
     for (unsigned int j = 0; j < ly_ - 1; ++j) {
       double denom =
         pi * ((di / (j + 1)) * (di / dlx) * (dly / dlx) + (j + 1) / dly);
-      grid_fluxy_init(i, j) = -rho_ft_(i, j + 1) / denom;
+      grid_fluxy_init_(i, j) = -rho_ft_(i, j + 1) / denom;
     }
   }
   for (unsigned int i = 0; i < lx_; ++i) {
-    grid_fluxy_init(i, ly_ - 1) = 0.0;
+    grid_fluxy_init_(i, ly_ - 1) = 0.0;
   }
 
   // Compute the flux vector and store the result in grid_fluxx_init and
   // grid_fluxy_init
-  grid_fluxx_init.execute_fftw_plan();
-  grid_fluxy_init.execute_fftw_plan();
+  execute_fftw_plans_for_flux();
+
   double t = 0.0;
   double delta_t = 1e-2;  // Initial time step.
   unsigned int iter = 0;
@@ -173,8 +165,8 @@ void InsetState::flatten_density()
   while (t < 1.0) {
     calculate_velocity(
       t,
-      grid_fluxx_init,
-      grid_fluxy_init,
+      grid_fluxx_init_,
+      grid_fluxy_init_,
       rho_ft_,
       rho_init_,
       &grid_vx,
@@ -226,8 +218,8 @@ void InsetState::flatten_density()
       // and similarly for y.
       calculate_velocity(
         t + 0.5 * delta_t,
-        grid_fluxx_init,
-        grid_fluxy_init,
+        grid_fluxx_init_,
+        grid_fluxy_init_,
         rho_ft_,
         rho_init_,
         &grid_vx,
@@ -296,11 +288,6 @@ void InsetState::flatten_density()
     proj_ = mid;
     delta_t *= inc_after_acc;  // Try a larger step next time
   }
-  grid_fluxx_init.destroy_fftw_plan();
-  grid_fluxy_init.destroy_fftw_plan();
-  grid_fluxx_init.free();
-  grid_fluxy_init.free();
-  return;
 }
 
 bool all_map_points_are_in_domain(
@@ -354,14 +341,6 @@ void InsetState::flatten_density_with_node_vertices()
     proj_qd_.triangle_transformation.insert_or_assign(pt, pt);
   }
 
-  // Prepare Fourier transforms for the flux
-  FTReal2d grid_fluxx_init;
-  FTReal2d grid_fluxy_init;
-  grid_fluxx_init.allocate(lx_, ly_);
-  grid_fluxy_init.allocate(lx_, ly_);
-  grid_fluxx_init.make_fftw_plan(FFTW_RODFT01, FFTW_REDFT01);
-  grid_fluxy_init.make_fftw_plan(FFTW_REDFT01, FFTW_RODFT01);
-
   // eul[i][j] will be the new position of proj_[i][j] proposed by a simple
   // Euler step: move a full time interval delta_t with the velocity at time t
   // and position (proj_[i][j].x, proj_[i][j].y)
@@ -395,11 +374,11 @@ void InsetState::flatten_density_with_node_vertices()
     for (unsigned int j = 0; j < ly_; ++j) {
       double denom =
         pi * ((di + 1) / dlx + (j / (di + 1)) * (j / dly) * (dlx / dly));
-      grid_fluxx_init(i, j) = -rho_ft_(i + 1, j) / denom;
+      grid_fluxx_init_(i, j) = -rho_ft_(i + 1, j) / denom;
     }
   }
   for (unsigned int j = 0; j < ly_; ++j) {
-    grid_fluxx_init(lx_ - 1, j) = 0.0;
+    grid_fluxx_init_(lx_ - 1, j) = 0.0;
   }
 #pragma omp parallel for
   for (unsigned int i = 0; i < lx_; ++i) {
@@ -407,17 +386,17 @@ void InsetState::flatten_density_with_node_vertices()
     for (unsigned int j = 0; j < ly_ - 1; ++j) {
       double denom =
         pi * ((di / (j + 1)) * (di / dlx) * (dly / dlx) + (j + 1) / dly);
-      grid_fluxy_init(i, j) = -rho_ft_(i, j + 1) / denom;
+      grid_fluxy_init_(i, j) = -rho_ft_(i, j + 1) / denom;
     }
   }
   for (unsigned int i = 0; i < lx_; ++i) {
-    grid_fluxy_init(i, ly_ - 1) = 0.0;
+    grid_fluxy_init_(i, ly_ - 1) = 0.0;
   }
 
   // Compute the flux vector and store the result in grid_fluxx_init and
   // grid_fluxy_init
-  grid_fluxx_init.execute_fftw_plan();
-  grid_fluxy_init.execute_fftw_plan();
+  execute_fftw_plans_for_flux();
+
   double t = 0.0;
   double delta_t = 0.30;  // Initial time step.
   unsigned int iter = 0;
@@ -433,8 +412,8 @@ void InsetState::flatten_density_with_node_vertices()
           j,
           direction,
           t,
-          grid_fluxx_init,
-          grid_fluxy_init,
+          grid_fluxx_init_,
+          grid_fluxy_init_,
           rho_ft_,
           rho_init_);
       };
@@ -475,8 +454,8 @@ void InsetState::flatten_density_with_node_vertices()
             j,
             direction,
             t + 0.5 * delta_t,
-            grid_fluxx_init,
-            grid_fluxy_init,
+            grid_fluxx_init_,
+            grid_fluxy_init_,
             rho_ft_,
             rho_init_);
         };
@@ -552,12 +531,4 @@ void InsetState::flatten_density_with_node_vertices()
 
   // Add current proj to proj_sequence vector
   proj_sequence_.push_back(proj_qd_);
-
-  // Clean up
-  grid_fluxx_init.destroy_fftw_plan();
-  grid_fluxy_init.destroy_fftw_plan();
-  grid_fluxx_init.free();
-  grid_fluxy_init.free();
-
-  return;
 }
