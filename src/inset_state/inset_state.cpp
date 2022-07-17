@@ -172,6 +172,13 @@ void InsetState::execute_fftw_fwd_plan() const
   fftw_execute(fwd_plan_for_rho_);
 }
 
+bool InsetState::geo_div_id_exists(std::string gd_id) const
+{
+  if (target_areas_.find(gd_id) == target_areas_.end())
+    return false;
+  return true;
+}
+
 std::vector<GeoDiv> InsetState::geo_divs() const
 {
   return geo_divs_;

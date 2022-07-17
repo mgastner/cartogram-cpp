@@ -106,6 +106,7 @@ public:
   void flatten_density();  // Flatten said density with integration
   void flatten_density_with_node_vertices();
 
+  bool geo_div_id_exists(std::string) const;
   std::vector<GeoDiv> geo_divs() const;
   std::map<std::string, double> get_geo_div_differences(
     std::function<double (Polygon_with_holes, Polygon_with_holes)>);

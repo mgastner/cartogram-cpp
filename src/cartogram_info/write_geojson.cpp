@@ -120,7 +120,8 @@ nlohmann::json CartogramInfo::cgal_to_json(bool original_geo_divs_to_geojson)
 void CartogramInfo::json_to_geojson(
   const nlohmann::json &old_json,
   nlohmann::ordered_json &new_json,
-  const nlohmann::json &container)
+  const nlohmann::json &container,
+  bool insert_visual_variable)
 {
   // We must match the GeoDiv IDs in the container with the IDs in the input
   // GeoJSON. For later convenience, we store the numeric indices for an ID
@@ -149,13 +150,21 @@ void CartogramInfo::json_to_geojson(
   for (unsigned int i = 0; i < n_geo_divs(); ++i) {
     unsigned int index = index_of_id_in_old_json.at(container[i]["gd_id"]);
     new_json["features"][i]["type"] = "Feature";
+    nlohmann::json gd_properties = old_json["features"][index]["properties"];
+    if (insert_visual_variable) {
+      for (const auto &[_, inset_state] : inset_states_){
+        if (inset_state.geo_div_id_exists(container[i]["gd_id"])){
+          gd_properties[visual_variable_name_] =
+            inset_state.target_area_at(container[i]["gd_id"]);
+        }
+      }
+    }
 
     // TODO: THE NEXT LINE CREATES A FIELD WITH VALUE null UNLESS THE
     //       INPUT GEOJSON CONTAINED A FIELD CALLED id. THIS MAY BE NEEDED BY
     //       cartogram_web, BUT, IN THE LONG RUN, WE WANT TO GET RID OF IT.
     new_json["features"][i]["id"] = old_json["features"][index]["id"];
-    new_json["features"][i]["properties"] =
-      old_json["features"][index]["properties"];
+    new_json["features"][i]["properties"] = gd_properties;
     new_json["features"][i]["geometry"]["type"] = "MultiPolygon";
 
     // Iterate over Polygon_with_holes in the GeoDiv
@@ -174,7 +183,8 @@ void CartogramInfo::json_to_geojson(
 void CartogramInfo::write_geojson(
   const std::string &old_geo_file_name,
   const std::string &new_geo_file_name,
-  bool output_to_stdout)
+  bool output_to_stdout,
+  bool insert_visual_variable)
 {
   std::ifstream old_file(old_geo_file_name);
   nlohmann::json old_json, container;
@@ -182,13 +192,13 @@ void CartogramInfo::write_geojson(
   nlohmann::ordered_json new_json;
   container = cgal_to_json(false);
 
-  json_to_geojson(old_json, new_json, container);
+  json_to_geojson(old_json, new_json, container, insert_visual_variable);
 
   if (output_to_stdout) {
     nlohmann::ordered_json new_json_original;
     nlohmann::json container_original, combined_json;
     container_original = cgal_to_json(true);
-    json_to_geojson(old_json, new_json_original, container_original);
+    json_to_geojson(old_json, new_json_original, container_original, insert_visual_variable);
     combined_json["Simplified"] = new_json;
     combined_json["Original"] = new_json_original;
     std::cout << combined_json << std::endl;

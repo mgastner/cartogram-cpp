@@ -10,6 +10,7 @@ argparse::ArgumentParser parsed_arguments(
   std::string &visual_file_name,
   unsigned int &max_n_grid_rows_or_cols,
   unsigned int &target_points_per_inset,
+  bool &insert_visual_variable,
   bool &world,
   bool &triangulation,
   bool &qtdt_method,
@@ -48,6 +49,10 @@ argparse::ArgumentParser parsed_arguments(
       "Integer: Number of grid cells along longer Cartesian coordinate axis");
 
   // Optional boolean arguments
+  arguments.add_argument("--insert_visual_variable")
+    .help("Boolean: insert the visual variable into output GeoJSON file")
+    .default_value(false)
+    .implicit_value(true);
   arguments.add_argument("-w", "--world")
     .help("Boolean: is input a world map in longitude-latitude format?")
     .default_value(false)
@@ -144,6 +149,7 @@ argparse::ArgumentParser parsed_arguments(
   target_points_per_inset = arguments.get<unsigned int>("-P");
 
   // Set boolean values
+  insert_visual_variable = arguments.get<bool>("--insert_visual_variable");
   world = arguments.get<bool>("-w");
   triangulation = arguments.get<bool>("-t");
   qtdt_method = arguments.get<bool>("-Q");

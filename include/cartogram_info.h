@@ -21,6 +21,7 @@ private:
   // are external rings with opposite winding directions.
   bool original_ext_ring_is_clockwise_;
   std::string visual_variable_file_;
+  std::string visual_variable_name_;
   nlohmann::json cgal_to_json(bool = false);
 
 public:
@@ -29,7 +30,8 @@ public:
   [[nodiscard]] bool is_world_map() const;
   void json_to_geojson(const nlohmann::json &,
     nlohmann::ordered_json &,
-    const nlohmann::json &);
+    const nlohmann::json &,
+    bool);
   [[nodiscard]] unsigned int n_geo_divs() const;
   [[nodiscard]] unsigned int n_insets() const;
   void read_csv(const argparse::ArgumentParser&);
@@ -38,6 +40,6 @@ public:
   void replace_missing_and_zero_target_areas();
   void set_map_name(std::string);
   void shift_insets_to_target_position();
-  void write_geojson(const std::string&, const std::string&, bool);
+  void write_geojson(const std::string&, const std::string&, bool, bool);
 };
 #endif

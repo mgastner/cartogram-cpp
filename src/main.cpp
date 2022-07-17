@@ -131,7 +131,7 @@ int main(const int argc, const char *argv[])
   // Other boolean values that are needed to parse the command line arguments
   bool make_csv, output_equal_area, output_to_stdout, plot_density,
     plot_graticule, plot_intersections, plot_polygons, plot_quadtree,
-    remove_tiny_polygons;
+    remove_tiny_polygons, insert_visual_variable;
 
   // The proportion of the total area smaller than which polygons are removed
   double minimum_polygon_area;
@@ -145,6 +145,7 @@ int main(const int argc, const char *argv[])
     visual_file_name,
     max_n_grid_rows_or_cols,
     target_points_per_inset,
+    insert_visual_variable,
     world,
     triangulation,
     qtdt_method,
@@ -216,7 +217,8 @@ int main(const int argc, const char *argv[])
     cart_info.write_geojson(
       geo_file_name,
       map_name + "_equal_area.geojson",
-      output_to_stdout);
+      output_to_stdout,
+      insert_visual_variable);
     return EXIT_SUCCESS;
   }
 
@@ -435,7 +437,8 @@ int main(const int argc, const char *argv[])
       cart_info.write_geojson(
         geo_file_name,
         output_file_name,
-        output_to_stdout);
+        output_to_stdout,
+        insert_visual_variable);
       inset_state.revert_smyth_craster_projection();
     } else {
 
@@ -478,7 +481,8 @@ int main(const int argc, const char *argv[])
   cart_info.write_geojson(
     geo_file_name,
     map_name + "_cartogram.geojson",
-    output_to_stdout);
+    output_to_stdout,
+    insert_visual_variable);
 
   // Store time when main() ended
   time_point end_main = clock_time::now();
