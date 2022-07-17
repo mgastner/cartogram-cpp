@@ -544,3 +544,18 @@ void InsetState::flatten_density_with_node_vertices()
 
   return;
 }
+
+double calculate_velocity_for_point(
+  unsigned int i,
+  unsigned int j,
+  char direction,
+  double t,
+  FTReal2d &grid_fluxx_init,
+  FTReal2d &grid_fluxy_init,
+  FTReal2d &rho_ft,
+  FTReal2d &rho_init)
+{
+  double rho = rho_ft(0, 0) + (1.0 - t) * (rho_init(i, j) - rho_ft(0, 0));
+  return (direction == 'x') ? (-grid_fluxx_init(i, j) / rho)
+                            : (-grid_fluxy_init(i, j) / rho);
+}
