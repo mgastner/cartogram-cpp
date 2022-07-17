@@ -9,5 +9,13 @@ double interpolate_bilinearly(double,
                               char,
                               const unsigned int,
                               const unsigned int);
+                              
+double interpolate_bilinearly(double,
+                              double,
+                              std::function<double(unsigned int, unsigned int, char)> &,
+                              char,
+                              const unsigned int,
+                              const unsigned int);
+    
 
 #endif
