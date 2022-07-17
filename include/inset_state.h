@@ -107,6 +107,8 @@ public:
   void flatten_density_with_node_vertices();
 
   std::vector<GeoDiv> geo_divs() const;
+  std::map<std::string, double> get_geo_div_differences(
+    std::function<double (Polygon_with_holes, Polygon_with_holes)>);
   void holes_inside_polygons();
   void increment_integration();
   void initialize_cum_proj();
@@ -150,6 +152,7 @@ public:
   void set_area_errors();
   void set_grid_dimensions(unsigned int, unsigned int);
   void set_inset_name(const std::string &);
+  // void set_original_geo_divs_to(std::vector<GeoDiv>);
   void simplify(unsigned int);
   void store_original_geo_divs();
   double target_area_at(const std::string &) const;

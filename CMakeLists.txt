@@ -48,6 +48,7 @@ add_executable(
   src/inset_state/fill_with_density.cpp
   src/inset_state/flatten_density.cpp
   src/inset_state/inset_state.cpp
+  src/inset_state/compare_insets.cpp
   src/inset_state/interpolate_bilinearly.cpp
   src/inset_state/matrix.cpp
   src/inset_state/project.cpp

@@ -1,4 +1,5 @@
 #include "cartogram_info.h"
+#include "compare_insets.h"
 #include "constants.h"
 #include "parse_arguments.h"
 #include <chrono>
@@ -213,7 +214,7 @@ int main(const int argc, const char *argv[])
     // Rescale map to fit into a rectangular box [0, lx] * [0, ly]
     inset_state.rescale_map(max_n_grid_rows_or_cols, cart_info.is_world_map());
 
-    if (output_to_stdout) {
+    if (output_to_stdout || true) {
 
       // Store original coordinates
       inset_state.store_original_geo_divs();
@@ -430,6 +431,23 @@ int main(const int argc, const char *argv[])
     inset_state.destroy_fftw_plans_for_rho();
     inset_state.ref_to_rho_init()->free();
     inset_state.ref_to_rho_ft()->free();
+
+    // Calculate distances
+    std::map<std::string, double> hausdorff_distances =
+      inset_state.get_geo_div_differences(hausdorff_distance);
+    std::cout << "\nHausdorff distances:\n";
+    for (const auto &[key, val] : hausdorff_distances) {
+      std::cout << key << ": " << val << std::endl;
+    }
+    std::cout << std::endl;
+
+    std::map<std::string, double> symmetric_distances =
+      inset_state.get_geo_div_differences(symmetric_distance);
+    std::cout << "Symmetric distances:\n";
+    for (const auto &[key, val] : symmetric_distances) {
+      std::cout << key << ": " << val << std::endl;
+    }
+    std::cout << std::endl;
   }  // End of loop over insets
 
   // Shift insets so that they do not overlap
