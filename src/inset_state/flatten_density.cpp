@@ -322,6 +322,21 @@ bool all_map_points_are_in_domain(
   return true;
 }
 
+double calculate_velocity_for_point(
+  unsigned int i,
+  unsigned int j,
+  char direction,
+  double t,
+  FTReal2d &grid_fluxx_init,
+  FTReal2d &grid_fluxy_init,
+  FTReal2d &rho_ft,
+  FTReal2d &rho_init)
+{
+  double rho = rho_ft(0, 0) + (1.0 - t) * (rho_init(i, j) - rho_ft(0, 0));
+  return (direction == 'x') ? (-grid_fluxx_init(i, j) / rho)
+                            : (-grid_fluxy_init(i, j) / rho);
+}
+
 // Return a map of initial quadtree point to point
 void InsetState::flatten_density_with_node_vertices()
 {
@@ -338,10 +353,6 @@ void InsetState::flatten_density_with_node_vertices()
   for (const Point &pt : unique_quadtree_corners_) {
     proj_qd_.triangle_transformation.insert_or_assign(pt, pt);
   }
-
-  // Allocate memory for the velocity grid
-  boost::multi_array<double, 2> grid_vx(boost::extents[lx_][ly_]);
-  boost::multi_array<double, 2> grid_vy(boost::extents[lx_][ly_]);
 
   // Prepare Fourier transforms for the flux
   FTReal2d grid_fluxx_init;
@@ -413,16 +424,20 @@ void InsetState::flatten_density_with_node_vertices()
 
   // Integrate
   while (t < 1.0) {
-    calculate_velocity(
-      t,
-      grid_fluxx_init,
-      grid_fluxy_init,
-      rho_ft_,
-      rho_init_,
-      &grid_vx,
-      &grid_vy,
-      lx_,
-      ly_);
+
+    // calculate_velocity lambda function
+    std::function<double(unsigned int, unsigned int, char)> cal_velocity =
+      [&](unsigned int i, unsigned int j, char direction) {
+        return calculate_velocity_for_point(
+          i,
+          j,
+          direction,
+          t,
+          grid_fluxx_init,
+          grid_fluxy_init,
+          rho_ft_,
+          rho_init_);
+      };
 
     for (const auto &[key, val] : proj_qd_.triangle_transformation) {
 
@@ -432,8 +447,8 @@ void InsetState::flatten_density_with_node_vertices()
       // that interpolate_bilinearly() is given a point that cannot cause it
       // to fail.
       Point v_intp_val(
-        interpolate_bilinearly(val.x(), val.y(), &grid_vx, 'x', lx_, ly_),
-        interpolate_bilinearly(val.x(), val.y(), &grid_vy, 'y', lx_, ly_));
+        interpolate_bilinearly(val.x(), val.y(), cal_velocity, 'x', lx_, ly_),
+        interpolate_bilinearly(val.x(), val.y(), cal_velocity, 'y', lx_, ly_));
       v_intp.insert_or_assign(key, v_intp_val);
     }
 
@@ -453,16 +468,18 @@ void InsetState::flatten_density_with_node_vertices()
       //                        y + 0.5*delta_t*v_y(x,y,t),
       //                        t + 0.5*delta_t)
       // and similarly for y.
-      calculate_velocity(
-        t + 0.5 * delta_t,
-        grid_fluxx_init,
-        grid_fluxy_init,
-        rho_ft_,
-        rho_init_,
-        &grid_vx,
-        &grid_vy,
-        lx_,
-        ly_);
+      std::function<double(unsigned int, unsigned int, char)> get_velocity =
+        [&](unsigned int i, unsigned int j, char direction) {
+          return calculate_velocity_for_point(
+            i,
+            j,
+            direction,
+            t + 0.5 * delta_t,
+            grid_fluxx_init,
+            grid_fluxy_init,
+            rho_ft_,
+            rho_init_);
+        };
 
       // Make sure we do not pass a point outside [0, lx_] x [0, ly_] to
       // interpolate_bilinearly(). Otherwise, decrease the time step below and
@@ -481,14 +498,14 @@ void InsetState::flatten_density_with_node_vertices()
             interpolate_bilinearly(
               val.x() + 0.5 * delta_t * v_intp[key].x(),
               val.y() + 0.5 * delta_t * v_intp[key].y(),
-              &grid_vx,
+              cal_velocity,
               'x',
               lx_,
               ly_),
             interpolate_bilinearly(
               val.x() + 0.5 * delta_t * v_intp[key].x(),
               val.y() + 0.5 * delta_t * v_intp[key].y(),
-              &grid_vy,
+              cal_velocity,
               'y',
               lx_,
               ly_));
@@ -543,19 +560,4 @@ void InsetState::flatten_density_with_node_vertices()
   grid_fluxy_init.free();
 
   return;
-}
-
-double calculate_velocity_for_point(
-  unsigned int i,
-  unsigned int j,
-  char direction,
-  double t,
-  FTReal2d &grid_fluxx_init,
-  FTReal2d &grid_fluxy_init,
-  FTReal2d &rho_ft,
-  FTReal2d &rho_init)
-{
-  double rho = rho_ft(0, 0) + (1.0 - t) * (rho_init(i, j) - rho_ft(0, 0));
-  return (direction == 'x') ? (-grid_fluxx_init(i, j) / rho)
-                            : (-grid_fluxy_init(i, j) / rho);
 }
