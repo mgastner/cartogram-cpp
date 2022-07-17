@@ -343,8 +343,8 @@ void InsetState::flatten_density_with_node_vertices()
   std::cerr << "In flatten_density_with_node_vertices()" << std::endl;
 
   // Constants for the numerical integrator
-  const double inc_after_acc = 1.1;
-  const double dec_after_not_acc = 0.75;
+  const double inc_after_acc = 1.5;
+  const double dec_after_not_acc = 0.5;
   const double abs_tol = (std::min(lx_, ly_) * 1e-6);
 
   // Clear previous triangle transformation data
@@ -419,7 +419,7 @@ void InsetState::flatten_density_with_node_vertices()
   grid_fluxx_init.execute_fftw_plan();
   grid_fluxy_init.execute_fftw_plan();
   double t = 0.0;
-  double delta_t = 1e-2;  // Initial time step.
+  double delta_t = 0.30;  // Initial time step.
   unsigned int iter = 0;
 
   // Integrate
