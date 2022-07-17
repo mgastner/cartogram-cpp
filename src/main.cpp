@@ -90,10 +90,12 @@ void init_cart_info(CartogramInfo *cart_info,
       } else {
         inset_state.apply_albers_projection();
       }
-    } else if (output_equal_area) {
-      std::cerr << "ERROR: Input GeoJSON is not a longitude-latitude map."
-                << std::endl;
-      exit(EXIT_FAILURE);
+    // TODO: For now, assume that all non longitude-latitude maps are equal
+    // area.
+    // } else if (output_equal_area) {
+    //   std::cerr << "ERROR: Input GeoJSON is not a longitude-latitude map."
+    //             << std::endl;
+    //   exit(EXIT_FAILURE);
     }
     if (simplify) {
 
