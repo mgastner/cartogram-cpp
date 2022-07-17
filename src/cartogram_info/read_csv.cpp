@@ -81,25 +81,27 @@ void CartogramInfo::read_csv(argparse::ArgumentParser arguments)
         _Exit(101);
       }
     }
-    
+
     // Check for both commas and decimals
     else if (
       (area_as_str.find(comma) != std::string::npos) &&
       (area_as_str.find(decimal) != std::string::npos)) {
-      
+
       // if commas come first, remove all commas
       if (area_as_str.find(comma) < area_as_str.find(decimal)) {
         area_as_str.erase(
           std::remove(area_as_str.begin(), area_as_str.end(), comma),
           area_as_str.end());
-      } 
-      
+        area = std::stod(area_as_str);
+      }
+
       // Otherwise, remove decimals, then convert comma to decimal
       else {
         area_as_str.erase(
           std::remove(area_as_str.begin(), area_as_str.end(), decimal),
           area_as_str.end());
-          area_as_str[area_as_str.find(comma)] = '.';
+        area_as_str[area_as_str.find(comma)] = '.';
+        area = std::stod(area_as_str);
       }
     }
 
@@ -108,14 +110,16 @@ void CartogramInfo::read_csv(argparse::ArgumentParser arguments)
       (area_as_str.find(comma) != std::string::npos) &&
       (area_as_str.find(decimal) == std::string::npos)) {
       int count_commas = 0;
-      long unsigned int i;
-      for (i = 0; i < string_size; i++)
-        if ((area_as_str[i] == comma))
+      long unsigned int j;
+      for (j = 0; j < string_size; j++)
+        if ((area_as_str[j] == comma))
           count_commas++;
 
       // if there is only 1 comma, and there are only 2 numbers after the
       // comma, convert to decimal
-      if ((count_commas = 1) && ((area_as_str.find(comma) + 4) > string_size)) {
+      if (
+        (count_commas = 1) &&
+        ((area_as_str.find(comma) + 3) > (string_size))) {
         area_as_str[area_as_str.find(comma)] = '.';
       }
 
@@ -126,6 +130,9 @@ void CartogramInfo::read_csv(argparse::ArgumentParser arguments)
         area_as_str.erase(
           std::remove(area_as_str.begin(), area_as_str.end(), comma),
           area_as_str.end());
+      }
+      if (std::all_of(area_as_str.begin(), area_as_str.end(), ::isdigit)) {
+        area = std::stod(area_as_str);
       }
     }
 
@@ -145,16 +152,16 @@ void CartogramInfo::read_csv(argparse::ArgumentParser arguments)
           std::remove(area_as_str.begin(), area_as_str.end(), decimal),
           area_as_str.end());
       }
+      if (std::all_of(area_as_str.begin(), area_as_str.end(), ::isdigit)) {
+        area = std::stod(area_as_str);
+      }
     }
 
     // Check if areas is missing or "NA"
     else if (area_as_str.empty() || area_as_str.compare("NA") == 0) {
       area = -1.0;  // Use negative area as sign of a missing value
-    } 
-    else if (std::all_of(area_as_str.begin(), area_as_str.end(), ::isdigit)) {
-        area = std::stod(area_as_str.c_str());
-      }
-    
+    }
+
     else {
       std::cerr << "area_field: " << area_as_str << std::endl;
       std::cerr << "ERROR: Areas must be numeric or NA" << std::endl;
