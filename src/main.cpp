@@ -170,7 +170,18 @@ int main(const int argc, const char *argv[])
       // Simplification reduces the number of points used to represent the
       // GeoDivs in the inset, thereby reducing output file sizes and
       // run-times
+
+      std::cerr << "Simplying the input" << std::endl;
+      std::cerr << "Initial number of points = " << inset_state.n_points() << std::endl;
+      std::string output_filename = inset_state.inset_name();
+      cart_info.write_geojson(
+        geo_file_name,
+        map_name + "_eq_area_map.geojson",
+        output_to_stdout);
+      std::cerr << "Written _eq_area output" << std::endl;
       inset_state.simplify(target_points_per_inset);
+
+      //exit(12098);
     }
   }
 
