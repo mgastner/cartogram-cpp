@@ -114,7 +114,7 @@ int main(const int argc, const char *argv[])
 {
   // Start of main function time
   time_point start_main = clock_time::now();
-  std::string geo_file_name, visual_file_name;
+  std::string geo_file_name, visual_file_name, compare_geo_file_name;
 
   // Default number of grid cells along longer Cartesian coordinate axis
   unsigned int max_n_grid_rows_or_cols;
@@ -147,6 +147,7 @@ int main(const int argc, const char *argv[])
     visual_file_name,
     max_n_grid_rows_or_cols,
     target_points_per_inset,
+    compare_geo_file_name,
     insert_visual_variable,
     world,
     triangulation,
@@ -222,6 +223,53 @@ int main(const int argc, const char *argv[])
       output_to_stdout,
       insert_visual_variable);
     return EXIT_SUCCESS;
+  }
+
+  // Compare 2 GeoJSON files.
+  if (compare_geo_file_name != "") {
+    CartogramInfo compare_cart_info(world, visual_file_name);
+    init_cart_info(&compare_cart_info,
+                    arguments,
+                    make_csv,
+                    world,
+                    simplify,
+                    output_equal_area,
+                    target_points_per_inset,
+                    compare_geo_file_name,
+                 map_name);
+
+    std::map<std::string, InsetState> *compare_insets =
+      compare_cart_info.ref_to_inset_states();
+    for (auto &[inset_pos, inset_state] : *cart_info.ref_to_inset_states()) {
+      InsetState current_compare_inset = compare_insets -> at(inset_pos);
+      inset_state.set_geo_divs_compare_to(current_compare_inset.geo_divs());
+
+      // Update and display area error.
+      current_compare_inset.set_area_errors();
+      std::cerr << "max. area err: "
+                << current_compare_inset.max_area_error().value
+                << ", GeoDiv: "
+                << current_compare_inset.max_area_error().geo_div
+                << std::endl;
+
+      // Calculate distances
+      std::map<std::string, double> hausdorff_distances =
+        inset_state.get_geo_div_differences(hausdorff_distance, false);
+      std::cout << "\nHausdorff distances:\n";
+      for (const auto &[key, val] : hausdorff_distances) {
+        std::cout << key << ": " << val << std::endl;
+      }
+      std::cout << std::endl;
+
+      std::map<std::string, double> symmetric_distances =
+        inset_state.get_geo_div_differences(symmetric_distance, false);
+      std::cout << "Symmetric distances:\n";
+      for (const auto &[key, val] : symmetric_distances) {
+        std::cout << key << ": " << val << std::endl;
+      }
+      std::cout << std::endl;
+      return EXIT_SUCCESS;
+    }
   }
 
   // Iterate over insets
@@ -460,7 +508,7 @@ int main(const int argc, const char *argv[])
 
     // Calculate distances
     std::map<std::string, double> hausdorff_distances =
-      inset_state.get_geo_div_differences(hausdorff_distance);
+      inset_state.get_geo_div_differences(hausdorff_distance, true);
     std::cout << "\nHausdorff distances:\n";
     for (const auto &[key, val] : hausdorff_distances) {
       std::cout << key << ": " << val << std::endl;
@@ -468,7 +516,7 @@ int main(const int argc, const char *argv[])
     std::cout << std::endl;
 
     std::map<std::string, double> symmetric_distances =
-      inset_state.get_geo_div_differences(symmetric_distance);
+      inset_state.get_geo_div_differences(symmetric_distance, true);
     std::cout << "Symmetric distances:\n";
     for (const auto &[key, val] : symmetric_distances) {
       std::cout << key << ": " << val << std::endl;

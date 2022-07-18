@@ -12,6 +12,7 @@ argparse::ArgumentParser parsed_arguments(
   std::string &visual_file_name,
   unsigned int &max_n_grid_rows_or_cols,
   unsigned int &target_points_per_inset,
+  std::string &compare_geo_file_name,
   bool &insert_visual_variable,
   bool &world,
   bool &triangulation,

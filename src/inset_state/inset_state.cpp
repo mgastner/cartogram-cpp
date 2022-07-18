@@ -392,6 +392,10 @@ void InsetState::set_area_errors()
   }
 }
 
+void InsetState::set_geo_divs_compare_to(std::vector<GeoDiv> geo_divs_compare) {
+  geo_divs_compare_ = geo_divs_compare;
+}
+
 void InsetState::set_grid_dimensions(
   const unsigned int lx,
   const unsigned int ly)

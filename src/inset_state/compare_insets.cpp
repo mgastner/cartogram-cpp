@@ -225,22 +225,32 @@ double symmetric_distance(Polygon_with_holes orig_poly,
 }
 
 std::map<std::string, double> InsetState::get_geo_div_differences(
-  std::function<double (Polygon_with_holes,
-  Polygon_with_holes)> distance_func)
+  std::function<double (Polygon_with_holes, Polygon_with_holes)> distance_func,
+  bool compare_with_original)
 {
   
   // Initialize a vector to store the max distance for each GeoDiv
   std::map<std::string, double> differences_geo_divs;
 
+  const std::vector<GeoDiv> *original_geo_divs;
+  const std::vector<GeoDiv> *new_geo_divs;
+  if (compare_with_original) {
+    original_geo_divs = &geo_divs_original_;
+    new_geo_divs = &geo_divs_;
+  } else {
+    original_geo_divs = &geo_divs_;
+    new_geo_divs = &geo_divs_compare_;
+  }
+
   // Iterate through each GeoDiv
-  for (unsigned int i = 0; i < geo_divs_.size(); ++i) {
+  for (unsigned int i = 0; i < original_geo_divs -> size(); ++i) {
 
     // Vectors of the current GeoDiv's polygon with holes,
     // before and after integration
     std::vector<Polygon_with_holes> original_pwh_vector =
-      geo_divs_original_[i].polygons_with_holes();
+      (*original_geo_divs)[i].polygons_with_holes();
     std::vector<Polygon_with_holes> new_pwh_vector =
-      geo_divs_[i].polygons_with_holes();
+      (*new_geo_divs)[i].polygons_with_holes();
 
     // Iterate through each pair of polygon with holes.
     std::vector<double> distances;
@@ -272,7 +282,7 @@ std::map<std::string, double> InsetState::get_geo_div_differences(
     // Get the maximum distance and take that as the "distance" of the whole
     // GeoDiv
     double dist = *std::max_element(distances.begin(), distances.end());
-    std::string geo_div_id = geo_divs_[i].id();
+    std::string geo_div_id = (*new_geo_divs)[i].id();
     differences_geo_divs.insert(
       std::pair<std::string, double> (geo_div_id, dist)
     );
