@@ -153,6 +153,7 @@ public:
   void rescale_map(unsigned int, bool);
   void revert_smyth_craster_projection();
   void rings_are_simple();
+  void scale_inset(double);
   void set_area_errors();
   void set_geo_divs_compare_to(std::vector<GeoDiv>);
   void set_grid_dimensions(unsigned int, unsigned int);

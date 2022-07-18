@@ -216,6 +216,12 @@ int main(const int argc, const char *argv[])
     // Shift insets so that they do not overlap
     cart_info.shift_insets_to_target_position();
 
+    // Scale equal area map up
+    double scale_factor = 10e3;
+    for (auto &[inset_pos, inset_state] : *cart_info.ref_to_inset_states()) {
+      inset_state.scale_inset(scale_factor);
+    }
+
     // Output to GeoJSON
     cart_info.write_geojson(
       geo_file_name,
