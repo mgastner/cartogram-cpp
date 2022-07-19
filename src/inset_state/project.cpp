@@ -46,7 +46,7 @@ void InsetState::project()
         'x',
         lx_,
         ly_);
-      const double graticule_intp_y = interpolate_bilinearly(
+      const double grid_intp_y = interpolate_bilinearly(
         cum_proj_[i][j].x,
         cum_proj_[i][j].y,
         &ydisp,
@@ -153,8 +153,8 @@ Point InsetState::projected_point(const Point p1, bool project_original)
 // TODO: chosen_diag() seems to be more naturally thought of as a boolean
 //       than an integer.
 
-// For a graticule cell with corners stored in the Point array v, determine
-// whether the diagonal from v[0] to v[2] is inside the graticule cell. If
+// For a grid cell with corners stored in the Point array v, determine
+// whether the diagonal from v[0] to v[2] is inside the grid cell. If
 // yes, return 0. Otherwise, if the diagonal from v[1] to v[3] is inside the
 // grid cell, return 1. If neither of the two diagonals is inside the
 // grid cell, then the cell's topology is invalid; thus, we exit with an
@@ -188,10 +188,10 @@ int InsetState::chosen_diag(
     (tv[1].x() + tv[3].x()) / 2,
     (tv[1].y() + tv[3].y()) / 2);
 
-  // Get the transformed graticule cell as a polygon
-  Polygon trans_graticule;
+  // Get the transformed grid cell as a polygon
+  Polygon trans_grid;
   for (auto &i : tv) {
-    trans_graticule.push_back(i);
+    trans_grid.push_back(i);
   }
 
   // Check if grid cell is concave
@@ -219,15 +219,15 @@ int InsetState::chosen_diag(
   exit(1);
 }
 
-void InsetState::fill_graticule_diagonals(bool project_original)
+void InsetState::fill_grid_diagonals(bool project_original)
 {
   // Initialize array if running for the first time
   if (
-    graticule_diagonals_.shape()[0] != lx_ ||
-    graticule_diagonals_.shape()[1] != ly_) {
-    graticule_diagonals_.resize(boost::extents[lx_ - 1][ly_ - 1]);
+    grid_diagonals_.shape()[0] != lx_ ||
+    grid_diagonals_.shape()[1] != ly_) {
+    grid_diagonals_.resize(boost::extents[lx_ - 1][ly_ - 1]);
   }
-  unsigned int n_concave = 0;  // Count concave graticule cells
+  unsigned int n_concave = 0;  // Count concave grid cells
 
 #pragma omp parallel for default(none) shared(n_concave, project_original)
   for (unsigned int i = 0; i < lx_ - 1; ++i) {
@@ -237,11 +237,11 @@ void InsetState::fill_graticule_diagonals(bool project_original)
       v[1] = Point(double(i) + 1.5, double(j) + 0.5);
       v[2] = Point(double(i) + 1.5, double(j) + 1.5);
       v[3] = Point(double(i) + 0.5, double(j) + 1.5);
-      graticule_diagonals_[i][j] =
+      grid_diagonals_[i][j] =
         chosen_diag(v, &n_concave, project_original);
     }
   }
-  std::cerr << "Number of concave graticule cells: " << n_concave << std::endl;
+  std::cerr << "Number of concave grid cells: " << n_concave << std::endl;
 }
 
 std::array<Point, 3> InsetState::transformed_triangle(
@@ -279,7 +279,7 @@ bool is_on_triangle_boundary(const Point pt, const Polygon &triangle)
 
 // Get the untransformed coordinates of the triangle in which the point `pt`
 // is located. After transformation, this triangle must be entirely inside
-// the transformed graticule cell.
+// the transformed grid cell.
 std::array<Point, 3> InsetState::untransformed_triangle(
   const Point pt,
   bool project_original)
@@ -312,18 +312,18 @@ std::array<Point, 3> InsetState::untransformed_triangle(
   if (
     v[0].x() == 0.0 || v[0].y() == 0.0 || v[2].x() == lx_ || v[2].y() == ly_) {
 
-    // Case when the graticule is on the edge of the grid.
-    // We calculate the chosen diagonal because graticule_diagonals_ does not
+    // Case when the grid is on the edge of the grid.
+    // We calculate the chosen diagonal because grid_diagonals_ does not
     // store the diagonals for edge grid cells.
     unsigned int n_concave = 0;
     diag = chosen_diag(v, &n_concave, project_original);
   } else {
 
-    // Case when the graticule is not on the edge of the grid. We can find the
-    // already computed chosen diagonal in graticule_diagonals_.
+    // Case when the grid is not on the edge of the grid. We can find the
+    // already computed chosen diagonal in grid_diagonals_.
     const auto x = static_cast<unsigned int>(v[0].x());
     const auto y = static_cast<unsigned int>(v[0].y());
-    diag = graticule_diagonals_[x][y];
+    diag = grid_diagonals_[x][y];
   }
 
   // Get the two possible triangles

@@ -109,15 +109,15 @@ void InsetState::write_polygons_to_eps(
   }
 }
 
-void InsetState::write_graticule_to_eps(std::ofstream &eps_file)
+void InsetState::write_grid_to_eps(std::ofstream &eps_file)
 {
-  const unsigned int graticule_line_spacing = 7;
+  const unsigned int grid_line_spacing = 7;
 
-  // Set line width of graticule lines
+  // Set line width of grid lines
   eps_file << 0.0005 * std::min(lx_, ly_) << " slw\n";
 
-  // Vertical graticule lines
-  for (unsigned int i = 0; i <= lx_; i += graticule_line_spacing) {
+  // Vertical grid lines
+  for (unsigned int i = 0; i <= lx_; i += grid_line_spacing) {
     eps_file << cum_proj_[i][0].x << " " << cum_proj_[i][0].y << " m\n";
     for (unsigned int j = 1; j < ly_; ++j) {
       eps_file << cum_proj_[i][j].x << " " << cum_proj_[i][j].y << " l\n";
@@ -125,8 +125,8 @@ void InsetState::write_graticule_to_eps(std::ofstream &eps_file)
     eps_file << "s\n";
   }
 
-  // Horizontal graticule lines
-  for (unsigned int j = 0; j <= ly_; j += graticule_line_spacing) {
+  // Horizontal grid lines
+  for (unsigned int j = 0; j <= ly_; j += grid_line_spacing) {
     eps_file << cum_proj_[0][j].x << " " << cum_proj_[0][j].y << " m\n";
     for (unsigned int i = 1; i < lx_; ++i) {
       eps_file << cum_proj_[i][j].x << " " << cum_proj_[i][j].y << " l\n";
@@ -137,7 +137,7 @@ void InsetState::write_graticule_to_eps(std::ofstream &eps_file)
 
 void InsetState::write_map_to_eps(
   const std::string &eps_name,
-  const bool plot_graticule)
+  const bool plot_grid)
 {
   std::ofstream eps_file(eps_name);
   write_eps_header_and_definitions(eps_file, eps_name, lx_, ly_);
@@ -148,8 +148,8 @@ void InsetState::write_map_to_eps(
     eps_file,
     true,  // Fill polygons with default color?
     has_colors);  // Fill polygons with assigned colors?
-  if (plot_graticule) {
-    write_graticule_to_eps(eps_file);
+  if (plot_grid) {
+    write_grid_to_eps(eps_file);
   }
   eps_file << "showpage\n";
   eps_file << "%%EOF\n";

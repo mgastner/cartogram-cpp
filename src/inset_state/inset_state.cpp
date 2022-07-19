@@ -494,7 +494,3 @@ void InsetState::transform_points(
     }
   }
 }
-
-void InsetState::store_original_geo_divs() {
-  geo_divs_original_ = geo_divs_;
-}

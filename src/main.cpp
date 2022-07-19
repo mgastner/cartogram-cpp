@@ -38,7 +38,7 @@ int main(const int argc, const char *argv[])
   // Other boolean values that are needed to parse the command line arguments
   bool make_csv, output_equal_area, output_to_stdout, plot_density,
     produce_map_image, plot_grid, plot_grid_heatmap,
-    plot_intersections, plot_crop, plot_polygons, image_format_ps,
+    plot_intersections, crop_polygons, plot_polygons, image_format_ps,
     plot_quadtree, remove_tiny_polygons;
 
   // The proportion of the total area smaller than which polygons are removed
@@ -77,7 +77,7 @@ int main(const int argc, const char *argv[])
     plot_grid,
     plot_grid_heatmap,
     plot_intersections,
-    plot_crop,
+    crop_polygons,
     plot_polygons,
     remove_tiny_polygons,
     minimum_polygon_area,
@@ -295,7 +295,7 @@ int main(const int argc, const char *argv[])
         duration_qtdt += inMilliseconds(clock_time::now() - start_delaunay_t);
 
         if (plot_quadtree) {
-          const std::string quadtree_filename =
+          std::string quadtree_filename =
             inset_state.inset_name() + "_" +
             std::to_string(inset_state.n_finished_integrations()) +
             "_quadtree";
@@ -453,7 +453,7 @@ int main(const int argc, const char *argv[])
         output_filename,
         true,
         image_format_ps,
-        plot_crop);
+        crop_polygons);
 
       // Produce cartogram grid heatmap
       output_filename = inset_state.inset_name() + "_cartogram_grid_heatmap";
@@ -466,7 +466,7 @@ int main(const int argc, const char *argv[])
         output_filename,
         false,
         image_format_ps,
-        plot_crop);
+        crop_polygons);
     }
     if (world) {
       std::string output_file_name =

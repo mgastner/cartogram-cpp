@@ -4,7 +4,7 @@
 #include <string>
 
 argparse::ArgumentParser parsed_arguments(
-  const int argc,
+  int argc,
   const char *argv[],
   std::string &geo_file_name,
   std::string &visual_file_name,
@@ -15,12 +15,15 @@ argparse::ArgumentParser parsed_arguments(
   bool &qtdt_method,
   bool &simplify,
   bool &make_csv,
+  bool &produce_map_image,
+  bool &image_format_ps,
   bool &output_equal_area,
   bool &output_to_stdout,
   bool &plot_density,
-  bool &plot_graticule,
+  bool &plot_grid,
+  bool &plot_grid_heatmap,
   bool &plot_intersections,
-  bool &crop,
+  bool &crop_polygons,
   bool &plot_polygons,
   bool &remove_tiny_polygons,
   double &minimum_polygon_area,
@@ -42,8 +45,8 @@ argparse::ArgumentParser parsed_arguments(
 
   // Optional argument accepting long grid side length (unsigned int) as
   // input. Default value declared in "constants.h"
-  arguments.add_argument("-N", "--n_graticule_rows_or_cols")
-    .default_value(default_long_graticule_length)
+  arguments.add_argument("-N", "--n_grid_rows_or_cols")
+    .default_value(default_long_grid_length)
     .scan<'u', unsigned int>()
     .help(
       "Integer: Number of grid cells along longer Cartesian coordinate axis");
@@ -83,8 +86,8 @@ argparse::ArgumentParser parsed_arguments(
     .help("Boolean: make EPS images *_density_*.eps?")
     .default_value(false)
     .implicit_value(true);
-  arguments.add_argument("-g", "--graticule_to_eps")
-    .help("Boolean: make EPS images with graticule?")
+  arguments.add_argument("-g", "--grid_to_eps")
+    .help("Boolean: make EPS images with grid?")
     .default_value(false)
     .implicit_value(true);
   arguments.add_argument("-i", "--intersections_to_eps")
@@ -182,7 +185,7 @@ argparse::ArgumentParser parsed_arguments(
   make_csv = arguments.get<bool>("-m");
   produce_map_image = arguments.get<bool>("-e");
   image_format_ps = arguments.get<bool>("-p");
-  crop = arguments.get<bool>("-c");
+  crop_polygons = arguments.get<bool>("-c");
   output_equal_area = arguments.get<bool>("-q");
   output_to_stdout = arguments.get<bool>("-o");
   plot_density = arguments.get<bool>("-d");

@@ -20,6 +20,7 @@ public:
   [[nodiscard]] std::set<std::string> adjacent_geodivs() const;
   void adjacent_to(const std::string &);
   [[nodiscard]] double area() const;
+  [[nodiscard]] Bbox bbox() const;
   [[nodiscard]] std::string id() const;
   [[nodiscard]] Polygon_with_holes largest_polygon_with_holes() const;
   [[nodiscard]] unsigned int n_points() const;

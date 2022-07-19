@@ -29,7 +29,7 @@ std::ostream &operator<<(std::ostream &cout, std::vector<A> const &v)
 //      coef_x * x + coef_y * y + coef_const = 0.
 // The function returns the unique intersection point between them. If this
 // intersection point does not exist, the function returns the point called
-// OUT_OF_RANGE, which is always outside any graticule grid cell.
+// OUT_OF_RANGE, which is always outside any grid grid cell.
 Point calc_intersection(
   const Point a,
   const Point b,

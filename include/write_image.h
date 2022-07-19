@@ -26,8 +26,8 @@ void write_ps_header(const std::string filename, cairo_surface_t *surface);
 //       POLYGON WITH HOLES? THAT CRITERION WOULD BE MORE RESTRICTIVE THAN
 //       FITTING INSIDE THE EXTERIOR RING.
 bool all_points_inside_exterior_ring(
-  const std::vector<Point> pts,
-  const Polygon_with_holes pwh);
+  const std::vector<Point> &pts,
+  const Polygon_with_holes &pwh);
 
 double get_font_size(
   cairo_t *cr,

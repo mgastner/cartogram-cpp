@@ -58,12 +58,6 @@ private:
   // Copy of original data
   std::vector<GeoDiv> geo_divs_original_;
 
-  // Geographic divisions in this inset
-  std::vector<GeoDiv> geo_divs_;
-
-  // Copy of original data
-  std::vector<GeoDiv> geo_divs_original_;
-
   // Chosen diagonal for each grid cell
   boost::multi_array<int, 2> grid_diagonals_;
 
@@ -83,9 +77,6 @@ private:
 
   // Vertical adjacency graph std::vector<std::vector<intersection> >
   // vertical_adj_;
-
-  // Create cairo surface
-  void write_polygons_to_cairo_surface(cairo_t *, bool, bool, bool);
 
   // Make default constructor private so that only
   // InsetState(const std::string) can be called as constructor
@@ -117,7 +108,7 @@ public:
   void execute_fftw_bwd_plan() const;
   void execute_fftw_fwd_plan() const;
   void exit_if_not_on_grid_or_edge(Point p1) const;
-  void fill_graticule_diagonals(bool = false);
+  void fill_grid_diagonals(bool = false);
 
   // Density functions
   // Fill map with density, using scanlines
@@ -130,7 +121,7 @@ public:
   void flatten_density();
   void flatten_density_with_node_vertices();
 
-  const std::vector<GeoDiv> geo_divs() const;
+  std::vector<GeoDiv> geo_divs() const;
   std::vector<std::vector<Color>> grid_cell_colors(unsigned int cell_width);
   Polygon grid_cell_edge_points(
     unsigned int x,
@@ -222,7 +213,7 @@ public:
     bool = false);
 
   // Apply given function to all points
-  void transform_points(std::function<Point(Point)>, bool = false);
+  void transform_points(const std::function<Point(Point)> &, bool = false);
   void trim_grid_heatmap(cairo_t *cr, double padding);
   std::array<Point, 3> untransformed_triangle(const Point, bool = false);
 
@@ -241,12 +232,12 @@ public:
     const std::string filename,
     const bool plot_equal_area_map,
     const bool image_format_ps,
-    const bool crop);
+    const bool crop_polygons);
   void write_grids_to_cairo_surface(cairo_t *cr);
   void write_grid_colors_to_cairo_surface(
     cairo_t *cr,
     bool plot_equal_area_map,
-    bool crop);
+    bool crop_polygons);
   // void write_grid_to_eps(std::ofstream &);
   // void write_intersections_to_eps(unsigned int);
   // void write_map_to_eps(const std::string, const bool);
@@ -276,7 +267,7 @@ public:
   void write_legend_to_cairo_surface(cairo_t *cr, bool equal_area_map);
   void write_quadtree(const std::string &);
   void write_density_to_eps(const std::string &, const double *);
-  void write_graticule_to_eps(std::ofstream &);
+  void write_grid_to_eps(std::ofstream &);
   void write_intersections_to_eps(unsigned int);
   void write_map_to_eps(const std::string &, bool);
   void write_polygons_to_eps(std::ofstream &, bool, bool);

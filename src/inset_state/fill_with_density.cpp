@@ -84,7 +84,7 @@ void InsetState::fill_with_density(
         }
 
         // Fill last exiting intersection with GeoDiv where part of ray inside
-        // the graticule cell is inside the GeoDiv
+        // the grid cell is inside the GeoDiv
         const auto last_x =
           static_cast<unsigned int>(intersections_at_y.back().x());
         const double last_weight =

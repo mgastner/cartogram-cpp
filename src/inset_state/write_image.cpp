@@ -1,11 +1,271 @@
 #include "write_image.h"
 
+void write_triangles_on_cairo_surface(cairo_t *cr, Delaunay &dt, color clr)
+{
+  // Draw the triangles
+  for (Delaunay::Finite_faces_iterator fit = dt.finite_faces_begin();
+       fit != dt.finite_faces_end();
+       ++fit) {
+    Point p1 = fit->vertex(0)->point();
+    Point p2 = fit->vertex(1)->point();
+    Point p3 = fit->vertex(2)->point();
+
+    // set width of line
+    cairo_set_line_width(cr, 0.05);
+
+    // set color
+    cairo_set_source_rgb(cr, clr.r, clr.g, clr.b);
+
+    cairo_move_to(cr, p1.x(), 512 - p1.y());
+    cairo_line_to(cr, p2.x(), 512 - p2.y());
+    cairo_line_to(cr, p3.x(), 512 - p3.y());
+    cairo_line_to(cr, p1.x(), 512 - p1.y());
+    cairo_stroke(cr);
+  }
+}
+
+void write_ps_header(const std::string filename, cairo_surface_t *surface)
+{
+  const std::string title = "%%Title: " + filename;
+  cairo_ps_surface_dsc_comment(surface, title.c_str());
+  cairo_ps_surface_dsc_comment(
+    surface,
+    "%%Creator: Michael T. Gastner et al.");
+  cairo_ps_surface_dsc_comment(surface, "%%For: Humanity");
+  cairo_ps_surface_dsc_comment(surface, "%%Copyright: License CC BY");
+  cairo_ps_surface_dsc_comment(surface, "%%Magnification: 1.0000");
+}
+
+void write_point_on_cairo_surface(cairo_t *cr, Point pt, color clr)
+{
+  cairo_set_source_rgb(cr, clr.r, clr.g, clr.b);
+  cairo_move_to(cr, pt.x(), 512 - pt.y());
+  cairo_line_to(cr, pt.x() + 0.05, 512 - pt.y() - 0.05);
+  cairo_close_path(cr);
+  cairo_stroke(cr);
+}
+
+void InsetState::write_polygon_points_on_cairo_surface(cairo_t *cr, color clr)
+{
+  cairo_set_source_rgb(cr, clr.r, clr.g, clr.b);
+  cairo_set_line_cap(cr, CAIRO_LINE_CAP_ROUND);
+  cairo_set_line_width(cr, 0.5);
+  // Draw the shapes
+  for (const auto &gd : geo_divs_) {
+    for (const auto &pwh : gd.polygons_with_holes()) {
+      const auto ext_ring = pwh.outer_boundary();
+
+      // Plot each point in exterior ring
+      for (auto i : ext_ring) {
+        write_point_on_cairo_surface(cr, i, clr);
+      }
+
+      // Plot holes
+      for (auto hci = pwh.holes_begin(); hci != pwh.holes_end(); ++hci) {
+        Polygon hole = *hci;
+        for (unsigned int i = 1; i <= hole.size(); ++i) {
+          write_point_on_cairo_surface(cr, hole[i], clr);
+        }
+      }
+    }
+  }
+}
+
+void InsetState::write_quadtree(const std::string &filename)
+{
+  cairo_surface_t *surface =
+    cairo_ps_surface_create((filename + ".ps").c_str(), lx_, ly_);
+  cairo_t *cr = cairo_create(surface);
+  write_ps_header((filename + ".ps"), surface);
+  write_triangles_on_cairo_surface(cr, proj_qd_.dt, color{0.0, 0.0, 0.0});
+  write_polygon_points_on_cairo_surface(cr, color{1.0, 0.0, 0.0});
+  cairo_show_page(cr);
+  cairo_surface_destroy(surface);
+  cairo_destroy(cr);
+}
+
+// TODO: IS THERE A CGAL WAY OF DETERMINING WHETHER THE LABEL'S BOUNDING
+//       BOX IS COMPLETELY CONTAINED IN THE POLYGON?
+
+// TODO: SHOULD THE CRITERION FOR PRINTING A LABEL BE THAT IT FITS INSIDE THE
+//       POLYGON WITH HOLES? THAT CRITERION WOULD BE MORE RESTRICTIVE THAN
+//       FITTING INSIDE THE EXTERIOR RING.
+bool all_points_inside_exterior_ring(
+  const std::vector<Point> &pts,
+  const Polygon_with_holes &pwh)
+{
+  for (const auto &pt : pts) {
+    if (pwh.outer_boundary().has_on_unbounded_side(pt)) {
+      return false;
+    }
+  }
+  return true;
+}
+
+double font_size(
+  cairo_t *cr,
+  const char *label,
+  const Point label_pt,
+  const GeoDiv &gd)
+{
+  for (double fsize = max_font_size; fsize >= min_font_size; fsize -= 0.5) {
+    cairo_set_font_size(cr, fsize);
+    cairo_text_extents_t extents;
+    cairo_text_extents(cr, label, &extents);
+    const auto largest_pwh = gd.largest_polygon_with_holes();
+
+    // Bounding box of the label
+    const CGAL::Bbox_2 bb(
+      label_pt.x() - 0.5 * extents.width,
+      label_pt.y() - 0.5 * extents.height,
+      label_pt.x() + 0.5 * extents.width,
+      label_pt.y() + 0.5 * extents.height);
+
+    // Vector of bounding-box edge points
+    std::vector<Point> bb_edge_points;
+    for (unsigned int i = 0; i <= 1; ++i) {
+      for (unsigned int j = 0; j <= 5; ++j) {
+        bb_edge_points.emplace_back(
+          (j * bb.xmin() + (5 - j) * bb.xmax()) / 5,
+          (i * bb.ymin() + (1 - i) * bb.ymax()));
+      }
+    }
+    if (all_points_inside_exterior_ring(bb_edge_points, largest_pwh)) {
+      return fsize;
+    }
+  }
+  return 0.0;
+}
+
+
+void InsetState::write_polygons_to_cairo_surface(
+  cairo_t *cr,
+  const bool fill_polygons,
+  const bool colors,
+  const bool plot_equal_area_map)
+{
+  cairo_set_line_width(cr, 1e-3 * std::min(lx_, ly_));
+
+  // Draw cartogram polygons or equal area map polygons
+  const std::vector<GeoDiv> &geo_divs =
+    plot_equal_area_map ? geo_divs_original_ : geo_divs_;
+
+  // Draw the shapes
+  for (const auto &gd : geo_divs) {
+    for (const auto &pwh : gd.polygons_with_holes()) {
+      const Polygon ext_ring = pwh.outer_boundary();
+      cairo_move_to(cr, ext_ring[0].x(), ly_ - ext_ring[0].y());
+
+      // Plot each point in exterior ring
+      for (unsigned int i = 1; i < ext_ring.size(); ++i) {
+        cairo_line_to(cr, ext_ring[i].x(), ly_ - ext_ring[i].y());
+      }
+
+      // Close the exterior ring
+      cairo_close_path(cr);
+
+      // Draw holes
+      for (auto h = pwh.holes_begin(); h != pwh.holes_end(); ++h) {
+        cairo_move_to(cr, (*h)[0].x(), ly_ - (*h)[0].y());
+        const size_t hsize = (*h).size();
+        for (unsigned int i = 1; i <= hsize; ++i) {
+          cairo_line_to(cr, (*h)[i % hsize].x(), ly_ - (*h)[i % hsize].y());
+        }
+      }
+      if (colors || fill_polygons) {
+        if (is_input_target_area_missing(gd.id())) {
+
+          // Fill path with dark gray
+          cairo_set_source_rgb(cr, 0.9375, 0.9375, 0.9375);
+        } else if (colors) {
+
+          // Get color
+          const Color col = color_at(gd.id());
+
+          // Fill path
+          cairo_set_source_rgb(cr, col.r, col.g, col.b);
+        } else if (fill_polygons) {
+
+          // Fill path with default color
+          cairo_set_source_rgb(cr, 0.96, 0.92, 0.70);
+        }
+        cairo_fill_preserve(cr);
+      }
+
+      cairo_set_source_rgb(cr, 0.0, 0.0, 0.0);
+      cairo_stroke(cr);
+    }
+  }
+}
+
+// Outputs a PNG file
+void InsetState::write_cairo_polygons_to_png(
+  const std::string &fname,
+  const bool fill_polygons,
+  const bool colors,
+  const bool plot_grid)
+{
+  const auto filename = fname.c_str();
+  cairo_surface_t *surface = cairo_image_surface_create(
+    CAIRO_FORMAT_ARGB32,
+    static_cast<int>(lx_),
+    static_cast<int>(ly_));
+  cairo_t *cr = cairo_create(surface);
+  write_polygons_to_cairo_surface(cr, fill_polygons, colors, plot_grid);
+  cairo_surface_write_to_png(surface, filename);
+  cairo_destroy(cr);
+  cairo_surface_destroy(surface);
+}
+
+// Outputs a PS file
+void InsetState::write_cairo_polygons_to_ps(
+  const std::string &fname,
+  const bool fill_polygons,
+  const bool colors,
+  const bool plot_grid)
+{
+  const auto filename = fname.c_str();
+  cairo_surface_t *surface = cairo_ps_surface_create(filename, lx_, ly_);
+  cairo_t *cr = cairo_create(surface);
+
+  // Add comments
+  const std::string title = "%%Title: " + fname;
+  cairo_ps_surface_dsc_comment(surface, title.c_str());
+  cairo_ps_surface_dsc_comment(
+    surface,
+    "%%Creator: Michael T. Gastner et al.");
+  cairo_ps_surface_dsc_comment(surface, "%%For: Humanity");
+  cairo_ps_surface_dsc_comment(surface, "%%Copyright: License CC BY");
+  cairo_ps_surface_dsc_comment(surface, "%%Magnification: 1.0000");
+  write_polygons_to_cairo_surface(cr, fill_polygons, colors, plot_grid);
+  cairo_show_page(cr);
+  cairo_surface_destroy(surface);
+  cairo_destroy(cr);
+}
+
+// TODO: DO WE NEED THIS FUNCTION? WOULD IT NOT MAKE MORE SENSE TO ONLY PRINT
+// FILE TYPES INDICATED BY COMMAND-LINE FLAGS?
+// Outputs both png and ps files
+void InsetState::write_cairo_map(
+  const std::string &file_name,
+  const bool plot_grid)
+{
+  const auto png_name = file_name + ".png";
+  const auto ps_name = file_name + ".ps";
+
+  // Check whether the has all GeoDivs colored
+  const bool has_colors = (colors_size() == n_geo_divs());
+  write_cairo_polygons_to_png(png_name, true, has_colors, plot_grid);
+  write_cairo_polygons_to_ps(ps_name, true, has_colors, plot_grid);
+}
+
+
 // Outputs a SVG/PS file of grid heatmap
 void InsetState::write_grid_heatmap_image(
   const std::string filename,
   const bool plot_equal_area_map,
   const bool image_format_ps,
-  const bool crop)
+  const bool crop_polygons)
 {
   // Whether to draw bar on the cairo surface
   const bool draw_bar = true;
@@ -79,7 +339,7 @@ void InsetState::write_grid_heatmap_image(
     nice_numbers);
 
   // Draw colors
-  write_grid_colors_to_cairo_surface(cr, plot_equal_area_map, crop);
+  write_grid_colors_to_cairo_surface(cr, plot_equal_area_map, crop_polygons);
 
   // Draw polygons without color
   write_polygons_to_cairo_surface(cr, false, false, plot_equal_area_map);
@@ -524,36 +784,6 @@ void InsetState::write_intersections_image(
   cairo_show_page(cr);
   cairo_surface_destroy(surface);
   cairo_destroy(cr);
-}
-
-void write_ps_header(const std::string filename, cairo_surface_t *surface)
-{
-  const std::string title = "%%Title: " + filename;
-  cairo_ps_surface_dsc_comment(surface, title.c_str());
-  cairo_ps_surface_dsc_comment(
-    surface,
-    "%%Creator: Michael T. Gastner et al.");
-  cairo_ps_surface_dsc_comment(surface, "%%For: Humanity");
-  cairo_ps_surface_dsc_comment(surface, "%%Copyright: License CC BY");
-  cairo_ps_surface_dsc_comment(surface, "%%Magnification: 1.0000");
-}
-
-// TODO: IS THERE A CGAL WAY OF DETERMINING WHETHER THE LABEL'S BOUNDING
-//       BOX IS COMPLETELY CONTAINED IN THE POLYGON?
-
-// TODO: SHOULD THE CRITERION FOR PRINTING A LABEL BE THAT IT FITS INSIDE THE
-//       POLYGON WITH HOLES? THAT CRITERION WOULD BE MORE RESTRICTIVE THAN
-//       FITTING INSIDE THE EXTERIOR RING.
-bool all_points_inside_exterior_ring(
-  const std::vector<Point> pts,
-  const Polygon_with_holes pwh)
-{
-  for (const auto &pt : pts) {
-    if (pwh.outer_boundary().has_on_unbounded_side(pt)) {
-      return false;
-    }
-  }
-  return true;
 }
 
 double get_font_size(
@@ -1099,7 +1329,7 @@ void InsetState::write_grids_to_cairo_surface(cairo_t *cr)
 void InsetState::write_grid_colors_to_cairo_surface(
   cairo_t *cr,
   bool plot_equal_area_map,
-  bool crop)
+  bool crop_polygons)
 {
   unsigned int cell_width = 1;
 
@@ -1110,7 +1340,7 @@ void InsetState::write_grid_colors_to_cairo_surface(
   cairo_set_line_width(cr, 5e-6 * std::min(lx_, ly_));
 
   // Print the color of all grid cells and exit
-  if (!crop) {
+  if (!crop_polygons) {
 
     // Iterate over grid cells
     for (unsigned int i = 0; i < lx_ - cell_width; i += cell_width) {
@@ -1217,66 +1447,6 @@ void InsetState::write_grid_colors_to_cairo_surface(
     }
   }
   return;
-}
-
-void InsetState::write_polygons_to_cairo_surface(
-  cairo_t *cr,
-  const bool fill_polygons,
-  const bool colors,
-  const bool plot_equal_area_map)
-{
-  cairo_set_line_width(cr, 1e-3 * std::min(lx_, ly_));
-
-  // Draw cartogram polygons or equal area map polygons
-  const std::vector<GeoDiv> &geo_divs =
-    plot_equal_area_map ? geo_divs_original_ : geo_divs_;
-
-  // Draw the shapes
-  for (const auto &gd : geo_divs) {
-    for (const auto &pwh : gd.polygons_with_holes()) {
-      const Polygon ext_ring = pwh.outer_boundary();
-      cairo_move_to(cr, ext_ring[0].x(), ly_ - ext_ring[0].y());
-
-      // Plot each point in exterior ring
-      for (unsigned int i = 1; i < ext_ring.size(); ++i) {
-        cairo_line_to(cr, ext_ring[i].x(), ly_ - ext_ring[i].y());
-      }
-
-      // Close the exterior ring
-      cairo_close_path(cr);
-
-      // Draw holes
-      for (auto h = pwh.holes_begin(); h != pwh.holes_end(); ++h) {
-        cairo_move_to(cr, (*h)[0].x(), ly_ - (*h)[0].y());
-        const size_t hsize = (*h).size();
-        for (unsigned int i = 1; i <= hsize; ++i) {
-          cairo_line_to(cr, (*h)[i % hsize].x(), ly_ - (*h)[i % hsize].y());
-        }
-      }
-      if (colors || fill_polygons) {
-        if (is_input_target_area_missing(gd.id())) {
-
-          // Fill path with dark gray
-          cairo_set_source_rgb(cr, 0.9375, 0.9375, 0.9375);
-        } else if (colors) {
-
-          // Get color
-          const Color col = color_at(gd.id());
-
-          // Fill path
-          cairo_set_source_rgb(cr, col.r, col.g, col.b);
-        } else if (fill_polygons) {
-
-          // Fill path with default color
-          cairo_set_source_rgb(cr, 0.96, 0.92, 0.70);
-        }
-        cairo_fill_preserve(cr);
-      }
-
-      cairo_set_source_rgb(cr, 0.0, 0.0, 0.0);
-      cairo_stroke(cr);
-    }
-  }
 }
 
 // Outputs a SVG/PS file with polygons, labels, and grids (if required)
