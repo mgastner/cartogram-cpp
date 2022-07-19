@@ -1,5 +1,3 @@
-test
-
 # Format requirements
 
 ## 10 July 2022
