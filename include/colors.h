@@ -13,13 +13,9 @@ struct Color {
   double b;
 
   // Defaults to white
-  Color()
-  {
-    r = 1.0;
-    g = 1.0;
-    b = 1.0;
-  };
+  Color();
   Color(double red, double green, double blue);
+  Color(int red, int green, int blue);
   explicit Color(std::string color_as_string);
 
   bool operator==(const Color &rhs) const

@@ -11,7 +11,9 @@ Color::Color()
   b = 213;
 }
 
-Color::Color(double red, double green, double blue) : r(red), g(green), b(blue) {}
+Color::Color(double red, double green, double blue) : r(red), g(green), b(blue)
+{
+}
 
 Color::Color(int red, int green, int blue) : r(red), g(green), b(blue) {}
 
