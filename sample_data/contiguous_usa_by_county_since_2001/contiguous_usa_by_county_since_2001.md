@@ -10,7 +10,7 @@ Lines within the .json file containing shapes for Alaska, Puerto Rico, US Virgin
 usa <- geojson_sf("~/contiguous_usa_by_county_since_2001/cb_2021_us_county_500k.json")
 target_n_pts_in_output <- 48500
 npts(usa)
-usa_simp <- ms_simplify(usa, keep = target_n_pts_in_output/npts(usa))
+usa_simp <- ms_simplify(usa, keep = target_n_pts_in_output/npts(usa), keep_shapes = T)
 geojson_write(
   usa_simp,
   lat = NULL,
