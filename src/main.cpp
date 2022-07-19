@@ -44,6 +44,17 @@ int main(const int argc, const char *argv[])
   double minimum_polygon_area;
   bool qtdt_method;  // Use Quadtree-Delaunay triangulation
 
+  // Create std::map to store duration of each inset integrations
+  std::map<std::string, ms> insets_integration_times;
+
+  // Keep track of total time
+  ms duration_initial_simplification = inMilliseconds(duration::zero()),
+     duration_simplification = inMilliseconds(duration::zero()),
+     duration_densification = inMilliseconds(duration::zero()),
+     duration_flatten_density = inMilliseconds(duration::zero()),
+     duration_fill_density = inMilliseconds(duration::zero()),
+     duration_qtdt = inMilliseconds(duration::zero());
+
   // Parse command-line arguments
   argparse::ArgumentParser arguments = parsed_arguments(
     argc,
@@ -85,8 +96,8 @@ int main(const int argc, const char *argv[])
   }
   cart_info.set_map_name(map_name);
 
-  // Parsing start time
-  // time_point start_parse = clock_time::now();
+  // Parsing start time: read csv, read GeoJSON
+  time_point start_parse = clock_time::now();
 
   if (!make_csv) {
     // Read visual variables (e.g. area, color) from CSV
@@ -125,17 +136,6 @@ int main(const int argc, const char *argv[])
 
   // Store total number of GeoDivs to monitor progress
   double total_geo_divs = cart_info.n_geo_divs();
-
-  // Create std::map to store duration of each inset integrations
-  std::map<std::string, ms> insets_integration_times;
-
-  // Keep track of total time
-  ms duration_initial_simplification = inMilliseconds(duration::zero()),
-     duration_simplification = inMilliseconds(duration::zero()),
-     duration_densification = inMilliseconds(duration::zero()),
-     duration_flatten_density = inMilliseconds(duration::zero()),
-     duration_fill_density = inMilliseconds(duration::zero()),
-     duration_qtdt = inMilliseconds(duration::zero());
 
   // Project map and ensure that all holes are inside polygons
   for (auto &[inset_pos, inset_state] : *cart_info.ref_to_inset_states()) {
@@ -177,10 +177,17 @@ int main(const int argc, const char *argv[])
     }
     if (simplify) {
 
+      // Time for the initial simplification
+      time_point start_initial_simplification = clock_time::now();
+
       // Simplification reduces the number of points used to represent the
       // GeoDivs in the inset, thereby reducing output file sizes and
       // run-times
       inset_state.simplify(target_points_per_inset);
+
+      // Update time tracking
+      duration_initial_simplification +=
+        inMilliseconds(clock_time::now() - start_initial_simplification);
     }
   }
 
@@ -257,8 +264,13 @@ int main(const int argc, const char *argv[])
       image_format_ps ? input_filename += ".ps" : input_filename += ".svg";
 
       std::cerr << "Writing " << input_filename << std::endl;
-      inset_state
-        .write_map_image(input_filename, true, plot_grid, false, image_format_ps, true);
+      inset_state.write_map_image(
+        input_filename,
+        true,
+        plot_grid,
+        false,
+        image_format_ps,
+        true);
     }
 
     // Remove tiny polygons below threshold
@@ -271,15 +283,6 @@ int main(const int argc, const char *argv[])
     // finished insets
     const double inset_max_frac = inset_state.n_geo_divs() / total_geo_divs;
 
-    // Time for the initial simplification
-    time_point start_initial_simplification = clock_time::now();
-    if (simplify) {
-      inset_state.simplify(target_points_per_inset);
-    }
-    time_point end_initial_simplification = clock_time::now();
-    duration_initial_simplification += inMilliseconds(
-      end_initial_simplification - start_initial_simplification);
-
     // Integration start time
     time_point start_integration = clock_time::now();
 
@@ -291,8 +294,7 @@ int main(const int argc, const char *argv[])
 
         // Create the Delaunay triangulation
         inset_state.create_delaunay_t();
-        time_point end_delaunay_t = clock_time::now();
-        duration_qtdt += inMilliseconds(end_delaunay_t - start_delaunay_t);
+        duration_qtdt += inMilliseconds(clock_time::now() - start_delaunay_t);
 
         if (plot_quadtree) {
           const std::string quadtree_filename =
@@ -340,9 +342,9 @@ int main(const int argc, const char *argv[])
         plot_density,
         plot_grid_heatmap,
         image_format_ps);
-      time_point end_fill_density = clock_time::now();
       duration_fill_density +=
-        inMilliseconds(end_fill_density - start_fill_density);
+        inMilliseconds(clock_time::now() - start_fill_density);
+
       if (blur_width > 0.0) {
         inset_state.blur_density(blur_width, plot_density, image_format_ps);
       }
@@ -351,22 +353,22 @@ int main(const int argc, const char *argv[])
           intersections_resolution,
           image_format_ps);
       }
+
       time_point start_flatten_density = clock_time::now();
       if (qtdt_method) {
         inset_state.flatten_density_with_node_vertices();
       } else {
         inset_state.flatten_density();
       }
-      time_point end_flatten_density = clock_time::now();
       duration_flatten_density +=
-        inMilliseconds(end_flatten_density - start_flatten_density);
+        inMilliseconds(clock_time::now() - start_flatten_density);
+
       if (qtdt_method) {
         if (simplify) {
           time_point start_densify = clock_time::now();
           inset_state.densify_geo_divs_using_delaunay_t();
-          time_point end_densify = clock_time::now();
           duration_densification +=
-            inMilliseconds(end_densify - start_densify);
+            inMilliseconds(clock_time::now() - start_densify);
         }
 
         // Project using the Delaunay triangulation
@@ -387,12 +389,12 @@ int main(const int argc, const char *argv[])
       } else {
         inset_state.project();
       }
+
       if (simplify) {
         time_point start_simplify = clock_time::now();
         inset_state.simplify(target_points_per_inset);
-        time_point end_simplify = clock_time::now();
         duration_simplification +=
-          inMilliseconds(end_simplify - start_simplify);
+          inMilliseconds(clock_time::now() - start_simplify);
       }
       inset_state.increment_integration();
 
@@ -414,13 +416,10 @@ int main(const int argc, const char *argv[])
                 << std::endl
                 << std::endl;
     }
-
-    // Integration end time
-    time_point end_integration = clock_time::now();
-
+    
     // Store integration time
     insets_integration_times[inset_pos] =
-      inMilliseconds(end_integration - start_integration);
+      inMilliseconds(clock_time::now() - start_integration);
     progress += inset_max_frac;
     std::cerr << "Finished inset " << inset_pos << "\nProgress: " << progress
               << std::endl;
@@ -443,8 +442,13 @@ int main(const int argc, const char *argv[])
       image_format_ps ? output_filename += ".ps" : output_filename += ".svg";
 
       std::cerr << "Writing " << output_filename << std::endl;
-      inset_state
-        .write_map_image(output_filename, true, plot_grid, false, image_format_ps, false);
+      inset_state.write_map_image(
+        output_filename,
+        true,
+        plot_grid,
+        false,
+        image_format_ps,
+        false);
     }
 
     if (plot_grid_heatmap) {
@@ -523,6 +527,9 @@ int main(const int argc, const char *argv[])
   // Show time report
   std::cerr << std::endl;
   std::cerr << "********** Time Report **********" << std::endl;
+
+  std::cerr << "Parsing time: " << inMilliseconds(end_parse - start_parse)
+            << " ms" << std::endl;
 
   // Print integration times
   for (auto [inset_pos, inset_integration_time] : insets_integration_times) {
