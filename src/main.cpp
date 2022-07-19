@@ -29,15 +29,16 @@ int main(const int argc, const char *argv[])
   bool world;  // World maps need special projections
 
   // If `triangulation` is true, we apply a cartogram projection method based
-  // on the triangulation of graticule cells. It can eliminate intersections
-  // that occur when the projected graticule lines are strongly curved. Only
+  // on the triangulation of grid cells. It can eliminate intersections
+  // that occur when the projected grid lines are strongly curved. Only
   // use this method if the tracer points are an FTReal2d data structure.
   bool triangulation;
   bool simplify;  // Should the polygons be simplified?
 
   // Other boolean values that are needed to parse the command line arguments
   bool make_csv, output_equal_area, output_to_stdout, plot_density,
-    plot_graticule, plot_heatmap, plot_intersections, plot_crop, plot_polygons,
+    produce_map_image, plot_grid, plot_grid_heatmap,
+    plot_intersections, plot_crop, plot_polygons, image_format_ps,
     plot_quadtree, remove_tiny_polygons;
 
   // The proportion of the total area smaller than which polygons are removed
@@ -76,7 +77,7 @@ int main(const int argc, const char *argv[])
     plot_grid,
     plot_grid_heatmap,
     plot_intersections,
-    crop,
+    plot_crop,
     plot_polygons,
     remove_tiny_polygons,
     minimum_polygon_area,
@@ -215,9 +216,6 @@ int main(const int argc, const char *argv[])
     return EXIT_SUCCESS;
   }
 
-  // Create map to store duration of each inset integrations
-  std::map<std::string, ms> insets_integration_times;
-
   // Iterate over insets
   for (auto &[inset_pos, inset_state] : *cart_info.ref_to_inset_states()) {
     // Determine the name of the inset
@@ -310,19 +308,11 @@ int main(const int argc, const char *argv[])
       std::cerr << "Integration number "
                 << inset_state.n_finished_integrations() << std::endl;
 
-      // Calculate progress percentage. We assume that the maximum area
-      // error is typically reduced to 1/5 of the previous value.
-      const double ratio_actual_to_permitted_max_area_error =
-        inset_state.max_area_error().value / max_permitted_area_error;
-      const double n_predicted_integrations = std::max(
-        (log(ratio_actual_to_permitted_max_area_error) / log(5)),
-        1.0);
-
       // Blur density to speed up the numerics in flatten_density() below.
       // We slowly reduce the blur width so that the areas can reach their
       // target values.
       // TODO: whenever blur_width hits 0, the maximum area error will start
-      //       increasing again and eventually lead to an invalid graticule
+      //       increasing again and eventually lead to an invalid grid
       //       cell error when projecting with triangulation. Investigate why.
       //       As a temporary fix, we set blur_width to be always positive,
       //       regardless of the number of integrations.
@@ -404,8 +394,8 @@ int main(const int argc, const char *argv[])
       // Calculate progress percentage. We assume that the maximum area
       // error is typically reduced to 1/10 of the previous value.
       const double ratio_actual_to_permitted_max_area_error = std::max(
-        inset_state.max_area_error().value / max_permitted_area_error,
-        1.0);
+        1.0,
+        inset_state.max_area_error().value / max_permitted_area_error);
       const double n_predicted_integrations =
         std::max((log10(ratio_actual_to_permitted_max_area_error)), 1.0);
 
@@ -416,7 +406,7 @@ int main(const int argc, const char *argv[])
                 << std::endl
                 << std::endl;
     }
-    
+
     // Store integration time
     insets_integration_times[inset_pos] =
       inMilliseconds(clock_time::now() - start_integration);
@@ -463,7 +453,7 @@ int main(const int argc, const char *argv[])
         output_filename,
         true,
         image_format_ps,
-        crop);
+        plot_crop);
 
       // Produce cartogram grid heatmap
       output_filename = inset_state.inset_name() + "_cartogram_grid_heatmap";
@@ -476,7 +466,7 @@ int main(const int argc, const char *argv[])
         output_filename,
         false,
         image_format_ps,
-        crop);
+        plot_crop);
     }
     if (world) {
       std::string output_file_name =
@@ -492,7 +482,7 @@ int main(const int argc, const char *argv[])
     }
 
     if (output_to_stdout) {
-      inset_state.fill_graticule_diagonals(true);
+      inset_state.fill_grid_diagonals(true);
       inset_state.project_with_cum_proj();
     }
 
@@ -528,8 +518,9 @@ int main(const int argc, const char *argv[])
   std::cerr << std::endl;
   std::cerr << "********** Time Report **********" << std::endl;
 
-  std::cerr << "Parsing time: " << inMilliseconds(end_parse - start_parse)
-            << " ms" << std::endl;
+  std::cerr << "Parsing time: "
+            << inMilliseconds(end_parse - start_parse).count() << " ms"
+            << std::endl;
 
   // Print integration times
   for (auto [inset_pos, inset_integration_time] : insets_integration_times) {
