@@ -2,10 +2,10 @@
 #include "inset_state.h"
 
 void InsetState::rescale_map(
-    unsigned int max_n_grid_rows_or_cols,
-    bool is_world_map
-) {
-  double padding = (is_world_map ?  1.0 : padding_unless_world);
+  unsigned int max_n_grid_rows_or_cols,
+  bool is_world_map)
+{
+  double padding = (is_world_map ? 1.0 : padding_unless_world);
   Bbox bb;
   if (is_world_map) {
 
@@ -21,61 +21,49 @@ void InsetState::rescale_map(
 
   // Expand bounding box to guarantee a minimum padding
   double new_xmin =
-    0.5 * ((1.0-padding)*bb.xmax() + (1.0+padding)*bb.xmin());
+    0.5 * ((1.0 - padding) * bb.xmax() + (1.0 + padding) * bb.xmin());
   double new_xmax =
-    0.5 * ((1.0+padding)*bb.xmax() + (1.0-padding)*bb.xmin());
+    0.5 * ((1.0 + padding) * bb.xmax() + (1.0 - padding) * bb.xmin());
   double new_ymin =
-    0.5 * ((1.0-padding)*bb.ymax() + (1.0+padding)*bb.ymin());
+    0.5 * ((1.0 - padding) * bb.ymax() + (1.0 + padding) * bb.ymin());
   double new_ymax =
-    0.5 * ((1.0+padding)*bb.ymax() + (1.0-padding)*bb.ymin());
+    0.5 * ((1.0 + padding) * bb.ymax() + (1.0 - padding) * bb.ymin());
 
   // Ensure that the grid dimensions lx and ly are integer powers of 2
   unsigned int lx, ly;
-  if ((max_n_grid_rows_or_cols <= 0) ||
-      ((max_n_grid_rows_or_cols & (~max_n_grid_rows_or_cols + 1))
-       != max_n_grid_rows_or_cols)) {
-    std::cerr << "ERROR: max_n_grid_rows_or_cols must be an integer"
-              << "power of 2."
-              << std::endl;
+  if (
+    (max_n_grid_rows_or_cols <= 0) ||
+    ((max_n_grid_rows_or_cols & (~max_n_grid_rows_or_cols + 1)) !=
+     max_n_grid_rows_or_cols)) {
+    std::cerr
+      << "ERROR: max_n_grid_rows_or_cols must be an integer power of 2."
+      << std::endl;
     _Exit(15);
   }
   double latt_const;
-  if (bb.xmax()-bb.xmin() > bb.ymax()-bb.ymin()) {
+  if (bb.xmax() - bb.xmin() > bb.ymax() - bb.ymin()) {
     lx = max_n_grid_rows_or_cols;
-    latt_const = (new_xmax-new_xmin) / lx;
-    ly = 1 << static_cast<int>(ceil(log2((new_ymax-new_ymin) / latt_const)));
-    new_ymax = 0.5*(bb.ymax()+bb.ymin()) + 0.5*ly*latt_const;
-    new_ymin = 0.5*(bb.ymax()+bb.ymin()) - 0.5*ly*latt_const;
+    latt_const = (new_xmax - new_xmin) / lx;
+    ly = 1 << static_cast<int>(ceil(log2((new_ymax - new_ymin) / latt_const)));
+    new_ymax = 0.5 * (bb.ymax() + bb.ymin()) + 0.5 * ly * latt_const;
+    new_ymin = 0.5 * (bb.ymax() + bb.ymin()) - 0.5 * ly * latt_const;
   } else {
     ly = max_n_grid_rows_or_cols;
-    latt_const = (new_ymax-new_ymin) / ly;
-    lx = 1 << static_cast<int>(ceil(log2((new_xmax-new_xmin) / latt_const)));
-    new_xmax = 0.5*(bb.xmax()+bb.xmin()) + 0.5*lx*latt_const;
-    new_xmin = 0.5*(bb.xmax()+bb.xmin()) - 0.5*lx*latt_const;
+    latt_const = (new_ymax - new_ymin) / ly;
+    lx = 1 << static_cast<int>(ceil(log2((new_xmax - new_xmin) / latt_const)));
+    new_xmax = 0.5 * (bb.xmax() + bb.xmin()) + 0.5 * lx * latt_const;
+    new_xmin = 0.5 * (bb.xmax() + bb.xmin()) - 0.5 * lx * latt_const;
   }
-  latt_const_ = latt_const;
-  std::cerr << "Rescaling to "
-            << lx
-            << "-by-"
-            << ly
-            << " grid with bounding box\n\t("
-            << new_xmin
-            << ", "
-            << new_ymin
-            << ", "
-            << new_xmax
-            << ", "
-            << new_ymax
-            << ")"
-            << std::endl;
+  std::cerr << "Rescaling to " << lx << "-by-" << ly
+            << " grid with bounding box\n\t(" << new_xmin << ", " << new_ymin
+            << ", " << new_xmax << ", " << new_ymax << ")" << std::endl;
   set_grid_dimensions(lx, ly);
 
   // Rescale and translate all GeoDiv coordinates
   const Transformation translate(
     CGAL::TRANSLATION,
-    CGAL::Vector_2<Scd>(-new_xmin, -new_ymin)
-  );
-  const Transformation scale(CGAL::SCALING, (1.0/latt_const));
+    CGAL::Vector_2<Scd>(-new_xmin, -new_ymin));
+  const Transformation scale(CGAL::SCALING, (1.0 / latt_const));
   for (auto &gd : geo_divs_) {
     for (auto &pwh : *gd.ref_to_polygons_with_holes()) {
       auto *ext_ring = &pwh.outer_boundary();
@@ -87,13 +75,12 @@ void InsetState::rescale_map(
       }
     }
   }
-  return;
 }
 
 void InsetState::normalize_inset_area(
-    double total_cart_target_area,
-    bool equal_area
-) {
+  double total_cart_target_area,
+  bool equal_area)
+{
   const auto bb = bbox();
 
   // Calculate scale_factor that makes inset areas proportional to their
@@ -107,9 +94,7 @@ void InsetState::normalize_inset_area(
     CGAL::TRANSLATION,
     CGAL::Vector_2<Scd>(
       -(bb.xmin() + bb.xmax()) / 2,
-      -(bb.ymin() + bb.ymax()) / 2
-    )
-  );
+      -(bb.ymin() + bb.ymax()) / 2));
   const Transformation scale(CGAL::SCALING, scale_factor);
   for (auto &gd : geo_divs_) {
     for (auto &pwh : *gd.ref_to_polygons_with_holes()) {
@@ -122,5 +107,4 @@ void InsetState::normalize_inset_area(
       }
     }
   }
-  return;
 }

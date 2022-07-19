@@ -9,6 +9,7 @@ void InsetState::blur_density(
   const bool is_format_ps)
 {
   const double prefactor = -0.5 * blur_width * blur_width * pi * pi;
+#pragma omp parallel for default(none) shared(prefactor)
   for (unsigned int i = 0; i < lx_; ++i) {
     const double scaled_i = static_cast<double>(i) / lx_;
     const double scaled_i_squared = scaled_i * scaled_i;
@@ -31,5 +32,4 @@ void InsetState::blur_density(
       false,
       is_format_ps);
   }
-  return;
 }

@@ -23,7 +23,7 @@ Install [homebrew](brew.sh) by running the following command:
 
 Install llvm, pkg-config, boost, fftw, cgal, nlohmann-json, and cmake by running the following command:
 
-    brew install llvm libomp pkg-config boost fftw cgal nlohmann-json cmake
+    brew install llvm libomp pkg-config boost fftw cgal nlohmann-json cmake cairo
 
 ### Debian-based distributions (Ubuntu, Arch Linux etc.)
 
@@ -77,6 +77,13 @@ For posterity: Once version 5.3 is available through apt (you may check [here](h
         ./configure
         make
         sudo make install
+        
+#### Installing CairoGraphics
+
+[CairoGraphics Homepage](https://www.cairographics.org/)
+
+    sudo apt install libcairo2-dev        
+
 
 ### Installation
 
