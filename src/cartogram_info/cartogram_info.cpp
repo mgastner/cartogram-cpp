@@ -40,11 +40,6 @@ bool CartogramInfo::is_world_map() const
   return is_world_map_;
 }
 
-const std::string CartogramInfo::map_name() const
-{
-  return map_name_;
-}
-
 unsigned int CartogramInfo::n_geo_divs() const
 {
   unsigned int n_geo_divs = 0;
@@ -58,11 +53,6 @@ unsigned int CartogramInfo::n_geo_divs() const
 unsigned int CartogramInfo::n_insets() const
 {
   return inset_states_.size();
-}
-
-bool CartogramInfo::original_ext_ring_is_clockwise() const
-{
-  return original_ext_ring_is_clockwise_;
 }
 
 std::map<std::string, InsetState> *CartogramInfo::ref_to_inset_states()
