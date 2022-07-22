@@ -23,7 +23,7 @@ geojson_write(
   crs = NULL)
 ```
 
-Afterwards, use a text editor to change
+The source file has topology errors along the antimeridian cut. Therefore, we used a text editor to change
 
 ```
 [179.983337,68.96875],[180,68.949738],[180,68.855209],[180,67.499535],[180,67.498718],[180,65.984116],[179.99791,65.027084],
