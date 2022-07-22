@@ -29,7 +29,12 @@ void InsetState::fill_with_density(bool plot_density)
   // Resolution with which we sample polygons. "resolution" is the number of
   // horizontal "test rays" between each of the ly consecutive horizontal
   // graticule lines.
-  const unsigned int resolution = default_resolution;
+  unsigned int long_graticule_length = std::max(lx_, ly_);
+  const unsigned int resolution =
+    (long_graticule_length > default_long_graticule_length)
+      ? (default_resolution * 512) * (1.0 / long_graticule_length)
+      : default_resolution;
+
   auto intersections_with_rays = intersec_with_parallel_to('x', resolution);
 
   // Determine rho's numerator and denominator:
@@ -40,7 +45,7 @@ void InsetState::fill_with_density(bool plot_density)
   // (length of the segment inside the geo_div) * (area error of the geodiv).
 
 #pragma omp parallel for default(none) \
-  shared(intersections_with_rays, rho_den, rho_num, std::cerr)
+  shared(intersections_with_rays, rho_den, resolution, rho_num, std::cerr)
   for (unsigned int k = 0; k < ly_; ++k) {
 
     // Iterate over each of the rays between the graticule lines y = k and

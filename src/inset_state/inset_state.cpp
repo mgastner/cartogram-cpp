@@ -387,11 +387,12 @@ void InsetState::set_area_errors()
 
 void InsetState::adjust_grid()
 {
+  unsigned int long_graticule_length = std::max(lx_, ly_);
   double curr_max_area_error = max_area_error().value;
-  unsigned int grid_factor = (lx_ > default_long_graticule_length ||
-                              ly_ > default_long_graticule_length)
-                               ? 2
-                               : default_grid_factor;
+  unsigned int grid_factor =
+    (long_graticule_length > default_long_graticule_length)
+      ? 2
+      : default_grid_factor;
   max_area_errors_.push_back(curr_max_area_error);
   if (
     n_finished_integrations_ >= 2 &&
