@@ -170,9 +170,6 @@ int main(const int argc, const char *argv[])
       // Simplification reduces the number of points used to represent the
       // GeoDivs in the inset, thereby reducing output file sizes and
       // run-times
-
-      std::cerr << "Simplying the input" << std::endl;
-      std::cerr << "Initial number of points = " << inset_state.n_points() << std::endl;
       inset_state.simplify(target_points_per_inset);
     }
   }
