@@ -112,18 +112,19 @@ double InsetState::area_error_at(const std::string &id) const
   return area_errors_.at(id);
 }
 
-Bbox InsetState::bbox() const
+Bbox InsetState::bbox(bool original_bbox) const
 {
+  auto &geo_divs = original_bbox ? geo_divs_original_ : geo_divs_;
   // Find joint bounding box for all "polygons with holes" in this inset
   double inset_xmin = dbl_inf;
   double inset_xmax = -dbl_inf;
   double inset_ymin = dbl_inf;
   double inset_ymax = -dbl_inf;
-#pragma omp parallel for default(none) reduction(min                       \
-                                                 : inset_xmin, inset_ymin) \
-  reduction(max                                                            \
-            : inset_xmax, inset_ymax)
-  for (const auto &gd : geo_divs_) {
+#pragma omp parallel for default(none) shared(geo_divs) \
+  reduction(min                                         \
+            : inset_xmin, inset_ymin) reduction(max     \
+                                                : inset_xmax, inset_ymax)
+  for (const auto &gd : geo_divs) {
     for (const auto &pwh : gd.polygons_with_holes()) {
       const auto bb = pwh.bbox();
       inset_xmin = std::min(bb.xmin(), inset_xmin);

@@ -84,7 +84,7 @@ public:
   void apply_smyth_craster_projection();
   double area_error_at(const std::string &) const;
   void auto_color();  // Automatically color GeoDivs
-  Bbox bbox() const;
+  Bbox bbox(bool = false) const;
   void blur_density(double, bool);
   void check_topology();
   int chosen_diag(const Point v[4], unsigned int *, bool = false);

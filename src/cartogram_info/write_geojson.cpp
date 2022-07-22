@@ -54,7 +54,7 @@ nlohmann::json CartogramInfo::cgal_to_json(bool original_geo_divs_to_geojson)
   // Get bounding box of central inset
   Bbox inset_c_bb;
   for (const auto &[inset_pos, inset_state] : inset_states_) {
-    Bbox inset_bb = inset_state.bbox();
+    Bbox inset_bb = inset_state.bbox(original_geo_divs_to_geojson);
     bb_xmin = std::min(bb_xmin, inset_bb.xmin());
     bb_ymin = std::min(bb_ymin, inset_bb.ymin());
     bb_xmax = std::max(bb_xmax, inset_bb.xmax());
