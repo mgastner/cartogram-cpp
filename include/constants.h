@@ -4,7 +4,8 @@
 #include <limits>
 #include <numbers>
 
-constexpr unsigned int default_long_graticule_length = 512;
+constexpr unsigned int default_long_graticule_length = 128;
+constexpr unsigned int default_grid_factor = 4;
 constexpr double dbl_epsilon = std::numeric_limits<double>::epsilon();
 constexpr double dbl_inf = std::numeric_limits<double>::infinity();
 constexpr double dbl_resolution = 1e-8;

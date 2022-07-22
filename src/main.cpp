@@ -373,16 +373,17 @@ int main(const int argc, const char *argv[])
         duration_simplification +=
           inMilliseconds(end_simplify - start_simplify);
       }
-      inset_state.increment_integration();
 
       // Update area errors
       inset_state.set_area_errors();
+      inset_state.adjust_grid();
       std::cerr << "max. area err: " << inset_state.max_area_error().value
                 << ", GeoDiv: " << inset_state.max_area_error().geo_div
                 << "\nProgress: "
                 << progress + (inset_max_frac / n_predicted_integrations)
                 << std::endl
                 << std::endl;
+      inset_state.increment_integration();
     }
 
     // Integration end time
