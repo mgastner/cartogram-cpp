@@ -83,6 +83,7 @@ public:
   explicit InsetState(std::string);  // Constructor
   void create_delaunay_t();
   void adjust_for_dual_hemisphere();
+  void adjust_grid();
   void apply_albers_projection();
   void apply_smyth_craster_projection();
   double area_error_at(const std::string &) const;
@@ -151,7 +152,6 @@ public:
   void revert_smyth_craster_projection();
   void rings_are_simple();
   void set_area_errors();
-  void adjust_grid();
   void set_grid_dimensions(unsigned int, unsigned int);
   void set_inset_name(const std::string &);
   void simplify(unsigned int);
