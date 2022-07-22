@@ -168,9 +168,10 @@ void InsetState::flatten_density()
   double t = 0.0;
   double delta_t = 1e-2;  // Initial time step.
   unsigned int iter = 0;
+  unsigned int max_iter = 300;
 
   // Integrate
-  while (t < 1.0) {
+  while (t < 1.0 || iter > max_iter) {
     calculate_velocity(
       t,
       grid_fluxx_init,
@@ -410,9 +411,10 @@ void InsetState::flatten_density_with_node_vertices()
   double t = 0.0;
   double delta_t = 1e-2;  // Initial time step.
   unsigned int iter = 0;
+  unsigned int max_iter = 300;
 
   // Integrate
-  while (t < 1.0) {
+  while (t < 1.0 || iter > max_iter) {
     calculate_velocity(
       t,
       grid_fluxx_init,
