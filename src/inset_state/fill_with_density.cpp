@@ -101,19 +101,19 @@ void InsetState::fill_with_density(bool plot_density)
 
         // Check for intersection of polygons, holes and GeoDivs
         // TODO: Decide whether to comment out? (probably not)
-        if (
-          intersections_at_y[i].ray_enters ==
-          intersections_at_y[i + 1].ray_enters) {
+        // if (
+        //   intersections_at_y[i].ray_enters ==
+        //   intersections_at_y[i + 1].ray_enters) {
 
-          // Highlight where intersection is present
-          std::cerr << "\nInvalid Geometry!" << std::endl;
-          std::cerr << "Intersection of Polygons/Holes/Geodivs" << std::endl;
-          std::cerr << "Y-coordinate: " << y << std::endl;
-          std::cerr << "Left X-coordinate: " << left_x << std::endl;
-          std::cerr << "Right X-coordinate: " << right_x << std::endl;
-          std::cerr << std::endl;
-          // _Exit(8026519);
-        }
+        //   // Highlight where intersection is present
+        //   std::cerr << "\nInvalid Geometry!" << std::endl;
+        //   std::cerr << "Intersection of Polygons/Holes/Geodivs" << std::endl;
+        //   std::cerr << "Y-coordinate: " << y << std::endl;
+        //   std::cerr << "Left X-coordinate: " << left_x << std::endl;
+        //   std::cerr << "Right X-coordinate: " << right_x << std::endl;
+        //   std::cerr << std::endl;
+        //   // _Exit(8026519);
+        // }
 
         // Fill each cell between intersections
         // TODO: WE ENCOUNTERED ISSUES WITH THE NEXT FOR_LOOP; THUS, WE
