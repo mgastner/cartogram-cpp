@@ -422,8 +422,12 @@ int main(const int argc, const char *argv[])
     }
 
     if (output_to_stdout) {
-      inset_state.fill_graticule_diagonals(true);
-      inset_state.project_with_cum_proj();
+      if (qtdt_method) {
+        inset_state.project_with_proj_sequence();
+      } else {
+        inset_state.fill_graticule_diagonals(true);
+        inset_state.project_with_cum_proj();
+      }
     }
 
     // Clean up after finishing all Fourier transforms for this inset

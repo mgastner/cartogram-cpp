@@ -472,3 +472,25 @@ void InsetState::project_with_cum_proj()
   // Transforming all points based on triangulation
   transform_points(lambda, true);
 }
+
+Point interpolate_point_with_proj_sequence(
+  Point p,
+  std::vector<proj_qd> &proj_sequence_)
+{
+  for(auto &prj_qd : proj_sequence_) {
+    auto &dt = prj_qd.dt;
+    auto &proj_map = prj_qd.triangle_transformation;
+    p = interpolate_point_with_barycentric_coordinates(p, dt, proj_map);
+  }
+  return p;
+}
+
+void InsetState::project_with_proj_sequence()
+{
+  std::function<Point(Point)> lambda = [&](Point p1) {
+    return interpolate_point_with_proj_sequence(p1, proj_sequence_);
+  };
+  
+  // Appy the function on the original points
+  transform_points(lambda, true);
+}

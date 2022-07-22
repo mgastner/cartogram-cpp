@@ -139,6 +139,7 @@ public:
   void project_with_cum_proj();
   void project_with_delaunay_t();
   void project_with_triangulation();
+  void project_with_proj_sequence();
   void push_back(const GeoDiv &);
   FTReal2d *ref_to_rho_ft();
   FTReal2d *ref_to_rho_init();
