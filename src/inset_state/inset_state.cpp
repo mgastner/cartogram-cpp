@@ -383,12 +383,15 @@ void InsetState::set_area_errors()
       target_area_at(gd.id()) * sum_cart_area / sum_target_area;
     area_errors_[gd.id()] = std::abs((gd.area() / obj_area) - 1);
   }
-
 }
 
 void InsetState::adjust_grid()
 {
   double curr_max_area_error = max_area_error().value;
+  unsigned int grid_factor = (lx_ > default_long_graticule_length ||
+                              ly_ > default_long_graticule_length)
+                               ? 2
+                               : default_grid_factor;
   max_area_errors_.push_back(curr_max_area_error);
   if (
     n_finished_integrations_ >= 2 &&
@@ -397,10 +400,10 @@ void InsetState::adjust_grid()
 
     // Multiply grid size with factor
     std::cout << "Adjusting grid size." << std::endl;
-    lx_ *= default_grid_factor;
-    ly_ *= default_grid_factor;
+    lx_ *= grid_factor;
+    ly_ *= grid_factor;
 
-    // Reallocate FFTW
+    // Reallocate FFTW plans
     ref_to_rho_init()->allocate(lx_, ly_);
     ref_to_rho_ft()->allocate(lx_, ly_);
     make_fftw_plans_for_rho();
