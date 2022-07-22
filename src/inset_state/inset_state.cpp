@@ -277,7 +277,7 @@ void InsetState::make_fftw_plans_for_rho()
 struct max_area_error_info InsetState::max_area_error() const
 {
   double value = -dbl_inf;
-  std::string worst_gd;
+  std::string worst_gd = "";
   for (const auto &[gd_id, area_error] : area_errors_) {
     if (area_error > value) {
       value = area_error;
@@ -382,6 +382,29 @@ void InsetState::set_area_errors()
     const double obj_area =
       target_area_at(gd.id()) * sum_cart_area / sum_target_area;
     area_errors_[gd.id()] = std::abs((gd.area() / obj_area) - 1);
+  }
+
+}
+
+void InsetState::adjust_grid()
+{
+  double curr_max_area_error = max_area_error().value;
+  max_area_errors_.push_back(curr_max_area_error);
+  if (
+    n_finished_integrations_ >= 2 &&
+    curr_max_area_error > max_area_errors_[n_finished_integrations_ - 1] &&
+    curr_max_area_error > max_area_errors_[n_finished_integrations_ - 2]) {
+
+    // Multiply grid size with factor
+    std::cout << "Adjusting grid size." << std::endl;
+    lx_ *= default_grid_factor;
+    ly_ *= default_grid_factor;
+
+    // Reallocate FFTW
+    ref_to_rho_init()->allocate(lx_, ly_);
+    ref_to_rho_ft()->allocate(lx_, ly_);
+    make_fftw_plans_for_rho();
+    std::cout << "New grid dimensions: " << lx_ << " " << ly_ << std::endl;
   }
 }
 

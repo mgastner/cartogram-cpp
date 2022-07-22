@@ -69,6 +69,9 @@ private:
   // Vertical adjacency graph
   std::vector<std::vector<intersection> > vertical_adj_;
 
+  // Area errors
+  std::vector<double> max_area_errors_;
+
   // Create cairo surface
   void write_polygons_to_cairo_surface(cairo_t *, bool, bool, bool);
 
@@ -148,6 +151,7 @@ public:
   void revert_smyth_craster_projection();
   void rings_are_simple();
   void set_area_errors();
+  void adjust_grid();
   void set_grid_dimensions(unsigned int, unsigned int);
   void set_inset_name(const std::string &);
   void simplify(unsigned int);
