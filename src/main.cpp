@@ -261,19 +261,27 @@ int main(const int argc, const char *argv[])
       // Calculate distances
       std::map<std::string, double> hausdorff_distances =
         inset_state.get_geo_div_differences(hausdorff_distance, false);
+      double total_distance = 0;
       std::cout << "\nHausdorff distances:\n";
       for (const auto &[key, val] : hausdorff_distances) {
         std::cout << key << ": " << val << std::endl;
+        total_distance += val;
       }
-      std::cout << std::endl;
+      std::cout << "\nAverage Hausdorff distance: "
+                << total_distance / double(hausdorff_distances.size())
+                << std::endl;
 
       std::map<std::string, double> symmetric_distances =
         inset_state.get_geo_div_differences(symmetric_distance, false);
-      std::cout << "Symmetric distances:\n";
+      total_distance = 0;
+      std::cout << "\nSymmetric distances:\n";
       for (const auto &[key, val] : symmetric_distances) {
         std::cout << key << ": " << val << std::endl;
+        total_distance += val;
       }
-      std::cout << std::endl;
+      std::cout << "\nAverage symmetric distance: "
+                << total_distance / double(symmetric_distances.size())
+                << std::endl;
       return EXIT_SUCCESS;
     }
   }
@@ -515,19 +523,27 @@ int main(const int argc, const char *argv[])
     // Calculate distances
     std::map<std::string, double> hausdorff_distances =
       inset_state.get_geo_div_differences(hausdorff_distance, true);
+    double total_distance = 0;
     std::cout << "\nHausdorff distances:\n";
     for (const auto &[key, val] : hausdorff_distances) {
       std::cout << key << ": " << val << std::endl;
+      total_distance += val;
     }
-    std::cout << std::endl;
+    std::cout << "\nAverage Hausdorff distance: "
+              << total_distance / double(hausdorff_distances.size())
+              << std::endl;
 
     std::map<std::string, double> symmetric_distances =
       inset_state.get_geo_div_differences(symmetric_distance, true);
-    std::cout << "Symmetric distances:\n";
+    total_distance = 0;
+    std::cout << "\nSymmetric distances:\n";
     for (const auto &[key, val] : symmetric_distances) {
       std::cout << key << ": " << val << std::endl;
+      total_distance += val;
     }
-    std::cout << std::endl;
+    std::cout << "\nAverage symmetric distance: "
+              << total_distance / double(symmetric_distances.size())
+              << std::endl;
   }  // End of loop over insets
 
   // Shift insets so that they do not overlap
