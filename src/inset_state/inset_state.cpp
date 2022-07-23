@@ -7,11 +7,13 @@
 
 InsetState::InsetState()
 {
+  initial_area_ = 0.0;
   n_finished_integrations_ = 0;
 }
 
 InsetState::InsetState(std::string pos) : pos_(std::move(pos))
 {
+  initial_area_ = 0.0;
   n_finished_integrations_ = 0;
 }
 
@@ -321,16 +323,11 @@ void InsetState::normalize_target_area()
   double ta = total_target_area();
 
   // Assign normalized target area to GeoDivs
-    for (const auto &gd : geo_divs_) {
-      double normalized_target_area =
-        (target_area_at(gd.id()) / ta) * initial_area;
-      replace_target_area(gd.id(), normalized_target_area);
-    }
-  // std::cout << "Area = " << area();
-  // std::cout << "Target area = " << cart_total_target_area();
-  // double hi;
-  // std::cin >> hi;
-  return;
+  for (const auto &gd : geo_divs_) {
+    double normalized_target_area =
+      (target_area_at(gd.id()) / ta) * initial_area;
+    replace_target_area(gd.id(), normalized_target_area);
+  }
 }
 
 std::string InsetState::pos() const

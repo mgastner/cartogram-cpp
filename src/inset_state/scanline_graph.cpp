@@ -1,20 +1,15 @@
 #include "inset_state.h"
-#include "constants.h"
 
 // TODO: THE OUTPUT FROM intersec_with_parallel_to() ALWAYS
 // SEEM TO COME WITH A NEED TO SORT AFTERWARDS. SHOULD SORTING BECOME PART of
 // intersec_with_parallel_to() TO SAVE TYPING ELSEWHERE?
 
 std::vector<std::vector<intersection> > InsetState::intersec_with_parallel_to(
-    char axis,
-    unsigned int resolution
-) const
+  char axis,
+  unsigned int resolution) const
 {
   if (axis != 'x' && axis != 'y') {
-    std::cerr << "Invalid axis in "
-              << __func__
-              << "()"
-              << std::endl;
+    std::cerr << "Invalid axis in " << __func__ << "()" << std::endl;
     exit(984320);
   }
   const unsigned int grid_length = (axis == 'x' ? ly_ : lx_);
@@ -40,14 +35,15 @@ std::vector<std::vector<intersection> > InsetState::intersec_with_parallel_to(
       }
 
       // Iterate over coordinates in bounding box of pwh
-      for (unsigned int k = floor(min_lim) - 1; k <= ceil(max_lim) + 1; ++k) {
+      for (unsigned int k = static_cast<unsigned int>(floor(min_lim)) - 1;
+           k <= ceil(max_lim) + 1;
+           ++k) {
 
         // If the rays are in x-direction, iterate over each ray between the
         // graticule lines y = k and y = k+1. Otherwise, iterate over each
         // ray between x = k and x = k+1.
-        for (double ray = k + 0.5/resolution;
-             ray < k + 1;
-             ray += (1.0/resolution)) {
+        for (double ray = k + 0.5 / resolution; ray < k + 1;
+             ray += (1.0 / resolution)) {
 
           // Temporary vector of intersections for this particular ray
           std::vector<intersection> intersections;
@@ -58,9 +54,9 @@ std::vector<std::vector<intersection> > InsetState::intersec_with_parallel_to(
           // appropriate densities. We add a small value `epsilon` to the ray
           // coordinate so that we assign correct densities if the ray with
           // equation y = ray_y or x = ray_x goes exactly through curr_point.
-          // The addition ensures that, if there is any intersection, it is only
-          // counted once. This method also correctly detects whether the ray
-          // touches the point without entering or exiting the polygon.
+          // The addition ensures that, if there is any intersection, it is
+          // only counted once. This method also correctly detects whether the
+          // ray touches the point without entering or exiting the polygon.
           const double epsilon = 1e-6 / resolution;
 
           // Run algorithm on exterior ring
@@ -71,8 +67,7 @@ std::vector<std::vector<intersection> > InsetState::intersec_with_parallel_to(
             target_density,
             epsilon,
             gd.id(),
-            axis
-          );
+            axis);
 
           // Run algorithm on each hole
           for (auto h = pwh.holes_begin(); h != pwh.holes_end(); ++h) {
@@ -83,27 +78,20 @@ std::vector<std::vector<intersection> > InsetState::intersec_with_parallel_to(
               target_density,
               epsilon,
               gd.id(),
-              axis
-            );
+              axis);
           }
 
           // Check whether the number of intersections is odd
           if (intersections.size() % 2 != 0) {
             std::cerr << "Incorrect Topology.\n"
-                      << "Number of intersections: "
-                      << intersections.size()
+                      << "Number of intersections: " << intersections.size()
                       << "\n"
-                      << axis
-                      << "-coordinate: "
-                      << ray
-                      << "\n"
-                      << "Intersection points: "
-                      << std::endl;
+                      << axis << "-coordinate: " << ray << "\n"
+                      << "Intersection points: " << std::endl;
 
-            for (unsigned int l = 0; l < intersections.size(); ++l) {
-              std::cerr
-                << (axis == 'x' ? intersections[l].x() : intersections[l].y())
-                << std::endl;
+            for (auto &intersection : intersections) {
+              std::cerr << (axis == 'x' ? intersection.x() : intersection.y())
+                        << std::endl;
             }
             std::cerr << std::endl << std::endl;
             _Exit(932875);
@@ -112,9 +100,10 @@ std::vector<std::vector<intersection> > InsetState::intersec_with_parallel_to(
 
           // Assign directions to intersections and add sorted vector of
           // intersections to vector `scanlines`
-          const int index = round((ray - 0.5/resolution) * resolution);
+          const auto index = static_cast<unsigned int>(
+            round((ray - 0.5 / resolution) * resolution));
           for (unsigned int l = 0; l < intersections.size(); ++l) {
-            intersections[l].ray_enters = (l%2 == 0);
+            intersections[l].ray_enters = (l % 2 == 0);
             scanlines[index].push_back(intersections[l]);
           }
         }
@@ -137,17 +126,17 @@ void InsetState::create_contiguity_graph(unsigned int resolution)
     for (unsigned int k = 0; k < grid_length; ++k) {
 
       // Iterate over rays in this row or column
-      for (double ray = k + 0.5/resolution;
-           ray < k + 1;
-           ray += (1.0/resolution)) {
+      for (double ray = k + 0.5 / resolution; ray < k + 1;
+           ray += (1.0 / resolution)) {
 
         // Intersections for one ray
         std::vector<intersection> intersections =
-          scanlines[round((ray - (0.5/resolution) * resolution))];
+          scanlines[static_cast<unsigned int>(
+            round((ray - (0.5 / resolution) * resolution)))];
 
         // Sort intersections in ascending order
         sort(intersections.begin(), intersections.end());
-        const int size = intersections.size() - 1;
+        const int size = static_cast<int>(intersections.size()) - 1;
 
         // Find adjacent GeoDivs by iterating over intersections
         for (int l = 1; l < size; l += 2) {
@@ -173,9 +162,8 @@ void InsetState::create_contiguity_graph(unsigned int resolution)
 }
 
 // Returns line segments highlighting intersection points using scans above
-const std::vector<Segment> InsetState::intersecting_segments(
-    unsigned int resolution
-) const
+std::vector<Segment> InsetState::intersecting_segments(
+  unsigned int resolution) const
 {
   std::vector<Segment> int_segments;
   for (char axis : {'x', 'y'}) {
@@ -187,34 +175,32 @@ const std::vector<Segment> InsetState::intersecting_segments(
     for (unsigned int k = 0; k < grid_length; ++k) {
 
       // Iterate over rays in this row or column
-      for (double ray = k + 0.5/resolution;
-           ray < k + 1;
-           ray += (1.0/resolution)) {
+      for (double ray = k + 0.5 / resolution; ray < k + 1;
+           ray += (1.0 / resolution)) {
 
         // Intersections for one ray
         std::vector<intersection> intersec =
-          scanlines[round((ray - (0.5/resolution) * resolution))];
+          scanlines[static_cast<unsigned int>(
+            round((ray - (0.5 / resolution) * resolution)))];
 
         // Sort intersections in ascending order
         std::sort(intersec.begin(), intersec.end());
 
         // Check whether intersection enters twice or exits twice
         for (size_t l = 0; l + 1 < intersec.size(); ++l) {
-          if (intersec[l].ray_enters == intersec[l + 1].ray_enters &&
-              intersec[l].ray_enters &&
-              l + 2 <= intersec.size()) {
+          if (
+            intersec[l].ray_enters == intersec[l + 1].ray_enters &&
+            intersec[l].ray_enters && l + 2 <= intersec.size()) {
             Segment temp;
             if (axis == 'x' && intersec[l + 1].x() != intersec[l + 2].x()) {
               temp = Segment(
                 Point(intersec[l + 1].x(), ray),
-                Point(intersec[l + 2].x(), ray)
-              );
+                Point(intersec[l + 2].x(), ray));
               int_segments.push_back(temp);
             } else if (intersec[l + 1].y() != intersec[l + 2].y()) {
               temp = Segment(
                 Point(ray, intersec[l + 1].y()),
-                Point(ray, intersec[l + 2].y())
-              );
+                Point(ray, intersec[l + 2].y()));
               int_segments.push_back(temp);
             }
           }

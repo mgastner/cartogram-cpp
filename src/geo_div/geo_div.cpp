@@ -73,7 +73,7 @@ unsigned int GeoDiv::n_rings() const
 }
 
 // TODO: IS THIS THE USUAL DEFINITION OF point_on_surface()? SHOULD IT NOT BE
-// THE LARGEST LINE SEGMENT IN ANY POLYGON WITH HOLES IN THE GEO_DIV?
+//       THE LARGEST LINE SEGMENT IN ANY POLYGON WITH HOLES IN THE GEO_DIV?
 Point GeoDiv::point_on_surface_of_geodiv() const
 {
   return point_on_surface_of_polygon_with_holes(largest_polygon_with_holes());
@@ -115,8 +115,8 @@ Point GeoDiv::point_on_surface_of_polygon_with_holes(
   }
 
   // TODO: Using target_density when we really mean line length feels like a
-  // bad hack. should we rename the data member target_density to
-  // value_in_geo_div?
+  //       bad hack. should we rename the data member target_density to
+  //       value_in_geo_div?
   // Assign length of line segments using the target_density property of
   // intersections for line segment lengths
   for (unsigned int i = 0; i < intersections.size(); i += 2) {

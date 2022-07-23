@@ -1,10 +1,10 @@
 #include "cartogram_info.h"
 #include <iostream>
+#include <utility>
 
-CartogramInfo::CartogramInfo(const bool w, const std::string v)
-    : is_world_map_(w), visual_variable_file_(v)
+CartogramInfo::CartogramInfo(const bool w, std::string v)
+    : is_world_map_(w), visual_variable_file_(std::move(v))
 {
-  return;
 }
 
 double CartogramInfo::cart_total_target_area() const
@@ -175,8 +175,7 @@ void CartogramInfo::replace_missing_and_zero_target_areas()
   }
 }
 
-void CartogramInfo::set_map_name(const std::string map_name)
+void CartogramInfo::set_map_name(const std::string &map_name)
 {
   map_name_ = map_name;
-  return;
 }

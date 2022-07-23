@@ -384,9 +384,8 @@ int main(const int argc, const char *argv[])
       inset_state.increment_integration();
 
       // Print area drift information
-      std::cerr << "Area drift: "
-                << (inset_state.area_drift() - 1.0) * 100.0 << "%"
-                << std::endl;
+      std::cerr << "Area drift: " << (inset_state.area_drift() - 1.0) * 100.0
+                << "%" << std::endl;
 
       // Update area errors
       inset_state.set_area_errors();
