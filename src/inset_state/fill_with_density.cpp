@@ -5,10 +5,22 @@ void InsetState::fill_with_density(bool plot_density)
 {
   // We assume that target areas that were zero or missing in the input have
   // already been replaced by
-  // CartogramInfo::replace_missing_and_zero_target_areas()
-  double mean_density = total_target_area() / total_inset_area();
+  // CartogramInfo::replace_missing_and_zero_target_areas().
+  // We also correct for a drift in the total inset area, in case it is
+  // present, by adjusting mean_density. The idea is to treat the exterior
+  // area as if it were a polygon with target area
+  // C * (lx * ly - initial_area_) and current area
+  // C * (lx * ly - total_inset_area). The constant prefactor C is the same
+  // in both areas and, thus, cancels out when taking the ratio. Note that
+  // missing, zero, and near-zero areas must already be filled with surrogate
+  // target areas in the desired proportion to the other polygons. That is,
+  // we must call cart_info.replace_missing_and_zero_target_areas() before
+  // calling this function.
+  double mean_density = (1.0 - (initial_area_ / (lx_ * ly_))) /
+                        (1.0 - (total_inset_area() / (lx_ * ly_)));
 
 #pragma omp parallel for default(none)
+
   // Initially assign zero to all densities
   for (unsigned int i = 0; i < lx_; ++i) {
     for (unsigned int j = 0; j < ly_; ++j) {
