@@ -23,8 +23,8 @@ geojson_write(
   crs = NULL)
   ```
   
-## china_population_2021.csv
-Source: National Bureau of Statistics China. Communiqué of the Seventh National Population Census (No. 3). Downloaded from http://www.stats.gov.cn/english/PressRelease/202105/t20210510_1817188.html on 17 July 2022.
+## china_population_2020.csv
+Sources: National Bureau of Statistics China. Communiqué of the Seventh National Population Census (No. 3). Downloaded from http://www.stats.gov.cn/english/PressRelease/202105/t20210510_1817188.html on 17 July 2022.
 Worldometers. Downloaded from https://www.worldometers.info/world-population/taiwan-population/, https://www.worldometers.info/world-population/china-hong-kong-sar-population/, and https://www.worldometers.info/world-population/china-macao-sar-population/ on July 17 2022.
 
 
