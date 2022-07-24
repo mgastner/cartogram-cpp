@@ -28,6 +28,6 @@ geojson_write(
   ```
   
 ## vietnam_population_2019.csv
-Source: General Statistics Office of Vietnam. Downloaded 30 June 2022 from https://www.gso.gov.vn/en/data-and-statistics/2020/11/completed-results-of-the-2019-viet-nam-population-and-housing-census/.
+Source: General Statistics Office of Vietnam. Downloaded 30 June 2022 from https://www.gso.gov.vn/wp-content/uploads/2019/12/Ket-qua-toan-bo-Tong-dieu-tra-dan-so-va-nha-o-2019.pdf (p.345).
 
 
