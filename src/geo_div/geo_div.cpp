@@ -1,6 +1,9 @@
 #include "geo_div.h"
+#include "cgal_typedef.h"
 #include "constants.h"
 #include <utility>
+
+GeoDiv::GeoDiv() = default;
 
 GeoDiv::GeoDiv(std::string i) : id_(std::move(i)) {}
 
@@ -18,11 +21,7 @@ double GeoDiv::area() const
 {
   double a = 0.0;
   for (const auto &pwh : polygons_with_holes()) {
-    const auto &ext_ring = pwh.outer_boundary();
-    a += ext_ring.area();
-    for (auto h = pwh.holes_begin(); h != pwh.holes_end(); ++h) {
-      a += h->area();
-    }
+    a += pwh_area(pwh);
   }
   return a;
 }
@@ -74,7 +73,7 @@ unsigned int GeoDiv::n_rings() const
 }
 
 // TODO: IS THIS THE USUAL DEFINITION OF point_on_surface()? SHOULD IT NOT BE
-// THE LARGEST LINE SEGMENT IN ANY POLYGON WITH HOLES IN THE GEO_DIV?
+//       THE LARGEST LINE SEGMENT IN ANY POLYGON WITH HOLES IN THE GEO_DIV?
 Point GeoDiv::point_on_surface_of_geodiv() const
 {
   return point_on_surface_of_polygon_with_holes(largest_polygon_with_holes());
@@ -115,9 +114,9 @@ Point GeoDiv::point_on_surface_of_polygon_with_holes(
     intersections[i].ray_enters = (i % 2 == 0);
   }
 
-  // TODO: USING target_density WHEN WE REALLY MEAN LINE LENGTH FEELS LIKE A
-  // BAD HACK. SHOULD WE RENAME THE DATA MEMBER target_density TO
-  // value_in_geo_div?
+  // TODO: Using target_density when we really mean line length feels like a
+  //       bad hack. should we rename the data member target_density to
+  //       value_in_geo_div?
   // Assign length of line segments using the target_density property of
   // intersections for line segment lengths
   for (unsigned int i = 0; i < intersections.size(); i += 2) {
@@ -154,4 +153,12 @@ void GeoDiv::push_back(const Polygon_with_holes &pwh)
 std::vector<Polygon_with_holes> *GeoDiv::ref_to_polygons_with_holes()
 {
   return &polygons_with_holes_;
+}
+
+void GeoDiv::sort_pwh()
+{
+  std::sort(
+    polygons_with_holes_.begin(),
+    polygons_with_holes_.end(),
+    compare_pwh);
 }

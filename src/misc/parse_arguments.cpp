@@ -1,13 +1,14 @@
 #include "parse_arguments.h"
 #include "constants.h"
 #include <iostream>
+#include <string>
 
 argparse::ArgumentParser parsed_arguments(
   const int argc,
   const char *argv[],
   std::string &geo_file_name,
   std::string &visual_file_name,
-  unsigned int &max_n_graticule_rows_or_cols,
+  unsigned int &max_n_grid_rows_or_cols,
   unsigned int &target_points_per_inset,
   bool &world,
   bool &triangulation,
@@ -20,6 +21,8 @@ argparse::ArgumentParser parsed_arguments(
   bool &plot_graticule,
   bool &plot_intersections,
   bool &plot_polygons,
+  bool &remove_tiny_polygons,
+  double &minimum_polygon_area,
   bool &plot_quadtree)
 {
   // Create parser for arguments using argparse.
@@ -98,6 +101,16 @@ argparse::ArgumentParser parsed_arguments(
     .help("Boolean: Output GeoJSON to stdout")
     .default_value(false)
     .implicit_value(true);
+  arguments.add_argument("-r", "--remove_tiny_polygons")
+    .help("Boolean: Output GeoJSON to stdout")
+    .default_value(false)
+    .implicit_value(true);
+  arguments.add_argument("-M", "--minimum_polygon_size")
+    .help(
+      std::string("Double: If remove-tiny-polygons enabled, ") +
+      "minimum size of polygons as proportion of total area")
+    .default_value(default_minimum_polygon_area)
+    .scan<'g', double>();
 
   // Arguments of column names in provided visual variables file (CSV)
   std::string pre = "String: Column name for ";
@@ -125,7 +138,7 @@ argparse::ArgumentParser parsed_arguments(
   }
 
   // Set long grid-side length
-  max_n_graticule_rows_or_cols = arguments.get<unsigned int>("-N");
+  max_n_grid_rows_or_cols = arguments.get<unsigned int>("-N");
 
   // Set target_points_per_inset
   target_points_per_inset = arguments.get<unsigned int>("-P");
@@ -135,6 +148,8 @@ argparse::ArgumentParser parsed_arguments(
   triangulation = arguments.get<bool>("-t");
   qtdt_method = arguments.get<bool>("-Q");
   simplify = arguments.get<bool>("-s");
+  remove_tiny_polygons = arguments.get<bool>("-r");
+  minimum_polygon_area = arguments.get<double>("-M");
   if (!triangulation && simplify) {
 
     // If tracer points are on the FTReal2d, then simplification requires

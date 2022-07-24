@@ -30,23 +30,18 @@ public:
   explicit intersection(bool);
   intersection();
 
-  double x() const;
-  double y() const;
-  bool ray_intersects(
-    XYPoint,
-    XYPoint,
-    const double,
-    const double,
-    const double);
+  [[nodiscard]] double x() const;
+  [[nodiscard]] double y() const;
+  bool ray_intersects(XYPoint, XYPoint, double, double, double);
 };
 
 void add_intersections(
   std::vector<intersection> &,
   const Polygon &,
-  const double,
-  const double,
-  const double,
+  double,
+  double,
+  double,
   const std::string &,
-  const char);
+  char);
 
 #endif
