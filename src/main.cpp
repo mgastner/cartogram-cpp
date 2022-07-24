@@ -431,7 +431,7 @@ int main(const int argc, const char *argv[])
     inset_state.ref_to_rho_init()->free();
     inset_state.ref_to_rho_ft()->free();
   }  // End of loop over insets
-  cart_info.replace_missing_and_zero_target_areas();
+
   // Shift insets so that they do not overlap
   cart_info.shift_insets_to_target_position();
 
