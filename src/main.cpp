@@ -34,10 +34,10 @@ int main(const int argc, const char *argv[])
   std::string geo_file_name, visual_file_name;
 
   // Default number of grid cells along longer Cartesian coordinate axis
-  unsigned int long_graticule_length = default_long_graticule_length;
+  unsigned int max_n_grid_rows_or_cols;
 
   // Target number of points to retain after simplification
-  unsigned int target_points_per_inset = default_target_points_per_inset;
+  unsigned int target_points_per_inset;
   bool world;  // World maps need special projections
 
   // If `triangulation` is true, we apply a cartogram projection method based
@@ -45,16 +45,16 @@ int main(const int argc, const char *argv[])
   // that occur when the projected graticule lines are strongly curved. Only
   // use this method if the tracer points are an FTReal2d data structure.
   bool triangulation;
-
-  // Use Quadtree-Delaunay triangulation
-  bool qtdt_method;
-
-  // Should the polygons be simplified?
-  bool simplify;
+  bool simplify;  // Should the polygons be simplified?
 
   // Other boolean values that are needed to parse the command line arguments
   bool make_csv, output_equal_area, output_to_stdout, plot_density,
-    plot_graticule, plot_intersections, plot_polygons, plot_quadtree;
+    plot_graticule, plot_intersections, plot_polygons, plot_quadtree,
+    remove_tiny_polygons;
+
+  // The proportion of the total area smaller than which polygons are removed
+  double minimum_polygon_area;
+  bool qtdt_method;  // Use Quadtree-Delaunay triangulation
 
   // Parse command-line arguments
   argparse::ArgumentParser arguments = parsed_arguments(
@@ -62,7 +62,7 @@ int main(const int argc, const char *argv[])
     argv,
     geo_file_name,
     visual_file_name,
-    long_graticule_length,
+    max_n_grid_rows_or_cols,
     target_points_per_inset,
     world,
     triangulation,
@@ -75,6 +75,8 @@ int main(const int argc, const char *argv[])
     plot_graticule,
     plot_intersections,
     plot_polygons,
+    remove_tiny_polygons,
+    minimum_polygon_area,
     plot_quadtree);
 
   // Initialize cart_info. It contains all the information about the cartogram
@@ -216,7 +218,7 @@ int main(const int argc, const char *argv[])
     inset_state.set_inset_name(inset_name);
 
     // Rescale map to fit into a rectangular box [0, lx] * [0, ly]
-    inset_state.rescale_map(long_graticule_length, cart_info.is_world_map());
+    inset_state.rescale_map(max_n_grid_rows_or_cols, cart_info.is_world_map());
 
     if (output_to_stdout) {
 
@@ -236,6 +238,12 @@ int main(const int argc, const char *argv[])
     inset_state.initialize_cum_proj();
     inset_state.set_area_errors();
 
+    // Store initial inset area to calculate area drift
+    inset_state.store_initial_area();
+
+    // Normalize total target area to be equal to initial area
+    inset_state.normalize_target_area();
+
     // Automatically color GeoDivs if no colors are provided
     if (inset_state.colors_empty()) {
       inset_state.auto_color();
@@ -253,6 +261,11 @@ int main(const int argc, const char *argv[])
       inset_state.write_cairo_map(input_filename, plot_graticule);
     }
 
+    // Remove tiny polygons below threshold
+    if (remove_tiny_polygons) {
+      inset_state.remove_tiny_polygons(minimum_polygon_area);
+    }
+
     // We make the approximation that the progress towards generating the
     // cartogram is proportional to the number of GeoDivs that are in the
     // finished insets
@@ -262,8 +275,10 @@ int main(const int argc, const char *argv[])
     time_point start_integration = clock_time::now();
 
     // Start map integration
+    // TODO: Add condition for area drift
     while (inset_state.n_finished_integrations() < max_integrations &&
-           inset_state.max_area_error().value > max_permitted_area_error) {
+           (inset_state.max_area_error().value > max_permitted_area_error ||
+            std::abs(inset_state.area_drift() - 1.0) > 0.01)) {
       if (qtdt_method) {
         time_point start_delaunay_t = clock_time::now();
 
@@ -377,6 +392,10 @@ int main(const int argc, const char *argv[])
           inMilliseconds(clock_time::now() - start_simplify);
       }
       inset_state.increment_integration();
+
+      // Print area drift information
+      std::cerr << "Area drift: " << (inset_state.area_drift() - 1.0) * 100.0
+                << "%" << std::endl;
 
       // Update area errors
       inset_state.set_area_errors();

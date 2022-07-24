@@ -2,12 +2,18 @@
 #include "constants.h"
 #include "round_point.h"
 #include <cmath>
+#include <iostream>
 #include <utility>
 
-InsetState::InsetState() = default;
+InsetState::InsetState()
+{
+  initial_area_ = 0.0;
+  n_finished_integrations_ = 0;
+}
 
 InsetState::InsetState(std::string pos) : pos_(std::move(pos))
 {
+  initial_area_ = 0.0;
   n_finished_integrations_ = 0;
 }
 
@@ -20,7 +26,6 @@ void InsetState::create_delaunay_t()
   // Avoid collisions in hash table
   points.reserve(8192);
   points.max_load_factor(0.5);
-
   for (const auto &gd : geo_divs_) {
     for (const auto &pwh : gd.polygons_with_holes()) {
       Polygon ext_ring = pwh.outer_boundary();
@@ -45,7 +50,6 @@ void InsetState::create_delaunay_t()
   points.insert(Point(0, ly_));
   points.insert(Point(lx_, 0));
   points.insert(Point(lx_, ly_));
-
   std::vector<Point> points_vec;
 
   // Copy points of unordered_set to vector
@@ -331,9 +335,27 @@ unsigned int InsetState::n_rings() const
   return n_rings;
 }
 
+void InsetState::normalize_target_area()
+{
+  double initial_area = total_inset_area();
+  double ta = total_target_area();
+
+  // Assign normalized target area to GeoDivs
+  for (const auto &gd : geo_divs_) {
+    double normalized_target_area =
+      (target_area_at(gd.id()) / ta) * initial_area;
+    replace_target_area(gd.id(), normalized_target_area);
+  }
+}
+
 std::string InsetState::pos() const
 {
   return pos_;
+}
+
+double InsetState::area_drift() const
+{
+  return (total_inset_area() / initial_area_);
 }
 
 void InsetState::push_back(const GeoDiv &gd)
@@ -359,6 +381,32 @@ FTReal2d *InsetState::ref_to_rho_ft()
 FTReal2d *InsetState::ref_to_rho_init()
 {
   return &rho_init_;
+}
+
+void InsetState::remove_tiny_polygons(const double &minimum_polygon_size)
+{
+
+  double threshold = total_inset_area() * minimum_polygon_size;
+  std::vector<GeoDiv> geo_divs_cleaned;
+
+  // Iterate over GeoDivs
+  for (auto &gd : geo_divs_) {
+    GeoDiv gd_cleaned(gd.id());
+
+    // Sort polygons with holes according to area
+    gd.sort_pwh();
+    const auto &pwhs = gd.polygons_with_holes();
+
+    // Iterate over Polygon_with_holes
+    for (unsigned int i = 0; i < pwhs.size(); ++i) {
+      if (i == 0 || pwh_area(pwhs[i]) > threshold) {
+        gd_cleaned.push_back(pwhs[i]);
+      }
+    }
+    geo_divs_cleaned.push_back(gd_cleaned);
+  }
+  geo_divs_.clear();
+  geo_divs_ = geo_divs_cleaned;
 }
 
 void InsetState::replace_target_area(const std::string &id, const double area)
@@ -396,6 +444,11 @@ void InsetState::set_grid_dimensions(
 void InsetState::set_inset_name(const std::string &inset_name)
 {
   inset_name_ = inset_name;
+}
+
+void InsetState::store_initial_area()
+{
+  initial_area_ = total_inset_area();
 }
 
 bool InsetState::target_area_is_missing(const std::string &id) const
