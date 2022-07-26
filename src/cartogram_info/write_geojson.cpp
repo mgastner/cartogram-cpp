@@ -19,21 +19,21 @@ std::vector<double> divider_points(double x1, double y1, double x2, double y2)
   return {x1d, y1d, x2d, y2d};
 }
 
-nlohmann::json CartogramInfo::cgal_to_json()
+nlohmann::json CartogramInfo::cgal_to_json(bool original_geo_divs_to_geojson)
 {
   nlohmann::json container = nlohmann::json::array();
 
   // Insert each inset into `container`
   for (const auto &[inset_pos, inset_state] : inset_states_) {
-    nlohmann::json inset_container =
-      inset_state.inset_to_geojson(original_ext_ring_is_clockwise_);
+    nlohmann::json inset_container = inset_state.inset_to_geojson(
+      original_ext_ring_is_clockwise_,
+      original_geo_divs_to_geojson);
 
     // Insert all elements inside the inset_container (concatenate JSON arrays)
     container.insert(
       container.end(),
       inset_container.begin(),
-      inset_container.end()
-    );
+      inset_container.end());
   }
 
   // Get joint bounding box for all insets.
@@ -88,59 +88,40 @@ nlohmann::json CartogramInfo::cgal_to_json()
   for (const auto &[inset_pos, inset_state] : inset_states_) {
     Bbox inset_bb = inset_state.bbox();
     if (inset_pos == "T") {
-      divider_container.push_back(
-        divider_points(
-          min_xmin_tcb,
-          (inset_bb.ymin() + inset_c_bb.ymax()) / 2,
-          max_xmax_tcb,
-          (inset_bb.ymin() + inset_c_bb.ymax()) / 2
-        )
-      );
+      divider_container.push_back(divider_points(
+        min_xmin_tcb,
+        (inset_bb.ymin() + inset_c_bb.ymax()) / 2,
+        max_xmax_tcb,
+        (inset_bb.ymin() + inset_c_bb.ymax()) / 2));
     } else if (inset_pos == "B") {
-      divider_container.push_back(
-        divider_points(
-          min_xmin_tcb,
-          (inset_bb.ymax() + inset_c_bb.ymin()) / 2,
-          max_xmax_tcb,
-          (inset_bb.ymax() + inset_c_bb.ymin()) / 2
-        )
-      );
+      divider_container.push_back(divider_points(
+        min_xmin_tcb,
+        (inset_bb.ymax() + inset_c_bb.ymin()) / 2,
+        max_xmax_tcb,
+        (inset_bb.ymax() + inset_c_bb.ymin()) / 2));
     } else if (inset_pos == "L") {
-      divider_container.push_back(
-        divider_points(
-          (inset_bb.xmax() + inset_c_bb.xmin()) / 2,
-          max_ymax_lcr,
-          (inset_bb.xmax() + inset_c_bb.xmin()) / 2,
-          min_ymin_lcr
-        )
-      );
+      divider_container.push_back(divider_points(
+        (inset_bb.xmax() + inset_c_bb.xmin()) / 2,
+        max_ymax_lcr,
+        (inset_bb.xmax() + inset_c_bb.xmin()) / 2,
+        min_ymin_lcr));
     } else if (inset_pos == "R") {
-      divider_container.push_back(
-        divider_points(
-          (inset_bb.xmin() + inset_c_bb.xmax()) / 2,
-          max_ymax_lcr,
-          (inset_bb.xmin() + inset_c_bb.xmax()) / 2,
-          min_ymin_lcr
-        )
-      );
+      divider_container.push_back(divider_points(
+        (inset_bb.xmin() + inset_c_bb.xmax()) / 2,
+        max_ymax_lcr,
+        (inset_bb.xmin() + inset_c_bb.xmax()) / 2,
+        min_ymin_lcr));
     }
   }
   container.push_back(divider_container);
   return container;
 }
 
-void CartogramInfo::write_geojson(
-    std::string old_geo_file_name,
-    std::string new_geo_file_name,
-    std::ostream &new_geo_stream,
-    bool output_to_stdout
-) {
-  std::ifstream old_file(old_geo_file_name);
-  nlohmann::json old_json;
-  old_file >> old_json;
-  nlohmann::ordered_json new_json;
-  const nlohmann::json container = cgal_to_json();
-
+void CartogramInfo::json_to_geojson(
+  const nlohmann::json &old_json,
+  nlohmann::ordered_json &new_json,
+  const nlohmann::json &container)
+{
   // We must match the GeoDiv IDs in the container with the IDs in the input
   // GeoJSON. For later convenience, we store the numeric indices for an ID
   // in an std::map.
@@ -181,20 +162,38 @@ void CartogramInfo::write_geojson(
     for (unsigned int j = 0; j < container[i]["coordinates"].size(); ++j) {
 
       // Iterate over exterior ring and holes in the Polygon_with_holes
-      for (unsigned int k = 0;
-           k < container[i]["coordinates"][j].size();
+      for (unsigned int k = 0; k < container[i]["coordinates"][j].size();
            ++k) {
         new_json["features"][i]["geometry"]["coordinates"][j][k] =
           container[i]["coordinates"][j][k];
       }
     }
   }
-  
+}
+
+void CartogramInfo::write_geojson(
+  const std::string &old_geo_file_name,
+  const std::string &new_geo_file_name,
+  bool output_to_stdout)
+{
+  std::ifstream old_file(old_geo_file_name);
+  nlohmann::json old_json, container;
+  old_file >> old_json;
+  nlohmann::ordered_json new_json;
+  container = cgal_to_json(false);
+
+  json_to_geojson(old_json, new_json, container);
+
   if (output_to_stdout) {
-    new_geo_stream << new_json << std::endl;
+    nlohmann::ordered_json new_json_original;
+    nlohmann::json container_original, combined_json;
+    container_original = cgal_to_json(true);
+    json_to_geojson(old_json, new_json_original, container_original);
+    combined_json["Simplified"] = new_json;
+    combined_json["Original"] = new_json_original;
+    std::cout << combined_json << std::endl;
   } else {
     std::ofstream o(new_geo_file_name);
     o << new_json << std::endl;
   }
-  return;
 }
