@@ -172,7 +172,7 @@ void CartogramInfo::write_geojson(
     // TODO: THE NEXT LINE CREATES A FIELD WITH VALUE null UNLESS THE
     // INPUT GEOJSON CONTAINED A FIELD CALLED id. THIS MAY BE NEEDED BY
     // cartogram_web, BUT, IN THE LONG RUN, WE WANT TO GET RID OF IT.
-    new_json["features"][i]["id"] = old_json["features"][index]["id"];
+    //new_json["features"][i]["id"] = old_json["features"][index]["id"];
     new_json["features"][i]["properties"] =
       old_json["features"][index]["properties"];
     new_json["features"][i]["geometry"]["type"] = "MultiPolygon";
