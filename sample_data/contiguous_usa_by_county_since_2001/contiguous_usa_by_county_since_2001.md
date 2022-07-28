@@ -7,10 +7,29 @@ Lines within the .json file containing shapes for Alaska, Puerto Rico, US Virgin
 
 ### Code for simplification
 ```
-usa <- geojson_sf("~/contiguous_usa_by_county_since_2001/cb_2021_us_county_500k.json")
+library(rmapshaper)
+library(geojsonio)
+library(sf)
+library(mapview)
+library(tidyverse)
+temp <- tempfile()
+download.file(
+  "https://www2.census.gov/geo/tiger/GENZ2021/shp/cb_2021_us_county_500k.zip",
+  temp
+)
+usa_unzip <- unzip(temp)
+usa <- read_sf("cb_2021_us_county_500k.shp") |>
+  filter(!(STATE_NAME %in% c(
+    "Alaska",
+    "Hawaii",
+    "Commonwealth of the Northern Mariana Islands",
+    "Puerto Rico",
+    "Guam",
+    "American Samoa",
+    "United States Virgin Islands"
+  )))
 target_n_pts_in_output <- 48500
-npts(usa)
-usa_simp <- ms_simplify(usa, keep = target_n_pts_in_output/npts(usa), keep_shapes = T)
+usa_simp <- ms_simplify(usa, keep = target_n_pts_in_output / npts(usa))
 geojson_write(
   usa_simp,
   lat = NULL,
@@ -21,7 +40,10 @@ geojson_write(
   overwrite = TRUE,
   precision = NULL,
   convert_wgs84 = FALSE,
-  crs = NULL)
+  crs = NULL
+)
+unlink(usa_unzip)
+
   ```
   
 ## usa_population_2021.csv

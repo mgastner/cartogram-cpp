@@ -10,10 +10,17 @@ library(rmapshaper)
 library(geojsonio)
 library(sf)
 library(mapview)
-vnm <- geojson_sf("~/vietnam_by_province_since_1996/gadm40_VNM_1.geojson")
-target_n_pts_in_output <- 48500
-npts(vnm)
-vnm_simp <- ms_simplify(vnm, keep = target_n_pts_in_output/npts(vnm))
+library(tidyverse)
+temp <- tempfile()
+download.file(
+  "https://geodata.ucdavis.edu/gadm/gadm4.0/shp/gadm40_VNM_shp.zip",
+  temp
+)
+vnm_unzip <- unzip(temp)
+vnm <- read_sf("gadm40_VNM_1.shp")
+target_n_pts_in_output <- 45000
+vnm_simp <- ms_simplify(vnm, keep = target_n_pts_in_output / npts(vnm))
+npts(vnm_simp)
 geojson_write(
   vnm_simp,
   lat = NULL,
@@ -24,7 +31,9 @@ geojson_write(
   overwrite = TRUE,
   precision = NULL,
   convert_wgs84 = FALSE,
-  crs = NULL)
+  crs = NULL
+)
+unlink(vnm_unzip)
   ```
   
 ## vietnam_population_2019.csv

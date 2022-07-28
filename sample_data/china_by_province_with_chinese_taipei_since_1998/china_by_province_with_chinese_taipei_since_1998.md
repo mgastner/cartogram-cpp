@@ -1,15 +1,27 @@
 # Sources
 
 ## china_by_province_with_chinese_taipei_since_1998.geojson
-Global Administrative Areas (2012). GADM database of Global Administrative Areas, version 2.0. [online] URL: www.gadm.org.
-Downloaded from https://geodata.ucdavis.edu/gadm/gadm4.1/shp/gadm41_CHN_shp.zip, https://earthworks.stanford.edu/catalog/stanford-yq344jw1449, https://geodata.lib.utexas.edu/catalog/stanford-hh544xg3454, and https://github.com/wmgeolab/geoBoundaries/blob/main/releaseData/gbOpen/TWN/ADM1/geoBoundaries-TWN-ADM1_simplified.geojson on 24 July 2022.
+United Nations Office for the Coordination of Humanitarian Affairs. China - Subnational Administrative Boundaries.
+Downloaded from https://data.humdata.org/dataset/17a2aaa2-dea9-4a2e-8b3f-92d1bdfb850c/resource/9e67ddf9-ce26-4b7a-82b1-51e5ca0714c8/download/chn_adm_ocha_2020_shp.zip on 28 July 2022.
 
 ### Code for simplification
 ```
-chn <- geojson_sf("~/china_by_province_with_chinese_taipei_since_1998/gadm36_CHN_1.json")
-target_n_pts_in_output <- 48500
+library(rmapshaper)
+library(geojsonio)
+library(sf)
+library(mapview)
+library(tidyverse)
+temp <- tempfile()
+download.file(
+  "https://data.humdata.org/dataset/17a2aaa2-dea9-4a2e-8b3f-92d1bdfb850c/resource/9e67ddf9-ce26-4b7a-82b1-51e5ca0714c8/download/chn_adm_ocha_2020_shp.zip",
+  temp
+)
+chn_unzip <- unzip(temp)
+chn <- read_sf("chn_admbnda_adm1_ocha_2020.shp")
+target_n_pts_in_output <- 47500
 npts(chn)
-chn_simp <- ms_simplify(chn, keep = target_n_pts_in_output/npts(chn))
+chn_simp <- ms_simplify(chn, keep = target_n_pts_in_output / npts(chn))
+npts(chn_simp)
 geojson_write(
   chn_simp,
   lat = NULL,
@@ -20,7 +32,9 @@ geojson_write(
   overwrite = TRUE,
   precision = NULL,
   convert_wgs84 = FALSE,
-  crs = NULL)
+  crs = NULL
+)
+unlink(chn_unzip)
   ```
   
 ## china_population_2020.csv
