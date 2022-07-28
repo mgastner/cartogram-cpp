@@ -45,7 +45,11 @@ Examples:
 
 In each subdirectory, there should be:
 
-- exactly one GeoJSON file, which should contain maximally 50,000 points.
+- exactly one GeoJSON file, which should usually contain maximally 50,000
+  points.
+  The number of points can be increased if the specific example requires it
+  (e.g. because there are more than 200 geographic divisions, such as counties
+  or census blocks).
   The coordinates should be longitude/latitude.
   The name of the GeoJSON file should be:
 

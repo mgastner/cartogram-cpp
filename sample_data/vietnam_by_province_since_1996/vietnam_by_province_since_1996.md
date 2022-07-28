@@ -28,6 +28,6 @@ geojson_write(
   ```
   
 ## vietnam_population_2019.csv
-Source: General Statistics Office of Vietnam. Downloaded 30 June 2022 from https://www.gso.gov.vn/wp-content/uploads/2019/12/Ket-qua-toan-bo-Tong-dieu-tra-dan-so-va-nha-o-2019.pdf (p.345).
+Source: General Statistics Office of Vietnam. Downloaded 30 June 2022 from https://www.gso.gov.vn/wp-content/uploads/2019/12/Ket-qua-toan-bo-Tong-dieu-tra-dan-so-va-nha-o-2019.pdf, and accessed via https://data.humdata.org/dataset/bf6858bf-a5a8-403b-8380-f78cd72c9fee/resource/90642c40-f854-49a2-bdd2-fdea7db4130d/download/vnm_admpop_2019.xlsx.
 
 

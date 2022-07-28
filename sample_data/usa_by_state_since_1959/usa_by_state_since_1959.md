@@ -25,7 +25,7 @@ geojson_write(
   crs = NULL)
 ```
 ## usa_population_2020.csv
-Source: The United States Census Bureau. Downloaded 30 June 2022 from https://github.com/wmgeolab/geoBoundaries/blob/main/releaseData/gbOpen/CHE/ADM1/geoBoundaries-CHE-ADM1_simplified.geojson.
+Source: The United States Census Bureau. Downloaded 30 June 2022 from https://www2.census.gov/programs-surveys/popest/tables/2020-2021/counties/totals/co-est2021-pop.xlsx.
 
 
 

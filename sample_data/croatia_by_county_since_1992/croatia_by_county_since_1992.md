@@ -5,3 +5,6 @@ Downloaded from: Justin Meyers. https://github.com/justinelliotmeyers/Official_C
 
 ## croatia_covid_cases_2022.csv
 Source: Vlada Republike Hrvatske. Downloaded on 5 July 2022 from https://www.koronavirus.hr/en.
+
+## croation_population_2021.csv
+Source: Croation Bureau of Statistics. 2021 Census. Downloaded 28 July 2022 from https://web.dzs.hr/Hrv_Eng/Pokazatelji/Popis%202021-Prvi%20rezultati.xlsx.
