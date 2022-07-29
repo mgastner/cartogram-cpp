@@ -37,7 +37,7 @@ unlink(nuts_unzip)
   ```
   
 ## NUTS_population_2021.csv
-Source: Eurostat. Population on 1 January by age and sex.
+Source: Eurostat. Population on 1 January by age, sex and NUTS 2 region.
 Downloaded on 29 July 2022 from https://appsso.eurostat.ec.europa.eu/nui/show.do?dataset=demo_pjan&lang=en.
 
 
