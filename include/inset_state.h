@@ -53,6 +53,9 @@ private:
   // Chosen diagonal for each graticule cell
   boost::multi_array<int, 2> graticule_diagonals_;
 
+  // Variable to store initial inset area before integration
+  double initial_area_;
+
   // Map name. Inset position is appended to the name if n_insets > 2.
   std::string inset_name_;
   std::unordered_map<std::string, bool> is_input_target_area_missing_;
@@ -117,7 +120,7 @@ public:
   void insert_whether_input_target_area_is_missing(const std::string &, bool);
   std::string inset_name() const;
   nlohmann::json inset_to_geojson(bool, bool = false) const;
-  const std::vector<Segment> intersecting_segments(unsigned int) const;
+  std::vector<Segment> intersecting_segments(unsigned int) const;
   std::vector<std::vector<intersection> > intersec_with_parallel_to(
     char,
     unsigned int) const;
@@ -129,9 +132,10 @@ public:
   struct max_area_error_info max_area_error() const;
   unsigned int n_finished_integrations() const;
   unsigned int n_geo_divs() const;
-  void normalize_inset_area(double total_cart_target_area, bool = false);
   unsigned long n_points() const;
   unsigned int n_rings() const;
+  void normalize_inset_area(double total_cart_target_area, bool = false);
+  void normalize_target_area();
   std::string pos() const;
   void project();
   Point projected_point(Point, bool = false);
@@ -141,6 +145,9 @@ public:
   void project_with_triangulation();
   void project_with_proj_sequence();
   void push_back(const GeoDiv &);
+
+  // Calculate difference between initial area and current area
+  double area_drift() const;
   FTReal2d *ref_to_rho_ft();
   FTReal2d *ref_to_rho_init();
   void remove_tiny_polygons(const double &minimum_polygon_size);
@@ -151,6 +158,7 @@ public:
   void set_area_errors();
   void set_grid_dimensions(unsigned int, unsigned int);
   void set_inset_name(const std::string &);
+  void store_initial_area();
   void simplify(unsigned int);
   void store_original_geo_divs();
   double target_area_at(const std::string &) const;

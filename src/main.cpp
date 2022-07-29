@@ -228,6 +228,12 @@ int main(const int argc, const char *argv[])
     inset_state.initialize_cum_proj();
     inset_state.set_area_errors();
 
+    // Store initial inset area to calculate area drift
+    inset_state.store_initial_area();
+
+    // Normalize total target area to be equal to initial area
+    inset_state.normalize_target_area();
+
     // Automatically color GeoDivs if no colors are provided
     if (inset_state.colors_empty()) {
       inset_state.auto_color();
@@ -268,8 +274,10 @@ int main(const int argc, const char *argv[])
     time_point start_integration = clock_time::now();
 
     // Start map integration
+    // TODO: Add condition for area drift
     while (inset_state.n_finished_integrations() < max_integrations &&
-           inset_state.max_area_error().value > max_permitted_area_error) {
+           (inset_state.max_area_error().value > max_permitted_area_error ||
+            std::abs(inset_state.area_drift() - 1.0) > 0.01)) {
       if (qtdt_method) {
         time_point start_delaunay_t = clock_time::now();
 
@@ -374,6 +382,10 @@ int main(const int argc, const char *argv[])
           inMilliseconds(end_simplify - start_simplify);
       }
       inset_state.increment_integration();
+
+      // Print area drift information
+      std::cerr << "Area drift: " << (inset_state.area_drift() - 1.0) * 100.0
+                << "%" << std::endl;
 
       // Update area errors
       inset_state.set_area_errors();

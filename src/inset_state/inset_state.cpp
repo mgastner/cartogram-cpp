@@ -7,11 +7,13 @@
 
 InsetState::InsetState()
 {
+  initial_area_ = 0.0;
   n_finished_integrations_ = 0;
 }
 
 InsetState::InsetState(std::string pos) : pos_(std::move(pos))
 {
+  initial_area_ = 0.0;
   n_finished_integrations_ = 0;
 }
 
@@ -316,9 +318,27 @@ unsigned int InsetState::n_rings() const
   return n_rings;
 }
 
+void InsetState::normalize_target_area()
+{
+  double initial_area = total_inset_area();
+  double ta = total_target_area();
+
+  // Assign normalized target area to GeoDivs
+  for (const auto &gd : geo_divs_) {
+    double normalized_target_area =
+      (target_area_at(gd.id()) / ta) * initial_area;
+    replace_target_area(gd.id(), normalized_target_area);
+  }
+}
+
 std::string InsetState::pos() const
 {
   return pos_;
+}
+
+double InsetState::area_drift() const
+{
+  return (total_inset_area() / initial_area_);
 }
 
 void InsetState::push_back(const GeoDiv &gd)
@@ -397,6 +417,11 @@ void InsetState::set_grid_dimensions(
 void InsetState::set_inset_name(const std::string &inset_name)
 {
   inset_name_ = inset_name;
+}
+
+void InsetState::store_initial_area()
+{
+  initial_area_ = total_inset_area();
 }
 
 bool InsetState::target_area_is_missing(const std::string &id) const
