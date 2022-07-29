@@ -29,7 +29,7 @@ usa <- read_sf("cb_2021_us_county_500k.shp") |>
     "United States Virgin Islands"
   )))
 target_n_pts_in_output <- 48500
-usa_simp <- ms_simplify(usa, keep = target_n_pts_in_output / npts(usa))
+usa_simp <- ms_simplify(usa, keep = target_n_pts_in_output / npts(usa), keep_shapes = T)
 geojson_write(
   usa_simp,
   lat = NULL,

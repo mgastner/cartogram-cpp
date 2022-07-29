@@ -17,16 +17,17 @@ download.file(
   temp
 )
 nuts_unzip <- unzip(temp)
-nuts <- geojson_sf("NUTS_BN_03M_2021_3035_LEVL_0.geojson")
-target_n_pts_in_output <- 48500
-nuts_simp <- ms_simplify(nuts, keep = target_n_pts_in_output / npts(nuts))
+nuts <- geojson_sf("NUTS_RG_03M_2021_4326_LEVL_2.geojson")
+target_n_pts_in_output <- 47000
+nuts_simp <- ms_simplify(nuts, keep = target_n_pts_in_output / npts(nuts),keep_shapes = T)
+npts(nuts_simp)
 geojson_write(
   nuts_simp,
   lat = NULL,
   lon = NULL,
   geometry = "point",
   group = NULL,
-  file = "NUTS_by_country_since_2021.geojson",
+  file = "NUTS_by_region_until_2020.geojson",
   overwrite = TRUE,
   precision = NULL,
   convert_wgs84 = FALSE,
