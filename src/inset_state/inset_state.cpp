@@ -28,17 +28,24 @@ void InsetState::create_delaunay_t()
   points.max_load_factor(0.5);
   for (const auto &gd : geo_divs_) {
     for (const auto &pwh : gd.polygons_with_holes()) {
-      Polygon ext_ring = pwh.outer_boundary();
+      const Polygon ext_ring = pwh.outer_boundary();
 
       // Get exterior ring coordinates
-      for (auto &i : ext_ring) {
+      for (const auto &i : ext_ring) {
         points.insert(Point(i[0], i[1]));
       }
 
       // Get holes of polygon with holes
+      //      for (auto hci = pwh.holes_begin(); hci != pwh.holes_end(); ++hci)
+      //      {
+      //        const Polygon &hole = *hci;
+      //        for (auto i : hole) {
+      //          points.insert(Point(i[0], i[1]));
+      //        }
+      //      }
       for (auto hci = pwh.holes_begin(); hci != pwh.holes_end(); ++hci) {
         const Polygon &hole = *hci;
-        for (auto i : hole) {
+        for (const auto &i : hole) {
           points.insert(Point(i[0], i[1]));
         }
       }
@@ -58,7 +65,8 @@ void InsetState::create_delaunay_t()
   // Create the quadtree and 'grade' it so that neighboring quadtree leaves
   // differ by a depth that can only be 0 or 1.
   Quadtree qt(points_vec, Quadtree::PointMap(), 1);
-  int depth = static_cast<int>(std::max(log2(lx_), log2(ly_)));
+  const unsigned int depth =
+    static_cast<unsigned int>(std::max(log2(lx_), log2(ly_)));
   std::cerr << "Using Quadtree depth: " << depth << std::endl;
   qt.refine(
     depth,
@@ -71,8 +79,7 @@ void InsetState::create_delaunay_t()
   unique_quadtree_corners_.clear();
 
   // Get unique quadtree corners
-  for (Quadtree::Node &node :
-       qt.traverse<CGAL::Orthtrees::Leaves_traversal>()) {
+  for (const auto &node : qt.traverse<CGAL::Orthtrees::Leaves_traversal>()) {
 
     // Get bounding box of the leaf node
     const Bbox bbox = qt.bbox(node);
@@ -114,18 +121,19 @@ double InsetState::area_error_at(const std::string &id) const
   return area_errors_.at(id);
 }
 
-Bbox InsetState::bbox() const
+Bbox InsetState::bbox(bool original_bbox) const
 {
+  auto &geo_divs = original_bbox ? geo_divs_original_ : geo_divs_;
   // Find joint bounding box for all "polygons with holes" in this inset
   double inset_xmin = dbl_inf;
   double inset_xmax = -dbl_inf;
   double inset_ymin = dbl_inf;
   double inset_ymax = -dbl_inf;
-#pragma omp parallel for default(none) reduction(min                       \
-                                                 : inset_xmin, inset_ymin) \
-  reduction(max                                                            \
-            : inset_xmax, inset_ymax)
-  for (const auto &gd : geo_divs_) {
+#pragma omp parallel for default(none) shared(geo_divs) \
+  reduction(min                                         \
+            : inset_xmin, inset_ymin) reduction(max     \
+                                                : inset_xmax, inset_ymax)
+  for (const auto &gd : geo_divs) {
     for (const auto &pwh : gd.polygons_with_holes()) {
       const auto bb = pwh.bbox();
       inset_xmin = std::min(bb.xmin(), inset_xmin);
@@ -134,8 +142,7 @@ Bbox InsetState::bbox() const
       inset_ymax = std::max(bb.ymax(), inset_ymax);
     }
   }
-  Bbox inset_bb(inset_xmin, inset_ymin, inset_xmax, inset_ymax);
-  return inset_bb;
+  return {inset_xmin, inset_ymin, inset_xmax, inset_ymax};
 }
 
 Color InsetState::color_at(const std::string &id) const
@@ -357,8 +364,7 @@ FTReal2d *InsetState::ref_to_rho_init()
 
 void InsetState::remove_tiny_polygons(const double &minimum_polygon_size)
 {
-
-  double threshold = total_inset_area() * minimum_polygon_size;
+  const double threshold = total_inset_area() * minimum_polygon_size;
   std::vector<GeoDiv> geo_divs_cleaned;
 
   // Iterate over GeoDivs
@@ -366,7 +372,7 @@ void InsetState::remove_tiny_polygons(const double &minimum_polygon_size)
     GeoDiv gd_cleaned(gd.id());
 
     // Sort polygons with holes according to area
-    gd.sort_pwh();
+    gd.sort_pwh_descending_by_area();
     const auto &pwhs = gd.polygons_with_holes();
 
     // Iterate over Polygon_with_holes

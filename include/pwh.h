@@ -4,7 +4,7 @@
 #include "cgal_typedef.h"
 
 double pwh_area(const Polygon_with_holes &pwh);
-bool compare_pwh(
+bool pwh_is_larger(
   const Polygon_with_holes &pwh1,
   const Polygon_with_holes &pwh2);
 
