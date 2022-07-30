@@ -155,10 +155,10 @@ std::vector<Polygon_with_holes> *GeoDiv::ref_to_polygons_with_holes()
   return &polygons_with_holes_;
 }
 
-void GeoDiv::sort_pwh()
+void GeoDiv::sort_pwh_descending_by_area()
 {
   std::sort(
     polygons_with_holes_.begin(),
     polygons_with_holes_.end(),
-    compare_pwh);
+    pwh_is_larger);
 }
