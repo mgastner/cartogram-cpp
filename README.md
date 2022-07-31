@@ -33,7 +33,7 @@ GNU gcc-11 is currently unavailable from apt by default. You may find installati
 
     sudo apt install build-essential manpages-dev software-properties-common
     sudo add-apt-repository ppa:ubuntu-toolchain-r/test
-    sudo apt update && sudo apt install gcc-11 g++-11
+    sudo apt update && sudo apt install gcc g++
 
 #### Installing nlohmann's JSON parser
 

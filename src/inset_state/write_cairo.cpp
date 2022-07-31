@@ -194,6 +194,18 @@ void InsetState::write_polygons_to_cairo_surface(cairo_t *cr,
       cairo_set_source_rgb(cr, 0.0, 0.0, 0.0);
       cairo_stroke(cr);
     }
+
+    //Plotting transformation after flatten_ellipse_density
+    for (const auto &[start_pt, curr_pt] : proj_qd_.triangle_transformation) {
+      cairo_arc(cr, start_pt.x(), ly_ - start_pt.y(), 0.25, 0, 2 * pi); //Plotting the points
+      cairo_set_source_rgb(cr, 0.0, 0.0, 255.0); //Points: Blue
+      cairo_fill(cr);
+      cairo_move_to(cr, start_pt.x(), ly_ - start_pt.y());
+      cairo_set_line_width(cr, 0.5 * 1e-3 * std::min(lx_, ly_));
+      cairo_set_source_rgb(cr, 255.0, 0.0, 0.0); //Lines: Red
+      cairo_rel_line_to(cr, 1e4 * (curr_pt.x() - start_pt.x()), 1e4 * (start_pt.y() - curr_pt.y())); //Plotting path of translation
+      cairo_stroke(cr);
+    }
   }
 
   // Add labels

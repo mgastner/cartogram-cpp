@@ -100,7 +100,10 @@ double ellipse_density_prefactor(
 
 double ellipse_density_polynomial(double r_tilde_sq)
 {
-  return((r_tilde_sq - xi_sq) * (r_tilde_sq - 4 * xi_sq) * (r_tilde_sq - 4 * xi_sq) /
+  if (r_tilde_sq >= 4 * xi_sq){
+    return 0.0;
+  }
+  return ((r_tilde_sq - xi_sq) * (r_tilde_sq - 4 * xi_sq) * (r_tilde_sq - 4 * xi_sq) /
     (16 * xi_sq * xi_sq * xi_sq));
 }
 
@@ -199,19 +202,18 @@ void InsetState::flatten_ellipse_density()
   rho_max = *std::max_element(
     ell_density_prefactors.begin(),
     ell_density_prefactors.end());
-  std::cout << "rho_min_post = " << rho_min << ", rho_max_post = " << rho_max
+  std::cout << "adjusted_rho_min = " << rho_min << ", adjusted_rho_max = " << rho_max
             << std::endl;
 
-  // Initial time and step size
-  double t = 0.0;
-  double delta_t = 1e-2;  // Initial time step.
-  unsigned int iter = 0;  // Counter for the number of iterations
-  bool accepted = false;
-
-
   // Integrate
-  while (t < 1.0) {
-    for (const auto &[start_pt, curr_pt] : proj_qd_.triangle_transformation) {
+  
+  for (const auto &[start_pt, curr_pt] : proj_qd_.triangle_transformation) {
+    // Initial time and step size
+    double t = 0.0;
+    double delta_t = 1e-2;  // Initial time step.
+    unsigned int iter = 0;  // Counter for the number of iterations
+    bool accepted = false;
+    while (t < 1.0) {
       double rho = rho_mean; 
       double flux_x = 0.0;
       double flux_y = 0.0;
@@ -265,9 +267,11 @@ void InsetState::flatten_ellipse_density()
           curr_pt.y() + v_y * delta_t);
 
       	// Explicit midpoint method:
-      	// x <- x + delta_t * v_x(x + 0.5*delta_t*v_x(x,y,t),
-    	  //                    	y + 0.5*delta_t*v_y(x,y,t),
-    	  //                    	t + 0.5*delta_t)
+      	// x <- x + delta_t * v_x(
+        //                        x + 0.5*delta_t*v_x(x,y,t),   //v_x_t
+    	  //                    	  y + 0.5*delta_t*v_y(x,y,t),   //v_y_t
+    	  //                    	  t + 0.5*delta_t               //t_mid
+        //                       )             
         
         // Calculating the velocity values needed to find the midpoint as per the midpoint method
         double v_x_t = curr_pt.x() + 0.5 * delta_t * v_x; // x value for new velocity
@@ -276,7 +280,7 @@ void InsetState::flatten_ellipse_density()
 
         //Carry out same steps as above to find velocity values
 
-        double rho_mid = 0.0;
+        double rho_mid = rho_mean;
         double flux_x_mid = 0.0;
         double flux_y_mid = 0.0;
         for (unsigned int pgn_index_mid = 0; pgn_index_mid < ells.size();
@@ -303,6 +307,10 @@ void InsetState::flatten_ellipse_density()
               rho_mid += (ell_density_prefactors[pgn_index_mid] *
                           ellipse_density_polynomial(r_tilde_sq_mid)) *
                           (1.0 - t_mid);
+              // std::cout << "ell[pgn]: " << ell_density_prefactors[pgn_index_mid] << std::endl;
+              // std::cout << "r_tilde_sq_mid" << r_tilde_sq_mid << std::endl;
+              // std::cout << "ell(r_tilde_sq_mid): " << ellipse_density_polynomial(r_tilde_sq_mid) << std::endl;
+              // std::cout << "1-tmid: " << (1.0 - t_mid)<< std::endl;
               double prefac_mid = ellipse_flux_prefactor(
                 ell_mid,
                 r_tilde_sq_mid,
@@ -323,7 +331,7 @@ void InsetState::flatten_ellipse_density()
         }
         double v_x_t_mid = flux_x_mid / rho_mid;
         double v_y_t_mid = flux_y_mid / rho_mid;
-
+        
         //New displacement proposed by the midpoint method
         double mid_x = curr_pt.x() + delta_t * v_x_t_mid;
         double mid_y = curr_pt.y() + delta_t * v_y_t_mid;
@@ -336,20 +344,15 @@ void InsetState::flatten_ellipse_density()
           accepted = true;
           proj_qd_.triangle_transformation[start_pt] = Point(mid_x, mid_y);
           delta_t *= inc_after_acc;
-          std::cout << "delta: " << start_pt.x() - mid_x << ", " << start_pt.y() - mid_y << std::endl;
         }
         else{
           delta_t *= dec_after_not_acc;
         }
-        
-
-      
       }
-      std::cout << "delta_t: " << delta_t << std::endl;
+      iter++;
+      t += delta_t;
+      break;
     }
-    iter++;
-    t += delta_t;
-    std::cout << "Number of iterations: " << iter << std::endl;
-    std::cout << "t = " << t << std::endl;
   }
+  return;
 }

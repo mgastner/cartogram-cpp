@@ -85,8 +85,8 @@ if(APPLE)
 elseif(UNIX)
 
   # Using GNU gcc-11.
-  set(CMAKE_CXX_COMPILER "g++-11")
-  set(CMAKE_C_COMPILER "gcc-11")
+  set(CMAKE_CXX_COMPILER "g++")
+  set(CMAKE_C_COMPILER "gcc")
 endif()
 
 target_include_directories(cartogram PUBLIC ${PROJECT_SOURCE_DIR}/include)
