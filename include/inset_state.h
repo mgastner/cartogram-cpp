@@ -133,8 +133,8 @@ public:
   std::string label_at(const std::string &) const;
   unsigned int lx() const;
   unsigned int ly() const;
-  void make_fftw_plans_for_rho();
   void make_fftw_plans_for_flux();
+  void make_fftw_plans_for_rho();
   struct max_area_error_info max_area_error() const;
   unsigned int n_finished_integrations() const;
   unsigned int n_geo_divs() const;
@@ -183,13 +183,13 @@ public:
   void write_cairo_polygons_to_ps(const std::string &, bool, bool, bool);
 
   // Functions to write map to eps
-  void write_quadtree(const std::string &);
   void write_density_to_eps(const std::string &, const double *);
   void write_graticule_to_eps(std::ofstream &);
   void write_intersections_to_eps(unsigned int);
   void write_map_to_eps(const std::string &, bool);
-  void write_polygons_to_eps(std::ofstream &, bool, bool);
   void write_polygon_points_on_cairo_surface(cairo_t *, color);
+  void write_polygons_to_eps(std::ofstream &, bool, bool);
+  void write_quadtree(const std::string &);
 };
 
 #endif
