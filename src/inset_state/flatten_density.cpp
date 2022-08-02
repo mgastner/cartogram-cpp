@@ -87,7 +87,7 @@ void InsetState::flatten_density()
     proj_.resize(boost::extents[lx_][ly_]);
   }
 
-#pragma omp parallel for
+#pragma omp parallel for default(none)
   for (unsigned int i = 0; i < lx_; ++i) {
     for (unsigned int j = 0; j < ly_; ++j) {
       proj_[i][j].x = i + 0.5;
@@ -121,14 +121,14 @@ void InsetState::flatten_density()
   // every point on the lx_-times-ly_ grid at t = 0. We must typecast lx_ and
   // ly_ as double-precision numbers. Otherwise, the ratios in the denominator
   // will evaluate as zero.
-  double dlx = lx_;
-  double dly = ly_;
+  const double dlx = lx_;
+  const double dly = ly_;
 
   // We temporarily insert the Fourier coefficients for the x-components and
   // y-components of the flux vector into grid_fluxx_init and grid_fluxy_init.
   // The reason for `+1` in `di+1` stems from the RODFT10 formula at:
   // https://www.fftw.org/fftw3_doc/1d-Real_002dodd-DFTs-_0028DSTs_0029.html
-#pragma omp parallel for
+#pragma omp parallel for default(none) shared(dlx, dly)
   for (unsigned int i = 0; i < lx_ - 1; ++i) {
     double di = i;
     for (unsigned int j = 0; j < ly_; ++j) {
@@ -140,7 +140,7 @@ void InsetState::flatten_density()
   for (unsigned int j = 0; j < ly_; ++j) {
     grid_fluxx_init_(lx_ - 1, j) = 0.0;
   }
-#pragma omp parallel for
+#pragma omp parallel for default(none) shared(dlx, dly)
   for (unsigned int i = 0; i < lx_; ++i) {
     double di = i;
     for (unsigned int j = 0; j < ly_ - 1; ++j) {
@@ -173,7 +173,7 @@ void InsetState::flatten_density()
       &grid_vy,
       lx_,
       ly_);
-#pragma omp parallel for
+#pragma omp parallel for default(none) shared(v_intp, grid_vx, grid_vy)
     for (unsigned int i = 0; i < lx_; ++i) {
       for (unsigned int j = 0; j < ly_; ++j) {
 
@@ -203,7 +203,7 @@ void InsetState::flatten_density()
 
       // Simple Euler step.
 
-#pragma omp parallel for
+#pragma omp parallel for default(none) shared(delta_t, eul, v_intp)
       for (unsigned int i = 0; i < lx_; ++i) {
         for (unsigned int j = 0; j < ly_; ++j) {
           eul[i][j].x = proj_[i][j].x + v_intp[i][j].x * delta_t;
@@ -235,7 +235,16 @@ void InsetState::flatten_density()
 
         // Okay, we can run interpolate_bilinearly()
 
-#pragma omp parallel for
+#pragma omp parallel for default(none) shared( \
+  abs_tol,                                     \
+  accept,                                      \
+  delta_t,                                     \
+  eul,                                         \
+  grid_vx,                                     \
+  grid_vy,                                     \
+  mid,                                         \
+  v_intp,                                      \
+  v_intp_half)
         for (unsigned int i = 0; i < lx_; ++i) {
           for (unsigned int j = 0; j < ly_; ++j) {
             v_intp_half[i][j].x = interpolate_bilinearly(
@@ -368,11 +377,11 @@ void InsetState::flatten_density_with_node_vertices()
 
   // We temporarily insert the Fourier coefficients for the x-components and
   // y-components of the flux vector into grid_fluxx_init and grid_fluxy_init
-#pragma omp parallel for
+#pragma omp parallel for default(none) shared(dlx, dly)
   for (unsigned int i = 0; i < lx_ - 1; ++i) {
-    double di = i;
+    const double di = i;
     for (unsigned int j = 0; j < ly_; ++j) {
-      double denom =
+      const double denom =
         pi * ((di + 1) / dlx + (j / (di + 1)) * (j / dly) * (dlx / dly));
       grid_fluxx_init_(i, j) = -rho_ft_(i + 1, j) / denom;
     }
@@ -380,11 +389,11 @@ void InsetState::flatten_density_with_node_vertices()
   for (unsigned int j = 0; j < ly_; ++j) {
     grid_fluxx_init_(lx_ - 1, j) = 0.0;
   }
-#pragma omp parallel for
+#pragma omp parallel for default(none) shared(dlx, dly)
   for (unsigned int i = 0; i < lx_; ++i) {
-    double di = i;
+    const double di = i;
     for (unsigned int j = 0; j < ly_ - 1; ++j) {
-      double denom =
+      const double denom =
         pi * ((di / (j + 1)) * (di / dlx) * (dly / dlx) + (j + 1) / dly);
       grid_fluxy_init_(i, j) = -rho_ft_(i, j + 1) / denom;
     }
