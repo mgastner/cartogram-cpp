@@ -23,6 +23,30 @@ geojson_write(
   crs = NULL)
 ```
 
+The source file has topology errors along the antimeridian cut. Therefore, we used a text editor to change
+
+```
+[179.983337,68.96875],[180,68.949738],[180,68.855209],[180,67.499535],[180,67.498718],[180,65.984116],[179.99791,65.027084],
+```
+
+to
+
+```
+[179.983337,68.96875],[180,68.949738],[180,68.855209],[180,67.996353],[180,67.499535],[180,67.498718],[180,66.030731],[180,65.984116],[179.99791,65.027084],
+```
+
+and
+
+```
+[-179.998428,65.048439],[-180,66.030731],[-180,67.498718],[-180,67.996353],[-179.99791,68.979164],
+```
+
+to
+
+```
+[-179.998428,65.048439],[-180,66.030731],[-180,67.498718],[-180,67.499535],[-180,67.996353],[-179.99791,68.979164],
+```
+
 ## russia_population_2010.csv
 Source: Russian Federal State Statistics Service. 2010 All-Russian Population Census. Downloaded 30 June 2022 from https://en.wikipedia.org/wiki/List_of_federal_subjects_of_Russia_by_population.
 
