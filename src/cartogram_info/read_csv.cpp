@@ -82,12 +82,12 @@ void CartogramInfo::read_csv(const argparse::ArgumentParser &arguments)
       }
     }
 
-    // Check for both commas and decimals
+    // Both commas and decimals are present
     else if (
       (area_str_size.find(comma) != std::string::npos) &&
       (area_str_size.find(decimal) != std::string::npos)) {
 
-      // if commas come first, remove all commas
+      // if commas come first, remove all commas and keep the decimal
       if (area_str_size.find(comma) < area_str_size.find(decimal)) {
         area_str_size.erase(
           std::remove(area_str_size.begin(), area_str_size.end(), comma),
@@ -105,14 +105,14 @@ void CartogramInfo::read_csv(const argparse::ArgumentParser &arguments)
       }
     }
 
-    // Check for commas only
+    // Only commas present
     else if (
       area_str_size.find(comma) != std::string::npos) {
       int count_commas = 0;
       count_commas = std::count(area_str_size.begin(),area_str_size.end(),comma);
 
       // if there is only 1 comma, and there are only 2 numbers after the
-      // comma, convert to decimal
+      // comma, convert to decimal: 12,56 -> 12.56
       if (
         (count_commas == 1) &&
         (string_size - area_str_size.find(comma) == 3)) {
@@ -135,13 +135,13 @@ void CartogramInfo::read_csv(const argparse::ArgumentParser &arguments)
       }
     }
 
-    // Check for decimals only
+    // No comma but multiple decimals present
     else if (
       area_str_size.find(decimal) != std::string::npos) {
       int count_decimals = 0;
       count_decimals = std::count(area_str_size.begin(),area_str_size.end(),decimal);
 
-      // If there is more than 1 decimal, remove all decimals
+      // If there is more than 1 decimal, remove all decimals, as we treat them as commas
       if (count_decimals > 1) {
         area_str_size.erase(
           std::remove(area_str_size.begin(), area_str_size.end(), decimal),
@@ -149,7 +149,7 @@ void CartogramInfo::read_csv(const argparse::ArgumentParser &arguments)
           area = std::stod(area_str_size);
       }
       // if there is only 1 decimal, and there are 3 numbers after the
-      // decimal, remove decimal.
+      // decimal, treat the decimal as comma: 12.345 -> 12,345 -> 12345 (parsed)
       else if (
         (count_decimals == 1) &&
         (string_size - area_str_size.find(decimal) == 4)){
