@@ -15,7 +15,6 @@ bool is_area_str_valid(const std::string &area_str)
       return false;
     }
   }
-  
   // if there is '-', it must be infront
   if (area_str.find('-') != std::string::npos) {
     if (area_str.find('-') != 0) {
@@ -105,10 +104,6 @@ void CartogramInfo::read_csv(const argparse::ArgumentParser &arguments)
     Area String Parsing Algorithm:
     *) Check validity of string: only 0-9, ',' and '.' are allowed.
 
-    *) Number with only one decimal (i.e: 123.56), or without any
-       comma or decimal(i.e: 12345): convert to double type without
-    modification.
-
     *) Contains both decimal and comma (i.e: 123,456,789.123 or
     123.456.789,123):
       i) Comma appears first, decimal second (123,456,789.123):
@@ -119,8 +114,8 @@ void CartogramInfo::read_csv(const argparse::ArgumentParser &arguments)
       comma with decimal point (123.456.789,123 -> 123456789.123)
       iii) Number of comma and decimals both are more than 1
       (123,456,789.123.456): This format does not belong to any known
-      convention, so exit with error. iv) Contains in random order (i.e:
-      123,456.789,123): Exit with error.
+      convention, so exit with error.
+      iv) Contains in random order (i.e: 123,456.789,123): Exit with error.
 
     *) Contains only commas (i.e: 123,456,789 or 123456,78):
       i) Only one comma is present and there are two digits after comma. We
@@ -142,7 +137,10 @@ void CartogramInfo::read_csv(const argparse::ArgumentParser &arguments)
       std::cerr << "Area string must only contain 0-9, '.', '-' and ','."
                 << std::endl;
       _Exit(18);
-    } else if (  // Both commas and decimals are present
+    }
+
+    // Both commas and decimals are present
+    if (
       (area_as_str.find(comma) != std::string::npos) &&
       (area_as_str.find(decimal) != std::string::npos)) {
 
@@ -219,13 +217,13 @@ void CartogramInfo::read_csv(const argparse::ArgumentParser &arguments)
     } else if (area_as_str.empty() || area_as_str.compare("NA") == 0) {
       area = -1.0;  // Use negative area as sign of a missing value
     } else {
-      std::cerr << "area_field: " << area_as_str << std::endl;
-      std::cerr << "ERROR: Areas must be numeric or NA" << std::endl;
-      _Exit(201);
+      area = std::stod(area_as_str);
     }
 
-    if (area < 0.0) {
-      std::cerr << "ERROR: negative area in CSV" << std::endl;
+    if (
+      area < 0.0 and
+      (area_as_str.compare("NA") != 0 and !area_as_str.empty())) {
+      std::cerr << "ERROR: Negative area in CSV" << std::endl;
       _Exit(101);
     }
 
