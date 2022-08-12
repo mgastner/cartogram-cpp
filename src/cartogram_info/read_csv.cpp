@@ -2,6 +2,17 @@
 #include "csv.hpp"
 #include <string>
 
+bool is_area_str_valid(const std::string& area_str) {
+  
+  // Only 0 to 9, '.', and ',' are allowed.
+  for (auto c : area_str) {
+    if (!(c >= '0' && c <= '9') && c != '.' && c != ',') {
+      return false;
+    }
+  }
+  return true;
+}
+
 void CartogramInfo::read_csv(const argparse::ArgumentParser &arguments)
 {
 
@@ -68,7 +79,7 @@ void CartogramInfo::read_csv(const argparse::ArgumentParser &arguments)
     }
     ids_in_visual_variables_file_.insert(id);
 
-    const csv::CSVField area_field = row[area_col];
+    csv::CSVField area_field = row[area_col];
     // Get target area as string
     std::string area_as_str = area_field.get();
 
