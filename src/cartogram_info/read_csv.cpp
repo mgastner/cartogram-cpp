@@ -4,6 +4,10 @@
 
 bool is_area_str_valid(const std::string &area_str)
 {
+  // Allow area_str being "NA"
+  if (area_str == "NA") {
+    return true;
+  }
 
   // Only 0 to 9, '.', '-', and ',' are allowed.
   for (const auto &c : area_str) {
