@@ -106,10 +106,10 @@ void CartogramInfo::read_csv(const argparse::ArgumentParser &arguments)
     }
 
     // Only commas present
-    else if (
-      area_str_size.find(comma) != std::string::npos) {
+    else if (area_str_size.find(comma) != std::string::npos) {
       int count_commas = 0;
-      count_commas = std::count(area_str_size.begin(),area_str_size.end(),comma);
+      count_commas =
+        std::count(area_str_size.begin(), area_str_size.end(), comma);
 
       // if there is only 1 comma, and there are only 2 numbers after the
       // comma, convert to decimal: 12,56 -> 12.56
@@ -129,36 +129,36 @@ void CartogramInfo::read_csv(const argparse::ArgumentParser &arguments)
       }
       if (std::all_of(area_str_size.begin(), area_str_size.end(), ::isdigit)) {
         area = std::stod(area_str_size);
-      }
-      else{
+      } else {
         area = -1.0;
       }
     }
 
     // No comma but multiple decimals present
-    else if (
-      area_str_size.find(decimal) != std::string::npos) {
+    else if (area_str_size.find(decimal) != std::string::npos) {
       int count_decimals = 0;
-      count_decimals = std::count(area_str_size.begin(),area_str_size.end(),decimal);
+      count_decimals =
+        std::count(area_str_size.begin(), area_str_size.end(), decimal);
 
-      // If there is more than 1 decimal, remove all decimals, as we treat them as commas
+      // If there is more than 1 decimal, remove all decimals, as we treat them
+      // as commas
       if (count_decimals > 1) {
         area_str_size.erase(
           std::remove(area_str_size.begin(), area_str_size.end(), decimal),
           area_str_size.end());
-          area = std::stod(area_str_size);
+        area = std::stod(area_str_size);
       }
       // if there is only 1 decimal, and there are 3 numbers after the
-      // decimal, treat the decimal as comma: 12.345 -> 12,345 -> 12345 (parsed)
+      // decimal, treat the decimal as comma: 12.345 -> 12,345 -> 12345
+      // (parsed)
       else if (
         (count_decimals == 1) &&
-        (string_size - area_str_size.find(decimal) == 4)){
+        (string_size - area_str_size.find(decimal) == 4)) {
         area_str_size.erase(
           std::remove(area_str_size.begin(), area_str_size.end(), decimal),
           area_str_size.end());
-          area = std::stod(area_str_size);
-      }
-      else{
+        area = std::stod(area_str_size);
+      } else {
         area = -1.0;
       }
     }
