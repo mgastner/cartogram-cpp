@@ -59,6 +59,7 @@ void CartogramInfo::read_csv(const argparse::ArgumentParser &arguments)
     }
 
     // Read ID of geographic division
+
     std::string id = row[id_col].get();
     if (ids_in_visual_variables_file_.contains(id)) {
       std::cerr << "ERROR: ID " << id << " appears more than once in CSV"
@@ -67,14 +68,52 @@ void CartogramInfo::read_csv(const argparse::ArgumentParser &arguments)
     }
     ids_in_visual_variables_file_.insert(id);
 
+    const csv::CSVField area_field = row[area_col];
     // Get target area as string
-    std::string area_as_str = row[area_col].get();
-    
+    std::string area_as_str = area_field.get();
+
     // Parsed area string will be stored here
     double area;
     const char comma = ',';
     const char decimal = '.';
     const int area_str_size = area_as_str.length();
+
+    /*
+    Area String Parsing Algorithm:
+    *) Check validity of string: only 0-9, ',' and '.' are allowed.
+
+    *) Number with only one decimal (i.e: 123.56), or without any
+       comma or decimal(i.e: 12345): convert to double type without
+    modification.
+
+    *) Contains both decimal and comma (i.e: 123,456,789.123 or
+    123.456.789,123):
+      i) Comma appears first, decimal second (123,456,789.123):
+      We consider it as US-convention, and remove the commas.
+      123,456,789.123 -> 123456789.123.
+      ii) Decimal appears first, comma second (123.456.789,123): We
+      consider it Europe-convention, and we remove the decimals and replace the
+      comma with decimal point (123.456.789,123 -> 123456789.123)
+      iii) Number of comma and decimals both are more than 1
+      (123,456,789.123.456): This format does not belong to any known
+      convention, so exit with error. iv) Contains in random order (i.e:
+      123,456.789,123): Exit with error.
+
+    *) Contains only commas (i.e: 123,456,789 or 123456,78):
+      i) Only one comma is present and there are two digits after comma. We
+      treat the comma as deicmal. (123456,78 -> 123456.78)
+      ii) All other case, we assume the number does not contain any decimal
+      values. So, we remove the commas and parse as usual. (123,456,789 ->
+      123456789)
+
+    *) Contains only decimals (i.e: 123.456.789 or 123456.789):
+      i) Only one decimal present case is addressed by second logic. Bascially,
+      .is_num() method will consider it as a double type.
+      ii) Other cases, we assume the decimals were used to convey comma
+      meaning. So, we remove the decimals places and parse the string.
+      (123.456.789 -> 123456789)
+    */
+   
     if (area_field.is_num()) {
       area = area_field.get<double>();
       if (area < 0.0) {
@@ -114,8 +153,7 @@ void CartogramInfo::read_csv(const argparse::ArgumentParser &arguments)
       // if there is only 1 comma, and there are only 2 numbers after the
       // comma, convert to decimal: 12,56 -> 12.56
       if (
-        (comma_count == 1) &&
-        (area_str_size - area_as_str.find(comma) == 3)) {
+        (comma_count == 1) && (area_str_size - area_as_str.find(comma) == 3)) {
         area_as_str[area_as_str.find(comma)] = '.';
       }
 
