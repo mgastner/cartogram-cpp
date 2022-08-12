@@ -5,9 +5,16 @@
 bool is_area_str_valid(const std::string &area_str)
 {
 
-  // Only 0 to 9, '.', and ',' are allowed.
-  for (auto c : area_str) {
-    if (!(c >= '0' && c <= '9') && c != '.' && c != ',') {
+  // Only 0 to 9, '.', '-', and ',' are allowed.
+  for (const auto &c : area_str) {
+    if (!(c >= '0' && c <= '9') && c != '.' && c != '-' && c != ',') {
+      return false;
+    }
+  }
+  
+  // if there is '-', it must be infront
+  if (area_str.find('-') != std::string::npos) {
+    if (area_str.find('-') != 0) {
       return false;
     }
   }
