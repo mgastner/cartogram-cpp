@@ -125,8 +125,8 @@ void CartogramInfo::read_csv(const argparse::ArgumentParser &arguments)
       123456789)
 
     *) Contains only decimals (i.e: 123.456.789 or 123456.789):
-      i) Only one decimal present case is addressed by second logic. Bascially,
-      .is_num() method will consider it as a double type.
+      i) Only one decimal present and there are three digits after that. Assume
+      the decimal is European convention. (123456.789 -> 123456789)
       ii) Other cases, we assume the decimals were used to convey comma
       meaning. So, we remove the decimals places and parse the string.
       (123.456.789 -> 123456789)
