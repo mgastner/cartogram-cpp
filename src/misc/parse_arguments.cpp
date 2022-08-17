@@ -10,7 +10,6 @@ argparse::ArgumentParser parsed_arguments(
   std::string &visual_file_name,
   unsigned int &max_n_grid_rows_or_cols,
   unsigned int &target_points_per_inset,
-  std::string &compare_geo_file_name,
   bool &insert_visual_variable,
   bool &world,
   bool &triangulation,
@@ -50,7 +49,6 @@ argparse::ArgumentParser parsed_arguments(
       "Integer: Number of grid cells along longer Cartesian coordinate axis");
 
   arguments.add_argument("-c", "--compare")
-    .default_value("none")
     .help("File path: GeoJSON file with the same regions and IDs as `geometry_file`");
 
   // Optional boolean arguments
@@ -152,13 +150,6 @@ argparse::ArgumentParser parsed_arguments(
 
   // Set target_points_per_inset
   target_points_per_inset = arguments.get<unsigned int>("-P");
-
-  // Get GeoJSON file for comparison.
-  if (arguments.is_used("--compare")) {
-    compare_geo_file_name = arguments.get<std::string>("--compare");
-  } else {
-    compare_geo_file_name = "";
-  }
 
   // Set boolean values
   insert_visual_variable = arguments.get<bool>("--insert_visual_variable");

@@ -17,6 +17,24 @@ using multi_linestring_type =
 
 bool account_for_holes = false;
 
+// Debugging test for checking the order of line strings in the Hausdorff
+// distance function. The first line string in the argument is the anchor
+// a.k.a. the line string of which we take each point and measure its distance
+// to the closest point in the second line string.
+// void hausdorff_test() {
+
+//   linestring_type ls1, ls2;
+//   boost::geometry::read_wkt("LINESTRING(1 1,2 1,3 1,4 1,5 1)", ls1);
+//   boost::geometry::read_wkt("LINESTRING(1 2,2 4,3 2,4 2,5 2)", ls2);
+
+//   double res1 = boost::geometry::discrete_hausdorff_distance(ls1, ls2);
+//   double res2 = boost::geometry::discrete_hausdorff_distance(ls2, ls1);
+
+//   std::cout << "Discrete Hausdorff Distance 1: " << res1 << std::endl;
+//   std::cout << "Discrete Hausdorff Distance 2: " << res2 << std::endl;
+//   return;
+// }
+
 double area_polygon_with_holes(Polygon_with_holes poly) {
   double a = 0;
   a += poly.outer_boundary().area();
@@ -54,23 +72,20 @@ Polygon_with_holes normalised_polygon(Polygon_with_holes poly) {
 Polygon_with_holes translated_polygon (Polygon_with_holes poly,
                                        double x_shift,
                                        double y_shift) {
-  Polygon new_outer;
-  for (auto pt : poly.outer_boundary()) {
-    new_outer.push_back(Point(pt.x() + x_shift, pt.y() + y_shift));
-  }
 
+  // Get the transformation.
+  const Transformation translate(CGAL::TRANSLATION,
+                                 CGAL::Vector_2<Scd> (x_shift, y_shift));
+
+  // Construct the new polygon.
+  Polygon new_outer =
+    transform(translate, poly.outer_boundary());
   std::vector<Polygon> new_holes;
-
   for (auto h = poly.holes_begin(); h != poly.holes_end(); ++h) {
-    Polygon hole;
-    for (auto &coords_hole : *h) {
-      hole.push_back(
-        Point(coords_hole.x() + x_shift, coords_hole.y() + y_shift)
-      );
-    }
-    new_holes.push_back(hole);
+    new_holes.push_back(transform(translate, *h));
   }
-  return Polygon_with_holes(new_outer, new_holes.begin(), new_holes.end());
+  Polygon_with_holes new_poly(new_outer, new_holes.begin(), new_holes.end());
+  return new_poly;
 }
 
 std::pair<double, double> get_translation_coordinates (

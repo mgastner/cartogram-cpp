@@ -111,11 +111,10 @@ void init_cart_info(CartogramInfo *cart_info,
 
 int main(const int argc, const char *argv[])
 {
-  hausdorff_test();
-  
+
   // Start of main function time
   time_point start_main = clock_time::now();
-  std::string geo_file_name, visual_file_name, compare_geo_file_name;
+  std::string geo_file_name, visual_file_name;
 
   // Default number of grid cells along longer Cartesian coordinate axis
   unsigned int max_n_grid_rows_or_cols;
@@ -148,7 +147,6 @@ int main(const int argc, const char *argv[])
     visual_file_name,
     max_n_grid_rows_or_cols,
     target_points_per_inset,
-    compare_geo_file_name,
     insert_visual_variable,
     world,
     triangulation,
@@ -231,8 +229,11 @@ int main(const int argc, const char *argv[])
     return EXIT_SUCCESS;
   }
 
+  // Check if a comparison GeoJSON file is provided
+  auto is_compare_header = arguments.present("-c");
+
   // Compare 2 GeoJSON files.
-  if (compare_geo_file_name != "") {
+  if (is_compare_header) {
     CartogramInfo compare_cart_info(world, visual_file_name);
     init_cart_info(&compare_cart_info,
                     arguments,
@@ -240,7 +241,7 @@ int main(const int argc, const char *argv[])
                     world,
                     simplify,
                     target_points_per_inset,
-                    compare_geo_file_name,
+                    *is_compare_header,
                  map_name);
 
     std::map<std::string, InsetState> *compare_insets =
@@ -300,11 +301,8 @@ int main(const int argc, const char *argv[])
     // Rescale map to fit into a rectangular box [0, lx] * [0, ly]
     inset_state.rescale_map(max_n_grid_rows_or_cols, cart_info.is_world_map());
 
-    if (output_to_stdout || true) {
-
-      // Store original coordinates
-      inset_state.store_original_geo_divs();
-    }
+    // Store original coordinates
+    inset_state.store_original_geo_divs();
 
     // Set up Fourier transforms
     const unsigned int lx = inset_state.lx();
