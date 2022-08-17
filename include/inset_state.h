@@ -89,10 +89,10 @@ public:
   double area_drift() const;
   double area_error_at(const std::string &) const;
   void auto_color();  // Automatically color GeoDivs
-  Bbox bbox() const;
+  Bbox bbox(bool = false) const;
   void blur_density(double, bool);
   void check_topology();
-  int chosen_diag(const Point v[4], unsigned int *, bool = false);
+  int chosen_diag(const Point v[4], unsigned int &, bool = false) const;
   Color color_at(const std::string &) const;
   bool color_found(const std::string &) const;
   bool colors_empty() const;
@@ -144,11 +144,12 @@ public:
   void normalize_target_area();
   std::string pos() const;
   void project();
-  Point projected_point(Point, bool = false);
-  Point projected_point_with_triangulation(Point, bool = false);
+  Point projected_point(Point, bool = false) const;
+  Point projected_point_with_triangulation(Point, bool = false) const;
   void project_with_cum_proj();
   void project_with_delaunay_t();
   void project_with_triangulation();
+  void project_with_proj_sequence();
   void push_back(const GeoDiv &);
   FTReal2d *ref_to_fluxx_init();
   FTReal2d *ref_to_fluxy_init();
@@ -171,11 +172,11 @@ public:
   double total_target_area() const;
   std::array<Point, 3> transformed_triangle(
     const std::array<Point, 3> &,
-    bool = false);
+    bool = false) const;
 
   // Apply given function to all points
   void transform_points(const std::function<Point(Point)> &, bool = false);
-  std::array<Point, 3> untransformed_triangle(Point, bool = false);
+  std::array<Point, 3> untransformed_triangle(Point, bool = false) const;
 
   // Cairo functions
   void write_cairo_map(const std::string &, bool);

@@ -52,8 +52,9 @@ int main(const int argc, const char *argv[])
     plot_graticule, plot_intersections, plot_polygons, plot_quadtree,
     remove_tiny_polygons;
 
-  // The proportion of the total area smaller than which polygons are removed
-  double minimum_polygon_area;
+  // If the proportion of the polygon area is smaller than
+  // min_polygon_area * total area, then remove polygon
+  double min_polygon_area;
   bool qtdt_method;  // Use Quadtree-Delaunay triangulation
 
   // Parse command-line arguments
@@ -76,7 +77,7 @@ int main(const int argc, const char *argv[])
     plot_intersections,
     plot_polygons,
     remove_tiny_polygons,
-    minimum_polygon_area,
+    min_polygon_area,
     plot_quadtree);
 
   // Initialize cart_info. It contains all the information about the cartogram
@@ -263,7 +264,7 @@ int main(const int argc, const char *argv[])
 
     // Remove tiny polygons below threshold
     if (remove_tiny_polygons) {
-      inset_state.remove_tiny_polygons(minimum_polygon_area);
+      inset_state.remove_tiny_polygons(min_polygon_area);
     }
 
     // We make the approximation that the progress towards generating the
@@ -275,7 +276,6 @@ int main(const int argc, const char *argv[])
     time_point start_integration = clock_time::now();
 
     // Start map integration
-    // TODO: Add condition for area drift
     while (inset_state.n_finished_integrations() < max_integrations &&
            (inset_state.max_area_error().value > max_permitted_area_error ||
             std::abs(inset_state.area_drift() - 1.0) > 0.01)) {
@@ -443,8 +443,12 @@ int main(const int argc, const char *argv[])
     }
 
     if (output_to_stdout) {
-      inset_state.fill_graticule_diagonals(true);
-      inset_state.project_with_cum_proj();
+      if (qtdt_method) {
+        inset_state.project_with_proj_sequence();
+      } else {
+        inset_state.fill_graticule_diagonals(true);
+        inset_state.project_with_cum_proj();
+      }
     }
 
     // Clean up after finishing all Fourier transforms for this inset
@@ -473,7 +477,8 @@ int main(const int argc, const char *argv[])
   std::cerr << "********** Time Report **********" << std::endl;
 
   // Print integration times
-  for (auto [inset_pos, inset_integration_time] : insets_integration_times) {
+  for (const auto &[inset_pos, inset_integration_time] :
+       insets_integration_times) {
     std::cerr << "Integration Time for Inset " << inset_pos << ": "
               << inset_integration_time.count() << " ms" << std::endl;
   }

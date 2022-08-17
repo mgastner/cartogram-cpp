@@ -12,7 +12,7 @@ double pwh_area(const Polygon_with_holes &pwh)
 }
 
 // Compares two polygon with holes according to their areas
-bool compare_pwh(
+bool pwh_is_larger(
   const Polygon_with_holes &pwh1,
   const Polygon_with_holes &pwh2)
 {
