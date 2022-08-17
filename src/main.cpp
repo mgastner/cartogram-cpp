@@ -21,7 +21,6 @@ void init_cart_info(CartogramInfo *cart_info,
                     bool make_csv,
                     bool world,
                     bool simplify,
-                    bool output_equal_area,
                     unsigned int target_points_per_inset,
                     std::string geo_file_name,
                     std::string map_name)
@@ -112,6 +111,8 @@ void init_cart_info(CartogramInfo *cart_info,
 
 int main(const int argc, const char *argv[])
 {
+  hausdorff_test();
+  
   // Start of main function time
   time_point start_main = clock_time::now();
   std::string geo_file_name, visual_file_name, compare_geo_file_name;
@@ -181,7 +182,6 @@ int main(const int argc, const char *argv[])
                  make_csv,
                  world,
                  simplify,
-                 output_equal_area,
                  target_points_per_inset,
                  geo_file_name,
                  map_name);
@@ -239,7 +239,6 @@ int main(const int argc, const char *argv[])
                     make_csv,
                     world,
                     simplify,
-                    output_equal_area,
                     target_points_per_inset,
                     compare_geo_file_name,
                  map_name);
