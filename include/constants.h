@@ -44,6 +44,14 @@ constexpr double max_font_size = 10.0;
 
 // Threshold as a fraction of non-na and non-zero total area for a target
 // area to be considered "too small"
-constexpr double small_area_threshold_frac = 2e-5;
+// Area of 2e-3 is selected from the Singapore_by_planning_area map, 
+// where this is the smallest area threshold such that 0 
+// population GeoDivs are not effectively removed entirely.
+// Todo: This threshold is too high for maps with many GeoDivs
+// and sharp contrast in Geodiv population values
+// e.g. Map of contiguous_USA_by_county
+// Maybe we could automate this expr to be a function depending on
+// the absolute value of the total area.
+constexpr double small_area_threshold_frac = 2e-3;
 
 #endif
