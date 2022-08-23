@@ -450,21 +450,15 @@ void InsetState::scale_inset(double scale_factor)
 {
   std::vector<GeoDiv> new_geo_divs;
   const Transformation scale(CGAL::SCALING, scale_factor);
-  for (auto gd : geo_divs_) {
-    GeoDiv new_gd(gd.id());
-    for (auto pwh : *gd.ref_to_polygons_with_holes()) {
-      Polygon new_outer = transform(scale, pwh.outer_boundary());
-      std::vector<Polygon> new_holes;
+  for (auto &gd : geo_divs_) {
+    for (auto &pwh : *gd.ref_to_polygons_with_holes()) {
+      auto *ext_ring = &pwh.outer_boundary();
+      *ext_ring = transform(scale, *ext_ring);
       for (auto h = pwh.holes_begin(); h != pwh.holes_end(); ++h) {
-        new_holes.push_back(transform(scale, *h));
+        *h = transform(scale, *h);
       }
-      new_gd.push_back(
-        Polygon_with_holes(new_outer, new_holes.begin(), new_holes.end())
-      );
     }
-    new_geo_divs.push_back(new_gd);
   }
-  geo_divs_ = new_geo_divs;
 }
 
 void InsetState::store_original_geo_divs()
