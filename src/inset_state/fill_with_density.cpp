@@ -169,21 +169,18 @@ void InsetState::fill_with_density(
   dens_max_ = dens_max;
 
   // Print density into csv
-  if (false) {
+  if (true) {
     std::string file_name =
       inset_name_ + "_density_" + std::to_string(n_finished_integrations());
-    std::ofstream f_csv;
-    for (unsigned int i = 0; i < lx_; ++i) {
-      for (unsigned int j = 0; j < ly_; ++j) {
-        f_csv << rho_init_(i, j);
-        if (j < ly_ - 1) {
-          f_csv << ", ";
-        }
-      }
-      f_csv << "\n";
-    }
-    f_csv.open(file_name + ".csv");
-    f_csv.close();
+    // std::ofstream f_csv;
+    // f_csv.open(file_name + ".csv");
+    // for (unsigned int i = 0; i < lx_; ++i) {
+    //   for (unsigned int j = 0; j < ly_; ++j) {
+    //     f_csv << i << ", " << j << ", " << rho_init_(i, j) << "\n";
+    //   }
+    // }
+    // f_csv.close();
+
     std::ofstream f_txt;
     f_txt.open(file_name + ".txt");
     f_txt << "Minimum Density: " << dens_min_ << "\n";
@@ -217,5 +214,6 @@ void InsetState::fill_with_density(
       false,
       image_format_ps);
   }
+
   execute_fftw_fwd_plan();
 }

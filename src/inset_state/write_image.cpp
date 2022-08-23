@@ -268,7 +268,7 @@ void InsetState::write_grid_heatmap_image(
   const bool crop_polygons)
 {
   // Whether to draw bar on the cairo surface
-  const bool draw_bar = true;
+  const bool draw_bar = false;
 
   // Create a cairo surface
   cairo_surface_t *surface;
@@ -291,7 +291,7 @@ void InsetState::write_grid_heatmap_image(
   const double total_ta = total_target_area();
   const double total_ia = total_inset_area();
 
-  const Bbox bbox_bar = get_bbox_bar(15, 150);
+  // const Bbox bbox_bar = get_bbox_bar(15, 150);
 
   // Get the max and min grid cell area points
   Point max_area_cell_point, min_area_cell_point;
@@ -592,7 +592,7 @@ void InsetState::write_density_image(
   const bool image_format_ps)
 {
   // Whether to draw bar on the cairo surface
-  const bool draw_bar = true;
+  const bool draw_bar = false;
   cairo_surface_t *surface =
     (image_format_ps ? cairo_ps_surface_create(filename.c_str(), lx_, ly_)
                      : cairo_svg_surface_create(filename.c_str(), lx_, ly_));
