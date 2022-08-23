@@ -35,7 +35,7 @@ bool account_for_holes = false;
 //   return;
 // }
 
-double area_polygon_with_holes(Polygon_with_holes poly) {
+double area_polygon_with_holes(const Polygon_with_holes &poly) {
   double a = 0;
   a += poly.outer_boundary().area();
   for (auto h = poly.holes_begin(); h != poly.holes_end(); ++h) {
@@ -44,7 +44,7 @@ double area_polygon_with_holes(Polygon_with_holes poly) {
   return a;
 }
 
-Polygon_with_holes normalised_polygon(Polygon_with_holes poly) {
+Polygon_with_holes normalised_polygon(const Polygon_with_holes &poly) {
 
   // How to calculate areas when normalising polygons
   double poly_area;
@@ -69,7 +69,7 @@ Polygon_with_holes normalised_polygon(Polygon_with_holes poly) {
   return new_poly;
 }
 
-Polygon_with_holes translated_polygon (Polygon_with_holes poly,
+Polygon_with_holes translated_polygon (const Polygon_with_holes &poly,
                                        double x_shift,
                                        double y_shift) {
 
@@ -89,8 +89,8 @@ Polygon_with_holes translated_polygon (Polygon_with_holes poly,
 }
 
 std::pair<double, double> get_translation_coordinates (
-  Polygon_with_holes anchor_poly,
-  Polygon_with_holes displaced_poly)
+  const Polygon_with_holes &anchor_poly,
+  const Polygon_with_holes &displaced_poly)
 {
 
   // Note: The centroid calculation ignores the holes and returns
@@ -113,7 +113,7 @@ std::pair<double, double> get_translation_coordinates (
   return displacement;
 }
 
-linestring_type get_linestring(Polygon poly) {
+linestring_type get_linestring(const Polygon &poly) {
   linestring_type orig_outer_linestring;
   for (auto pt : poly) {
     boost::geometry::append(
@@ -126,7 +126,7 @@ linestring_type get_linestring(Polygon poly) {
 // Debug function to test out Frechet distance variations.
 Polygon_with_holes get_polygon_with_new_starting_point (
   unsigned int start_pt,
-  Polygon_with_holes poly)
+  const Polygon_with_holes &poly)
 {
   std::vector<Point> start_points;
   Polygon outer_pwh = poly.outer_boundary();
@@ -146,8 +146,8 @@ Polygon_with_holes get_polygon_with_new_starting_point (
   );
 }
 
-double frechet_distance(Polygon_with_holes orig_poly,
-                        Polygon_with_holes new_poly) {
+double frechet_distance(const Polygon_with_holes &orig_poly,
+                        const Polygon_with_holes &new_poly) {
   double distance = 0;
   linestring_type orig_outer_linestring =
     get_linestring(orig_poly.outer_boundary());
@@ -177,8 +177,8 @@ double frechet_distance(Polygon_with_holes orig_poly,
   return distance;
 }
 
-double hausdorff_distance(Polygon_with_holes orig_poly,
-                          Polygon_with_holes new_poly) {
+double hausdorff_distance(const Polygon_with_holes &orig_poly,
+                          const Polygon_with_holes &new_poly) {
   double distance = 0;
   linestring_type orig_outer_linestring =
     get_linestring(orig_poly.outer_boundary());
@@ -208,8 +208,8 @@ double hausdorff_distance(Polygon_with_holes orig_poly,
   return distance;
 }
 
-double symmetric_distance(Polygon_with_holes orig_poly,
-                          Polygon_with_holes new_poly) {
+double symmetric_distance(const Polygon_with_holes &orig_poly,
+                          const Polygon_with_holes &new_poly) {
 
   // Calculate the intersection of the original and transformed polygons.
   std::list<Polygon_with_holes> inter_polys;
