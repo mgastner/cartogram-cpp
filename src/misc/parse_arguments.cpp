@@ -24,7 +24,6 @@ argparse::ArgumentParser parsed_arguments(
   bool &plot_grid_heatmap,
   bool &plot_intersections,
   bool &crop_polygons,
-  bool &plot_polygons,
   bool &remove_tiny_polygons,
   double &minimum_polygon_area,
   bool &plot_quadtree)
@@ -64,7 +63,7 @@ argparse::ArgumentParser parsed_arguments(
       .help("Boolean: use .ps format for images?")
       .default_value(false)
       .implicit_value(true);
-  arguments.add_argument("-h", "--grid_heatmap_image")
+  arguments.add_argument("-y", "--pycnophylactic_image")
       .help(
           "Boolean: produce grid heatmap images "
           "*_grid_heatmap.svg/ps?")
@@ -74,10 +73,6 @@ argparse::ArgumentParser parsed_arguments(
       .help("Boolean: crop grid heatmap image?")
       .default_value(false)
       .implicit_value(true);
-  arguments.add_argument("-p", "--plot_polygons")
-    .help("Boolean: make EPS image of input and output?")
-    .default_value(false)
-    .implicit_value(true);
   arguments.add_argument("-T", "--quadtree_to_ps")
     .help("Boolean: make PS images of Quadtree-Delaunay Triangulation?")
     .default_value(false)
@@ -190,9 +185,8 @@ argparse::ArgumentParser parsed_arguments(
   output_to_stdout = arguments.get<bool>("-o");
   plot_density = arguments.get<bool>("-d");
   plot_grid = arguments.get<bool>("-g");
-  plot_grid_heatmap = arguments.get<bool>("-h");
+  plot_grid_heatmap = arguments.get<bool>("-y");
   plot_intersections = arguments.get<bool>("-i");
-  plot_polygons = arguments.get<bool>("-p");
   plot_quadtree = arguments.get<bool>("-T");
 
   if (arguments.is_used("-o") && !arguments.is_used("-s")) {
@@ -219,8 +213,7 @@ argparse::ArgumentParser parsed_arguments(
     std::cerr << "QTDT method is necessary for Quadtree images." << std::endl;
     std::cerr << "To use qtdt method, pass the -Q flag." << std::endl;
     std::cerr << arguments << std::endl;
-    _Exit(17);
-  }
+    _Exit(17);}
 
   // Print names of geometry file
   if (arguments.is_used("geometry_file")) {

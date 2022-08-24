@@ -38,7 +38,7 @@ int main(const int argc, const char *argv[])
   // Other boolean values that are needed to parse the command line arguments
   bool make_csv, output_equal_area, output_to_stdout, plot_density,
     produce_map_image, plot_grid, plot_grid_heatmap,
-    plot_intersections, crop_polygons, plot_polygons, image_format_ps,
+    plot_intersections, crop_polygons, image_format_ps,
     plot_quadtree, remove_tiny_polygons;
 
   // The proportion of the total area smaller than which polygons are removed
@@ -78,7 +78,6 @@ int main(const int argc, const char *argv[])
     plot_grid_heatmap,
     plot_intersections,
     crop_polygons,
-    plot_polygons,
     remove_tiny_polygons,
     minimum_polygon_area,
     plot_quadtree);

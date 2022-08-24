@@ -26,7 +26,6 @@ argparse::ArgumentParser parsed_arguments(
   bool &plot_grid_heatmap,
   bool &plot_intersections,
   bool &crop_polygons,
-  bool &plot_polygons,
   bool &remove_tiny_polygons,
   double &minimum_polygon_area,
   bool &plot_quadtree);
