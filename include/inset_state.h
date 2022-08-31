@@ -198,6 +198,7 @@ public:
   void rings_are_simple();
   void set_area_errors();
   void set_grid_dimensions(unsigned int, unsigned int);
+  void set_geo_divs(std::vector<GeoDiv> geo_divs_dens);
   void set_inset_name(const std::string &);
   void set_latt_const(const double);
   void set_pos(const std::string &);

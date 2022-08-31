@@ -264,8 +264,10 @@ void InsetState::write_grid_heatmap_data(const std::string filename)
 {
   unsigned int cell_width = 1;
   const unsigned int resolution = 1;
-  auto intersections_with_rays = intersec_with_parallel_to('x', resolution);
 
+  InsetState is_copy = (*this);
+  is_copy.set_geo_divs(geo_divs_original_);
+  auto intersections_with_rays = is_copy.intersec_with_parallel_to('x', resolution);
   std::vector<std::vector<double>> exists(lx_, std::vector<double>(ly_, 0));
 
   // Mark all squares that are inside map with 1

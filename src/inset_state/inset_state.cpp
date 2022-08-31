@@ -1,9 +1,11 @@
 #include "inset_state.h"
 #include "constants.h"
+#include "geo_div.h"
 #include "round_point.h"
 #include <cmath>
 #include <iostream>
 #include <utility>
+#include <vector>
 
 InsetState::InsetState()
 {
@@ -493,4 +495,9 @@ void InsetState::transform_points(
       }
     }
   }
+}
+void InsetState::set_geo_divs(std::vector<GeoDiv> geo_divs_dens)
+{
+  geo_divs_.clear();
+  geo_divs_ = geo_divs_dens;
 }
