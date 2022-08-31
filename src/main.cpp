@@ -37,7 +37,7 @@ int main(const int argc, const char *argv[])
 
   // Other boolean values that are needed to parse the command line arguments
   bool make_csv, output_equal_area, output_to_stdout, plot_density,
-    produce_map_image, plot_grid, plot_grid_heatmap,
+    produce_map_image, plot_grid, plot_pycnophylactic,
     plot_intersections, crop_polygons, image_format_ps,
     plot_quadtree, remove_tiny_polygons;
 
@@ -75,7 +75,7 @@ int main(const int argc, const char *argv[])
     output_to_stdout,
     plot_density,
     plot_grid,
-    plot_grid_heatmap,
+    plot_pycnophylactic,
     plot_intersections,
     crop_polygons,
     remove_tiny_polygons,
@@ -170,7 +170,7 @@ int main(const int argc, const char *argv[])
       } else {
         inset_state.apply_albers_projection();
       }
-    } else if (output_equal_area || plot_grid_heatmap) {
+    } else if (output_equal_area || plot_pycnophylactic) {
       std::cerr << "ERROR: Input GeoJSON is not a longitude-latitude map."
                 << std::endl;
       return EXIT_FAILURE;
@@ -229,7 +229,7 @@ int main(const int argc, const char *argv[])
     // Rescale map to fit into a rectangular box [0, lx] * [0, ly]
     inset_state.rescale_map(max_n_grid_rows_or_cols, cart_info.is_world_map());
 
-    if (output_to_stdout) {
+    if (output_to_stdout || plot_pycnophylactic) {
 
       // Store original coordinates
       inset_state.store_original_geo_divs();
@@ -329,7 +329,7 @@ int main(const int argc, const char *argv[])
       time_point start_fill_density = clock_time::now();
       inset_state.fill_with_density(
         plot_density,
-        plot_grid_heatmap,
+        plot_pycnophylactic,
         image_format_ps);
       duration_fill_density +=
         inMilliseconds(clock_time::now() - start_fill_density);
@@ -440,7 +440,7 @@ int main(const int argc, const char *argv[])
         false);
     }
 
-    if (plot_grid_heatmap) {
+    if (plot_pycnophylactic) {
       // Produce equal-area grid heatmap
       std::string output_filename =
         inset_state.inset_name() + "_equal_area_grid_heatmap";

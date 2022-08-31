@@ -496,8 +496,8 @@ void InsetState::transform_points(
     }
   }
 }
-void InsetState::set_geo_divs(std::vector<GeoDiv> geo_divs_dens)
+void InsetState::set_geo_divs(std::vector<GeoDiv> new_geo_divs)
 {
   geo_divs_.clear();
-  geo_divs_ = geo_divs_dens;
+  geo_divs_ = new_geo_divs;
 }

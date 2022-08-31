@@ -21,7 +21,7 @@ argparse::ArgumentParser parsed_arguments(
   bool &output_to_stdout,
   bool &plot_density,
   bool &plot_grid,
-  bool &plot_grid_heatmap,
+  bool &plot_pycnophylactic,
   bool &plot_intersections,
   bool &crop_polygons,
   bool &remove_tiny_polygons,
@@ -185,7 +185,7 @@ argparse::ArgumentParser parsed_arguments(
   output_to_stdout = arguments.get<bool>("-o");
   plot_density = arguments.get<bool>("-d");
   plot_grid = arguments.get<bool>("-g");
-  plot_grid_heatmap = arguments.get<bool>("-y");
+  plot_pycnophylactic = arguments.get<bool>("-y");
   plot_intersections = arguments.get<bool>("-i");
   plot_quadtree = arguments.get<bool>("-T");
 

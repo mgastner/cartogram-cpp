@@ -23,7 +23,7 @@ argparse::ArgumentParser parsed_arguments(
   bool &output_to_stdout,
   bool &plot_density,
   bool &plot_grid,
-  bool &plot_grid_heatmap,
+  bool &plot_pycnophylactic,
   bool &plot_intersections,
   bool &crop_polygons,
   bool &remove_tiny_polygons,

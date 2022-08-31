@@ -5,7 +5,7 @@
 
 void InsetState::fill_with_density(
   const bool plot_density,
-  const bool plot_grid_heatmap,
+  const bool plot_pycnophylactic,
   const bool image_format_ps)
 {
   // We assume that target areas that were zero or missing in the input have
@@ -188,7 +188,7 @@ void InsetState::fill_with_density(
     f_txt << "Maximum Density: " << dens_max_ << "\n";
   }
 
-  if (plot_grid_heatmap && n_finished_integrations_ == 0) {
+  if (plot_pycnophylactic && n_finished_integrations_ == 0) {
     std::string file_name = inset_name_ + "_piecewise_density_" +
                             std::to_string(n_finished_integrations());
 
@@ -198,7 +198,7 @@ void InsetState::fill_with_density(
     write_density_image(
       file_name,
       rho_init_.as_1d_array(),
-      plot_grid_heatmap,
+      plot_pycnophylactic,
       image_format_ps);
   }
 

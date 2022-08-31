@@ -1,4 +1,5 @@
 #include "write_image.h"
+#include <iostream>
 
 void write_triangles_on_cairo_surface(cairo_t *cr, Delaunay &dt, color clr)
 {
@@ -271,11 +272,10 @@ void InsetState::write_grid_heatmap_data(const std::string filename)
   std::vector<std::vector<double>> exists(lx_, std::vector<double>(ly_, 0));
 
   // Mark all squares that are inside map with 1
-  for (double y = 0; y < ly_; y += 1.0) {
+  for (unsigned int y = 0; y < ly_; y += 1.0) {
 
     // Intersections for one ray
-    auto intersections_at_y = intersections_with_rays[std::lround(
-                                                                  (y - 0.5 / resolution) * resolution)];
+    auto intersections_at_y = intersections_with_rays[y];
 
     // Sort intersections in ascending order
     std::sort(intersections_at_y.begin(), intersections_at_y.end());
@@ -303,7 +303,7 @@ void InsetState::write_grid_heatmap_data(const std::string filename)
       }
     }
   }
-
+  std::cout << "Grid heatmap data written" << std::endl;
 }
 
 
@@ -635,7 +635,7 @@ void InsetState::write_legend_to_cairo_surface(
 void InsetState::write_density_image(
   const std::string filename,
   const double *density,
-  const bool plot_grid_heatmap,
+  const bool plot_pycnophylactic,
   const bool image_format_ps)
 {
   // Whether to draw bar on the cairo surface
@@ -666,7 +666,7 @@ void InsetState::write_density_image(
   const double each_grid_cell_area_km = grid_cell_area_km(0, 0);
 
   // Crop it too
-  if (plot_grid_heatmap) {
+  if (plot_pycnophylactic) {
     unsigned int cell_width = 1;
 
     // Clip to shape and print in sequential scale
@@ -698,7 +698,7 @@ void InsetState::write_density_image(
 
             // Values here used are "Max target area per km" and
             // "Min target area per km", which is obtained by running the
-            // code with the "plot_grid_heatmap" -h flag set to true
+            // code with the "plot_pycnophylactic" -y flag set to true
             // Update here for new map
             Color color = grid_cell_color(target_area_km, 660.058, 0.660816);
 
@@ -754,7 +754,7 @@ void InsetState::write_density_image(
   }
   write_polygons_to_cairo_surface(cr, false, false, false);
 
-  if (draw_bar && !plot_grid_heatmap) {
+  if (draw_bar && !plot_pycnophylactic) {
     std::string bar_filename = "bar_" + filename;
 
     // Create a cairo bar_surface

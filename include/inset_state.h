@@ -114,7 +114,7 @@ public:
   // Fill map with density, using scanlines
   void fill_with_density(
     const bool plot_density,
-    const bool plot_grid_heatmap,
+    const bool plot_pycnophylactic,
     const bool image_format_ps);
 
   // Flatten said density with integration
@@ -198,7 +198,7 @@ public:
   void rings_are_simple();
   void set_area_errors();
   void set_grid_dimensions(unsigned int, unsigned int);
-  void set_geo_divs(std::vector<GeoDiv> geo_divs_dens);
+  void set_geo_divs(std::vector<GeoDiv> new_geo_divs);
   void set_inset_name(const std::string &);
   void set_latt_const(const double);
   void set_pos(const std::string &);
@@ -262,7 +262,7 @@ public:
   void write_density_image(
     const std::string filename,
     const double *density,
-    const bool plot_grid_heatmap,
+    const bool plot_pycnophylactic,
     const bool image_format_ps);
   void write_intersections_image(unsigned int res, const bool image_format_ps);
   void write_density_bar_image(
