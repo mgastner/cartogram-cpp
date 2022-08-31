@@ -316,9 +316,7 @@ int main(const int argc, const char *argv[])
       //       cell error when projecting with triangulation. Investigate why.
       //       As a temporary fix, we set blur_width to be always positive,
       //       regardless of the number of integrations.
-      // start with (1/8) and keep  going lower (1/16) and so on
-      double blur_width =
-        std::pow(2.0, 5 - int(inset_state.n_finished_integrations()));
+      double blur_width = inset_state.blur_width();
       // if (inset_state.n_finished_integrations() < max_integrations) {
       //   blur_width =
       //     std::pow(2.0, 5 - int(inset_state.n_finished_integrations()));

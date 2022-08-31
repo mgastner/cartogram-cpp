@@ -413,29 +413,42 @@ void InsetState::set_area_errors()
 
 void InsetState::adjust_grid()
 {
-  unsigned int long_graticule_length = std::max(lx_, ly_);
   double curr_max_area_error = max_area_error().value;
-  unsigned int grid_factor =
-    (long_graticule_length > default_long_graticule_length)
-      ? 2
-      : default_grid_factor;
+  // unsigned int grid_factor =
+  //   (long_graticule_length > default_long_graticule_length)
+  //     ? 2
+  //     : default_grid_factor;
   max_area_errors_.push_back(curr_max_area_error);
+  // if (
+  //   n_finished_integrations_ >= 2 &&
+  //   curr_max_area_error > std::max(
+  //                           max_area_errors_[n_finished_integrations_ - 1],
+  //                           max_area_errors_[n_finished_integrations_ - 2]))
+  //                           {
+
   if (
     n_finished_integrations_ >= 2 &&
-    curr_max_area_error > max_area_errors_[n_finished_integrations_ - 1] &&
-    curr_max_area_error > max_area_errors_[n_finished_integrations_ - 2]) {
+    curr_max_area_error > max_area_errors_[n_finished_integrations_ - 1]) {
 
     // Multiply grid size with factor
-    std::cout << "Adjusting grid size." << std::endl;
-    lx_ *= grid_factor;
-    ly_ *= grid_factor;
+    std::cerr << "Adjusting grid size." << std::endl;
+    lx_ *= default_grid_factor;
+    ly_ *= default_grid_factor;
 
     // Reallocate FFTW plans
     ref_to_rho_init()->allocate(lx_, ly_);
     ref_to_rho_ft()->allocate(lx_, ly_);
     make_fftw_plans_for_rho();
-    std::cout << "New grid dimensions: " << lx_ << " " << ly_ << std::endl;
+    std::cerr << "New grid dimensions: " << lx_ << " " << ly_ << std::endl;
   }
+}
+
+double InsetState::blur_width()
+{
+  unsigned int long_graticule_length = std::max(lx_, ly_);
+  // Start with (1/4) and keep going lower
+  double factor = 1.0 / std::pow(2.0, (4 + n_finished_integrations_));
+  return long_graticule_length * factor;
 }
 
 void InsetState::set_grid_dimensions(

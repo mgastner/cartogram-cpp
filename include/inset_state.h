@@ -93,6 +93,7 @@ public:
   void auto_color();  // Automatically color GeoDivs
   Bbox bbox(bool = false) const;
   void blur_density(double, bool);
+  double blur_width();
   void check_topology();
   int chosen_diag(const Point v[4], unsigned int &, bool = false) const;
   Color color_at(const std::string &) const;
