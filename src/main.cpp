@@ -445,6 +445,8 @@ int main(const int argc, const char *argv[])
       std::string output_filename =
         inset_state.inset_name() + "_equal_area_grid_heatmap";
 
+      inset_state.write_grid_heatmap_data(output_filename + ".csv");
+
       // Update extension
       image_format_ps ? output_filename += ".ps" : output_filename += ".svg";
       std::cerr << "Writing " << output_filename << std::endl;

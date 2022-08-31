@@ -227,6 +227,9 @@ public:
   void write_cairo_polygons_to_ps(const std::string &, bool, bool, bool);
 
   // Functions to write map to eps
+  void write_grid_heatmap_data(const std::string filename);
+
+  // Functions to write map to eps
   // void write_density_to_eps(const std::string, const double *);
   void write_grid_heatmap_image(
     const std::string filename,

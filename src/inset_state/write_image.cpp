@@ -260,6 +260,51 @@ void InsetState::write_cairo_map(
 }
 
 
+void InsetState::write_grid_heatmap_data(const std::string filename)
+{
+  unsigned int cell_width = 1;
+  const unsigned int resolution = 1;
+  auto intersections_with_rays = intersec_with_parallel_to('x', resolution);
+
+  std::vector<std::vector<double>> exists(lx_, std::vector<double>(ly_, 0));
+
+  // Mark all squares that are inside map with 1
+  for (double y = 0; y < ly_; y += 1.0) {
+
+    // Intersections for one ray
+    auto intersections_at_y = intersections_with_rays[std::lround(
+                                                                  (y - 0.5 / resolution) * resolution)];
+
+    // Sort intersections in ascending order
+    std::sort(intersections_at_y.begin(), intersections_at_y.end());
+
+    // Fill GeoDivs by iterating over intersections
+    for (unsigned int i = 0; i < intersections_at_y.size(); i += 2) {
+      const double left_x = intersections_at_y[i].x();
+      const double right_x = intersections_at_y[i + 1].x();
+
+      // Fill each cell between intersections
+      for (unsigned int m = ceil(left_x); m <= ceil(right_x); ++m) {
+        exists[m - 1][y] += 1;
+      }
+    }
+  }
+
+  std::ofstream f_csv;
+  f_csv.open(filename);
+  // Fill rho_init with the ratio of rho_num to exists
+  for (unsigned int i = 0; i < lx_; ++i) {
+    for (unsigned int j = 0; j < ly_; ++j) {
+      if (exists[i][j]) {
+        const double area = grid_cell_area(i, j, cell_width);
+        f_csv << i << ", " << j << ", " << area << "\n";
+      }
+    }
+  }
+
+}
+
+
 // Outputs a SVG/PS file of grid heatmap
 void InsetState::write_grid_heatmap_image(
   const std::string filename,
@@ -1526,6 +1571,8 @@ double InsetState::grid_cell_area_km(
 std::pair<double, unsigned int> InsetState::get_km_legend_length()
 {
 
+  return std::pair<double, unsigned int>(0, 0);
+
   // 1% of the total area, rounded up to the nearest power of 10
   double min_length = 0.02 * ((lx() + ly()) / 2.0);
   double max_length = 0.06 * ((lx() + ly()) / 2.0);
@@ -1707,11 +1754,11 @@ Bbox InsetState::get_bbox_bar(const double bar_width, const double bar_height)
 std::vector<int> get_nice_numbers_for_bar(const double max_target_area_per_km)
 {
   std::vector<int> nice_numbers;
-  int NiceNumber = 1;
-  nice_numbers.push_back(NiceNumber);
-  while (NiceNumber < max_target_area_per_km) {
-    NiceNumber = NiceNumber * 10;
-    nice_numbers.push_back(NiceNumber);
-  }
+  // int NiceNumber = 1;
+  // nice_numbers.push_back(NiceNumber);
+  // while (NiceNumber < max_target_area_per_km) {
+  //   NiceNumber = NiceNumber * 10;
+  //   nice_numbers.push_back(NiceNumber);
+  // }
   return nice_numbers;
 }
