@@ -111,21 +111,21 @@ int main(const int argc, const char *argv[])
   std::cerr << "Coordinate reference system: " << crs << std::endl;
 
   // Progress measured on a scale from 0 (start) to 1 (end)
-  double progress = 0.0;
+  // double progress = 0.0;
 
   // Store total number of GeoDivs to monitor progress
-  double total_geo_divs = cart_info.n_geo_divs();
+  // double total_geo_divs = cart_info.n_geo_divs();
 
   // Create map to store duration of each inset integrations
   std::map<std::string, ms> insets_integration_times;
 
-  // Keep track of total time
-  ms duration_initial_simplification = inMilliseconds(duration::zero()),
-     duration_simplification = inMilliseconds(duration::zero()),
-     duration_densification = inMilliseconds(duration::zero()),
-     duration_flatten_density = inMilliseconds(duration::zero()),
-     duration_fill_density = inMilliseconds(duration::zero()),
-     duration_qtdt = inMilliseconds(duration::zero());
+  // // Keep track of total time
+  // ms duration_initial_simplification = inMilliseconds(duration::zero()),
+  //    duration_simplification = inMilliseconds(duration::zero()),
+  //    duration_densification = inMilliseconds(duration::zero()),
+  //    duration_flatten_density = inMilliseconds(duration::zero()),
+  //    duration_fill_density = inMilliseconds(duration::zero()),
+  //    duration_qtdt = inMilliseconds(duration::zero());
 
   // Project map and ensure that all holes are inside polygons
   for (auto &[inset_pos, inset_state] : *cart_info.ref_to_inset_states()) {
