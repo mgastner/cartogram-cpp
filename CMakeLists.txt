@@ -73,13 +73,13 @@ if(APPLE)
   if(${CMAKE_HOST_SYSTEM_PROCESSOR} STREQUAL "arm64")
 
     # Homebrew install path on arm64 (apple silicon, M1 etc.) machines.
-    set(CMAKE_CXX_COMPILER "/opt/homebrew/opt/llvm/bin/clang++")
-    set(CMAKE_C_COMPILER "/opt/homebrew/opt/llvm/bin/clang")
+    set(CMAKE_CXX_COMPILER "/opt/homebrew/opt/llvm@13/bin/clang++")
+    set(CMAKE_C_COMPILER "/opt/homebrew/opt/llvm@13/bin/clang")
   else()
 
     # Homebrew install path on x86 machines (Intel).
-    set(CMAKE_C_COMPILER "/usr/local/opt/llvm/bin/clang")
-    set(CMAKE_CXX_COMPILER "/usr/local/opt/llvm/bin/clang++")
+    set(CMAKE_C_COMPILER "/usr/local/opt/llvm@13/bin/clang")
+    set(CMAKE_CXX_COMPILER "/usr/local/opt/llvm@13/bin/clang++")
   endif()
 elseif(UNIX)
 
