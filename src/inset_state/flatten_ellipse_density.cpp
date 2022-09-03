@@ -68,23 +68,23 @@ void InsetState::min_ellipses()
   }
 }
 
-double delta_rho_of_polygon(
-  Ellipse ell,
-  double r_tilde_sq,
-  double rho_p,
-  double rho_mean,
-  double pwh_area)
-{
-  if (r_tilde_sq >= 4 * xi_sq) {
-    return 0.0;
-  }
-  double xi_to_6 = xi_sq * xi_sq * xi_sq;
-  double prefac = ((rho_p - rho_mean) * pwh_area) /
-                  (16 * pi * ell.semimajor * ell.semiminor * xi_to_6);
-  double postfac = r_tilde_sq - 4 * xi_sq;
-  double polynomial = -(r_tilde_sq - xi_sq) * postfac * postfac;
-  return prefac * polynomial;
-}
+// double delta_rho_of_polygon(
+//   Ellipse ell,
+//   double r_tilde_sq,
+//   double rho_p,
+//   double rho_mean,
+//   double pwh_area)
+// {
+//   if (r_tilde_sq >= 4 * xi_sq) {
+//     return 0.0;
+//   }
+//   double xi_to_6 = xi_sq * xi_sq * xi_sq;
+//   double prefac = ((rho_p - rho_mean) * pwh_area) /
+//                   (16 * pi * ell.semimajor * ell.semiminor * xi_to_6);
+//   double postfac = r_tilde_sq - 4 * xi_sq;
+//   double polynomial = -(r_tilde_sq - xi_sq) * postfac * postfac;
+//   return prefac * polynomial;
+// }
 
 double ellipse_density_prefactor(
   Ellipse ell,
