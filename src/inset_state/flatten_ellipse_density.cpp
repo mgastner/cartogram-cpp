@@ -60,6 +60,7 @@ void InsetState::min_ellipses()
         if (b != 0.0) {
           theta = atan((c - a - inner_sqrt) / b);
         }
+        ell.theta = theta;
         ell.cos_theta = cos(theta);
         ell.sin_theta = sin(theta);
       }
