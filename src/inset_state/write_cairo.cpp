@@ -256,7 +256,7 @@ void InsetState::write_polygons_to_cairo_surface(cairo_t *cr,
   for (const auto &gd : geo_divs_) {
     for (const auto &ell : gd.min_ellipses()) {
       cairo_translate(cr, ell.center.x(), ly_ - ell.center.y());
-      cairo_rotate(cr, -acos(ell.cos_theta));
+      cairo_rotate(cr, -ell.theta);
       cairo_scale(cr, ell.semimajor, ell.semiminor);
       cairo_arc(
         cr,
