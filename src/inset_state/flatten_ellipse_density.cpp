@@ -56,7 +56,7 @@ void InsetState::min_ellipses()
         ell.center = Point(
           ((2 * c * d) - (b * e)) / denom,
           ((2 * a * e) - (b * d)) / denom);
-        double theta = (a < c) ? 0.0 : pi;
+        double theta = (a < c) ? 0.0 : pi / 2;
         if (b != 0.0) {
           theta = atan((c - a - inner_sqrt) / b);
         }
