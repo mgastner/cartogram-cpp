@@ -99,8 +99,8 @@ double ellipse_density_prefactor(
 
 double ellipse_density_polynomial(double r_tilde_sq)
 {
-  (r_tilde_sq - xi_sq) * (r_tilde_sq - 4 * xi_sq) * (r_tilde_sq - 4 * xi_sq) /
-    (16 * xi_sq * xi_sq * xi_sq);
+  return ((r_tilde_sq - xi_sq) * (r_tilde_sq - 4 * xi_sq) * (r_tilde_sq - 4 * xi_sq) /
+    (16 * xi_sq * xi_sq * xi_sq));
 }
 
 double ellipse_flux_prefactor(
@@ -183,7 +183,7 @@ void InsetState::flatten_ellipse_density()
     }
   }
   std::cout << "nu = " << nu << std::endl;
-  for (unsigned int pgn_index; pgn_index < ell_density_prefactors.size();
+  for (unsigned int pgn_index = 0; pgn_index < ell_density_prefactors.size();
        ++pgn_index) {
     ell_density_prefactors[pgn_index] *= nu;
   }
@@ -201,7 +201,7 @@ void InsetState::flatten_ellipse_density()
       double flux_y = 0.0;
 
       // Calculate density, flux and velocity at curr_pt
-      for (unsigned int pgn_index; pgn_index < ells.size(); ++pgn_index) {
+      for (unsigned int pgn_index = 0; pgn_index < ells.size(); ++pgn_index) {
         auto ell = ells[pgn_index];
         for (int i = -2; i <= 2; ++i) {
           double x = ((i + abs(i) % 2) * static_cast<int>(lx_)) +
