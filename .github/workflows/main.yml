@@ -2,7 +2,7 @@ name: json-to-md-2
 
 on:
   push:
-    branches: [ "main","github-actions-blah"]
+    branches: [ "main","github-action-blah"]
     paths: ['**.json', '**.geojson']
 
 jobs:
