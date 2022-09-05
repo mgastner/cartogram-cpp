@@ -22,6 +22,13 @@ jobs:
         id: changed-files
         uses: tj-actions/changed-files@v29.0.3
 
+      - name: Generate documentation
+        id: documentation
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+        run: blah --docs(./testing.json) 
+
       - name: List all changed files
         run: |
           for file in ${{ steps.changed-files.outputs.all_changed_files }}; do
