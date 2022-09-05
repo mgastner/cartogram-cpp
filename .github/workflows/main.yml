@@ -14,20 +14,28 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: install blah
-        id: blah-install
-        run: npm install --global blah
-
       - name: Get changed files
         id: changed-files
-        uses: tj-actions/changed-files@v29.0.3
-
-      - name: Generate documentation
-        id: documentation
-        run: blah --docs(./testing.json) 
+        uses: tj-actions/changed-files@v29.0.3 
 
       - name: List all changed files
         run: |
           for file in ${{ steps.changed-files.outputs.all_changed_files }}; do
             echo "$file was changed"
           done
+
+  generate:
+    runs-on: ubuntu-latest
+    name: Generate markdown
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+          
+      - name: install blah
+        id: blah-install
+        run: npm install --global blah
+
+      - name: Generate documentation
+        id: documentation
+        run: blah --docs(./testing.json)
