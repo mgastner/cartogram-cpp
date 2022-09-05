@@ -38,6 +38,4 @@ jobs:
 
       - name: Generate documentation
         id: documentation
-        run: var Blah = require("blah");
-             var blh = new Blah("./");
-             blh.docs(testing.json)
+        run: blah -d ./testing.json
