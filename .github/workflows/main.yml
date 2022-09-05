@@ -34,5 +34,6 @@ jobs:
 
       - name: install json2md
         id: json2md-install
-        run: npm install --save json2md
-             json2md cartogram-cpp/testing.json
+        run: |
+          npm install --save json2md
+          json2md cartogram-cpp/testing.json
