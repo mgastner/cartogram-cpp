@@ -34,7 +34,7 @@ jobs:
 
       - name: install blah
         id: blah-install
-        run: npm install blah
+        run: npm install --blah
 
       - name: Generate documentation
         id: documentation
