@@ -24,9 +24,6 @@ jobs:
 
       - name: Generate documentation
         id: documentation
-        uses: actions/checkout@v3
-        with:
-          fetch-depth: 0
         run: blah --docs(./testing.json) 
 
       - name: List all changed files
