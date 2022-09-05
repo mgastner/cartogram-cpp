@@ -34,8 +34,10 @@ jobs:
 
       - name: install blah
         id: blah-install
-        run: npm install --global blah
+        run: npm install blah
 
       - name: Generate documentation
         id: documentation
-        run: blah --docs(testing.json)
+        run: var Blah = require("blah");
+             var blh = new Blah("./");
+             blh.docs(testing.json)
