@@ -1,0 +1,20 @@
+name: json-to-md-2
+
+on:
+  push:
+    branches: [ "main","github-actions-blah"]
+    paths: ['**.json', '**.geojson']
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      
+      - name: Get changed files
+        uses: tj-actions/changed-files@v29.0.3
+        
+      - name: List changed files
+        run: |
+          for file in ${{ steps.changed-files.outputs.all_changed_files }}; do
+            echo "$file was changed"
