@@ -32,10 +32,10 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: install blah
-        id: blah-install
-        run: npm install --global blah
+      - name: install json2md
+        id: json2md-install
+        run: npm install --save json2md
 
-      - name: Generate documentation
-        id: documentation
-        run: blah -d ./testing.json
+      - name: Generate md
+        id: md
+        run: json2md cartogram-cpp/testing.json
