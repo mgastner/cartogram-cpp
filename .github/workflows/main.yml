@@ -36,4 +36,4 @@ jobs:
         id: json2md-install
         run: |
           npm install --save json2md
-          json2md cartogram-cpp/testing.json
+          json2md(cartogram-cpp/testing.json)
