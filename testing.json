@@ -1,16 +1,21 @@
 {
-   "application":"MyApplication",
-   "name":"OrdersProducts",
-   "description":"Model containing data for Order and Products.",
-   "version":"1.0",
-   "modifiedTime":"2018-01-02T12:00:00+08:00",
-   "annotations":[
-
-   ],
-   "entities":[
-
-   ],
-   "referenceModels":[
-
-   ]
+  "$id": "https://example.com/person.schema.json",
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Person",
+  "type": "object",
+  "properties": {
+    "firstName": {
+      "type": "string",
+      "description": "The person's first name."
+    },
+    "lastName": {
+      "type": "string",
+      "description": "The person's last name."
+    },
+    "age": {
+      "description": "Age in years which must be equal to or greater than zero.",
+      "type": "integer",
+      "minimum": 0
+    }
+  }
 }
