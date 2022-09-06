@@ -24,7 +24,7 @@ jobs:
             echo "$file was changed"
           done
 
-  python:
+  conversion:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
@@ -46,3 +46,8 @@ jobs:
             with open("./testing.json") as json_file, open("./testing.md", 'w') as output_markdown:
                 output_md = parser.parse_schema(json.load(json_file))
                 output_markdown.writelines(output_md)
+          
+      - name: Push the edited markdown
+        run: |
+          git push
+
