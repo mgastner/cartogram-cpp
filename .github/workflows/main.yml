@@ -24,6 +24,11 @@ jobs:
             echo "$file was changed"
           done
       
+      - uses: 1arp/create-a-file-action@0.2
+        with:
+          path: './'
+          file: 'testing.md'
+      
       - uses: actions/setup-python@v2
       - uses: BSFishy/pip-action@v1
         with: 
