@@ -2,7 +2,7 @@ name: CI
 
 on:
   push:
-    branches: [ "main","github-action-blah"]
+    branches: [ "main","github-actions-python"]
     paths: ['**.json', '**.geojson']
 
 jobs:
@@ -24,16 +24,25 @@ jobs:
             echo "$file was changed"
           done
 
-  generate:
-    runs-on: ubuntu-latest
-    name: Generate markdown
-    steps:
-      - uses: actions/checkout@v3
-        with:
-          fetch-depth: 0
-
-      - name: install json2md
-        id: json2md-install
-        run: |
-          npm install --save json2md
-          json2md(cartogram-cpp/testing.json)
+    python:
+      runs-on: ubuntu-latest
+      steps:
+        - uses: actions/checkout@v2
+        - uses: actions/setup-python@v2
+        - uses: BSFishy/pip-action@v1
+          with: 
+            packages: |
+              jsonschema2md
+        - uses: jannekem/run-python-script-action@v1
+          with:
+            script: |
+              import json
+              import jsonschema2md
+              
+              parser = jsonschema2md.Parser(
+                  examples_as_yaml=False,
+                  show_examples="all",
+              )
+              with open("./testing.json", "r") as json_file:
+              md_lines = parser.parse_schema(json.load(json_file))
+              print(''.join(md_lines))
