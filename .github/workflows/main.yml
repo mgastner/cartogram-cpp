@@ -26,7 +26,7 @@ jobs:
       
       - uses: 1arp/create-a-file-action@0.2
         with:
-          path: './'
+          path: '$file'
           file: 'testing.md'
       
       - uses: actions/setup-python@v2
