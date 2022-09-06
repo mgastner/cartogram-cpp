@@ -45,4 +45,4 @@ jobs:
                 )
             with open("./testing.json") as json_file, open("./testing.md") as output_markdown:
                 output_md = parser.parse_schema(json.load(json_file))
-                output_markdown.writelines(output.md)
+                output_markdown.writelines(output_md)
