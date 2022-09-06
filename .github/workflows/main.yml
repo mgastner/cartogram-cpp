@@ -43,6 +43,6 @@ jobs:
                 examples_as_yaml=False,
                 show_examples="all",
                 )
-            with open("./testing.json") as json_file:
-                md_lines = parser.parse_schema(json.load(json_file))
-                output_markdown.writelines("./testing.md")
+            with open("./testing.json") as json_file and open("./testing.md") as output_markdown:
+                output_md = parser.parse_schema(json.load(json_file))
+                output_markdown.writelines(output.md)
