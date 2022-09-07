@@ -14,13 +14,26 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Get changed files
-        id: changed-files
+      - name: Get changed .json files with paths
+        id: changed-json-files-with-paths
         uses: tj-actions/changed-files@v29.0.3 
+        with:
+          files: |
+            *.json
+            *.geojson
+
+      - name: Get changed files without paths
+        id: changed-json-files-without-paths
+        uses: tj-actions/changed-files@v29.0.3 
+        with:
+          quotepath: "false"
+          files: |
+            *.json
+            *.geojson
 
       - name: List all changed files
         run: |
-          for file in ${{ steps.changed-files.outputs.all_modified_files }}; do
+          for file in ${{ steps.changed-json-files-without-paths.outputs.all_modified_files }}; do
             echo "$file was changed"
           done
       
@@ -41,8 +54,6 @@ jobs:
             import json
             import jsonschema2md
             
-            print(${{ steps.changed-files.outputs.all_modified_files }})
-
             parser = jsonschema2md.Parser(
                 examples_as_yaml=False,
                 show_examples="all",
