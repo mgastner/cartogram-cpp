@@ -22,15 +22,6 @@ jobs:
             *.json
             *.geojson
 
-      - name: Get changed files without paths
-        id: changed-json-files-without-paths
-        uses: tj-actions/changed-files@v29.0.3 
-        with:
-          quotepath: "false"
-          files: |
-            *.json
-            *.geojson
-
       - name: Get changed directory names
         id: changed-directories-of-files
         uses: tj-actions/changed-files@v29.0.3 
@@ -49,7 +40,7 @@ jobs:
       - uses: 1arp/create-a-file-action@0.2
         with:
           path: '${{ steps.changed-changed-directories-of-files.outputs.all_modified_files }}'
-          file: '${{ steps.changed-json-files-without-paths.outputs.all_modified_files }}.md'
+          file: 'documentation.md'
       
       - uses: actions/setup-python@v2
       - uses: BSFishy/pip-action@v1
@@ -69,7 +60,7 @@ jobs:
                 examples_as_yaml=False,
                 show_examples="all",
                 )
-            with open(${{ steps.changed-json-files-with-paths.outputs.all_modified_files }}) as json_file, open("${{ steps.changed-changed-directories-of-files.outputs.all_modified_files }}/${{ steps.changed-json-files-without-paths.outputs.all_modified_files }}.md, 'w') as output_markdown:
+            with open(${{ steps.changed-json-files-with-paths.outputs.all_modified_files }}) as json_file, open("${{ steps.changed-changed-directories-of-files.outputs.all_modified_files }}/documentation.md, 'w') as output_markdown:
                 output_md = parser.parse_schema(json.load(json_file))
                 output_markdown.writelines(output_md)
       
