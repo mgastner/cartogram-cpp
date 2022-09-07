@@ -55,8 +55,6 @@ jobs:
           script: |
             import json
             import jsonschema2md
-            
-            print(${{ steps.changed-json-files-with-paths.outputs.all_modified_files }}.md)
 
             parser = jsonschema2md.Parser(
                 examples_as_yaml=False,
