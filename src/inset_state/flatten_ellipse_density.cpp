@@ -194,6 +194,45 @@ void InsetState::flatten_ellipse_density()
   double delta_t = 1e-2;  // Initial time step.
   unsigned int iter = 0;
 
+  for (unsigned int i = 0; i < lx_; ++i) {
+    for (unsigned int j = 0; j < ly_; ++j) {
+      rho_init_(i, j) = 0;
+    }
+  }
+  
+  for (unsigned int i = 0; i < lx_; ++i) {
+    for (unsigned int j = 0; j < ly_; ++j) {
+      Point curr_pt = Point(i, j);
+      double rho = 0.0;
+      for (unsigned int pgn_index = 0; pgn_index < ells.size(); ++pgn_index) {
+        auto ell = ells[pgn_index];
+        for (int i = -2; i <= 2; ++i) {
+          double x = ((i + abs(i) % 2) * static_cast<int>(lx_)) +
+                     (curr_pt.x() * (i % 2 == 0 ? 1 : -1));
+          for (int j = -2; j <= 2; ++j) {
+            double y = ((j + abs(j) % 2) * static_cast<int>(ly_)) +
+                       (curr_pt.y() * (j % 2 == 0 ? 1 : -1));
+            double x_tilde = ((x - ell.center.x()) * ell.cos_theta +
+                              (y - ell.center.y()) * ell.sin_theta) /
+                             ell.semimajor;
+            double y_tilde = ((-(x - ell.center.x()) * ell.sin_theta) +
+                              (y - ell.center.y()) * ell.cos_theta) /
+                             ell.semiminor;
+            double r_tilde_sq = (x_tilde * x_tilde) + (y_tilde * y_tilde);
+            if (r_tilde_sq < 4 * xi_sq) {
+              rho += ell_density_prefactors[pgn_index] *
+                   ellipse_density_polynomial(r_tilde_sq);
+            }
+            
+          }
+        }
+      }
+      rho_init_(i, j) = -rho;
+    }
+  }
+  
+  write_density_to_eps("belgium.eps", rho_init_.as_1d_array());
+  
   // Integrate
   while (t < 1.0) {
     for (const auto &[start_pt, curr_pt] : proj_qd_.triangle_transformation) {
