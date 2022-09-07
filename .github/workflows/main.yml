@@ -41,6 +41,8 @@ jobs:
             import json
             import jsonschema2md
             
+            print(${{ steps.changed-files.outputs.all_modified_files }})
+
             parser = jsonschema2md.Parser(
                 examples_as_yaml=False,
                 show_examples="all",
