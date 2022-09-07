@@ -36,10 +36,13 @@ jobs:
         uses: tj-actions/changed-files@v29.0.3 
         with:
           dir_names: "true"
+          files: |
+            *.json
+            *.geojson
 
       - name: List all changed files
         run: |
-          for file in ${{ steps.changed-json-files-with-paths.outputs.all_modified_files }}; do
+          for file in ${{ steps.changed-json-files-without-paths.outputs.all_modified_files }}; do
             echo "$file was changed"
           done
       
