@@ -61,7 +61,7 @@ jobs:
                 examples_as_yaml=False,
                 show_examples="all",
                 )
-            with open(${{ steps.changed-json-files-with-paths.outputs.all_modified_files }}) as json_file, open(./${{ steps.changed-directories-of-files.outputs.all_modified_files }}/documentation.md, 'w') as output_markdown:
+            with open(${{ steps.changed-json-files-with-paths.outputs.all_modified_files }}) as json_file, open(${{ steps.changed-directories-of-files.outputs.all_modified_files }}/documentation.md, 'w') as output_markdown:
                 output_md = parser.parse_schema(json.load(json_file))
                 output_markdown.writelines(output_md)
       
