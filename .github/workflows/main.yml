@@ -26,7 +26,7 @@ jobs:
         id: changed-directories-of-files
         uses: tj-actions/changed-files@v29.0.3 
         with:
-          dir_names: "true"
+          dir_names: 'true'
           files: |
             *.json
             *.geojson
