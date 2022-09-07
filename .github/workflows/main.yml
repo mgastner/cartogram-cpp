@@ -44,7 +44,7 @@ jobs:
       - name: Create empty markdown file in folder
         uses: 1arp/create-a-file-action@0.2
         with:
-          path: '${{ steps.changed-directories-of-files.outputs.all_modified_files }}'
+          path: './${{ steps.changed-directories-of-files.outputs.all_modified_files }}'
           file: 'documentation.md'
       
       - name: Setup Python 
