@@ -19,6 +19,7 @@ jobs:
         uses: tj-actions/changed-files@v29.0.3 
         with:
           files: |
+            ./**
             *.json
             *.geojson
             
