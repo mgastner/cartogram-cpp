@@ -8,7 +8,7 @@ on:
 jobs:
   changes:
     runs-on: ubuntu-latest  
-    name: get changed files
+    name: add markdown documentation
     steps:
       - uses: actions/checkout@v3
         with:
