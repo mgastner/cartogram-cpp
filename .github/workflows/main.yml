@@ -42,9 +42,10 @@ jobs:
           done
       
       - name: Create empty markdown file in folder
-        uses: finnp/create-file-action@1.0.0
-        env:
-          FILE_NAME: "./${{ steps.changed-directories-of-files.outputs.all_modified_files }}/documentation.md"
+        uses: 1arp/create-a-file-action@0.2
+        with:
+          path: '${{ steps.changed-directories-of-files.outputs.all_modified_files }}'
+          file: 'documentation.md'
       
       - name: Setup Python 
         uses: actions/setup-python@v2
