@@ -10,7 +10,8 @@ jobs:
     runs-on: ubuntu-latest  
     name: add markdown documentation
     steps:
-      - uses: actions/checkout@v3
+      - name: checkout repo
+        uses: actions/checkout@v3
         with:
           fetch-depth: 0
 
@@ -40,18 +41,23 @@ jobs:
             echo "$file was changed"
           done
       
-      - uses: 1arp/create-a-file-action@0.2
-        with:
-          path: '${{ steps.changed-directories-of-files.outputs.all_modified_files }}'
-          file: 'documentation.md'
+      - name: Create empty markdown file in folder
+        uses: finnp/create-file-action@1.0.0
+        env:
+          FILE_NAME: "./${{ steps.changed-directories-of-files.outputs.all_modified_files }}/documentation.md"
       
-      - uses: actions/setup-python@v2
-      - uses: BSFishy/pip-action@v1
+      - name: Setup Python 
+        uses: actions/setup-python@v2
+
+
+      - name: Setup jsonschema2md Package
+        uses: BSFishy/pip-action@v1
         with: 
            packages: |
             jsonschema2md
       
-      - uses: jannekem/run-python-script-action@v1
+      - name: Write to Markdown
+        uses: jannekem/run-python-script-action@v1
         with:
           script: |
             import json
@@ -65,7 +71,8 @@ jobs:
                 output_md = parser.parse_schema(json.load(json_file))
                 output_markdown.writelines(output_md)
       
-      - uses: EndBug/add-and-commit@v9.1.0
+      - name: Push changed and added files to repo
+        uses: EndBug/add-and-commit@v9.1.0
       
       
 
