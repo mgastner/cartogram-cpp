@@ -227,7 +227,7 @@ void InsetState::flatten_ellipse_density()
           }
         }
       }
-      rho_init_(i, j) = -rho;
+      rho_init_(i, j) = rho;
     }
   }
   
