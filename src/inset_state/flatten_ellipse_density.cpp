@@ -94,32 +94,32 @@ double ellipse_density_prefactor(
   double pwh_area,
   double nu)
 {
-  return nu * pwh_area * (rho_p - rho_mean) /
-         (pi * ell.semimajor * ell.semiminor);
+  // return nu *(pi * ell.semimajor * ell.semiminor)* (rho_p - rho_mean) / pwh_area; // possibility
+  return nu *pwh_area* (rho_p - rho_mean) / (pi * ell.semimajor * ell.semiminor);
 }
 
 double ellipse_density_polynomial(double r_tilde_sq)
 {
-  return ((r_tilde_sq - xi_sq) * (r_tilde_sq - 4 * xi_sq) * (r_tilde_sq - 4 * xi_sq) /
+  return -((r_tilde_sq - xi_sq) * (r_tilde_sq - 4 * xi_sq) * (r_tilde_sq - 4 * xi_sq) /
     (16 * xi_sq * xi_sq * xi_sq));
 }
 
-double ellipse_flux_prefactor(
-  Ellipse ell,
-  double r_tilde_sq,
-  double rho_p,
-  double rho_mean,
-  double pwh_area,
-  double nu)
-{
-  if (r_tilde_sq >= 4 * xi_sq) {
-    return 0.0;
-  }
-  double xi_to_6 = xi_sq * xi_sq * xi_sq;
-  return nu * pwh_area * (rho_p - rho_mean) * (4 * xi_sq - r_tilde_sq) *
-         (4 * xi_sq - r_tilde_sq) * (4 * xi_sq - r_tilde_sq) /
-         (128 * pi * ell.semimajor * ell.semiminor * xi_to_6);
-}
+// double ellipse_flux_prefactor(
+//   Ellipse ell,
+//   double r_tilde_sq,
+//   double rho_p,
+//   double rho_mean,
+//   double pwh_area,
+//   double nu)
+// {
+//   if (r_tilde_sq >= 4 * xi_sq) {
+//     return 0.0;
+//   }
+//   double xi_to_6 = xi_sq * xi_sq * xi_sq;
+//   return nu * pwh_area * (rho_p - rho_mean) * (4 * xi_sq - r_tilde_sq) *
+//          (4 * xi_sq - r_tilde_sq) * (4 * xi_sq - r_tilde_sq) /
+//          (128 * pi * ell.semimajor * ell.semiminor * xi_to_6);
+// }
 
 void InsetState::flatten_ellipse_density()
 {
