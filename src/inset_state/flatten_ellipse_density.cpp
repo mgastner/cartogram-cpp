@@ -102,6 +102,7 @@ double ellipse_density_prefactor(
 
 double ellipse_density_polynomial(double r_tilde_sq)
 {
+  if (r_tilde_sq >= 4 * xi_sq) return 0.0;
   return -(
     (r_tilde_sq - xi_sq) * (r_tilde_sq - 4 * xi_sq) *
     (r_tilde_sq - 4 * xi_sq) / (16 * xi_sq * xi_sq * xi_sq));
@@ -226,10 +227,8 @@ void InsetState::flatten_ellipse_density2()
                               (y - ell.center.y()) * ell.cos_theta) /
                              ell.semiminor;
             double r_tilde_sq = (x_tilde * x_tilde) + (y_tilde * y_tilde);
-            if (r_tilde_sq < 4*xi_sq) {
-              rho += ell_density_prefactors[pgn_index] *
-                     ellipse_density_polynomial(r_tilde_sq);
-            }
+            rho += ell_density_prefactors[pgn_index] *
+                    ellipse_density_polynomial(r_tilde_sq);
           }
         }
       }
