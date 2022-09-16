@@ -271,25 +271,25 @@ int main(const int argc, const char *argv[])
       std::cerr << "Integration number "
                 << inset_state.n_finished_integrations() << std::endl;
 
-      if (qtdt_method) {
-        inset_state.flatten_density_with_node_vertices();
-      } else {
-        inset_state.flatten_density();
-      }
+      // if (qtdt_method) {
+      //   inset_state.flatten_density_with_node_vertices();
+      // } else {
+      //   inset_state.flatten_density();
+      // }
 
-      if (qtdt_method) {
-        inset_state.project_with_delaunay_t();
-      } else if (triangulation) {
-        inset_state.fill_graticule_diagonals();
-        inset_state.densify_geo_divs();
-        inset_state.project_with_triangulation();
-      } else {
-        inset_state.project();
-      }
+      // if (qtdt_method) {
+      //   inset_state.project_with_delaunay_t();
+      // } else if (triangulation) {
+      //   inset_state.fill_graticule_diagonals();
+      //   inset_state.densify_geo_divs();
+      //   inset_state.project_with_triangulation();
+      // } else {
+      //   inset_state.project();
+      // }
 
-      if (simplify) {
-        inset_state.simplify(target_points_per_inset);
-      }
+      // if (simplify) {
+      //   inset_state.simplify(target_points_per_inset);
+      // }
       inset_state.increment_integration();
 
       // Update area errors
