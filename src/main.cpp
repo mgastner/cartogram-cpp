@@ -248,13 +248,13 @@ int main(const int argc, const char *argv[])
     // inset_state.flatten_density();
 
     // Start map integration
-    while (inset_state.n_finished_integrations() < 5 &&
+    while (inset_state.n_finished_integrations() < 1 &&
            inset_state.max_area_error().value > max_permitted_area_error) {
 
       inset_state.min_ellipses();
 
       inset_state.create_delaunay_t();
-      inset_state.flatten_ellipse_density();
+      inset_state.flatten_ellipse_density2();
       
       // double blur_width =
       //    std::pow(2.0, 5 - int(inset_state.n_finished_integrations()));
