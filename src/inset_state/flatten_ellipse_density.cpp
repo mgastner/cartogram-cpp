@@ -94,14 +94,17 @@ double ellipse_density_prefactor(
   double pwh_area,
   double nu)
 {
-  // return nu *(pi * ell.semimajor * ell.semiminor)* (rho_p - rho_mean) / pwh_area; // possibility
-  return nu *pwh_area* (rho_p - rho_mean) / (pi * ell.semimajor * ell.semiminor);
+  // return nu *(pi * ell.semimajor * ell.semiminor)* (rho_p - rho_mean) /
+  // pwh_area; // possibility
+  return nu * pwh_area * (rho_p - rho_mean) /
+         (pi * ell.semimajor * ell.semiminor);
 }
 
 double ellipse_density_polynomial(double r_tilde_sq)
 {
-  return -((r_tilde_sq - xi_sq) * (r_tilde_sq - 4 * xi_sq) * (r_tilde_sq - 4 * xi_sq) /
-    (16 * xi_sq * xi_sq * xi_sq));
+  return -(
+    (r_tilde_sq - xi_sq) * (r_tilde_sq - 4 * xi_sq) *
+    (r_tilde_sq - 4 * xi_sq) / (16 * xi_sq * xi_sq * xi_sq));
 }
 
 // double ellipse_flux_prefactor(
@@ -199,7 +202,10 @@ void InsetState::flatten_ellipse_density()
       rho_init_(i, j) = 0;
     }
   }
-  
+  double mx_rho = 0.0;
+  double mn_rho = 1e35;
+  int n_densities = 0;
+  double total_rho = 0.0;
   for (unsigned int i = 0; i < lx_; ++i) {
     for (unsigned int j = 0; j < ly_; ++j) {
       Point curr_pt = Point(i, j);
@@ -219,64 +225,82 @@ void InsetState::flatten_ellipse_density()
                               (y - ell.center.y()) * ell.cos_theta) /
                              ell.semiminor;
             double r_tilde_sq = (x_tilde * x_tilde) + (y_tilde * y_tilde);
-            if (r_tilde_sq < 4 * xi_sq) {
+            if (r_tilde_sq < 4*xi_sq) {
               rho += ell_density_prefactors[pgn_index] *
-                   ellipse_density_polynomial(r_tilde_sq);
+                     ellipse_density_polynomial(r_tilde_sq);
             }
-            
           }
         }
       }
       rho_init_(i, j) = rho;
-    }
-  }
-  
-  write_density_to_eps("belgium.eps", rho_init_.as_1d_array());
-  
-  // Integrate
-  while (t < 1.0) {
-    for (const auto &[start_pt, curr_pt] : proj_qd_.triangle_transformation) {
-      double rho = 0.0;
-      double flux_x = 0.0;
-      double flux_y = 0.0;
-
-      // Calculate density, flux and velocity at curr_pt
-      for (unsigned int pgn_index = 0; pgn_index < ells.size(); ++pgn_index) {
-        auto ell = ells[pgn_index];
-        for (int i = -2; i <= 2; ++i) {
-          double x = ((i + abs(i) % 2) * static_cast<int>(lx_)) +
-                     (curr_pt.x() * (i % 2 == 0 ? 1 : -1));
-          for (int j = -2; j <= 2; ++j) {
-            double y = ((j + abs(j) % 2) * static_cast<int>(ly_)) +
-                       (curr_pt.y() * (j % 2 == 0 ? 1 : -1));
-            double x_tilde = ((x - ell.center.x()) * ell.cos_theta +
-                              (y - ell.center.y()) * ell.sin_theta) /
-                             ell.semimajor;
-            double y_tilde = ((-(x - ell.center.x()) * ell.sin_theta) +
-                              (y - ell.center.y()) * ell.cos_theta) /
-                             ell.semiminor;
-            double r_tilde_sq = (x_tilde * x_tilde) + (y_tilde * y_tilde);
-            rho += ell_density_prefactors[pgn_index] *
-                   ellipse_density_polynomial(r_tilde_sq);
-//            double ell_flux_prefactor ellipse_flux_prefactor(ell, r_tilde_sq,
-//              double rho_p,
-//              double rho_mean,
-//              double pwh_area,
-//              double nu)
-//            fluxx =
-          }
-        }
+      if (rho > mx_rho) {
+        mx_rho = rho;
       }
-
-      // `eul` will be the new position of proj_[i][j] proposed by a simple
-      // Euler step: move a full time interval delta_t with the velocity at
-      // time t and position (proj_[i][j].x, proj_[i][j].y)
-
-      // `mid` will be the new displacement proposed by the midpoint
-      // method (see comment below for the formula)
-      return;
+      if (rho < mn_rho) {
+        mn_rho = rho;
+      }
+      if (rho > 0.0) {
+        ++n_densities;
+        total_rho += rho;
+      }
     }
   }
+  
+  std::cout << "mx_rho = " << mx_rho << ", mn_rho = " << mn_rho << std::endl;
+  std::cout << "Mean density after = " << total_rho / n_densities << std::endl;
+  execute_fftw_fwd_plan();
+
+  std::string filename = inset_name() + "_" +
+                         std::to_string(n_finished_integrations()) +
+                         "_density.eps";
+  write_density_to_eps(filename, rho_init_.as_1d_array());
+
+  //   // Integrate
+  //   while (t < 1.0) {
+  //     for (const auto &[start_pt, curr_pt] :
+  //     proj_qd_.triangle_transformation) {
+  //       double rho = 0.0;
+  //       double flux_x = 0.0;
+  //       double flux_y = 0.0;
+
+  //       // Calculate density, flux and velocity at curr_pt
+  //       for (unsigned int pgn_index = 0; pgn_index < ells.size();
+  //       ++pgn_index) {
+  //         auto ell = ells[pgn_index];
+  //         for (int i = -2; i <= 2; ++i) {
+  //           double x = ((i + abs(i) % 2) * static_cast<int>(lx_)) +
+  //                      (curr_pt.x() * (i % 2 == 0 ? 1 : -1));
+  //           for (int j = -2; j <= 2; ++j) {
+  //             double y = ((j + abs(j) % 2) * static_cast<int>(ly_)) +
+  //                        (curr_pt.y() * (j % 2 == 0 ? 1 : -1));
+  //             double x_tilde = ((x - ell.center.x()) * ell.cos_theta +
+  //                               (y - ell.center.y()) * ell.sin_theta) /
+  //                              ell.semimajor;
+  //             double y_tilde = ((-(x - ell.center.x()) * ell.sin_theta) +
+  //                               (y - ell.center.y()) * ell.cos_theta) /
+  //                              ell.semiminor;
+  //             double r_tilde_sq = (x_tilde * x_tilde) + (y_tilde * y_tilde);
+  //             rho += ell_density_prefactors[pgn_index] *
+  //                    ellipse_density_polynomial(r_tilde_sq);
+  // //            double ell_flux_prefactor ellipse_flux_prefactor(ell,
+  // r_tilde_sq,
+  // //              double rho_p,
+  // //              double rho_mean,
+  // //              double pwh_area,
+  // //              double nu)
+  // //            fluxx =
+  //           }
+  //         }
+  //       }
+
+  // `eul` will be the new position of proj_[i][j] proposed by a simple
+  // Euler step: move a full time interval delta_t with the velocity at
+  // time t and position (proj_[i][j].x, proj_[i][j].y)
+
+  // `mid` will be the new displacement proposed by the midpoint
+  // method (see comment below for the formula)
+  //   return;
+  // }
   //    calculate_velocity(
   //      t,
   //      grid_fluxx_init,
