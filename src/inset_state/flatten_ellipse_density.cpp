@@ -205,9 +205,29 @@ void InsetState::calculate_rho_flux(
   }
 }
 
+bool all_map_points_are_in_domain(
+  double delta_t,
+  std::unordered_map<Point, Point> &proj_map,
+  std::unordered_map<Point, Point> &v_intp,
+  const unsigned int lx,
+  const unsigned int ly)
+{
+  // Return false if and only if there exists a point that would be outside
+  // [0, lx] x [0, ly]
+  for (auto &[key, val] : proj_map) {
+    double x = val.x() + 0.5 * delta_t * v_intp[key].x();
+    double y = val.y() + 0.5 * delta_t * v_intp[key].y();
+    if (x < 0.0 || x > lx || y < 0.0 || y > ly) {
+      return false;
+    }
+  }
+  return true;
+}
+
+
 Point calculate_velocity_for_point(
-  Point pt,
-  double t,
+  const Point pt,
+  const double t,
   std::unordered_map<Point, double> &rho_mp,
   std::unordered_map<Point, Point> &flux_mp)
 {
@@ -216,10 +236,19 @@ Point calculate_velocity_for_point(
     (-flux_mp[pt].y() / rho_mp[pt]));
 }
 
-Point interpolate(
-  Point p,
-  Delaunay &dt,
-  std::unordered_map<Point, Point> &mp)
+void calculate_velocity(
+  double t,
+  std::unordered_map<Point, double> &rho_mp,
+  std::unordered_map<Point, Point> &flux_mp,
+  std::unordered_map<Point, Point> &triangle_transformation,
+  std::unordered_map<Point, Point> &velocity)
+{
+  for (const auto &[key, val] : triangle_transformation) {
+    velocity[key] = calculate_velocity_for_point(key, t, rho_mp, flux_mp);
+  }
+}
+
+Point interpolate(Point p, Delaunay &dt, std::unordered_map<Point, Point> &mp)
 {
   // Find the triangle containing the point
   Face_handle fh = dt.locate(p);
@@ -256,7 +285,7 @@ void InsetState::flatten_ellipse_density2()
   std::cerr << "In flatten_ellipse_density2()" << std::endl;
 
   std::unordered_map<Point, double> rho_mp;
-  std::unordered_map<Point, Point>  flux_mp;
+  std::unordered_map<Point, Point> flux_mp;
 
   // eul[i][j] will be the new position of proj_[i][j] proposed by a simple
   // Euler step: move a full time interval delta_t with the velocity at time t
@@ -336,10 +365,42 @@ void InsetState::flatten_ellipse_density2()
   double delta_t = 1e-2;  // Initial time step.
   unsigned int iter = 0;
 
-  // while (t < 1.0) {
-  //   // calculating velocity at t by filling v_intp
-  //   for (const auto &[key, val] : proj_qd_.triangle_transformation) {
-  //     Point v_intp_val(interpolate(val, dt_,
-  //   }
+  while (t < 1.0) {
+    calculate_velocity(
+      t,
+      rho_mp,
+      flux_mp,
+      proj_qd_.triangle_transformation,
+      velocity);
+    // calculating velocity at t by filling v_intp
+    for (const auto &[key, val] : proj_qd_.triangle_transformation) {
+      Point v_intp_val(interpolate(val, proj_qd_.dt, velocity));
+      v_intp.insert_or_assign(key, v_intp_val);
+    }
+    bool accept = false;
+    do {
+      // Simple Euler step.
+      for (const auto &[key, val] : proj_qd_.triangle_transformation) {
+        Point eul_val(
+          val.x() + v_intp[key].x() * delta_t,
+          val.y() + v_intp[key].y() * delta_t);
+        eul.insert_or_assign(key, eul_val);
+      }
+      
+      calculate_velocity(
+      t + 0.5 * delta_t,
+      rho_mp,
+      flux_mp,
+      proj_qd_.triangle_transformation,
+      velocity);
+      
+      accept = all_map_points_are_in_domain(
+        delta_t,
+        proj_qd_.triangle_transformation,
+        v_intp,
+        lx_,
+        ly_);
+    } while(!accept);
+  }
   return;
 }
