@@ -220,6 +220,38 @@ double calculate_velocity_for_point(
                             : (-fluxy_mp[pt] / rho_mp[pt]);
 }
 
+
+double interpolate(
+  Point p,
+  Delaunay &dt,
+  std::unordered_map<Point, double> &mp)
+{
+  // Find the triangle containing the point
+  Face_handle fh = dt.locate(p);
+
+  // Get three vertices
+  Point v1 = fh->vertex(0)->point();
+  Point v2 = fh->vertex(1)->point();
+  Point v3 = fh->vertex(2)->point();
+
+  // Calculate barycentric coordinates
+  std::tuple<Scd::FT, Scd::FT, Scd::FT> bary_coor;
+  bary_coor = BC::triangle_coordinates_in_tuple_2<Point>(v1, v2, v3, p);
+
+  // Get the barycentric coordinates
+  const double bary_x = std::get<0>(bary_coor);
+  const double bary_y = std::get<1>(bary_coor);
+  const double bary_z = std::get<2>(bary_coor);
+
+  // Get projected vertices
+  auto v1_proj = mp[v1];
+  auto v2_proj = mp[v2];
+  auto v3_proj = mp[v3];
+
+  // Calculate projected point of p
+  return bary_x * v1_proj + bary_y * v2_proj + bary_z * v3_proj;
+}
+
 void InsetState::flatten_ellipse_density2()
 {
   std::cerr << "In flatten_ellipse_density2()" << std::endl;
