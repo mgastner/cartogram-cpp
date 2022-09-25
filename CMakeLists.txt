@@ -25,9 +25,9 @@ find_package(PkgConfig REQUIRED)
 
 # Finding and linking fftw, and cairo using PkgConfig.
 pkg_search_module(fftw REQUIRED fftw3 IMPORTED_TARGET)
-pkg_search_module(cairo REQUIRED cairo IMPORTED_TARGET)
-include_directories(PkgConfig::fftw PkgConfig::cairo)
-link_libraries(PkgConfig::fftw PkgConfig::cairo)
+pkg_search_module(CAIRO REQUIRED CAIRO IMPORTED_TARGET)
+include_directories(PkgConfig::fftw PkgConfig::CAIRO)
+link_libraries(PkgConfig::fftw PkgConfig::CAIRO)
 
 
 # Adding C++ files needed for compilation.
@@ -95,7 +95,7 @@ target_include_directories(cartogram PUBLIC ${PROJECT_SOURCE_DIR}/include)
 target_link_libraries(
   cartogram
   PkgConfig::fftw
-  PkgConfig::cairo
+  PkgConfig::CAIRO
   OpenMP::OpenMP_CXX
 )
 
