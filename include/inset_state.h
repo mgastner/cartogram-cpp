@@ -201,8 +201,7 @@ public:
   void calculate_den_prefactor_rho_p_ells();
   void calculate_rho_flux(
     std::unordered_map<Point, double> &,
-    std::unordered_map<Point, double> &,
-    std::unordered_map<Point, double> &,
+    std::unordered_map<Point, Point> &,
     const double);
 };
 

@@ -154,8 +154,7 @@ void InsetState::calculate_den_prefactor_rho_p_ells()
 
 void InsetState::calculate_rho_flux(
   std::unordered_map<Point, double> &rho_mp,
-  std::unordered_map<Point, double> &fluxx_mp,
-  std::unordered_map<Point, double> &fluxy_mp,
+  std::unordered_map<Point, Point> &flux_mp,
   const double nu)
 {
   for (const auto &[start_pt, curr_pt] : proj_qd_.triangle_transformation) {
@@ -202,24 +201,20 @@ void InsetState::calculate_rho_flux(
       }
     }
     rho_mp[curr_pt] = rho;
-    fluxx_mp[curr_pt] = flux_x;
-    fluxy_mp[curr_pt] = flux_y;
+    flux_mp[curr_pt] = Point(flux_x, flux_y);
   }
 }
 
-
-double calculate_velocity_for_point(
+Point calculate_velocity_for_point(
   Point pt,
-  char direction,
   double t,
   std::unordered_map<Point, double> &rho_mp,
-  std::unordered_map<Point, double> &fluxx_mp,
-  std::unordered_map<Point, double> &fluxy_mp)
+  std::unordered_map<Point, Point> &flux_mp)
 {
-  return (direction == 'x') ? (-fluxx_mp[pt] / rho_mp[pt])
-                            : (-fluxy_mp[pt] / rho_mp[pt]);
+  return Point(
+    (-flux_mp[pt].x() / rho_mp[pt]),
+    (-flux_mp[pt].y() / rho_mp[pt]));
 }
-
 
 double interpolate(
   Point p,
@@ -256,8 +251,9 @@ void InsetState::flatten_ellipse_density2()
 {
   std::cerr << "In flatten_ellipse_density2()" << std::endl;
 
-  std::unordered_map<Point, double> rho_mp, fluxx_mp, fluxy_mp;
-  
+  std::unordered_map<Point, double> rho_mp;
+  std::unordered_map<Point, Point>  flux_mp;
+
   // eul[i][j] will be the new position of proj_[i][j] proposed by a simple
   // Euler step: move a full time interval delta_t with the velocity at time t
   // and position (proj_[i][j].x, proj_[i][j].y)
@@ -275,6 +271,8 @@ void InsetState::flatten_ellipse_density2()
   // (proj_.x + 0.5*delta_t*vx_intp, proj_.y + 0.5*delta_t*vy_intp) at time
   // t + 0.5*delta_t
   std::unordered_map<Point, Point> v_intp_half;
+
+  std::unordered_map<Point, Point> velocity;
 
   // Constants for the numerical integrator
   // const double inc_after_acc = 1.1;
@@ -327,12 +325,17 @@ void InsetState::flatten_ellipse_density2()
   }
 
   // Calculate densities
-  calculate_rho_flux(rho_mp, fluxx_mp, fluxy_mp, nu);
+  calculate_rho_flux(rho_mp, flux_mp, nu);
 
   // Initial time and step size
   double t = 0.0;
   double delta_t = 1e-2;  // Initial time step.
   unsigned int iter = 0;
 
+  // while (t < 1.0) {
+  //   // calculating velocity at t by filling v_intp
+  //   for (const auto &[key, val] : proj_qd_.triangle_transformation) {
+  //     Point v_intp_val(interpolate(val, dt_,
+  //   }
   return;
 }
