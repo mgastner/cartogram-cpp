@@ -23,14 +23,18 @@ struct max_area_error_info {
   std::string geo_div;
 };
 
-struct proj_qd { // quadtree-delaunay projection
-    Delaunay dt; 
-    std::unordered_map<Point, Point> triangle_transformation;
+struct proj_qd {  // quadtree-delaunay projection
+  Delaunay dt;
+  std::unordered_map<Point, Point> triangle_transformation;
 };
 
 class InsetState
 {
 private:
+  std::vector<Ellipse> ells_;
+  std::vector<double> ell_density_prefactors_;
+  std::vector<double> rho_p_vec_;
+  std::vector<double> pwh_areas_;
   std::unordered_map<std::string, double> area_errors_;
   std::unordered_set<Point> unique_quadtree_corners_;
   proj_qd proj_qd_;
@@ -162,7 +166,7 @@ public:
   bool target_area_is_missing(const std::string) const;
   double total_inset_area() const;
   double total_target_area() const;
-  std::array<Point, 3> transformed_triangle(const std::array<Point, 3>&);
+  std::array<Point, 3> transformed_triangle(const std::array<Point, 3> &);
 
   // Apply given function to all points
   void transform_points(std::function<Point(Point)>);
@@ -193,6 +197,13 @@ public:
   void write_map_to_eps(const std::string, const bool);
   void write_polygons_to_eps(std::ofstream &, const bool, const bool);
   void write_polygon_points_on_cairo_surface(cairo_t *, color);
+
+  void calculate_den_prefactor_rho_p_ells();
+  void calculate_rho_flux(
+    std::unordered_map<Point, double> &,
+    std::unordered_map<Point, double> &,
+    std::unordered_map<Point, double> &,
+    const double);
 };
 
 #endif
