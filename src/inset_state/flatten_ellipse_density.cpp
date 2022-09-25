@@ -224,7 +224,6 @@ bool all_map_points_are_in_domain(
   return true;
 }
 
-
 Point calculate_velocity_for_point(
   const Point pt,
   const double t,
@@ -308,9 +307,9 @@ void InsetState::flatten_ellipse_density2()
   std::unordered_map<Point, Point> velocity;
 
   // Constants for the numerical integrator
-  // const double inc_after_acc = 1.1;
-  // const double dec_after_not_acc = 0.75;
-  // const double abs_tol = (std::min(lx_, ly_) * 1e-6);
+  const double inc_after_acc = 1.1;
+  const double dec_after_not_acc = 0.75;
+  const double abs_tol = (std::min(lx_, ly_) * 1e-6);
 
   // Clear previous triangle transformation data
   proj_qd_.triangle_transformation.clear();
@@ -386,21 +385,67 @@ void InsetState::flatten_ellipse_density2()
           val.y() + v_intp[key].y() * delta_t);
         eul.insert_or_assign(key, eul_val);
       }
-      
+
       calculate_velocity(
-      t + 0.5 * delta_t,
-      rho_mp,
-      flux_mp,
-      proj_qd_.triangle_transformation,
-      velocity);
-      
+        t + 0.5 * delta_t,
+        rho_mp,
+        flux_mp,
+        proj_qd_.triangle_transformation,
+        velocity);
+
       accept = all_map_points_are_in_domain(
         delta_t,
         proj_qd_.triangle_transformation,
         v_intp,
         lx_,
         ly_);
-    } while(!accept);
+
+      if (accept) {
+        for (const auto &[key, val] : proj_qd_.triangle_transformation) {
+          Point n_val = Point(
+            val.x() + 0.5 * delta_t * v_intp[key].x(),
+            val.y() + 0.5 * delta_t * v_intp[key].y());
+          Point v_intp_half_val(interpolate(n_val, proj_qd_.dt, velocity));
+          v_intp_half.insert_or_assign(key, v_intp_half_val);
+          Point mid_val(
+            val.x() + v_intp_half[key].x() * delta_t,
+            val.y() + v_intp_half[key].y() * delta_t);
+          mid.insert_or_assign(key, mid_val);
+
+          // Do not accept the integration step if the maximum squared
+          // difference between the Euler and midpoint proposals exceeds
+          // abs_tol. Neither should we accept the integration step if one
+          // of the positions wandered out of the domain. If one of these
+          // problems occurred, decrease the time step.
+          const double sq_dist =
+            (mid[key].x() - eul[key].x()) * (mid[key].x() - eul[key].x()) +
+            (mid[key].y() - eul[key].y()) * (mid[key].y() - eul[key].y());
+
+          if (
+            sq_dist > abs_tol || mid[key].x() < 0.0 || mid[key].x() > lx_ ||
+            mid[key].y() < 0.0 || mid[key].y() > ly_) {
+            accept = false;
+          }
+        }
+      }
+
+      if (!accept) {
+        delta_t *= dec_after_not_acc;
+      }
+    } while (!accept);
+    // Control ouput
+    if (iter % 10 == 0) {
+      std::cerr << "iter = " << iter << ", t = " << t
+                << ", delta_t = " << delta_t << "\n";
+    }
+
+    // When we get here, the integration step was accepted
+    t += delta_t;
+    ++iter;
+
+    // Update the triangle transformation map
+    proj_qd_.triangle_transformation = mid;
+    delta_t *= inc_after_acc;  // Try a larger step next time
   }
   return;
 }
