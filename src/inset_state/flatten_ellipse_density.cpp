@@ -216,10 +216,10 @@ Point calculate_velocity_for_point(
     (-flux_mp[pt].y() / rho_mp[pt]));
 }
 
-double interpolate(
+Point interpolate(
   Point p,
   Delaunay &dt,
-  std::unordered_map<Point, double> &mp)
+  std::unordered_map<Point, Point> &mp)
 {
   // Find the triangle containing the point
   Face_handle fh = dt.locate(p);
@@ -244,7 +244,11 @@ double interpolate(
   auto v3_proj = mp[v3];
 
   // Calculate projected point of p
-  return bary_x * v1_proj + bary_y * v2_proj + bary_z * v3_proj;
+  const Point p_proj = Point(
+    bary_x * v1_proj.x() + bary_y * v2_proj.x() + bary_z * v3_proj.x(),
+    bary_x * v1_proj.y() + bary_y * v2_proj.y() + bary_z * v3_proj.y());
+
+  return p_proj;
 }
 
 void InsetState::flatten_ellipse_density2()
