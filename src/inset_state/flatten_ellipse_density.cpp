@@ -231,8 +231,8 @@ Point calculate_velocity_for_point(
   std::unordered_map<Point, Point> &flux_mp)
 {
   return Point(
-    (-flux_mp[pt].x() / rho_mp[pt]),
-    (-flux_mp[pt].y() / rho_mp[pt]));
+    (flux_mp[pt].x() / rho_mp[pt]),
+    (flux_mp[pt].y() / rho_mp[pt]));
 }
 
 void calculate_velocity(
