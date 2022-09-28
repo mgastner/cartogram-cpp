@@ -39,7 +39,7 @@ private:
   std::unordered_set<Point> unique_quadtree_corners_;
   proj_qd proj_qd_;
   std::vector<proj_qd> proj_sequence_;
-  
+
   Bbox bbox_;  // Bounding box
   fftw_plan bwd_plan_for_rho_;
   std::unordered_map<std::string, Color> colors_;
@@ -173,7 +173,10 @@ public:
   std::array<Point, 3> untransformed_triangle(const Point);
 
   // Cairo functions
-  void write_cairo_map(const std::string, const bool);
+  void write_cairo_map(
+    const std::string,
+    const bool,
+    std::unordered_map<Point, Point> &);
   void write_cairo_polygons_to_png(
     const std::string,
     const bool,
@@ -183,7 +186,8 @@ public:
     const std::string,
     const bool,
     const bool,
-    const bool);
+    const bool,
+    std::unordered_map<Point, Point> &);
 
   // Functions to write map to eps
   void write_quadtree(const std::string);

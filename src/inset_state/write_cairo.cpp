@@ -291,11 +291,50 @@ void InsetState::write_cairo_polygons_to_png(const std::string fname,
   cairo_surface_destroy(surface);
 }
 
+void write_vectors_to_cairo_surface(cairo_t *cr,
+std::unordered_map<Point, Point> &vectors,
+unsigned int lx_,
+unsigned int ly_) {
+  // Set line width of vectors
+  cairo_set_line_width(cr, 5e-4 * std::min(lx_, ly_));
+  cairo_set_source_rgb(cr, 0.0, 0.0, 0.0);
+
+  // Plot vectors
+  for (const auto &v : vectors) {
+    cairo_move_to(cr, v.first.x(), ly_ - v.first.y());
+    // vector angle
+    const auto theta = std::atan2(v.second.y(), v.second.x());
+    // vector length
+    const auto r = std::sqrt(v.second.x() * v.second.x() +
+                             v.second.y() * v.second.y());
+                             
+    // vector end point
+    // const auto x = v.first.x() + r * std::cos(theta);
+    // const auto y = v.first.y() + r * std::sin(theta);
+    const auto x = v.first.x() + v.second.x();
+    const auto y = v.first.y() + v.second.y();
+    // arrow head
+    const auto x1 = x - 0.05 * r * std::cos(theta + pi / 6);
+    const auto y1 = y - 0.05 * r * std::sin(theta + pi / 6);
+    const auto x2 = x - 0.05 * r * std::cos(theta - pi / 6);
+    const auto y2 = y - 0.05 * r * std::sin(theta - pi / 6);
+    
+    cairo_line_to(cr, x, ly_ - y);
+    cairo_line_to(cr, x1, ly_ - y1);
+    cairo_move_to(cr, x, ly_ - y);
+    cairo_line_to(cr, x2, ly_ - y2);
+    cairo_stroke(cr);
+    cairo_stroke(cr);
+  }
+}
+  
+
 // Outputs a PS file
 void InsetState::write_cairo_polygons_to_ps(const std::string fname,
                                             const bool fill_polygons,
                                             const bool colors,
-                                            const bool plot_graticule)
+                                            const bool plot_graticule,
+                                            std::unordered_map<Point, Point> &vectors)
 {
   const auto filename = fname.c_str();
   cairo_surface_t *surface = cairo_ps_surface_create(filename, lx_, ly_);
@@ -316,6 +355,7 @@ void InsetState::write_cairo_polygons_to_ps(const std::string fname,
                                   fill_polygons,
                                   colors,
                                   plot_graticule);
+  write_vectors_to_cairo_surface(cr, vectors, lx_, ly_);
   cairo_show_page(cr);
   cairo_surface_destroy(surface);
   cairo_destroy(cr);
@@ -325,7 +365,8 @@ void InsetState::write_cairo_polygons_to_ps(const std::string fname,
 // FILE TYPES INDICATED BY COMMAND-LINE FLAGS?
 // Outputs both png and ps files
 void InsetState::write_cairo_map(const std::string file_name,
-                                 const bool plot_graticule)
+                                 const bool plot_graticule,
+                                 std::unordered_map<Point, Point> &vectors)
 {
   const auto png_name = file_name + ".png";
   const auto ps_name = file_name + ".ps";
@@ -333,12 +374,12 @@ void InsetState::write_cairo_map(const std::string file_name,
   //Check whether the has all GeoDivs colored
   const bool has_colors =
     (colors_size() == n_geo_divs());
-  write_cairo_polygons_to_png(png_name,
-                              true,
-                              has_colors,
-                              plot_graticule);
+  // write_cairo_polygons_to_png(png_name,
+  //                             true,
+  //                             has_colors,
+  //                             plot_graticule);
   write_cairo_polygons_to_ps(ps_name,
                              true,
                              has_colors,
-                             plot_graticule);
+                             plot_graticule, vectors);
 }
