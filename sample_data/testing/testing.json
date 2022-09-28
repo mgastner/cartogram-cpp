@@ -1,37 +1,88 @@
 {
-	"title": "The valid generic name for red-backed voles (Muroidea: Cricetidae: Arvicolinae): restatement of the case for Myodes Pallas, 1811",
-	"journal": {
-		"name": "Journal of Mammalogy",
-		"volume": "95",
-		"issue": "5",
-		"pages": "943",
-		"identifier": [{
-			"type": "issn",
-			"id": "0022-2372"
-		}]
-	},
-	"year": "2014",
-	"author": [{
-		"firstname": "Michael D.",
-		"lastname": "Carleton",
-		"name": "Michael D. Carleton"
-	}, {
-		"firstname": "Alfred L.",
-		"lastname": "Gardner",
-		"name": "Alfred L. Gardner"
-	}, {
-		"firstname": "Igor Ya.",
-		"lastname": "Pavlinov",
-		"name": "Igor Ya. Pavlinov"
-	}, {
-		"firstname": "Guy G.",
-		"lastname": "Musser",
-		"name": "Guy G. Musser"
-	}],
-	"identifier": [{
-		"type": "doi",
-		"id": "10.1644\/14-MAMM-A-004"
-	}],
-	"type": "article",
-	"abstract": "In view of contradictions in the recent literature, the valid genus-group name to be applied to northern red-backed voles\u2014 Myodes Pallas, 1811, or Clethrionomys Tilesius, 1850\u2014is reviewed. To develop the thesis that Myodes (type species, Mus rutilus Pallas, 1779) is the correct name, our discussion explores the 19th-century taxonomic works that bear on the relevant taxa, the transition in zoological codes apropos the identification of type species, and past nomenclatural habits in cases where no type species was originally indicated. We conclude that Myodes is the senior name to use for the genus-group taxon that includes the Holarctic species rutilus and frame this conclusion within a synonymy of the genus."
+  "_id": "10.1644\/14-MAMM-A-004",
+  "_rev": "3-f594d8049555a781f8fa040cf1039101",
+  "title": "The valid generic name for red-backed voles (Muroidea: Cricetidae: Arvicolinae): restatement of the case for Myodes Pallas, 1811",
+  "journal": {
+    "name": "Journal of Mammalogy",
+    "volume": "95",
+    "issue": "5",
+    "pages": "943",
+    "identifier": [
+      {
+        "type": "issn",
+        "id": "0022-2372"
+      }
+    ]
+  },
+  "year": "2014",
+  "author": [
+    {
+      "firstname": "Michael D.",
+      "lastname": "Carleton",
+      "name": "Michael D. Carleton"
+    },
+    {
+      "firstname": "Alfred L.",
+      "lastname": "Gardner",
+      "name": "Alfred L. Gardner"
+    },
+    {
+      "firstname": "Igor Ya.",
+      "lastname": "Pavlinov",
+      "name": "Igor Ya. Pavlinov"
+    },
+    {
+      "firstname": "Guy G.",
+      "lastname": "Musser",
+      "name": "Guy G. Musser"
+    }
+  ],
+  "identifier": [
+    {
+      "type": "doi",
+      "id": "10.1644\/14-MAMM-A-004"
+    }
+  ],
+  "citation_string": "Michael D. Carleton, Alfred L. Gardner, Igor Ya. Pavlinov, Guy G. Musser (2014) The valid generic name for red-backed voles (Muroidea: Cricetidae: Arvicolinae): restatement of the case for Myodes Pallas, 1811. Journal of Mammalogy, 95(5): 943",
+  "type": "article",
+  "abstract": "In view of contradictions in the recent literature, the valid genus-group name to be applied to northern red-backed voles\u2014 Myodes Pallas, 1811, or Clethrionomys Tilesius, 1850\u2014is reviewed. To develop the thesis that Myodes (type species, Mus rutilus Pallas, 1779) is the correct name, our discussion explores the 19th-century taxonomic works that bear on the relevant taxa, the transition in zoological codes apropos the identification of type species, and past nomenclatural habits in cases where no type species was originally indicated. We conclude that Myodes is the senior name to use for the genus-group taxon that includes the Holarctic species rutilus and frame this conclusion within a synonymy of the genus.",
+  "status": 200,
+  "names": {
+    "Muroidea": {
+      "namestring": "Muroidea",
+      "pages": [
+        "10.1644\/14-MAMM-A-004-1"
+      ]
+    },
+    "Cricetidae": {
+      "namestring": "Cricetidae",
+      "pages": [
+        "10.1644\/14-MAMM-A-004-1"
+      ]
+    },
+    "Arvicolinae": {
+      "namestring": "Arvicolinae",
+      "pages": [
+        "10.1644\/14-MAMM-A-004-1"
+      ]
+    },
+    "Myodes": {
+      "namestring": "Myodes",
+      "pages": [
+        "10.1644\/14-MAMM-A-004-1"
+      ]
+    },
+    "Clethrionomys": {
+      "namestring": "Clethrionomys",
+      "pages": [
+        "10.1644\/14-MAMM-A-004-1"
+      ]
+    },
+    "Mus rutilus": {
+      "namestring": "Mus rutilus",
+      "pages": [
+        "10.1644\/14-MAMM-A-004-1"
+      ]
+    }
+  }
 }
