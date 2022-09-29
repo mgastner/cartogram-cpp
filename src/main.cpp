@@ -240,7 +240,7 @@ int main(const int argc, const char *argv[])
         input_filename += "_input";
       }
       std::cerr << "Writing " << input_filename << std::endl;
-      inset_state.write_cairo_map(input_filename, plot_graticule);
+      // inset_state.write_cairo_map(input_filename, plot_graticule);
     }
 
     // DELETE AFTER DEBUGGING
@@ -250,12 +250,20 @@ int main(const int argc, const char *argv[])
     // Start map integration
     while (inset_state.n_finished_integrations() < 1 &&
            inset_state.max_area_error().value > max_permitted_area_error) {
-
+      // Update area errors
+      inset_state.set_area_errors();
+      std::cerr << "max. area err: " << inset_state.max_area_error().value
+                << std::endl;
       inset_state.min_ellipses();
-
+      std::unordered_map<Point, Point> v_intp;
       inset_state.create_delaunay_t();
       inset_state.flatten_ellipse_density2();
-      
+      //       inset_state.write_cairo_map("output_bef", plot_graticule,
+      //       v_intp);
+      inset_state.project_with_delaunay_t();
+
+      inset_state.write_cairo_map("output", plot_graticule, v_intp);
+
       // double blur_width =
       //    std::pow(2.0, 5 - int(inset_state.n_finished_integrations()));
       //  if (inset_state.n_finished_integrations() < max_integrations) {
@@ -265,7 +273,7 @@ int main(const int argc, const char *argv[])
       //    blur_width = 0.0;
       //  }
       //  std::cerr << "blur_width = " << blur_width << std::endl;
-  //
+      //
       // inset_state.blur_density(1, true);
 
       std::cerr << "Integration number "
@@ -294,21 +302,23 @@ int main(const int argc, const char *argv[])
 
       // Update area errors
       inset_state.set_area_errors();
-      
+
       if (plot_polygons) {
-      std::string output_filename = inset_state.inset_name() + "_" + std::to_string(inset_state.n_finished_integrations());
-      if (plot_graticule) {
-        output_filename += "_output_graticule";
-      } else {
-        output_filename += "_output";
+        std::string output_filename =
+          inset_state.inset_name() + "_" +
+          std::to_string(inset_state.n_finished_integrations());
+        if (plot_graticule) {
+          output_filename += "_output_graticule";
+        } else {
+          output_filename += "_output";
+        }
+        std::cerr << "Writing " << output_filename << std::endl;
+        // inset_state.write_cairo_map(output_filename, plot_graticule);
+        std::cerr << "max. area err: " << inset_state.max_area_error().value
+                  << ", GeoDiv: " << inset_state.max_area_error().geo_div
+                  << std::endl
+                  << std::endl;
       }
-      std::cerr << "Writing " << output_filename << std::endl;
-      inset_state.write_cairo_map(output_filename, plot_graticule);
-      std::cerr << "max. area err: " << inset_state.max_area_error().value
-                 << ", GeoDiv: " << inset_state.max_area_error().geo_div
-                 << std::endl
-                 << std::endl;
-    }
     }
 
     // inset_state.create_delaunay_t();
@@ -340,7 +350,7 @@ int main(const int argc, const char *argv[])
         output_filename += "_output";
       }
       std::cerr << "Writing " << output_filename << std::endl;
-      inset_state.write_cairo_map(output_filename, plot_graticule);
+      // inset_state.write_cairo_map(output_filename, plot_graticule);
     }
     cart_info.write_geojson(
       geo_file_name,
