@@ -190,8 +190,24 @@ void InsetState::calculate_rho_flux(
             rho_mean,
             pwh_area,
             nu);
-          flux_x += flux_prefac * x_tilde;
-          flux_y += flux_prefac * y_tilde;
+          double change_x, change_y;
+          change_x = flux_prefac * x_tilde * (abs(i) % 2 == 0 ? 1 : -1) *
+                     (abs(j) % 2 == 0 ? 1 : -1);
+          change_y = flux_prefac * y_tilde * (abs(i) % 2 == 0 ? 1 : -1) *
+                     (abs(j) % 2 == 0 ? 1 : -1);
+          // if (start_pt.x() == 512 and start_pt.y() == 320 and pgn_index ==
+          // 4) {
+          //   std::cout << "x: " << x << " y: " << y << " i: " << i
+          //             << " j: " << j << " x_tilde: " << x_tilde
+          //             << " y_tilde: " << y_tilde << " pgn_index: " <<
+          //             pgn_index
+          //             << " r_tilde_sq: " << r_tilde_sq
+          //             << " flux_prefac x: " << change_x
+          //             << " flux_prefac y: " << change_y << std::endl
+          //             << std::endl;
+          // }
+          flux_x += change_x;
+          flux_y += change_y;
         }
       }
     }
@@ -210,8 +226,8 @@ bool all_map_points_are_in_domain(
   // Return false if and only if there exists a point that would be outside
   // [0, lx] x [0, ly]
   for (auto &[key, val] : proj_map) {
-    unsigned int x = val.x() + 0.5 * delta_t * v_intp[key].x();
-    unsigned int y = val.y() + 0.5 * delta_t * v_intp[key].y();
+    double x = val.x() + 0.5 * delta_t * v_intp[key].x();
+    double y = val.y() + 0.5 * delta_t * v_intp[key].y();
     if (x < 0.0 || x > lx || y < 0.0 || y > ly) {
       return false;
     }
@@ -225,7 +241,9 @@ Point calculate_velocity_for_point(
   std::unordered_map<Point, double> &rho_mp,
   std::unordered_map<Point, Point> &flux_mp)
 {
-  return Point((flux_mp[pt].x() * 100/ rho_mp[pt]), (flux_mp[pt].y() *100 / rho_mp[pt]));
+  return Point(
+    (flux_mp[pt].x() * 100 / rho_mp[pt]),
+    (flux_mp[pt].y() * 100 / rho_mp[pt]));
 }
 
 void calculate_velocity(
@@ -352,13 +370,20 @@ void InsetState::flatten_ellipse_density2()
   // Calculate densities
   calculate_rho_flux(rho_mp, flux_mp, nu);
 
+  // for (const auto &[key, val] : rho_mp) {
+  //   if (key.x() == 512 or key.y() == 512) {
+  //     std::cout << "rho_mp[" << key << "] = " << val << " flux_mp[" << key
+  //               << "] = " << flux_mp[key] << std::endl;
+  //   }
+  // }
+
   // Initial time and step size
   double t = 0.0;
   double delta_t = 1e-2;  // Initial time step.
   unsigned int iter = 0;
 
   write_cairo_map(inset_name() + "_flux", false, flux_mp);
-  
+
   while (t < 1.0) {
     calculate_velocity(
       t,
@@ -418,10 +443,8 @@ void InsetState::flatten_ellipse_density2()
             (mid[key].y() - eul[key].y()) * (mid[key].y() - eul[key].y());
 
           if (
-            sq_dist > abs_tol || (unsigned int)mid[key].x() < 0.0 ||
-            (unsigned int)mid[key].x() > lx_ ||
-            (unsigned int)mid[key].y() < 0.0 ||
-            (unsigned int)mid[key].y() > ly_) {
+            sq_dist > abs_tol || mid[key].x() < 0.0 || mid[key].x() > lx_ ||
+            mid[key].y() < 0.0 || mid[key].y() > ly_) {
             accept = false;
           }
         }
