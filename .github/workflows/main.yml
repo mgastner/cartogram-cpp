@@ -47,9 +47,11 @@ jobs:
           path: './${{ steps.changed-directories-of-files.outputs.all_modified_files }}'
           file: 'documentation.md'
       
+      - name: Setup Haskell
+        uses: actions/setup-haskell@v1.1
+
       - name: Setup Python 
         uses: actions/setup-python@v2
-
 
       - name: Setup jsonschema2md Package
         uses: BSFishy/pip-action@v1
