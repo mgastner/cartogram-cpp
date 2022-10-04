@@ -121,17 +121,6 @@ bool all_map_points_are_in_domain(
   return true;
 }
 
-Point calculate_velocity_for_point(
-  const Point pt,
-  const double t,
-  std::unordered_map<Point, double> &rho_mp,
-  std::unordered_map<Point, Point> &flux_mp)
-{
-  return Point(
-    (flux_mp[pt].x() * 100 / rho_mp[pt]),
-    (flux_mp[pt].y() * 100 / rho_mp[pt]));
-}
-
 void calculate_velocity(
   double t,
   std::unordered_map<Point, double> &rho_mp,
@@ -140,7 +129,9 @@ void calculate_velocity(
   std::unordered_map<Point, Point> &velocity)
 {
   for (const auto &[key, val] : triangle_transformation) {
-    velocity[key] = calculate_velocity_for_point(key, t, rho_mp, flux_mp);
+    velocity[key] = Point(
+      flux_mp[key].x() * 100 / rho_mp[key],
+      flux_mp[key].y() * 100 / rho_mp[key]);
   }
 }
 
