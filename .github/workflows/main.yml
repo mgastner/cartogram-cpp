@@ -1,4 +1,4 @@
-name: Json_to_md
+name: Bibtex_to_md
 
 on:
   push:
