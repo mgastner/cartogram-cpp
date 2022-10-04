@@ -31,10 +31,6 @@ struct proj_qd {  // quadtree-delaunay projection
 class InsetState
 {
 private:
-  std::vector<Ellipse> ells_;
-  std::vector<double> ell_density_prefactors_;
-  std::vector<double> rho_p_vec_;
-  std::vector<double> pwh_areas_;
   std::unordered_map<std::string, double> area_errors_;
   std::unordered_set<Point> unique_quadtree_corners_;
   proj_qd proj_qd_;

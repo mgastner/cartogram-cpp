@@ -102,79 +102,13 @@ double ellipse_flux_prefactor(
          (128 * pi * ell.semimajor * ell.semiminor * xi_to_6);
 }
 
-void InsetState::calculate_den_prefactor_rho_p_ells()
-{
-  ell_density_prefactors_.clear();
-  rho_p_vec_.clear();
-  ells_.clear();
-  pwh_areas_.clear();
-  double rho_mean = total_target_area() / total_inset_area();
-  for (auto &gd : geo_divs_) {
-    double rho_p = (target_area_at(gd.id()) / gd.area());
-    for (unsigned int pgon = 0; pgon < gd.n_polygons_with_holes(); ++pgon) {
-      Polygon_with_holes pwh = gd.polygons_with_holes()[pgon];
-      const auto ext_ring = pwh.outer_boundary();
-      double pwh_area = ext_ring.area();
-      for (auto h = pwh.holes_begin(); h != pwh.holes_end(); ++h) {
-        pwh_area += h->area();
-      }
-      pwh_areas_.push_back(pwh_area);
-      Ellipse ell = gd.min_ellipses()[pgon];
-      ells_.push_back(ell);
-      ell_density_prefactors_.push_back(
-        ellipse_density_prefactor(ell, rho_p, rho_mean, pwh_area, 1.0));
-      rho_p_vec_.push_back(rho_p);
-    }
-  }
-}
+void InsetState::calculate_den_prefactor_rho_p_ells() {}
 
 void InsetState::calculate_rho_flux(
   std::unordered_map<Point, double> &rho_mp,
   std::unordered_map<Point, Point> &flux_mp,
   const double nu)
 {
-  for (const auto &[start_pt, curr_pt] : proj_qd_.triangle_transformation) {
-    double rho_mean = total_target_area() / total_inset_area();
-    double rho =
-      rho_mean;  // to avoid division by zero while calculating velocity
-    double flux_x = 0.0;
-    double flux_y = 0.0;
-    for (unsigned int pgn_index = 0; pgn_index < ells_.size(); ++pgn_index) {
-      auto ell = ells_[pgn_index];
-      auto pwh_area = pwh_areas_[pgn_index];
-      auto rho_p = rho_p_vec_[pgn_index];
-      for (int i = -2; i <= 2; ++i) {
-        double x = ((i + abs(i) % 2) * static_cast<int>(lx_)) +
-                   (curr_pt.x() * (i % 2 == 0 ? 1 : -1));
-        for (int j = -2; j <= 2; ++j) {
-          double y = ((j + abs(j) % 2) * static_cast<int>(ly_)) +
-                     (curr_pt.y() * (j % 2 == 0 ? 1 : -1));
-          double x_tilde = ((x - ell.center.x()) * ell.cos_theta +
-                            (y - ell.center.y()) * ell.sin_theta) /
-                           ell.semimajor;
-          double y_tilde = ((-(x - ell.center.x()) * ell.sin_theta) +
-                            (y - ell.center.y()) * ell.cos_theta) /
-                           ell.semiminor;
-          double r_tilde_sq = (x_tilde * x_tilde) + (y_tilde * y_tilde);
-          rho += ell_density_prefactors_[pgn_index] *
-                 ellipse_density_polynomial(r_tilde_sq);
-          double flux_prefac = (abs(i) % 2 == 0 ? 1 : -1) *
-                               (abs(j) % 2 == 0 ? 1 : -1) *
-                               ellipse_flux_prefactor(
-                                 ell,
-                                 r_tilde_sq,
-                                 rho_p,
-                                 rho_mean,
-                                 pwh_area,
-                                 nu);
-          flux_x += flux_prefac * x_tilde;
-          flux_y += flux_prefac * y_tilde;
-        }
-      }
-    }
-    rho_mp[curr_pt] = rho;
-    flux_mp[curr_pt] = Point(flux_x, flux_y);
-  }
 }
 
 bool all_map_points_are_in_domain(
@@ -300,14 +234,35 @@ void InsetState::flatten_ellipse_density2()
   // any ellipse within a fraction f of the mean density.
   double f = 0.1;
 
-  calculate_den_prefactor_rho_p_ells();
+  std::vector<Ellipse> ells;
+  std::vector<double> ell_density_prefactors;
+  std::vector<double> pwh_rhos;
+  std::vector<double> pwh_areas;
+
+  for (auto &gd : geo_divs_) {
+    double rho_p = (target_area_at(gd.id()) / gd.area());
+    for (unsigned int pgon = 0; pgon < gd.n_polygons_with_holes(); ++pgon) {
+      Polygon_with_holes pwh = gd.polygons_with_holes()[pgon];
+      const auto ext_ring = pwh.outer_boundary();
+      double pwh_area = ext_ring.area();
+      for (auto h = pwh.holes_begin(); h != pwh.holes_end(); ++h) {
+        pwh_area += h->area();
+      }
+      pwh_areas.push_back(pwh_area);
+      Ellipse ell = gd.min_ellipses()[pgon];
+      ells.push_back(ell);
+      ell_density_prefactors.push_back(
+        ellipse_density_prefactor(ell, rho_p, rho_mean, pwh_area, 1.0));
+      pwh_rhos.push_back(rho_p);
+    }
+  }
 
   double rho_min = *std::min_element(
-    ell_density_prefactors_.begin(),
-    ell_density_prefactors_.end());
+    ell_density_prefactors.begin(),
+    ell_density_prefactors.end());
   double rho_max = *std::max_element(
-    ell_density_prefactors_.begin(),
-    ell_density_prefactors_.end());
+    ell_density_prefactors.begin(),
+    ell_density_prefactors.end());
   std::cout << "rho_min = " << rho_min << ", rho_max = " << rho_max
             << std::endl;
 
@@ -323,13 +278,53 @@ void InsetState::flatten_ellipse_density2()
     }
   }
   std::cout << "nu = " << nu << std::endl;
-  for (unsigned int pgn_index = 0; pgn_index < ell_density_prefactors_.size();
+  for (unsigned int pgn_index = 0; pgn_index < ell_density_prefactors.size();
        ++pgn_index) {
-    ell_density_prefactors_[pgn_index] *= nu;
+    ell_density_prefactors[pgn_index] *= nu;
   }
 
   // Calculate densities
-  calculate_rho_flux(rho_mp, flux_mp, nu);
+  for (const auto &[start_pt, curr_pt] : proj_qd_.triangle_transformation) {
+    double rho =
+      rho_mean;  // to avoid division by zero while calculating velocity
+    double flux_x = 0.0;
+    double flux_y = 0.0;
+    for (unsigned int pgn_index = 0; pgn_index < ells.size(); ++pgn_index) {
+      auto ell = ells[pgn_index];
+      auto pwh_area = pwh_areas[pgn_index];
+      auto rho_p = pwh_rhos[pgn_index];
+      for (int i = -2; i <= 2; ++i) {
+        double x = ((i + abs(i) % 2) * static_cast<int>(lx_)) +
+                   (curr_pt.x() * (i % 2 == 0 ? 1 : -1));
+        for (int j = -2; j <= 2; ++j) {
+          double y = ((j + abs(j) % 2) * static_cast<int>(ly_)) +
+                     (curr_pt.y() * (j % 2 == 0 ? 1 : -1));
+          double x_tilde = ((x - ell.center.x()) * ell.cos_theta +
+                            (y - ell.center.y()) * ell.sin_theta) /
+                           ell.semimajor;
+          double y_tilde = ((-(x - ell.center.x()) * ell.sin_theta) +
+                            (y - ell.center.y()) * ell.cos_theta) /
+                           ell.semiminor;
+          double r_tilde_sq = (x_tilde * x_tilde) + (y_tilde * y_tilde);
+          rho += ell_density_prefactors[pgn_index] *
+                 ellipse_density_polynomial(r_tilde_sq);
+          double flux_prefac = (abs(i) % 2 == 0 ? 1 : -1) *
+                               (abs(j) % 2 == 0 ? 1 : -1) *
+                               ellipse_flux_prefactor(
+                                 ell,
+                                 r_tilde_sq,
+                                 rho_p,
+                                 rho_mean,
+                                 pwh_area,
+                                 nu);
+          flux_x += flux_prefac * x_tilde;
+          flux_y += flux_prefac * y_tilde;
+        }
+      }
+    }
+    rho_mp[curr_pt] = rho;
+    flux_mp[curr_pt] = Point(flux_x, flux_y);
+  }
 
   // Initial time and step size
   double t = 0.0;
