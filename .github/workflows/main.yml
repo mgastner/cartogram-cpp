@@ -57,30 +57,6 @@ jobs:
 
       - name: Run Haskell Script
         run: runhaskell pandoc -t markdown_strict --citeproc pandoc-bib-test.md -o pandoc-bib-test-output.md --bibliography sample.bib
-
-      - name: Setup Python 
-        uses: actions/setup-python@v2
-
-      - name: Setup jsonschema2md Package
-        uses: BSFishy/pip-action@v1
-        with: 
-           packages: |
-            jsonschema2md
-      
-      - name: Write to Markdown
-        uses: jannekem/run-python-script-action@v1
-        with:
-          script: |
-            import json
-            import jsonschema2md
-
-            parser = jsonschema2md.Parser(
-                examples_as_yaml=False,
-                show_examples="all",
-                )
-            with open("./${{ steps.changed-files.outputs.all_changed_files }}") as json_file, open("./${{ steps.changed-directories-of-files.outputs.all_changed_files }}/documentation.md", 'w') as output_markdown:
-                output_md = parser.parse_schema(json.load(json_file))
-                output_markdown.writelines(output_md)
       
       - name: Push changed and added files to repo
         uses: EndBug/add-and-commit@v9.1.0
