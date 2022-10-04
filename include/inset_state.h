@@ -197,12 +197,6 @@ public:
   void write_map_to_eps(const std::string, const bool);
   void write_polygons_to_eps(std::ofstream &, const bool, const bool);
   void write_polygon_points_on_cairo_surface(cairo_t *, color);
-
-  void calculate_den_prefactor_rho_p_ells();
-  void calculate_rho_flux(
-    std::unordered_map<Point, double> &,
-    std::unordered_map<Point, Point> &,
-    const double);
 };
 
 #endif

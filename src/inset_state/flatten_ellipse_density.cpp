@@ -102,15 +102,6 @@ double ellipse_flux_prefactor(
          (128 * pi * ell.semimajor * ell.semiminor * xi_to_6);
 }
 
-void InsetState::calculate_den_prefactor_rho_p_ells() {}
-
-void InsetState::calculate_rho_flux(
-  std::unordered_map<Point, double> &rho_mp,
-  std::unordered_map<Point, Point> &flux_mp,
-  const double nu)
-{
-}
-
 bool all_map_points_are_in_domain(
   double delta_t,
   std::unordered_map<Point, Point> &proj_map,
