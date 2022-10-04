@@ -52,7 +52,6 @@ jobs:
       
       - name: Setup Haskell
         uses: haskell/actions/setup@v2
-        run: runhaskell 
 
       - name: Setup Python 
         uses: actions/setup-python@v2
