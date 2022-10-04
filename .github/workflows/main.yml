@@ -2,7 +2,7 @@ name: Bibtex_to_md
 
 on:
   push:
-    branches: [ "main","github-actions-python"]
+    branches: [ "main","github-autodocs-bibtex"]
     paths: ['**.json', '**.geojson']
 
 jobs:
