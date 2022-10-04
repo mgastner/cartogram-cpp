@@ -43,4 +43,6 @@ constexpr double max_font_size = 10.0;
 // area to be considered "too small"
 constexpr double small_area_threshold_frac = 2e-5;
 
+constexpr double xi_sq = 4.0;
+
 #endif

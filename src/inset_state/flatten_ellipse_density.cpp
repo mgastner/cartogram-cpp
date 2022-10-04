@@ -1,8 +1,6 @@
 #include "constants.h"
 #include "inset_state.h"
 
-constexpr double xi_sq(4.0);
-
 void InsetState::min_ellipses()
 {
   for (auto &gd : geo_divs_) {
