@@ -47,11 +47,16 @@ jobs:
           path: './${{ steps.changed-directories-of-files.outputs.all_changed_files }}'
           file: 'documentation.md'
           content: |
-            Your
-            ## Mama
+            ---
+            bibliography: sample.bib
+            nocite: "@*"
+            ---
       
       - name: Setup Haskell
         uses: haskell/actions/setup@v2
+
+      - name: Run Haskell Script
+        run: runhaskell pandoc -t markdown_strict --citeproc pandoc-bib-test.md -o pandoc-bib-test-output.md --bibliography sample.bib
 
       - name: Setup Python 
         uses: actions/setup-python@v2
