@@ -6,7 +6,6 @@ constexpr double xi_sq(4.0);
 void InsetState::min_ellipses()
 {
   for (auto &gd : geo_divs_) {
-    // std::cout << "gd " << gd.id() << std::endl;
     for (const auto &pwh : gd.polygons_with_holes()) {
       auto ext_ring = pwh.outer_boundary();
       Ellipse ell;
@@ -69,24 +68,6 @@ void InsetState::min_ellipses()
   }
 }
 
-// double delta_rho_of_polygon(
-//   Ellipse ell,
-//   double r_tilde_sq,
-//   double rho_p,
-//   double rho_mean,
-//   double pwh_area)
-// {
-//   if (r_tilde_sq >= 4 * xi_sq) {
-//     return 0.0;
-//   }
-//   double xi_to_6 = xi_sq * xi_sq * xi_sq;
-//   double prefac = ((rho_p - rho_mean) * pwh_area) /
-//                   (16 * pi * ell.semimajor * ell.semiminor * xi_to_6);
-//   double postfac = r_tilde_sq - 4 * xi_sq;
-//   double polynomial = -(r_tilde_sq - xi_sq) * postfac * postfac;
-//   return prefac * polynomial;
-// }
-
 double ellipse_density_prefactor(
   Ellipse ell,
   double rho_p,
@@ -94,8 +75,6 @@ double ellipse_density_prefactor(
   double pwh_area,
   double nu)
 {
-  // return nu *(pi * ell.semimajor * ell.semiminor)* (rho_p - rho_mean) /
-  // pwh_area; // possibility
   return nu * pwh_area * (rho_p - rho_mean) /
          (pi * ell.semimajor * ell.semiminor);
 }
@@ -119,7 +98,6 @@ double ellipse_flux_prefactor(
 {
   if (r_tilde_sq >= 4 * xi_sq)
     return 0.0;
-
   double xi_to_6 = xi_sq * xi_sq * xi_sq;
   return nu * pwh_area * (rho_p - rho_mean) * (4 * xi_sq - r_tilde_sq) *
          (4 * xi_sq - r_tilde_sq) * (4 * xi_sq - r_tilde_sq) /
@@ -182,32 +160,17 @@ void InsetState::calculate_rho_flux(
           double r_tilde_sq = (x_tilde * x_tilde) + (y_tilde * y_tilde);
           rho += ell_density_prefactors_[pgn_index] *
                  ellipse_density_polynomial(r_tilde_sq);
-
-          double flux_prefac = ellipse_flux_prefactor(
-            ell,
-            r_tilde_sq,
-            rho_p,
-            rho_mean,
-            pwh_area,
-            nu);
-          double change_x, change_y;
-          change_x = flux_prefac * x_tilde * (abs(i) % 2 == 0 ? 1 : -1) *
-                     (abs(j) % 2 == 0 ? 1 : -1);
-          change_y = flux_prefac * y_tilde * (abs(i) % 2 == 0 ? 1 : -1) *
-                     (abs(j) % 2 == 0 ? 1 : -1);
-          // if (start_pt.x() == 512 and start_pt.y() == 320 and pgn_index ==
-          // 4) {
-          //   std::cout << "x: " << x << " y: " << y << " i: " << i
-          //             << " j: " << j << " x_tilde: " << x_tilde
-          //             << " y_tilde: " << y_tilde << " pgn_index: " <<
-          //             pgn_index
-          //             << " r_tilde_sq: " << r_tilde_sq
-          //             << " flux_prefac x: " << change_x
-          //             << " flux_prefac y: " << change_y << std::endl
-          //             << std::endl;
-          // }
-          flux_x += change_x;
-          flux_y += change_y;
+          double flux_prefac = (abs(i) % 2 == 0 ? 1 : -1) *
+                               (abs(j) % 2 == 0 ? 1 : -1) *
+                               ellipse_flux_prefactor(
+                                 ell,
+                                 r_tilde_sq,
+                                 rho_p,
+                                 rho_mean,
+                                 pwh_area,
+                                 nu);
+          flux_x += flux_prefac * x_tilde;
+          flux_y += flux_prefac * y_tilde;
         }
       }
     }
@@ -370,13 +333,6 @@ void InsetState::flatten_ellipse_density2()
   // Calculate densities
   calculate_rho_flux(rho_mp, flux_mp, nu);
 
-  // for (const auto &[key, val] : rho_mp) {
-  //   if (key.x() == 512 or key.y() == 512) {
-  //     std::cout << "rho_mp[" << key << "] = " << val << " flux_mp[" << key
-  //               << "] = " << flux_mp[key] << std::endl;
-  //   }
-  // }
-
   // Initial time and step size
   double t = 0.0;
   double delta_t = 1e-2;  // Initial time step.
@@ -468,5 +424,4 @@ void InsetState::flatten_ellipse_density2()
     proj_qd_.triangle_transformation = mid;
     delta_t *= inc_after_acc;  // Try a larger step next time
   }
-  return;
 }
