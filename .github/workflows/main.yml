@@ -46,9 +46,13 @@ jobs:
         with:
           path: './${{ steps.changed-directories-of-files.outputs.all_modified_files }}'
           file: 'documentation.md'
+          content: |
+            Your
+            ## Mama
       
       - name: Setup Haskell
         uses: haskell/actions/setup@v2
+        run: runhaskell 
 
       - name: Setup Python 
         uses: actions/setup-python@v2
