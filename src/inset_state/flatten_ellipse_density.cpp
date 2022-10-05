@@ -122,7 +122,6 @@ bool all_map_points_are_in_domain(
 }
 
 void calculate_velocity(
-  double t,
   std::unordered_map<Point, double> &rho_mp,
   std::unordered_map<Point, Point> &flux_mp,
   std::unordered_map<Point, Point> &triangle_transformation,
@@ -172,9 +171,9 @@ Point interpolate(Point p, Delaunay &dt, std::unordered_map<Point, Point> &mp)
   return p_proj;
 }
 
-void InsetState::flatten_ellipse_density2()
+void InsetState::flatten_ellipse_density()
 {
-  std::cerr << "In flatten_ellipse_density2()" << std::endl;
+  std::cerr << "In flatten_ellipse_density()" << std::endl;
 
   std::unordered_map<Point, double> rho_mp;
   std::unordered_map<Point, Point> flux_mp;
@@ -322,7 +321,6 @@ void InsetState::flatten_ellipse_density2()
 
   while (t < 1.0) {
     calculate_velocity(
-      t,
       rho_mp,
       flux_mp,
       proj_qd_.triangle_transformation,
@@ -344,7 +342,6 @@ void InsetState::flatten_ellipse_density2()
       }
 
       calculate_velocity(
-        t + 0.5 * delta_t,
         rho_mp,
         flux_mp,
         proj_qd_.triangle_transformation,

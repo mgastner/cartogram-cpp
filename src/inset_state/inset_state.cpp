@@ -36,13 +36,6 @@ void InsetState::create_delaunay_t()
       }
 
       // Get holes of polygon with holes
-      //      for (auto hci = pwh.holes_begin(); hci != pwh.holes_end(); ++hci)
-      //      {
-      //        const Polygon &hole = *hci;
-      //        for (auto i : hole) {
-      //          points.insert(Point(i[0], i[1]));
-      //        }
-      //      }
       for (auto hci = pwh.holes_begin(); hci != pwh.holes_end(); ++hci) {
         const Polygon &hole = *hci;
         for (const auto &i : hole) {
@@ -378,7 +371,7 @@ void InsetState::remove_tiny_polygons(const double &minimum_polygon_size)
     // Iterate over Polygon_with_holes
     for (unsigned int i = 0; i < pwhs.size(); ++i) {
       if (i == 0 || pwh_area(pwhs[i]) > threshold) {
-        gd_cleaned.push_back(pwhs[i]);
+        gd_cleaned.push_back_polygon_with_holes(pwhs[i]);
       }
     }
     geo_divs_cleaned.push_back(gd_cleaned);

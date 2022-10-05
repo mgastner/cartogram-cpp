@@ -108,7 +108,6 @@ public:
   void fill_with_density(bool);  // Fill map with density, using scanlines
   void fill_with_ellipse_density_and_flux(bool, bool);
   void flatten_density();  // Flatten said density with integration
-  void flatten_ellipse_density2();
   void flatten_ellipse_density();
   void flatten_density_with_node_vertices();
 
@@ -178,11 +177,22 @@ public:
   std::array<Point, 3> untransformed_triangle(Point, bool = false) const;
 
   // Cairo functions
-  void write_cairo_map(const std::string &, bool);
-  void write_cairo_polygons_to_png(const std::string &, bool, bool, bool);
-  void write_cairo_polygons_to_ps(const std::string &, bool, bool, bool);
+  void write_cairo_map(
+    const std::string &,
+    bool,
+    std::unordered_map<Point, Point> = std::unordered_map<Point, Point>());
+  void write_cairo_polygons_to_ps(
+    const std::string &,
+    bool,
+    bool,
+    bool,
+    std::unordered_map<Point, Point> &);
 
   // Functions to write map to eps
+  void write_flux_to_eps(
+    const std::string,
+    const boost::multi_array<double, 2>,
+    const boost::multi_array<double, 2>);
   void write_quadtree(const std::string &);
   void write_density_to_eps(const std::string &, const double *);
   void write_graticule_to_eps(std::ofstream &);

@@ -273,25 +273,6 @@ void InsetState::write_polygons_to_cairo_surface(
   }
 }
 
-// Outputs a PNG file
-void InsetState::write_cairo_polygons_to_png(
-  const std::string &fname,
-  const bool fill_polygons,
-  const bool colors,
-  const bool plot_graticule)
-{
-  const auto filename = fname.c_str();
-  cairo_surface_t *surface = cairo_image_surface_create(
-    CAIRO_FORMAT_ARGB32,
-    static_cast<int>(lx_),
-    static_cast<int>(ly_));
-  cairo_t *cr = cairo_create(surface);
-  write_polygons_to_cairo_surface(cr, fill_polygons, colors, plot_graticule);
-  cairo_surface_write_to_png(surface, filename);
-  cairo_destroy(cr);
-  cairo_surface_destroy(surface);
-}
-
 void write_vectors_to_cairo_surface(cairo_t *cr,
 std::unordered_map<Point, Point> &vectors,
 unsigned int lx_,
@@ -331,7 +312,7 @@ unsigned int ly_) {
   
 
 // Outputs a PS file
-void InsetState::write_cairo_polygons_to_ps(const std::string fname,
+void InsetState::write_cairo_polygons_to_ps(const std::string &fname,
                                             const bool fill_polygons,
                                             const bool colors,
                                             const bool plot_graticule,
@@ -365,15 +346,14 @@ void InsetState::write_cairo_polygons_to_ps(const std::string fname,
 // TODO: DO WE NEED THIS FUNCTION? WOULD IT NOT MAKE MORE SENSE TO ONLY PRINT
 // FILE TYPES INDICATED BY COMMAND-LINE FLAGS?
 // Outputs both png and ps files
-void InsetState::write_cairo_map(const std::string file_name,
+void InsetState::write_cairo_map(const std::string &file_name,
                                  const bool plot_graticule,
-                                 std::unordered_map<Point, Point> &vectors)
+                                 std::unordered_map<Point, Point> vectors)
 {
   const auto png_name = file_name + ".png";
   const auto ps_name = file_name + ".ps";
 
   // Check whether the has all GeoDivs colored
   const bool has_colors = (colors_size() == n_geo_divs());
-  write_cairo_polygons_to_png(png_name, true, has_colors, plot_graticule);
-  write_cairo_polygons_to_ps(ps_name, true, has_colors, plot_graticule);
+  write_cairo_polygons_to_ps(ps_name, true, has_colors, plot_graticule, vectors);
 }

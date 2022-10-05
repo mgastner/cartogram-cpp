@@ -77,6 +77,11 @@ unsigned int GeoDiv::n_rings() const
   return n_rings;
 }
 
+unsigned int GeoDiv::n_polygons_with_holes() const
+{
+  return polygons_with_holes_.size();
+}
+
 // TODO: IS THIS THE USUAL DEFINITION OF point_on_surface()? SHOULD IT NOT BE
 //       THE LARGEST LINE SEGMENT IN ANY POLYGON WITH HOLES IN THE GEO_DIV?
 Point GeoDiv::point_on_surface_of_geodiv() const
@@ -156,7 +161,7 @@ void GeoDiv::push_back_ellipse(const Ellipse ell)
   return;
 }
 
-void GeoDiv::push_back_polygon_with_holes(const Polygon_with_holes pwh)
+void GeoDiv::push_back_polygon_with_holes(const Polygon_with_holes &pwh)
 {
   polygons_with_holes_.push_back(pwh);
 }

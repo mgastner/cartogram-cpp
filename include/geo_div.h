@@ -33,7 +33,7 @@ public:
     const Polygon_with_holes &) const;
   [[nodiscard]] std::vector<Polygon_with_holes> polygons_with_holes() const;
   void push_back_ellipse(Ellipse);
-  void push_back_polygon_with_holes(const Polygon_with_holes);
+  void push_back_polygon_with_holes(const Polygon_with_holes&);
   std::vector<Polygon_with_holes> *ref_to_polygons_with_holes();
   void sort_pwh_descending_by_area();
 };

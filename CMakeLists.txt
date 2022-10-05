@@ -12,7 +12,7 @@ set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
 # Release mode by default, unless specified
 # https://stackoverflow.com/questions/48832233/
 # have-a-cmake-project-default-to-the-release-build-type
-if (NOT CMAKE_BUILD_TYPE)
+if(NOT CMAKE_BUILD_TYPE)
   set(CMAKE_BUILD_TYPE "Release" CACHE STRING "" FORCE)
 endif()
 
@@ -28,7 +28,6 @@ pkg_search_module(fftw REQUIRED fftw3 IMPORTED_TARGET)
 pkg_search_module(CAIRO REQUIRED CAIRO IMPORTED_TARGET)
 include_directories(PkgConfig::fftw PkgConfig::CAIRO)
 link_libraries(PkgConfig::fftw PkgConfig::CAIRO)
-
 
 # Adding C++ files needed for compilation.
 add_executable(
@@ -47,11 +46,10 @@ add_executable(
   src/inset_state/densify.cpp
   src/inset_state/fill_with_density.cpp
   src/inset_state/flatten_density.cpp
-        src/inset_state/flatten_ellipse_density.cpp
+  src/inset_state/flatten_ellipse_density.cpp
   src/inset_state/inset_state.cpp
   src/inset_state/interpolate_bilinearly.cpp
   src/inset_state/matrix.cpp
-  # src/inset_state/min_ellipses.cpp
   src/inset_state/project.cpp
   src/inset_state/rescale_map.cpp
   src/inset_state/round_point.cpp
@@ -70,21 +68,17 @@ add_executable(
 
 # Linking appropriate libraries required.
 if(APPLE)
-
   # Using LLVM clang, installed via homebrew, instaed of Apple clang.
   if(${CMAKE_HOST_SYSTEM_PROCESSOR} STREQUAL "arm64")
-
     # Homebrew install path on arm64 (apple silicon, M1 etc.) machines.
     set(CMAKE_CXX_COMPILER "/opt/homebrew/opt/llvm@13/bin/clang++")
     set(CMAKE_C_COMPILER "/opt/homebrew/opt/llvm@13/bin/clang")
   else()
-
     # Homebrew install path on x86 machines (Intel).
     set(CMAKE_C_COMPILER "/usr/local/opt/llvm/bin/clang")
     set(CMAKE_CXX_COMPILER "/usr/local/opt/llvm/bin/clang++")
   endif()
 elseif(UNIX)
-
   # Using GNU gcc-11.
   set(CMAKE_CXX_COMPILER "g++-11")
   set(CMAKE_C_COMPILER "gcc-11")
@@ -108,9 +102,9 @@ install(TARGETS cartogram DESTINATION bin)
 # From https://stackoverflow.com/questions/41471620/cmake-support-make-uninstall
 add_custom_target("uninstall")
 add_custom_command(
-    TARGET "uninstall"
-    POST_BUILD
-    COMMENT "Uninstalling cartogram..."
-    COMMAND xargs rm -vf < install_manifest.txt || echo Nothing in
-            install_manifest.txt to be uninstalled!
+  TARGET "uninstall"
+  POST_BUILD
+  COMMENT "Uninstalling cartogram..."
+  COMMAND xargs rm -vf < install_manifest.txt || echo Nothing in
+  install_manifest.txt to be uninstalled!
 )
