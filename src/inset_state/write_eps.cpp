@@ -4,7 +4,7 @@
 
 void write_eps_header_and_definitions(
   std::ofstream &eps_file,
-  const std::string eps_name,
+  const std::string &eps_name,
   const unsigned int lx,
   const unsigned int ly)
 {
@@ -42,7 +42,6 @@ void write_eps_header_and_definitions(
   eps_file << "  n rx ry m " << 1.0 + sq_overlap << " 0 rl 0 "
            << 1.0 + sq_overlap << " rl " << -1.0 - sq_overlap << " 0 rl c\n";
   eps_file << "} def %% square\n";
-  return;
 }
 
 void InsetState::write_polygons_to_eps(
@@ -53,7 +52,7 @@ void InsetState::write_polygons_to_eps(
   eps_file << 0.001 * std::min(lx_, ly_) << " slw\n";
   for (const auto &gd : geo_divs_) {
     for (const auto &pwh : gd.polygons_with_holes()) {
-      const Polygon ext_ring = pwh.outer_boundary();
+      const Polygon &ext_ring = pwh.outer_boundary();
 
       // Move to starting coordinates
       eps_file << "n " << ext_ring[0][0] << " " << ext_ring[0][1] << " m\n";
@@ -68,7 +67,7 @@ void InsetState::write_polygons_to_eps(
 
       // Plot holes
       for (auto h = pwh.holes_begin(); h != pwh.holes_end(); ++h) {
-        const Polygon hole = *h;
+        const Polygon &hole = *h;
         eps_file << hole[0][0] << " " << hole[0][1] << " m\n";
         for (unsigned int i = 1; i < hole.size(); ++i) {
           eps_file << hole[i][0] << " " << hole[i][1] << " l\n";
@@ -108,7 +107,6 @@ void InsetState::write_polygons_to_eps(
       eps_file << "0 sgry s\n";
     }
   }
-  return;
 }
 
 void InsetState::write_graticule_to_eps(std::ofstream &eps_file)
@@ -135,11 +133,10 @@ void InsetState::write_graticule_to_eps(std::ofstream &eps_file)
     }
     eps_file << "s\n";
   }
-  return;
 }
 
 void InsetState::write_map_to_eps(
-  const std::string eps_name,
+  const std::string &eps_name,
   const bool plot_graticule)
 {
   std::ofstream eps_file(eps_name);
@@ -150,14 +147,13 @@ void InsetState::write_map_to_eps(
   write_polygons_to_eps(
     eps_file,
     true,  // Fill polygons with default color?
-    has_colors);  // Fill polygons with assigned assigned?
+    has_colors);  // Fill polygons with assigned colors?
   if (plot_graticule) {
     write_graticule_to_eps(eps_file);
   }
   eps_file << "showpage\n";
   eps_file << "%%EOF\n";
   eps_file.close();
-  return;
 }
 
 // Functions to show a scalar field called "density" as a heat map
@@ -197,14 +193,16 @@ void heatmap_color(
     *b = blue[0];
     return;
   } else if (dens > dens_mean) {
-    color_category = 5 * (dens_max - dens) / (dens_max - dens_mean);
+    color_category =
+      static_cast<int>(5.0 * (dens_max - dens) / (dens_max - dens_mean));
     xmax = dens_max - 0.2 * color_category * (dens_max - dens_mean);
     xmin = xmax - 0.2 * (dens_max - dens_mean);
 
     // Assign color category 0 if dens_max and dens are very close
     color_category = std::max(color_category, 0);
   } else if (dens > dens_min) {
-    color_category = 5 * (dens_mean - dens) / (dens_mean - dens_min) + 5;
+    color_category =
+      static_cast<int>(5 * (dens_mean - dens) / (dens_mean - dens_min) + 5);
     xmax = dens_mean - 0.2 * (color_category - 5) * (dens_mean - dens_min);
     xmin = xmax - 0.2 * (dens_mean - dens_min);
 
@@ -234,11 +232,10 @@ void heatmap_color(
     xmax,
     blue[color_category + 1],
     blue[color_category]);
-  return;
 }
 
 void InsetState::write_density_to_eps(
-  const std::string eps_name,
+  const std::string &eps_name,
   const double *density)
 {
   std::ofstream eps_file(eps_name);
@@ -323,7 +320,6 @@ void InsetState::write_flux_to_eps(
   eps_file << "showpage\n";
   eps_file << "%%EOF\n";
   eps_file.close();
-  return;
 }
 
 void InsetState::write_intersections_to_eps(unsigned int res)
@@ -359,5 +355,4 @@ void InsetState::write_intersections_to_eps(unsigned int res)
   eps_file << "showpage\n";
   eps_file << "%%EOF\n";
   eps_file.close();
-  return;
 }

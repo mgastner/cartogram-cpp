@@ -1,4 +1,3 @@
-#include "constants.h"
 #include "inset_state.h"
 #include "round_point.h"
 #include <CGAL/intersections.h>
@@ -30,7 +29,7 @@ std::ostream &operator<<(std::ostream &cout, std::vector<A> const &v)
 //      coef_x * x + coef_y * y + coef_const = 0.
 // The function returns the unique intersection point between them. If this
 // intersection point does not exist, the function returns the point called
-// OUT_OF_RANGE, which is always outside of any graticule grid cell.
+// OUT_OF_RANGE, which is always outside any graticule grid cell.
 Point calc_intersection(
   const Point a,
   const Point b,
@@ -198,7 +197,7 @@ std::vector<Point> densification_points(
     // Bottom-left to top-right edge diagonals
     add_diag_inter(&temp_intersections, a, b, 0.5, 0.25, 0.5, lx, ly);
 
-    // Top-left to botom-right edge diagonals
+    // Top-left to bottom-right edge diagonals
     add_diag_inter(&temp_intersections, a, b, -0.5, 0.25, 0.5, lx, ly);
   }
 
@@ -241,8 +240,8 @@ void InsetState::densify_geo_divs()
         // Push all points. Omit the last point because it will be included
         // in the next iteration. Otherwise, we would have duplicated points
         // in the polygon.
-        for (unsigned int i = 0; i < (outer_pts_dens.size() - 1); ++i) {
-          outer_dens.push_back(outer_pts_dens[i]);
+        for (unsigned int j = 0; j < (outer_pts_dens.size() - 1); ++j) {
+          outer_dens.push_back(outer_pts_dens[j]);
         }
       }
       std::vector<Polygon> holes_v_dens;
@@ -273,17 +272,18 @@ void InsetState::densify_geo_divs()
   }
   geo_divs_.clear();
   geo_divs_ = geodivs_dens;
-  return;
 }
 
 std::vector<Point> densification_points_with_delaunay_t(
-  const Point pt1,
-  const Point pt2,
-  const Delaunay &dt)
+  const Point &pt1,
+  const Point &pt2,
+  const Delaunay &dt,
+  const unsigned int lx,
+  const unsigned int ly)
 {
   std::vector<Point> dens_points;
 
-  // keep track of visited segements
+  // keep track of visited segments
   std::unordered_set<Segment> vis_seg;
 
   // If the input points are identical, return them without calculating
@@ -307,8 +307,8 @@ std::vector<Point> densification_points_with_delaunay_t(
   Line_face_circulator lfc_begin = lfc;  // we store the begining iterator
 
   // keeping track of states
-  bool f1_first = false, found_a_face = false, found_both_faces = false;
-  if (lfc_begin != 0) {
+  bool f1_first = false, found_a_face = false;
+  if (lfc_begin != nullptr) {
     do {
       Face_handle fh = lfc;
 
@@ -355,16 +355,14 @@ std::vector<Point> densification_points_with_delaunay_t(
         Point pt_intersec;
         if (CGAL::do_intersect(segment, tri_seg)) {
           CGAL::Object p = CGAL::intersection(segment, tri_seg);
+
+          // The CGAL::Object p does not need to be a point, but could also be
+          // empty or a line. CGAL::assign() only returns `true` if p is a
+          // point.
           if (CGAL::assign(pt_intersec, p)) {
 
-            // round to 15 bicimal places
-            const unsigned int precision = 15;
-            pt_intersec = Point(
-              std::round(pt_intersec.x() * (1 << precision)) /
-                (1 << precision),
-              std::round(pt_intersec.y() * (1 << precision)) /
-                (1 << precision));
-
+            // round the point before adding
+            pt_intersec = rounded_point(pt_intersec, lx, ly);
             dens_points.push_back(pt_intersec);
           }
         }
@@ -372,7 +370,7 @@ std::vector<Point> densification_points_with_delaunay_t(
 
       // move the iterator to the next one
       ++lfc;
-    } while (lfc != lfc_begin && !found_both_faces);
+    } while (lfc != lfc_begin);
   }
 
   if (dens_points.size() <= 1) {
@@ -386,12 +384,14 @@ std::vector<Point> densification_points_with_delaunay_t(
   }
 
   // if densification points are in reverse order, reverse them
-  if (dens_points[0] != pt1) {
+  if (dens_points.front() != pt1) {
     reverse(dens_points.begin(), dens_points.end());
   }
 
-  // check validity of densification points
-  if (dens_points[0] != pt1 || dens_points[dens_points.size() - 1] != pt2) {
+  // check validity of densification points: in case the first and last
+  // points are not the originally given points, we consider the densificaiton
+  // points invalid and return the original points
+  if (dens_points.front() != pt1 || dens_points.back() != pt2) {
     return {pt1, pt2};
   }
 
@@ -419,13 +419,13 @@ void InsetState::densify_geo_divs_using_delaunay_t()
         const auto b = (i == outer.size() - 1) ? outer[0] : outer[i + 1];
         // Densify the segment
         const std::vector<Point> outer_pts_dens =
-          densification_points_with_delaunay_t(a, b, proj_qd_.dt);
+          densification_points_with_delaunay_t(a, b, proj_qd_.dt, lx_, ly_);
 
         // Push all points. Omit the last point because it will be included
         // in the next iteration. Otherwise, we would have duplicated points
         // in the polygon.
-        for (unsigned int i = 0; i < (outer_pts_dens.size() - 1); ++i) {
-          outer_dens.push_back(outer_pts_dens[i]);
+        for (unsigned int j = 0; j < (outer_pts_dens.size() - 1); ++j) {
+          outer_dens.push_back(outer_pts_dens[j]);
         }
       }
       std::vector<Polygon> holes_v_dens;
@@ -439,7 +439,7 @@ void InsetState::densify_geo_divs_using_delaunay_t()
           const Point c = (*h)[j];
           const Point d = (j == h->size() - 1) ? (*h)[0] : (*h)[j + 1];
           const std::vector<Point> hole_pts_dens =
-            densification_points_with_delaunay_t(c, d, proj_qd_.dt);
+            densification_points_with_delaunay_t(c, d, proj_qd_.dt, lx_, ly_);
           for (unsigned int i = 0; i < (hole_pts_dens.size() - 1); ++i) {
             hole_dens.push_back(hole_pts_dens[i]);
           }
@@ -456,5 +456,4 @@ void InsetState::densify_geo_divs_using_delaunay_t()
   }
   geo_divs_.clear();
   geo_divs_ = geodivs_dens;
-  return;
 }

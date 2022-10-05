@@ -65,6 +65,7 @@ add_executable(
   src/misc/ft_real_2d.cpp
   src/misc/intersection.cpp
   src/misc/parse_arguments.cpp
+  src/misc/pwh.cpp
 )
 
 # Linking appropriate libraries required.

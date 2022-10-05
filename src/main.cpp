@@ -17,33 +17,33 @@ template <typename T> std::chrono::milliseconds inMilliseconds(T duration)
 
 int main(const int argc, const char *argv[])
 {
-
   // Start of main function time
-  time_point start_main = clock_time::now();
-
+  const time_point start_main = clock_time::now();
   std::string geo_file_name, visual_file_name;
 
   // Default number of grid cells along longer Cartesian coordinate axis
-  unsigned int long_graticule_length = default_long_graticule_length;
+  unsigned int max_n_grid_rows_or_cols;
 
   // Target number of points to retain after simplification
-  unsigned int target_points_per_inset = default_target_points_per_inset;
+  unsigned int target_points_per_inset;
   bool world;  // World maps need special projections
 
-  // Another cartogram projection method based on triangulation of graticule
-  // cells. It can eliminate intersections that occur when the projected
-  // graticule lines are strongly curved.
+  // If `triangulation` is true, we apply a cartogram projection method based
+  // on the triangulation of graticule cells. It can eliminate intersections
+  // that occur when the projected graticule lines are strongly curved. Only
+  // use this method if the tracer points are an FTReal2d data structure.
   bool triangulation;
-
-  // Use Quadtree-Delaunay Triangulations
-  bool qtdt_method;
-
-  // Shall the polygons be simplified?
-  bool simplify;
+  bool simplify;  // Should the polygons be simplified?
 
   // Other boolean values that are needed to parse the command line arguments
   bool make_csv, output_equal_area, output_to_stdout, plot_density,
-    plot_graticule, plot_intersections, plot_polygons, plot_quadtree;
+    plot_graticule, plot_intersections, plot_polygons, plot_quadtree,
+    remove_tiny_polygons;
+
+  // If the proportion of the polygon area is smaller than
+  // min_polygon_area * total area, then remove polygon
+  double min_polygon_area;
+  bool qtdt_method;  // Use Quadtree-Delaunay triangulation
 
   // Parse command-line arguments
   argparse::ArgumentParser arguments = parsed_arguments(
@@ -51,7 +51,7 @@ int main(const int argc, const char *argv[])
     argv,
     geo_file_name,
     visual_file_name,
-    long_graticule_length,
+    max_n_grid_rows_or_cols,
     target_points_per_inset,
     world,
     triangulation,
@@ -64,9 +64,11 @@ int main(const int argc, const char *argv[])
     plot_graticule,
     plot_intersections,
     plot_polygons,
+    remove_tiny_polygons,
+    min_polygon_area,
     plot_quadtree);
 
-  // Initialize cart_info. It contains all information about the cartogram
+  // Initialize cart_info. It contains all the information about the cartogram
   // that needs to be handled by functions called from main().
   CartogramInfo cart_info(world, visual_file_name);
 
@@ -78,12 +80,10 @@ int main(const int argc, const char *argv[])
   if (map_name.find('.') != std::string::npos) {
     map_name = map_name.substr(0, map_name.find('.'));
   }
-  std::cout << geo_file_name << "\n";
-
   cart_info.set_map_name(map_name);
   if (!make_csv) {
 
-    // Read visual variables (e.g. area, color) from CSV
+    // Read visual variables (e.g., area and color) from CSV
     try {
       cart_info.read_csv(arguments);
     } catch (const std::system_error &e) {
@@ -111,21 +111,21 @@ int main(const int argc, const char *argv[])
   std::cerr << "Coordinate reference system: " << crs << std::endl;
 
   // Progress measured on a scale from 0 (start) to 1 (end)
-  // double progress = 0.0;
+  double progress = 0.0;
 
   // Store total number of GeoDivs to monitor progress
-  // double total_geo_divs = cart_info.n_geo_divs();
+  double total_geo_divs = cart_info.n_geo_divs();
 
-  // Create map to store duration of each inset integrations
+  // Create std::map to store duration of each inset integrations
   std::map<std::string, ms> insets_integration_times;
 
-  // // Keep track of total time
-  // ms duration_initial_simplification = inMilliseconds(duration::zero()),
-  //    duration_simplification = inMilliseconds(duration::zero()),
-  //    duration_densification = inMilliseconds(duration::zero()),
-  //    duration_flatten_density = inMilliseconds(duration::zero()),
-  //    duration_fill_density = inMilliseconds(duration::zero()),
-  //    duration_qtdt = inMilliseconds(duration::zero());
+  // Keep track of total time
+  ms duration_initial_simplification = inMilliseconds(duration::zero()),
+     duration_simplification = inMilliseconds(duration::zero()),
+     duration_densification = inMilliseconds(duration::zero()),
+     duration_flatten_density = inMilliseconds(duration::zero()),
+     duration_fill_density = inMilliseconds(duration::zero()),
+     duration_qtdt = inMilliseconds(duration::zero());
 
   // Project map and ensure that all holes are inside polygons
   for (auto &[inset_pos, inset_state] : *cart_info.ref_to_inset_states()) {
@@ -140,13 +140,13 @@ int main(const int argc, const char *argv[])
     }
 
     // Can the coordinates be interpreted as longitude and latitude?
-    // TODO: the "crs" field for GeoJSON files seems to be deprecated. However,
-    // in earlier specifications, the coordinate reference system used to be
-    // written in the format specified here:
-    // https://geojson.org/geojson-spec.html#coordinate-reference-system-objects.
-    // It may be a good idea to make a list of possible entries corresponding
-    // to longitude and lattitude projection. "urn:ogc:def:crs:OGC:1.3:CRS84"
-    // is one such entry.
+    // TODO: The "crs" field for GeoJSON files seems to be deprecated.
+    //       However, in earlier specifications, the coordinate reference
+    //       system used to be written in the format specified here:
+    //       https://geojson.org/geojson-spec.html#coordinate-reference-system-objects.
+    //       It may be a good idea to make a list of possible entries
+    //       corresponding to longitude and lattitude projection.
+    //       "urn:ogc:def:crs:OGC:1.3:CRS84" is one such entry.
     const Bbox bb = inset_state.bbox();
     if (
       (bb.xmin() >= -180.0 && bb.xmax() <= 180.0) &&
@@ -169,13 +169,13 @@ int main(const int argc, const char *argv[])
     if (simplify) {
 
       // Simplification reduces the number of points used to represent the
-      // GeoDivs in the inset, thereby reducing output file sizes and run
-      // times
+      // GeoDivs in the inset, thereby reducing output file sizes and
+      // run-times
       inset_state.simplify(target_points_per_inset);
     }
   }
 
-  // Replace missing and zero target areas with absolute values
+  // Replace missing and zero target areas with positive values
   cart_info.replace_missing_and_zero_target_areas();
 
   // Project and exit
@@ -195,7 +195,6 @@ int main(const int argc, const char *argv[])
     cart_info.write_geojson(
       geo_file_name,
       map_name + "_equal_area.geojson",
-      std::cout,
       output_to_stdout);
     return EXIT_SUCCESS;
   }
@@ -206,14 +205,20 @@ int main(const int argc, const char *argv[])
     // Determine the name of the inset
     std::string inset_name = map_name;
     if (cart_info.n_insets() > 1) {
-      inset_name = inset_name + "_" + inset_pos;
+      inset_name += "_" + inset_pos;
       std::cerr << "\nWorking on inset at position: " << inset_pos
                 << std::endl;
     }
     inset_state.set_inset_name(inset_name);
 
     // Rescale map to fit into a rectangular box [0, lx] * [0, ly]
-    inset_state.rescale_map(long_graticule_length, cart_info.is_world_map());
+    inset_state.rescale_map(max_n_grid_rows_or_cols, cart_info.is_world_map());
+
+    if (output_to_stdout) {
+
+      // Store original coordinates
+      inset_state.store_original_geo_divs();
+    }
 
     // Set up Fourier transforms
     const unsigned int lx = inset_state.lx();
@@ -224,7 +229,11 @@ int main(const int argc, const char *argv[])
     inset_state.initialize_cum_proj();
     inset_state.set_area_errors();
 
-    // inset_state.fill_with_ellipse_density_and_flux(plot_density, true);
+    // Store initial inset area to calculate area drift
+    inset_state.store_initial_area();
+
+    // Normalize total target area to be equal to initial area
+    inset_state.normalize_target_area();
 
     // Automatically color GeoDivs if no colors are provided
     if (inset_state.colors_empty()) {
@@ -240,108 +249,166 @@ int main(const int argc, const char *argv[])
         input_filename += "_input";
       }
       std::cerr << "Writing " << input_filename << std::endl;
-      // inset_state.write_cairo_map(input_filename, plot_graticule);
+      inset_state.write_cairo_map(input_filename, plot_graticule);
     }
 
-    // DELETE AFTER DEBUGGING
-    // inset_state.execute_fftw_fwd_plan();
-    // inset_state.flatten_density();
+    // Remove tiny polygons below threshold
+    if (remove_tiny_polygons) {
+      inset_state.remove_tiny_polygons(min_polygon_area);
+    }
+
+    // We make the approximation that the progress towards generating the
+    // cartogram is proportional to the number of GeoDivs that are in the
+    // finished insets
+    const double inset_max_frac = inset_state.n_geo_divs() / total_geo_divs;
+
+    // Time for the initial simplification
+    time_point start_initial_simplification = clock_time::now();
+    if (simplify) {
+      inset_state.simplify(target_points_per_inset);
+    }
+    time_point end_initial_simplification = clock_time::now();
+    duration_initial_simplification += inMilliseconds(
+      end_initial_simplification - start_initial_simplification);
+
+    // Integration start time
+    time_point start_integration = clock_time::now();
 
     // Start map integration
-    while (inset_state.n_finished_integrations() < 1 &&
-           inset_state.max_area_error().value > max_permitted_area_error) {
-      // Update area errors
-      inset_state.set_area_errors();
-      std::cerr << "max. area err: " << inset_state.max_area_error().value
-                << std::endl;
-      inset_state.min_ellipses();
-      std::unordered_map<Point, Point> v_intp;
-      inset_state.create_delaunay_t();
-      inset_state.flatten_ellipse_density2();
-      //       inset_state.write_cairo_map("output_bef", plot_graticule,
-      //       v_intp);
-      inset_state.project_with_delaunay_t();
+    while (inset_state.n_finished_integrations() < max_integrations &&
+           (inset_state.max_area_error().value > max_permitted_area_error ||
+            std::abs(inset_state.area_drift() - 1.0) > 0.01)) {
+      if (qtdt_method) {
+        time_point start_delaunay_t = clock_time::now();
 
-      inset_state.write_cairo_map("output", plot_graticule, v_intp);
+        // Create the Delaunay triangulation
+        inset_state.create_delaunay_t();
+        time_point end_delaunay_t = clock_time::now();
+        duration_qtdt += inMilliseconds(end_delaunay_t - start_delaunay_t);
 
-      // double blur_width =
-      //    std::pow(2.0, 5 - int(inset_state.n_finished_integrations()));
-      //  if (inset_state.n_finished_integrations() < max_integrations) {
-      //    blur_width =
-      //      std::pow(2.0, 5 - int(inset_state.n_finished_integrations()));
-      //  } else {
-      //    blur_width = 0.0;
-      //  }
-      //  std::cerr << "blur_width = " << blur_width << std::endl;
-      //
-      // inset_state.blur_density(1, true);
+        if (plot_quadtree) {
+          const std::string quadtree_filename =
+            inset_state.inset_name() + "_" +
+            std::to_string(inset_state.n_finished_integrations()) +
+            "_quadtree";
+          std::cerr << "Writing " << quadtree_filename << std::endl;
 
+          // Draw the resultant quadtree
+          inset_state.write_quadtree(quadtree_filename);
+        }
+      }
       std::cerr << "Integration number "
                 << inset_state.n_finished_integrations() << std::endl;
 
-      // if (qtdt_method) {
-      //   inset_state.flatten_density_with_node_vertices();
-      // } else {
-      //   inset_state.flatten_density();
-      // }
+      // Calculate progress percentage. We assume that the maximum area
+      // error is typically reduced to 1/5 of the previous value.
+      const double ratio_actual_to_permitted_max_area_error =
+        inset_state.max_area_error().value / max_permitted_area_error;
+      const double n_predicted_integrations = std::max(
+        (log(ratio_actual_to_permitted_max_area_error) / log(5)),
+        1.0);
 
-      // if (qtdt_method) {
-      //   inset_state.project_with_delaunay_t();
-      // } else if (triangulation) {
-      //   inset_state.fill_graticule_diagonals();
-      //   inset_state.densify_geo_divs();
-      //   inset_state.project_with_triangulation();
+      // Blur density to speed up the numerics in flatten_density() below.
+      // We slowly reduce the blur width so that the areas can reach their
+      // target values.
+      // TODO: whenever blur_width hits 0, the maximum area error will start
+      //       increasing again and eventually lead to an invalid graticule
+      //       cell error when projecting with triangulation. Investigate why.
+      //       As a temporary fix, we set blur_width to be always positive,
+      //       regardless of the number of integrations.
+      double blur_width =
+        std::pow(2.0, 5 - int(inset_state.n_finished_integrations()));
+      // if (inset_state.n_finished_integrations() < max_integrations) {
+      //   blur_width =
+      //     std::pow(2.0, 5 - int(inset_state.n_finished_integrations()));
       // } else {
-      //   inset_state.project();
+      //   blur_width = 0.0;
       // }
+      std::cerr << "blur_width = " << blur_width << std::endl;
 
-      // if (simplify) {
-      //   inset_state.simplify(target_points_per_inset);
-      // }
+      // Track time needed for fill_with_density()
+      time_point start_fill_density = clock_time::now();
+      inset_state.fill_with_density(plot_density);
+      time_point end_fill_density = clock_time::now();
+      duration_fill_density +=
+        inMilliseconds(end_fill_density - start_fill_density);
+      if (blur_width > 0.0) {
+        inset_state.blur_density(blur_width, plot_density);
+      }
+      if (plot_intersections) {
+        inset_state.write_intersections_to_eps(intersections_resolution);
+      }
+      time_point start_flatten_density = clock_time::now();
+      if (qtdt_method) {
+        inset_state.flatten_density_with_node_vertices();
+      } else {
+        inset_state.flatten_density();
+      }
+      time_point end_flatten_density = clock_time::now();
+      duration_flatten_density +=
+        inMilliseconds(end_flatten_density - start_flatten_density);
+      if (qtdt_method) {
+        if (simplify) {
+          time_point start_densify = clock_time::now();
+          inset_state.densify_geo_divs_using_delaunay_t();
+          time_point end_densify = clock_time::now();
+          duration_densification +=
+            inMilliseconds(end_densify - start_densify);
+        }
+
+        // Project using the Delaunay triangulation
+        inset_state.project_with_delaunay_t();
+      } else if (triangulation) {
+        time_point start_densify = clock_time::now();
+
+        // Choose diagonals that are inside graticule cells
+        inset_state.fill_graticule_diagonals();
+
+        // Densify map
+        inset_state.densify_geo_divs();
+        time_point end_densify = clock_time::now();
+        duration_densification += inMilliseconds(end_densify - start_densify);
+
+        // Project with triangulation
+        inset_state.project_with_triangulation();
+      } else {
+        inset_state.project();
+      }
+      if (simplify) {
+        time_point start_simplify = clock_time::now();
+        inset_state.simplify(target_points_per_inset);
+        time_point end_simplify = clock_time::now();
+        duration_simplification +=
+          inMilliseconds(end_simplify - start_simplify);
+      }
       inset_state.increment_integration();
+
+      // Print area drift information
+      std::cerr << "Area drift: " << (inset_state.area_drift() - 1.0) * 100.0
+                << "%" << std::endl;
 
       // Update area errors
       inset_state.set_area_errors();
-
-      if (plot_polygons) {
-        std::string output_filename =
-          inset_state.inset_name() + "_" +
-          std::to_string(inset_state.n_finished_integrations());
-        if (plot_graticule) {
-          output_filename += "_output_graticule";
-        } else {
-          output_filename += "_output";
-        }
-        std::cerr << "Writing " << output_filename << std::endl;
-        // inset_state.write_cairo_map(output_filename, plot_graticule);
-        std::cerr << "max. area err: " << inset_state.max_area_error().value
-                  << ", GeoDiv: " << inset_state.max_area_error().geo_div
-                  << std::endl
-                  << std::endl;
-      }
+      std::cerr << "max. area err: " << inset_state.max_area_error().value
+                << ", GeoDiv: " << inset_state.max_area_error().geo_div
+                << "\nProgress: "
+                << progress + (inset_max_frac / n_predicted_integrations)
+                << std::endl
+                << std::endl;
     }
 
-    // inset_state.create_delaunay_t();
-    // if (plot_quadtree) {
-    //   const std::string quadtree_filename =
-    //     inset_state.inset_name() + "_" +
-    //     std::to_string(inset_state.n_finished_integrations()) + "_quadtree";
+    // Integration end time
+    time_point end_integration = clock_time::now();
 
-    //   std::cerr << "Writing " << quadtree_filename << std::endl;
-    //   // Draw the resultant quadtree
-    //   inset_state.write_quadtree(quadtree_filename);
-    // }
-    // inset_state.flatten_ellipse_density();
-    //    if (triangulation) {
-    //      inset_state.fill_graticule_diagonals();
-    //      inset_state.densify_geo_divs();
-    //      inset_state.project_with_triangulation();
-    //    } else {
-    //      inset_state.project();
-    //    }
-    //    if (simplify) {
-    //      inset_state.simplify(target_points_per_inset);
-    //    }
+    // Store integration time
+    insets_integration_times[inset_pos] =
+      inMilliseconds(end_integration - start_integration);
+    progress += inset_max_frac;
+    std::cerr << "Finished inset " << inset_pos << "\nProgress: " << progress
+              << std::endl;
+    if (plot_intersections) {
+      inset_state.write_intersections_to_eps(intersections_resolution);
+    }
     if (plot_polygons) {
       std::string output_filename = inset_state.inset_name();
       if (plot_graticule) {
@@ -350,250 +417,78 @@ int main(const int argc, const char *argv[])
         output_filename += "_output";
       }
       std::cerr << "Writing " << output_filename << std::endl;
-      // inset_state.write_cairo_map(output_filename, plot_graticule);
+      inset_state.write_cairo_map(output_filename, plot_graticule);
     }
-    cart_info.write_geojson(
-      geo_file_name,
-      map_name + "_cartogram.geojson",
-      std::cout,
-      output_to_stdout);
-    return EXIT_SUCCESS;
+    if (world) {
+      std::string output_file_name =
+        map_name + "_cartogram_in_smyth_projection.geojson";
+      cart_info.write_geojson(
+        geo_file_name,
+        output_file_name,
+        output_to_stdout);
+      inset_state.revert_smyth_craster_projection();
+    } else {
+
+      // Rescale insets in correct proportion to each other
+      inset_state.normalize_inset_area(cart_info.cart_total_target_area());
+    }
+
+    if (output_to_stdout) {
+      if (qtdt_method) {
+        inset_state.project_with_proj_sequence();
+      } else {
+        inset_state.fill_graticule_diagonals(true);
+        inset_state.project_with_cum_proj();
+      }
+    }
+
+    // Clean up after finishing all Fourier transforms for this inset
+    inset_state.destroy_fftw_plans_for_rho();
+    inset_state.ref_to_rho_init()->free();
+    inset_state.ref_to_rho_ft()->free();
+  }  // End of loop over insets
+
+  // Shift insets so that they do not overlap
+  cart_info.shift_insets_to_target_position();
+
+  // Output to GeoJSON
+  cart_info.write_geojson(
+    geo_file_name,
+    map_name + "_cartogram.geojson",
+    output_to_stdout);
+
+  // Store time when main() ended
+  time_point end_main = clock_time::now();
+
+  // Show time report
+  std::cerr << std::endl;
+  std::cerr << "********** Time Report **********" << std::endl;
+
+  // Print integration times
+  for (const auto &[inset_pos, inset_integration_time] :
+       insets_integration_times) {
+    std::cerr << "Integration Time for Inset " << inset_pos << ": "
+              << inset_integration_time.count() << " ms" << std::endl;
   }
-
-  //    // We make the approximation that the progress towards generating the
-  //    // cartogram is proportional to the number of GeoDivs that are in the
-  //    // finished insets
-  //    const double inset_max_frac = inset_state.n_geo_divs() /
-  //    total_geo_divs;
-  //
-  //    // Initial Simplification time
-  //    time_point start_initial_simplification = clock_time::now();
-  //    if (simplify) {
-  //      inset_state.simplify(target_points_per_inset);
-  //    }
-  //    time_point end_initial_simplification = clock_time::now();
-  //    duration_initial_simplification += inMilliseconds(
-  //      end_initial_simplification - start_initial_simplification);
-  //
-  //    // Integration start time
-  //    time_point start_integration = clock_time::now();
-  //
-  //    // Start map integration
-  //    while (inset_state.n_finished_integrations() < max_integrations &&
-  //           inset_state.max_area_error().value > max_permitted_area_error) {
-  //
-  //      if (qtdt_method) {
-  //        time_point start_delaunay_t = clock_time::now();
-  //
-  //        // Create the deluanay triangulation
-  //        inset_state.create_delaunay_t();
-  //        time_point end_delaunay_t = clock_time::now();
-  //        duration_qtdt += inMilliseconds(end_delaunay_t - start_delaunay_t);
-  //
-  //        if (plot_quadtree) {
-  //          const std::string quadtree_filename =
-  //            inset_state.inset_name() + "_" +
-  //            std::to_string(inset_state.n_finished_integrations()) +
-  //            "_quadtree";
-  //
-  //          std::cerr << "Writing " << quadtree_filename << std::endl;
-  //          // Draw the resultant quadtree
-  //          inset_state.write_quadtree(quadtree_filename);
-  //        }
-  //      }
-  //
-  //      std::cerr << "Integration number "
-  //                << inset_state.n_finished_integrations() << std::endl;
-  //
-  //      // Calculate progress percentage. We assume that the maximum area
-  //      // error is typically reduced to 1/5 of the previous value.
-  //      const double ratio_actual_to_permitted_max_area_error =
-  //        inset_state.max_area_error().value / max_permitted_area_error;
-  //      const double n_predicted_integrations = std::max(
-  //        (log(ratio_actual_to_permitted_max_area_error) / log(5)),
-  //        1.0);
-  //
-  //      // Blur density to speed up the numerics in flatten_density() below.
-  //      // We slowly reduce the blur width so that the areas can reach their
-  //      // target values.
-  //      // TODO: whenever blur_width hits 0, the maximum area error will
-  //      start
-  //      // increasing again and eventually lead to an invalid graticule cell
-  //      // error when projecting with triangulation. Investigate why. As a
-  //      // temporary fix, we set blur_width to be always positive, regardless
-  //      // of the number of integrations.
-  //      double blur_width =
-  //        std::pow(2.0, 5 - int(inset_state.n_finished_integrations()));
-  //      // if (inset_state.n_finished_integrations() < max_integrations) {
-  //      //   blur_width =
-  //      //     std::pow(2.0, 5 - int(inset_state.n_finished_integrations()));
-  //      // } else {
-  //      //   blur_width = 0.0;
-  //      // }
-  //      std::cerr << "blur_width = " << blur_width << std::endl;
-  //
-  //      // Fill with density time tracking
-  //      time_point start_fill_density = clock_time::now();
-  //      inset_state.fill_with_density(plot_density);
-  //      time_point end_fill_density = clock_time::now();
-  //      duration_fill_density +=
-  //        inMilliseconds(end_fill_density - start_fill_density);
-  //
-  //      if (blur_width > 0.0) {
-  //        inset_state.blur_density(blur_width, plot_density);
-  //      }
-  //      if (plot_intersections) {
-  //        inset_state.write_intersections_to_eps(intersections_resolution);
-  //      }
-  //
-  //      time_point start_flatten_density = clock_time::now();
-  //      if (qtdt_method) {
-  //        inset_state.flatten_density_with_node_vertices();
-  //      } else {
-  //        inset_state.flatten_density();
-  //      }
-  //      time_point end_flatten_density = clock_time::now();
-  //      duration_flatten_density +=
-  //        inMilliseconds(end_flatten_density - start_flatten_density);
-  //
-  //      if (qtdt_method) {
-  //
-  //        if (simplify) {
-  //          time_point start_densify = clock_time::now();
-  //          inset_state.densify_geo_divs_using_delaunay_t();
-  //          time_point end_densify = clock_time::now();
-  //          duration_densification +=
-  //            inMilliseconds(end_densify - start_densify);
-  //        }
-  //        // Projecting with delaunay triangulation
-  //        inset_state.project_with_delaunay_t();
-  //      } else if (triangulation) {
-  //        time_point start_densify = clock_time::now();
-  //        // Choose diagonals that are inside graticule cells
-  //        inset_state.fill_graticule_diagonals();
-  //
-  //        // Densify map
-  //        inset_state.densify_geo_divs();
-  //        time_point end_densify = clock_time::now();
-  //        duration_densification += inMilliseconds(end_densify -
-  //        start_densify);
-  //
-  //        // Project with triangulation
-  //        inset_state.project_with_triangulation();
-  //      } else {
-  //        inset_state.project();
-  //      }
-  //
-  //      if (simplify) {
-  //        time_point start_simplify = clock_time::now();
-  //        inset_state.simplify(target_points_per_inset);
-  //        time_point end_simplify = clock_time::now();
-  //        duration_simplification +=
-  //          inMilliseconds(end_simplify - start_simplify);
-  //      }
-  //      inset_state.increment_integration();
-  //
-  //      // Update area errors
-  //      inset_state.set_area_errors();
-  //      std::cerr << "max. area err: " << inset_state.max_area_error().value
-  //                << ", GeoDiv: " << inset_state.max_area_error().geo_div
-  //                << "\nProgress: "
-  //                << progress + (inset_max_frac / n_predicted_integrations)
-  //                << std::endl
-  //                << std::endl;
-  //    }
-  //
-  //    // Integration end time
-  //    time_point end_integration = clock_time::now();
-  //
-  //    // Add integration time to the map
-  //    insets_integration_times[inset_pos] =
-  //      inMilliseconds(end_integration - start_integration);
-  //
-  //    progress += inset_max_frac;
-  //    std::cerr << "Finished inset " << inset_pos << "\nProgress: " <<
-  //    progress
-  //              << std::endl;
-  //    if (plot_intersections) {
-  //      inset_state.write_intersections_to_eps(intersections_resolution);
-  //    }
-  //    if (plot_polygons) {
-  //      std::string output_filename = inset_state.inset_name();
-  //      if (plot_graticule) {
-  //        output_filename += "_output_graticule";
-  //      } else {
-  //        output_filename += "_output";
-  //      }
-  //      std::cerr << "Writing " << output_filename << std::endl;
-  //      inset_state.write_cairo_map(output_filename, plot_graticule);
-  //    }
-  //    if (world) {
-  //      std::string output_file_name =
-  //        map_name + "_cartogram_in_smyth_projection.geojson";
-  //      cart_info.write_geojson(
-  //        geo_file_name,
-  //        output_file_name,
-  //        std::cout,
-  //        output_to_stdout);
-  //      inset_state.revert_smyth_craster_projection();
-  //    } else {
-  //
-  //      // Rescale insets in correct proportion to each other
-  //      inset_state.normalize_inset_area(cart_info.cart_total_target_area());
-  //    }
-  //
-  //    // Clean up after finishing all Fourier transforms for this inset
-  //    inset_state.destroy_fftw_plans_for_rho();
-  //    inset_state.ref_to_rho_init()->free();
-  //    inset_state.ref_to_rho_ft()->free();
-  //  }
-  //  // End of loop over insets
-  //
-  //  // Shift insets so that they do not overlap
-  //  cart_info.shift_insets_to_target_position();
-  //
-  //  // Output to GeoJSON
-  //  cart_info.write_geojson(
-  //    geo_file_name,
-  //    map_name + "_cartogram.geojson",
-  //    std::cout,
-  //    output_to_stdout);
-  //
-  //  // End of main function time
-  //  time_point end_main = clock_time::now();
-  //
-  //  // Show Time Report
-  //  std::cerr << std::endl;
-  //  std::cerr << "********** Time Report **********" << std::endl;
-  //
-  //  // Iterate over the map and print integration times
-  //  for (auto [inset_pos, inset_integration_time] : insets_integration_times)
-  //  {
-  //    std::cerr << "Integration Time for Inset " << inset_pos << ": "
-  //              << inset_integration_time.count() << " ms" << std::endl;
-  //  }
-  //  if (qtdt_method) {
-  //    std::cerr << "Quadtree-Delaunay T. Time: " << duration_qtdt.count()
-  //              << " ms" << std::endl;
-  //  }
-  //  if (simplify) {
-  //    std::cerr << "Initial Simplification Time: "
-  //              << duration_initial_simplification.count() << " ms" <<
-  //              std::endl;
-  //    std::cerr << "Simplification Time: " << duration_simplification.count()
-  //              << " ms" << std::endl;
-  //    std::cerr << "Densification Time: " << duration_densification.count()
-  //              << " ms" << std::endl;
-  //  }
-  //  std::cerr << "Flatten Density Time: " << duration_flatten_density.count()
-  //            << " ms" << std::endl;
-  //  std::cerr << "Fill with Density Time: " << duration_fill_density.count()
-  //            << " ms" << std::endl;
-  //  std::cerr << "--------------------------------" << std::endl;
-  //  std::cerr << "Total Time: " << inMilliseconds(end_main -
-  //  start_main).count()
-  //            << " ms" << std::endl;
-  //  std::cerr << "*********************************" << std::endl;
-
+  if (qtdt_method) {
+    std::cerr << "Quadtree-Delaunay T. Time: " << duration_qtdt.count()
+              << " ms" << std::endl;
+  }
+  if (simplify) {
+    std::cerr << "Initial Simplification Time: "
+              << duration_initial_simplification.count() << " ms" << std::endl;
+    std::cerr << "Simplification Time: " << duration_simplification.count()
+              << " ms" << std::endl;
+    std::cerr << "Densification Time: " << duration_densification.count()
+              << " ms" << std::endl;
+  }
+  std::cerr << "Flatten Density Time: " << duration_flatten_density.count()
+            << " ms" << std::endl;
+  std::cerr << "Fill with Density Time: " << duration_fill_density.count()
+            << " ms" << std::endl;
+  std::cerr << "--------------------------------" << std::endl;
+  std::cerr << "Total Time: " << inMilliseconds(end_main - start_main).count()
+            << " ms" << std::endl;
+  std::cerr << "*********************************" << std::endl;
   return EXIT_SUCCESS;
 }

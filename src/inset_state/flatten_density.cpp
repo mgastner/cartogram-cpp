@@ -3,7 +3,6 @@
 #include "interpolate_bilinearly.h"
 #include "round_point.h"
 #include <boost/multi_array.hpp>
-#include <omp.h>
 
 // Function to calculate the velocity at the grid points (x, y) with x =
 // 0.5, 1.5, ..., lx-0.5 and y = 0.5, 1.5, ..., ly-0.5 at time t
@@ -18,19 +17,23 @@ void calculate_velocity(
   const unsigned int lx,
   const unsigned int ly)
 {
-  double rho;
-
-  // std::cout << "rho_init_(256, 256) = " << rho_init_(256, 256) << std::endl;
-
-#pragma omp parallel for private(rho)
+#pragma omp parallel for default(none) shared( \
+  grid_fluxx_init,                             \
+  grid_fluxy_init,                             \
+  grid_vx,                                     \
+  grid_vy,                                     \
+  lx,                                          \
+  ly,                                          \
+  rho_ft,                                      \
+  rho_init,                                    \
+  t)
   for (unsigned int i = 0; i < lx; ++i) {
     for (unsigned int j = 0; j < ly; ++j) {
-      rho = rho_ft(0, 0) + (1.0 - t) * (rho_init_(i, j) - rho_ft(0, 0));
-      (*grid_vx)[i][j] = grid_fluxx_init(i, j) / rho;
-      (*grid_vy)[i][j] = grid_fluxy_init(i, j) / rho;
+      double rho = rho_ft(0, 0) + (1.0 - t) * (rho_init(i, j) - rho_ft(0, 0));
+      (*grid_vx)[i][j] = -grid_fluxx_init(i, j) / rho;
+      (*grid_vy)[i][j] = -grid_fluxy_init(i, j) / rho;
     }
   }
-  return;
 }
 
 bool all_points_are_in_domain(
@@ -42,16 +45,30 @@ bool all_points_are_in_domain(
 {
   // Return false if and only if there exists a point that would be outside
   // [0, lx] x [0, ly]
+  bool in_domain = true;
+
+  // Parallelization as indicated by the comment below does not work:
+  // "Function 'all_points_are_in_domain' always returns false."
+  // The problem is probably because one thread may overwrite
+  // `in_domain = false` with `in_domain = true`.
+  // I am commenting out the #pragma to ensure correctness. Presumably
+  // parallelization could be implemented with reduction.
+#pragma omp parallel for reduction(&&:in_domain) default(none) shared( \
+  delta_t,                                                             \
+  proj,                                                                \
+  v_intp,                                                              \
+  lx,                                                                  \
+  ly)
   for (unsigned int i = 0; i < lx; ++i) {
     for (unsigned int j = 0; j < ly; ++j) {
       double x = (*proj)[i][j].x + 0.5 * delta_t * (*v_intp)[i][j].x;
       double y = (*proj)[i][j].y + 0.5 * delta_t * (*v_intp)[i][j].y;
       if (x < 0.0 || x > lx || y < 0.0 || y > ly) {
-        return false;
+        in_domain = false;
       }
     }
   }
-  return true;
+  return in_domain;
 }
 
 // Function to integrate the equations of motion with the fast flow-based
@@ -70,6 +87,8 @@ void InsetState::flatten_density()
   if (proj_.shape()[0] != lx_ || proj_.shape()[1] != ly_) {
     proj_.resize(boost::extents[lx_][ly_]);
   }
+
+#pragma omp parallel for
   for (unsigned int i = 0; i < lx_; ++i) {
     for (unsigned int j = 0; j < ly_; ++j) {
       proj_[i][j].x = i + 0.5;
@@ -109,7 +128,7 @@ void InsetState::flatten_density()
 
   // Initialize the Fourier transforms of gridvx[] and gridvy[] at
   // every point on the lx_-times-ly_ grid at t = 0. We must typecast lx_ and
-  // ly_ as double-precision numbers. Otherwise the ratios in the denominator
+  // ly_ as double-precision numbers. Otherwise, the ratios in the denominator
   // will evaluate as zero.
   double dlx = lx_;
   double dly = ly_;
@@ -118,23 +137,25 @@ void InsetState::flatten_density()
   // y-components of the flux vector into grid_fluxx_init and grid_fluxy_init.
   // The reason for `+1` in `di+1` stems from the RODFT10 formula at:
   // https://www.fftw.org/fftw3_doc/1d-Real_002dodd-DFTs-_0028DSTs_0029.html
+#pragma omp parallel for
   for (unsigned int i = 0; i < lx_ - 1; ++i) {
     double di = i;
     for (unsigned int j = 0; j < ly_; ++j) {
       double denom =
         pi * ((di + 1) / dlx + (j / (di + 1)) * (j / dly) * (dlx / dly));
-      grid_fluxx_init(i, j) = rho_ft_(i + 1, j) / denom;
+      grid_fluxx_init(i, j) = -rho_ft_(i + 1, j) / denom;
     }
   }
   for (unsigned int j = 0; j < ly_; ++j) {
     grid_fluxx_init(lx_ - 1, j) = 0.0;
   }
+#pragma omp parallel for
   for (unsigned int i = 0; i < lx_; ++i) {
     double di = i;
     for (unsigned int j = 0; j < ly_ - 1; ++j) {
       double denom =
         pi * ((di / (j + 1)) * (di / dlx) * (dly / dlx) + (j + 1) / dly);
-      grid_fluxy_init(i, j) = rho_ft_(i, j + 1) / denom;
+      grid_fluxy_init(i, j) = -rho_ft_(i, j + 1) / denom;
     }
   }
   for (unsigned int i = 0; i < lx_; ++i) {
@@ -251,7 +272,7 @@ void InsetState::flatten_density()
         ly_);
 
       // Make sure we do not pass a point outside [0, lx_] x [0, ly_] to
-      // interpolate_bilinearly(). Otherwise decrease the time step below and
+      // interpolate_bilinearly(). Otherwise, decrease the time step below and
       // try again.
       accept = all_points_are_in_domain(delta_t, &proj_, &v_intp, lx_, ly_);
       if (accept) {
@@ -394,13 +415,14 @@ void InsetState::flatten_density_with_node_vertices()
 
   // Initialize the Fourier transforms of gridvx[] and gridvy[] at
   // every point on the lx_-times-ly_ grid at t = 0. We must typecast lx_ and
-  // ly_ as double-precision numbers. Otherwise the ratios in the denominator
+  // ly_ as double-precision numbers. Otherwise, the ratios in the denominator
   // will evaluate as zero.
   double dlx = lx_;
   double dly = ly_;
 
   // We temporarily insert the Fourier coefficients for the x-components and
   // y-components of the flux vector into grid_fluxx_init and grid_fluxy_init
+#pragma omp parallel for
   for (unsigned int i = 0; i < lx_ - 1; ++i) {
     double di = i;
     for (unsigned int j = 0; j < ly_; ++j) {
@@ -412,6 +434,7 @@ void InsetState::flatten_density_with_node_vertices()
   for (unsigned int j = 0; j < ly_; ++j) {
     grid_fluxx_init(lx_ - 1, j) = 0.0;
   }
+#pragma omp parallel for
   for (unsigned int i = 0; i < lx_; ++i) {
     double di = i;
     for (unsigned int j = 0; j < ly_ - 1; ++j) {
@@ -486,7 +509,7 @@ void InsetState::flatten_density_with_node_vertices()
         ly_);
 
       // Make sure we do not pass a point outside [0, lx_] x [0, ly_] to
-      // interpolate_bilinearly(). Otherwise decrease the time step below and
+      // interpolate_bilinearly(). Otherwise, decrease the time step below and
       // try again.
       accept = all_map_points_are_in_domain(
         delta_t,

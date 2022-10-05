@@ -1,11 +1,12 @@
 #include "cartogram_info.h"
 #include "csv.hpp"
+#include <string>
 
-void CartogramInfo::read_csv(argparse::ArgumentParser arguments)
+void CartogramInfo::read_csv(const argparse::ArgumentParser &arguments)
 {
 
   // Retrieve CSV Name.
-  std::string csv_name = arguments.get<std::string>("visual_variable_file");
+  auto csv_name = arguments.get<std::string>("visual_variable_file");
 
   // Open CSV Reader.
   csv::CSVReader reader(csv_name);
@@ -26,24 +27,24 @@ void CartogramInfo::read_csv(argparse::ArgumentParser arguments)
   // have index 1.
   int area_col = 1;
   if (auto area_header = arguments.present<std::string>("-A")) {
-    std::cout << "Area Header: " << *area_header << std::endl;
+    std::cerr << "Area Header: " << *area_header << std::endl;
     area_col = reader.index_of(*area_header);
   }
 
   // Find index of column with inset specifiers. If no inset column header was
   // passed with the command-line flag --inset, the header is assumed to be
   // "Inset".
-  std::string inset_header = arguments.get<std::string>("-I");
+  auto inset_header = arguments.get<std::string>("-I");
   int inset_col = reader.index_of(inset_header);
 
   // Find index of column with color specifiers. If no color column header was
   // passed with the command-line flag --color, the header is assumed to be
   // "Color".
-  std::string color_header = arguments.get<std::string>("-C");
+  auto color_header = arguments.get<std::string>("-C");
   int color_col = reader.index_of(color_header);
 
   // Default: "Label".
-  std::string label_header = arguments.get<std::string>("-L");
+  auto label_header = arguments.get<std::string>("-L");
   int label_col = reader.index_of(label_header);
 
   // Read CSV
@@ -60,9 +61,7 @@ void CartogramInfo::read_csv(argparse::ArgumentParser arguments)
     // Read ID of geographic division
     std::string id = row[id_col].get();
     if (ids_in_visual_variables_file_.contains(id)) {
-      std::cerr << "ERROR: ID "
-                << id
-                << " appears more than once in CSV"
+      std::cerr << "ERROR: ID " << id << " appears more than once in CSV"
                 << std::endl;
       _Exit(301);
     }
@@ -77,24 +76,41 @@ void CartogramInfo::read_csv(argparse::ArgumentParser arguments)
         std::cerr << "ERROR: negative area in CSV" << std::endl;
         _Exit(101);
       }
-    } else {  // We get here if one of the areas is missing ("NA")
-      std::cerr << "area_field: " << area_field.get() << std::endl;
-      if (area_field.get().compare("NA") == 0) {
+    } else {
+      std::string area_as_str = area_field.get();
+
+      // With inspiration from:
+      // https://stackoverflow.com/questions/2684491/remove-commas-from-string
+      area_as_str.erase(
+        std::remove(area_as_str.begin(), area_as_str.end(), ','),
+        area_as_str.end());
+
+      // Check if areas is missing or "NA"
+      if (area_as_str.empty() || area_as_str == "NA") {
         area = -1.0;  // Use negative area as sign of a missing value
+      }
+      // With inspiration from:
+      // https://stackoverflow.com/questions/4654636/how-to-determine-if-a-string-is-a-number-with-c
+      else if (std::all_of(
+                 area_as_str.begin(),
+                 area_as_str.end(),
+                 ::isdigit)) {
+        area = std::stod(area_as_str);
       } else {
+        std::cerr << "area_field: " << area_as_str << std::endl;
         std::cerr << "ERROR: Areas must be numeric or NA" << std::endl;
         _Exit(201);
       }
     }
 
     // Read color
-    std::string color = "";
+    std::string color;
     if (color_col != csv::CSV_NOT_FOUND) {
       color = row[color_col].get();
     }
 
     // Read Label
-    std::string label = "";
+    std::string label;
     if (label_col != csv::CSV_NOT_FOUND) {
       label = row[label_col].get();
     }
@@ -106,12 +122,12 @@ void CartogramInfo::read_csv(argparse::ArgumentParser arguments)
       std::string inset_pos_original = inset_pos;
 
       // Set to "C" if inset position is blank
-      if (inset_pos == "") {
+      if (inset_pos.empty()) {
         inset_pos = "C";
       }
 
       // Now we can process inputs like "center"/"left"/"right"
-      inset_pos = std::toupper(inset_pos[0]);
+      inset_pos = std::toupper(inset_pos[0], std::locale());
 
       // Enable user to give inset position "U"/"D" for top and bottom inset
       if (inset_pos == "U") {
@@ -122,41 +138,34 @@ void CartogramInfo::read_csv(argparse::ArgumentParser arguments)
       }
 
       // If unrecognized, set inset position to "C"
-      std::unordered_set<std::string> permitted_pos {"C", "L", "R", "T", "B"};
+      std::unordered_set<std::string> permitted_pos{"C", "L", "R", "T", "B"};
       if (!permitted_pos.contains(inset_pos)) {
-        std::cerr << "Unrecognized inset position : "
-                  << inset_pos_original
-                  << " for Region: "
-                  << id
-                  << "\nSetting "
-                  << id
-                  << "\'s inset position to Center (C)."
-                  << std::endl;
+        std::cerr << "Unrecognized inset position : " << inset_pos_original
+                  << " for Region: " << id << "\nSetting " << id
+                  << "\'s inset position to Center (C)." << std::endl;
         inset_pos = "C";
       }
     }
 
-    // Associate GeoDiv ID with inset positon
+    // Associate GeoDiv ID with inset position
     gd_to_inset_.insert(std::pair<std::string, std::string>(id, inset_pos));
 
     // Create inset_state for inset_pos unless it already exists
     if (!inset_pos_set.contains(inset_pos)) {
       InsetState inset_state(inset_pos);
       inset_states_.insert(
-        std::pair<std::string, InsetState>(inset_pos, inset_state)
-      );
+        std::pair<std::string, InsetState>(inset_pos, inset_state));
       inset_pos_set.insert(inset_pos);
     }
 
     // Insert target area and color
     InsetState *inset_state = &inset_states_.at(inset_pos);
     inset_state->insert_target_area(id, area);
-    if (color != "") {
+    if (!color.empty()) {
       inset_state->insert_color(id, color);
     }
-    if (label != "") {
+    if (!label.empty()) {
       inset_state->insert_label(id, label);
     }
   }
-  return;
 }

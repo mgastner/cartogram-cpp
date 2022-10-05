@@ -1,13 +1,27 @@
 #include "cartogram_info.h"
+#include <iostream>
+#include <utility>
 
-CartogramInfo::CartogramInfo(const bool w, const std::string v) :
-  is_world_map_(w),
-  visual_variable_file_(v)
+CartogramInfo::CartogramInfo(const bool w, std::string v)
+    : is_world_map_(w), visual_variable_file_(std::move(v))
 {
-  return;
 }
 
 double CartogramInfo::cart_total_target_area() const
+{
+  double target_area = 0.0;
+
+  // Iterate over inset states. Syntax from:
+  // https://stackoverflow.com/questions/13087028/can-i-easily-iterate-over-
+  // the-values-of-a-map-using-a-range-based-for-loop
+  for (const auto &inset_info : inset_states_) {
+    auto &inset_state = inset_info.second;
+    target_area += inset_state.total_target_area();
+  }
+  return target_area;
+}
+
+double CartogramInfo::area() const
 {
   double area = 0.0;
 
@@ -16,7 +30,7 @@ double CartogramInfo::cart_total_target_area() const
   // the-values-of-a-map-using-a-range-based-for-loop
   for (const auto &inset_info : inset_states_) {
     auto &inset_state = inset_info.second;
-    area += inset_state.total_target_area();
+    area += inset_state.total_inset_area();
   }
   return area;
 }
@@ -24,11 +38,6 @@ double CartogramInfo::cart_total_target_area() const
 bool CartogramInfo::is_world_map() const
 {
   return is_world_map_;
-}
-
-const std::string CartogramInfo::map_name() const
-{
-  return map_name_;
 }
 
 unsigned int CartogramInfo::n_geo_divs() const
@@ -44,11 +53,6 @@ unsigned int CartogramInfo::n_geo_divs() const
 unsigned int CartogramInfo::n_insets() const
 {
   return inset_states_.size();
-}
-
-bool CartogramInfo::original_ext_ring_is_clockwise() const
-{
-  return original_ext_ring_is_clockwise_;
 }
 
 std::map<std::string, InsetState> *CartogramInfo::ref_to_inset_states()
@@ -85,8 +89,7 @@ void CartogramInfo::replace_missing_and_zero_target_areas()
       const double target_area = inset_state.target_area_at(gd.id());
       inset_state.insert_whether_input_target_area_is_missing(
         gd.id(),
-        target_area < 0.0
-      );
+        target_area < 0.0);
       if (target_area < 0.0) {
         missing_target_area_exists = true;
       } else if (target_area <= small_target_area_threshold) {
@@ -103,8 +106,7 @@ void CartogramInfo::replace_missing_and_zero_target_areas()
     // small_area_absolute_threshold if not all target areas are initially
     // missing or zero
     if (small_target_area_threshold > 0.0) {
-      std::cerr << "Replacing small target areas."
-                << std::endl;
+      std::cerr << "Replacing small target areas." << std::endl;
       replacement_target_area = small_target_area_threshold;
     } else {
 
@@ -130,13 +132,12 @@ void CartogramInfo::replace_missing_and_zero_target_areas()
 
         // Current target area
         const double target_area = inset_state.target_area_at(gd.id());
-        if ((target_area >= 0.0) &&
-            (target_area <= small_target_area_threshold)) {
+        if (
+          (target_area >= 0.0) &&
+          (target_area <= small_target_area_threshold)) {
           inset_state.replace_target_area(gd.id(), replacement_target_area);
-          std::cerr << gd.id() << ": "
-                    << target_area << " to "
-                    << replacement_target_area
-                    << std::endl;
+          std::cerr << gd.id() << ": " << target_area << " to "
+                    << replacement_target_area << std::endl;
 
           // Update total target area
           total_target_area_with_data +=
@@ -174,8 +175,7 @@ void CartogramInfo::replace_missing_and_zero_target_areas()
   }
 }
 
-void CartogramInfo::set_map_name(const std::string map_name)
+void CartogramInfo::set_map_name(const std::string &map_name)
 {
   map_name_ = map_name;
-  return;
 }

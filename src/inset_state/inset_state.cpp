@@ -2,37 +2,51 @@
 #include "constants.h"
 #include "round_point.h"
 #include <cmath>
+#include <iostream>
+#include <utility>
 
-InsetState::InsetState(std::string pos) : pos_(pos)
+InsetState::InsetState()
 {
+  initial_area_ = 0.0;
   n_finished_integrations_ = 0;
-  return;
+}
+
+InsetState::InsetState(std::string pos) : pos_(std::move(pos))
+{
+  initial_area_ = 0.0;
+  n_finished_integrations_ = 0;
 }
 
 void InsetState::create_delaunay_t()
 {
-
-  // Get all the points of the map in a unordered_map to remove duplicates
+  // Store all the polygon vertices in std::unordered_map to remove
+  // duplicates
   std::unordered_set<Point> points;
 
   // Avoid collisions in hash table
   points.reserve(8192);
   points.max_load_factor(0.5);
-
   for (const auto &gd : geo_divs_) {
     for (const auto &pwh : gd.polygons_with_holes()) {
-      Polygon ext_ring = pwh.outer_boundary();
+      const Polygon ext_ring = pwh.outer_boundary();
 
       // Get exterior ring coordinates
-      for (unsigned int i = 0; i < ext_ring.size(); ++i) {
-        points.insert(Point(ext_ring[i][0], ext_ring[i][1]));
+      for (const auto &i : ext_ring) {
+        points.insert(Point(i[0], i[1]));
       }
 
       // Get holes of polygon with holes
+      //      for (auto hci = pwh.holes_begin(); hci != pwh.holes_end(); ++hci)
+      //      {
+      //        const Polygon &hole = *hci;
+      //        for (auto i : hole) {
+      //          points.insert(Point(i[0], i[1]));
+      //        }
+      //      }
       for (auto hci = pwh.holes_begin(); hci != pwh.holes_end(); ++hci) {
-        const Polygon hole = *hci;
-        for (unsigned int i = 0; i < hole.size(); ++i) {
-          points.insert(Point(hole[i][0], hole[i][1]));
+        const Polygon &hole = *hci;
+        for (const auto &i : hole) {
+          points.insert(Point(i[0], i[1]));
         }
       }
     }
@@ -43,23 +57,21 @@ void InsetState::create_delaunay_t()
   points.insert(Point(0, ly_));
   points.insert(Point(lx_, 0));
   points.insert(Point(lx_, ly_));
-
   std::vector<Point> points_vec;
 
   // Copy points of unordered_set to vector
   std::copy(points.begin(), points.end(), std::back_inserter(points_vec));
 
-  // Create the quadtree and grade it
+  // Create the quadtree and 'grade' it so that neighboring quadtree leaves
+  // differ by a depth that can only be 0 or 1.
   Quadtree qt(points_vec, Quadtree::PointMap(), 1);
-  int depth = std::max(log2(lx_), log2(ly_));
-
+  const unsigned int depth =
+    static_cast<unsigned int>(std::max(log2(lx_), log2(ly_)));
   std::cerr << "Using Quadtree depth: " << depth << std::endl;
-
   qt.refine(
     depth,
-    9);  // (maximum depth, spltting condition: max number of points per node)
+    9);  // (maximum depth, splitting condition: max number of points per node)
   qt.grade();
-
   std::cerr << "Quadtree root node bounding box: " << qt.bbox(qt.root())
             << std::endl;
 
@@ -67,10 +79,9 @@ void InsetState::create_delaunay_t()
   unique_quadtree_corners_.clear();
 
   // Get unique quadtree corners
-  for (Quadtree::Node &node :
-       qt.traverse<CGAL::Orthtrees::Leaves_traversal>()) {
-        
-    // Get bbox of the leaf node
+  for (const auto &node : qt.traverse<CGAL::Orthtrees::Leaves_traversal>()) {
+
+    // Get bounding box of the leaf node
     const Bbox bbox = qt.bbox(node);
 
     // check if points are between lx_ and ly_
@@ -105,19 +116,24 @@ void InsetState::create_delaunay_t()
             << std::endl;
 }
 
-double InsetState::area_error_at(const std::string id) const
+double InsetState::area_error_at(const std::string &id) const
 {
   return area_errors_.at(id);
 }
 
-Bbox InsetState::bbox() const
+Bbox InsetState::bbox(bool original_bbox) const
 {
-  // Find joint bounding for all polygons with holes in this inset
+  auto &geo_divs = original_bbox ? geo_divs_original_ : geo_divs_;
+  // Find joint bounding box for all "polygons with holes" in this inset
   double inset_xmin = dbl_inf;
   double inset_xmax = -dbl_inf;
   double inset_ymin = dbl_inf;
   double inset_ymax = -dbl_inf;
-  for (const auto &gd : geo_divs_) {
+#pragma omp parallel for default(none) shared(geo_divs) \
+  reduction(min                                         \
+            : inset_xmin, inset_ymin) reduction(max     \
+                                                : inset_xmax, inset_ymax)
+  for (const auto &gd : geo_divs) {
     for (const auto &pwh : gd.polygons_with_holes()) {
       const auto bb = pwh.bbox();
       inset_xmin = std::min(bb.xmin(), inset_xmin);
@@ -126,16 +142,15 @@ Bbox InsetState::bbox() const
       inset_ymax = std::max(bb.ymax(), inset_ymax);
     }
   }
-  Bbox inset_bb(inset_xmin, inset_ymin, inset_xmax, inset_ymax);
-  return inset_bb;
+  return {inset_xmin, inset_ymin, inset_xmax, inset_ymax};
 }
 
-const Color InsetState::color_at(const std::string id) const
+Color InsetState::color_at(const std::string &id) const
 {
   return colors_.at(id);
 }
 
-bool InsetState::color_found(const std::string id) const
+bool InsetState::color_found(const std::string &id) const
 {
   return colors_.count(id);
 }
@@ -154,22 +169,19 @@ void InsetState::destroy_fftw_plans_for_rho()
 {
   fftw_destroy_plan(fwd_plan_for_rho_);
   fftw_destroy_plan(bwd_plan_for_rho_);
-  return;
 }
 
 void InsetState::execute_fftw_bwd_plan() const
 {
   fftw_execute(bwd_plan_for_rho_);
-  return;
 }
 
 void InsetState::execute_fftw_fwd_plan() const
 {
   fftw_execute(fwd_plan_for_rho_);
-  return;
 }
 
-const std::vector<GeoDiv> InsetState::geo_divs() const
+std::vector<GeoDiv> InsetState::geo_divs() const
 {
   return geo_divs_;
 }
@@ -177,12 +189,13 @@ const std::vector<GeoDiv> InsetState::geo_divs() const
 void InsetState::increment_integration()
 {
   n_finished_integrations_ += 1;
-  return;
 }
 
 void InsetState::initialize_cum_proj()
 {
   cum_proj_.resize(boost::extents[lx_][ly_]);
+
+#pragma omp parallel for default(none)
   for (unsigned int i = 0; i < lx_; ++i) {
     for (unsigned int j = 0; j < ly_; ++j) {
       cum_proj_[i][j].x = i + 0.5;
@@ -191,56 +204,51 @@ void InsetState::initialize_cum_proj()
   }
 }
 
-void InsetState::insert_color(const std::string id, const Color c)
+void InsetState::insert_color(const std::string &id, const Color c)
 {
   if (colors_.count(id)) {
     colors_.erase(id);
   }
   colors_.insert(std::pair<std::string, Color>(id, c));
-  return;
 }
 
-void InsetState::insert_color(const std::string id, std::string color)
+void InsetState::insert_color(const std::string &id, std::string color)
 {
   if (colors_.count(id)) {
     colors_.erase(id);
   }
 
-  // From https://stackoverflow.com/questions/313970/how-to-convert-stdstring-
-  // to-lower-case
+  // From
+  // https://stackoverflow.com/questions/313970/how-to-convert-stdstring-to-lower-case
   std::transform(color.begin(), color.end(), color.begin(), ::tolower);
   const Color c(color);
   colors_.insert(std::pair<std::string, Color>(id, c));
-  return;
 }
 
-void InsetState::insert_label(const std::string id, const std::string label)
+void InsetState::insert_label(const std::string &id, const std::string &label)
 {
   labels_.insert(std::pair<std::string, std::string>(id, label));
-  return;
 }
 
-void InsetState::insert_target_area(const std::string id, const double area)
+void InsetState::insert_target_area(const std::string &id, const double area)
 {
   target_areas_.insert(std::pair<std::string, double>(id, area));
-  return;
 }
 
 void InsetState::insert_whether_input_target_area_is_missing(
-  const std::string id,
+  const std::string &id,
   const bool is_missing)
 {
   is_input_target_area_missing_.insert(
     std::pair<std::string, bool>(id, is_missing));
-  return;
 }
 
-const std::string InsetState::inset_name() const
+std::string InsetState::inset_name() const
 {
   return inset_name_;
 }
 
-bool InsetState::is_input_target_area_missing(const std::string id) const
+bool InsetState::is_input_target_area_missing(const std::string &id) const
 {
   return is_input_target_area_missing_.at(id);
 }
@@ -258,28 +266,27 @@ unsigned int InsetState::ly() const
 void InsetState::make_fftw_plans_for_rho()
 {
   fwd_plan_for_rho_ = fftw_plan_r2r_2d(
-    lx_,
-    ly_,
+    static_cast<int>(lx_),  // fftw_plan_...() uses signed integers.
+    static_cast<int>(ly_),
     rho_init_.as_1d_array(),
     rho_ft_.as_1d_array(),
     FFTW_REDFT10,
     FFTW_REDFT10,
     FFTW_ESTIMATE);
   bwd_plan_for_rho_ = fftw_plan_r2r_2d(
-    lx_,
-    ly_,
+    static_cast<int>(lx_),
+    static_cast<int>(ly_),
     rho_ft_.as_1d_array(),
     rho_init_.as_1d_array(),
     FFTW_REDFT01,
     FFTW_REDFT01,
     FFTW_ESTIMATE);
-  return;
 }
 
 struct max_area_error_info InsetState::max_area_error() const
 {
   double value = -dbl_inf;
-  std::string worst_gd = "";
+  std::string worst_gd;
   for (const auto &[gd_id, area_error] : area_errors_) {
     if (area_error > value) {
       value = area_error;
@@ -317,15 +324,32 @@ unsigned int InsetState::n_rings() const
   return n_rings;
 }
 
-const std::string InsetState::pos() const
+void InsetState::normalize_target_area()
+{
+  double initial_area = total_inset_area();
+  double ta = total_target_area();
+
+  // Assign normalized target area to GeoDivs
+  for (const auto &gd : geo_divs_) {
+    double normalized_target_area =
+      (target_area_at(gd.id()) / ta) * initial_area;
+    replace_target_area(gd.id(), normalized_target_area);
+  }
+}
+
+std::string InsetState::pos() const
 {
   return pos_;
 }
 
-void InsetState::push_back(const GeoDiv gd)
+double InsetState::area_drift() const
+{
+  return (total_inset_area() / initial_area_);
+}
+
+void InsetState::push_back(const GeoDiv &gd)
 {
   geo_divs_.push_back(gd);
-  return;
 }
 
 FTReal2d *InsetState::ref_to_rho_ft()
@@ -338,10 +362,34 @@ FTReal2d *InsetState::ref_to_rho_init()
   return &rho_init_;
 }
 
-void InsetState::replace_target_area(const std::string id, const double area)
+void InsetState::remove_tiny_polygons(const double &minimum_polygon_size)
+{
+  const double threshold = total_inset_area() * minimum_polygon_size;
+  std::vector<GeoDiv> geo_divs_cleaned;
+
+  // Iterate over GeoDivs
+  for (auto &gd : geo_divs_) {
+    GeoDiv gd_cleaned(gd.id());
+
+    // Sort polygons with holes according to area
+    gd.sort_pwh_descending_by_area();
+    const auto &pwhs = gd.polygons_with_holes();
+
+    // Iterate over Polygon_with_holes
+    for (unsigned int i = 0; i < pwhs.size(); ++i) {
+      if (i == 0 || pwh_area(pwhs[i]) > threshold) {
+        gd_cleaned.push_back(pwhs[i]);
+      }
+    }
+    geo_divs_cleaned.push_back(gd_cleaned);
+  }
+  geo_divs_.clear();
+  geo_divs_ = geo_divs_cleaned;
+}
+
+void InsetState::replace_target_area(const std::string &id, const double area)
 {
   target_areas_[id] = area;
-  return;
 }
 
 void InsetState::set_area_errors()
@@ -350,6 +398,8 @@ void InsetState::set_area_errors()
   // area_on_cartogram / target_area - 1
   double sum_target_area = 0.0;
   double sum_cart_area = 0.0;
+
+#pragma omp parallel for default(none) reduction(+ : sum_target_area, sum_cart_area)
   for (const auto &gd : geo_divs_) {
     sum_target_area += target_area_at(gd.id());
     sum_cart_area += gd.area();
@@ -359,7 +409,6 @@ void InsetState::set_area_errors()
       target_area_at(gd.id()) * sum_cart_area / sum_target_area;
     area_errors_[gd.id()] = std::abs((gd.area() / obj_area) - 1);
   }
-  return;
 }
 
 void InsetState::set_grid_dimensions(
@@ -368,22 +417,25 @@ void InsetState::set_grid_dimensions(
 {
   lx_ = lx;
   ly_ = ly;
-  return;
 }
 
-void InsetState::set_inset_name(const std::string inset_name)
+void InsetState::set_inset_name(const std::string &inset_name)
 {
   inset_name_ = inset_name;
-  return;
 }
 
-bool InsetState::target_area_is_missing(const std::string id) const
+void InsetState::store_initial_area()
+{
+  initial_area_ = total_inset_area();
+}
+
+bool InsetState::target_area_is_missing(const std::string &id) const
 {
   // We use negative area as indication that GeoDiv has no target area
   return target_areas_.at(id) < 0.0;
 }
 
-double InsetState::target_area_at(const std::string id) const
+double InsetState::target_area_at(const std::string &id) const
 {
   return target_areas_.at(id);
 }
@@ -406,7 +458,7 @@ double InsetState::total_target_area() const
   return inset_total_target_area;
 }
 
-std::string InsetState::label_at(const std::string id) const
+std::string InsetState::label_at(const std::string &id) const
 {
   if (labels_.find(id) == labels_.end()) {
     return "";
@@ -414,10 +466,21 @@ std::string InsetState::label_at(const std::string id) const
   return labels_.at(id);
 }
 
-void InsetState::transform_points(std::function<Point(Point)> transform_point)
+void InsetState::store_original_geo_divs()
 {
+  geo_divs_original_ = geo_divs_;
+}
+
+void InsetState::transform_points(
+  const std::function<Point(Point)> &transform_point,
+  bool project_original)
+{
+
+  auto &geo_divs = project_original ? geo_divs_original_ : geo_divs_;
+
   // Iterate over GeoDivs
-  for (auto &gd : geo_divs_) {
+#pragma omp parallel for default(none) shared(transform_point, geo_divs)
+  for (auto &gd : geo_divs) {
 
     // Iterate over Polygon_with_holes
     for (auto &pwh : *gd.ref_to_polygons_with_holes()) {
@@ -444,18 +507,4 @@ void InsetState::transform_points(std::function<Point(Point)> transform_point)
       }
     }
   }
-  return;
-}
-
-void InsetState::round_points()
-{
-
-  // Specialise rounded_point with lx_ and ly_
-  std::function<Point(Point)> lambda = [lx = lx_, ly = ly_](Point p1) {
-    return rounded_point(p1, lx, ly);
-  };
-
-  // Apply `lambda` to all points
-  transform_points(lambda);
-  return;
 }

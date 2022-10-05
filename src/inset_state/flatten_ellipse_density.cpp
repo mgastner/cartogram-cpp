@@ -147,7 +147,12 @@ Point interpolate(Point p, Delaunay &dt, std::unordered_map<Point, Point> &mp)
 
   // Calculate barycentric coordinates
   std::tuple<Scd::FT, Scd::FT, Scd::FT> bary_coor;
-  bary_coor = BC::triangle_coordinates_in_tuple_2<Point>(v1, v2, v3, p);
+  bary_coor =
+    CGAL::Barycentric_coordinates::triangle_coordinates_in_tuple_2<Point>(
+      v1,
+      v2,
+      v3,
+      p);
 
   // Get the barycentric coordinates
   const double bary_x = std::get<0>(bary_coor);
