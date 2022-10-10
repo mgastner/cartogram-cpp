@@ -50,7 +50,7 @@ jobs:
             nocite: '@*'
             ...
 
-            #Bibliography
+            # Bibliography
       
       - name: Run Pandoc Converter
         uses: docker://pandoc/core:2.9
