@@ -52,14 +52,10 @@ jobs:
             nocite: "@*"
             ---
       
-      - name: Setup Haskell
-        uses: haskell/actions/setup@v2
-
-      - name: Run Haskell Script
-        run: pandoc -t markdown_strict --citeproc ./${{ steps.changed-directories-of-files.outputs.all_changed_files }}/pandoc-bib-test.md -o ./${{ steps.changed-directories-of-files.outputs.all_changed_files }}/pandoc-bib-test-output.md --bibliography ./${{ steps.changed-directories-of-files.outputs.all_changed_files }}/sample.bib
-      
-      - name: Push changed and added files to repo
-        uses: EndBug/add-and-commit@v9.1.0
+      - name: Run Pandoc Converter
+        uses: docker://pandoc/core:2.9
+        with:
+          args: "--help"
       
       
 
