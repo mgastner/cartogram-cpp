@@ -58,7 +58,7 @@ jobs:
           args: >-
             --filter=pandoc-citeproc 
             --standalone 
-            testing.md 
+            ./${{ steps.changed-directories-of-files.outputs.all_changed_files }}/testing.md
             --o 
             testing.html
       
