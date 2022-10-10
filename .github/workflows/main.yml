@@ -21,8 +21,7 @@ jobs:
         with:
           files: |
             ./**
-            *.json
-            *.geojson
+            *.bib
             
 
       - name: Get changed directory paths
@@ -31,8 +30,7 @@ jobs:
         with:
           files: |
             ./**
-            *.json
-            *.geojson
+            *.bib
           dir_names: "true"
 
       - name: List all changed files
@@ -45,10 +43,10 @@ jobs:
         uses: 1arp/create-a-file-action@0.2
         with:
           path: './${{ steps.changed-directories-of-files.outputs.all_changed_files }}'
-          file: 'documentation.md'
+          file: 'testing.md'
           content: |
             ---
-            bibliography: sample.bib
+            bibliography: testing.bib
             nocite: '@*'
             ...
 
@@ -57,7 +55,12 @@ jobs:
       - name: Run Pandoc Converter
         uses: docker://pandoc/core:2.9
         with:
-          args: "--help"
+          args: >-
+            --filter=pandoc-citeproc 
+            --standalone 
+            mybib.md 
+            --o 
+            mybib.html
       
       
 
