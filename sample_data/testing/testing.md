@@ -1,5 +1,5 @@
 ---
-bibliography: testing.bib
+bibliography: ./sample_data/testing/testing.bib
 nocite: '@*'
 ...
 
