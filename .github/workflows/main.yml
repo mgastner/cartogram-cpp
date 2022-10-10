@@ -58,9 +58,9 @@ jobs:
           args: >-
             --filter=pandoc-citeproc 
             --standalone 
-            mybib.md 
+            testing.md 
             --o 
-            mybib.html
+            testing.html
       
       
 
