@@ -46,7 +46,7 @@ jobs:
           file: 'testing.md'
           content: |
             ---
-            bibliography: ./${{ steps.changed-directories-of-files.outputs.all_changed_files }}/testing.bib
+            bibliography: testing.bib
             nocite: '@*'
             ...
 
