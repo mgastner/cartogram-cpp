@@ -59,7 +59,7 @@ jobs:
             --filter=pandoc-citeproc 
             --standalone 
             ./${{ steps.changed-directories-of-files.outputs.all_changed_files }}/testing.md
-            --o 
+            -o 
             testing.html
       
       - name: Push changed and added files to repo
