@@ -47,7 +47,7 @@ jobs:
           content: |
             ---
             bibliography: ./${{ steps.changed-directories-of-files.outputs.all_changed_files }}/testing.bib
-            nocite: "@*"
+            nocite: '@*'
             ---
 
             # Bibliography
@@ -56,14 +56,13 @@ jobs:
         uses: docker://pandoc/core:2.9
         with:
           args: >-
-            -t 
-            markdown_strict 
-            --citeproc 
-            ./${{ steps.changed-directories-of-files.outputs.all_changed_files }}/testing.md 
+            --filter=pandoc-citeproc 
+            --standalone 
+            ./${{ steps.changed-directories-of-files.outputs.all_changed_files }}/testing.md
+            -M
+            title:Test
             -o 
-            ./${{ steps.changed-directories-of-files.outputs.all_changed_files }}/testing.md 
-            --bibliography 
-            ./${{ steps.changed-directories-of-files.outputs.all_changed_files }}/testing.bib
+            testing.html
             
       
       - name: Push changed and added files to repo
