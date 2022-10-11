@@ -60,7 +60,7 @@ jobs:
             --standalone 
             ./${{ steps.changed-directories-of-files.outputs.all_changed_files }}/testing.md
             -o 
-            ./${{ steps.changed-directories-of-files.outputs.all_changed_files }}/testing.html
+            ./${{ steps.changed-directories-of-files.outputs.all_changed_files }}/testing.md
             
       
       - name: Push changed and added files to repo
