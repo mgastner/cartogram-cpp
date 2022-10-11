@@ -15,15 +15,6 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Get changed .json files with paths
-        id: changed-files
-        uses: tj-actions/changed-files@v29.0.3 
-        with:
-          files: |
-            ./**
-            *.bib
-            
-
       - name: Get changed directory paths
         id: changed-directories-of-files
         uses: tj-actions/changed-files@v29.0.3 
@@ -32,35 +23,16 @@ jobs:
             ./**
             *.bib
           dir_names: "true"
-
-      - name: List all changed files
-        run: |
-          for file in ${{ steps.changed-files.outputs.all_changed_files }}; do
-            echo "$file was changed"
-          done
       
-      - name: Create empty markdown file in folder
-        uses: 1arp/create-a-file-action@0.2
-        with:
-          path: './${{ steps.changed-directories-of-files.outputs.all_changed_files }}'
-          file: 'testing.md'
-          content: |
-            ---
-            bibliography: ./${{ steps.changed-directories-of-files.outputs.all_changed_files }}/testing.bib
-            nocite: '@*'
-            ---
-
-            # Bibliography
-      
-      - name: Run Pandoc Converter
+      - name: Run Pandoc Converter and create html file
         uses: docker://pandoc/core:2.9
         with:
           args: >-
             --filter=pandoc-citeproc 
             --standalone 
-            ./${{ steps.changed-directories-of-files.outputs.all_changed_files }}/testing.md
+            ./sample_data/templates/html_converter.bib
             -o 
-            ./${{ steps.changed-directories-of-files.outputs.all_changed_files }}/testing.md
+            ./${{ steps.changed-directories-of-files.outputs.all_changed_files }}/documentation.html
             
       
       - name: Push changed and added files to repo
