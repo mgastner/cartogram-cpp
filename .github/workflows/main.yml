@@ -61,9 +61,9 @@ jobs:
             --citeproc 
             ./${{ steps.changed-directories-of-files.outputs.all_changed_files }}/testing.md 
             -o 
-           ./${{ steps.changed-directories-of-files.outputs.all_changed_files }}/testing.md 
-           --bibliography 
-           ./${{ steps.changed-directories-of-files.outputs.all_changed_files }}/testing.bib
+            ./${{ steps.changed-directories-of-files.outputs.all_changed_files }}/testing.md 
+            --bibliography 
+            ./${{ steps.changed-directories-of-files.outputs.all_changed_files }}/testing.bib
             
       
       - name: Push changed and added files to repo
