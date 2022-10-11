@@ -8,7 +8,7 @@ on:
 jobs:
   changes:
     runs-on: ubuntu-latest  
-    name: add markdown documentation
+    name: add html documentation
     steps:
       - name: checkout repo
         uses: actions/checkout@v3
