@@ -8,7 +8,7 @@ on:
 jobs:
   changes:
     runs-on: ubuntu-latest  
-    name: add html documentation
+    name: add markdown documentation
     steps:
       - name: checkout repo
         uses: actions/checkout@v3
@@ -24,13 +24,26 @@ jobs:
             *.bib
           dir_names: "true"
       
-      - name: Run Pandoc Converter and create html file
+      - name: Create empty markdown file in folder
+        uses: 1arp/create-a-file-action@0.2
+        with:
+          path: './${{ steps.changed-directories-of-files.outputs.all_changed_files }}'
+          file: 'template.md'
+          content: |
+            ---
+            bibliography: ./${{ steps.changed-directories-of-files.outputs.all_changed_files }}/testing.bib
+            nocite: '@*'
+            ---
+
+            # Bibliography
+      
+      - name: Run Pandoc Converter
         uses: docker://pandoc/core:2.9
         with:
           args: >-
             --filter=pandoc-citeproc 
             --standalone 
-            ./sample_data/templates/html_converter.bib
+            ./${{ steps.changed-directories-of-files.outputs.all_changed_files }}/template.md
             -o 
             ./${{ steps.changed-directories-of-files.outputs.all_changed_files }}/documentation.html
             
