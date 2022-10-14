@@ -129,9 +129,8 @@ void calculate_velocity(
   std::unordered_map<Point, Point> &velocity)
 {
   for (const auto &[key, val] : triangle_transformation) {
-    velocity[key] = Point(
-      flux_mp[key].x() * 100 / rho_mp[key],
-      flux_mp[key].y() * 100 / rho_mp[key]);
+    velocity[key] =
+      Point(flux_mp[key].x() / rho_mp[key], flux_mp[key].y() / rho_mp[key]);
   }
 }
 
@@ -214,7 +213,7 @@ void InsetState::flatten_ellipse_density2()
 
   // Determine attenuation factor nu that keeps density changes caused by
   // any ellipse within a fraction f of the mean density.
-  double f = 0.1;
+  double f = 0.8;
 
   std::vector<Ellipse> ells;
   std::vector<double> ell_density_prefactors;
@@ -249,7 +248,7 @@ void InsetState::flatten_ellipse_density2()
             << std::endl;
 
   // Update the prefactor densities
-  double nu = 1.0;
+  double nu = 0.10;
   double acceptable_min = -f * rho_mean;
   double acceptable_max = f * rho_mean;
   if (rho_min < acceptable_min || rho_max > acceptable_max) {
@@ -299,8 +298,12 @@ void InsetState::flatten_ellipse_density2()
                                  rho_mean,
                                  pwh_area,
                                  nu);
-          flux_x += flux_prefac * x_tilde;
-          flux_y += flux_prefac * y_tilde;
+          double flux_tilde_x = flux_prefac * x_tilde;
+          double flux_tilde_y = flux_prefac * y_tilde;
+          flux_x += ell.semimajor * flux_tilde_x * ell.cos_theta -
+                    ell.semiminor * flux_tilde_y * ell.sin_theta;
+          flux_y += ell.semimajor * flux_tilde_x * ell.sin_theta +
+                    ell.semiminor * flux_tilde_y * ell.cos_theta;
         }
       }
     }
