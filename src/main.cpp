@@ -263,20 +263,29 @@ int main(const int argc, const char *argv[])
       inset_state.remove_tiny_polygons(min_polygon_area);
     }
 
+    std::cerr << "Applying Polygon Preprocessing..." << std::endl;
+    
     // Polygon Preprocessing
     while (inset_state.n_finished_integrations() < 5) {
+      std::cerr << "Integration number "
+                  << inset_state.n_finished_integrations() << std::endl;
+                  
       inset_state.create_delaunay_t();
       inset_state.min_ellipses();
       inset_state.flatten_ellipse_density();
       inset_state.project_with_delaunay_t();
-      inset_state.increment_integration();
 
       inset_state.set_area_errors();
       std::cerr << "max. area err: " << inset_state.max_area_error().value
                 << ", GeoDiv: " << inset_state.max_area_error().geo_div
                 << std::endl
                 << std::endl;
+      inset_state.increment_integration();
     }
+    
+    std::cerr << "Polygon Preprocessing finished." << std::endl << std::endl;
+    
+    inset_state.reset_n_finished_integrations();
 
       // We make the approximation that the progress towards generating the
       // cartogram is proportional to the number of GeoDivs that are in the
