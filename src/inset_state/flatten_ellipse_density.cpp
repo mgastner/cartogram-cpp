@@ -129,9 +129,8 @@ void calculate_velocity(
   std::unordered_map<Point, Point> &velocity)
 {
   for (const auto &[key, val] : triangle_transformation) {
-    velocity[key] = Point(
-      flux_mp[key].x() * 100 / rho_mp[key],
-      flux_mp[key].y() * 100 / rho_mp[key]);
+    velocity[key] =
+      Point(flux_mp[key].x() / rho_mp[key], flux_mp[key].y() / rho_mp[key]);
   }
 }
 
@@ -239,7 +238,7 @@ void InsetState::flatten_ellipse_density()
       Ellipse ell = gd.min_ellipses()[pgon];
       ells.push_back(ell);
       ell_density_prefactors.push_back(
-        ellipse_density_prefactor(ell, rho_p, rho_mean, pwh_area, 1.0));
+        ellipse_density_prefactor(ell, rho_p, rho_mean, pwh_area, 0.1));
       pwh_rhos.push_back(rho_p);
     }
   }
@@ -254,7 +253,7 @@ void InsetState::flatten_ellipse_density()
             << std::endl;
 
   // Update the prefactor densities
-  double nu = 1.0;
+  double nu = 0.1;
   double acceptable_min = -f * rho_mean;
   double acceptable_max = f * rho_mean;
   if (rho_min < acceptable_min || rho_max > acceptable_max) {
@@ -304,8 +303,12 @@ void InsetState::flatten_ellipse_density()
                                  rho_mean,
                                  pwh_area,
                                  nu);
-          flux_x += flux_prefac * x_tilde;
-          flux_y += flux_prefac * y_tilde;
+          double flux_tilde_x = flux_prefac * x_tilde;
+          double flux_tilde_y = flux_prefac * y_tilde;
+          flux_x += ell.semimajor * flux_tilde_x * ell.cos_theta -
+                    ell.semiminor * flux_tilde_y * ell.sin_theta;
+          flux_y += ell.semimajor * flux_tilde_x * ell.sin_theta +
+                    ell.semiminor * flux_tilde_y * ell.cos_theta;
         }
       }
     }
@@ -340,7 +343,7 @@ void InsetState::flatten_ellipse_density()
       flux_mp,
       proj_qd_.triangle_transformation,
       velocity);
-    
+
     // calculating velocity at t by filling v_intp
     for (const auto &[key, val] : proj_qd_.triangle_transformation) {
       Point v_intp_val(interpolate(val, proj_qd_.dt, velocity));
