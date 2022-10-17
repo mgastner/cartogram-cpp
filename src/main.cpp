@@ -125,7 +125,8 @@ int main(const int argc, const char *argv[])
      duration_densification = inMilliseconds(duration::zero()),
      duration_flatten_density = inMilliseconds(duration::zero()),
      duration_fill_density = inMilliseconds(duration::zero()),
-     duration_qtdt = inMilliseconds(duration::zero());
+     duration_qtdt = inMilliseconds(duration::zero()),
+     duration_polygon_preprocessing = inMilliseconds(duration::zero());
 
   // Project map and ensure that all holes are inside polygons
   for (auto &[inset_pos, inset_state] : *cart_info.ref_to_inset_states()) {
@@ -264,6 +265,7 @@ int main(const int argc, const char *argv[])
     }
 
     std::cerr << "Applying Polygon Preprocessing..." << std::endl;
+    time_point start_polygon_preprocessing = clock_time::now();
 
     // Polygon Preprocessing
     while (inset_state.n_finished_integrations() < 5) {
@@ -282,6 +284,8 @@ int main(const int argc, const char *argv[])
                 << std::endl;
       inset_state.increment_integration();
     }
+    duration_polygon_preprocessing += inMilliseconds(
+      clock_time::now() - start_polygon_preprocessing);
 
     std::cerr << "Polygon Preprocessing finished." << std::endl << std::endl;
 
@@ -491,6 +495,8 @@ int main(const int argc, const char *argv[])
     std::cerr << "Integration Time for Inset " << inset_pos << ": "
               << inset_integration_time.count() << " ms" << std::endl;
   }
+  std::cerr << "Polygon Preprocessing Time: "
+            << duration_polygon_preprocessing.count() << " ms" << std::endl;
   if (qtdt_method) {
     std::cerr << "Quadtree-Delaunay T. Time: " << duration_qtdt.count()
               << " ms" << std::endl;
