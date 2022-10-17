@@ -22,6 +22,7 @@ public:
   [[nodiscard]] std::set<std::string> adjacent_geodivs() const;
   void adjacent_to(const std::string &);
   [[nodiscard]] double area() const;
+  void clear_min_ellipses();
   [[nodiscard]] std::string id() const;
   [[nodiscard]] Polygon_with_holes largest_polygon_with_holes() const;
   const std::vector<Ellipse> min_ellipses() const;

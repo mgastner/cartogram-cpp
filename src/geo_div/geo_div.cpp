@@ -31,6 +31,11 @@ std::string GeoDiv::id() const
   return id_;
 }
 
+void GeoDiv::clear_min_ellipses()
+{
+  min_ellipses_.clear();
+}
+
 Polygon_with_holes GeoDiv::largest_polygon_with_holes() const
 {
   double max_area = -dbl_inf;
