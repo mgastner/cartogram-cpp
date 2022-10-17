@@ -264,12 +264,12 @@ int main(const int argc, const char *argv[])
     }
 
     // Polygon Preprocessing
-    int iter = 0;
-    while (iter++ < 5) {
+    while (inset_state.n_finished_integrations() < 5) {
       inset_state.create_delaunay_t();
       inset_state.min_ellipses();
       inset_state.flatten_ellipse_density();
       inset_state.project_with_delaunay_t();
+      inset_state.increment_integration();
 
       inset_state.set_area_errors();
       std::cerr << "max. area err: " << inset_state.max_area_error().value
