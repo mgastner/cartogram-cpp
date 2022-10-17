@@ -385,6 +385,11 @@ void InsetState::replace_target_area(const std::string &id, const double area)
   target_areas_[id] = area;
 }
 
+void InsetState::reset_n_finished_integrations()
+{
+  n_finished_integrations_ = 0;
+}
+
 void InsetState::set_area_errors()
 {
   // Formula for relative area error:
