@@ -321,21 +321,21 @@ void InsetState::flatten_ellipse_density()
   double delta_t = 1e-2;  // Initial time step.
   unsigned int iter = 0;
 
-  write_cairo_map(
-    inset_name() + "_" + std::to_string(n_finished_integrations()) + "_flux",
-    false,
-    flux_mp);
+  // write_cairo_map(
+  //   inset_name() + "_" + std::to_string(n_finished_integrations()) + "_flux",
+  //   false,
+  //   flux_mp);
 
-  calculate_velocity(
-    rho_mp,
-    flux_mp,
-    proj_qd_.triangle_transformation,
-    velocity);
-  write_cairo_map(
-    inset_name() + "_" + std::to_string(n_finished_integrations()) +
-      "_velcity",
-    false,
-    velocity);
+  // calculate_velocity(
+  //   rho_mp,
+  //   flux_mp,
+  //   proj_qd_.triangle_transformation,
+  //   velocity);
+  // write_cairo_map(
+  //   inset_name() + "_" + std::to_string(n_finished_integrations()) +
+  //     "_velcity",
+  //   false,
+  //   velocity);
 
   while (t < 1.0) {
     calculate_velocity(

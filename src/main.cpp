@@ -300,7 +300,7 @@ int main(const int argc, const char *argv[])
     time_point start_integration = clock_time::now();
 
     // Start map integration
-    while (inset_state.n_finished_integrations() < 0 &&
+    while (inset_state.n_finished_integrations() < max_integrations &&
            (inset_state.max_area_error().value > max_permitted_area_error ||
             std::abs(inset_state.area_drift() - 1.0) > 0.01)) {
       if (qtdt_method) {
