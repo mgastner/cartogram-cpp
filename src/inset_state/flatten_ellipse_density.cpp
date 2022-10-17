@@ -4,6 +4,7 @@
 void InsetState::min_ellipses()
 {
   for (auto &gd : geo_divs_) {
+    gd.clear_min_ellipses();
     for (const auto &pwh : gd.polygons_with_holes()) {
       auto ext_ring = pwh.outer_boundary();
       Ellipse ell;
