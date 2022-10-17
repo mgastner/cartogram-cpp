@@ -171,7 +171,13 @@ int main(const int argc, const char *argv[])
       // Simplification reduces the number of points used to represent the
       // GeoDivs in the inset, thereby reducing output file sizes and
       // run-times
-      inset_state.simplify(target_points_per_inset);
+      time_point start_initial_simplification = clock_time::now();
+      if (simplify) {
+        inset_state.simplify(target_points_per_inset);
+      }
+      time_point end_initial_simplification = clock_time::now();
+      duration_initial_simplification += inMilliseconds(
+        end_initial_simplification - start_initial_simplification);
     }
   }
 
@@ -261,15 +267,6 @@ int main(const int argc, const char *argv[])
     // cartogram is proportional to the number of GeoDivs that are in the
     // finished insets
     const double inset_max_frac = inset_state.n_geo_divs() / total_geo_divs;
-
-    // Time for the initial simplification
-    time_point start_initial_simplification = clock_time::now();
-    if (simplify) {
-      inset_state.simplify(target_points_per_inset);
-    }
-    time_point end_initial_simplification = clock_time::now();
-    duration_initial_simplification += inMilliseconds(
-      end_initial_simplification - start_initial_simplification);
 
     // Integration start time
     time_point start_integration = clock_time::now();
