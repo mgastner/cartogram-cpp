@@ -37,7 +37,7 @@ jobs:
 
             # Bibliography
       
-      - name: Run Pandoc Converter
+      - name: Run Pandoc Converter to html
         uses: docker://pandoc/core:2.9
         with:
           args: >-
@@ -46,6 +46,17 @@ jobs:
             ./${{ steps.changed-directories-of-files.outputs.all_changed_files }}/template.md
             -o 
             ./${{ steps.changed-directories-of-files.outputs.all_changed_files }}/documentation.html
+      
+      - name: Run Pandoc Converter to JSON
+        uses: docker://pandoc/core:2.9
+        with:
+          args: >-
+            pandoc 
+            ./${{ steps.changed-directories-of-files.outputs.all_changed_files }}/testing.bib
+            -t
+            csljson
+            -o             
+            ./${{ steps.changed-directories-of-files.outputs.all_changed_files }}/documentation.json
       
       - name: Delete template files
         uses: JesseTG/rm@v1.0.3
