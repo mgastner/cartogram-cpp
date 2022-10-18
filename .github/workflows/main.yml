@@ -51,11 +51,10 @@ jobs:
         uses: docker://pandoc/core:2.9
         with:
           args: >-
-            pandoc 
+            pandoc-citeproc
+            --bib2json 
             ./${{ steps.changed-directories-of-files.outputs.all_changed_files }}/testing.bib
-            -t
-            csljson
-            -o             
+            >           
             ./${{ steps.changed-directories-of-files.outputs.all_changed_files }}/documentation.json
       
       - name: Delete template files
