@@ -24,7 +24,7 @@ jobs:
             *.bib
           dir_names: "true"
       
-      - name: Create empty markdown file in folder
+      - name: Create template markdown file in folder
         uses: 1arp/create-a-file-action@0.2
         with:
           path: './${{ steps.changed-directories-of-files.outputs.all_changed_files }}'
@@ -46,7 +46,11 @@ jobs:
             ./${{ steps.changed-directories-of-files.outputs.all_changed_files }}/template.md
             -o 
             ./${{ steps.changed-directories-of-files.outputs.all_changed_files }}/documentation.html
-            
+      
+      - name: Delete template files
+        uses: JesseTG/rm@v1.0.3
+        with:
+          path: ./${{ steps.changed-directories-of-files.outputs.all_changed_files }}/template.md
       
       - name: Push changed and added files to repo
         uses: EndBug/add-and-commit@v9.1.0
