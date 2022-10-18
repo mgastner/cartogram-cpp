@@ -45,7 +45,7 @@ jobs:
             --standalone 
             ./${{ steps.changed-directories-of-files.outputs.all_changed_files }}/template.md
             -o 
-            ./${{ steps.changed-directories-of-files.outputs.all_changed_files }}/documentation.html
+            ./${{ steps.changed-directories-of-files.outputs.all_changed_files }}/documentation.md
             
       
       - name: Push changed and added files to repo
