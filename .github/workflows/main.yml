@@ -53,7 +53,7 @@ jobs:
           node-version: 16
         
       - name: install citation-js 
-        run: npm install citation-js
+        run: npm install --global citation-js
       
       - name: Run citation-js Converter to JSON
         run: citation-js -i ./${{ steps.changed-directories-of-files.outputs.all_changed_files }}/testing.bib -o ./${{ steps.changed-directories-of-files.outputs.all_changed_files }}/documentation -f json -s csl
