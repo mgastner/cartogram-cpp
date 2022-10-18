@@ -44,7 +44,6 @@ jobs:
             --filter=pandoc-citeproc 
             --standalone 
             ./${{ steps.changed-directories-of-files.outputs.all_changed_files }}/template.md
-            -o
             -j 
             ./${{ steps.changed-directories-of-files.outputs.all_changed_files }}/documentation.json
             
