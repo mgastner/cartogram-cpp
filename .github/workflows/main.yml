@@ -41,9 +41,10 @@ jobs:
         uses: docker://pandoc/core:2.9
         with:
           args: >-
-            --filter=pandoc-citeproc 
-            --standalone 
-            ./${{ steps.changed-directories-of-files.outputs.all_changed_files }}/template.md
+            --filter=pandoc-citeproc  
+            ./${{ steps.changed-directories-of-files.outputs.all_changed_files }}/testing.bib
+            -s
+            -o
             -j 
             ./${{ steps.changed-directories-of-files.outputs.all_changed_files }}/documentation.json
             
