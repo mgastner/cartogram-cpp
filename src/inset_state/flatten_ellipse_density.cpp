@@ -68,14 +68,12 @@ void InsetState::min_ellipses()
 }
 
 double ellipse_density_prefactor(
-  Ellipse ell,
   double rho_p,
   double rho_mean,
   double pwh_area,
   double nu)
 {
-  return nu * pwh_area * (rho_p - rho_mean) /
-         (pi * ell.semimajor * ell.semiminor);
+  return nu * pwh_area * (rho_p - rho_mean) / pi;
 }
 
 double ellipse_density_polynomial(double r_tilde_sq)
@@ -88,7 +86,6 @@ double ellipse_density_polynomial(double r_tilde_sq)
 }
 
 double ellipse_flux_prefactor(
-  Ellipse ell,
   double r_tilde_sq,
   double rho_p,
   double rho_mean,
@@ -100,7 +97,7 @@ double ellipse_flux_prefactor(
   double xi_to_6 = xi_sq * xi_sq * xi_sq;
   return nu * pwh_area * (rho_p - rho_mean) * (4 * xi_sq - r_tilde_sq) *
          (4 * xi_sq - r_tilde_sq) * (4 * xi_sq - r_tilde_sq) /
-         (128 * pi * ell.semimajor * ell.semiminor * xi_to_6);
+         (128 * pi * xi_to_6);
 }
 
 bool all_map_points_are_in_domain(
@@ -238,7 +235,8 @@ void InsetState::flatten_ellipse_density()
       Ellipse ell = gd.min_ellipses()[pgon];
       ells.push_back(ell);
       ell_density_prefactors.push_back(
-        ellipse_density_prefactor(ell, rho_p, rho_mean, pwh_area, 0.1));
+        ellipse_density_prefactor(rho_p, rho_mean, pwh_area, 0.1) /
+        (ell.semimajor * ell.semiminor));
       pwh_rhos.push_back(rho_p);
     }
   }
@@ -294,21 +292,15 @@ void InsetState::flatten_ellipse_density()
           double r_tilde_sq = (x_tilde * x_tilde) + (y_tilde * y_tilde);
           rho += ell_density_prefactors[pgn_index] *
                  ellipse_density_polynomial(r_tilde_sq);
-          double flux_prefac = (abs(i) % 2 == 0 ? 1 : -1) *
-                               (abs(j) % 2 == 0 ? 1 : -1) *
-                               ellipse_flux_prefactor(
-                                 ell,
-                                 r_tilde_sq,
-                                 rho_p,
-                                 rho_mean,
-                                 pwh_area,
-                                 nu);
-          double flux_tilde_x = flux_prefac * x_tilde;
-          double flux_tilde_y = flux_prefac * y_tilde;
-          flux_x += ell.semimajor * flux_tilde_x * ell.cos_theta -
-                    ell.semiminor * flux_tilde_y * ell.sin_theta;
-          flux_y += ell.semimajor * flux_tilde_x * ell.sin_theta +
-                    ell.semiminor * flux_tilde_y * ell.cos_theta;
+          double flux_prefac =
+            (abs(i) % 2 == 0 ? 1 : -1) * (abs(j) % 2 == 0 ? 1 : -1) *
+            ellipse_flux_prefactor(r_tilde_sq, rho_p, rho_mean, pwh_area, nu);
+          double flux_tilde_x = flux_prefac * x_tilde * (1 / ell.semiminor);
+          double flux_tilde_y = flux_prefac * y_tilde * (1 / ell.semimajor);
+          flux_x +=
+            flux_tilde_x * ell.cos_theta - flux_tilde_y * ell.sin_theta;
+          flux_y +=
+            flux_tilde_x * ell.sin_theta + flux_tilde_y * ell.cos_theta;
         }
       }
     }
@@ -321,21 +313,21 @@ void InsetState::flatten_ellipse_density()
   double delta_t = 1e-2;  // Initial time step.
   unsigned int iter = 0;
 
-  // write_cairo_map(
-  //   inset_name() + "_" + std::to_string(n_finished_integrations()) + "_flux",
-  //   false,
-  //   flux_mp);
+  write_cairo_map(
+    inset_name() + "_" + std::to_string(n_finished_integrations()) + "_flux",
+    false,
+    flux_mp);
 
-  // calculate_velocity(
-  //   rho_mp,
-  //   flux_mp,
-  //   proj_qd_.triangle_transformation,
-  //   velocity);
-  // write_cairo_map(
-  //   inset_name() + "_" + std::to_string(n_finished_integrations()) +
-  //     "_velcity",
-  //   false,
-  //   velocity);
+  calculate_velocity(
+    rho_mp,
+    flux_mp,
+    proj_qd_.triangle_transformation,
+    velocity);
+  write_cairo_map(
+    inset_name() + "_" + std::to_string(n_finished_integrations()) +
+      "_velcity",
+    false,
+    velocity);
 
   while (t < 1.0) {
     calculate_velocity(
