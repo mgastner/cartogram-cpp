@@ -215,12 +215,19 @@ void InsetState::flatten_ellipse_density()
 
   // Determine attenuation factor nu that keeps density changes caused by
   // any ellipse within a fraction f of the mean density.
-  double f = 0.1;
+  nu = 0.3;
 
   std::vector<Ellipse> ells;
   std::vector<double> ell_density_prefactors;
   std::vector<double> pwh_rhos;
   std::vector<double> pwh_areas;
+
+  for (auto &gd : geo_divs_) {
+    double rho_p = (target_area_at(gd.id()) / gd.area());
+    for (unsigned int pgon = 0; pgon < gd.n_polygons_with_holes(); ++pgon) {
+      pwh_rhos.push_back(rho_p);
+    }
+  }
 
   for (auto &gd : geo_divs_) {
     double rho_p = (target_area_at(gd.id()) / gd.area());
@@ -235,9 +242,8 @@ void InsetState::flatten_ellipse_density()
       Ellipse ell = gd.min_ellipses()[pgon];
       ells.push_back(ell);
       ell_density_prefactors.push_back(
-        ellipse_density_prefactor(rho_p, rho_mean, pwh_area, 0.1) /
+        ellipse_density_prefactor(rho_p, rho_mean, pwh_area, nu) /
         (ell.semimajor * ell.semiminor));
-      pwh_rhos.push_back(rho_p);
     }
   }
 
@@ -247,20 +253,20 @@ void InsetState::flatten_ellipse_density()
   double rho_max = *std::max_element(
     ell_density_prefactors.begin(),
     ell_density_prefactors.end());
+    
   std::cout << "rho_min = " << rho_min << ", rho_max = " << rho_max
             << std::endl;
+  std::cout << "rho_mean = " << rho_mean << std::endl;
 
   // Update the prefactor densities
-  double nu = 0.1;
-  double acceptable_min = -f * rho_mean;
-  double acceptable_max = f * rho_mean;
-  if (rho_min < acceptable_min || rho_max > acceptable_max) {
-    double nu_min = acceptable_min / rho_min;
+  double acceptable_max = nu * rho_mean;
+  if (rho_max > acceptable_max) {
     double nu_max = acceptable_max / rho_max;
-    if (std::max(nu_min, nu_max) < 1.0) {
-      nu = (nu_min < nu_max) ? nu_min : nu_max;
+    if (nu_max < 1.0) {
+      nu = nu_max;
     }
   }
+
   std::cerr << "nu = " << nu << std::endl;
   for (unsigned int pgn_index = 0; pgn_index < ell_density_prefactors.size();
        ++pgn_index) {
@@ -313,21 +319,21 @@ void InsetState::flatten_ellipse_density()
   double delta_t = 1e-2;  // Initial time step.
   unsigned int iter = 0;
 
-  write_cairo_map(
-    inset_name() + "_" + std::to_string(n_finished_integrations()) + "_flux",
-    false,
-    flux_mp);
+  // write_cairo_map(
+  //   inset_name() + "_" + std::to_string(n_finished_integrations()) + "_flux",
+  //   false,
+  //   flux_mp);
 
-  calculate_velocity(
-    rho_mp,
-    flux_mp,
-    proj_qd_.triangle_transformation,
-    velocity);
-  write_cairo_map(
-    inset_name() + "_" + std::to_string(n_finished_integrations()) +
-      "_velcity",
-    false,
-    velocity);
+  // calculate_velocity(
+  //   rho_mp,
+  //   flux_mp,
+  //   proj_qd_.triangle_transformation,
+  //   velocity);
+  // write_cairo_map(
+  //   inset_name() + "_" + std::to_string(n_finished_integrations()) +
+  //     "_velcity",
+  //   false,
+  //   velocity);
 
   while (t < 1.0) {
     calculate_velocity(
