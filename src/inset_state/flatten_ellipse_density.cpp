@@ -215,7 +215,7 @@ void InsetState::flatten_ellipse_density()
 
   // Determine attenuation factor nu that keeps density changes caused by
   // any ellipse within a fraction f of the mean density.
-  nu = 0.3;
+  double nu = 0.3;
 
   std::vector<Ellipse> ells;
   std::vector<double> ell_density_prefactors;
