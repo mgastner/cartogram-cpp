@@ -5,7 +5,7 @@ void InsetState::rescale_map(
   unsigned int max_n_grid_rows_or_cols,
   bool is_world_map)
 {
-  double padding = (is_world_map ? 1.0 : padding_unless_world);
+  double padding = (is_world_map ? 1.0 : 1.0000001);
   Bbox bb;
   if (is_world_map) {
 
@@ -28,6 +28,19 @@ void InsetState::rescale_map(
     0.5 * ((1.0 - padding) * bb.ymax() + (1.0 + padding) * bb.ymin());
   double new_ymax =
     0.5 * ((1.0 + padding) * bb.ymax() + (1.0 - padding) * bb.ymin());
+  
+    
+  //     double new_xmin = bb.xmin();
+  //   // 0.5 * ((1.0 - padding) * bb.xmax() + (1.0 + padding) * bb.xmin());
+  // double new_xmax = bb.xmax();
+  //   // 0.5 * ((1.0 + padding) * bb.xmax() + (1.0 - padding) * bb.xmin());
+  // double new_ymin = bb.ymin();
+  //   // 0.5 * ((1.0 - padding) * bb.ymax() + (1.0 + padding) * bb.ymin());
+  // double new_ymax = bb.ymax();
+  //   // 0.5 * ((1.0 + padding) * bb.ymax() + (1.0 - padding) * bb.ymin());
+    
+  // std::cout <<  "new_xmin: "  << new_xmin <<  " new_xmax: "  << new_xmax <<  " new_ymin: "  << new_ymin <<  " new_ymax: "  << new_ymax << std::endl;
+    
 
   // Ensure that the grid dimensions lx and ly are integer powers of 2
   unsigned int lx, ly;
