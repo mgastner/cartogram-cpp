@@ -170,11 +170,12 @@ int main(const int argc, const char *argv[])
       } else {
         inset_state.apply_albers_projection();
       }
-    } else if (output_equal_area || plot_pycnophylactic) {
-      std::cerr << "ERROR: Input GeoJSON is not a longitude-latitude map."
-                << std::endl;
-      return EXIT_FAILURE;
-    }
+    } 
+    // else if (output_equal_area || plot_pycnophylactic) {
+    //   std::cerr << "ERROR: Input GeoJSON is not a longitude-latitude map."
+    //             << std::endl;
+    //   return EXIT_FAILURE;
+    // }
     if (simplify) {
 
       // Time for the initial simplification
