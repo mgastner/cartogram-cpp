@@ -23,11 +23,11 @@ add_compile_options(-Wall -Wextra -pedantic)
 find_package(OpenMP REQUIRED)
 find_package(PkgConfig REQUIRED)
 
-# Finding and linking FFTW, and Cairo using PkgConfig.
-pkg_search_module(FFTW REQUIRED fftw3 IMPORTED_TARGET)
-pkg_search_module(Cairo REQUIRED cairo IMPORTED_TARGET)
-include_directories(PkgConfig::FFTW PkgConfig::Cairo)
-link_libraries(PkgConfig::FFTW PkgConfig::Cairo)
+# Finding and linking fftw, and CAIRO using PkgConfig.
+pkg_search_module(fftw REQUIRED fftw3 IMPORTED_TARGET)
+pkg_search_module(CAIRO REQUIRED CAIRO IMPORTED_TARGET)
+include_directories(PkgConfig::fftw PkgConfig::CAIRO)
+link_libraries(PkgConfig::fftw PkgConfig::CAIRO)
 
 
 # Adding C++ files needed for compilation.
@@ -92,8 +92,8 @@ target_include_directories(cartogram PUBLIC ${PROJECT_SOURCE_DIR}/include)
 # Linking appropriate libraries to cartogram target.
 target_link_libraries(
   cartogram
-  PkgConfig::FFTW
-  PkgConfig::Cairo
+  PkgConfig::fftw
+  PkgConfig::CAIRO
   OpenMP::OpenMP_CXX
 )
 
