@@ -155,11 +155,11 @@ void InsetState::write_polygons_to_cairo_surface(
   for (const auto &gd : geo_divs) {
     for (const auto &pwh : gd.polygons_with_holes()) {
       const Polygon ext_ring = pwh.outer_boundary();
-      cairo_move_to(cr, ext_ring[0].x(), ly_ - ext_ring[0].y());
+      cairo_move_to(cr, ext_ring[0].x() + 75, ly_ - ext_ring[0].y() + 75);
 
       // Plot each point in exterior ring
       for (unsigned int i = 1; i < ext_ring.size(); ++i) {
-        cairo_line_to(cr, ext_ring[i].x(), ly_ - ext_ring[i].y());
+        cairo_line_to(cr, ext_ring[i].x() + 75, ly_ - ext_ring[i].y() + 75);
       }
 
       // Close the exterior ring
@@ -167,10 +167,10 @@ void InsetState::write_polygons_to_cairo_surface(
 
       // Draw holes
       for (auto h = pwh.holes_begin(); h != pwh.holes_end(); ++h) {
-        cairo_move_to(cr, (*h)[0].x(), ly_ - (*h)[0].y());
+        cairo_move_to(cr, (*h)[0].x() + 75, ly_ - (*h)[0].y() + 75);
         const size_t hsize = (*h).size();
         for (unsigned int i = 1; i <= hsize; ++i) {
-          cairo_line_to(cr, (*h)[i % hsize].x(), ly_ - (*h)[i % hsize].y());
+          cairo_line_to(cr, (*h)[i % hsize].x() + 75, ly_ - (*h)[i % hsize].y() + 75);
         }
       }
       if (colors || fill_polygons) {
@@ -315,12 +315,12 @@ void InsetState::write_grid_heatmap_image(
   const bool crop_polygons)
 {
   // Whether to draw bar on the cairo surface
-  const bool draw_bar = false;
+  const bool draw_bar = true;
 
   // Create a cairo surface
   cairo_surface_t *surface;
   image_format_ps
-    ? surface = cairo_ps_surface_create(filename.c_str(), lx_, ly_)
+    ? surface = cairo_ps_surface_create(filename.c_str(), lx_ + 150, ly_ + 150)
     : surface = cairo_svg_surface_create(filename.c_str(), lx_, ly_);
   cairo_t *cr = cairo_create(surface);
 
@@ -331,12 +331,16 @@ void InsetState::write_grid_heatmap_image(
 
   // White background
   cairo_set_source_rgb(cr, 1.0, 1.0, 1.0);
-  cairo_rectangle(cr, 0, 0, lx_, ly_);
+  cairo_rectangle(cr, 0, 0, lx_ + 150, ly_ + 150);
   cairo_fill(cr);
 
   // Get inset areas
   const double total_ta = total_target_area();
   const double total_ia = total_inset_area();
+  
+  // std::cout << "Total target area: " << total_ta << std::endl;
+  // std::cout << "Total inset area: " << total_ia << std::endl;
+  
 
   // const Bbox bbox_bar = get_bbox_bar(15, 150);
 
@@ -344,7 +348,7 @@ void InsetState::write_grid_heatmap_image(
   Point max_area_cell_point, min_area_cell_point;
 
   std::tie(max_area_cell_point, min_area_cell_point) =
-    max_and_min_grid_cell_area_index(1);
+    max_and_min_grid_cell_area_index(1); // width 1 for cells
 
   const double max_area_cell_point_area =
     grid_cell_area(max_area_cell_point.x(), max_area_cell_point.y(), 1);
@@ -363,6 +367,11 @@ void InsetState::write_grid_heatmap_image(
     total_ta,
     total_ia);
 
+  std::cout << "Max target area per km: " << max_target_area_per_km
+                << std::endl;
+      std::cout << "Min target area per km: " << min_target_area_per_km
+                << std::endl
+                << std::endl;
   if (plot_equal_area_map) {
     std::cerr << std::endl;
     std::cerr << "Max target area per km: " << max_target_area_per_km
@@ -374,11 +383,17 @@ void InsetState::write_grid_heatmap_image(
 
   std::vector<int> nice_numbers =
     get_nice_numbers_for_bar(max_target_area_per_km);
+  
+  std::cout << "Nice numbers: " << std::endl;
+  for (auto n : nice_numbers) {
+    std::cout << n << ", ";
+  }
+  std::cout << std::endl;
 
   std::vector<std::pair<double, double>> major_ticks, minor_ticks;
 
   std::tie(major_ticks, minor_ticks) = get_ticks(
-    9,
+    5,
     min_target_area_per_km,
     max_target_area_per_km,
     min_area_cell_point_area,
@@ -392,6 +407,91 @@ void InsetState::write_grid_heatmap_image(
   write_polygons_to_cairo_surface(cr, false, false, plot_equal_area_map);
 
   // trim_grid_heatmap(cr, 20);
+  
+  unsigned int font_size = 10;
+  
+    // Set font properties
+  cairo_select_font_face(
+    cr,
+    "Sans",
+    CAIRO_FONT_SLANT_NORMAL,
+    CAIRO_FONT_WEIGHT_BOLD);
+  cairo_set_font_size(cr, font_size);
+  
+  // Tick width outside bar
+  double half_tick_width = 4.0;
+  
+  cairo_set_source_rgb(cr, 0.0, 0.0, 0.0);
+  cairo_set_line_width(cr, 1.1);
+  
+  std::vector<double> mj_ticks;
+  std::vector<double> mr_ticks;
+  double ratio = 512.0/29.0;
+  mj_ticks = {(ratio * 5), (ratio * (5+7)), (ratio * (5+ 7 + 7)), ratio * (5 + 7 + 7 + 7)};
+  std::vector<std::string> dates = {"11 Oct", "18 Oct", "25 Oct", "1 Nov"};
+  font_size = 10;
+  double cur = 0.0;
+  for(int i = 1; i < 29; i++) {
+    cur += ratio;
+    mr_ticks.push_back(cur);
+  }
+  
+  // Draw major ticks
+  for(int i = 0; i < mj_ticks.size(); i++) {
+    double tick = mj_ticks[i];
+    auto date = dates[i];
+    cairo_move_to(cr, tick + 75, ly_ - half_tick_width + 75);
+    cairo_line_to(cr, tick + 75, ly_ + half_tick_width + 75);
+    cairo_fill_preserve(cr);
+    cairo_stroke(cr);
+    
+    cairo_text_extents_t extents;
+    cairo_text_extents(cr, date.c_str(), &extents);
+    double move = extents.width;
+    cairo_move_to(cr, tick + 90 - move, ly_ + half_tick_width * 2 + 85);
+    cairo_show_text(cr, date.c_str());
+  }
+  
+  cairo_set_line_width(cr, 0.8);
+  // Draw minor ticks
+  for(int i = 0; i < mr_ticks.size(); i++) {
+    double tick = mr_ticks[i];
+    cairo_move_to(cr, tick + 75, ly_ - half_tick_width/2 + 75);
+    cairo_line_to(cr, tick + 75, ly_ + half_tick_width/2 + 75);
+    cairo_fill_preserve(cr);
+    cairo_stroke(cr);
+  }
+  
+  std::vector<double> mj_ticks_y_axis;
+  std::vector<double> mr_ticks_y_axis;
+  ratio = 512.0/10.0;
+  mj_ticks_y_axis = {0, ratio * 2, ratio * 4, ratio * 6, ratio * 8, ratio * 10};
+  std::vector<double> dates_y_axis = {0, 20, 40, 60, 80, 100};
+  mr_ticks_y_axis = {ratio * 1, ratio * 2, ratio * 3, ratio * 4, ratio * 5, ratio * 6, ratio * 7, ratio * 8, ratio * 9, ratio * 10};
+  
+  cairo_set_line_width(cr, 1.1);
+  
+  // Draw major ticks
+  for(int i = 0; i < mj_ticks_y_axis.size(); i++) {
+    double tick = mj_ticks_y_axis[i];
+    auto date = dates_y_axis[i];
+    cairo_move_to(cr, 75 - half_tick_width, ly_ + 75 - tick);
+    cairo_line_to(cr, 75 + half_tick_width, ly_ + 75 - tick);
+    cairo_fill_preserve(cr);
+    cairo_stroke(cr);
+    
+    right_aligned_text(cr, date, 75 - half_tick_width, ly_ + 73 - tick + font_size/2, font_size);
+  }
+  
+  cairo_set_line_width(cr, 0.8);
+  // Draw minor ticks
+  for(int i = 0; i < mr_ticks_y_axis.size(); i++) {
+    double tick = mr_ticks_y_axis[i];
+    cairo_move_to(cr, 75 - half_tick_width/2, ly_ + 75 - tick);
+    cairo_line_to(cr, 75 + half_tick_width/2, ly_ + 75 - tick);
+    cairo_fill_preserve(cr);
+    cairo_stroke(cr);
+  }
 
   if (draw_bar) {
     std::string bar_filename = "bar_" + filename;
@@ -408,7 +508,10 @@ void InsetState::write_grid_heatmap_image(
     if (image_format_ps) {
       write_ps_header(bar_filename, bar_surface);
     }
-
+  
+    std::cout << min_area_cell_point_area << " " << max_area_cell_point_area
+              << std::endl;
+              
     // Write bar
     write_grid_heatmap_bar_to_cairo_surface(
       min_area_cell_point_area,
@@ -544,7 +647,7 @@ void write_density_bar_to_cairo_surface(
     font_size);
 
   long long magnitude =
-    std::max(std::pow(10.0, std::floor(std::log10(max_value))), 1.0);
+    std::max(max_value, 1.0);
 
   long long original_mag = magnitude;
 
@@ -639,9 +742,9 @@ void InsetState::write_density_image(
   const bool image_format_ps)
 {
   // Whether to draw bar on the cairo surface
-  const bool draw_bar = false;
+  const bool draw_bar = true;
   cairo_surface_t *surface =
-    (image_format_ps ? cairo_ps_surface_create(filename.c_str(), lx_, ly_)
+    (image_format_ps ? cairo_ps_surface_create(filename.c_str(), lx_ + 150, ly_ + 150)
                      : cairo_svg_surface_create(filename.c_str(), lx_, ly_));
 
   // Create a cairo surface
@@ -654,7 +757,7 @@ void InsetState::write_density_image(
 
   // White background
   cairo_set_source_rgb(cr, 1.0, 1.0, 1.0);
-  cairo_rectangle(cr, 0, 0, lx_, ly_);
+  cairo_rectangle(cr, 0, 0, lx_ + 150, ly_ + 150);
   cairo_fill(cr);
 
   cairo_set_line_width(cr, 0);
@@ -664,7 +767,11 @@ void InsetState::write_density_image(
   const double dens_mean = dens_mean_;
   const double dens_max = dens_max_;
   const double each_grid_cell_area_km = grid_cell_area_km(0, 0);
-
+  std::cout << std::endl << "Each grid cell area: " << each_grid_cell_area_km << " km²" << std::endl;
+  std::cout << "Minimum density: " << dens_min << " km²" << std::endl;
+  std::cout << "Mean density: " << dens_mean << " km²" << std::endl;
+  std::cout << "Maximum density: " << dens_max << " km²" << std::endl;
+  
   // Crop it too
   if (plot_pycnophylactic) {
     unsigned int cell_width = 1;
@@ -674,11 +781,11 @@ void InsetState::write_density_image(
       for (const auto &pwh : gd.polygons_with_holes()) {
         const auto ext_ring = pwh.outer_boundary();
         cairo_new_path(cr);
-        cairo_move_to(cr, ext_ring[0].x(), ly_ - ext_ring[0].y());
+        cairo_move_to(cr, ext_ring[0].x() + 75, ly_ - ext_ring[0].y() + 75);
 
         // Plot each point in exterior ring
         for (unsigned int i = 1; i < ext_ring.size(); ++i) {
-          cairo_line_to(cr, ext_ring[i].x(), ly_ - ext_ring[i].y());
+          cairo_line_to(cr, ext_ring[i].x() + 75, ly_ - ext_ring[i].y() + 75);
         }
 
         // Close entire path
@@ -700,7 +807,7 @@ void InsetState::write_density_image(
             // "Min target area per km", which is obtained by running the
             // code with the "plot_pycnophylactic" -y flag set to true
             // Update here for new map
-            Color color = grid_cell_color(target_area_km, 660.058, 0.660816);
+            Color color = grid_cell_color(target_area_km, 69.9668, 5.15995);
 
             // Get four points of the square
             double x_min = i - 0.5 * sq_overlap;
@@ -708,10 +815,10 @@ void InsetState::write_density_image(
             double x_max = i + 1 + 0.5 * sq_overlap;
             double y_max = j + 1 + 0.5 * sq_overlap;
 
-            cairo_move_to(cr, x_min, ly_ - y_min);
-            cairo_line_to(cr, x_max, ly_ - y_min);
-            cairo_line_to(cr, x_max, ly_ - y_max);
-            cairo_line_to(cr, x_min, ly_ - y_max);
+            cairo_move_to(cr, x_min + 75, ly_ - y_min + 75);
+            cairo_line_to(cr, x_max + 75, ly_ - y_min + 75);
+            cairo_line_to(cr, x_max + 75, ly_ - y_max + 75);
+            cairo_line_to(cr, x_min + 75, ly_ - y_max + 75);
 
             cairo_set_source_rgb(cr, color.r, color.g, color.b);
             cairo_fill(cr);
@@ -740,10 +847,10 @@ void InsetState::write_density_image(
         double x_max = i + 1 + 0.5 * sq_overlap;
         double y_max = j + 1 + 0.5 * sq_overlap;
 
-        cairo_move_to(cr, x_min, ly_ - y_min);
-        cairo_line_to(cr, x_max, ly_ - y_min);
-        cairo_line_to(cr, x_max, ly_ - y_max);
-        cairo_line_to(cr, x_min, ly_ - y_max);
+        cairo_move_to(cr, x_min + 75, ly_ - y_min + 75);
+        cairo_line_to(cr, x_max + 75, ly_ - y_min + 75);
+        cairo_line_to(cr, x_max + 75, ly_ - y_max + 75);
+        cairo_line_to(cr, x_min + 75, ly_ - y_max + 75);
 
         cairo_set_source_rgb(cr, color.r, color.g, color.b);
         cairo_fill(cr);
@@ -753,7 +860,93 @@ void InsetState::write_density_image(
     }
   }
   write_polygons_to_cairo_surface(cr, false, false, false);
-
+  
+  unsigned int font_size = 10;
+  
+    // Set font properties
+  cairo_select_font_face(
+    cr,
+    "Sans",
+    CAIRO_FONT_SLANT_NORMAL,
+    CAIRO_FONT_WEIGHT_BOLD);
+  cairo_set_font_size(cr, font_size);
+  
+  // Tick width outside bar
+  double half_tick_width = 4.0;
+  
+  cairo_set_source_rgb(cr, 0.0, 0.0, 0.0);
+  cairo_set_line_width(cr, 1.1);
+  
+  std::vector<double> major_ticks;
+  std::vector<double> minor_ticks;
+  double ratio = 512.0/29.0;
+  major_ticks = {(ratio * 5), (ratio * (5+7)), (ratio * (5+ 7 + 7)), ratio * (5 + 7 + 7 + 7)};
+  std::vector<std::string> dates = {"11 Oct", "18 Oct", "25 Oct", "1 Nov"};
+  font_size = 10;
+  double cur = 0.0;
+  for(int i = 1; i < 29; i++) {
+    cur += ratio;
+    minor_ticks.push_back(cur);
+  }
+  
+  // Draw major ticks
+  for(int i = 0; i < major_ticks.size(); i++) {
+    double tick = major_ticks[i];
+    auto date = dates[i];
+    cairo_move_to(cr, tick + 75, ly_ - half_tick_width + 75);
+    cairo_line_to(cr, tick + 75, ly_ + half_tick_width + 75);
+    cairo_fill_preserve(cr);
+    cairo_stroke(cr);
+    
+    cairo_text_extents_t extents;
+    cairo_text_extents(cr, date.c_str(), &extents);
+    double move = extents.width;
+    cairo_move_to(cr, tick + 90 - move, ly_ + half_tick_width * 2 + 85);
+    cairo_show_text(cr, date.c_str());
+  }
+  
+  cairo_set_line_width(cr, 0.8);
+  // Draw minor ticks
+  for(int i = 0; i < minor_ticks.size(); i++) {
+    double tick = minor_ticks[i];
+    cairo_move_to(cr, tick + 75, ly_ - half_tick_width/2 + 75);
+    cairo_line_to(cr, tick + 75, ly_ + half_tick_width/2 + 75);
+    cairo_fill_preserve(cr);
+    cairo_stroke(cr);
+  }
+  
+  std::vector<double> major_ticks_y_axis;
+  std::vector<double> minor_ticks_y_axis;
+  ratio = 512.0/10.0;
+  major_ticks_y_axis = {0, ratio * 2, ratio * 4, ratio * 6, ratio * 8, ratio * 10};
+  std::vector<double> dates_y_axis = {0, 20, 40, 60, 80, 100};
+  minor_ticks_y_axis = {ratio * 1, ratio * 2, ratio * 3, ratio * 4, ratio * 5, ratio * 6, ratio * 7, ratio * 8, ratio * 9, ratio * 10};
+  
+  cairo_set_line_width(cr, 1.1);
+  
+  // Draw major ticks
+  for(int i = 0; i < major_ticks_y_axis.size(); i++) {
+    double tick = major_ticks_y_axis[i];
+    auto date = dates_y_axis[i];
+    cairo_move_to(cr, 75 - half_tick_width, ly_ + 75 - tick);
+    cairo_line_to(cr, 75 + half_tick_width, ly_ + 75 - tick);
+    cairo_fill_preserve(cr);
+    cairo_stroke(cr);
+    
+    right_aligned_text(cr, date, 75 - half_tick_width, ly_ + 73 - tick + font_size/2, font_size);
+  }
+  
+  cairo_set_line_width(cr, 0.8);
+  // Draw minor ticks
+  for(int i = 0; i < minor_ticks_y_axis.size(); i++) {
+    double tick = minor_ticks_y_axis[i];
+    cairo_move_to(cr, 75 - half_tick_width/2, ly_ + 75 - tick);
+    cairo_line_to(cr, 75 + half_tick_width/2, ly_ + 75 - tick);
+    cairo_fill_preserve(cr);
+    cairo_stroke(cr);
+  }
+  
+  
   if (draw_bar && !plot_pycnophylactic) {
     std::string bar_filename = "bar_" + filename;
 
@@ -1121,15 +1314,15 @@ Color grid_cell_color(
   const std::vector<Color> colors = {
 
     // White to purple
-    Color("#ffffff"),
-    Color("#efedf5"),
-    Color("#dadaeb"),
-    Color("#bcbddc"),
-    Color("#9e9ac8"),
-    Color("#807dba"),
-    Color("#6a51a3"),
-    Color("#54278f"),
-    Color("#3f007d")
+    // Color("#ffffff"),
+    // Color("#efedf5"),
+    // Color("#dadaeb"),
+    // Color("#bcbddc"),
+    // Color("#9e9ac8"),
+    // Color("#807dba"),
+    // Color("#6a51a3"),
+    // Color("#54278f"),
+    // Color("#3f007d")
 
     // White to green
     // Color("#ffffff"),
@@ -1143,20 +1336,20 @@ Color grid_cell_color(
     // Color("#00441b")
 
     // // White to red
-    // Color(1.000, 0.961, 0.941),
-    // Color(0.996, 0.878, 0.824),
-    // Color(0.988, 0.733, 0.631),
-    // Color(0.988, 0.572, 0.447),
-    // Color(0.984, 0.416, 0.290),
-    // Color(0.937, 0.231, 0.173),
-    // Color(0.796, 0.094, 0.114),
-    // Color(0.647, 0.058, 0.082),
-    // Color(0.404, 0.000, 0.050)
+    Color(1.000, 0.961, 0.941),
+    Color(0.996, 0.878, 0.824),
+    Color(0.988, 0.733, 0.631),
+    Color(0.988, 0.572, 0.447),
+    Color(0.984, 0.416, 0.290),
+    Color(0.937, 0.231, 0.173),
+    Color(0.796, 0.094, 0.114),
+    Color(0.647, 0.058, 0.082),
+    Color(0.404, 0.000, 0.050)
   };
   int n_categories = colors.size();
 
   // Normalize area to [0,1] and make it logarithmic
-  double ratio = (log(area) - log(min_area)) / (log(max_area) - log(min_area));
+  double ratio = ((area) - (min_area)) / ((max_area) - (min_area));
 
   // Determine color category
   double category = fmax(0, ratio * (n_categories - 1) - 10e-6);
@@ -1256,9 +1449,9 @@ void write_grid_heatmap_bar_to_cairo_surface(
 
   for (double y = ymin_bar; y <= ymax_bar; y += gradient_segment_height) {
     Color color = grid_cell_color(
-      exp(value_at_gradient_segment),
-      exp(max_value),
-      exp(min_value));
+      (value_at_gradient_segment),
+      (max_value),
+      (min_value));
     cairo_set_source_rgb(cr, color.r, color.g, color.b);
     cairo_rectangle(
       cr,
@@ -1283,6 +1476,7 @@ void write_grid_heatmap_bar_to_cairo_surface(
   // Tick width outside bar
   double half_tick_width = 4.0;
 
+  std::cout << "Min_value: " << min_value << std::endl;
   // Draw the ticks and nice_numbers
   cairo_set_source_rgb(cr, 0.0, 0.0, 0.0);
   cairo_set_line_width(cr, 1.1);
@@ -1291,9 +1485,11 @@ void write_grid_heatmap_bar_to_cairo_surface(
     int NiceNumber = tick.second;
     if (area > min_value and area < max_value) {
       double y =
-        ((log(area) - log(min_value)) / (log(max_value) - log(min_value))) *
-          (ymax_bar - ymin_bar) +
-        ymin_bar;
+        (((area) - (min_value)) / ((max_value) - (min_value))) *
+          (ymax_bar - ymin_bar) + ymin_bar;
+      std::cout << "y: " << y << std::endl;
+      std::cout << "NiceNumber: " << NiceNumber << std::endl;
+      std::cout << "area: " << area << std::endl;
       cairo_move_to(cr, xmin_bar + half_tick_width, ly - y);
       cairo_line_to(cr, xmin_bar - half_tick_width, ly - y);
 
@@ -1312,7 +1508,7 @@ void write_grid_heatmap_bar_to_cairo_surface(
     double area = ticks.first;
     if (area > min_value and area < max_value) {
       double y =
-        ((log(area) - log(min_value)) / (log(max_value) - log(min_value))) *
+        (((area) - (min_value)) / ((max_value) - (min_value))) *
           (ymax_bar - ymin_bar) +
         ymin_bar;
 
@@ -1321,6 +1517,51 @@ void write_grid_heatmap_bar_to_cairo_surface(
       cairo_stroke(cr);
     }
   }
+  
+    double x = xmin_bar - 30;
+    double y = ly - ymax_bar - 24;
+
+    font_size = 10;
+    cairo_select_font_face(
+      cr,
+      "Sans",
+      CAIRO_FONT_SLANT_NORMAL,
+      CAIRO_FONT_WEIGHT_BOLD);
+    cairo_set_font_size(cr, font_size);
+    std::string legend_label = "Cases per day and";
+    std::string legend_label2 = "per year of age";
+
+    cairo_move_to(cr, x, y + (font_size / 2.0));
+    cairo_show_text(cr, legend_label.c_str());
+    
+    cairo_move_to(cr, x + 6.5, y + 2 + (font_size * 1.5));
+    cairo_show_text(cr, legend_label2.c_str());
+  
+  // half_tick_width = bar_width / 8.0;
+
+  // // Write max value at top of bar
+  // right_aligned_text(
+  //   cr,
+  //   std::floor(max_value),
+  //   xmin_bar - half_tick_width,
+  //   ly - ymax_bar,
+  //   font_size);
+
+  // Write mean value
+  // right_aligned_text(
+  //   cr,
+  //   mean_value,
+  //   xmin_bar,
+  //   ly - ymean_bar + (font_size / 4.0),
+  //   font_size);
+
+  // // Write min_value
+  // right_aligned_text(
+  //   cr,
+  //   std::ceil(min_value),
+  //   xmin_bar - half_tick_width,
+  //   ly - ymin_bar + (font_size * 1.2),
+  //   font_size);
 }
 
 // Given padding, makes padding area white
@@ -1404,13 +1645,13 @@ void InsetState::write_grid_colors_to_cairo_surface(
           grid_cell_edge_points(i, j, cell_width, plot_equal_area_map);
         cairo_move_to(
           cr,
-          cell_edge_points[0].x(),
-          ly_ - cell_edge_points[0].y());
+          cell_edge_points[0].x() + 75,
+          ly_ - cell_edge_points[0].y() + 75);
         for (unsigned int k = 1; k < cell_edge_points.size(); ++k) {
           cairo_line_to(
             cr,
-            cell_edge_points[k].x(),
-            ly_ - cell_edge_points[k].y());
+            cell_edge_points[k].x() + 75,
+            ly_ - cell_edge_points[k].y() + 75);
         }
 
         // Fill the grid polygon with color
@@ -1563,11 +1804,16 @@ double InsetState::grid_cell_area_km(
   const unsigned int j = 0)
 {
   Polygon cell_edge_points = grid_cell_edge_points(i, j, 1, true);
-  const Polygon cell_edge_points_albers =
-    transform_to_albers_coor(cell_edge_points);
-  const double cell_area = cell_edge_points_albers.area();
-  const double cell_area_km = albers_area_to_earth_area(cell_area);
-  return cell_area_km;
+  // const Polygon cell_edge_points_albers =
+  //   transform_to_albers_coor(cell_edge_points);
+  // const double cell_area = cell_edge_points_albers.area();
+  // const double cell_area_km = albers_area_to_earth_area(cell_area);
+  double cell_area = cell_edge_points.area();
+  double ratio = 2900.0/ (512.0*512.0);
+  std::cout << "ratio: " << ratio << std::endl;
+  std::cout << "cell_area: " << cell_area << std::endl;
+  double cell_area_per_unit = cell_area * ratio;
+  return cell_area_per_unit;
 }
 
 std::pair<double, unsigned int> InsetState::get_km_legend_length()
@@ -1579,8 +1825,8 @@ std::pair<double, unsigned int> InsetState::get_km_legend_length()
   double min_length = 0.02 * ((lx() + ly()) / 2.0);
   double max_length = 0.06 * ((lx() + ly()) / 2.0);
   double unit_square_area = grid_cell_area_km();
-  unsigned int legend_area =
-    pow(10.0, ceil(std::log10(total_inset_area() * 0.01)));
+  unsigned int legend_area = total_inset_area() * 0.01;
+    // pow(10.0, ceil(std::log10());
   double length = sqrt(legend_area / unit_square_area);
 
   while (length < min_length) {
@@ -1613,8 +1859,8 @@ double InsetState::grid_cell_target_area(
 
 std::pair<double, unsigned int> InsetState::get_visual_variable_legend_length()
 {
-  unsigned int legend_area =
-    pow(10.0, ceil(std::log10(total_target_area() * 0.01)));
+  unsigned int legend_area = total_target_area() * 0.01;
+    // pow(10.0, ceil(std::log10());
 
   double unit_square_area = total_target_area() / total_inset_area();
   double min_length = 0.02 * ((lx() + ly()) / 2.0);
@@ -1664,6 +1910,8 @@ std::vector<std::pair<double, double>> get_major_ticks(
     double area =
       min_area_cell_point_area +
       NiceNumberRatio * (max_area_cell_point_area - min_area_cell_point_area);
+    std::cout << "area: " << area << std::endl;
+    std::cout << "niceNumber: " << niceNumber << std::endl;
     ticks.push_back(std::make_pair(area, niceNumber));
   }
   return ticks;
@@ -1756,11 +2004,11 @@ Bbox InsetState::get_bbox_bar(const double bar_width, const double bar_height)
 std::vector<int> get_nice_numbers_for_bar(const double max_target_area_per_km)
 {
   std::vector<int> nice_numbers;
-  // int NiceNumber = 1;
-  // nice_numbers.push_back(NiceNumber);
-  // while (NiceNumber < max_target_area_per_km) {
-  //   NiceNumber = NiceNumber * 10;
-  //   nice_numbers.push_back(NiceNumber);
-  // }
+  int NiceNumber = 0;
+  nice_numbers.push_back(NiceNumber);
+  while (NiceNumber < max_target_area_per_km) {
+    NiceNumber = NiceNumber + 10;
+    nice_numbers.push_back(NiceNumber);
+  }
   return nice_numbers;
 }
