@@ -1,0 +1,69 @@
+name: Bibtex_to_json_cartdata
+
+on:
+  push:
+    branches: [ "main","github-autodocs-bibtex"]
+    paths: ['cartdata_bibliography.bib']
+
+jobs:
+  changes:
+    runs-on: ubuntu-latest  
+    name: add markdown documentation
+    steps:
+      - name: checkout repo
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+
+      - name: Get changed directory paths
+        id: changed-directories-of-files
+        uses: tj-actions/changed-files@v29.0.3 
+        with:
+          files: |
+            ./**
+            *.bib
+          dir_names: "true"
+      
+      - name: Create template markdown file in folder
+        uses: 1arp/create-a-file-action@0.2
+        with:
+          path: './${{ steps.changed-directories-of-files.outputs.all_changed_files }}'
+          file: 'template.md'
+          content: |
+            ---
+            bibliography: ./${{ steps.changed-directories-of-files.outputs.all_changed_files }}/testing.bib
+            nocite: '@*'
+            ---
+
+            # Bibliography
+      
+      - name: Run Pandoc Converter to html
+        uses: docker://pandoc/core:2.9
+        with:
+          args: >-
+            --filter=pandoc-citeproc 
+            --standalone 
+            ./${{ steps.changed-directories-of-files.outputs.all_changed_files }}/template.md
+            -o 
+            ./${{ steps.changed-directories-of-files.outputs.all_changed_files }}/cartdata_documentation.html
+      
+      - name: Setup npm environment
+        uses: actions/setup-node@v3
+        with:
+          node-version: 16
+        
+      - name: install citation-js 
+        run: npm install --global citation-js
+      
+      - name: Run citation-js Converter to JSON
+        run: citation-js -i ./${{ steps.changed-directories-of-files.outputs.all_changed_files }}/testing.bib -o ./${{ steps.changed-directories-of-files.outputs.all_changed_files }}/cartdata_documentation -f json -s csl
+      
+      - name: Delete template files
+        uses: JesseTG/rm@v1.0.3
+        with:
+          path: ./${{ steps.changed-directories-of-files.outputs.all_changed_files }}/template.md
+      
+      - name: Push changed and added files to repo
+        uses: EndBug/add-and-commit@v9.1.0
+      
+
