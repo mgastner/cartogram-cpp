@@ -37,9 +37,8 @@ int main(const int argc, const char *argv[])
 
   // Other boolean values that are needed to parse the command line arguments
   bool make_csv, output_equal_area, output_to_stdout, plot_density,
-    produce_map_image, plot_grid, plot_pycnophylactic,
-    plot_intersections, crop_polygons, image_format_ps,
-    plot_quadtree, remove_tiny_polygons;
+    produce_map_image, plot_grid, plot_pycnophylactic, plot_intersections,
+    crop_polygons, image_format_ps, plot_quadtree, remove_tiny_polygons;
 
   // The proportion of the total area smaller than which polygons are removed
   double minimum_polygon_area;
@@ -54,7 +53,8 @@ int main(const int argc, const char *argv[])
      duration_densification = inMilliseconds(duration::zero()),
      duration_flatten_density = inMilliseconds(duration::zero()),
      duration_fill_density = inMilliseconds(duration::zero()),
-     duration_qtdt = inMilliseconds(duration::zero());
+     duration_qtdt = inMilliseconds(duration::zero()),
+     duration_parse = inMilliseconds(duration::zero());
 
   // Parse command-line arguments
   argparse::ArgumentParser arguments = parsed_arguments(
@@ -126,8 +126,8 @@ int main(const int argc, const char *argv[])
     return EXIT_FAILURE;
   }
 
-  // Parsing end time
-  time_point end_parse = clock_time::now();
+  // Calculating parsing duration
+  duration_parse = inMilliseconds(clock_time::now() - start_parse);
 
   std::cerr << "Coordinate reference system: " << crs << std::endl;
 
@@ -518,9 +518,7 @@ int main(const int argc, const char *argv[])
   // Show time report
   std::cerr << std::endl;
   std::cerr << "********** Time Report **********" << std::endl;
-
-  std::cerr << "Parsing time: "
-            << inMilliseconds(end_parse - start_parse).count() << " ms"
+  std::cerr << "Parsing time: " << duration_parse.count() << " ms"
             << std::endl;
 
   // Print integration times
