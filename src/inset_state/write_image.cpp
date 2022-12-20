@@ -1,4 +1,5 @@
 #include "write_image.h"
+#include <cairo.h>
 #include <iostream>
 #include <string>
 #include <utility>
@@ -40,20 +41,10 @@ void write_ps_header(const std::string filename, cairo_surface_t *surface)
   cairo_ps_surface_dsc_comment(surface, "%%Magnification: 1.0000");
 }
 
-void write_point_on_cairo_surface(cairo_t *cr, Point pt, color clr)
-{
-  cairo_set_source_rgb(cr, clr.r, clr.g, clr.b);
-  cairo_move_to(cr, pt.x(), 512 - pt.y());
-  cairo_line_to(cr, pt.x() + 0.05, 512 - pt.y() - 0.05);
-  cairo_close_path(cr);
-  cairo_stroke(cr);
-}
-
 void InsetState::write_polygon_points_on_cairo_surface(cairo_t *cr, color clr)
 {
   cairo_set_source_rgb(cr, clr.r, clr.g, clr.b);
   cairo_set_line_cap(cr, CAIRO_LINE_CAP_ROUND);
-  cairo_set_line_width(cr, 0.5);
   // Draw the shapes
   for (const auto &gd : geo_divs_) {
     for (const auto &pwh : gd.polygons_with_holes()) {
@@ -61,14 +52,16 @@ void InsetState::write_polygon_points_on_cairo_surface(cairo_t *cr, color clr)
 
       // Plot each point in exterior ring
       for (auto i : ext_ring) {
-        write_point_on_cairo_surface(cr, i, clr);
+        cairo_arc(cr, i.x(), ly_ - i.y(), 0.5, 0, 2 * M_PI);
+        cairo_fill(cr);
       }
 
       // Plot holes
       for (auto hci = pwh.holes_begin(); hci != pwh.holes_end(); ++hci) {
         Polygon hole = *hci;
         for (unsigned int i = 1; i <= hole.size(); ++i) {
-          write_point_on_cairo_surface(cr, hole[i], clr);
+          cairo_arc(cr, hole[i].x(), ly_ - hole[i].y(), 0.5, 0, 2 * M_PI);
+          cairo_fill(cr);
         }
       }
     }
