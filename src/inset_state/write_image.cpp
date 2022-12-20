@@ -140,7 +140,6 @@ double font_size(
   return 0.0;
 }
 
-
 void InsetState::write_polygons_to_cairo_surface(
   cairo_t *cr,
   const bool fill_polygons,
@@ -200,68 +199,6 @@ void InsetState::write_polygons_to_cairo_surface(
     }
   }
 }
-
-// // Outputs a PNG file
-// void InsetState::write_cairo_polygons_to_png(
-//   const std::string &fname,
-//   const bool fill_polygons,
-//   const bool colors,
-//   const bool plot_grid)
-// {
-//   const auto filename = fname.c_str();
-//   cairo_surface_t *surface = cairo_image_surface_create(
-//     CAIRO_FORMAT_ARGB32,
-//     static_cast<int>(lx_),
-//     static_cast<int>(ly_));
-//   cairo_t *cr = cairo_create(surface);
-//   write_polygons_to_cairo_surface(cr, fill_polygons, colors, plot_grid);
-//   cairo_surface_write_to_png(surface, filename);
-//   cairo_destroy(cr);
-//   cairo_surface_destroy(surface);
-// }
-
-// // Outputs a PS file
-// void InsetState::write_cairo_polygons_to_ps(
-//   const std::string &fname,
-//   const bool fill_polygons,
-//   const bool colors,
-//   const bool plot_grid)
-// {
-//   const auto filename = fname.c_str();
-//   cairo_surface_t *surface = cairo_ps_surface_create(filename, lx_, ly_);
-//   cairo_t *cr = cairo_create(surface);
-
-//   // Add comments
-//   const std::string title = "%%Title: " + fname;
-//   cairo_ps_surface_dsc_comment(surface, title.c_str());
-//   cairo_ps_surface_dsc_comment(
-//     surface,
-//     "%%Creator: Michael T. Gastner et al.");
-//   cairo_ps_surface_dsc_comment(surface, "%%For: Humanity");
-//   cairo_ps_surface_dsc_comment(surface, "%%Copyright: License CC BY");
-//   cairo_ps_surface_dsc_comment(surface, "%%Magnification: 1.0000");
-//   write_polygons_to_cairo_surface(cr, fill_polygons, colors, plot_grid);
-//   cairo_show_page(cr);
-//   cairo_surface_destroy(surface);
-//   cairo_destroy(cr);
-// }
-
-// // TODO: DO WE NEED THIS FUNCTION? WOULD IT NOT MAKE MORE SENSE TO ONLY PRINT
-// // FILE TYPES INDICATED BY COMMAND-LINE FLAGS?
-// // Outputs both png and ps files
-// void InsetState::write_cairo_map(
-//   const std::string &file_name,
-//   const bool plot_grid)
-// {
-//   const auto png_name = file_name + ".png";
-//   const auto ps_name = file_name + ".ps";
-
-//   // Check whether the has all GeoDivs colored
-//   const bool has_colors = (colors_size() == n_geo_divs());
-//   write_cairo_polygons_to_png(png_name, true, has_colors, plot_grid);
-//   write_cairo_polygons_to_ps(ps_name, true, has_colors, plot_grid);
-// }
-
 
 void InsetState::write_grid_heatmap_data(const std::string filename)
 {
