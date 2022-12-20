@@ -252,15 +252,7 @@ int main(const int argc, const char *argv[])
 
     // Write PNG and PS files if requested by command-line option
     if (produce_map_image) {
-      std::string input_filename = inset_state.inset_name();
-
-      // Update filename with grid info
-      plot_grid ? input_filename += "_input_grid" : input_filename += "_input";
-
-      // Update extension
-      image_format_ps ? input_filename += ".ps" : input_filename += ".svg";
-
-      std::cerr << "Writing " << input_filename << std::endl;
+      std::string input_filename = inset_state.inset_name() + "_input";
       inset_state.write_map_image(
         input_filename,
         true,
@@ -298,7 +290,6 @@ int main(const int argc, const char *argv[])
             inset_state.inset_name() + "_" +
             std::to_string(inset_state.n_finished_integrations()) +
             "_quadtree";
-          std::cerr << "Writing " << quadtree_filename << std::endl;
 
           // Draw the resultant quadtree
           inset_state.write_quadtree(quadtree_filename);
@@ -421,16 +412,7 @@ int main(const int argc, const char *argv[])
 
     // Print PS files of cartogram
     if (produce_map_image) {
-      std::string output_filename = inset_state.inset_name();
-
-      // Update filename with grid info
-      plot_grid ? output_filename += "_output_grid"
-                : output_filename += "_output";
-
-      // Update extension
-      image_format_ps ? output_filename += ".ps" : output_filename += ".svg";
-
-      std::cerr << "Writing " << output_filename << std::endl;
+      std::string output_filename = inset_state.inset_name() + "_output";
       inset_state.write_map_image(
         output_filename,
         true,
@@ -444,12 +426,7 @@ int main(const int argc, const char *argv[])
       // Produce equal-area grid heatmap
       std::string output_filename =
         inset_state.inset_name() + "_equal_area_grid_heatmap";
-
       inset_state.write_grid_heatmap_data(output_filename + ".csv");
-
-      // Update extension
-      image_format_ps ? output_filename += ".ps" : output_filename += ".svg";
-      std::cerr << "Writing " << output_filename << std::endl;
       inset_state.write_grid_heatmap_image(
         output_filename,
         true,
@@ -458,11 +435,6 @@ int main(const int argc, const char *argv[])
 
       // Produce cartogram grid heatmap
       output_filename = inset_state.inset_name() + "_cartogram_grid_heatmap";
-
-      // Update extension
-      image_format_ps ? output_filename += ".ps" : output_filename += ".svg";
-
-      std::cerr << "Writing " << output_filename << std::endl;
       inset_state.write_grid_heatmap_image(
         output_filename,
         false,
@@ -496,10 +468,6 @@ int main(const int argc, const char *argv[])
   // Output a density heatmap's bar
   if (plot_density) {
     std::string output_filename = "density_bar";
-
-    // Update extension
-    image_format_ps ? output_filename += ".ps" : output_filename += ".svg";
-    std::cerr << "Writing " << output_filename << std::endl;
     // write_density_bar_image(output_filename, image_format_ps);
   }
 

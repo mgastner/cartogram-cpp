@@ -226,9 +226,12 @@ public:
   void write_cairo_map(const std::string &, bool);
   void write_cairo_polygons_to_png(const std::string &, bool, bool, bool);
   void write_cairo_polygons_to_ps(const std::string &, bool, bool, bool);
+  std::pair<cairo_t *, cairo_surface_t *> get_cairo_surface(
+    const bool image_format_ps,
+    const std::string filename);
 
-  // Functions to write map to eps
-  void write_grid_heatmap_data(const std::string filename);
+    // Functions to write map to eps
+    void write_grid_heatmap_data(const std::string filename);
 
   // Functions to write map to eps
   // void write_density_to_eps(const std::string, const double *);

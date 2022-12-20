@@ -1,5 +1,7 @@
 #include "write_image.h"
 #include <iostream>
+#include <string>
+#include <utility>
 
 void write_triangles_on_cairo_surface(cairo_t *cr, Delaunay &dt, color clr)
 {
@@ -7,6 +9,7 @@ void write_triangles_on_cairo_surface(cairo_t *cr, Delaunay &dt, color clr)
   for (Delaunay::Finite_faces_iterator fit = dt.finite_faces_begin();
        fit != dt.finite_faces_end();
        ++fit) {
+
     Point p1 = fit->vertex(0)->point();
     Point p2 = fit->vertex(1)->point();
     Point p3 = fit->vertex(2)->point();
@@ -74,10 +77,9 @@ void InsetState::write_polygon_points_on_cairo_surface(cairo_t *cr, color clr)
 
 void InsetState::write_quadtree(const std::string &filename)
 {
-  cairo_surface_t *surface =
-    cairo_ps_surface_create((filename + ".ps").c_str(), lx_, ly_);
-  cairo_t *cr = cairo_create(surface);
-  write_ps_header((filename + ".ps"), surface);
+
+  // Get cairo surface with white background
+  auto [cr, surface] = get_cairo_surface(true, filename);
   write_triangles_on_cairo_surface(cr, proj_qd_.dt, color{0.0, 0.0, 0.0});
   write_polygon_points_on_cairo_surface(cr, color{1.0, 0.0, 0.0});
   cairo_show_page(cr);
@@ -199,66 +201,66 @@ void InsetState::write_polygons_to_cairo_surface(
   }
 }
 
-// Outputs a PNG file
-void InsetState::write_cairo_polygons_to_png(
-  const std::string &fname,
-  const bool fill_polygons,
-  const bool colors,
-  const bool plot_grid)
-{
-  const auto filename = fname.c_str();
-  cairo_surface_t *surface = cairo_image_surface_create(
-    CAIRO_FORMAT_ARGB32,
-    static_cast<int>(lx_),
-    static_cast<int>(ly_));
-  cairo_t *cr = cairo_create(surface);
-  write_polygons_to_cairo_surface(cr, fill_polygons, colors, plot_grid);
-  cairo_surface_write_to_png(surface, filename);
-  cairo_destroy(cr);
-  cairo_surface_destroy(surface);
-}
+// // Outputs a PNG file
+// void InsetState::write_cairo_polygons_to_png(
+//   const std::string &fname,
+//   const bool fill_polygons,
+//   const bool colors,
+//   const bool plot_grid)
+// {
+//   const auto filename = fname.c_str();
+//   cairo_surface_t *surface = cairo_image_surface_create(
+//     CAIRO_FORMAT_ARGB32,
+//     static_cast<int>(lx_),
+//     static_cast<int>(ly_));
+//   cairo_t *cr = cairo_create(surface);
+//   write_polygons_to_cairo_surface(cr, fill_polygons, colors, plot_grid);
+//   cairo_surface_write_to_png(surface, filename);
+//   cairo_destroy(cr);
+//   cairo_surface_destroy(surface);
+// }
 
-// Outputs a PS file
-void InsetState::write_cairo_polygons_to_ps(
-  const std::string &fname,
-  const bool fill_polygons,
-  const bool colors,
-  const bool plot_grid)
-{
-  const auto filename = fname.c_str();
-  cairo_surface_t *surface = cairo_ps_surface_create(filename, lx_, ly_);
-  cairo_t *cr = cairo_create(surface);
+// // Outputs a PS file
+// void InsetState::write_cairo_polygons_to_ps(
+//   const std::string &fname,
+//   const bool fill_polygons,
+//   const bool colors,
+//   const bool plot_grid)
+// {
+//   const auto filename = fname.c_str();
+//   cairo_surface_t *surface = cairo_ps_surface_create(filename, lx_, ly_);
+//   cairo_t *cr = cairo_create(surface);
 
-  // Add comments
-  const std::string title = "%%Title: " + fname;
-  cairo_ps_surface_dsc_comment(surface, title.c_str());
-  cairo_ps_surface_dsc_comment(
-    surface,
-    "%%Creator: Michael T. Gastner et al.");
-  cairo_ps_surface_dsc_comment(surface, "%%For: Humanity");
-  cairo_ps_surface_dsc_comment(surface, "%%Copyright: License CC BY");
-  cairo_ps_surface_dsc_comment(surface, "%%Magnification: 1.0000");
-  write_polygons_to_cairo_surface(cr, fill_polygons, colors, plot_grid);
-  cairo_show_page(cr);
-  cairo_surface_destroy(surface);
-  cairo_destroy(cr);
-}
+//   // Add comments
+//   const std::string title = "%%Title: " + fname;
+//   cairo_ps_surface_dsc_comment(surface, title.c_str());
+//   cairo_ps_surface_dsc_comment(
+//     surface,
+//     "%%Creator: Michael T. Gastner et al.");
+//   cairo_ps_surface_dsc_comment(surface, "%%For: Humanity");
+//   cairo_ps_surface_dsc_comment(surface, "%%Copyright: License CC BY");
+//   cairo_ps_surface_dsc_comment(surface, "%%Magnification: 1.0000");
+//   write_polygons_to_cairo_surface(cr, fill_polygons, colors, plot_grid);
+//   cairo_show_page(cr);
+//   cairo_surface_destroy(surface);
+//   cairo_destroy(cr);
+// }
 
-// TODO: DO WE NEED THIS FUNCTION? WOULD IT NOT MAKE MORE SENSE TO ONLY PRINT
-// FILE TYPES INDICATED BY COMMAND-LINE FLAGS?
-// Outputs both png and ps files
-void InsetState::write_cairo_map(
-  const std::string &file_name,
-  const bool plot_grid)
-{
-  const auto png_name = file_name + ".png";
-  const auto ps_name = file_name + ".ps";
+// // TODO: DO WE NEED THIS FUNCTION? WOULD IT NOT MAKE MORE SENSE TO ONLY PRINT
+// // FILE TYPES INDICATED BY COMMAND-LINE FLAGS?
+// // Outputs both png and ps files
+// void InsetState::write_cairo_map(
+//   const std::string &file_name,
+//   const bool plot_grid)
+// {
+//   const auto png_name = file_name + ".png";
+//   const auto ps_name = file_name + ".ps";
 
-  // Check whether the has all GeoDivs colored
-  const bool has_colors = (colors_size() == n_geo_divs());
-  write_cairo_polygons_to_png(png_name, true, has_colors, plot_grid);
-  write_cairo_polygons_to_ps(ps_name, true, has_colors, plot_grid);
-}
+//   // Check whether the has all GeoDivs colored
+//   const bool has_colors = (colors_size() == n_geo_divs());
+//   write_cairo_polygons_to_png(png_name, true, has_colors, plot_grid);
+//   write_cairo_polygons_to_ps(ps_name, true, has_colors, plot_grid);
+// }
 
 
 void InsetState::write_grid_heatmap_data(const std::string filename)
@@ -306,22 +308,23 @@ void InsetState::write_grid_heatmap_data(const std::string filename)
   std::cout << "Grid heatmap data written" << std::endl;
 }
 
-
-// Outputs a SVG/PS file of grid heatmap
-void InsetState::write_grid_heatmap_image(
-  const std::string filename,
-  const bool plot_equal_area_map,
+std::pair<cairo_t *, cairo_surface_t *> InsetState::get_cairo_surface(
   const bool image_format_ps,
-  const bool crop_polygons)
+  const std::string filename)
 {
-  // Whether to draw bar on the cairo surface
-  const bool draw_bar = false;
-
   // Create a cairo surface
   cairo_surface_t *surface;
-  image_format_ps
-    ? surface = cairo_ps_surface_create(filename.c_str(), lx_, ly_)
-    : surface = cairo_svg_surface_create(filename.c_str(), lx_, ly_);
+  std::string updated_filename;
+  if (image_format_ps) {
+    updated_filename = filename + ".ps";
+    surface = cairo_ps_surface_create(updated_filename.c_str(), lx_, ly_);
+  } else {
+    updated_filename = filename + ".svg";
+    surface = cairo_svg_surface_create(updated_filename.c_str(), lx_, ly_);
+  }
+
+  std::cerr << "Writing " << updated_filename << std::endl;
+
   cairo_t *cr = cairo_create(surface);
 
   // Write header
@@ -334,14 +337,31 @@ void InsetState::write_grid_heatmap_image(
   cairo_rectangle(cr, 0, 0, lx_, ly_);
   cairo_fill(cr);
 
+  return std::make_pair(cr, surface);
+}
+
+// Outputs a SVG/PS file of grid heatmap
+void InsetState::write_grid_heatmap_image(
+  const std::string filename,
+  const bool plot_equal_area_map,
+  const bool image_format_ps,
+  const bool crop_polygons)
+{
+  // Whether to draw bar on the cairo surface
+  const bool draw_bar = false;
+
   // Get inset areas
   const double total_ta = total_target_area();
   const double total_ia = total_inset_area();
 
+  // Get cairo surface with white background
+  auto [cr, surface] = get_cairo_surface(image_format_ps, filename);
+
   // const Bbox bbox_bar = get_bbox_bar(15, 150);
 
   // Get the max and min grid cell area points
-  Point max_area_cell_point, min_area_cell_point;
+  Point max_area_cell_point,
+    min_area_cell_point;
 
   std::tie(max_area_cell_point, min_area_cell_point) =
     max_and_min_grid_cell_area_index(1);
@@ -640,23 +660,9 @@ void InsetState::write_density_image(
 {
   // Whether to draw bar on the cairo surface
   const bool draw_bar = false;
-  cairo_surface_t *surface =
-    (image_format_ps ? cairo_ps_surface_create(filename.c_str(), lx_, ly_)
-                     : cairo_svg_surface_create(filename.c_str(), lx_, ly_));
 
-  // Create a cairo surface
-  cairo_t *cr = cairo_create(surface);
-
-  // Write header
-  if (image_format_ps) {
-    write_ps_header(filename, surface);
-  }
-
-  // White background
-  cairo_set_source_rgb(cr, 1.0, 1.0, 1.0);
-  cairo_rectangle(cr, 0, 0, lx_, ly_);
-  cairo_fill(cr);
-
+  // Get cairo surface with white background
+  auto [cr, surface] = get_cairo_surface(image_format_ps, filename);
   cairo_set_line_width(cr, 0);
 
   // Determine range of densities
@@ -795,29 +801,11 @@ void InsetState::write_intersections_image(
   std::string filename = inset_name() + "_intersections_" +
                          std::to_string(n_finished_integrations());
 
-  // Update extension
-  image_format_ps ? filename += ".ps" : filename += ".svg";
-
   // Calculating intersections
   std::vector<Segment> intersections = intersecting_segments(res);
-  cairo_surface_t *surface;
 
-  // Create a cairo surface
-  image_format_ps
-    ? surface = cairo_ps_surface_create(filename.c_str(), lx_, ly_)
-    : surface = cairo_svg_surface_create(filename.c_str(), lx_, ly_);
-  cairo_t *cr = cairo_create(surface);
-
-  // Write header
-  if (image_format_ps) {
-    write_ps_header(filename, surface);
-  }
-
-  // White background
-  cairo_set_source_rgb(cr, 1.0, 1.0, 1.0);
-  cairo_rectangle(cr, 0, 0, lx_, ly_);
-  cairo_fill(cr);
-
+  // Get cairo surface with white background
+  auto [cr, surface] = get_cairo_surface(image_format_ps, filename);
   write_polygons_to_cairo_surface(cr, false, false, false);
 
   cairo_set_line_width(cr, 0.0001 * std::min(lx_, ly_));
@@ -1513,23 +1501,9 @@ void InsetState::write_map_image(
 
   // Check whether the map has all GeoDivs colored
   const bool colors = (colors_size() == n_geo_divs());
-  cairo_surface_t *surface;
 
-  // Create a cairo surface
-  image_format_ps
-    ? surface = cairo_ps_surface_create(filename.c_str(), lx_, ly_)
-    : surface = cairo_svg_surface_create(filename.c_str(), lx_, ly_);
-  cairo_t *cr = cairo_create(surface);
-
-  // Write header
-  if (image_format_ps) {
-    write_ps_header(filename, surface);
-  }
-
-  // White background
-  cairo_set_source_rgb(cr, 1.0, 1.0, 1.0);
-  cairo_rectangle(cr, 0, 0, lx_, ly_);
-  cairo_fill(cr);
+  // Get cairo surface with white background
+  auto [cr, surface] = get_cairo_surface(image_format_ps, filename);
 
   // Draw polygons with color
   write_polygons_to_cairo_surface(cr, fill_polygons, colors, false);
