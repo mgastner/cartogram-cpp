@@ -250,7 +250,7 @@ int main(const int argc, const char *argv[])
       inset_state.auto_color();
     }
 
-    // Write PNG and PS files if requested by command-line option
+    // Write map image if requested by command-line option
     if (produce_map_image) {
       std::string input_filename = inset_state.inset_name() + "_input";
       inset_state.write_map_image(
