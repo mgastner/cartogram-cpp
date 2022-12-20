@@ -169,24 +169,24 @@ void InsetState::fill_with_density(
   dens_max_ = dens_max;
 
   // Print density into csv
-  if (true) {
-    std::string file_name =
-      inset_name_ + "_density_" + std::to_string(n_finished_integrations());
-    // std::ofstream f_csv;
-    // f_csv.open(file_name + ".csv");
-    // for (unsigned int i = 0; i < lx_; ++i) {
-    //   for (unsigned int j = 0; j < ly_; ++j) {
-    //     f_csv << i << ", " << j << ", " << rho_init_(i, j) << "\n";
-    //   }
-    // }
-    // f_csv.close();
+  // if (true) {
+  //   std::string file_name =
+  //     inset_name_ + "_density_" + std::to_string(n_finished_integrations());
+  //   // std::ofstream f_csv;
+  //   // f_csv.open(file_name + ".csv");
+  //   // for (unsigned int i = 0; i < lx_; ++i) {
+  //   //   for (unsigned int j = 0; j < ly_; ++j) {
+  //   //     f_csv << i << ", " << j << ", " << rho_init_(i, j) << "\n";
+  //   //   }
+  //   // }
+  //   // f_csv.close();
 
-    std::ofstream f_txt;
-    f_txt.open(file_name + ".txt");
-    f_txt << "Minimum Density: " << dens_min_ << "\n";
-    f_txt << "Mean Density: " << dens_mean_ << "\n";
-    f_txt << "Maximum Density: " << dens_max_ << "\n";
-  }
+  //   std::ofstream f_txt;
+  //   f_txt.open(file_name + ".txt");
+  //   f_txt << "Minimum Density: " << dens_min_ << "\n";
+  //   f_txt << "Mean Density: " << dens_mean_ << "\n";
+  //   f_txt << "Maximum Density: " << dens_max_ << "\n";
+  // }
 
   if (plot_pycnophylactic && n_finished_integrations_ == 0) {
     std::string file_name = inset_name_ + "_piecewise_density_" +

@@ -22,17 +22,17 @@ void InsetState::blur_density(
   }
 
   // CSV with blurred data
-  std::string file_name =
-    inset_name_ + "_blurred_density_" + std::to_string(n_finished_integrations());
-  std::ofstream f_csv;
-  f_csv.open(file_name + ".csv");
-  for (unsigned int i = 0; i < lx_; ++i) {
-    for (unsigned int j = 0; j < ly_; ++j) {
-      f_csv << i << ", " << j << ", " << rho_init_(i, j) << "\n";
-    }
-  }
+  // std::string file_name =
+  //   inset_name_ + "_blurred_density_" + std::to_string(n_finished_integrations());
+  // std::ofstream f_csv;
+  // f_csv.open(file_name + ".csv");
+  // for (unsigned int i = 0; i < lx_; ++i) {
+  //   for (unsigned int j = 0; j < ly_; ++j) {
+  //     f_csv << i << ", " << j << ", " << rho_init_(i, j) << "\n";
+  //   }
+  // }
 
-  f_csv.close();
+  // f_csv.close();
   execute_fftw_bwd_plan();
   if (plot_density) {
     std::string file_name = inset_name_ + "_blurred_density_" +

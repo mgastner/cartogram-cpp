@@ -813,6 +813,11 @@ void InsetState::write_intersections_image(
     write_ps_header(filename, surface);
   }
 
+  // White background
+  cairo_set_source_rgb(cr, 1.0, 1.0, 1.0);
+  cairo_rectangle(cr, 0, 0, lx_, ly_);
+  cairo_fill(cr);
+
   write_polygons_to_cairo_surface(cr, false, false, false);
 
   cairo_set_line_width(cr, 0.0001 * std::min(lx_, ly_));
@@ -1520,6 +1525,11 @@ void InsetState::write_map_image(
   if (image_format_ps) {
     write_ps_header(filename, surface);
   }
+
+  // White background
+  cairo_set_source_rgb(cr, 1.0, 1.0, 1.0);
+  cairo_rectangle(cr, 0, 0, lx_, ly_);
+  cairo_fill(cr);
 
   // Draw polygons with color
   write_polygons_to_cairo_surface(cr, fill_polygons, colors, false);
