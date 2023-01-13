@@ -210,7 +210,10 @@ void InsetState::flatten_ellipse_density()
   // TODO: Does the next line adjust rho_mean if the total inset area has
   //       changed in previous runs of flatten_density() or
   //       flatten_ellipse_density()?
-  double rho_mean = total_target_area() / total_inset_area();
+  // double rho_mean = total_target_area() / total_inset_area();
+  
+  double rho_mean = (1.0 - (initial_area_ / (lx_ * ly_))) /
+                    (1.0 - (total_inset_area() / (lx_ * ly_)));
   std::cerr << "rho_mean = " << rho_mean << std::endl;
 
   // Determine attenuation factor nu that keeps density changes caused by
@@ -253,7 +256,7 @@ void InsetState::flatten_ellipse_density()
   double rho_max = *std::max_element(
     ell_density_prefactors.begin(),
     ell_density_prefactors.end());
-    
+
   std::cout << "rho_min = " << rho_min << ", rho_max = " << rho_max
             << std::endl;
   std::cout << "rho_mean = " << rho_mean << std::endl;
@@ -320,9 +323,8 @@ void InsetState::flatten_ellipse_density()
   unsigned int iter = 0;
 
   // write_cairo_map(
-  //   inset_name() + "_" + std::to_string(n_finished_integrations()) + "_flux",
-  //   false,
-  //   flux_mp);
+  //   inset_name() + "_" + std::to_string(n_finished_integrations()) +
+  //   "_flux", false, flux_mp);
 
   // calculate_velocity(
   //   rho_mp,
