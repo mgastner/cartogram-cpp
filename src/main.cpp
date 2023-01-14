@@ -3,6 +3,7 @@
 #include "parse_arguments.h"
 #include <chrono>
 #include <iostream>
+#include <matplot/matplot.h>
 
 // Cpp Chrono for timing
 typedef std::chrono::steady_clock::time_point time_point;
@@ -267,8 +268,23 @@ int main(const int argc, const char *argv[])
     std::cerr << "Applying Polygon Preprocessing..." << std::endl;
     time_point start_polygon_preprocessing = clock_time::now();
 
+    inset_state.set_area_errors();
+    std::cerr << "Initial max. area err: "
+              << inset_state.max_area_error().value
+              << ", GeoDiv: " << inset_state.max_area_error().geo_div
+              << std::endl
+              << std::endl;
+
+    std::cout << "Intial Area: " << inset_state.total_inset_area()
+              << std::endl;
+
+    // for plotting area error, areas by integration
+    std::vector<double> area_errors, areas;
+    area_errors.push_back(inset_state.max_area_error().value);
+    areas.push_back(inset_state.total_inset_area());
+
     // Polygon Preprocessing
-    while (inset_state.n_finished_integrations() < 5) {
+    while (inset_state.n_finished_integrations() < 100) {
       std::cerr << "Integration number "
                 << inset_state.n_finished_integrations() << std::endl;
 
@@ -276,16 +292,68 @@ int main(const int argc, const char *argv[])
       inset_state.min_ellipses();
       inset_state.flatten_ellipse_density();
       inset_state.project_with_delaunay_t();
-
       inset_state.set_area_errors();
       std::cerr << "max. area err: " << inset_state.max_area_error().value
                 << ", GeoDiv: " << inset_state.max_area_error().geo_div
                 << std::endl
+                << "Area: " << inset_state.total_inset_area() << std::endl
+                << "Change in Area: "
+                << (inset_state.total_inset_area() -
+                    inset_state.initial_area()) *
+                     100 / inset_state.initial_area()
+                << "%" << std::endl
                 << std::endl;
+
+      areas.push_back(inset_state.total_inset_area());
+      area_errors.push_back(inset_state.max_area_error().value);
       inset_state.increment_integration();
+      // if max_area_error change from previous is not lower than 5% of
+      // previous area error, break
+      if (
+        inset_state.max_area_error().value >
+        0.95 * area_errors[area_errors.size() - 2]) {
+        break;
+      }
     }
-    duration_polygon_preprocessing += inMilliseconds(
-      clock_time::now() - start_polygon_preprocessing);
+
+    // build integration vector
+    std::vector<double> integrations(area_errors.size());
+    std::iota(integrations.begin(), integrations.end(), 0);
+
+    // plot area error and area by integration
+    matplot::plot(integrations, area_errors);
+    matplot::title(
+      "Area Error vs. Integration for " + inset_state.inset_name());
+    matplot::xlabel("Integration");
+    matplot::ylabel("Area Error");
+
+    matplot::save("area_error.svg");
+
+    // plot area by integration
+    matplot::plot(integrations, areas);
+    matplot::title("Area vs. Integration for " + inset_state.inset_name());
+    matplot::xlabel("Integration");
+    matplot::ylabel("Area");
+
+    matplot::save("area.svg");
+
+    if (plot_polygons) {
+
+      // Write PNG and PS files if requested by command-line option
+      std::string input_filename = inset_state.inset_name();
+      if (plot_graticule) {
+        input_filename +=
+          "_out_graticule_" +
+          std::to_string(inset_state.n_finished_integrations());
+      } else {
+        input_filename +=
+          "_out_" + std::to_string(inset_state.n_finished_integrations());
+      }
+      std::cerr << "Writing " << input_filename << std::endl;
+      inset_state.write_cairo_map(input_filename, plot_graticule);
+    }
+    duration_polygon_preprocessing +=
+      inMilliseconds(clock_time::now() - start_polygon_preprocessing);
 
     std::cerr << "Polygon Preprocessing finished." << std::endl << std::endl;
 
