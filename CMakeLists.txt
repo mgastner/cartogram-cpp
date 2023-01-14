@@ -20,14 +20,18 @@ endif()
 add_compile_options(-Wall -Wextra -pedantic)
 
 # Finding appropriate packages.
-find_package(OpenMP REQUIRED)
 find_package(PkgConfig REQUIRED)
+find_package(Matplot++ REQUIRED)
 
 # Finding and linking fftw, and cairo using PkgConfig.
 pkg_search_module(fftw REQUIRED fftw3 IMPORTED_TARGET)
 pkg_search_module(CAIRO REQUIRED CAIRO IMPORTED_TARGET)
 include_directories(PkgConfig::fftw PkgConfig::CAIRO)
-link_libraries(PkgConfig::fftw PkgConfig::CAIRO)
+
+include_directories(/opt/homebrew/Cellar/cgal/5.5.1/include)
+include_directories(/opt/homebrew/Cellar/boost/1.81.0/include)
+include_directories(/opt/homebrew/Cellar/cairo/1.16.0_5/include)
+include_directories(/opt/homebrew/Cellar/nlohmann-json/3.11.2/include)
 
 # Adding C++ files needed for compilation.
 add_executable(
@@ -91,7 +95,7 @@ target_link_libraries(
   cartogram
   PkgConfig::fftw
   PkgConfig::CAIRO
-  OpenMP::OpenMP_CXX
+  Matplot++::matplot
 )
 
 # Providing make with install target.
