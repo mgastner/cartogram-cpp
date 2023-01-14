@@ -327,7 +327,7 @@ int main(const int argc, const char *argv[])
     matplot::xlabel("Integration");
     matplot::ylabel("Area Error");
 
-    matplot::save("area_error.svg");
+    matplot::save("img/area_error.svg");
 
     // plot area by integration
     matplot::plot(integrations, areas);
@@ -335,7 +335,7 @@ int main(const int argc, const char *argv[])
     matplot::xlabel("Integration");
     matplot::ylabel("Area");
 
-    matplot::save("area.svg");
+    matplot::save("img/area.svg");
 
     if (plot_polygons) {
 
@@ -343,11 +343,11 @@ int main(const int argc, const char *argv[])
       std::string input_filename = inset_state.inset_name();
       if (plot_graticule) {
         input_filename +=
-          "_out_graticule_" +
+          "_preprocessing_graticule_" +
           std::to_string(inset_state.n_finished_integrations());
       } else {
         input_filename +=
-          "_out_" + std::to_string(inset_state.n_finished_integrations());
+          "_preprocessing_" + std::to_string(inset_state.n_finished_integrations());
       }
       std::cerr << "Writing " << input_filename << std::endl;
       inset_state.write_cairo_map(input_filename, plot_graticule);
