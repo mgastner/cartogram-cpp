@@ -114,6 +114,7 @@ public:
   std::vector<GeoDiv> geo_divs() const;
   void holes_inside_polygons();
   void increment_integration();
+  double initial_area() const;
   void initialize_cum_proj();
   void insert_color(const std::string &, Color);
   void insert_color(const std::string &, std::string);

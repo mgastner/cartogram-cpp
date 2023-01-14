@@ -241,6 +241,11 @@ std::string InsetState::inset_name() const
   return inset_name_;
 }
 
+double InsetState::initial_area() const
+{
+  return initial_area_;
+}
+
 bool InsetState::is_input_target_area_missing(const std::string &id) const
 {
   return is_input_target_area_missing_.at(id);
