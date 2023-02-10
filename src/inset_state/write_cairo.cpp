@@ -2,6 +2,7 @@
 #include "inset_state.h"
 #include <cairo/cairo-pdf.h>
 #include <cairo/cairo-ps.h>
+#include <cairo/cairo-svg.h>
 #include <iostream>
 
 void write_triangles_on_cairo_surface(cairo_t *cr, Delaunay &dt, color clr)
@@ -255,22 +256,22 @@ void InsetState::write_polygons_to_cairo_surface(
   }
 
   // Plot minimum ellipses
-  for (const auto &gd : geo_divs_) {
-    for (const auto &ell : gd.min_ellipses()) {
-      cairo_translate(cr, ell.center.x(), ly_ - ell.center.y());
-      cairo_rotate(cr, -ell.theta);
-      cairo_scale(cr, ell.semimajor, ell.semiminor);
-      cairo_arc(
-        cr,
-        0, //ly_ - ell.center.x(),
-        0, //ell.center.y(),
-        1, //std::max(ell.semimajor, ell.semiminor),
-        0,
-        2 * pi);
-      cairo_identity_matrix(cr);
-      cairo_stroke(cr);
-    }
-  }
+  // for (const auto &gd : geo_divs_) {
+  //   for (const auto &ell : gd.min_ellipses()) {
+  //     cairo_translate(cr, ell.center.x(), ly_ - ell.center.y());
+  //     cairo_rotate(cr, -ell.theta);
+  //     cairo_scale(cr, ell.semimajor, ell.semiminor);
+  //     cairo_arc(
+  //       cr,
+  //       0, //ly_ - ell.center.x(),
+  //       0, //ell.center.y(),
+  //       1, //std::max(ell.semimajor, ell.semiminor),
+  //       0,
+  //       2 * pi);
+  //     cairo_identity_matrix(cr);
+  //     cairo_stroke(cr);
+  //   }
+  // }
 }
 
 void write_vectors_to_cairo_surface(cairo_t *cr,
@@ -319,20 +320,21 @@ void InsetState::write_cairo_polygons_to_ps(const std::string &fname,
                                             std::unordered_map<Point, Point> &vectors)
 {
   const auto filename = fname.c_str();
-  cairo_surface_t *surface = cairo_ps_surface_create(filename, lx_, ly_);
+  // cairo_surface_t *surface = cairo_ps_surface_create(filename, lx_, ly_);
+  cairo_surface_t *surface = cairo_svg_surface_create(filename, lx_, ly_);
   cairo_t *cr = cairo_create(surface);
 
   // Add comments
   const std::string title = "%%Title: " + fname;
-  cairo_ps_surface_dsc_comment(surface, title.c_str());
-  cairo_ps_surface_dsc_comment(surface,
-                               "%%Creator: Michael T. Gastner et al.");
-  cairo_ps_surface_dsc_comment(surface,
-                               "%%For: Humanity");
-  cairo_ps_surface_dsc_comment(surface,
-                               "%%Copyright: License CC BY");
-  cairo_ps_surface_dsc_comment(surface,
-                               "%%Magnification: 1.0000");
+  // cairo_ps_surface_dsc_comment(surface, title.c_str());
+  // cairo_ps_surface_dsc_comment(surface,
+  //                              "%%Creator: Michael T. Gastner et al.");
+  // cairo_ps_surface_dsc_comment(surface,
+  //                              "%%For: Humanity");
+  // cairo_ps_surface_dsc_comment(surface,
+  //                              "%%Copyright: License CC BY");
+  // cairo_ps_surface_dsc_comment(surface,
+  //                              "%%Magnification: 1.0000");
   write_polygons_to_cairo_surface(cr,
                                   fill_polygons,
                                   colors,
@@ -351,7 +353,9 @@ void InsetState::write_cairo_map(const std::string &file_name,
                                  std::unordered_map<Point, Point> vectors)
 {
   const auto png_name = file_name + ".png";
-  const auto ps_name = file_name + ".ps";
+  // const auto ps_name = file_name + ".ps";
+  const auto ps_name = "maps/" +file_name + ".svg";
+  
 
   // Check whether the has all GeoDivs colored
   const bool has_colors = (colors_size() == n_geo_divs());
