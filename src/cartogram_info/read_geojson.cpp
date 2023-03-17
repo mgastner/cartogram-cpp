@@ -207,7 +207,17 @@ void CartogramInfo::read_geojson(
       const auto geometry = feature["geometry"];
       const bool is_polygon = (geometry["type"] == "Polygon");
       if (!make_csv) {
-
+        
+        // remove non characters from id_header_
+        std::string id_header = id_header_;
+        id_header.erase(
+          std::remove_if(
+            id_header.begin(),
+            id_header.end(),
+            [](unsigned char x) { return !std::isalnum(x); }),
+          id_header.end());
+        id_header_ = id_header;
+        
         // Store ID from properties
         const auto properties = feature["properties"];
         if (
