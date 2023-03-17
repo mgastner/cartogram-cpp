@@ -187,10 +187,10 @@ void InsetState::flatten_density()
       auxy[i][j] = -1e-8 * grid_fluxy_init(i, j);
     }
   }
-  std::string file_name = inset_name_ + "_ellipse_aux_" +
-                          std::to_string(n_finished_integrations_) + ".eps";
-  std::cerr << "Writing " << file_name << std::endl;
-  write_flux_to_eps(file_name, auxx, auxy);
+  // std::string file_name = inset_name_ + "_ellipse_aux_" +
+  //                         std::to_string(n_finished_integrations_) + ".eps";
+  // std::cerr << "Writing " << file_name << std::endl;
+  // write_flux_to_eps(file_name, auxx, auxy);
 
   //  for (unsigned int i = 0; i < lx_; ++i) {
   //    for (unsigned int j = 0; j < ly_; ++j) {
