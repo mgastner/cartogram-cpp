@@ -5,8 +5,32 @@ void InsetState::min_ellipses()
 {
   for (auto &gd : geo_divs_) {
     gd.clear_min_ellipses();
-    for (const auto &pwh : gd.polygons_with_holes()) {
-      auto ext_ring = pwh.outer_boundary();
+    for (auto &pwh : gd.polygons_with_holes()) {
+      auto ext_ring_actual = pwh.outer_boundary();
+      std::vector<double> x_coords;
+      std::vector<double> y_coords;
+      for (const auto &pt : ext_ring_actual) {
+        x_coords.push_back(pt.x());
+        y_coords.push_back(pt.y());
+      }
+      std::nth_element(
+        x_coords.begin(),
+        x_coords.begin() + x_coords.size() / 2,
+        x_coords.end());
+      std::nth_element(
+        y_coords.begin(),
+        y_coords.begin() + y_coords.size() / 2,
+        y_coords.end());
+        
+      double x_median = x_coords[x_coords.size() / 2];
+      double y_median = y_coords[y_coords.size() / 2];
+      
+      // Shift the polygon so that its median is at the origin
+      // This is necessary to avoid floating point errors
+      Polygon ext_ring;
+      for (const auto &v : ext_ring_actual) {
+        ext_ring.push_back(Point(v.x() - x_median, v.y() - y_median));
+      }
       Ellipse ell;
 
       // The minimum ellipse is not uniquely defined if there are fewer than
@@ -17,6 +41,10 @@ void InsetState::min_ellipses()
       if (ext_ring.size() < 6) {
         Min_circle mc(ext_ring.vertices_begin(), ext_ring.vertices_end());
         ell.center = mc.circle().center();
+        
+        // Shift the center back to the original coordinate system
+        ell.center =
+          Point(ell.center.x() + x_median, ell.center.y() + y_median);
         ell.semimajor = sqrt(mc.circle().squared_radius());
         ell.semiminor = ell.semimajor;
         ell.cos_theta = 1.0;
@@ -54,6 +82,11 @@ void InsetState::min_ellipses()
         ell.center = Point(
           ((2 * c * d) - (b * e)) / denom,
           ((2 * a * e) - (b * d)) / denom);
+          
+        // Shift the center back to the original coordinate system
+        ell.center =
+          Point(ell.center.x() + x_median, ell.center.y() + y_median);
+
         double theta = (a < c) ? 0.0 : pi / 2;
         if (b != 0.0) {
           theta = atan((c - a - inner_sqrt) / b);
