@@ -53,7 +53,7 @@ void InsetState::adjust_for_dual_hemisphere()
     for (auto &gd : geo_divs_) {
 
       // Iterate over Polygon_with_holes
-      for (auto &pwh : *gd.ref_to_polygons_with_holes()) {
+      for (auto &pwh : gd.ref_to_polygons_with_holes()) {
         auto *outer_boundary = &pwh.outer_boundary();
 
         // If pwh is in the western hemisphere

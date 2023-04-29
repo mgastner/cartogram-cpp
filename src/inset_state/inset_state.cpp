@@ -123,9 +123,8 @@ Bbox InsetState::bbox(bool original_bbox) const
   double inset_ymin = dbl_inf;
   double inset_ymax = -dbl_inf;
 #pragma omp parallel for default(none) shared(geo_divs) \
-  reduction(min                                         \
-            : inset_xmin, inset_ymin) reduction(max     \
-                                                : inset_xmax, inset_ymax)
+  reduction(min : inset_xmin, inset_ymin)               \
+  reduction(max : inset_xmax, inset_ymax)
   for (const auto &gd : geo_divs) {
     for (const auto &pwh : gd.polygons_with_holes()) {
       const auto bb = pwh.bbox();
@@ -402,7 +401,8 @@ void InsetState::set_area_errors()
   double sum_target_area = 0.0;
   double sum_cart_area = 0.0;
 
-// #pragma omp parallel for default(none) reduction(+ : sum_target_area, sum_cart_area)
+  // #pragma omp parallel for default(none) reduction(+ : sum_target_area,
+  // sum_cart_area)
   for (const auto &gd : geo_divs_) {
     sum_target_area += target_area_at(gd.id());
     sum_cart_area += gd.area();
@@ -486,7 +486,7 @@ void InsetState::transform_points(
   for (auto &gd : geo_divs) {
 
     // Iterate over Polygon_with_holes
-    for (auto &pwh : *gd.ref_to_polygons_with_holes()) {
+    for (auto &pwh : gd.ref_to_polygons_with_holes()) {
 
       // Get outer boundary
       auto &outer_boundary = *(&pwh.outer_boundary());

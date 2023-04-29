@@ -65,7 +65,7 @@ void InsetState::rescale_map(
     CGAL::Vector_2<Scd>(-new_xmin, -new_ymin));
   const Transformation scale(CGAL::SCALING, (1.0 / latt_const));
   for (auto &gd : geo_divs_) {
-    for (auto &pwh : *gd.ref_to_polygons_with_holes()) {
+    for (auto &pwh : gd.ref_to_polygons_with_holes()) {
       auto *ext_ring = &pwh.outer_boundary();
       *ext_ring = transform(translate, *ext_ring);
       *ext_ring = transform(scale, *ext_ring);
@@ -97,7 +97,7 @@ void InsetState::normalize_inset_area(
       -(bb.ymin() + bb.ymax()) / 2));
   const Transformation scale(CGAL::SCALING, scale_factor);
   for (auto &gd : geo_divs_) {
-    for (auto &pwh : *gd.ref_to_polygons_with_holes()) {
+    for (auto &pwh : gd.ref_to_polygons_with_holes()) {
       auto *ext_ring = &pwh.outer_boundary();
       *ext_ring = transform(translate, *ext_ring);
       *ext_ring = transform(scale, *ext_ring);

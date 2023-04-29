@@ -1,8 +1,8 @@
 #ifndef GEO_DIV_H_
 #define GEO_DIV_H_
 
-#include "ellipse.h"
 #include "cgal_typedef.h"
+#include "ellipse.h"
 #include "intersection.h"
 #include "pwh.h"
 #include <string>
@@ -34,8 +34,8 @@ public:
     const Polygon_with_holes &) const;
   [[nodiscard]] std::vector<Polygon_with_holes> polygons_with_holes() const;
   void push_back_ellipse(Ellipse);
-  void push_back_polygon_with_holes(const Polygon_with_holes&);
-  std::vector<Polygon_with_holes> *ref_to_polygons_with_holes();
+  void push_back_polygon_with_holes(const Polygon_with_holes &);
+  std::vector<Polygon_with_holes> &ref_to_polygons_with_holes();
   void sort_pwh_descending_by_area();
 };
 

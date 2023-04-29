@@ -46,7 +46,7 @@ void InsetState::simplify(const unsigned int target_points_per_inset)
   // Store simplified polygons
   pgn_id = 0;
   for (auto &gd : geo_divs_) {
-    for (auto &pwh : *gd.ref_to_polygons_with_holes()) {
+    for (auto &pwh : gd.ref_to_polygons_with_holes()) {
       auto cit = pgn_id_to_constraint_id[pgn_id++];
 
       Polygon ext_ring;

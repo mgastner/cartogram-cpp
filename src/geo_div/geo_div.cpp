@@ -171,9 +171,9 @@ void GeoDiv::push_back_polygon_with_holes(const Polygon_with_holes &pwh)
   polygons_with_holes_.push_back(pwh);
 }
 
-std::vector<Polygon_with_holes> *GeoDiv::ref_to_polygons_with_holes()
+std::vector<Polygon_with_holes> &GeoDiv::ref_to_polygons_with_holes()
 {
-  return &polygons_with_holes_;
+  return polygons_with_holes_;
 }
 
 void GeoDiv::sort_pwh_descending_by_area()
