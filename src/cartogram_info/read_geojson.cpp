@@ -137,8 +137,7 @@ std::pair<GeoDiv, bool> json_to_geodiv(
     const Polygon_with_holes pwh(
       ext_ring,
       int_ring_v.begin(),
-      int_ring_v.end()
-    );
+      int_ring_v.end());
     gd.push_back_polygon_with_holes(pwh);
   }
   return {gd, erico};
@@ -207,17 +206,19 @@ void CartogramInfo::read_geojson(
       const auto geometry = feature["geometry"];
       const bool is_polygon = (geometry["type"] == "Polygon");
       if (!make_csv) {
-        
+
         // remove non characters from id_header_
         std::string id_header = id_header_;
         id_header.erase(
           std::remove_if(
             id_header.begin(),
             id_header.end(),
-            [](unsigned char x) { return !std::isalnum(x); }),
+            [](unsigned char x) {
+              return x < 0 || x > 127;
+            }),
           id_header.end());
         id_header_ = id_header;
-        
+
         // Store ID from properties
         const auto properties = feature["properties"];
         if (
