@@ -16,8 +16,18 @@ if(NOT CMAKE_BUILD_TYPE)
   set(CMAKE_BUILD_TYPE "Release" CACHE STRING "" FORCE)
 endif()
 
+# Add Boost include directories using the -isystem flag for GCC and Clang
+if(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
+  set(BOOST_INCLUDE_DIR "/opt/homebrew/Cellar/boost/1.81.0/include")
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -isystem ${BOOST_INCLUDE_DIR}")
+  set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -isystem ${BOOST_INCLUDE_DIR}")
+elseif(MSVC)
+  set(BOOST_INCLUDE_DIR "C:/path/to/boost") # Update this path to your Boost include directory
+  add_compile_options(/external:I ${BOOST_INCLUDE_DIR})
+endif()
+
 # Lots of warnings.
-add_compile_options(-Wall -Wextra -pedantic)
+add_compile_options(-Wall -Wextra -pedantic -Wno-deprecated-declarations)
 
 # Finding appropriate packages.
 find_package(PkgConfig REQUIRED)
@@ -27,11 +37,6 @@ find_package(Matplot++ REQUIRED)
 pkg_search_module(fftw REQUIRED fftw3 IMPORTED_TARGET)
 pkg_search_module(CAIRO REQUIRED CAIRO IMPORTED_TARGET)
 include_directories(PkgConfig::fftw PkgConfig::CAIRO)
-
-include_directories(/opt/homebrew/Cellar/cgal/5.5.1/include)
-include_directories(/opt/homebrew/Cellar/boost/1.81.0/include)
-include_directories(/opt/homebrew/Cellar/cairo/1.16.0_5/include)
-include_directories(/opt/homebrew/Cellar/nlohmann-json/3.11.2/include)
 
 # Adding C++ files needed for compilation.
 add_executable(
