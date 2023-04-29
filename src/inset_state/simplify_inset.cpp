@@ -4,85 +4,6 @@
 #include "constants.h"
 #include "inset_state.h"
 
-// We use -1 to signal that there is no simplified polygon that can be matched
-// with a given non-simplified polygon
-constexpr int no_matching_simpl_pgn = -1;
-
-bool contains_vertices_in_order(
-  const Polygon &non_simpl_pgn,
-  const Polygon &simpl_pgn,
-  const Bbox &simpl_bb)
-{
-  // Return true if and only if
-  // - the non-simplified polygon contains all vertices in the simplified
-  //   polygon and
-  // - the order of the vertices in both polygons match.
-  // We pass the bounding box of the simplified polygon as an argument so that
-  // we do not need to construct the bounding box in this function.
-  if (non_simpl_pgn.size() < simpl_pgn.size()) {
-    return false;  // Simplification cannot create additional vertices
-  }
-
-  // If the two bounding boxes neither touch nor overlap, then the
-  // non-simplified polygon does not contain the vertices of the simplified
-  // polygon. For the if-condition, see:
-  // https://stackoverflow.com/questions/325933/determine-whether-two-date-
-  // ranges-overlap/325964#325964 (accessed on 2021-10-05).
-  const auto non_simpl_bb = non_simpl_pgn.bbox();
-  if (
-    non_simpl_bb.xmax() < simpl_bb.xmin() ||
-    non_simpl_bb.xmin() > simpl_bb.xmax() ||
-    non_simpl_bb.ymax() < simpl_bb.ymin() ||
-    non_simpl_bb.ymin() > simpl_bb.ymax()) {
-    return false;
-  }
-
-  // Check whether the vertices of the simplified polygon are contained in the
-  // non-simplified polygon efficiently
-  for (std::size_t i = 0, j = 0; i < simpl_pgn.size(); ++i) {
-    Point sim_pt = simpl_pgn[i];
-
-    // Find the vertex in the non-simplified polygon to the right
-    for (; j < non_simpl_pgn.size(); ++j) {
-      Point non_sim_pt = non_simpl_pgn[j];
-      if (sim_pt == non_sim_pt) {
-        break;
-      }
-    }
-
-    // If the vertex is not contained on the right side of non-simplified
-    // polygon, we know that the order of the vertices in the simplified
-    // polygon does not match the order in the non-simplified one.
-    if (j == non_simpl_pgn.size()) {
-      return false;
-    }
-  }
-  return true;
-}
-
-int simplified_polygon_index(
-  const Polygon &non_simpl_pgn,
-  const std::vector<Polygon> *simpl_pgns,
-  const std::vector<Bbox> *simpl_bboxes,
-  std::list<unsigned int> *unmatched)
-{
-  // Return index of simplified polygon that corresponds to a non-simplified
-  // polygon. We pass a vector of the bounding boxes of the simplified
-  // polygons as an argument so that the bounding boxes do not need to be
-  // calculated repeatedly. We maintain a list of hitherto unmatched polygon
-  // indices to avoid unnecessary iterations.
-  for (const auto &i : *unmatched) {
-    if (contains_vertices_in_order(
-          non_simpl_pgn,
-          simpl_pgns->at(i),
-          simpl_bboxes->at(i))) {
-      unmatched->remove(i);
-      return static_cast<int>(i);
-    }
-  }
-  return no_matching_simpl_pgn;
-}
-
 void InsetState::simplify(const unsigned int target_points_per_inset)
 {
   const unsigned int n_pts_before = n_points();
@@ -95,87 +16,80 @@ void InsetState::simplify(const unsigned int target_points_per_inset)
 
   // Store Polygons as a CT (Constrained Triangulation) object. Code inspired
   // by https://doc.cgal.org/latest/Polyline_simplification_2/index.html
+  std::unordered_map<int, Constraint_id> pgn_id_to_constraint_id;
+  int pgn_id = 0;
   CT ct;
   for (const auto &gd : geo_divs_) {
     for (const auto &pwh : gd.polygons_with_holes()) {
-      ct.insert_constraint(pwh.outer_boundary());
+      pgn_id_to_constraint_id[pgn_id++] =
+        ct.insert_constraint(pwh.outer_boundary());
+      if (!pwh.outer_boundary().is_simple()) {
+        std::cerr << "ERROR: Outer boundary is not simple." << std::endl;
+        exit(1);
+      }
       for (auto h = pwh.holes_begin(); h != pwh.holes_end(); ++h) {
-        ct.insert_constraint(*h);
+        if (!h->is_simple()) {
+          std::cerr << "ERROR: Hole is not simple." << std::endl;
+          exit(1);
+        }
+        pgn_id_to_constraint_id[pgn_id++] = ct.insert_constraint(*h);
       }
     }
   }
-
+  
   // Simplify polygons
   const unsigned long target_pts =
     std::max(target_points_per_inset, min_points_per_ring * n_rings());
   const double ratio = static_cast<double>(target_pts) / n_pts_before;
   CGAL::Polyline_simplification_2::simplify(ct, Cost(), Stop(ratio));
 
-  // Store each constraint in ct as a polygon. Also store bounding box so
-  // that we can match non-simplified and simplified polygons more quickly.
-  std::vector<Polygon> simpl_pgns;
-  std::vector<Bbox> simpl_bboxes;
-  for (auto it = ct.constraints_begin(); it != ct.constraints_end(); ++it) {
-
-    // First and last point in the constraint are identical. We remove the
-    // last point to make the polygon simple.
-    const Polygon ct_as_pgn(
-      ct.points_in_constraint_begin(*it),
-      --ct.points_in_constraint_end(*it));
-    simpl_pgns.push_back(ct_as_pgn);
-    simpl_bboxes.push_back(ct_as_pgn.bbox());
-  }
-
-  // Match non-simplified polygon to its simplified counterpart
-  std::list<unsigned int> unmatched(
-    boost::counting_iterator<unsigned int>(0U),
-    boost::counting_iterator<unsigned int>(simpl_pgns.size()));
-  std::vector<int> matching_simpl_pgn;
-  for (const auto &gd : geo_divs_) {
-    for (const auto &pwh : gd.polygons_with_holes()) {
-      const int ext_index = simplified_polygon_index(
-        pwh.outer_boundary(),
-        &simpl_pgns,
-        &simpl_bboxes,
-        &unmatched);
-      matching_simpl_pgn.push_back(ext_index);
-      for (auto h = pwh.holes_begin(); h != pwh.holes_end(); ++h) {
-        const int hole_index =
-          simplified_polygon_index(*h, &simpl_pgns, &simpl_bboxes, &unmatched);
-        matching_simpl_pgn.push_back(hole_index);
-      }
-    }
-  }
-
-  // Sanity check
-  if (
-    std::find(
-      matching_simpl_pgn.begin(),
-      matching_simpl_pgn.end(),
-      no_matching_simpl_pgn) != matching_simpl_pgn.end() ||
-    !unmatched.empty()) {
-    std::cerr << "ERROR: Unmatched polygon in " << __func__ << "()."
-              << std::endl;
-    for (const auto &u : unmatched) {
-      std::cerr << "Unmatched polygon: " << u << std::endl;
-      for (const auto &pt : simpl_pgns[u]) {
-        std::cerr << pt << std::endl;
-      }
-    }
-    exit(1);
-  }
-
-  // Replace non-simplified polygons by their simplified counterparts
-  unsigned int pgn_ctr = 0;
+  // Store simplified polygons
+  pgn_id = 0;
   for (auto &gd : geo_divs_) {
     for (auto &pwh : *gd.ref_to_polygons_with_holes()) {
-      const unsigned int match_outer = matching_simpl_pgn[pgn_ctr++];
-      pwh.outer_boundary() = simpl_pgns[match_outer];
-      for (auto h = pwh.holes_begin(); h != pwh.holes_end(); ++h) {
-        const unsigned int match_hole = matching_simpl_pgn[pgn_ctr++];
-        *h = simpl_pgns[match_hole];
+      auto cit = pgn_id_to_constraint_id[pgn_id++];
+
+      Polygon ext_ring;
+      for (auto it = ct.vertices_in_constraint_begin(cit);
+           it != ct.vertices_in_constraint_end(cit);
+           ++it) {
+        ext_ring.push_back(((*it)->point()));
       }
+
+      // remove the last point which is identitcal to the first point to
+      // make it a simple polygon
+      ext_ring.erase(ext_ring.vertices_end() - 1);
+
+      if (!ext_ring.is_simple()) {
+        std::cerr << "ERROR: Ext Simplified polygon is not simple."
+                  << std::endl;
+        exit(1);
+      }
+      std::vector<Polygon> int_ring_v;
+      for (auto h = pwh.holes_begin(); h != pwh.holes_end(); ++h) {
+        cit = pgn_id_to_constraint_id[pgn_id++];
+        Polygon int_ring;
+        for (auto it = ct.vertices_in_constraint_begin(cit);
+             it != ct.vertices_in_constraint_end(cit);
+             ++it) {
+          int_ring.push_back(((*it)->point()));
+        }
+
+        // remove the last point which is identitcal to the first point to
+        // make it a simple polygon
+        int_ring.erase(int_ring.vertices_end() - 1);
+        if (!int_ring.is_simple()) {
+          std::cerr << "ERROR: Int Simplified polygon is not simple."
+                    << std::endl;
+          exit(1);
+        }
+        int_ring_v.push_back(int_ring);
+      }
+      Polygon_with_holes pgnwh =
+        Polygon_with_holes(ext_ring, int_ring_v.begin(), int_ring_v.end());
+      pwh = pgnwh;
     }
   }
-  std::cerr << n_points() << " points after simplification." << std::endl;
+  std::cerr << n_points() << " points after simplification."
+            << std::endl;
 }
