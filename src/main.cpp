@@ -279,6 +279,17 @@ int main(const int argc, const char *argv[])
     area_errors.push_back(inset_state.max_area_error().value);
     areas.push_back(inset_state.total_inset_area());
 
+    {
+      std::string output_filename = inset_state.inset_name();
+      output_filename += "_before_" +
+                         std::to_string(inset_state.n_finished_integrations());
+      std::cerr << "Writing " << output_filename << std::endl;
+      cart_info.write_geojson(
+        geo_file_name,
+        output_filename + ".geojson",
+        output_to_stdout);
+    }
+
     // Polygon Preprocessing
     while (inset_state.n_finished_integrations() < 10) {
       std::cerr << "Polygon Preprocessing Integration number "
@@ -287,6 +298,7 @@ int main(const int argc, const char *argv[])
       inset_state.create_delaunay_t();
       inset_state.min_ellipses();
       inset_state.flatten_ellipse_density();
+      inset_state.densify_geo_divs_using_delaunay_t();
       inset_state.project_with_delaunay_t();
       inset_state.simplify(target_points_per_inset);
       inset_state.set_area_errors();
@@ -312,6 +324,17 @@ int main(const int argc, const char *argv[])
         0.95 * area_errors[area_errors.size() - 2]) {
         break;
       }
+    }
+
+    {
+      std::string output_filename = inset_state.inset_name();
+      output_filename += "_preprocessing_" +
+                         std::to_string(inset_state.n_finished_integrations());
+      std::cerr << "Writing " << output_filename << std::endl;
+      cart_info.write_geojson(
+        geo_file_name,
+        output_filename + ".geojson",
+        output_to_stdout);
     }
 
     // build integration vector
