@@ -247,7 +247,6 @@ void InsetState::flatten_ellipse_density()
   
   double rho_mean = (1.0 - (initial_area_ / (lx_ * ly_))) /
                     (1.0 - (total_inset_area() / (lx_ * ly_)));
-  std::cerr << "rho_mean = " << rho_mean << std::endl;
 
   // Determine attenuation factor nu that keeps density changes caused by
   // any ellipse within a fraction f of the mean density.
@@ -290,7 +289,7 @@ void InsetState::flatten_ellipse_density()
     ell_density_prefactors.begin(),
     ell_density_prefactors.end());
 
-  std::cout << "rho_min = " << rho_min << ", rho_max = " << rho_max
+  std::cout << "delta_min = " << rho_min << ", delta_max = " << rho_max
             << std::endl;
   std::cout << "rho_mean = " << rho_mean << std::endl;
 
