@@ -1,5 +1,8 @@
 # cartogram-cpp [![DOI](https://zenodo.org/badge/281575635.svg)](https://zenodo.org/badge/latestdoi/281575635) [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](./LICENSE)
 
+<p align="center">
+<img src ="img/gocart_logo.svg" width="65%">
+</p>
 
 Cartogram generator in C++
 
@@ -77,7 +80,7 @@ For posterity: Once version 5.3 is available through apt (you may check [here](h
         ./configure
         make
         sudo make install
-        
+
 #### Installing CairoGraphics
 
 [CairoGraphics Homepage](https://www.cairographics.org/)
