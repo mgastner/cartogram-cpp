@@ -50,4 +50,3 @@ to
 ## russia_population_2010.csv
 Source: Russian Federal State Statistics Service. 2010 All-Russian Population Census. Downloaded 30 June 2022 from https://en.wikipedia.org/wiki/List_of_federal_subjects_of_Russia_by_population#cite_note-2010Census-3.
 
-

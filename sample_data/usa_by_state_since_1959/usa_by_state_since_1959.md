@@ -4,7 +4,7 @@
 Runfola D, Anderson A, Baier H, Crittenden M, Dowker E, Fuhrig S, et al. (2020) 
 geoBoundaries: A global database of political administrative boundaries. 
 PLoS ONE 15(4): e0231866. https://doi.org/10.1371/journal.pone.0231866.
-Downloaded from: https://github.com/wmgeolab/geoBoundaries/tree/main/releaseData/gbOpen/USA/ADM1 on 4 July 2022.
+Downloaded from: https://github.com/wmgeolab/geoBoundaries/blob/main/releaseData/gbOpen/USA/ADM1/geoBoundaries-USA-ADM1_simplified.geojson on 4 July 2022.
 
 ### Code for simplification
 ```
@@ -24,8 +24,8 @@ geojson_write(
   convert_wgs84 = FALSE,
   crs = NULL)
 ```
-## usa_population_2022.csv
-Source: The United States Census Bureau. Downloaded 30 June 2022 from https://www.census.gov/data.html.
+## usa_population_2020.csv
+Source: The United States Census Bureau. Downloaded 30 June 2022 from https://www2.census.gov/programs-surveys/popest/tables/2020-2021/counties/totals/co-est2021-pop.xlsx.
 
 
 
