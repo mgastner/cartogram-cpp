@@ -1,7 +1,6 @@
 # cartogram-cpp: Cartogram generator in C++ [![DOI](https://zenodo.org/badge/281575635.svg)](https://zenodo.org/badge/latestdoi/281575635) [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](./LICENSE)
 
 <p align="center">
-<img src ="img/gocart_logo.svg" width="65%">
     <a href="https://go-cart.io"><img src ="img/gocart_logo.svg" width="65%"></a>
 </p>
 
