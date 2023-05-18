@@ -299,7 +299,7 @@ void InsetState::write_cairo_polygons_to_ps(
   cairo_destroy(cr);
 }
 
-// TODO: DO WE NEED THIS FUNCTION? WOULD IT NOT MAKE MORE SENSE TO ONLY PRINT
+// TODO: DO WE NEED THIS FUNCTION? WOULD IT NOT MAKE MORE SENSE TO PRINT ONLY
 // FILE TYPES INDICATED BY COMMAND-LINE FLAGS?
 // Outputs both png and ps files
 void InsetState::write_cairo_map(
