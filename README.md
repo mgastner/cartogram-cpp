@@ -1,7 +1,8 @@
 # cartogram-cpp: Cartogram generator in C++ [![DOI](https://zenodo.org/badge/281575635.svg)](https://zenodo.org/badge/latestdoi/281575635) [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](./LICENSE)
 
 <p align="center">
-<img src ="img/gocart_logo.svg" width="50%">
+<img src ="img/gocart_logo.svg" width="65%">
+    <a href="https://go-cart.io"><img src ="img/gocart_logo.svg" width="65%"></a>
 </p>
 
 This program uses the fast flow-based method developed by Michael T. Gastner, Vivien Seguy, and Pratyush More. For more information, you may refer to the following [paper](https://www.pnas.org/content/115/10/E2156):
