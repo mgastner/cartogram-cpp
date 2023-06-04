@@ -78,7 +78,7 @@ void CartogramInfo::replace_missing_and_zero_target_areas()
   // Calculate threshold for small target areas. For GeoDivs below this
   // threshold, the target area is scaled up for easier calculation.
   const double small_target_area_threshold =
-    total_target_area_with_data * small_area_threshold_frac;
+    total_target_area_with_data * 0.0001;
 
   // Check whether target areas exist that are missing or very small
   bool small_target_area_exists = false;
