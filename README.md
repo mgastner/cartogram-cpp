@@ -104,6 +104,7 @@ Using lesser cores than you have is recommended so that your computer still has 
 - If compilation suddenly stopped working for you, you may remove the `build` directory with `rm -rf build` and run the installation commands again.
 - If running `cmake -B build` gives you an error, it is likely that a dependency was not installed correctly. Rerun the appropriate commands above to install the required dependencies and try again.
 - If you get an error which mentions permission issues, try running the command that gave you the error with `sudo` prefixed, as done with `sudo make install -C build` above.
+- If `cmake` complains that it could not find a particular library, please try uninstalling it and installing it again. After reinstalling it, please also unlink it and link it with the `--force` flag.
 
 ### Usage
 
