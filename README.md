@@ -24,7 +24,7 @@ Install [homebrew](brew.sh) by running the following command:
 
 Install llvm, pkg-config, boost, fftw, cgal, nlohmann-json, and cmake by running the following command:
 
-    brew install llvm libomp pkg-config boost fftw cgal nlohmann-json cmake cairo
+    brew install llvm@13 libomp pkg-config boost fftw cgal nlohmann-json cmake cairo
 
 ### Debian-based distributions (Ubuntu, Arch Linux etc.)
 
@@ -83,7 +83,7 @@ For posterity: Once version 5.3 is available through apt (you may check [here](h
 
 [CairoGraphics Homepage](https://www.cairographics.org/)
 
-    sudo apt install libcairo2-dev        
+    sudo apt install libcairo2-dev
 
 
 ### Installation
@@ -105,6 +105,7 @@ Using lesser cores than you have is recommended so that your computer still has 
 - If compilation suddenly stopped working for you, you may remove the `build` directory with `rm -rf build` and run the installation commands again.
 - If running `cmake -B build` gives you an error, it is likely that a dependency was not installed correctly. Rerun the appropriate commands above to install the required dependencies and try again.
 - If you get an error which mentions permission issues, try running the command that gave you the error with `sudo` prefixed, as done with `sudo make install -C build` above.
+- If `cmake` complains that it could not find a particular library, please try uninstalling it and installing it again. After reinstalling it, please also unlink it and link it with the `--force` flag.
 
 ### Usage
 
