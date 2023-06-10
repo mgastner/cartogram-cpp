@@ -16,6 +16,7 @@ Point point_after_smyth_craster_projection(Point p1)
 
 void InsetState::apply_smyth_craster_projection()
 {
+  std::cerr << "Applying Smyth-Craster projection." << std::endl;
   transform_points(point_after_smyth_craster_projection);
   return;
 }
