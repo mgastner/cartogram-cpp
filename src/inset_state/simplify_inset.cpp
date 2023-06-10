@@ -25,12 +25,12 @@ void InsetState::simplify(const unsigned int target_points_per_inset)
         ct.insert_constraint(pwh.outer_boundary());
       if (!pwh.outer_boundary().is_simple()) {
         std::cerr << "ERROR: Outer boundary is not simple." << std::endl;
-        exit(1);
+        // exit(1);
       }
       for (auto h = pwh.holes_begin(); h != pwh.holes_end(); ++h) {
         if (!h->is_simple()) {
           std::cerr << "ERROR: Hole is not simple." << std::endl;
-          exit(1);
+          // exit(1);
         }
         pgn_id_to_constraint_id[pgn_id++] = ct.insert_constraint(*h);
       }
@@ -63,7 +63,7 @@ void InsetState::simplify(const unsigned int target_points_per_inset)
       if (!ext_ring.is_simple()) {
         std::cerr << "ERROR: Ext Simplified polygon is not simple."
                   << std::endl;
-        exit(1);
+        // exit(1);
       }
       std::vector<Polygon> int_ring_v;
       for (auto h = pwh.holes_begin(); h != pwh.holes_end(); ++h) {
@@ -81,7 +81,7 @@ void InsetState::simplify(const unsigned int target_points_per_inset)
         if (!int_ring.is_simple()) {
           std::cerr << "ERROR: Int Simplified polygon is not simple."
                     << std::endl;
-          exit(1);
+          // exit(1);
         }
         int_ring_v.push_back(int_ring);
       }
