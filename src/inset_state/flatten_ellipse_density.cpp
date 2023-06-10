@@ -1,6 +1,9 @@
 #include "constants.h"
 #include "inset_state.h"
 
+// Get GeoDiv name from polygon id
+std::vector<std::string> pgn_to_geo;
+
 void InsetState::min_ellipses()
 {
   for (auto &gd : geo_divs_) {
@@ -279,6 +282,9 @@ void InsetState::flatten_ellipse_density()
       ell_density_prefactors.push_back(
         ellipse_density_prefactor(rho_p, rho_mean, pwh_area, nu) /
         (ell.semimajor * ell.semiminor));
+        
+      // Fill pgn_to_geo
+      pgn_to_geo.push_back(gd.id());
     }
   }
 
@@ -289,10 +295,12 @@ void InsetState::flatten_ellipse_density()
     ell_density_prefactors.begin(),
     ell_density_prefactors.end());
 
-  std::cout << "delta_min = " << rho_min << ", delta_max = " << rho_max
+  std::cerr << "delta_min = " << rho_min << ", delta_max = " << rho_max
             << std::endl;
-  std::cout << "rho_mean = " << rho_mean << std::endl;
+  std::cerr << "rho_mean = " << rho_mean << std::endl;
 
+  // cerr previous nu
+  std::cerr << "previous nu = " << nu << std::endl;
   // Update the prefactor densities
   double acceptable_max = nu * rho_mean;
   if (rho_max > acceptable_max) {
@@ -301,8 +309,37 @@ void InsetState::flatten_ellipse_density()
       nu = nu_max;
     }
   }
-
-  std::cerr << "nu = " << nu << std::endl;
+  
+  // find the print the polygon name with max and min density, and the densities
+  int mx_pgn_index = std::max_element(
+    ell_density_prefactors.begin(),
+    ell_density_prefactors.end()) -
+                     ell_density_prefactors.begin();
+                     
+  std::cerr << "Max delta rho: " << ell_density_prefactors[mx_pgn_index]
+            << ", GeoDiv: " << pgn_to_geo[mx_pgn_index] << std::endl;
+            
+  // print top 5 polygons with most delta rho
+  // make vector of pairs <density, polygon name>
+  std::vector<std::pair<double, std::string>> pgn_density;
+  for (unsigned int i = 0; i < ell_density_prefactors.size(); ++i) {
+    pgn_density.push_back(
+      std::make_pair(ell_density_prefactors[i], pgn_to_geo[i]));
+  }
+  // sort the vector
+  std::sort(
+    pgn_density.begin(),
+    pgn_density.end(),
+    std::greater<std::pair<double, std::string>>());
+    
+  // print the top 5
+  std::cerr << "Top 5 Polygons with most Delta Rho:" << std::endl;
+  for (int i = 0; i < std::min(5, (int)ell_density_prefactors.size()); ++i) {
+    std::cerr << pgn_density[i].second << ": " << pgn_density[i].first
+              << std::endl;
+  }
+  
+  std::cerr << "Adjusted nu = " << nu << std::endl;
   for (unsigned int pgn_index = 0; pgn_index < ell_density_prefactors.size();
        ++pgn_index) {
     ell_density_prefactors[pgn_index] *= nu;
@@ -353,6 +390,17 @@ void InsetState::flatten_ellipse_density()
   double t = 0.0;
   double delta_t = 1e-2;  // Initial time step.
   unsigned int iter = 0;
+  
+  // print the corner points flux of flux_mp
+  // std::cerr << "flux_mp corner points:" << std::endl;
+  // for (const auto &[key, val] : proj_qd_.triangle_transformation) {
+  //   // make 0
+  //   if(key.x() == 0 || key.x() == lx_ || key.y() == 0 || key.y() == ly_) {
+  //    // if close to 0 using EPS
+  //    if(abs(val.x()) < 1e-9) flux_mp[key] = Point(0, flux_mp[key].y());
+  //    if(abs(val.y()) < 1e-9) flux_mp[key] = Point(flux_mp[key].x(), 0);
+  //   }
+  // }
 
   // write_cairo_map(
   //   inset_name() + "_" + std::to_string(n_finished_integrations()) +
