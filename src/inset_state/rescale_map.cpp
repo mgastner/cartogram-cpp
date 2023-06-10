@@ -5,7 +5,7 @@ void InsetState::rescale_map(
   unsigned int max_n_grid_rows_or_cols,
   bool is_world_map)
 {
-  double padding = (is_world_map ? 1.0 : padding_unless_world);
+  double padding = (is_world_map ? 1.1 : padding_unless_world);
   Bbox bb;
   if (is_world_map) {
 
@@ -14,6 +14,7 @@ void InsetState::rescale_map(
     // TODO: It would be more self-documenting to replace (-2.50663, -1.25331)
     // with point_after_smyth_craster_projection(Point(-180.0, -90.0)) and
     // similarly for the other two bounding box coordinate
+    std::cerr << "Rescaling world map..." << std::endl;
     bb = Bbox(-2.50663, -1.25331, 2.50663, 1.25331);
   } else {
     bb = bbox();
@@ -75,6 +76,9 @@ void InsetState::rescale_map(
       }
     }
   }
+  
+  // Transformed Bounding Box:
+  std::cerr << "New bounding box: " << bbox() << std::endl;
 }
 
 void InsetState::normalize_inset_area(
