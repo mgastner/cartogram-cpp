@@ -75,10 +75,23 @@ void CartogramInfo::replace_missing_and_zero_target_areas()
     }
   }
 
+  std::cerr << "Total start area with data: " << total_start_area_with_data
+            << std::endl;
+  std::cerr << "Total target area with data: " << total_target_area_with_data
+            << std::endl;
+
+  const double mean_density =
+    total_target_area_with_data / total_start_area_with_data;
+
+  std::cerr << "Mean density: " << mean_density << std::endl;
+
   // Calculate threshold for small target areas. For GeoDivs below this
   // threshold, the target area is scaled up for easier calculation.
   const double small_target_area_threshold =
     total_target_area_with_data * small_area_threshold_frac;
+
+  std::cerr << "Small target area threshold: " << small_target_area_threshold
+            << std::endl;
 
   // Check whether target areas exist that are missing or very small
   bool small_target_area_exists = false;
@@ -135,13 +148,22 @@ void CartogramInfo::replace_missing_and_zero_target_areas()
         if (
           (target_area >= 0.0) &&
           (target_area <= small_target_area_threshold)) {
-          inset_state.replace_target_area(gd.id(), replacement_target_area);
+
+          // Do not let the replacement target area be smaller than the
+          // GeoDiv's target area
+          double gd_specific_replacement_target_area = std::max(
+            std::min(replacement_target_area, gd.area() * mean_density),
+            target_area);
+          inset_state.replace_target_area(
+            gd.id(),
+            gd_specific_replacement_target_area);
           std::cerr << gd.id() << ": " << target_area << " to "
-                    << replacement_target_area << std::endl;
+                    << gd_specific_replacement_target_area
+                    << " Area: " << gd.area() << "\n";
 
           // Update total target area
           total_target_area_with_data +=
-            (replacement_target_area - target_area);
+            (gd_specific_replacement_target_area - target_area);
         }
       }
     }
