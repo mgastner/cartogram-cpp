@@ -183,7 +183,7 @@ public:
     const std::string &,
     bool,
     std::unordered_map<Point, Point> = std::unordered_map<Point, Point>());
-  void write_cairo_polygons_to_ps(
+  void write_cairo_polygons_to_svg(
     const std::string &,
     bool,
     bool,
