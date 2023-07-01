@@ -412,7 +412,7 @@ int main(const int argc, const char *argv[])
       //       why. As a temporary fix, we set blur_width to be always
       //       positive, regardless of the number of integrations.
       double blur_width =
-        std::pow(2.0, 5 - int(inset_state.n_finished_integrations()));
+        std::pow(2.0, 10 - (0.5 * int(inset_state.n_finished_integrations())));
       // if (inset_state.n_finished_integrations() < max_integrations) {
       //   blur_width =
       //     std::pow(2.0, 5 - int(inset_state.n_finished_integrations()));

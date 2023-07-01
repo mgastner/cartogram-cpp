@@ -84,8 +84,8 @@ if(APPLE)
     set(CMAKE_C_COMPILER "/opt/homebrew/opt/llvm@13/bin/clang")
   else()
     # Homebrew install path on x86 machines (Intel).
-    set(CMAKE_C_COMPILER "/usr/local/opt/llvm/bin/clang")
-    set(CMAKE_CXX_COMPILER "/usr/local/opt/llvm/bin/clang++")
+    set(CMAKE_C_COMPILER "/usr/local/opt/llvm@13/bin/clang")
+    set(CMAKE_CXX_COMPILER "/usr/local/opt/llvm@13/bin/clang++")
   endif()
 elseif(UNIX)
   # Using GNU gcc-11.
@@ -101,6 +101,7 @@ target_link_libraries(
   PkgConfig::fftw
   PkgConfig::CAIRO
   Matplot++::matplot
+  OpenMP::OpenMP_CXX
 )
 
 # Providing make with install target.
