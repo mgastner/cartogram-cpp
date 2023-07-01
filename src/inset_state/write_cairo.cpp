@@ -3,7 +3,19 @@
 #include <cairo/cairo-pdf.h>
 #include <cairo/cairo-ps.h>
 #include <cairo/cairo-svg.h>
-#include <iostream>
+
+
+void write_ps_header(const std::string &filename, cairo_surface_t *surface)
+{
+  const std::string title = "%%Title: " + filename;
+  cairo_ps_surface_dsc_comment(surface, title.c_str());
+  cairo_ps_surface_dsc_comment(
+    surface,
+    "%%Creator: Michael T. Gastner et al.");
+  cairo_ps_surface_dsc_comment(surface, "%%For: Humanity");
+  cairo_ps_surface_dsc_comment(surface, "%%Copyright: License CC BY");
+  cairo_ps_surface_dsc_comment(surface, "%%Magnification: 1.0000");
+}
 
 void write_triangles_on_cairo_surface(cairo_t *cr, Delaunay &dt, color clr)
 {
@@ -27,18 +39,6 @@ void write_triangles_on_cairo_surface(cairo_t *cr, Delaunay &dt, color clr)
     cairo_line_to(cr, p1.x(), 512 - p1.y());
     cairo_stroke(cr);
   }
-}
-
-void write_ps_header(const std::string &filename, cairo_surface_t *surface)
-{
-  const std::string title = "%%Title: " + filename;
-  cairo_ps_surface_dsc_comment(surface, title.c_str());
-  cairo_ps_surface_dsc_comment(
-    surface,
-    "%%Creator: Michael T. Gastner et al.");
-  cairo_ps_surface_dsc_comment(surface, "%%For: Humanity");
-  cairo_ps_surface_dsc_comment(surface, "%%Copyright: License CC BY");
-  cairo_ps_surface_dsc_comment(surface, "%%Magnification: 1.0000");
 }
 
 void write_point_on_cairo_surface(cairo_t *cr, Point pt, color clr)
@@ -278,8 +278,9 @@ void write_vectors_to_cairo_surface(cairo_t *cr,
 std::unordered_map<Point, Point> &vectors,
 unsigned int lx_,
 unsigned int ly_) {
+  
   // Set line width of vectors
-  cairo_set_line_width(cr, 5e-4 * std::min(lx_, ly_));
+  cairo_set_line_width(cr, 5e-3 * std::min(lx_, ly_));
   cairo_set_source_rgb(cr, 0.0, 0.0, 0.0);
 
   // Plot vectors
@@ -294,8 +295,9 @@ unsigned int ly_) {
     // vector end point
     // const auto x = v.first.x() + r * std::cos(theta);
     // const auto y = v.first.y() + r * std::sin(theta);
-    const auto x = v.first.x() + v.second.x();
-    const auto y = v.first.y() + v.second.y();
+    const auto x = v.first.x() + 2 * v.second.x();
+    const auto y = v.first.y() + 2 * v.second.y();
+    
     // arrow head
     const auto x1 = x - 0.05 * r * std::cos(theta + pi / 6);
     const auto y1 = y - 0.05 * r * std::sin(theta + pi / 6);
@@ -311,30 +313,17 @@ unsigned int ly_) {
   }
 }
   
-
-// Outputs a PS file
-void InsetState::write_cairo_polygons_to_ps(const std::string &fname,
-                                            const bool fill_polygons,
-                                            const bool colors,
-                                            const bool plot_graticule,
-                                            std::unordered_map<Point, Point> &vectors)
+// Outputs a SVG file
+void InsetState::write_cairo_polygons_to_svg(const std::string &fname,
+                                             const bool fill_polygons,
+                                             const bool colors,
+                                             const bool plot_graticule,
+                                             std::unordered_map<Point, Point> &vectors)
 {
   const auto filename = fname.c_str();
-  // cairo_surface_t *surface = cairo_ps_surface_create(filename, lx_, ly_);
   cairo_surface_t *surface = cairo_svg_surface_create(filename, lx_, ly_);
   cairo_t *cr = cairo_create(surface);
 
-  // Add comments
-  const std::string title = "%%Title: " + fname;
-  // cairo_ps_surface_dsc_comment(surface, title.c_str());
-  // cairo_ps_surface_dsc_comment(surface,
-  //                              "%%Creator: Michael T. Gastner et al.");
-  // cairo_ps_surface_dsc_comment(surface,
-  //                              "%%For: Humanity");
-  // cairo_ps_surface_dsc_comment(surface,
-  //                              "%%Copyright: License CC BY");
-  // cairo_ps_surface_dsc_comment(surface,
-  //                              "%%Magnification: 1.0000");
   write_polygons_to_cairo_surface(cr,
                                   fill_polygons,
                                   colors,
@@ -345,19 +334,14 @@ void InsetState::write_cairo_polygons_to_ps(const std::string &fname,
   cairo_destroy(cr);
 }
 
-// TODO: DO WE NEED THIS FUNCTION? WOULD IT NOT MAKE MORE SENSE TO ONLY PRINT
-// FILE TYPES INDICATED BY COMMAND-LINE FLAGS?
-// Outputs both png and ps files
+// Outputs both png and SVG files
 void InsetState::write_cairo_map(const std::string &file_name,
                                  const bool plot_graticule,
                                  std::unordered_map<Point, Point> vectors)
 {
-  const auto png_name = file_name + ".png";
-  // const auto ps_name = file_name + ".ps";
-  const auto ps_name = "maps/" +file_name + ".svg";
-  
+  const auto svg_name = file_name + ".svg";
 
   // Check whether the has all GeoDivs colored
   const bool has_colors = (colors_size() == n_geo_divs());
-  write_cairo_polygons_to_ps(ps_name, true, has_colors, plot_graticule, vectors);
+  write_cairo_polygons_to_svg(svg_name, true, has_colors, plot_graticule, vectors);
 }
