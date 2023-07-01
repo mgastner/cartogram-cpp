@@ -1,8 +1,6 @@
 #include "cartogram_info.h"
 #include "constants.h"
 #include "parse_arguments.h"
-#include <chrono>
-#include <iostream>
 #include <matplot/matplot.h>
 
 // Cpp Chrono for timing
@@ -279,19 +277,8 @@ int main(const int argc, const char *argv[])
     area_errors.push_back(inset_state.max_area_error().value);
     areas.push_back(inset_state.total_inset_area());
 
-    {
-      std::string output_filename = inset_state.inset_name();
-      output_filename += "_before_" +
-                         std::to_string(inset_state.n_finished_integrations());
-      std::cerr << "Writing " << output_filename << std::endl;
-      cart_info.write_geojson(
-        geo_file_name,
-        output_filename + ".geojson",
-        output_to_stdout);
-    }
-
     // Polygon Preprocessing
-    while (inset_state.n_finished_integrations() < 10) {
+    while (inset_state.n_finished_integrations() < 20) {
       std::cerr << "Polygon Preprocessing Integration number "
                 << inset_state.n_finished_integrations() << std::endl;
 
@@ -306,7 +293,7 @@ int main(const int argc, const char *argv[])
                 << ", GeoDiv: " << inset_state.max_area_error().geo_div
                 << std::endl
                 << "Area: " << inset_state.total_inset_area() << std::endl
-                << "Change in Area: "
+                << "Change in Area from Initial Area: "
                 << (inset_state.total_inset_area() -
                     inset_state.initial_area()) *
                      100 / inset_state.initial_area()
@@ -324,17 +311,6 @@ int main(const int argc, const char *argv[])
         0.95 * area_errors[area_errors.size() - 2]) {
         break;
       }
-    }
-
-    {
-      std::string output_filename = inset_state.inset_name();
-      output_filename += "_preprocessing_" +
-                         std::to_string(inset_state.n_finished_integrations());
-      std::cerr << "Writing " << output_filename << std::endl;
-      cart_info.write_geojson(
-        geo_file_name,
-        output_filename + ".geojson",
-        output_to_stdout);
     }
 
     // build integration vector
@@ -358,6 +334,9 @@ int main(const int argc, const char *argv[])
 
     // matplot::save("img/area.svg");
 
+    duration_polygon_preprocessing +=
+      inMilliseconds(clock_time::now() - start_polygon_preprocessing);
+
     if (plot_polygons) {
 
       // Write PNG and PS files if requested by command-line option
@@ -374,8 +353,6 @@ int main(const int argc, const char *argv[])
       std::cerr << "Writing " << input_filename << std::endl;
       inset_state.write_cairo_map(input_filename, plot_graticule);
     }
-    duration_polygon_preprocessing +=
-      inMilliseconds(clock_time::now() - start_polygon_preprocessing);
 
     std::cerr << "Polygon Preprocessing finished." << std::endl;
 
@@ -393,6 +370,8 @@ int main(const int argc, const char *argv[])
     while (inset_state.n_finished_integrations() < max_integrations &&
            (inset_state.max_area_error().value > max_permitted_area_error ||
             std::abs(inset_state.area_drift() - 1.0) > 0.01)) {
+
+      // if(inset_state.n_finished_integrations() == 0) break;
       std::cerr << "\nIntegration number "
                 << inset_state.n_finished_integrations() << std::endl;
       std::cerr << "Number of Points: " << inset_state.n_points() << std::endl;
@@ -510,18 +489,6 @@ int main(const int argc, const char *argv[])
                 << progress + (inset_max_frac / n_predicted_integrations)
                 << std::endl
                 << std::endl;
-
-      // std::string output_filename = inset_state.inset_name();
-      // output_filename +=
-      //   "_" + std::to_string(inset_state.n_finished_integrations());
-      // std::cerr << "Writing " << output_filename << std::endl;
-      // inset_state.write_cairo_map(output_filename, plot_graticule);
-      // cart_info.write_geojson(
-      //   geo_file_name,
-      //   map_name + "_" +
-      //     std::to_string(inset_state.n_finished_integrations()) +
-      //     "_cartogram.geojson",
-      //   output_to_stdout);
       inset_state.increment_integration();
     }
 

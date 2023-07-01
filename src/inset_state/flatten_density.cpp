@@ -18,15 +18,15 @@ void calculate_velocity(
   const unsigned int ly)
 {
 #pragma omp parallel for default(none) shared( \
-  grid_fluxx_init,                             \
-  grid_fluxy_init,                             \
-  grid_vx,                                     \
-  grid_vy,                                     \
-  lx,                                          \
-  ly,                                          \
-  rho_ft,                                      \
-  rho_init,                                    \
-  t)
+    grid_fluxx_init,                           \
+      grid_fluxy_init,                         \
+      grid_vx,                                 \
+      grid_vy,                                 \
+      lx,                                      \
+      ly,                                      \
+      rho_ft,                                  \
+      rho_init,                                \
+      t)
   for (unsigned int i = 0; i < lx; ++i) {
     for (unsigned int j = 0; j < ly; ++j) {
       double rho = rho_ft(0, 0) + (1.0 - t) * (rho_init(i, j) - rho_ft(0, 0));
@@ -53,12 +53,8 @@ bool all_points_are_in_domain(
   // `in_domain = false` with `in_domain = true`.
   // I am commenting out the #pragma to ensure correctness. Presumably
   // parallelization could be implemented with reduction.
-#pragma omp parallel for reduction(&&:in_domain) default(none) shared( \
-  delta_t,                                                             \
-  proj,                                                                \
-  v_intp,                                                              \
-  lx,                                                                  \
-  ly)
+#pragma omp parallel for reduction(&& : in_domain) default(none) \
+  shared(delta_t, proj, v_intp, lx, ly)
   for (unsigned int i = 0; i < lx; ++i) {
     for (unsigned int j = 0; j < ly; ++j) {
       double x = (*proj)[i][j].x + 0.5 * delta_t * (*v_intp)[i][j].x;

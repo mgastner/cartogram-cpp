@@ -75,11 +75,6 @@ void CartogramInfo::replace_missing_and_zero_target_areas()
     }
   }
 
-  std::cerr << "Total start area with data: " << total_start_area_with_data
-            << std::endl;
-  std::cerr << "Total target area with data: " << total_target_area_with_data
-            << std::endl;
-
   const double mean_density =
     total_target_area_with_data / total_start_area_with_data;
 
@@ -90,8 +85,8 @@ void CartogramInfo::replace_missing_and_zero_target_areas()
   const double small_target_area_threshold =
     total_target_area_with_data * small_area_threshold_frac;
 
-  std::cerr << "Small target area threshold: " << small_target_area_threshold
-            << std::endl;
+  std::cerr << "Using Small target area threshold: "
+            << small_target_area_threshold << std::endl;
 
   // Check whether target areas exist that are missing or very small
   bool small_target_area_exists = false;
@@ -119,7 +114,7 @@ void CartogramInfo::replace_missing_and_zero_target_areas()
     // small_area_absolute_threshold if not all target areas are initially
     // missing or zero
     if (small_target_area_threshold > 0.0) {
-      std::cerr << "Replacing small target areas." << std::endl;
+      std::cerr << "Replacing small target areas..." << std::endl;
       replacement_target_area = small_target_area_threshold;
     } else {
 
