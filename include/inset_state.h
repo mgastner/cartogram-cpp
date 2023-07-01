@@ -8,10 +8,7 @@
 #include "xy_point.h"
 #include <boost/multi_array.hpp>
 #include <cairo/cairo.h>
-#include <functional>
-#include <map>
 #include <nlohmann/json.hpp>
-#include <vector>
 
 // TODO: Transfer this struct to colors.h
 struct color {
