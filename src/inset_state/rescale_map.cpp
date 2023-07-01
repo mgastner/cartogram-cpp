@@ -5,7 +5,8 @@ void InsetState::rescale_map(
   unsigned int max_n_grid_rows_or_cols,
   bool is_world_map)
 {
-  double padding = (is_world_map ? 1.1 : padding_unless_world);
+  // padding 1 means no padding
+  double padding = (is_world_map ? 1 : padding_unless_world);
   Bbox bb;
   if (is_world_map) {
 
