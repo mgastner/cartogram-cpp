@@ -32,6 +32,7 @@ add_compile_options(-Wall -Wextra -pedantic -Wno-deprecated-declarations)
 # Finding appropriate packages.
 find_package(PkgConfig REQUIRED)
 find_package(Matplot++ REQUIRED)
+# find_package(OpenMP REQUIRED)
 
 # Finding and linking fftw, and cairo using PkgConfig.
 pkg_search_module(fftw REQUIRED fftw3 IMPORTED_TARGET)
@@ -101,7 +102,7 @@ target_link_libraries(
   PkgConfig::fftw
   PkgConfig::CAIRO
   Matplot++::matplot
-  OpenMP::OpenMP_CXX
+  # OpenMP::OpenMP_CXX
 )
 
 # Providing make with install target.
