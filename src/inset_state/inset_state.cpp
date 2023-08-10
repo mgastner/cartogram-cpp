@@ -70,12 +70,18 @@ void InsetState::create_delaunay_t()
 
   // Clear corner points from last iteration
   unique_quadtree_corners_.clear();
+  
+  // Clear the vector of bounding boxes
+  quadtree_bboxes_.clear();
 
   // Get unique quadtree corners
   for (const auto &node : qt.traverse<CGAL::Orthtrees::Leaves_traversal>()) {
 
     // Get bounding box of the leaf node
     const Bbox bbox = qt.bbox(node);
+    
+    // Store the bounding box
+    quadtree_bboxes_.push_back(bbox);
 
     // check if points are between lx_ and ly_
     if (

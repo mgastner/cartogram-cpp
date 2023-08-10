@@ -32,6 +32,9 @@ private:
   std::unordered_set<Point> unique_quadtree_corners_;
   proj_qd proj_qd_;
   std::vector<proj_qd> proj_sequence_;
+  
+  // store vector of bounding box to draw quadtree
+  std::vector<Bbox> quadtree_bboxes_;
 
   Bbox bbox_;  // Bounding box
   fftw_plan bwd_plan_for_rho_{};
@@ -192,13 +195,14 @@ public:
     const std::string,
     const boost::multi_array<double, 2>,
     const boost::multi_array<double, 2>);
-  void write_quadtree(const std::string &);
+  void write_delaunay_triangles(const std::string &);
   void write_density_to_eps(const std::string &, const double *);
   void write_graticule_to_eps(std::ofstream &);
   void write_intersections_to_eps(unsigned int);
   void write_map_to_eps(const std::string &, bool);
   void write_polygons_to_eps(std::ofstream &, bool, bool);
   void write_polygon_points_on_cairo_surface(cairo_t *, color);
+  void write_quadtree(const std::string &);
 };
 
 #endif

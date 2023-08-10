@@ -2,8 +2,11 @@
 #include "inset_state.h"
 #include <cairo/cairo-svg.h>
 
-
-void write_triangles_on_cairo_surface(cairo_t *cr, Delaunay &dt, color clr)
+void write_triangles_on_cairo_surface(
+  cairo_t *cr,
+  const Delaunay &dt,
+  const color &clr,
+  const unsigned int ly)
 {
   // Draw the triangles
   for (Delaunay::Finite_faces_iterator fit = dt.finite_faces_begin();
@@ -14,15 +17,15 @@ void write_triangles_on_cairo_surface(cairo_t *cr, Delaunay &dt, color clr)
     Point p3 = fit->vertex(2)->point();
 
     // set width of line
-    cairo_set_line_width(cr, 0.05);
+    cairo_set_line_width(cr, 0.20);
 
     // set color
     cairo_set_source_rgb(cr, clr.r, clr.g, clr.b);
 
-    cairo_move_to(cr, p1.x(), 512 - p1.y());
-    cairo_line_to(cr, p2.x(), 512 - p2.y());
-    cairo_line_to(cr, p3.x(), 512 - p3.y());
-    cairo_line_to(cr, p1.x(), 512 - p1.y());
+    cairo_move_to(cr, p1.x(), ly - p1.y());
+    cairo_line_to(cr, p2.x(), ly - p2.y());
+    cairo_line_to(cr, p3.x(), ly - p3.y());
+    cairo_line_to(cr, p1.x(), ly - p1.y());
     cairo_stroke(cr);
   }
 }
@@ -66,14 +69,50 @@ void InsetState::write_polygon_points_on_cairo_surface(cairo_t *cr, color clr)
   }
 }
 
+void write_quadtree_rectangles_on_cairo_surface(
+  cairo_t *cr,
+  const std::vector<Bbox> &quadtree_bboxes,
+  const color &clr,
+  const unsigned int ly)
+{
+  cairo_set_source_rgb(cr, clr.r, clr.g, clr.b);
+  cairo_set_line_cap(cr, CAIRO_LINE_CAP_ROUND);
+  cairo_set_line_width(cr, 0.20);
+  for (auto &bbox : quadtree_bboxes) {
+    auto xmin = bbox.xmin();
+    auto ymin = bbox.ymin();
+    auto xmax = bbox.xmax();
+    auto ymax = bbox.ymax();
+
+    // draw a rectangle with bbox values
+    cairo_rectangle(cr, xmin, ly - ymin, xmax - xmin, ymin - ymax);
+    cairo_stroke(cr);
+  }
+}
+
+void InsetState::write_delaunay_triangles(const std::string &filename)
+{
+  cairo_surface_t *surface =
+    cairo_svg_surface_create((filename + ".svg").c_str(), lx_, ly_);
+  cairo_t *cr = cairo_create(surface);
+  write_triangles_on_cairo_surface(cr, proj_qd_.dt, color{0.6, 0.6, 0.6}, ly_);
+  write_polygon_points_on_cairo_surface(cr, color{0.0, 0.0, 1.0});
+  cairo_show_page(cr);
+  cairo_surface_destroy(surface);
+  cairo_destroy(cr);
+}
+
 void InsetState::write_quadtree(const std::string &filename)
 {
   cairo_surface_t *surface =
-    cairo_ps_surface_create((filename + ".ps").c_str(), lx_, ly_);
+    cairo_svg_surface_create((filename + ".svg").c_str(), lx_, ly_);
   cairo_t *cr = cairo_create(surface);
-  write_ps_header((filename + ".ps"), surface);
-  write_triangles_on_cairo_surface(cr, proj_qd_.dt, color{0.0, 0.0, 0.0});
-  write_polygon_points_on_cairo_surface(cr, color{1.0, 0.0, 0.0});
+  write_quadtree_rectangles_on_cairo_surface(
+    cr,
+    quadtree_bboxes_,
+    color{0.6, 0.6, 0.6},
+    ly_);
+  write_polygon_points_on_cairo_surface(cr, color{0.0, 0.0, 1.0});
   cairo_show_page(cr);
   cairo_surface_destroy(surface);
   cairo_destroy(cr);
@@ -264,11 +303,13 @@ void InsetState::write_polygons_to_cairo_surface(
   // }
 }
 
-void write_vectors_to_cairo_surface(cairo_t *cr,
-std::unordered_map<Point, Point> &vectors,
-unsigned int lx_,
-unsigned int ly_) {
-  
+void write_vectors_to_cairo_surface(
+  cairo_t *cr,
+  std::unordered_map<Point, Point> &vectors,
+  unsigned int lx_,
+  unsigned int ly_)
+{
+
   // Set line width of vectors
   cairo_set_line_width(cr, 5e-3 * std::min(lx_, ly_));
   cairo_set_source_rgb(cr, 0.0, 0.0, 0.0);
@@ -279,21 +320,21 @@ unsigned int ly_) {
     // vector angle
     const auto theta = std::atan2(v.second.y(), v.second.x());
     // vector length
-    const auto r = std::sqrt(v.second.x() * v.second.x() +
-                             v.second.y() * v.second.y());
-                             
+    const auto r =
+      std::sqrt(v.second.x() * v.second.x() + v.second.y() * v.second.y());
+
     // vector end point
     // const auto x = v.first.x() + r * std::cos(theta);
     // const auto y = v.first.y() + r * std::sin(theta);
     const auto x = v.first.x() + 2 * v.second.x();
     const auto y = v.first.y() + 2 * v.second.y();
-    
+
     // arrow head
     const auto x1 = x - 0.05 * r * std::cos(theta + pi / 6);
     const auto y1 = y - 0.05 * r * std::sin(theta + pi / 6);
     const auto x2 = x - 0.05 * r * std::cos(theta - pi / 6);
     const auto y2 = y - 0.05 * r * std::sin(theta - pi / 6);
-    
+
     cairo_line_to(cr, x, ly_ - y);
     cairo_line_to(cr, x1, ly_ - y1);
     cairo_move_to(cr, x, ly_ - y);
@@ -302,22 +343,20 @@ unsigned int ly_) {
     cairo_stroke(cr);
   }
 }
-  
+
 // Outputs a SVG file
-void InsetState::write_cairo_polygons_to_svg(const std::string &fname,
-                                             const bool fill_polygons,
-                                             const bool colors,
-                                             const bool plot_graticule,
-                                             std::unordered_map<Point, Point> &vectors)
+void InsetState::write_cairo_polygons_to_svg(
+  const std::string &fname,
+  const bool fill_polygons,
+  const bool colors,
+  const bool plot_graticule,
+  std::unordered_map<Point, Point> &vectors)
 {
   const auto filename = fname.c_str();
   cairo_surface_t *surface = cairo_svg_surface_create(filename, lx_, ly_);
   cairo_t *cr = cairo_create(surface);
 
-  write_polygons_to_cairo_surface(cr,
-                                  fill_polygons,
-                                  colors,
-                                  plot_graticule);
+  write_polygons_to_cairo_surface(cr, fill_polygons, colors, plot_graticule);
   write_vectors_to_cairo_surface(cr, vectors, lx_, ly_);
   cairo_show_page(cr);
   cairo_surface_destroy(surface);
@@ -325,13 +364,19 @@ void InsetState::write_cairo_polygons_to_svg(const std::string &fname,
 }
 
 // Outputs both png and SVG files
-void InsetState::write_cairo_map(const std::string &file_name,
-                                 const bool plot_graticule,
-                                 std::unordered_map<Point, Point> vectors)
+void InsetState::write_cairo_map(
+  const std::string &file_name,
+  const bool plot_graticule,
+  std::unordered_map<Point, Point> vectors)
 {
   const auto svg_name = file_name + ".svg";
 
   // Check whether the has all GeoDivs colored
   const bool has_colors = (colors_size() == n_geo_divs());
-  write_cairo_polygons_to_svg(svg_name, true, has_colors, plot_graticule, vectors);
+  write_cairo_polygons_to_svg(
+    svg_name,
+    true,
+    has_colors,
+    plot_graticule,
+    vectors);
 }

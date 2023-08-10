@@ -388,10 +388,17 @@ int main(const int argc, const char *argv[])
             inset_state.inset_name() + "_" +
             std::to_string(inset_state.n_finished_integrations()) +
             "_quadtree";
-          std::cerr << "Writing " << quadtree_filename << std::endl;
+          std::cerr << "Writing " << quadtree_filename << ".svg" << std::endl;
 
           // Draw the resultant quadtree
           inset_state.write_quadtree(quadtree_filename);
+          
+          const std::string delaunay_t_filename =
+            inset_state.inset_name() + "_" +
+            std::to_string(inset_state.n_finished_integrations()) +
+            "_delaunay_t";
+          std::cerr << "Writing " << delaunay_t_filename << ".svg" << std::endl;
+          inset_state.write_delaunay_triangles(delaunay_t_filename);
         }
       }
 
