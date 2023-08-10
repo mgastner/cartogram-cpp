@@ -41,12 +41,16 @@ void write_triangles_on_cairo_surface(cairo_t *cr, Delaunay &dt, color clr)
   }
 }
 
-void write_point_on_cairo_surface(cairo_t *cr, Point pt, color clr)
+void write_point_on_cairo_surface(
+  cairo_t *cr,
+  const Point &pt,
+  const color &clr,
+  const unsigned int ly)
 {
+  const double radius = 0.25;
   cairo_set_source_rgb(cr, clr.r, clr.g, clr.b);
-  cairo_move_to(cr, pt.x(), 512 - pt.y());
-  cairo_line_to(cr, pt.x() + 0.05, 512 - pt.y() - 0.05);
-  cairo_close_path(cr);
+  cairo_arc(cr, pt.x(), ly - pt.y(), radius, 0, 2 * pi);
+  cairo_fill(cr);
   cairo_stroke(cr);
 }
 
