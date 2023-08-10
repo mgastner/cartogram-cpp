@@ -1,21 +1,7 @@
 #include "constants.h"
 #include "inset_state.h"
-#include <cairo/cairo-pdf.h>
-#include <cairo/cairo-ps.h>
 #include <cairo/cairo-svg.h>
 
-
-void write_ps_header(const std::string &filename, cairo_surface_t *surface)
-{
-  const std::string title = "%%Title: " + filename;
-  cairo_ps_surface_dsc_comment(surface, title.c_str());
-  cairo_ps_surface_dsc_comment(
-    surface,
-    "%%Creator: Michael T. Gastner et al.");
-  cairo_ps_surface_dsc_comment(surface, "%%For: Humanity");
-  cairo_ps_surface_dsc_comment(surface, "%%Copyright: License CC BY");
-  cairo_ps_surface_dsc_comment(surface, "%%Magnification: 1.0000");
-}
 
 void write_triangles_on_cairo_surface(cairo_t *cr, Delaunay &dt, color clr)
 {
