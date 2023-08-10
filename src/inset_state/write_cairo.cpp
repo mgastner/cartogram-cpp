@@ -66,14 +66,14 @@ void InsetState::write_polygon_points_on_cairo_surface(cairo_t *cr, color clr)
 
       // Plot each point in exterior ring
       for (auto i : ext_ring) {
-        write_point_on_cairo_surface(cr, i, clr);
+        write_point_on_cairo_surface(cr, i, clr, ly_);
       }
 
       // Plot holes
       for (auto hci = pwh.holes_begin(); hci != pwh.holes_end(); ++hci) {
         Polygon hole = *hci;
         for (unsigned int i = 1; i <= hole.size(); ++i) {
-          write_point_on_cairo_surface(cr, hole[i], clr);
+          write_point_on_cairo_surface(cr, hole[i], clr, ly_);
         }
       }
     }
