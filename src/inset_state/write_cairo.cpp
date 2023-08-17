@@ -188,8 +188,11 @@ void InsetState::write_polygons_to_cairo_surface(
       cairo_move_to(cr, ext_ring[0].x(), ly_ - ext_ring[0].y());
 
       // Plot each point in exterior ring
-      for (unsigned int i = 1; i < ext_ring.size(); ++i) {
-        cairo_line_to(cr, ext_ring[i].x(), ly_ - ext_ring[i].y());
+      for (unsigned int i = 1; i <= ext_ring.size(); ++i) {
+        cairo_line_to(
+          cr,
+          ext_ring[i % ext_ring.size()].x(),
+          ly_ - ext_ring[i % ext_ring.size()].y());
       }
 
       // Plot holes
