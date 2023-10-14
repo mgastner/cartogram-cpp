@@ -9,13 +9,14 @@ bool is_area_str_valid(const std::string &area_str)
     return true;
   }
 
-  // Only 0 to 9, '.', '-', and ',' are allowed.
+  // Only 0 to 9, '.', '-', and ',' are allowed
   for (const auto &c : area_str) {
     if (!(c >= '0' && c <= '9') && c != '.' && c != '-' && c != ',') {
       return false;
     }
   }
-  // if there is '-', it must be infront
+
+  // '-' can only be used as negative sign
   if (area_str.find('-') != std::string::npos) {
     if (area_str.find('-') != 0) {
       return false;
@@ -27,14 +28,15 @@ bool is_area_str_valid(const std::string &area_str)
 void CartogramInfo::read_csv(const argparse::ArgumentParser &arguments)
 {
 
-  // Retrieve CSV Name.
-  auto csv_name = arguments.get<std::string>("visual_variable_file");
+  // Retrieve CSV Name
+  const std::string csv_name =
+    arguments.get<std::string>("visual_variable_file");
 
-  // Open CSV Reader.
+  // Open CSV Reader
   csv::CSVReader reader(csv_name);
 
   // Find index of column with IDs. If no ID column header was passed with the
-  // command-line flag --id, the ID column is assumed to have index 0.
+  // command-line flag --id, the ID column is assumed to have index 0
   auto is_id_header = arguments.present<std::string>("-D");
   int id_col = 0;
   if (is_id_header) {
@@ -46,7 +48,7 @@ void CartogramInfo::read_csv(const argparse::ArgumentParser &arguments)
 
   // Find index of column with target areas. If no area column header was
   // passed with the command-line flag --area, the area column is assumed to
-  // have index 1.
+  // have index 1
   int area_col = 1;
   if (auto area_header = arguments.present<std::string>("-A")) {
     std::cerr << "Area Header: " << *area_header << std::endl;
@@ -55,7 +57,7 @@ void CartogramInfo::read_csv(const argparse::ArgumentParser &arguments)
 
   // Find index of column with inset specifiers. If no inset column header was
   // passed with the command-line flag --inset, the header is assumed to be
-  // "Inset".
+  // "Inset"
   auto inset_header = arguments.get<std::string>("-I");
   int inset_col = reader.index_of(inset_header);
 
@@ -81,7 +83,6 @@ void CartogramInfo::read_csv(const argparse::ArgumentParser &arguments)
     }
 
     // Read ID of geographic division
-
     std::string id = row[id_col].get();
     if (ids_in_visual_variables_file_.contains(id)) {
       std::cerr << "ERROR: ID " << id << " appears more than once in CSV"
