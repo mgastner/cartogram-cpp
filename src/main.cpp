@@ -18,6 +18,7 @@ int main(const int argc, const char *argv[])
 {
   // Start of main function time
   const time_point start_main = clock_time::now();
+  
   std::string geo_file_name, visual_file_name;
 
   // Default number of grid cells along longer Cartesian coordinate axis
@@ -174,6 +175,8 @@ int main(const int argc, const char *argv[])
       // run-times
       time_point start_initial_simplification = clock_time::now();
       inset_state.simplify(target_points_per_inset);
+
+      // Update initial simplification time
       time_point end_initial_simplification = clock_time::now();
       duration_initial_simplification += inMilliseconds(
         end_initial_simplification - start_initial_simplification);
@@ -231,7 +234,10 @@ int main(const int argc, const char *argv[])
     const unsigned int ly = inset_state.ly();
     inset_state.ref_to_rho_init()->allocate(lx, ly);
     inset_state.ref_to_rho_ft()->allocate(lx, ly);
+    inset_state.ref_to_fluxx_init()->allocate(lx, ly);
+    inset_state.ref_to_fluxy_init()->allocate(lx, ly);
     inset_state.make_fftw_plans_for_rho();
+    inset_state.make_fftw_plans_for_flux();
     inset_state.initialize_cum_proj();
     inset_state.set_area_errors();
 
@@ -432,31 +438,37 @@ int main(const int argc, const char *argv[])
       // Track time needed for fill_with_density()
       time_point start_fill_density = clock_time::now();
       inset_state.fill_with_density(plot_density);
-      time_point end_fill_density = clock_time::now();
+
+      // Update time
       duration_fill_density +=
-        inMilliseconds(end_fill_density - start_fill_density);
+        inMilliseconds(clock_time::now() - start_fill_density);
+
       if (blur_width > 0.0) {
         inset_state.blur_density(blur_width, plot_density);
       }
       if (plot_intersections) {
         inset_state.write_intersections_to_eps(intersections_resolution);
       }
+
       time_point start_flatten_density = clock_time::now();
       if (qtdt_method) {
         inset_state.flatten_density_with_node_vertices();
       } else {
         inset_state.flatten_density();
       }
-      time_point end_flatten_density = clock_time::now();
+
+      // Update time
       duration_flatten_density +=
-        inMilliseconds(end_flatten_density - start_flatten_density);
+        inMilliseconds(clock_time::now() - start_flatten_density);
+
       if (qtdt_method) {
         if (simplify) {
           time_point start_densify = clock_time::now();
           inset_state.densify_geo_divs_using_delaunay_t();
-          time_point end_densify = clock_time::now();
+
+          // Update time
           duration_densification +=
-            inMilliseconds(end_densify - start_densify);
+            inMilliseconds(clock_time::now() - start_densify);
         }
 
         // Project using the Delaunay triangulation
@@ -469,8 +481,10 @@ int main(const int argc, const char *argv[])
 
         // Densify map
         inset_state.densify_geo_divs();
-        time_point end_densify = clock_time::now();
-        duration_densification += inMilliseconds(end_densify - start_densify);
+
+        // Update time
+        duration_densification +=
+          inMilliseconds(clock_time::now() - start_densify);
 
         // Project with triangulation
         inset_state.project_with_triangulation();
@@ -480,9 +494,10 @@ int main(const int argc, const char *argv[])
       if (simplify) {
         time_point start_simplify = clock_time::now();
         inset_state.simplify(target_points_per_inset);
-        time_point end_simplify = clock_time::now();
+
+        // Update time
         duration_simplification +=
-          inMilliseconds(end_simplify - start_simplify);
+          inMilliseconds(clock_time::now() - start_simplify);
       }
 
       // Print area drift information
@@ -500,12 +515,11 @@ int main(const int argc, const char *argv[])
       inset_state.increment_integration();
     }
 
-    // Integration end time
-    time_point end_integration = clock_time::now();
-
     // Store integration time
     insets_integration_times[inset_pos] =
-      inMilliseconds(end_integration - start_integration);
+      inMilliseconds(clock_time::now() - start_integration);
+
+    // Update and display progress information
     progress += inset_max_frac;
     std::cerr << "Finished inset " << inset_pos << "\nProgress: " << progress
               << std::endl;
@@ -547,8 +561,11 @@ int main(const int argc, const char *argv[])
 
     // Clean up after finishing all Fourier transforms for this inset
     inset_state.destroy_fftw_plans_for_rho();
+    inset_state.destroy_fftw_plans_for_flux();
     inset_state.ref_to_rho_init()->free();
     inset_state.ref_to_rho_ft()->free();
+    inset_state.ref_to_fluxx_init()->free();
+    inset_state.ref_to_fluxy_init()->free();
   }  // End of loop over insets
 
   // Shift insets so that they do not overlap

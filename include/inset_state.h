@@ -65,8 +65,8 @@ private:
   std::string pos_;  // Position of inset ("C", "T" etc.)
   boost::multi_array<XYPoint, 2> proj_;  // Cartogram projection
 
-  // Rasterized density and its Fourier transform
-  FTReal2d rho_ft_, rho_init_;
+  // Rasterized density, flux and its Fourier transform
+  FTReal2d rho_ft_, rho_init_, grid_fluxx_init_, grid_fluxy_init_;
   std::unordered_map<std::string, double> target_areas_;
 
   // Vertical adjacency graph
@@ -81,10 +81,12 @@ private:
 
 public:
   explicit InsetState(std::string);  // Constructor
-  void create_delaunay_t();
   void adjust_for_dual_hemisphere();
   void apply_albers_projection();
   void apply_smyth_craster_projection();
+  
+  // Calculate difference between initial area and current area
+  double area_drift() const;
   double area_error_at(const std::string &) const;
   void auto_color();  // Automatically color GeoDivs
   Bbox bbox(bool = false) const;
@@ -96,11 +98,14 @@ public:
   bool colors_empty() const;
   unsigned int colors_size() const;
   void create_contiguity_graph(unsigned int);
+  void create_delaunay_t();
   void densify_geo_divs();
   void densify_geo_divs_using_delaunay_t();
+  void destroy_fftw_plans_for_flux();
   void destroy_fftw_plans_for_rho();
   void execute_fftw_bwd_plan() const;
   void execute_fftw_fwd_plan() const;
+  void execute_fftw_plans_for_flux();
   void exit_if_not_on_grid_or_edge(Point p1) const;
   void fill_graticule_diagonals(bool = false);
 
@@ -131,6 +136,7 @@ public:
   std::string label_at(const std::string &) const;
   unsigned int lx() const;
   unsigned int ly() const;
+  void make_fftw_plans_for_flux();
   void make_fftw_plans_for_rho();
   struct max_area_error_info max_area_error() const;
   void min_ellipses();
@@ -149,9 +155,8 @@ public:
   void project_with_triangulation();
   void project_with_proj_sequence();
   void push_back(const GeoDiv &);
-
-  // Calculate difference between initial area and current area
-  double area_drift() const;
+  FTReal2d *ref_to_fluxx_init();
+  FTReal2d *ref_to_fluxy_init();
   FTReal2d *ref_to_rho_ft();
   FTReal2d *ref_to_rho_init();
   void remove_tiny_polygons(const double &minimum_polygon_size);
@@ -200,8 +205,8 @@ public:
   void write_graticule_to_eps(std::ofstream &);
   void write_intersections_to_eps(unsigned int);
   void write_map_to_eps(const std::string &, bool);
-  void write_polygons_to_eps(std::ofstream &, bool, bool);
   void write_polygon_points_on_cairo_surface(cairo_t *, color);
+  void write_polygons_to_eps(std::ofstream &, bool, bool);
   void write_quadtree(const std::string &);
 };
 
