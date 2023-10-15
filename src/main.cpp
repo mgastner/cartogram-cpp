@@ -506,6 +506,7 @@ int main(const int argc, const char *argv[])
 
       // Update area errors
       inset_state.set_area_errors();
+      inset_state.adjust_grid();
       std::cerr << "max. area err: " << inset_state.max_area_error().value
                 << ", GeoDiv: " << inset_state.max_area_error().geo_div
                 << "\nProgress: "

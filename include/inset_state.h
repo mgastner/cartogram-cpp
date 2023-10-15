@@ -72,6 +72,9 @@ private:
   // Vertical adjacency graph
   std::vector<std::vector<intersection> > vertical_adj_;
 
+  // Area errors
+  std::vector<double> max_area_errors_;
+
   // Create cairo surface
   void write_polygons_to_cairo_surface(cairo_t *, bool, bool, bool);
 
@@ -82,6 +85,7 @@ private:
 public:
   explicit InsetState(std::string);  // Constructor
   void adjust_for_dual_hemisphere();
+  void adjust_grid();
   void apply_albers_projection();
   void apply_smyth_craster_projection();
   
