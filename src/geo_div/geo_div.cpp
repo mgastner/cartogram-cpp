@@ -25,6 +25,23 @@ double GeoDiv::area() const
   return a;
 }
 
+// Find joint bounding for all polygons with holes in this geo_div
+Bbox GeoDiv::bbox() const {
+  double geo_div_xmin = dbl_inf;
+  double geo_div_xmax = -dbl_inf;
+  double geo_div_ymin = dbl_inf;
+  double geo_div_ymax = -dbl_inf;
+  for (const auto &pwh : polygons_with_holes_) {
+    const auto bb = pwh.bbox();
+    geo_div_xmin = std::min(bb.xmin(), geo_div_xmin);
+    geo_div_ymin = std::min(bb.ymin(), geo_div_ymin);
+    geo_div_xmax = std::max(bb.xmax(), geo_div_xmax);
+    geo_div_ymax = std::max(bb.ymax(), geo_div_ymax);
+  }
+  Bbox geo_div_bbox(geo_div_xmin, geo_div_ymin, geo_div_xmax, geo_div_ymax);
+  return geo_div_bbox;
+}
+
 std::string GeoDiv::id() const
 {
   return id_;

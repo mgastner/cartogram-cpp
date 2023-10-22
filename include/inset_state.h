@@ -40,6 +40,14 @@ private:
   fftw_plan bwd_plan_for_rho_{};
   std::unordered_map<std::string, Color> colors_;
 
+  // Unblurred density mean, min, max
+  double dens_min_;
+  double dens_mean_;
+  double dens_max_;
+
+  // Scaling factor to convert albers unit to 512*512 unit
+  double latt_const_;
+
   // Cumulative cartogram projection
   boost::multi_array<XYPoint, 2> cum_proj_;
   fftw_plan fwd_plan_for_rho_{};
@@ -64,6 +72,7 @@ private:
   unsigned int n_finished_integrations_;
   std::string pos_;  // Position of inset ("C", "T" etc.)
   boost::multi_array<XYPoint, 2> proj_;  // Cartogram projection
+  boost::multi_array<XYPoint, 2> identity_proj_;  // Original projection
 
   // Rasterized density, flux and its Fourier transform
   FTReal2d rho_ft_, rho_init_, grid_fluxx_init_, grid_fluxy_init_;
@@ -121,10 +130,39 @@ public:
   void flatten_density_with_node_vertices();
 
   std::vector<GeoDiv> geo_divs() const;
+  std::vector<std::vector<Color>> grid_cell_colors(unsigned int cell_width);
+  Polygon grid_cell_edge_points(
+    unsigned int x,
+    unsigned int y,
+    unsigned int cell_width,
+    bool plot_equal_area_map);
+  double grid_cell_target_area(
+    const unsigned int i,
+    const unsigned int j,
+    const double total_target_area,
+    const double total_inset_area);
+  double grid_cell_area(
+    unsigned int x,
+    unsigned int y,
+    unsigned int cell_width);
+  double grid_cell_area_km(const unsigned int i, const unsigned int j);
   void holes_inside_polygons();
+  double grid_cell_target_area_per_km(
+    const unsigned int i,
+    const unsigned int j,
+    const double total_target_area,
+    const double total_inset_area);
+  Bbox get_bbox_bar(const double bar_width, const double bar_height);
+
+  std::pair<double, unsigned int> get_km_legend_length();
+  std::pair<double, unsigned int> get_visual_variable_legend_length();
+
+  const std::vector<std::vector<intersection>> horizontal_scans(
+    unsigned int) const;
   void increment_integration();
   double initial_area() const;
   void initialize_cum_proj();
+  void initialize_identity_proj();
   void insert_color(const std::string &, Color);
   void insert_color(const std::string &, std::string);
   void insert_label(const std::string &, const std::string &);
@@ -138,12 +176,17 @@ public:
     unsigned int) const;
   bool is_input_target_area_missing(const std::string &) const;
   std::string label_at(const std::string &) const;
+  double latt_const() const;
   unsigned int lx() const;
   unsigned int ly() const;
   void make_fftw_plans_for_flux();
   void make_fftw_plans_for_rho();
-  struct max_area_error_info max_area_error() const;
   void min_ellipses();
+  max_area_error_info max_area_error() const;
+  std::pair<double, double> max_and_min_grid_cell_area(
+    unsigned int cell_width);
+  std::pair<Point, Point> max_and_min_grid_cell_area_index(
+    unsigned int cell_width);
   unsigned int n_finished_integrations() const;
   unsigned int n_geo_divs() const;
   unsigned long n_points() const;
@@ -171,14 +214,18 @@ public:
   void rings_are_simple();
   void set_area_errors();
   void set_grid_dimensions(unsigned int, unsigned int);
+  void set_geo_divs(std::vector<GeoDiv> new_geo_divs);
   void set_inset_name(const std::string &);
   void store_initial_area();
+  void set_latt_const(const double);
+  void set_pos(const std::string &);
   void simplify(unsigned int);
   void store_original_geo_divs();
   double target_area_at(const std::string &) const;
   bool target_area_is_missing(const std::string &) const;
   double total_inset_area() const;
   double total_target_area() const;
+  Polygon transform_to_albers_coor(Polygon edge_points);
   std::array<Point, 3> transformed_triangle(
     const std::array<Point, 3> &,
     bool = false) const;
@@ -186,6 +233,12 @@ public:
   // Apply given function to all points
   void transform_points(const std::function<Point(Point)> &, bool = false);
   std::array<Point, 3> untransformed_triangle(Point, bool = false) const;
+  void trim_grid_heatmap(cairo_t *cr, double padding);
+  std::array<Point, 3> untransformed_triangle(const Point, bool = false);
+
+  // Write all intersections found to an SVG/PS file named
+  // "*_intersections_*.svg/ps"
+  // void write_intersections_image(unsigned int, const bool);
 
   // Cairo functions
   void write_cairo_map(
@@ -205,6 +258,49 @@ public:
     const boost::multi_array<double, 2>,
     const boost::multi_array<double, 2>);
   void write_delaunay_triangles(const std::string &);
+  void write_grid_heatmap_data(const std::string filename);
+
+  // Functions to write map to eps
+  // void write_density_to_eps(const std::string, const double *);
+  void write_grid_heatmap_image(
+    const std::string filename,
+    const bool plot_equal_area_map,
+    const bool image_format_ps,
+    const bool crop_polygons);
+  void write_grids_to_cairo_surface(cairo_t *cr);
+  void write_grid_colors_to_cairo_surface(
+    cairo_t *cr,
+    bool plot_equal_area_map,
+    bool crop_polygons);
+  // void write_grid_to_eps(std::ofstream &);
+  // void write_intersections_to_eps(unsigned int);
+  // void write_map_to_eps(const std::string, const bool);
+  void write_map_image(
+    const std::string filename,
+    const bool fill_polygons,
+    const bool plot_grid,
+    const bool plot_labels,
+    const bool image_format_ps,
+    const bool equal_area_map);
+  // void write_polygons_to_eps(std::ofstream &, const bool, const bool);
+  void write_polygons_to_cairo_surface(
+    cairo_t *cr,
+    const bool fill_polygons,
+    const bool colors,
+    const bool plot_equal_area_map);
+  void write_labels_to_cairo_surface(cairo_t *cr);
+  void write_density_image(
+    const std::string filename,
+    const double *density,
+    const bool plot_pycnophylactic,
+    const bool image_format_ps);
+  void write_intersections_image(unsigned int res, const bool image_format_ps);
+  void write_density_bar_image(
+    std::string filename,
+    const bool image_format_ps);
+  void write_legend_to_cairo_surface(cairo_t *cr, bool equal_area_map);
+  void write_quadtree(const std::string &);
+>>>>>>> graticule-heatmap
   void write_density_to_eps(const std::string &, const double *);
   void write_graticule_to_eps(std::ofstream &);
   void write_intersections_to_eps(unsigned int);

@@ -13,10 +13,11 @@ constexpr unsigned int max_integrations = 100;
 constexpr double max_permitted_area_error = 0.01;
 constexpr double padding_unless_world = 3.0;//1.5;
 constexpr double pi = std::numbers::pi;
+constexpr double earth_surface_area = 510.1e6;
 
 // The resolution represents the number of rays to shoot through each cell
 // (see inset_state/scanline_graph.cpp).
-// default_resolution is used for filling graticule cells with density.
+// default_resolution is used for filling grid cells with density.
 // intersection_resolution is used to specify the number of scanlines shown
 // in output files showing intersections.
 constexpr unsigned int default_resolution = 16;
@@ -48,5 +49,8 @@ constexpr double max_font_size = 10.0;
 constexpr double small_area_threshold_frac = 2e-5;
 
 constexpr double xi_sq = 4.0;
+
+// Grid cell width/height, as multiple of grid size of 1, when plotting heatmap
+constexpr unsigned int plotted_cell_length = 8;
 
 #endif

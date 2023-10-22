@@ -1,9 +1,11 @@
 #include "inset_state.h"
 #include "constants.h"
+#include "geo_div.h"
 #include "round_point.h"
 #include <cmath>
 #include <iostream>
 #include <utility>
+#include <vector>
 
 InsetState::InsetState()
 {
@@ -214,6 +216,18 @@ void InsetState::initialize_cum_proj()
   }
 }
 
+void InsetState::initialize_identity_proj()
+{
+  identity_proj_.resize(boost::extents[lx_][ly_]);
+  for (unsigned int i = 0; i < lx_; ++i) {
+    for (unsigned int j = 0; j < ly_; ++j) {
+      identity_proj_[i][j].x = i + 0.5;
+      identity_proj_[i][j].y = j + 0.5;
+    }
+  }
+  return;
+}
+
 void InsetState::insert_color(const std::string &id, const Color c)
 {
   if (colors_.count(id)) {
@@ -266,6 +280,11 @@ double InsetState::initial_area() const
 bool InsetState::is_input_target_area_missing(const std::string &id) const
 {
   return is_input_target_area_missing_.at(id);
+}
+
+double InsetState::latt_const() const
+{
+  return latt_const_;
 }
 
 unsigned int InsetState::lx() const
@@ -571,4 +590,9 @@ void InsetState::transform_points(
       }
     }
   }
+}
+void InsetState::set_geo_divs(std::vector<GeoDiv> new_geo_divs)
+{
+  geo_divs_.clear();
+  geo_divs_ = new_geo_divs;
 }
