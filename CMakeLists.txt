@@ -1,121 +1,104 @@
-# Setting up CMake Project
 cmake_minimum_required(VERSION 3.1)
 project(cartogram LANGUAGES CXX)
 
-# Setting compile options.
+# ========== Project Setup ==========
 set(CMAKE_CXX_STANDARD 20)
 set(THREADS_PREFER_PTHREAD_FLAG ON)
-
-# Setting CMake build options, adding path for binary.
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
 
-# Release mode by default, unless specified
-# https://stackoverflow.com/questions/48832233/
-# have-a-cmake-project-default-to-the-release-build-type
+# Default build type
 if(NOT CMAKE_BUILD_TYPE)
   set(CMAKE_BUILD_TYPE "Release" CACHE STRING "" FORCE)
 endif()
 
-# Add Boost include directories using the -isystem flag for GCC and Clang
-if(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
-  set(BOOST_INCLUDE_DIR "/opt/homebrew/Cellar/boost/1.81.0/include")
-  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -isystem ${BOOST_INCLUDE_DIR}")
-  set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -isystem ${BOOST_INCLUDE_DIR}")
-elseif(MSVC)
-  set(BOOST_INCLUDE_DIR "C:/path/to/boost") # Update this path to your Boost include directory
-  add_compile_options(/external:I ${BOOST_INCLUDE_DIR})
-endif()
+# ========== Dependencies Setup ==========
 
-# Lots of warnings.
-add_compile_options(-Wall -Wextra -pedantic -Wno-deprecated-declarations)
+# Boost
+find_package(Boost REQUIRED)
 
-# Finding appropriate packages.
-find_package(PkgConfig REQUIRED)
+# Matplot++
 find_package(Matplot++ REQUIRED)
-# find_package(OpenMP REQUIRED)
 
-# Finding and linking fftw, and cairo using PkgConfig.
+# PkgConfig, fftw, and cairo
+find_package(PkgConfig REQUIRED)
 pkg_search_module(fftw REQUIRED fftw3 IMPORTED_TARGET)
 pkg_search_module(CAIRO REQUIRED CAIRO IMPORTED_TARGET)
-include_directories(PkgConfig::fftw PkgConfig::CAIRO)
 
-# Adding C++ files needed for compilation.
-add_executable(
-  cartogram
-  src/main.cpp
-  src/cartogram_info/cartogram_info.cpp
-  src/cartogram_info/read_csv.cpp
-  src/cartogram_info/read_geojson.cpp
-  src/cartogram_info/shift_insets_to_position.cpp
-  src/cartogram_info/write_geojson.cpp
-  src/geo_div/geo_div.cpp
-  src/inset_state/albers_projection.cpp
-  src/inset_state/auto_color.cpp
-  src/inset_state/blur_density.cpp
-  src/inset_state/check_topology.cpp
-  src/inset_state/densify.cpp
-  src/inset_state/fill_with_density.cpp
-  src/inset_state/flatten_density.cpp
-  src/inset_state/flatten_ellipse_density.cpp
-  src/inset_state/inset_state.cpp
-  src/inset_state/interpolate_bilinearly.cpp
-  src/inset_state/matrix.cpp
-  src/inset_state/project.cpp
-  src/inset_state/rescale_map.cpp
-  src/inset_state/round_point.cpp
-  src/inset_state/scanline_graph.cpp
-  src/inset_state/simplify_inset.cpp
-  src/inset_state/smyth_projection.cpp
-  src/inset_state/write_cairo.cpp
-  src/inset_state/write_image.cpp
-  src/inset_state/write_inset_to_geojson.cpp
-  src/misc/colors.cpp
-  src/misc/ft_real_2d.cpp
-  src/misc/intersection.cpp
-  src/misc/parse_arguments.cpp
-  src/misc/pwh.cpp
-)
+# OpenMP
+if(APPLE AND ${CMAKE_CXX_COMPILER_ID} MATCHES "Clang")
+  set(OpenMP_CXX "${CMAKE_CXX_COMPILER}")
+  set(OpenMP_CXX_FLAGS "-fopenmp=libomp -Wno-unused-command-line-argument")
+  set(OpenMP_CXX_LIB_NAMES "libomp" "libgomp" "libiomp5")
+  set(OpenMP_libomp_LIBRARY ${OpenMP_CXX_LIB_NAMES})
+  set(OpenMP_libgomp_LIBRARY ${OpenMP_CXX_LIB_NAMES})
+  set(OpenMP_libiomp5_LIBRARY ${OpenMP_CXX_LIB_NAMES})
+  find_path(LIBOMP_PATH NAMES libomp.dylib PATHS /opt/homebrew/opt/libomp/lib /usr/local/opt/libomp/lib)
+endif()
 
-# Linking appropriate libraries required.
+find_package(OpenMP REQUIRED)
+
+# ========== Compiler Setup ==========
 if(APPLE)
-  # Using LLVM clang, installed via homebrew, instaed of Apple clang.
+  set(LLVM_BASE_PATH "/usr/local/opt/llvm@13/bin/")
+
   if(${CMAKE_HOST_SYSTEM_PROCESSOR} STREQUAL "arm64")
-    # Homebrew install path on arm64 (apple silicon, M1 etc.) machines.
-    set(CMAKE_CXX_COMPILER "/opt/homebrew/opt/llvm@13/bin/clang++")
-    set(CMAKE_C_COMPILER "/opt/homebrew/opt/llvm@13/bin/clang")
-  else()
-    # Homebrew install path on x86 machines (Intel).
-    set(CMAKE_C_COMPILER "/usr/local/opt/llvm@13/bin/clang")
-    set(CMAKE_CXX_COMPILER "/usr/local/opt/llvm@13/bin/clang++")
+    set(LLVM_BASE_PATH "/opt/homebrew/opt/llvm@13/bin/")
   endif()
+
+  set(CMAKE_CXX_COMPILER "${LLVM_BASE_PATH}clang++")
+  set(CMAKE_C_COMPILER "${LLVM_BASE_PATH}clang")
 elseif(UNIX)
-  # Using GNU gcc-11.
   set(CMAKE_CXX_COMPILER "g++-11")
   set(CMAKE_C_COMPILER "gcc-11")
 endif()
 
-target_include_directories(cartogram PUBLIC ${PROJECT_SOURCE_DIR}/include)
+# ========== Source Files ==========
+file(GLOB_RECURSE CARTOGRAM_SOURCES "src/*.cpp")
+add_executable(cartogram ${CARTOGRAM_SOURCES})
 
-# Linking appropriate libraries to cartogram target.
-target_link_libraries(
-  cartogram
+# ========== Include Directories ==========
+if(Boost_FOUND)
+  target_include_directories(cartogram PUBLIC ${Boost_INCLUDE_DIRS})
+endif()
+
+target_include_directories(cartogram PUBLIC
+  ${PROJECT_SOURCE_DIR}/include
+  ${Boost_INCLUDE_DIRS}
+  PkgConfig::fftw
+  PkgConfig::CAIRO
+)
+
+# ========== Compile Options ==========
+if(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
+  target_compile_options(cartogram PRIVATE -isystem ${Boost_INCLUDE_DIRS})
+elseif(MSVC)
+  target_compile_options(cartogram PRIVATE /external:I ${Boost_INCLUDE_DIRS})
+endif()
+
+# Compiler warnings
+target_compile_options(cartogram PRIVATE -Wall -Wextra -pedantic -Wno-deprecated-declarations)
+
+# ========== Linking Libraries ==========
+target_link_libraries(cartogram
   PkgConfig::fftw
   PkgConfig::CAIRO
   Matplot++::matplot
-  # OpenMP::OpenMP_CXX
 )
 
-# Providing make with install target.
+if(APPLE AND ${CMAKE_CXX_COMPILER_ID} MATCHES "Clang")
+  target_link_libraries(cartogram ${OpenMP_CXX_FLAGS} ${LIBOMP_PATH}/libomp.dylib)
+else()
+  target_link_libraries(cartogram OpenMP::OpenMP_CXX)
+endif()
+
+# ========== Installation ==========
 install(TARGETS cartogram DESTINATION bin)
 
-# Providing make with uninstall target.
-# TODO: Polish
-# From https://stackoverflow.com/questions/41471620/cmake-support-make-uninstall
+# Uninstall target
 add_custom_target("uninstall")
 add_custom_command(
   TARGET "uninstall"
   POST_BUILD
   COMMENT "Uninstalling cartogram..."
-  COMMAND xargs rm -vf < install_manifest.txt || echo Nothing in
-  install_manifest.txt to be uninstalled!
+  COMMAND xargs rm -vf < install_manifest.txt || echo "Nothing in install_manifest.txt to be uninstalled!"
 )
