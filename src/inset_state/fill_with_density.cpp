@@ -168,5 +168,27 @@ void InsetState::fill_with_density(bool plot_density)
       }
     }
   }
+
+  // Determine range of densities
+  double dens_min = dbl_inf;
+  double dens_max = -dbl_inf;
+
+  for (unsigned int i = 0; i < lx_; ++i) {
+    for (unsigned int j = 0; j < ly_; ++j) {
+      dens_min = std::min(rho_init_(i, j), dens_min);
+      dens_max = std::max(rho_init_(i, j), dens_max);
+    }
+  }
+  dens_min_ = dens_min;
+  dens_mean_ = mean_density;
+  dens_max_ = dens_max;
+
+  if (plot_density) {
+    std::string file_name = inset_name_ + "_unblurred_density_" +
+                            std::to_string(n_finished_integrations()) + ".svg";
+
+    std::cerr << "Writing " << file_name << std::endl;
+    write_density_image(file_name, rho_init_.as_1d_array(), false, false);
+  }
   execute_fftw_fwd_plan();
 }
