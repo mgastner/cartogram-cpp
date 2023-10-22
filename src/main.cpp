@@ -446,9 +446,6 @@ int main(const int argc, const char *argv[])
       if (blur_width > 0.0) {
         inset_state.blur_density(blur_width, plot_density);
       }
-      if (plot_intersections) {
-        inset_state.write_intersections_to_eps(intersections_resolution);
-      }
 
       time_point start_flatten_density = clock_time::now();
       if (qtdt_method) {
@@ -524,9 +521,7 @@ int main(const int argc, const char *argv[])
     progress += inset_max_frac;
     std::cerr << "Finished inset " << inset_pos << "\nProgress: " << progress
               << std::endl;
-    if (plot_intersections) {
-      inset_state.write_intersections_to_eps(intersections_resolution);
-    }
+
     if (plot_polygons) {
       std::string output_filename = inset_state.inset_name();
       if (plot_graticule) {

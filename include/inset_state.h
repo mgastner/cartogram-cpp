@@ -84,9 +84,6 @@ private:
   // Area errors
   std::vector<double> max_area_errors_;
 
-  // Create cairo surface
-  void write_polygons_to_cairo_surface(cairo_t *, bool, bool, bool);
-
   // Make default constructor private so that only
   // InsetState(const std::string) can be called as constructor
   InsetState();
@@ -299,8 +296,6 @@ public:
     std::string filename,
     const bool image_format_ps);
   void write_legend_to_cairo_surface(cairo_t *cr, bool equal_area_map);
-  void write_quadtree(const std::string &);
->>>>>>> graticule-heatmap
   void write_density_to_eps(const std::string &, const double *);
   void write_graticule_to_eps(std::ofstream &);
   void write_intersections_to_eps(unsigned int);

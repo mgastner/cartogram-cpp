@@ -1,30 +1,6 @@
 #include "write_image.h"
 #include <iostream>
 
-void write_triangles_on_cairo_surface(cairo_t *cr, Delaunay &dt, color clr)
-{
-  // Draw the triangles
-  for (Delaunay::Finite_faces_iterator fit = dt.finite_faces_begin();
-       fit != dt.finite_faces_end();
-       ++fit) {
-    Point p1 = fit->vertex(0)->point();
-    Point p2 = fit->vertex(1)->point();
-    Point p3 = fit->vertex(2)->point();
-
-    // set width of line
-    cairo_set_line_width(cr, 0.05);
-
-    // set color
-    cairo_set_source_rgb(cr, clr.r, clr.g, clr.b);
-
-    cairo_move_to(cr, p1.x(), 512 - p1.y());
-    cairo_line_to(cr, p2.x(), 512 - p2.y());
-    cairo_line_to(cr, p3.x(), 512 - p3.y());
-    cairo_line_to(cr, p1.x(), 512 - p1.y());
-    cairo_stroke(cr);
-  }
-}
-
 void write_ps_header(const std::string filename, cairo_surface_t *surface)
 {
   const std::string title = "%%Title: " + filename;
@@ -37,12 +13,44 @@ void write_ps_header(const std::string filename, cairo_surface_t *surface)
   cairo_ps_surface_dsc_comment(surface, "%%Magnification: 1.0000");
 }
 
-void write_point_on_cairo_surface(cairo_t *cr, Point pt, color clr)
+void write_triangles_on_cairo_surface(
+  cairo_t *cr,
+  const Delaunay &dt,
+  const color &clr,
+  const unsigned int ly)
 {
+  // Draw the triangles
+  for (Delaunay::Finite_faces_iterator fit = dt.finite_faces_begin();
+       fit != dt.finite_faces_end();
+       ++fit) {
+    Point p1 = fit->vertex(0)->point();
+    Point p2 = fit->vertex(1)->point();
+    Point p3 = fit->vertex(2)->point();
+
+    // set width of line
+    cairo_set_line_width(cr, 0.20);
+
+    // set color
+    cairo_set_source_rgb(cr, clr.r, clr.g, clr.b);
+
+    cairo_move_to(cr, p1.x(), ly - p1.y());
+    cairo_line_to(cr, p2.x(), ly - p2.y());
+    cairo_line_to(cr, p3.x(), ly - p3.y());
+    cairo_line_to(cr, p1.x(), ly - p1.y());
+    cairo_stroke(cr);
+  }
+}
+
+void write_point_on_cairo_surface(
+  cairo_t *cr,
+  const Point &pt,
+  const color &clr,
+  const unsigned int ly)
+{
+  const double radius = 0.25;
   cairo_set_source_rgb(cr, clr.r, clr.g, clr.b);
-  cairo_move_to(cr, pt.x(), 512 - pt.y());
-  cairo_line_to(cr, pt.x() + 0.05, 512 - pt.y() - 0.05);
-  cairo_close_path(cr);
+  cairo_arc(cr, pt.x(), ly - pt.y(), radius, 0, 2 * pi);
+  cairo_fill(cr);
   cairo_stroke(cr);
 }
 
@@ -58,28 +66,64 @@ void InsetState::write_polygon_points_on_cairo_surface(cairo_t *cr, color clr)
 
       // Plot each point in exterior ring
       for (auto i : ext_ring) {
-        write_point_on_cairo_surface(cr, i, clr);
+        write_point_on_cairo_surface(cr, i, clr, ly_);
       }
 
       // Plot holes
       for (auto hci = pwh.holes_begin(); hci != pwh.holes_end(); ++hci) {
         Polygon hole = *hci;
         for (unsigned int i = 1; i <= hole.size(); ++i) {
-          write_point_on_cairo_surface(cr, hole[i], clr);
+          write_point_on_cairo_surface(cr, hole[i], clr, ly_);
         }
       }
     }
   }
 }
 
+void write_quadtree_rectangles_on_cairo_surface(
+  cairo_t *cr,
+  const std::vector<Bbox> &quadtree_bboxes,
+  const color &clr,
+  const unsigned int ly)
+{
+  cairo_set_source_rgb(cr, clr.r, clr.g, clr.b);
+  cairo_set_line_cap(cr, CAIRO_LINE_CAP_ROUND);
+  cairo_set_line_width(cr, 0.20);
+  for (auto &bbox : quadtree_bboxes) {
+    auto xmin = bbox.xmin();
+    auto ymin = bbox.ymin();
+    auto xmax = bbox.xmax();
+    auto ymax = bbox.ymax();
+
+    // draw a rectangle with bbox values
+    cairo_rectangle(cr, xmin, ly - ymin, xmax - xmin, ymin - ymax);
+    cairo_stroke(cr);
+  }
+}
+
+void InsetState::write_delaunay_triangles(const std::string &filename)
+{
+  cairo_surface_t *surface =
+    cairo_svg_surface_create((filename + ".svg").c_str(), lx_, ly_);
+  cairo_t *cr = cairo_create(surface);
+  write_triangles_on_cairo_surface(cr, proj_qd_.dt, color{0.6, 0.6, 0.6}, ly_);
+  write_polygon_points_on_cairo_surface(cr, color{0.0, 0.0, 1.0});
+  cairo_show_page(cr);
+  cairo_surface_destroy(surface);
+  cairo_destroy(cr);
+}
+
 void InsetState::write_quadtree(const std::string &filename)
 {
   cairo_surface_t *surface =
-    cairo_ps_surface_create((filename + ".ps").c_str(), lx_, ly_);
+    cairo_svg_surface_create((filename + ".svg").c_str(), lx_, ly_);
   cairo_t *cr = cairo_create(surface);
-  write_ps_header((filename + ".ps"), surface);
-  write_triangles_on_cairo_surface(cr, proj_qd_.dt, color{0.0, 0.0, 0.0});
-  write_polygon_points_on_cairo_surface(cr, color{1.0, 0.0, 0.0});
+  write_quadtree_rectangles_on_cairo_surface(
+    cr,
+    quadtree_bboxes_,
+    color{0.6, 0.6, 0.6},
+    ly_);
+  write_polygon_points_on_cairo_surface(cr, color{0.0, 0.0, 1.0});
   cairo_show_page(cr);
   cairo_surface_destroy(surface);
   cairo_destroy(cr);
@@ -102,6 +146,7 @@ bool all_points_inside_exterior_ring(
   }
   return true;
 }
+
 
 double font_size(
   cairo_t *cr,
@@ -138,37 +183,34 @@ double font_size(
   return 0.0;
 }
 
-
 void InsetState::write_polygons_to_cairo_surface(
   cairo_t *cr,
   const bool fill_polygons,
   const bool colors,
-  const bool plot_equal_area_map)
+  const bool plot_graticule)
 {
   cairo_set_line_width(cr, 1e-3 * std::min(lx_, ly_));
 
-  // Draw cartogram polygons or equal area map polygons
-  const std::vector<GeoDiv> &geo_divs =
-    plot_equal_area_map ? geo_divs_original_ : geo_divs_;
-
   // Draw the shapes
-  for (const auto &gd : geo_divs) {
+  for (const auto &gd : geo_divs_) {
     for (const auto &pwh : gd.polygons_with_holes()) {
-      const Polygon ext_ring = pwh.outer_boundary();
+      const auto ext_ring = pwh.outer_boundary();
+
+      // Move to starting coordinates
       cairo_move_to(cr, ext_ring[0].x(), ly_ - ext_ring[0].y());
 
       // Plot each point in exterior ring
-      for (unsigned int i = 1; i < ext_ring.size(); ++i) {
-        cairo_line_to(cr, ext_ring[i].x(), ly_ - ext_ring[i].y());
+      for (unsigned int i = 1; i <= ext_ring.size(); ++i) {
+        cairo_line_to(
+          cr,
+          ext_ring[i % ext_ring.size()].x(),
+          ly_ - ext_ring[i % ext_ring.size()].y());
       }
 
-      // Close the exterior ring
-      cairo_close_path(cr);
-
-      // Draw holes
+      // Plot holes
       for (auto h = pwh.holes_begin(); h != pwh.holes_end(); ++h) {
         cairo_move_to(cr, (*h)[0].x(), ly_ - (*h)[0].y());
-        const size_t hsize = (*h).size();
+        const unsigned int hsize = h->size();
         for (unsigned int i = 1; i <= hsize; ++i) {
           cairo_line_to(cr, (*h)[i % hsize].x(), ly_ - (*h)[i % hsize].y());
         }
@@ -181,64 +223,156 @@ void InsetState::write_polygons_to_cairo_surface(
         } else if (colors) {
 
           // Get color
-          const Color col = color_at(gd.id());
+          const auto col = color_at(gd.id());
 
           // Fill path
-          cairo_set_source_rgb(cr, col.r, col.g, col.b);
+          cairo_set_source_rgb(
+            cr,
+            col.r / 255.0,
+            col.g / 255.0,
+            col.b / 255.0);
         } else if (fill_polygons) {
 
           // Fill path with default color
           cairo_set_source_rgb(cr, 0.96, 0.92, 0.70);
         }
-        cairo_fill_preserve(cr);
       }
-
+      cairo_fill_preserve(cr);
       cairo_set_source_rgb(cr, 0.0, 0.0, 0.0);
       cairo_stroke(cr);
     }
   }
+
+  // Add labels
+  for (const auto &gd : geo_divs_) {
+    const auto label = label_at(gd.id());
+    const auto label_char = label.c_str();
+
+    // Go to a specific coordinate to place the label
+    cairo_set_source_rgb(cr, 0.0, 0.0, 0.0);
+    cairo_select_font_face(
+      cr,
+      "sans-serif",
+      CAIRO_FONT_SLANT_NORMAL,
+      CAIRO_FONT_WEIGHT_NORMAL);
+    const auto label_pt = gd.point_on_surface_of_geodiv();
+
+    // Get size of label
+    const auto fsize = font_size(cr, label_char, label_pt, gd);
+    if (fsize > 0.0) {
+      cairo_set_font_size(cr, fsize);
+      cairo_text_extents_t extents;
+      cairo_text_extents(cr, label_char, &extents);
+      const double x = label_pt.x() - (extents.width / 2 + extents.x_bearing);
+      const double y =
+        ly_ - label_pt.y() - (extents.height / 2 + extents.y_bearing);
+      cairo_move_to(cr, x, y);
+      cairo_show_text(cr, label_char);
+      cairo_stroke(cr);
+    }
+  }
+
+  // Plot the graticule
+  if (plot_graticule) {
+    const unsigned int graticule_line_spacing = 7;
+
+    // Set line width of graticule lines
+    cairo_set_line_width(cr, 5e-4 * std::min(lx_, ly_));
+    cairo_set_source_rgb(cr, 0.0, 0.0, 0.0);
+
+    // Vertical graticule lines
+    for (unsigned int i = 0; i <= lx_; i += graticule_line_spacing) {
+      cairo_move_to(cr, cum_proj_[i][0].x, ly_ - cum_proj_[i][0].y);
+      for (unsigned int j = 1; j < ly_; ++j) {
+        cairo_line_to(cr, cum_proj_[i][j].x, ly_ - cum_proj_[i][j].y);
+      }
+      cairo_stroke(cr);
+    }
+
+    // Horizontal graticule lines
+    for (unsigned int j = 0; j <= ly_; j += graticule_line_spacing) {
+      cairo_move_to(cr, cum_proj_[0][j].x, ly_ - cum_proj_[0][j].y);
+      for (unsigned int i = 1; i < lx_; ++i) {
+        cairo_line_to(cr, cum_proj_[i][j].x, ly_ - cum_proj_[i][j].y);
+      }
+      cairo_stroke(cr);
+    }
+  }
+
+  // Plot minimum ellipses
+  // for (const auto &gd : geo_divs_) {
+  //   for (const auto &ell : gd.min_ellipses()) {
+  //     cairo_translate(cr, ell.center.x(), ly_ - ell.center.y());
+  //     cairo_rotate(cr, -ell.theta);
+  //     cairo_scale(cr, ell.semimajor, ell.semiminor);
+  //     cairo_arc(
+  //       cr,
+  //       0, //ly_ - ell.center.x(),
+  //       0, //ell.center.y(),
+  //       1, //std::max(ell.semimajor, ell.semiminor),
+  //       0,
+  //       2 * pi);
+  //     cairo_identity_matrix(cr);
+  //     cairo_stroke(cr);
+  //   }
+  // }
 }
 
-// Outputs a PNG file
-void InsetState::write_cairo_polygons_to_png(
+void write_vectors_to_cairo_surface(
+  cairo_t *cr,
+  std::unordered_map<Point, Point> &vectors,
+  unsigned int lx_,
+  unsigned int ly_)
+{
+
+  // Set line width of vectors
+  cairo_set_line_width(cr, 5e-3 * std::min(lx_, ly_));
+  cairo_set_source_rgb(cr, 0.0, 0.0, 0.0);
+
+  // Plot vectors
+  for (const auto &v : vectors) {
+    cairo_move_to(cr, v.first.x(), ly_ - v.first.y());
+    // vector angle
+    const auto theta = std::atan2(v.second.y(), v.second.x());
+    // vector length
+    const auto r =
+      std::sqrt(v.second.x() * v.second.x() + v.second.y() * v.second.y());
+
+    // vector end point
+    // const auto x = v.first.x() + r * std::cos(theta);
+    // const auto y = v.first.y() + r * std::sin(theta);
+    const auto x = v.first.x() + 2 * v.second.x();
+    const auto y = v.first.y() + 2 * v.second.y();
+
+    // arrow head
+    const auto x1 = x - 0.05 * r * std::cos(theta + pi / 6);
+    const auto y1 = y - 0.05 * r * std::sin(theta + pi / 6);
+    const auto x2 = x - 0.05 * r * std::cos(theta - pi / 6);
+    const auto y2 = y - 0.05 * r * std::sin(theta - pi / 6);
+
+    cairo_line_to(cr, x, ly_ - y);
+    cairo_line_to(cr, x1, ly_ - y1);
+    cairo_move_to(cr, x, ly_ - y);
+    cairo_line_to(cr, x2, ly_ - y2);
+    cairo_stroke(cr);
+    cairo_stroke(cr);
+  }
+}
+
+// Outputs a SVG file
+void InsetState::write_cairo_polygons_to_svg(
   const std::string &fname,
   const bool fill_polygons,
   const bool colors,
-  const bool plot_grid)
+  const bool plot_graticule,
+  std::unordered_map<Point, Point> &vectors)
 {
   const auto filename = fname.c_str();
-  cairo_surface_t *surface = cairo_image_surface_create(
-    CAIRO_FORMAT_ARGB32,
-    static_cast<int>(lx_),
-    static_cast<int>(ly_));
-  cairo_t *cr = cairo_create(surface);
-  write_polygons_to_cairo_surface(cr, fill_polygons, colors, plot_grid);
-  cairo_surface_write_to_png(surface, filename);
-  cairo_destroy(cr);
-  cairo_surface_destroy(surface);
-}
-
-// Outputs a PS file
-void InsetState::write_cairo_polygons_to_ps(
-  const std::string &fname,
-  const bool fill_polygons,
-  const bool colors,
-  const bool plot_grid)
-{
-  const auto filename = fname.c_str();
-  cairo_surface_t *surface = cairo_ps_surface_create(filename, lx_, ly_);
+  cairo_surface_t *surface = cairo_svg_surface_create(filename, lx_, ly_);
   cairo_t *cr = cairo_create(surface);
 
-  // Add comments
-  const std::string title = "%%Title: " + fname;
-  cairo_ps_surface_dsc_comment(surface, title.c_str());
-  cairo_ps_surface_dsc_comment(
-    surface,
-    "%%Creator: Michael T. Gastner et al.");
-  cairo_ps_surface_dsc_comment(surface, "%%For: Humanity");
-  cairo_ps_surface_dsc_comment(surface, "%%Copyright: License CC BY");
-  cairo_ps_surface_dsc_comment(surface, "%%Magnification: 1.0000");
-  write_polygons_to_cairo_surface(cr, fill_polygons, colors, plot_grid);
+  write_polygons_to_cairo_surface(cr, fill_polygons, colors, plot_graticule);
+  write_vectors_to_cairo_surface(cr, vectors, lx_, ly_);
   cairo_show_page(cr);
   cairo_surface_destroy(surface);
   cairo_destroy(cr);
@@ -246,18 +380,22 @@ void InsetState::write_cairo_polygons_to_ps(
 
 // TODO: DO WE NEED THIS FUNCTION? WOULD IT NOT MAKE MORE SENSE TO ONLY PRINT
 // FILE TYPES INDICATED BY COMMAND-LINE FLAGS?
-// Outputs both png and ps files
+// Outputs both png and SVG files
 void InsetState::write_cairo_map(
   const std::string &file_name,
-  const bool plot_grid)
+  const bool plot_graticule,
+  std::unordered_map<Point, Point> vectors)
 {
-  const auto png_name = file_name + ".png";
-  const auto ps_name = file_name + ".ps";
+  const auto svg_name = file_name + ".svg";
 
   // Check whether the has all GeoDivs colored
   const bool has_colors = (colors_size() == n_geo_divs());
-  write_cairo_polygons_to_png(png_name, true, has_colors, plot_grid);
-  write_cairo_polygons_to_ps(ps_name, true, has_colors, plot_grid);
+  write_cairo_polygons_to_svg(
+    svg_name,
+    true,
+    has_colors,
+    plot_graticule,
+    vectors);
 }
 
 
