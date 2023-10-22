@@ -13,6 +13,8 @@ void write_ps_header(const std::string filename, cairo_surface_t *surface)
   cairo_ps_surface_dsc_comment(surface, "%%Magnification: 1.0000");
 }
 
+// ======================== Basic Plotting ========================
+
 void write_triangles_on_cairo_surface(
   cairo_t *cr,
   const Delaunay &dt,
@@ -147,7 +149,6 @@ bool all_points_inside_exterior_ring(
   return true;
 }
 
-
 double font_size(
   cairo_t *cr,
   const char *label,
@@ -236,8 +237,8 @@ void InsetState::write_polygons_to_cairo_surface(
           // Fill path with default color
           cairo_set_source_rgb(cr, 0.96, 0.92, 0.70);
         }
+        cairo_fill_preserve(cr);
       }
-      cairo_fill_preserve(cr);
       cairo_set_source_rgb(cr, 0.0, 0.0, 0.0);
       cairo_stroke(cr);
     }
@@ -398,6 +399,7 @@ void InsetState::write_cairo_map(
     vectors);
 }
 
+// ======================== Graticule Heatmap ========================
 
 void InsetState::write_grid_heatmap_data(const std::string filename)
 {
@@ -406,7 +408,8 @@ void InsetState::write_grid_heatmap_data(const std::string filename)
 
   InsetState is_copy = (*this);
   is_copy.set_geo_divs(geo_divs_original_);
-  auto intersections_with_rays = is_copy.intersec_with_parallel_to('x', resolution);
+  auto intersections_with_rays =
+    is_copy.intersec_with_parallel_to('x', resolution);
   std::vector<std::vector<double>> exists(lx_, std::vector<double>(ly_, 0));
 
   // Mark all squares that are inside map with 1
@@ -443,7 +446,6 @@ void InsetState::write_grid_heatmap_data(const std::string filename)
   }
   std::cout << "Grid heatmap data written" << std::endl;
 }
-
 
 // Outputs a SVG/PS file of grid heatmap
 void InsetState::write_grid_heatmap_image(
