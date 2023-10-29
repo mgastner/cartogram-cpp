@@ -1,4 +1,5 @@
 #include "cartogram_info.h"
+#include "compare_insets.h"
 #include "constants.h"
 #include "parse_arguments.h"
 #include <chrono>
@@ -15,8 +16,102 @@ template <typename T> std::chrono::milliseconds inMilliseconds(T duration)
   return std::chrono::duration_cast<std::chrono::milliseconds>(duration);
 }
 
+void init_cart_info(CartogramInfo *cart_info,
+                    argparse::ArgumentParser arguments,
+                    bool make_csv,
+                    bool world,
+                    bool simplify,
+                    unsigned int target_points_per_inset,
+                    std::string geo_file_name,
+                    std::string map_name)
+{
+  cart_info -> set_map_name(map_name);
+  if (!make_csv) {
+
+    // Read visual variables (e.g., area and color) from CSV
+    try {
+      cart_info -> read_csv(arguments);
+    } catch (const std::system_error &e) {
+      std::cerr << "ERROR reading CSV: " << e.what() << " (" << e.code() << ")"
+                << std::endl;
+      exit(EXIT_FAILURE);
+    } catch (const std::runtime_error &e) {
+
+      // If there is an error, it is probably because of an invalid CSV file
+      std::cerr << "ERROR reading CSV: " << e.what() << std::endl;
+      exit(EXIT_FAILURE);
+    }
+  }
+
+  // Read geometry. If the GeoJSON does not explicitly contain a "crs" field,
+  // we assume that the coordinates are in longitude and latitude.
+  std::string crs = "+proj=longlat";
+  try {
+    cart_info -> read_geojson(geo_file_name, make_csv, &crs);
+  } catch (const std::system_error &e) {
+    std::cerr << "ERROR reading GeoJSON: " << e.what() << " (" << e.code()
+              << ")" << std::endl;
+    exit(EXIT_FAILURE);
+  }
+  std::cerr << "Coordinate reference system: " << crs << std::endl;
+
+  // Project map and ensure that all holes are inside polygons
+  for (auto &[inset_pos, inset_state] : *cart_info -> ref_to_inset_states()) {
+
+    // Check for errors in the input topology
+    try {
+      inset_state.check_topology();
+    } catch (const std::system_error &e) {
+      std::cerr << "ERROR while checking topology: " << e.what() << " ("
+                << e.code() << ")" << std::endl;
+      exit(EXIT_FAILURE);
+    }
+
+    // Can the coordinates be interpreted as longitude and latitude?
+    // TODO: The "crs" field for GeoJSON files seems to be deprecated.
+    //       However, in earlier specifications, the coordinate reference
+    //       system used to be written in the format specified here:
+    //       https://geojson.org/geojson-spec.html#coordinate-reference-system-objects.
+    //       It may be a good idea to make a list of possible entries
+    //       corresponding to longitude and lattitude projection.
+    //       "urn:ogc:def:crs:OGC:1.3:CRS84" is one such entry.
+    const Bbox bb = inset_state.bbox();
+    if (
+      (bb.xmin() >= -180.0 && bb.xmax() <= 180.0) &&
+      (bb.ymin() >= -90.0 && bb.ymax() <= 90.0) &&
+      (crs == "+proj=longlat" || crs == "urn:ogc:def:crs:OGC:1.3:CRS84")) {
+
+      // If yes, transform the coordinates with the Albers projection if the
+      // input map is not a world map. Otherwise, use the Smyth-Craster
+      // projection.
+      if (world) {
+        inset_state.apply_smyth_craster_projection();
+      } else {
+        inset_state.apply_albers_projection();
+      }
+    // TODO: For now, assume that all non longitude-latitude maps are equal
+    // area.
+    // } else if (output_equal_area) {
+    //   std::cerr << "ERROR: Input GeoJSON is not a longitude-latitude map."
+    //             << std::endl;
+    //   exit(EXIT_FAILURE);
+    }
+    if (simplify) {
+
+      // Simplification reduces the number of points used to represent the
+      // GeoDivs in the inset, thereby reducing output file sizes and
+      // run-times
+      inset_state.simplify(target_points_per_inset);
+    }
+  }
+
+  // Replace missing and zero target areas with positive values
+  cart_info -> replace_missing_and_zero_target_areas();
+}
+
 int main(const int argc, const char *argv[])
 {
+
   // Start of main function time
   const time_point start_main = clock_time::now();
   std::string geo_file_name, visual_file_name;
@@ -38,7 +133,7 @@ int main(const int argc, const char *argv[])
   // Other boolean values that are needed to parse the command line arguments
   bool make_csv, output_equal_area, output_to_stdout, plot_density,
     plot_graticule, plot_intersections, plot_polygons, plot_quadtree,
-    remove_tiny_polygons;
+    remove_tiny_polygons, insert_visual_variable;
 
   // If the proportion of the polygon area is smaller than
   // min_polygon_area * total area, then remove polygon
@@ -53,6 +148,7 @@ int main(const int argc, const char *argv[])
     visual_file_name,
     max_n_grid_rows_or_cols,
     target_points_per_inset,
+    insert_visual_variable,
     world,
     triangulation,
     qtdt_method,
@@ -80,35 +176,14 @@ int main(const int argc, const char *argv[])
   if (map_name.find('.') != std::string::npos) {
     map_name = map_name.substr(0, map_name.find('.'));
   }
-  cart_info.set_map_name(map_name);
-  if (!make_csv) {
-
-    // Read visual variables (e.g., area and color) from CSV
-    try {
-      cart_info.read_csv(arguments);
-    } catch (const std::system_error &e) {
-      std::cerr << "ERROR reading CSV: " << e.what() << " (" << e.code() << ")"
-                << std::endl;
-      return EXIT_FAILURE;
-    } catch (const std::runtime_error &e) {
-
-      // If there is an error, it is probably because of an invalid CSV file
-      std::cerr << "ERROR reading CSV: " << e.what() << std::endl;
-      return EXIT_FAILURE;
-    }
-  }
-
-  // Read geometry. If the GeoJSON does not explicitly contain a "crs" field,
-  // we assume that the coordinates are in longitude and latitude.
-  std::string crs = "+proj=longlat";
-  try {
-    cart_info.read_geojson(geo_file_name, make_csv, &crs);
-  } catch (const std::system_error &e) {
-    std::cerr << "ERROR reading GeoJSON: " << e.what() << " (" << e.code()
-              << ")" << std::endl;
-    return EXIT_FAILURE;
-  }
-  std::cerr << "Coordinate reference system: " << crs << std::endl;
+  init_cart_info(&cart_info,
+                 arguments,
+                 make_csv,
+                 world,
+                 simplify,
+                 target_points_per_inset,
+                 geo_file_name,
+                 map_name);
 
   // Progress measured on a scale from 0 (start) to 1 (end)
   double progress = 0.0;
@@ -127,57 +202,6 @@ int main(const int argc, const char *argv[])
      duration_fill_density = inMilliseconds(duration::zero()),
      duration_qtdt = inMilliseconds(duration::zero());
 
-  // Project map and ensure that all holes are inside polygons
-  for (auto &[inset_pos, inset_state] : *cart_info.ref_to_inset_states()) {
-
-    // Check for errors in the input topology
-    try {
-      inset_state.check_topology();
-    } catch (const std::system_error &e) {
-      std::cerr << "ERROR while checking topology: " << e.what() << " ("
-                << e.code() << ")" << std::endl;
-      return EXIT_FAILURE;
-    }
-
-    // Can the coordinates be interpreted as longitude and latitude?
-    // TODO: The "crs" field for GeoJSON files seems to be deprecated.
-    //       However, in earlier specifications, the coordinate reference
-    //       system used to be written in the format specified here:
-    //       https://geojson.org/geojson-spec.html#coordinate-reference-system-objects.
-    //       It may be a good idea to make a list of possible entries
-    //       corresponding to longitude and lattitude projection.
-    //       "urn:ogc:def:crs:OGC:1.3:CRS84" is one such entry.
-    const Bbox bb = inset_state.bbox();
-    if (
-      (bb.xmin() >= -180.0 && bb.xmax() <= 180.0) &&
-      (bb.ymin() >= -90.0 && bb.ymax() <= 90.0) &&
-      (crs == "+proj=longlat" || crs == "urn:ogc:def:crs:OGC:1.3:CRS84")) {
-
-      // If yes, transform the coordinates with the Albers projection if the
-      // input map is not a world map. Otherwise, use the Smyth-Craster
-      // projection.
-      if (world) {
-        inset_state.apply_smyth_craster_projection();
-      } else {
-        inset_state.apply_albers_projection();
-      }
-    } else if (output_equal_area) {
-      std::cerr << "ERROR: Input GeoJSON is not a longitude-latitude map."
-                << std::endl;
-      return EXIT_FAILURE;
-    }
-    if (simplify) {
-
-      // Simplification reduces the number of points used to represent the
-      // GeoDivs in the inset, thereby reducing output file sizes and
-      // run-times
-      inset_state.simplify(target_points_per_inset);
-    }
-  }
-
-  // Replace missing and zero target areas with positive values
-  cart_info.replace_missing_and_zero_target_areas();
-
   // Project and exit
   if (output_equal_area) {
 
@@ -191,12 +215,76 @@ int main(const int argc, const char *argv[])
     // Shift insets so that they do not overlap
     cart_info.shift_insets_to_target_position();
 
+    // Scale equal area map up
+    double scale_factor = 10e3;
+    for (auto &[inset_pos, inset_state] : *cart_info.ref_to_inset_states()) {
+      inset_state.scale_inset(scale_factor);
+    }
+
     // Output to GeoJSON
     cart_info.write_geojson(
       geo_file_name,
       map_name + "_equal_area.geojson",
-      output_to_stdout);
+      output_to_stdout,
+      insert_visual_variable);
     return EXIT_SUCCESS;
+  }
+
+  // Check if a comparison GeoJSON file is provided
+  auto is_compare_header = arguments.present("-c");
+
+  // Compare 2 GeoJSON files.
+  if (is_compare_header) {
+    CartogramInfo compare_cart_info(world, visual_file_name);
+    init_cart_info(&compare_cart_info,
+                    arguments,
+                    make_csv,
+                    world,
+                    simplify,
+                    target_points_per_inset,
+                    *is_compare_header,
+                 map_name);
+
+    std::map<std::string, InsetState> *compare_insets =
+      compare_cart_info.ref_to_inset_states();
+    for (auto &[inset_pos, inset_state] : *cart_info.ref_to_inset_states()) {
+      InsetState current_compare_inset = compare_insets -> at(inset_pos);
+      inset_state.set_geo_divs_compare_to(current_compare_inset.geo_divs());
+
+      // Update and display area error.
+      current_compare_inset.set_area_errors();
+      std::cerr << "max. area err: "
+                << current_compare_inset.max_area_error().value
+                << ", GeoDiv: "
+                << current_compare_inset.max_area_error().geo_div
+                << std::endl;
+
+      // Calculate distances
+      std::map<std::string, double> hausdorff_distances =
+        inset_state.get_geo_div_differences(hausdorff_distance, false);
+      double total_distance = 0;
+      // std::cout << "\nHausdorff distances:\n";
+      for (const auto &[key, val] : hausdorff_distances) {
+        // std::cout << key << ": " << val << std::endl;
+        total_distance += val;
+      }
+      std::cout << "\nAverage Hausdorff distance: "
+                << total_distance / double(hausdorff_distances.size())
+                << std::endl;
+
+      std::map<std::string, double> symmetric_distances =
+        inset_state.get_geo_div_differences(symmetric_distance, false);
+      total_distance = 0;
+      // std::cout << "\nSymmetric distances:\n";
+      for (const auto &[key, val] : symmetric_distances) {
+        // std::cout << key << ": " << val << std::endl;
+        total_distance += val;
+      }
+      std::cout << "\nAverage symmetric distance: "
+                << total_distance / double(symmetric_distances.size())
+                << std::endl;
+      return EXIT_SUCCESS;
+    }
   }
 
   // Iterate over insets
@@ -214,11 +302,8 @@ int main(const int argc, const char *argv[])
     // Rescale map to fit into a rectangular box [0, lx] * [0, ly]
     inset_state.rescale_map(max_n_grid_rows_or_cols, cart_info.is_world_map());
 
-    if (output_to_stdout) {
-
-      // Store original coordinates
-      inset_state.store_original_geo_divs();
-    }
+    // Store original coordinates
+    inset_state.store_original_geo_divs();
 
     // Set up Fourier transforms
     const unsigned int lx = inset_state.lx();
@@ -425,7 +510,8 @@ int main(const int argc, const char *argv[])
       cart_info.write_geojson(
         geo_file_name,
         output_file_name,
-        output_to_stdout);
+        output_to_stdout,
+        insert_visual_variable);
       inset_state.revert_smyth_craster_projection();
     } else {
 
@@ -446,6 +532,31 @@ int main(const int argc, const char *argv[])
     inset_state.destroy_fftw_plans_for_rho();
     inset_state.ref_to_rho_init()->free();
     inset_state.ref_to_rho_ft()->free();
+
+    // Calculate distances
+    std::map<std::string, double> hausdorff_distances =
+      inset_state.get_geo_div_differences(hausdorff_distance, true);
+    double total_distance = 0;
+    // std::cout << "\nHausdorff distances:\n";
+    for (const auto &[key, val] : hausdorff_distances) {
+      // std::cout << key << ": " << val << std::endl;
+      total_distance += val;
+    }
+    std::cout << "\nAverage Hausdorff distance: "
+              << total_distance / double(hausdorff_distances.size())
+              << std::endl;
+
+    std::map<std::string, double> symmetric_distances =
+      inset_state.get_geo_div_differences(symmetric_distance, true);
+    total_distance = 0;
+    // std::cout << "\nSymmetric distances:\n";
+    for (const auto &[key, val] : symmetric_distances) {
+      // std::cout << key << ": " << val << std::endl;
+      total_distance += val;
+    }
+    std::cout << "\nAverage symmetric distance: "
+              << total_distance / double(symmetric_distances.size())
+              << std::endl;
   }  // End of loop over insets
 
   // Shift insets so that they do not overlap
@@ -455,7 +566,8 @@ int main(const int argc, const char *argv[])
   cart_info.write_geojson(
     geo_file_name,
     map_name + "_cartogram.geojson",
-    output_to_stdout);
+    output_to_stdout,
+    insert_visual_variable);
 
   // Store time when main() ended
   time_point end_main = clock_time::now();

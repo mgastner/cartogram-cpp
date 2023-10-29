@@ -181,6 +181,13 @@ void InsetState::execute_fftw_fwd_plan() const
   fftw_execute(fwd_plan_for_rho_);
 }
 
+bool InsetState::geo_div_id_exists(std::string gd_id) const
+{
+  if (target_areas_.find(gd_id) == target_areas_.end())
+    return false;
+  return true;
+}
+
 std::vector<GeoDiv> InsetState::geo_divs() const
 {
   return geo_divs_;
@@ -411,6 +418,10 @@ void InsetState::set_area_errors()
   }
 }
 
+void InsetState::set_geo_divs_compare_to(std::vector<GeoDiv> geo_divs_compare) {
+  geo_divs_compare_ = geo_divs_compare;
+}
+
 void InsetState::set_grid_dimensions(
   const unsigned int lx,
   const unsigned int ly)
@@ -464,6 +475,21 @@ std::string InsetState::label_at(const std::string &id) const
     return "";
   }
   return labels_.at(id);
+}
+
+void InsetState::scale_inset(double scale_factor)
+{
+  std::vector<GeoDiv> new_geo_divs;
+  const Transformation scale(CGAL::SCALING, scale_factor);
+  for (auto &gd : geo_divs_) {
+    for (auto &pwh : *gd.ref_to_polygons_with_holes()) {
+      auto *ext_ring = &pwh.outer_boundary();
+      *ext_ring = transform(scale, *ext_ring);
+      for (auto h = pwh.holes_begin(); h != pwh.holes_end(); ++h) {
+        *h = transform(scale, *h);
+      }
+    }
+  }
 }
 
 void InsetState::store_original_geo_divs()

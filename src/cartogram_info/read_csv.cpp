@@ -30,6 +30,7 @@ void CartogramInfo::read_csv(const argparse::ArgumentParser &arguments)
     std::cerr << "Area Header: " << *area_header << std::endl;
     area_col = reader.index_of(*area_header);
   }
+  visual_variable_name_ = reader.get_col_names()[area_col];
 
   // Find index of column with inset specifiers. If no inset column header was
   // passed with the command-line flag --inset, the header is assumed to be

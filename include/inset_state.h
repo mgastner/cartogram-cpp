@@ -50,6 +50,9 @@ private:
   // Copy of original data
   std::vector<GeoDiv> geo_divs_original_;
 
+  // GeoDivs from a second file
+  std::vector<GeoDiv> geo_divs_compare_;
+
   // Chosen diagonal for each graticule cell
   boost::multi_array<int, 2> graticule_diagonals_;
 
@@ -109,7 +112,10 @@ public:
   void flatten_density();  // Flatten said density with integration
   void flatten_density_with_node_vertices();
 
+  bool geo_div_id_exists(std::string) const;
   std::vector<GeoDiv> geo_divs() const;
+  std::map<std::string, double> get_geo_div_differences(
+    std::function<double (Polygon_with_holes, Polygon_with_holes)>, bool);
   void holes_inside_polygons();
   void increment_integration();
   void initialize_cum_proj();
@@ -155,7 +161,9 @@ public:
   void rescale_map(unsigned int, bool);
   void revert_smyth_craster_projection();
   void rings_are_simple();
+  void scale_inset(double);
   void set_area_errors();
+  void set_geo_divs_compare_to(std::vector<GeoDiv>);
   void set_grid_dimensions(unsigned int, unsigned int);
   void set_inset_name(const std::string &);
   void store_initial_area();
