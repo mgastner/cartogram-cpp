@@ -28,10 +28,10 @@ void InsetState::fill_with_density(bool plot_density)
     }
   }
 
-  // Density numerator and denominator for each graticule cell. The density of
-  // a graticule cell can be calculated with (rho_num / rho_den). We initially
-  // assign zero to all elements because we assume that all graticule cells
-  // are outside any GeoDiv. Any graticule cell where rho_den is zero will be
+  // Density numerator and denominator for each grid cell. The density of
+  // a grid cell can be calculated with (rho_num / rho_den). We initially
+  // assign zero to all elements because we assume that all grid cells
+  // are outside any GeoDiv. Any grid cell where rho_den is zero will be
   // filled with the mean_density.
 
   // TODO: rho_num and rho_den could be a boost::multi_array<double, 2>.
@@ -40,12 +40,12 @@ void InsetState::fill_with_density(bool plot_density)
 
   // Resolution with which we sample polygons. "resolution" is the number of
   // horizontal "test rays" between each of the ly consecutive horizontal
-  // graticule lines.
-  unsigned int long_graticule_length = std::max(lx_, ly_);
+  // grid lines.
+  unsigned int long_grid_length = std::max(lx_, ly_);
   const unsigned int resolution =
-    (long_graticule_length > default_long_graticule_length)
-      ? (default_resolution * default_long_graticule_length) *
-          (1.0 / long_graticule_length)
+    (long_grid_length > default_long_grid_length)
+      ? (default_resolution * default_long_grid_length) *
+          (1.0 / long_grid_length)
       : default_resolution;
 
   auto intersections_with_rays = intersec_with_parallel_to('x', resolution);
@@ -61,7 +61,7 @@ void InsetState::fill_with_density(bool plot_density)
   shared(intersections_with_rays, rho_den, resolution, rho_num, std::cerr)
   for (unsigned int k = 0; k < ly_; ++k) {
 
-    // Iterate over each of the rays between the graticule lines y = k and
+    // Iterate over each of the rays between the grid lines y = k and
     // y = k+1
     for (double y = k + 0.5 / resolution; y < k + 1; y += 1.0 / resolution) {
 
@@ -85,7 +85,7 @@ void InsetState::fill_with_density(bool plot_density)
         if (left_x != right_x) {
           if (ceil(left_x) == ceil(right_x)) {
 
-            // The intersections are in the same graticule cell. The ray
+            // The intersections are in the same grid cell. The ray
             // enters and leaves a GeoDiv in this cell. We weigh the density
             // of the cell by the GeoDiv's area error.
             const double weight =
@@ -99,7 +99,7 @@ void InsetState::fill_with_density(bool plot_density)
         }
 
         // Fill last exiting intersection with GeoDiv where part of ray inside
-        // the graticule cell is inside the GeoDiv
+        // the grid cell is inside the GeoDiv
         const auto last_x =
           static_cast<unsigned int>(intersections_at_y.back().x());
         const double last_weight =

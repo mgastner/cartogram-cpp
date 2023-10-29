@@ -20,7 +20,7 @@ argparse::ArgumentParser parsed_arguments(
   bool &output_equal_area,
   bool &output_to_stdout,
   bool &plot_density,
-  bool &plot_graticule,
+  bool &plot_grid,
   bool &plot_intersections,
   bool &plot_polygons,
   bool &remove_tiny_polygons,

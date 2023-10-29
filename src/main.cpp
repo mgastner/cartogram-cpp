@@ -22,15 +22,15 @@ int main(const int argc, const char *argv[])
   bool world;  // World maps need special projections
 
   // If `triangulation` is true, we apply a cartogram projection method based
-  // on the triangulation of graticule cells. It can eliminate intersections
-  // that occur when the projected graticule lines are strongly curved. Only
+  // on the triangulation of grid cells. It can eliminate intersections
+  // that occur when the projected grid lines are strongly curved. Only
   // use this method if the tracer points are an FTReal2d data structure.
   bool triangulation;
   bool simplify;  // Should the polygons be simplified?
 
   // Other boolean values that are needed to parse the command line arguments
   bool make_csv, output_equal_area, output_to_stdout, plot_density,
-    plot_graticule, plot_intersections, plot_polygons, plot_quadtree,
+    plot_grid, plot_intersections, plot_polygons, plot_quadtree,
     remove_tiny_polygons;
 
   // If the proportion of the polygon area is smaller than
@@ -54,7 +54,7 @@ int main(const int argc, const char *argv[])
     output_equal_area,
     output_to_stdout,
     plot_density,
-    plot_graticule,
+    plot_grid,
     plot_intersections,
     plot_polygons,
     remove_tiny_polygons,
@@ -245,13 +245,13 @@ int main(const int argc, const char *argv[])
 
       // Write PNG and PS files if requested by command-line option
       std::string input_filename = inset_state.inset_name();
-      if (plot_graticule) {
-        input_filename += "_input_graticule";
+      if (plot_grid) {
+        input_filename += "_input_grid";
       } else {
         input_filename += "_input";
       }
       std::cerr << "Writing " << input_filename << std::endl;
-      inset_state.write_cairo_map(input_filename, plot_graticule);
+      inset_state.write_cairo_map(input_filename, plot_grid);
     }
 
     // Remove tiny polygons below threshold
@@ -337,9 +337,9 @@ int main(const int argc, const char *argv[])
 
     //   // Write PNG and PS files if requested by command-line option
     //   std::string input_filename = inset_state.inset_name();
-    //   if (plot_graticule) {
+    //   if (plot_grid) {
     //     input_filename +=
-    //       "_preprocessing_graticule_" +
+    //       "_preprocessing_grid_" +
     //       std::to_string(inset_state.n_finished_integrations());
     //   } else {
     //     input_filename +=
@@ -347,7 +347,7 @@ int main(const int argc, const char *argv[])
     //       std::to_string(inset_state.n_finished_integrations());
     //   }
     //   std::cerr << "Writing " << input_filename << std::endl;
-    //   inset_state.write_cairo_map(input_filename, plot_graticule);
+    //   inset_state.write_cairo_map(input_filename, plot_grid);
     // }
 
     // std::cerr << "Polygon Preprocessing finished." << std::endl;
@@ -431,8 +431,8 @@ int main(const int argc, const char *argv[])
       } else if (triangulation) {
         time_tracker.start("Densification");
 
-        // Choose diagonals that are inside graticule cells
-        inset_state.fill_graticule_diagonals();
+        // Choose diagonals that are inside grid cells
+        inset_state.fill_grid_diagonals();
 
         // Densify map
         inset_state.densify_geo_divs();
@@ -473,13 +473,13 @@ int main(const int argc, const char *argv[])
 
     if (plot_polygons) {
       std::string output_filename = inset_state.inset_name();
-      if (plot_graticule) {
-        output_filename += "_output_graticule";
+      if (plot_grid) {
+        output_filename += "_output_grid";
       } else {
         output_filename += "_output";
       }
       std::cerr << "Writing " << output_filename << std::endl;
-      inset_state.write_cairo_map(output_filename, plot_graticule);
+      inset_state.write_cairo_map(output_filename, plot_grid);
     }
     if (world) {
       std::string output_file_name =
@@ -499,7 +499,7 @@ int main(const int argc, const char *argv[])
       if (qtdt_method) {
         inset_state.project_with_proj_sequence();
       } else {
-        inset_state.fill_graticule_diagonals(true);
+        inset_state.fill_grid_diagonals(true);
         inset_state.project_with_cum_proj();
       }
     }

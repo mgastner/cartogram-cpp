@@ -18,7 +18,7 @@ argparse::ArgumentParser parsed_arguments(
   bool &output_equal_area,
   bool &output_to_stdout,
   bool &plot_density,
-  bool &plot_graticule,
+  bool &plot_grid,
   bool &plot_intersections,
   bool &plot_polygons,
   bool &remove_tiny_polygons,
@@ -41,8 +41,8 @@ argparse::ArgumentParser parsed_arguments(
 
   // Optional argument accepting long grid side length (unsigned int) as
   // input. Default value declared in "constants.h"
-  arguments.add_argument("-n", "--n_graticule_rows_or_cols")
-    .default_value(default_long_graticule_length)
+  arguments.add_argument("-n", "--n_grid_rows_or_cols")
+    .default_value(default_long_grid_length)
     .scan<'u', unsigned int>()
     .help(
       "Integer: Number of grid cells along longer Cartesian coordinate axis");
@@ -64,8 +64,8 @@ argparse::ArgumentParser parsed_arguments(
     .help("Boolean: Plot images of flatten and blur density")
     .default_value(false)
     .implicit_value(true);
-  arguments.add_argument("-g", "--plot_graticule")
-    .help("Boolean: Plot images of with transformed graticule grid")
+  arguments.add_argument("-g", "--plot_grid")
+    .help("Boolean: Plot images of with transformed grid grid")
     .default_value(false)
     .implicit_value(true);
   arguments.add_argument("-i", "--plot_intersections")
@@ -165,7 +165,7 @@ argparse::ArgumentParser parsed_arguments(
   output_equal_area = arguments.get<bool>("-E");
   output_to_stdout = arguments.get<bool>("-O");
   plot_density = arguments.get<bool>("-d");
-  plot_graticule = arguments.get<bool>("-g");
+  plot_grid = arguments.get<bool>("-g");
   plot_intersections = arguments.get<bool>("-i");
   plot_polygons = arguments.get<bool>("-p");
   plot_quadtree = arguments.get<bool>("-q");

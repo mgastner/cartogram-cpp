@@ -176,7 +176,7 @@ void InsetState::write_polygons_on_surface(
   cairo_t *cr,
   const bool fill_polygons,
   const bool colors,
-  const bool plot_graticule)
+  const bool plot_grid)
 {
   cairo_set_line_width(cr, 1e-3 * std::min(lx_, ly_));
 
@@ -261,16 +261,16 @@ void InsetState::write_polygons_on_surface(
     }
   }
 
-  // Plot the graticule
-  if (plot_graticule) {
-    const unsigned int graticule_line_spacing = 7;
+  // Plot the grid
+  if (plot_grid) {
+    const unsigned int grid_line_spacing = 7;
 
-    // Set line width of graticule lines
+    // Set line width of grid lines
     cairo_set_line_width(cr, 5e-4 * std::min(lx_, ly_));
     cairo_set_source_rgb(cr, 0.0, 0.0, 0.0);
 
-    // Vertical graticule lines
-    for (unsigned int i = 0; i <= lx_; i += graticule_line_spacing) {
+    // Vertical grid lines
+    for (unsigned int i = 0; i <= lx_; i += grid_line_spacing) {
       cairo_move_to(cr, cum_proj_[i][0].x, ly_ - cum_proj_[i][0].y);
       for (unsigned int j = 1; j < ly_; ++j) {
         cairo_line_to(cr, cum_proj_[i][j].x, ly_ - cum_proj_[i][j].y);
@@ -278,8 +278,8 @@ void InsetState::write_polygons_on_surface(
       cairo_stroke(cr);
     }
 
-    // Horizontal graticule lines
-    for (unsigned int j = 0; j <= ly_; j += graticule_line_spacing) {
+    // Horizontal grid lines
+    for (unsigned int j = 0; j <= ly_; j += grid_line_spacing) {
       cairo_move_to(cr, cum_proj_[0][j].x, ly_ - cum_proj_[0][j].y);
       for (unsigned int i = 1; i < lx_; ++i) {
         cairo_line_to(cr, cum_proj_[i][j].x, ly_ - cum_proj_[i][j].y);
@@ -353,14 +353,14 @@ void InsetState::write_cairo_polygons_to_svg(
   const std::string &fname,
   const bool fill_polygons,
   const bool colors,
-  const bool plot_graticule,
+  const bool plot_grid,
   std::unordered_map<Point, Point> &vectors)
 {
   const auto filename = fname.c_str();
   cairo_surface_t *surface = cairo_svg_surface_create(filename, lx_, ly_);
   cairo_t *cr = cairo_create(surface);
 
-  write_polygons_on_surface(cr, fill_polygons, colors, plot_graticule);
+  write_polygons_on_surface(cr, fill_polygons, colors, plot_grid);
   write_vectors_on_surface(cr, vectors, lx_, ly_);
   cairo_show_page(cr);
   cairo_surface_destroy(surface);
@@ -372,22 +372,17 @@ void InsetState::write_cairo_polygons_to_svg(
 // Outputs both png and SVG files
 void InsetState::write_cairo_map(
   const std::string &file_name,
-  const bool plot_graticule,
+  const bool plot_grid,
   std::unordered_map<Point, Point> vectors)
 {
   const auto svg_name = file_name + ".svg";
 
   // Check whether the has all GeoDivs colored
   const bool has_colors = (colors_size() == n_geo_divs());
-  write_cairo_polygons_to_svg(
-    svg_name,
-    true,
-    has_colors,
-    plot_graticule,
-    vectors);
+  write_cairo_polygons_to_svg(svg_name, true, has_colors, plot_grid, vectors);
 }
 
-// ======================== Graticule Heatmap ========================
+// ======================== grid Heatmap ========================
 
 void InsetState::write_grid_heatmap_data(const std::string filename)
 {

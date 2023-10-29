@@ -26,12 +26,12 @@ double InsetState::blur_width() const
   // We slowly reduce the blur width so that the areas can reach their
   // target values.
   // TODO: whenever blur_width hits 0, the maximum area error will start
-  //       increasing again and eventually lead to an invalid graticule
+  //       increasing again and eventually lead to an invalid grid
   //       cell error when projecting with triangulation. Investigate
   //       why. As a temporary fix, we set blur_width to be always
   //       positive, regardless of the number of integrations.
   const unsigned int blur_default_pow =
-    6 + log2(std::max(lx(), ly()) / default_long_graticule_length);
+    6 + log2(std::max(lx(), ly()) / default_long_grid_length);
   double blur_width =
     std::pow(2.0, blur_default_pow - (0.5 * int(n_finished_integrations())));
 
@@ -494,12 +494,10 @@ void InsetState::set_area_errors()
 
 void InsetState::adjust_grid()
 {
-  unsigned int long_graticule_length = std::max(lx_, ly_);
+  unsigned int long_grid_length = std::max(lx_, ly_);
   double curr_max_area_error = max_area_error().value;
   unsigned int grid_factor =
-    (long_graticule_length > default_long_graticule_length)
-      ? 2
-      : default_grid_factor;
+    (long_grid_length > default_long_grid_length) ? 2 : default_grid_factor;
   max_area_errors_.push_back(curr_max_area_error);
   if (
     n_finished_integrations_ >= 2 &&

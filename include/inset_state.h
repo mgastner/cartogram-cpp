@@ -58,8 +58,8 @@ private:
   // Copy of original data
   std::vector<GeoDiv> geo_divs_original_;
 
-  // Chosen diagonal for each graticule cell
-  boost::multi_array<int, 2> graticule_diagonals_;
+  // Chosen diagonal for each grid cell
+  boost::multi_array<int, 2> grid_diagonals_;
 
   // Variable to store initial inset area before integration
   double initial_area_;
@@ -118,7 +118,7 @@ public:
   void execute_fftw_fwd_plan() const;
   void execute_fftw_plans_for_flux();
   void exit_if_not_on_grid_or_edge(Point p1) const;
-  void fill_graticule_diagonals(bool = false);
+  void fill_grid_diagonals(bool = false);
 
   // Density functions
   void fill_with_density(bool);  // Fill map with density, using scanlines
@@ -285,7 +285,7 @@ public:
     const bool image_format_ps);
   void write_legend_on_surface(cairo_t *cr, bool equal_area_map);
   void write_density_to_eps(const std::string &, const double *);
-  void write_graticule_to_eps(std::ofstream &);
+  void write_grid_to_eps(std::ofstream &);
   void write_intersections_to_eps(unsigned int);
   void write_map_to_eps(const std::string &, bool);
   void write_polygon_points_on_surface(cairo_t *, color);
