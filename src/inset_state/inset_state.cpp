@@ -19,6 +19,31 @@ InsetState::InsetState(std::string pos) : pos_(std::move(pos))
   n_finished_integrations_ = 0;
 }
 
+double InsetState::blur_width() const
+{
+
+  // Blur density to speed up the numerics in flatten_density() below.
+  // We slowly reduce the blur width so that the areas can reach their
+  // target values.
+  // TODO: whenever blur_width hits 0, the maximum area error will start
+  //       increasing again and eventually lead to an invalid graticule
+  //       cell error when projecting with triangulation. Investigate
+  //       why. As a temporary fix, we set blur_width to be always
+  //       positive, regardless of the number of integrations.
+  const unsigned int blur_default_pow =
+    6 + log2(std::max(lx(), ly()) / default_long_graticule_length);
+  double blur_width =
+    std::pow(2.0, blur_default_pow - (0.5 * int(n_finished_integrations())));
+
+  // if (inset_state.n_finished_integrations() < max_integrations) {
+  //   blur_width =
+  //     std::pow(2.0, 5 - int(inset_state.n_finished_integrations()));
+  // } else {
+  //   blur_width = 0.0;
+  // }
+  return blur_width;
+}
+
 void InsetState::create_delaunay_t()
 {
   // Store all the polygon vertices in std::unordered_map to remove
@@ -72,7 +97,7 @@ void InsetState::create_delaunay_t()
 
   // Clear corner points from last iteration
   unique_quadtree_corners_.clear();
-  
+
   // Clear the vector of bounding boxes
   quadtree_bboxes_.clear();
 
@@ -81,7 +106,7 @@ void InsetState::create_delaunay_t()
 
     // Get bounding box of the leaf node
     const Bbox bbox = qt.bbox(node);
-    
+
     // Store the bounding box
     quadtree_bboxes_.push_back(bbox);
 
