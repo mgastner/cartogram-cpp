@@ -1,4 +1,3 @@
-#include "cartogram_info.h"
 #include "inset_state.h"
 
 void InsetState::fill_with_density(bool plot_density)

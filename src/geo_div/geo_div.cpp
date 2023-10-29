@@ -1,6 +1,4 @@
 #include "geo_div.h"
-#include "cgal_typedef.h"
-#include "constants.h"
 
 GeoDiv::GeoDiv() = default;
 

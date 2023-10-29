@@ -1,11 +1,4 @@
 #include "inset_state.h"
-#include "constants.h"
-#include "geo_div.h"
-#include "round_point.h"
-#include <cmath>
-#include <iostream>
-#include <utility>
-#include <vector>
 
 InsetState::InsetState()
 {

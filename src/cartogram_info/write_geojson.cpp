@@ -1,5 +1,4 @@
 #include "cartogram_info.h"
-#include <fstream>
 
 // Function that returns coordinates of the end points of a "divider" line
 // segment used to separate between different insets

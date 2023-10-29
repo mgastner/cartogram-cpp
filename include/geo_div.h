@@ -5,6 +5,7 @@
 #include "ellipse.h"
 #include "intersection.h"
 #include "pwh.h"
+#include "constants.h"
 #include <string>
 #include <vector>
 

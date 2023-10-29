@@ -1,7 +1,4 @@
-#include "constants.h"
 #include "inset_state.h"
-#include <fstream>
-#include <iostream>
 
 void print_albers_bbox(Bbox bb)
 {

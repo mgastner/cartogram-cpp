@@ -1,4 +1,3 @@
-#include "constants.h"
 #include "inset_state.h"
 
 void InsetState::rescale_map(

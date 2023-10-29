@@ -1,23 +1,10 @@
 #ifndef WRITE_IMAGE_H
 #define WRITE_IMAGE_H
 
-#include "cartogram_info.h"
 #include "colors.h"
 #include "constants.h"
 #include "inset_state.h"
-#include <array>
-#include <cairo/cairo-ps.h>
 #include <cairo/cairo-svg.h>
-#include <cairo/cairo.h>
-#include <cmath>
-#include <cstring>
-#include <iostream>
-#include <sstream>
-#include <string>
-#include <utility>
-#include <vector>
-
-void write_ps_header(const std::string filename, cairo_surface_t *surface);
 
 // TODO: IS THERE A CGAL WAY OF DETERMINING WHETHER THE LABEL'S BOUNDING
 //       BOX IS COMPLETELY CONTAINED IN THE POLYGON?

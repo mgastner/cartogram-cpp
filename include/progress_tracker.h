@@ -2,9 +2,6 @@
 #define PROGRESS_TRACKER_H
 
 #include "inset_state.h"
-#include <algorithm>
-#include <cmath>
-#include <iostream>
 
 class ProgressTracker
 {

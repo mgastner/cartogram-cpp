@@ -4,7 +4,6 @@
 #include "argparse.hpp"
 #include "constants.h"
 #include "inset_state.h"
-#include <vector>
 
 class CartogramInfo
 {

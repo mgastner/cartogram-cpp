@@ -10,11 +10,6 @@
 #include <cairo/cairo.h>
 #include <nlohmann/json.hpp>
 
-// TODO: Transfer this struct to colors.h
-struct color {
-  double r, g, b;
-};
-
 struct max_area_error_info {
   double value;
   std::string geo_div;
@@ -122,7 +117,6 @@ public:
 
   // Density functions
   void fill_with_density(bool);  // Fill map with density, using scanlines
-  void fill_with_ellipse_density_and_flux(bool, bool);
   void flatten_density();  // Flatten said density with integration
   void flatten_ellipse_density();
   void flatten_density_with_node_vertices();
@@ -215,8 +209,6 @@ public:
   void set_geo_divs(std::vector<GeoDiv> new_geo_divs);
   void set_inset_name(const std::string &);
   void store_initial_area();
-  void set_latt_const(const double);
-  void set_pos(const std::string &);
   void simplify(unsigned int);
   void store_original_geo_divs();
   double target_area_at(const std::string &) const;
@@ -234,10 +226,6 @@ public:
   void trim_grid_heatmap(cairo_t *cr, double padding);
   std::array<Point, 3> untransformed_triangle(const Point, bool = false);
 
-  // Write all intersections found to an SVG/PS file named
-  // "*_intersections_*.svg/ps"
-  // void write_intersections_image(unsigned int, const bool);
-
   // Cairo functions
   void write_cairo_map(
     const std::string &,
@@ -250,11 +238,6 @@ public:
     bool,
     std::unordered_map<Point, Point> &);
 
-  // Functions to write map to eps
-  void write_flux_to_eps(
-    const std::string,
-    const boost::multi_array<double, 2>,
-    const boost::multi_array<double, 2>);
   void write_delaunay_triangles(const std::string &);
   void write_grid_heatmap_data(const std::string filename);
 
@@ -280,16 +263,8 @@ public:
     const double *density,
     const bool plot_pycnophylactic);
   void write_intersections_image(unsigned int res);
-  void write_density_bar_image(
-    std::string filename,
-    const bool image_format_ps);
   void write_legend_on_surface(cairo_t *cr, bool equal_area_map);
-  void write_density_to_eps(const std::string &, const double *);
-  void write_grid_to_eps(std::ofstream &);
-  void write_intersections_to_eps(unsigned int);
-  void write_map_to_eps(const std::string &, bool);
-  void write_polygon_points_on_surface(cairo_t *, color);
-  void write_polygons_to_eps(std::ofstream &, bool, bool);
+  void write_polygon_points_on_surface(cairo_t *, Color);
   void write_quadtree(const std::string &);
 };
 

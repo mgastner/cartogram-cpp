@@ -1,6 +1,3 @@
-#include "cartogram_info.h"
-#include "colors.h"
-#include "constants.h"
 #include "inset_state.h"
 
 // Function to automatically color topology based on contiguity graph

@@ -2,6 +2,7 @@
 #define INTERPOL_H_
 
 #include <boost/multi_array.hpp>
+#include <iostream>
 
 double interpolate_bilinearly(
   double,

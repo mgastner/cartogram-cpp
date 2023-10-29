@@ -1,7 +1,5 @@
 #include "cartogram_info.h"
 #include "csv.hpp"
-#include <iostream>
-#include <nlohmann/json.hpp>
 
 void check_geojson_validity(const nlohmann::json &j)
 {

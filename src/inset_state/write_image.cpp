@@ -1,12 +1,11 @@
 #include "write_image.h"
-#include <iostream>
 
 // ======================== Basic Plotting ========================
 
 void write_triangles_on_surface(
   cairo_t *cr,
   const Delaunay &dt,
-  const color &clr,
+  const Color &clr,
   const unsigned int ly)
 {
   // Draw the triangles
@@ -34,7 +33,7 @@ void write_triangles_on_surface(
 void write_point_on_surface(
   cairo_t *cr,
   const Point &pt,
-  const color &clr,
+  const Color &clr,
   const unsigned int ly)
 {
   const double radius = 0.25;
@@ -44,7 +43,7 @@ void write_point_on_surface(
   cairo_stroke(cr);
 }
 
-void InsetState::write_polygon_points_on_surface(cairo_t *cr, color clr)
+void InsetState::write_polygon_points_on_surface(cairo_t *cr, Color clr)
 {
   cairo_set_source_rgb(cr, clr.r, clr.g, clr.b);
   cairo_set_line_cap(cr, CAIRO_LINE_CAP_ROUND);
@@ -73,7 +72,7 @@ void InsetState::write_polygon_points_on_surface(cairo_t *cr, color clr)
 void write_quadtree_rectangles_on_surface(
   cairo_t *cr,
   const std::vector<Bbox> &quadtree_bboxes,
-  const color &clr,
+  const Color &clr,
   const unsigned int ly)
 {
   cairo_set_source_rgb(cr, clr.r, clr.g, clr.b);
@@ -96,8 +95,8 @@ void InsetState::write_delaunay_triangles(const std::string &filename)
   cairo_surface_t *surface =
     cairo_svg_surface_create((filename + ".svg").c_str(), lx_, ly_);
   cairo_t *cr = cairo_create(surface);
-  write_triangles_on_surface(cr, proj_qd_.dt, color{0.6, 0.6, 0.6}, ly_);
-  write_polygon_points_on_surface(cr, color{0.0, 0.0, 1.0});
+  write_triangles_on_surface(cr, proj_qd_.dt, Color{0.6, 0.6, 0.6}, ly_);
+  write_polygon_points_on_surface(cr, Color{0.0, 0.0, 1.0});
   cairo_show_page(cr);
   cairo_surface_destroy(surface);
   cairo_destroy(cr);
@@ -111,9 +110,9 @@ void InsetState::write_quadtree(const std::string &filename)
   write_quadtree_rectangles_on_surface(
     cr,
     quadtree_bboxes_,
-    color{0.6, 0.6, 0.6},
+    Color{0.6, 0.6, 0.6},
     ly_);
-  write_polygon_points_on_surface(cr, color{0.0, 0.0, 1.0});
+  write_polygon_points_on_surface(cr, Color{0.0, 0.0, 1.0});
   cairo_show_page(cr);
   cairo_surface_destroy(surface);
   cairo_destroy(cr);

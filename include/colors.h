@@ -1,7 +1,6 @@
 #ifndef COLORS_H_
 #define COLORS_H_
 
-#include <cstdint>
 #include <string>
 #include <unordered_map>
 
