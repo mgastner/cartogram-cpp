@@ -32,7 +32,7 @@ private:
   std::unordered_set<Point> unique_quadtree_corners_;
   proj_qd proj_qd_;
   std::vector<proj_qd> proj_sequence_;
-  
+
   // store vector of bounding box to draw quadtree
   std::vector<Bbox> quadtree_bboxes_;
 
@@ -45,7 +45,7 @@ private:
   double dens_mean_;
   double dens_max_;
 
-  // Scaling factor to convert albers unit to 512*512 unit
+  // Scaling factor to convert albers unit to lx*ly unit
   double latt_const_;
 
   // Cumulative cartogram projection
@@ -79,7 +79,7 @@ private:
   std::unordered_map<std::string, double> target_areas_;
 
   // Vertical adjacency graph
-  std::vector<std::vector<intersection> > vertical_adj_;
+  std::vector<std::vector<intersection>> vertical_adj_;
 
   // Area errors
   std::vector<double> max_area_errors_;
@@ -94,13 +94,14 @@ public:
   void adjust_grid();
   void apply_albers_projection();
   void apply_smyth_craster_projection();
-  
+
   // Calculate difference between initial area and current area
   double area_drift() const;
   double area_error_at(const std::string &) const;
   void auto_color();  // Automatically color GeoDivs
   Bbox bbox(bool = false) const;
   void blur_density(double, bool);
+  double blur_width() const;
   void check_topology();
   int chosen_diag(const Point v[4], unsigned int &, bool = false) const;
   Color color_at(const std::string &) const;
@@ -168,7 +169,7 @@ public:
   std::string inset_name() const;
   nlohmann::json inset_to_geojson(bool, bool = false) const;
   std::vector<Segment> intersecting_segments(unsigned int) const;
-  std::vector<std::vector<intersection> > intersec_with_parallel_to(
+  std::vector<std::vector<intersection>> intersec_with_parallel_to(
     char,
     unsigned int) const;
   bool is_input_target_area_missing(const std::string &) const;
@@ -262,45 +263,32 @@ public:
   void write_grid_heatmap_image(
     const std::string filename,
     const bool plot_equal_area_map,
-    const bool image_format_ps,
     const bool crop_polygons);
-  void write_grids_to_cairo_surface(cairo_t *cr);
-  void write_grid_colors_to_cairo_surface(
+  void write_grids_on_surface(cairo_t *cr);
+  void write_grid_colors_on_surface(
     cairo_t *cr,
     bool plot_equal_area_map,
     bool crop_polygons);
-  // void write_grid_to_eps(std::ofstream &);
-  // void write_intersections_to_eps(unsigned int);
-  // void write_map_to_eps(const std::string, const bool);
-  void write_map_image(
-    const std::string filename,
-    const bool fill_polygons,
-    const bool plot_grid,
-    const bool plot_labels,
-    const bool image_format_ps,
-    const bool equal_area_map);
-  // void write_polygons_to_eps(std::ofstream &, const bool, const bool);
-  void write_polygons_to_cairo_surface(
+  void write_polygons_on_surface(
     cairo_t *cr,
     const bool fill_polygons,
     const bool colors,
     const bool plot_equal_area_map);
-  void write_labels_to_cairo_surface(cairo_t *cr);
+  void write_labels_on_surface(cairo_t *cr);
   void write_density_image(
     const std::string filename,
     const double *density,
-    const bool plot_pycnophylactic,
-    const bool image_format_ps);
-  void write_intersections_image(unsigned int res, const bool image_format_ps);
+    const bool plot_pycnophylactic);
+  void write_intersections_image(unsigned int res);
   void write_density_bar_image(
     std::string filename,
     const bool image_format_ps);
-  void write_legend_to_cairo_surface(cairo_t *cr, bool equal_area_map);
+  void write_legend_on_surface(cairo_t *cr, bool equal_area_map);
   void write_density_to_eps(const std::string &, const double *);
   void write_graticule_to_eps(std::ofstream &);
   void write_intersections_to_eps(unsigned int);
   void write_map_to_eps(const std::string &, bool);
-  void write_polygon_points_on_cairo_surface(cairo_t *, color);
+  void write_polygon_points_on_surface(cairo_t *, color);
   void write_polygons_to_eps(std::ofstream &, bool, bool);
   void write_quadtree(const std::string &);
 };

@@ -1,24 +1,17 @@
 #include "cartogram_info.h"
 #include "constants.h"
 #include "parse_arguments.h"
+#include "progress_tracker.h"
+#include "time_tracker.h"
 #include <matplot/matplot.h>
-
-// Cpp Chrono for timing
-typedef std::chrono::steady_clock::time_point time_point;
-typedef std::chrono::steady_clock clock_time;
-typedef clock_time::duration duration;
-typedef std::chrono::milliseconds ms;
-
-template <typename T> std::chrono::milliseconds inMilliseconds(T duration)
-{
-  return std::chrono::duration_cast<std::chrono::milliseconds>(duration);
-}
 
 int main(const int argc, const char *argv[])
 {
+  TimeTracker time_tracker;
+
   // Start of main function time
-  const time_point start_main = clock_time::now();
-  
+  time_tracker.start("Total Time");
+
   std::string geo_file_name, visual_file_name;
 
   // Default number of grid cells along longer Cartesian coordinate axis
@@ -110,26 +103,14 @@ int main(const int argc, const char *argv[])
   }
   std::cerr << "Coordinate reference system: " << crs << std::endl;
 
-  // Progress measured on a scale from 0 (start) to 1 (end)
-  double progress = 0.0;
-
   // Store total number of GeoDivs to monitor progress
   double total_geo_divs = cart_info.n_geo_divs();
 
-  // Create std::map to store duration of each inset integrations
-  std::map<std::string, ms> insets_integration_times;
-
-  // Keep track of total time
-  ms duration_initial_simplification = inMilliseconds(duration::zero()),
-     duration_simplification = inMilliseconds(duration::zero()),
-     duration_densification = inMilliseconds(duration::zero()),
-     duration_flatten_density = inMilliseconds(duration::zero()),
-     duration_fill_density = inMilliseconds(duration::zero()),
-     duration_qtdt = inMilliseconds(duration::zero()),
-     duration_polygon_preprocessing = inMilliseconds(duration::zero());
-
   // Project map and ensure that all holes are inside polygons
   for (auto &[inset_pos, inset_state] : *cart_info.ref_to_inset_states()) {
+
+    // Start of inset time
+    time_tracker.start("Inset " + inset_pos);
 
     // Check for errors in the input topology
     try {
@@ -167,21 +148,24 @@ int main(const int argc, const char *argv[])
                 << std::endl;
       return EXIT_FAILURE;
     }
-    std::cerr << "Initial start of simplification" << std::endl;
+
     if (simplify) {
+      std::cerr << "Start of initial simplification of " << inset_pos
+                << std::endl;
+      time_tracker.start("Simplification");
 
       // Simplification reduces the number of points used to represent the
       // GeoDivs in the inset, thereby reducing output file sizes and
       // run-times
-      time_point start_initial_simplification = clock_time::now();
       inset_state.simplify(target_points_per_inset);
 
-      // Update initial simplification time
-      time_point end_initial_simplification = clock_time::now();
-      duration_initial_simplification += inMilliseconds(
-        end_initial_simplification - start_initial_simplification);
+      // Update time
+      time_tracker.stop("Simplification");
     }
-    std::cerr << "Initial end of simplification" << std::endl;
+    std::cerr << "End of initial simplification of " << inset_pos << std::endl;
+
+    // End of inset time
+    time_tracker.stop("Inset " + inset_pos);
   }
 
   // Replace missing and zero target areas with positive values
@@ -208,8 +192,14 @@ int main(const int argc, const char *argv[])
     return EXIT_SUCCESS;
   }
 
+  // Track progress of the cartogram generation
+  ProgressTracker progress_tracker(total_geo_divs);
+
   // Iterate over insets
   for (auto &[inset_pos, inset_state] : *cart_info.ref_to_inset_states()) {
+
+    // Start of inset time
+    time_tracker.start("Inset " + inset_pos);
 
     // Determine the name of the inset
     std::string inset_name = map_name;
@@ -269,8 +259,9 @@ int main(const int argc, const char *argv[])
       inset_state.remove_tiny_polygons(min_polygon_area);
     }
 
-    time_point start_polygon_preprocessing = clock_time::now();
-    
+    // // Polygon Preprocessing start time
+    // time_tracker.start("Polygon Preprocessing");
+
     // std::cerr << "\nApplying Polygon Preprocessing..." << std::endl;
 
     // inset_state.set_area_errors();
@@ -335,7 +326,8 @@ int main(const int argc, const char *argv[])
 
     // // // plot area by integration
     // // matplot::plot(integrations, areas);
-    // // matplot::title("Area vs. Integration for " + inset_state.inset_name());
+    // // matplot::title("Area vs. Integration for " +
+    // inset_state.inset_name());
     // // matplot::xlabel("Integration");
     // // matplot::ylabel("Area");
 
@@ -359,36 +351,27 @@ int main(const int argc, const char *argv[])
     // }
 
     // std::cerr << "Polygon Preprocessing finished." << std::endl;
-    
-    duration_polygon_preprocessing +=
-      inMilliseconds(clock_time::now() - start_polygon_preprocessing);
+    // time_tracker.stop("Polygon Preprocessing");
 
     inset_state.reset_n_finished_integrations();
 
-    // We make the approximation that the progress towards generating the
-    // cartogram is proportional to the number of GeoDivs that are in the
-    // finished insets
-    const double inset_max_frac = inset_state.n_geo_divs() / total_geo_divs;
-
-    // Integration start time
-    time_point start_integration = clock_time::now();
+    time_tracker.start("Integration Inset " + inset_pos);
 
     // Start map integration
     while (inset_state.n_finished_integrations() < max_integrations &&
            (inset_state.max_area_error().value > max_permitted_area_error ||
             std::abs(inset_state.area_drift() - 1.0) > 0.01)) {
 
-      // if(inset_state.n_finished_integrations() == 0) break;
       std::cerr << "\nIntegration number "
                 << inset_state.n_finished_integrations() << std::endl;
       std::cerr << "Number of Points: " << inset_state.n_points() << std::endl;
       if (qtdt_method) {
-        time_point start_delaunay_t = clock_time::now();
+        time_tracker.start("Delaunay Triangulation");
 
         // Create the Delaunay triangulation
         inset_state.create_delaunay_t();
-        time_point end_delaunay_t = clock_time::now();
-        duration_qtdt += inMilliseconds(end_delaunay_t - start_delaunay_t);
+
+        time_tracker.stop("Delaunay Triangulation");
 
         if (plot_quadtree) {
           const std::string quadtree_filename =
@@ -399,84 +382,54 @@ int main(const int argc, const char *argv[])
 
           // Draw the resultant quadtree
           inset_state.write_quadtree(quadtree_filename);
-          
+
           const std::string delaunay_t_filename =
             inset_state.inset_name() + "_" +
             std::to_string(inset_state.n_finished_integrations()) +
             "_delaunay_t";
-          std::cerr << "Writing " << delaunay_t_filename << ".svg" << std::endl;
+          std::cerr << "Writing " << delaunay_t_filename << ".svg"
+                    << std::endl;
           inset_state.write_delaunay_triangles(delaunay_t_filename);
         }
       }
 
-      // Calculate progress percentage. We assume that the maximum area
-      // error is typically reduced to 1/5 of the previous value.
-      const double ratio_actual_to_permitted_max_area_error =
-        inset_state.max_area_error().value / max_permitted_area_error;
-      const double n_predicted_integrations = std::max(
-        (log(ratio_actual_to_permitted_max_area_error) / log(5)),
-        1.0);
-
-      // Blur density to speed up the numerics in flatten_density() below.
-      // We slowly reduce the blur width so that the areas can reach their
-      // target values.
-      // TODO: whenever blur_width hits 0, the maximum area error will start
-      //       increasing again and eventually lead to an invalid graticule
-      //       cell error when projecting with triangulation. Investigate
-      //       why. As a temporary fix, we set blur_width to be always
-      //       positive, regardless of the number of integrations.
-      const unsigned int blur_default_pow =
-        6 + log2(
-              max(inset_state.lx(), inset_state.ly()) /
-              default_long_graticule_length);
-      double blur_width = std::pow(
-        2.0,
-        blur_default_pow - (0.5 * int(inset_state.n_finished_integrations())));
-      // if (inset_state.n_finished_integrations() < max_integrations) {
-      //   blur_width =
-      //     std::pow(2.0, 5 - int(inset_state.n_finished_integrations()));
-      // } else {
-      //   blur_width = 0.0;
-      // }
+      const double blur_width = inset_state.blur_width();
+      
       std::cerr << "blur_width = " << blur_width << std::endl;
 
-      // Track time needed for fill_with_density()
-      time_point start_fill_density = clock_time::now();
+      time_tracker.start("Fill with Density");
+
       inset_state.fill_with_density(plot_density);
 
-      // Update time
-      duration_fill_density +=
-        inMilliseconds(clock_time::now() - start_fill_density);
+      time_tracker.stop("Fill with Density");
 
       if (blur_width > 0.0) {
         inset_state.blur_density(blur_width, plot_density);
       }
 
-      time_point start_flatten_density = clock_time::now();
+      time_tracker.start("Flatten Density");
+
       if (qtdt_method) {
         inset_state.flatten_density_with_node_vertices();
       } else {
         inset_state.flatten_density();
       }
 
-      // Update time
-      duration_flatten_density +=
-        inMilliseconds(clock_time::now() - start_flatten_density);
+      time_tracker.stop("Flatten Density");
 
       if (qtdt_method) {
         if (simplify) {
-          time_point start_densify = clock_time::now();
+          time_tracker.start("Densification");
+
           inset_state.densify_geo_divs_using_delaunay_t();
 
-          // Update time
-          duration_densification +=
-            inMilliseconds(clock_time::now() - start_densify);
+          time_tracker.stop("Densification");
         }
 
         // Project using the Delaunay triangulation
         inset_state.project_with_delaunay_t();
       } else if (triangulation) {
-        time_point start_densify = clock_time::now();
+        time_tracker.start("Densification");
 
         // Choose diagonals that are inside graticule cells
         inset_state.fill_graticule_diagonals();
@@ -484,9 +437,7 @@ int main(const int argc, const char *argv[])
         // Densify map
         inset_state.densify_geo_divs();
 
-        // Update time
-        duration_densification +=
-          inMilliseconds(clock_time::now() - start_densify);
+        time_tracker.stop("Densification");
 
         // Project with triangulation
         inset_state.project_with_triangulation();
@@ -494,12 +445,10 @@ int main(const int argc, const char *argv[])
         inset_state.project();
       }
       if (simplify) {
-        time_point start_simplify = clock_time::now();
+        time_tracker.start("Simplification");
         inset_state.simplify(target_points_per_inset);
 
-        // Update time
-        duration_simplification +=
-          inMilliseconds(clock_time::now() - start_simplify);
+        time_tracker.stop("Simplification");
       }
 
       // Print area drift information
@@ -511,21 +460,16 @@ int main(const int argc, const char *argv[])
       inset_state.adjust_grid();
       std::cerr << "max. area err: " << inset_state.max_area_error().value
                 << ", GeoDiv: " << inset_state.max_area_error().geo_div
-                << "\nProgress: "
-                << progress + (inset_max_frac / n_predicted_integrations)
-                << std::endl
                 << std::endl;
+      progress_tracker.print_progress_mid_integration(inset_state);
       inset_state.increment_integration();
     }
 
-    // Store integration time
-    insets_integration_times[inset_pos] =
-      inMilliseconds(clock_time::now() - start_integration);
+    time_tracker.stop("Integration Inset " + inset_pos);
 
     // Update and display progress information
-    progress += inset_max_frac;
-    std::cerr << "Finished inset " << inset_pos << "\nProgress: " << progress
-              << std::endl;
+    std::cerr << "Finished inset " << inset_pos << std::endl;
+    progress_tracker.update_and_print_progress(inset_state);
 
     if (plot_polygons) {
       std::string output_filename = inset_state.inset_name();
@@ -567,6 +511,9 @@ int main(const int argc, const char *argv[])
     inset_state.ref_to_rho_ft()->free();
     inset_state.ref_to_fluxx_init()->free();
     inset_state.ref_to_fluxy_init()->free();
+
+    // End of inset time
+    time_tracker.stop("Inset " + inset_pos);
   }  // End of loop over insets
 
   // Shift insets so that they do not overlap
@@ -578,40 +525,11 @@ int main(const int argc, const char *argv[])
     map_name + "_cartogram.geojson",
     output_to_stdout);
 
-  // Store time when main() ended
-  time_point end_main = clock_time::now();
+  // Stop of main function time
+  time_tracker.stop("Total Time");
 
-  // Show time report
-  std::cerr << std::endl;
-  std::cerr << "********** Time Report **********" << std::endl;
+  // Print summary report
+  time_tracker.print_summary_report();
 
-  // Print integration times
-  for (const auto &[inset_pos, inset_integration_time] :
-       insets_integration_times) {
-    std::cerr << "Integration Time for Inset " << inset_pos << ": "
-              << inset_integration_time.count() << " ms" << std::endl;
-  }
-  std::cerr << "Polygon Preprocessing Time: "
-            << duration_polygon_preprocessing.count() << " ms" << std::endl;
-  if (qtdt_method) {
-    std::cerr << "Quadtree-Delaunay T. Time: " << duration_qtdt.count()
-              << " ms" << std::endl;
-  }
-  if (simplify) {
-    std::cerr << "Initial Simplification Time: "
-              << duration_initial_simplification.count() << " ms" << std::endl;
-    std::cerr << "Simplification Time: " << duration_simplification.count()
-              << " ms" << std::endl;
-    std::cerr << "Densification Time: " << duration_densification.count()
-              << " ms" << std::endl;
-  }
-  std::cerr << "Flatten Density Time: " << duration_flatten_density.count()
-            << " ms" << std::endl;
-  std::cerr << "Fill with Density Time: " << duration_fill_density.count()
-            << " ms" << std::endl;
-  std::cerr << "--------------------------------" << std::endl;
-  std::cerr << "Total Time: " << inMilliseconds(end_main - start_main).count()
-            << " ms" << std::endl;
-  std::cerr << "*********************************" << std::endl;
   return EXIT_SUCCESS;
 }
