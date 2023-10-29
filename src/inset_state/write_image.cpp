@@ -1,21 +1,9 @@
 #include "write_image.h"
 #include <iostream>
 
-void write_ps_header(const std::string filename, cairo_surface_t *surface)
-{
-  const std::string title = "%%Title: " + filename;
-  cairo_ps_surface_dsc_comment(surface, title.c_str());
-  cairo_ps_surface_dsc_comment(
-    surface,
-    "%%Creator: Michael T. Gastner et al.");
-  cairo_ps_surface_dsc_comment(surface, "%%For: Humanity");
-  cairo_ps_surface_dsc_comment(surface, "%%Copyright: License CC BY");
-  cairo_ps_surface_dsc_comment(surface, "%%Magnification: 1.0000");
-}
-
 // ======================== Basic Plotting ========================
 
-void write_triangles_on_cairo_surface(
+void write_triangles_on_surface(
   cairo_t *cr,
   const Delaunay &dt,
   const color &clr,
@@ -43,7 +31,7 @@ void write_triangles_on_cairo_surface(
   }
 }
 
-void write_point_on_cairo_surface(
+void write_point_on_surface(
   cairo_t *cr,
   const Point &pt,
   const color &clr,
@@ -56,7 +44,7 @@ void write_point_on_cairo_surface(
   cairo_stroke(cr);
 }
 
-void InsetState::write_polygon_points_on_cairo_surface(cairo_t *cr, color clr)
+void InsetState::write_polygon_points_on_surface(cairo_t *cr, color clr)
 {
   cairo_set_source_rgb(cr, clr.r, clr.g, clr.b);
   cairo_set_line_cap(cr, CAIRO_LINE_CAP_ROUND);
@@ -68,21 +56,21 @@ void InsetState::write_polygon_points_on_cairo_surface(cairo_t *cr, color clr)
 
       // Plot each point in exterior ring
       for (auto i : ext_ring) {
-        write_point_on_cairo_surface(cr, i, clr, ly_);
+        write_point_on_surface(cr, i, clr, ly_);
       }
 
       // Plot holes
       for (auto hci = pwh.holes_begin(); hci != pwh.holes_end(); ++hci) {
         Polygon hole = *hci;
         for (unsigned int i = 1; i <= hole.size(); ++i) {
-          write_point_on_cairo_surface(cr, hole[i], clr, ly_);
+          write_point_on_surface(cr, hole[i], clr, ly_);
         }
       }
     }
   }
 }
 
-void write_quadtree_rectangles_on_cairo_surface(
+void write_quadtree_rectangles_on_surface(
   cairo_t *cr,
   const std::vector<Bbox> &quadtree_bboxes,
   const color &clr,
@@ -108,8 +96,8 @@ void InsetState::write_delaunay_triangles(const std::string &filename)
   cairo_surface_t *surface =
     cairo_svg_surface_create((filename + ".svg").c_str(), lx_, ly_);
   cairo_t *cr = cairo_create(surface);
-  write_triangles_on_cairo_surface(cr, proj_qd_.dt, color{0.6, 0.6, 0.6}, ly_);
-  write_polygon_points_on_cairo_surface(cr, color{0.0, 0.0, 1.0});
+  write_triangles_on_surface(cr, proj_qd_.dt, color{0.6, 0.6, 0.6}, ly_);
+  write_polygon_points_on_surface(cr, color{0.0, 0.0, 1.0});
   cairo_show_page(cr);
   cairo_surface_destroy(surface);
   cairo_destroy(cr);
@@ -120,12 +108,12 @@ void InsetState::write_quadtree(const std::string &filename)
   cairo_surface_t *surface =
     cairo_svg_surface_create((filename + ".svg").c_str(), lx_, ly_);
   cairo_t *cr = cairo_create(surface);
-  write_quadtree_rectangles_on_cairo_surface(
+  write_quadtree_rectangles_on_surface(
     cr,
     quadtree_bboxes_,
     color{0.6, 0.6, 0.6},
     ly_);
-  write_polygon_points_on_cairo_surface(cr, color{0.0, 0.0, 1.0});
+  write_polygon_points_on_surface(cr, color{0.0, 0.0, 1.0});
   cairo_show_page(cr);
   cairo_surface_destroy(surface);
   cairo_destroy(cr);
@@ -184,7 +172,7 @@ double font_size(
   return 0.0;
 }
 
-void InsetState::write_polygons_to_cairo_surface(
+void InsetState::write_polygons_on_surface(
   cairo_t *cr,
   const bool fill_polygons,
   const bool colors,
@@ -319,7 +307,7 @@ void InsetState::write_polygons_to_cairo_surface(
   // }
 }
 
-void write_vectors_to_cairo_surface(
+void write_vectors_on_surface(
   cairo_t *cr,
   std::unordered_map<Point, Point> &vectors,
   unsigned int lx_,
@@ -372,8 +360,8 @@ void InsetState::write_cairo_polygons_to_svg(
   cairo_surface_t *surface = cairo_svg_surface_create(filename, lx_, ly_);
   cairo_t *cr = cairo_create(surface);
 
-  write_polygons_to_cairo_surface(cr, fill_polygons, colors, plot_graticule);
-  write_vectors_to_cairo_surface(cr, vectors, lx_, ly_);
+  write_polygons_on_surface(cr, fill_polygons, colors, plot_graticule);
+  write_vectors_on_surface(cr, vectors, lx_, ly_);
   cairo_show_page(cr);
   cairo_surface_destroy(surface);
   cairo_destroy(cr);
@@ -447,11 +435,116 @@ void InsetState::write_grid_heatmap_data(const std::string filename)
   std::cout << "Grid heatmap data written" << std::endl;
 }
 
+void write_grid_heatmap_bar_on_surface(
+  double min_value,
+  double max_value,
+  cairo_t *cr,
+  Bbox bbox_bar,
+  std::vector<std::pair<double, double>> major_ticks,
+  std::vector<std::pair<double, double>> minor_ticks,
+  const unsigned int ly)
+{
+  const int n_gradient_bars = 500;
+
+  // get bar coordinates
+  const double xmin_bar = bbox_bar.xmin();
+  const double xmax_bar = bbox_bar.xmax();
+  const double ymin_bar = bbox_bar.ymin();
+  const double ymax_bar = bbox_bar.ymax();
+
+  const double bar_width = xmax_bar - xmin_bar;
+  const double bar_height = ymax_bar - ymin_bar;
+
+  // Draw the outer bar lines
+  cairo_set_source_rgb(cr, 0.0, 0.0, 0.0);
+  cairo_set_line_width(cr, 1.0);
+  cairo_rectangle(cr, xmin_bar, ymin_bar, bar_width, -bar_height);
+  cairo_stroke(cr);
+
+  // Calculate individual bar gradient segment property
+  const double gradient_segment_height =
+    (ymax_bar - ymin_bar) / n_gradient_bars;
+  const double gradient_segment_value =
+    (max_value - min_value) / n_gradient_bars;
+
+  // Draw the gradient segment rectangles
+  double value_at_gradient_segment = min_value;
+  double overlap = 0.1;
+
+  for (double y = ymin_bar; y <= ymax_bar; y += gradient_segment_height) {
+    Color color = grid_cell_color(
+      exp(value_at_gradient_segment),
+      exp(max_value),
+      exp(min_value));
+    cairo_set_source_rgb(cr, color.r, color.g, color.b);
+    cairo_rectangle(
+      cr,
+      xmin_bar,
+      ly - y - overlap,
+      bar_width,
+      gradient_segment_height + overlap);
+    cairo_fill(cr);
+    value_at_gradient_segment += gradient_segment_value;
+  }
+
+  unsigned int font_size = 10;
+
+  // Set font properties
+  cairo_select_font_face(
+    cr,
+    "Sans",
+    CAIRO_FONT_SLANT_NORMAL,
+    CAIRO_FONT_WEIGHT_BOLD);
+  cairo_set_font_size(cr, font_size);
+
+  // Tick width outside bar
+  double half_tick_width = 4.0;
+
+  // Draw the ticks and nice_numbers
+  cairo_set_source_rgb(cr, 0.0, 0.0, 0.0);
+  cairo_set_line_width(cr, 1.1);
+  for (auto tick : major_ticks) {
+    double area = tick.first;
+    int NiceNumber = tick.second;
+    if (area > min_value and area < max_value) {
+      double y =
+        ((log(area) - log(min_value)) / (log(max_value) - log(min_value))) *
+          (ymax_bar - ymin_bar) +
+        ymin_bar;
+      cairo_move_to(cr, xmin_bar + half_tick_width, ly - y);
+      cairo_line_to(cr, xmin_bar - half_tick_width, ly - y);
+
+      // Right-align text
+      right_aligned_text(
+        cr,
+        NiceNumber,
+        xmin_bar - half_tick_width,
+        ly - y + font_size / 2.0,
+        font_size);
+    }
+  }
+  cairo_set_line_width(cr, 0.75);
+  half_tick_width /= 2.0;
+  for (auto ticks : minor_ticks) {
+    double area = ticks.first;
+    if (area > min_value and area < max_value) {
+      double y =
+        ((log(area) - log(min_value)) / (log(max_value) - log(min_value))) *
+          (ymax_bar - ymin_bar) +
+        ymin_bar;
+
+      cairo_move_to(cr, xmin_bar + half_tick_width, ly - y);
+      cairo_line_to(cr, xmin_bar - half_tick_width, ly - y);
+      cairo_stroke(cr);
+    }
+  }
+}
+
+
 // Outputs a SVG/PS file of grid heatmap
 void InsetState::write_grid_heatmap_image(
   const std::string filename,
   const bool plot_equal_area_map,
-  const bool image_format_ps,
   const bool crop_polygons)
 {
   // Whether to draw bar on the cairo surface
@@ -459,15 +552,8 @@ void InsetState::write_grid_heatmap_image(
 
   // Create a cairo surface
   cairo_surface_t *surface;
-  image_format_ps
-    ? surface = cairo_ps_surface_create(filename.c_str(), lx_, ly_)
-    : surface = cairo_svg_surface_create(filename.c_str(), lx_, ly_);
+  surface = cairo_svg_surface_create(filename.c_str(), lx_, ly_);
   cairo_t *cr = cairo_create(surface);
-
-  // Write header
-  if (image_format_ps) {
-    write_ps_header(filename, surface);
-  }
 
   // White background
   cairo_set_source_rgb(cr, 1.0, 1.0, 1.0);
@@ -526,10 +612,10 @@ void InsetState::write_grid_heatmap_image(
     nice_numbers);
 
   // Draw colors
-  write_grid_colors_to_cairo_surface(cr, plot_equal_area_map, crop_polygons);
+  write_grid_colors_on_surface(cr, plot_equal_area_map, crop_polygons);
 
   // Draw polygons without color
-  write_polygons_to_cairo_surface(cr, false, false, plot_equal_area_map);
+  write_polygons_on_surface(cr, false, false, plot_equal_area_map);
 
   // trim_grid_heatmap(cr, 20);
 
@@ -538,19 +624,11 @@ void InsetState::write_grid_heatmap_image(
 
     // Create a cairo bar_surface
     cairo_surface_t *bar_surface =
-      (image_format_ps
-         ? cairo_ps_surface_create(bar_filename.c_str(), 160, 400)
-         : cairo_svg_surface_create(bar_filename.c_str(), 160, 400));
-
+      cairo_svg_surface_create(bar_filename.c_str(), 160, 400);
     cairo_t *bar_cr = cairo_create(bar_surface);
 
-    // Write header
-    if (image_format_ps) {
-      write_ps_header(bar_filename, bar_surface);
-    }
-
     // Write bar
-    write_grid_heatmap_bar_to_cairo_surface(
+    write_grid_heatmap_bar_on_surface(
       min_area_cell_point_area,
       max_area_cell_point_area,
       bar_cr,
@@ -569,7 +647,7 @@ void InsetState::write_grid_heatmap_image(
 }
 
 // Function to show the density bar on the cairo surface
-void write_density_bar_to_cairo_surface(
+void write_density_bar_on_surface(
   const double min_value,
   const double mean_value,
   const double max_value,
@@ -728,7 +806,7 @@ void write_density_bar_to_cairo_surface(
 }
 
 // Adds a square legend outside the map
-void InsetState::write_legend_to_cairo_surface(
+void InsetState::write_legend_on_surface(
   cairo_t *cr,
   bool equal_area_map)
 {
@@ -775,22 +853,15 @@ void InsetState::write_legend_to_cairo_surface(
 void InsetState::write_density_image(
   const std::string filename,
   const double *density,
-  const bool plot_pycnophylactic,
-  const bool image_format_ps)
+  const bool plot_pycnophylactic)
 {
   // Whether to draw bar on the cairo surface
   const bool draw_bar = false;
   cairo_surface_t *surface =
-    (image_format_ps ? cairo_ps_surface_create(filename.c_str(), lx_, ly_)
-                     : cairo_svg_surface_create(filename.c_str(), lx_, ly_));
+    cairo_svg_surface_create(filename.c_str(), lx_, ly_);
 
   // Create a cairo surface
   cairo_t *cr = cairo_create(surface);
-
-  // Write header
-  if (image_format_ps) {
-    write_ps_header(filename, surface);
-  }
 
   // White background
   cairo_set_source_rgb(cr, 1.0, 1.0, 1.0);
@@ -892,25 +963,18 @@ void InsetState::write_density_image(
       }
     }
   }
-  write_polygons_to_cairo_surface(cr, false, false, false);
+  write_polygons_on_surface(cr, false, false, false);
 
   if (draw_bar && !plot_pycnophylactic) {
     std::string bar_filename = "bar_" + filename;
 
     // Create a cairo bar_surface
     cairo_surface_t *bar_surface =
-      (image_format_ps
-         ? cairo_ps_surface_create(bar_filename.c_str(), 160, 400)
-         : cairo_svg_surface_create(bar_filename.c_str(), 160, 400));
+      cairo_svg_surface_create(bar_filename.c_str(), 160, 400);
 
     cairo_t *bar_cr = cairo_create(bar_surface);
 
-    // Write header
-    if (image_format_ps) {
-      write_ps_header(bar_filename, bar_surface);
-    }
-
-    write_density_bar_to_cairo_surface(
+    write_density_bar_on_surface(
       dens_min - dens_mean,
       0,
       dens_max - dens_mean,
@@ -928,32 +992,20 @@ void InsetState::write_density_image(
   cairo_destroy(cr);
 }
 
-void InsetState::write_intersections_image(
-  unsigned int res,
-  const bool image_format_ps)
+void InsetState::write_intersections_image(unsigned int res)
 {
   std::string filename = inset_name() + "_intersections_" +
-                         std::to_string(n_finished_integrations());
-
-  // Update extension
-  image_format_ps ? filename += ".ps" : filename += ".svg";
+                         std::to_string(n_finished_integrations()) + ".svg";
 
   // Calculating intersections
   std::vector<Segment> intersections = intersecting_segments(res);
   cairo_surface_t *surface;
 
   // Create a cairo surface
-  image_format_ps
-    ? surface = cairo_ps_surface_create(filename.c_str(), lx_, ly_)
-    : surface = cairo_svg_surface_create(filename.c_str(), lx_, ly_);
+  surface = cairo_svg_surface_create(filename.c_str(), lx_, ly_);
   cairo_t *cr = cairo_create(surface);
 
-  // Write header
-  if (image_format_ps) {
-    write_ps_header(filename, surface);
-  }
-
-  write_polygons_to_cairo_surface(cr, false, false, false);
+  write_polygons_on_surface(cr, false, false, false);
 
   cairo_set_line_width(cr, 0.0001 * std::min(lx_, ly_));
 
@@ -1008,7 +1060,7 @@ double get_font_size(
   return 0.0;
 }
 
-void InsetState::write_labels_to_cairo_surface(cairo_t *cr)
+void InsetState::write_labels_on_surface(cairo_t *cr)
 {
   for (const auto &gd : geo_divs()) {
     const std::string label = label_at(gd.id());
@@ -1358,111 +1410,6 @@ void right_aligned_text(
   cairo_show_text(cr, text.c_str());
 }
 
-void write_grid_heatmap_bar_to_cairo_surface(
-  double min_value,
-  double max_value,
-  cairo_t *cr,
-  Bbox bbox_bar,
-  std::vector<std::pair<double, double>> major_ticks,
-  std::vector<std::pair<double, double>> minor_ticks,
-  const unsigned int ly)
-{
-  const int n_gradient_bars = 500;
-
-  // get bar coordinates
-  const double xmin_bar = bbox_bar.xmin();
-  const double xmax_bar = bbox_bar.xmax();
-  const double ymin_bar = bbox_bar.ymin();
-  const double ymax_bar = bbox_bar.ymax();
-
-  const double bar_width = xmax_bar - xmin_bar;
-  const double bar_height = ymax_bar - ymin_bar;
-
-  // Draw the outer bar lines
-  cairo_set_source_rgb(cr, 0.0, 0.0, 0.0);
-  cairo_set_line_width(cr, 1.0);
-  cairo_rectangle(cr, xmin_bar, ymin_bar, bar_width, -bar_height);
-  cairo_stroke(cr);
-
-  // Calculate individual bar gradient segment property
-  const double gradient_segment_height =
-    (ymax_bar - ymin_bar) / n_gradient_bars;
-  const double gradient_segment_value =
-    (max_value - min_value) / n_gradient_bars;
-
-  // Draw the gradient segment rectangles
-  double value_at_gradient_segment = min_value;
-  double overlap = 0.1;
-
-  for (double y = ymin_bar; y <= ymax_bar; y += gradient_segment_height) {
-    Color color = grid_cell_color(
-      exp(value_at_gradient_segment),
-      exp(max_value),
-      exp(min_value));
-    cairo_set_source_rgb(cr, color.r, color.g, color.b);
-    cairo_rectangle(
-      cr,
-      xmin_bar,
-      ly - y - overlap,
-      bar_width,
-      gradient_segment_height + overlap);
-    cairo_fill(cr);
-    value_at_gradient_segment += gradient_segment_value;
-  }
-
-  unsigned int font_size = 10;
-
-  // Set font properties
-  cairo_select_font_face(
-    cr,
-    "Sans",
-    CAIRO_FONT_SLANT_NORMAL,
-    CAIRO_FONT_WEIGHT_BOLD);
-  cairo_set_font_size(cr, font_size);
-
-  // Tick width outside bar
-  double half_tick_width = 4.0;
-
-  // Draw the ticks and nice_numbers
-  cairo_set_source_rgb(cr, 0.0, 0.0, 0.0);
-  cairo_set_line_width(cr, 1.1);
-  for (auto tick : major_ticks) {
-    double area = tick.first;
-    int NiceNumber = tick.second;
-    if (area > min_value and area < max_value) {
-      double y =
-        ((log(area) - log(min_value)) / (log(max_value) - log(min_value))) *
-          (ymax_bar - ymin_bar) +
-        ymin_bar;
-      cairo_move_to(cr, xmin_bar + half_tick_width, ly - y);
-      cairo_line_to(cr, xmin_bar - half_tick_width, ly - y);
-
-      // Right-align text
-      right_aligned_text(
-        cr,
-        NiceNumber,
-        xmin_bar - half_tick_width,
-        ly - y + font_size / 2.0,
-        font_size);
-    }
-  }
-  cairo_set_line_width(cr, 0.75);
-  half_tick_width /= 2.0;
-  for (auto ticks : minor_ticks) {
-    double area = ticks.first;
-    if (area > min_value and area < max_value) {
-      double y =
-        ((log(area) - log(min_value)) / (log(max_value) - log(min_value))) *
-          (ymax_bar - ymin_bar) +
-        ymin_bar;
-
-      cairo_move_to(cr, xmin_bar + half_tick_width, ly - y);
-      cairo_line_to(cr, xmin_bar - half_tick_width, ly - y);
-      cairo_stroke(cr);
-    }
-  }
-}
-
 // Given padding, makes padding area white
 void InsetState::trim_grid_heatmap(cairo_t *cr, double padding)
 {
@@ -1483,7 +1430,7 @@ void InsetState::trim_grid_heatmap(cairo_t *cr, double padding)
 }
 
 // Writes grid cells and colors them if required
-void InsetState::write_grids_to_cairo_surface(cairo_t *cr)
+void InsetState::write_grids_on_surface(cairo_t *cr)
 {
 
   // Set line width of grid lines
@@ -1513,7 +1460,7 @@ void InsetState::write_grids_to_cairo_surface(cairo_t *cr)
   }
 }
 
-void InsetState::write_grid_colors_to_cairo_surface(
+void InsetState::write_grid_colors_on_surface(
   cairo_t *cr,
   bool plot_equal_area_map,
   bool crop_polygons)
@@ -1636,52 +1583,7 @@ void InsetState::write_grid_colors_to_cairo_surface(
   return;
 }
 
-// Outputs a SVG/PS file with polygons, labels, and grids (if required)
-void InsetState::write_map_image(
-  const std::string filename,
-  const bool fill_polygons,
-  const bool plot_grid,
-  const bool plot_labels,
-  const bool image_format_ps,
-  const bool equal_area_map)
-{
-
-  // Check whether the map has all GeoDivs colored
-  const bool colors = (colors_size() == n_geo_divs());
-  cairo_surface_t *surface;
-
-  // Create a cairo surface
-  image_format_ps
-    ? surface = cairo_ps_surface_create(filename.c_str(), lx_, ly_)
-    : surface = cairo_svg_surface_create(filename.c_str(), lx_, ly_);
-  cairo_t *cr = cairo_create(surface);
-
-  // Write header
-  if (image_format_ps) {
-    write_ps_header(filename, surface);
-  }
-
-  // Draw polygons with color
-  write_polygons_to_cairo_surface(cr, fill_polygons, colors, false);
-
-  // Place labels
-  if (plot_labels) {
-    write_labels_to_cairo_surface(cr);
-  }
-
-  // Add legend
-  write_legend_to_cairo_surface(cr, equal_area_map);
-
-  // Draw grid without color
-  if (plot_grid) {
-    write_grids_to_cairo_surface(cr);
-  }
-  cairo_show_page(cr);
-  cairo_surface_destroy(surface);
-  cairo_destroy(cr);
-}
-
-// Given coordinates in 512 by 512 coordinate system, returns the corresponding
+// Given coordinates in lx by ly coordinate system, returns the corresponding
 // coordinates in the albers projection coordinate system
 Polygon InsetState::transform_to_albers_coor(Polygon edge_points)
 {
@@ -1896,11 +1798,11 @@ Bbox InsetState::get_bbox_bar(const double bar_width, const double bar_height)
 std::vector<int> get_nice_numbers_for_bar(const double max_target_area_per_km)
 {
   std::vector<int> nice_numbers;
-  // int NiceNumber = 1;
-  // nice_numbers.push_back(NiceNumber);
-  // while (NiceNumber < max_target_area_per_km) {
-  //   NiceNumber = NiceNumber * 10;
-  //   nice_numbers.push_back(NiceNumber);
-  // }
+  int NiceNumber = 1;
+  nice_numbers.push_back(NiceNumber);
+  while (NiceNumber < max_target_area_per_km) {
+    NiceNumber = NiceNumber * 10;
+    nice_numbers.push_back(NiceNumber);
+  }
   return nice_numbers;
 }
