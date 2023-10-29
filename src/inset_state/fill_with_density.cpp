@@ -44,7 +44,8 @@ void InsetState::fill_with_density(bool plot_density)
   unsigned int long_graticule_length = std::max(lx_, ly_);
   const unsigned int resolution =
     (long_graticule_length > default_long_graticule_length)
-      ? (default_resolution * default_long_graticule_length) * (1.0 / long_graticule_length)
+      ? (default_resolution * default_long_graticule_length) *
+          (1.0 / long_graticule_length)
       : default_resolution;
 
   auto intersections_with_rays = intersec_with_parallel_to('x', resolution);
@@ -190,6 +191,6 @@ void InsetState::fill_with_density(bool plot_density)
     std::cerr << "Writing " << file_name << std::endl;
     write_density_image(file_name, rho_init_.as_1d_array(), false);
   }
-  
+
   execute_fftw_fwd_plan();
 }

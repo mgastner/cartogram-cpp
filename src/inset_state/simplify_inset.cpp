@@ -36,7 +36,7 @@ void InsetState::simplify(const unsigned int target_points_per_inset)
       }
     }
   }
-  
+
   // Simplify polygons
   const unsigned long target_pts =
     std::max(target_points_per_inset, min_points_per_ring * n_rings());
@@ -90,6 +90,5 @@ void InsetState::simplify(const unsigned int target_points_per_inset)
       pwh = pgnwh;
     }
   }
-  std::cerr << n_points() << " points after simplification."
-            << std::endl;
+  std::cerr << n_points() << " points after simplification." << std::endl;
 }

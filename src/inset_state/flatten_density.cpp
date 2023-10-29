@@ -234,15 +234,15 @@ void InsetState::flatten_density()
         // Okay, we can run interpolate_bilinearly()
 
 #pragma omp parallel for default(none) shared( \
-  abs_tol,                                     \
-  accept,                                      \
-  delta_t,                                     \
-  eul,                                         \
-  grid_vx,                                     \
-  grid_vy,                                     \
-  mid,                                         \
-  v_intp,                                      \
-  v_intp_half)
+    abs_tol,                                   \
+      accept,                                  \
+      delta_t,                                 \
+      eul,                                     \
+      grid_vx,                                 \
+      grid_vy,                                 \
+      mid,                                     \
+      v_intp,                                  \
+      v_intp_half)
         for (unsigned int i = 0; i < lx_; ++i) {
           for (unsigned int j = 0; j < ly_; ++j) {
             v_intp_half[i][j].x = interpolate_bilinearly(

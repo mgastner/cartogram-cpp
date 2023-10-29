@@ -394,7 +394,7 @@ int main(const int argc, const char *argv[])
       }
 
       const double blur_width = inset_state.blur_width();
-      
+
       std::cerr << "blur_width = " << blur_width << std::endl;
 
       time_tracker.start("Fill with Density");

@@ -10,8 +10,7 @@ Point point_after_smyth_craster_projection(Point p1)
 {
   return Point(
     p1.x() * std::sqrt(2.0 * pi) / 180.0,
-    std::sin(p1.y() * pi / 180.0) * std::sqrt(0.5 * pi)
-  );
+    std::sin(p1.y() * pi / 180.0) * std::sqrt(0.5 * pi));
 }
 
 void InsetState::apply_smyth_craster_projection()
@@ -25,23 +24,21 @@ void InsetState::apply_smyth_craster_projection()
 // latitude. We assume that the Smyth-Craster coordinates have been scaled
 // to fit in the box [0, lx] * [0, ly].
 Point point_before_smyth_craster_projection(
-    Point p1,
-    const unsigned int lx,
-    const unsigned int ly
-) {
+  Point p1,
+  const unsigned int lx,
+  const unsigned int ly)
+{
   return Point(
     (p1.x() * 360.0 / lx) - 180.0,
-    180.0 * std::asin((2.0 * p1.y() / ly) - 1) / pi
-  );
+    180.0 * std::asin((2.0 * p1.y() / ly) - 1) / pi);
 }
 
 void InsetState::revert_smyth_craster_projection()
 {
   // Specialise point_before_smyth_craster_projection with lx_ and ly_
-  std::function<Point(Point)> lambda =
-    [lx = lx_, ly = ly_](Point p1) {
-      return point_before_smyth_craster_projection(p1, lx, ly);
-    };
+  std::function<Point(Point)> lambda = [lx = lx_, ly = ly_](Point p1) {
+    return point_before_smyth_craster_projection(p1, lx, ly);
+  };
 
   // Apply `lambda` to all points
   transform_points(lambda);

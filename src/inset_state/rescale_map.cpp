@@ -77,7 +77,7 @@ void InsetState::rescale_map(
       }
     }
   }
-  
+
   // Transformed Bounding Box:
   std::cerr << "New bounding box: " << bbox() << std::endl;
 }

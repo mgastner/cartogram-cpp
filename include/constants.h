@@ -11,7 +11,7 @@ constexpr double dbl_inf = std::numeric_limits<double>::infinity();
 constexpr double dbl_resolution = 1e-8;
 constexpr unsigned int max_integrations = 100;
 constexpr double max_permitted_area_error = 0.01;
-constexpr double padding_unless_world = 3.0;//1.5;
+constexpr double padding_unless_world = 3.0;  // 1.5;
 constexpr double pi = std::numbers::pi;
 constexpr double earth_surface_area = 510.1e6;
 

@@ -540,7 +540,6 @@ void write_grid_heatmap_bar_on_surface(
   }
 }
 
-
 // Outputs a SVG/PS file of grid heatmap
 void InsetState::write_grid_heatmap_image(
   const std::string filename,
@@ -806,9 +805,7 @@ void write_density_bar_on_surface(
 }
 
 // Adds a square legend outside the map
-void InsetState::write_legend_on_surface(
-  cairo_t *cr,
-  bool equal_area_map)
+void InsetState::write_legend_on_surface(cairo_t *cr, bool equal_area_map)
 {
   std::pair<double, unsigned int> legend_info =
     equal_area_map ? get_km_legend_length()

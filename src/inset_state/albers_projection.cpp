@@ -6,14 +6,8 @@
 void print_albers_bbox(Bbox bb)
 {
   std::cerr << "Bounding box of Albers-transformed map:\n"
-            << "\tx_min = "
-            << bb.xmin()
-            << ", y_min = "
-            << bb.ymin()
-            << ", x_max = "
-            << bb.xmax()
-            << ", y_max = "
-            << bb.ymax()
+            << "\tx_min = " << bb.xmin() << ", y_min = " << bb.ymin()
+            << ", x_max = " << bb.xmax() << ", y_max = " << bb.ymax()
             << std::endl;
   return;
 }
@@ -45,9 +39,9 @@ void InsetState::adjust_for_dual_hemisphere()
   //   hemisphere also are partly in the western hemisphere
   // - If min_lon_east - max_lon_west < 180, the inset cannot fit in 1
   //   hemisphere
-  if (max_lon_west >= -180.0 &&
-      min_lon_east <= 180.0 &&
-      min_lon_east - max_lon_west >= 180) {
+  if (
+    max_lon_west >= -180.0 && min_lon_east <= 180.0 &&
+    min_lon_east - max_lon_west >= 180) {
 
     // Iterate over GeoDivs
     for (auto &gd : geo_divs_) {
@@ -72,12 +66,12 @@ void InsetState::adjust_for_dual_hemisphere()
 }
 
 Point point_after_albers_projection(
-    Point coords,
-    double lambda_0,
-    double phi_0,
-    double phi_1,
-    double phi_2
-) {
+  Point coords,
+  double lambda_0,
+  double phi_0,
+  double phi_1,
+  double phi_2)
+{
   const double lon_in_radians = (coords.x() * pi) / 180;
   const double lat_in_radians = (coords.y() * pi) / 180;
   double x, y;
@@ -94,8 +88,8 @@ Point point_after_albers_projection(
     // Albers projection formula:
     // https://en.wikipedia.org/wiki/Albers_projection
     const double n = 0.5 * (sin(phi_1) + sin(phi_2));
-    const double c = cos(phi_1)*cos(phi_1) + 2*n*sin(phi_1);
-    const double rho_0 = sqrt(c - 2*n*sin(phi_0)) / n;
+    const double c = cos(phi_1) * cos(phi_1) + 2 * n * sin(phi_1);
+    const double rho_0 = sqrt(c - 2 * n * sin(phi_0)) / n;
     const double theta = n * (lon_in_radians - lambda_0);
     const double rho = sqrt(c - (2 * n * sin(lat_in_radians))) / n;
     x = rho * sin(theta);
@@ -129,10 +123,9 @@ void InsetState::apply_albers_projection()
 
   // Specialize/curry point_after_albers_projection() s0 that it only requires
   // one argument (Point p1).
-  std::function<Point(Point)> lambda =
-    [=](Point p1) {
-      return point_after_albers_projection(p1, lambda_0, phi_0, phi_1, phi_2);
-    };
+  std::function<Point(Point)> lambda = [=](Point p1) {
+    return point_after_albers_projection(p1, lambda_0, phi_0, phi_1, phi_2);
+  };
 
   // Apply `lambda` to all points
   transform_points(lambda);

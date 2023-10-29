@@ -73,7 +73,8 @@ argparse::ArgumentParser parsed_arguments(
     .default_value(false)
     .implicit_value(true);
   arguments.add_argument("-E", "--output_equal_area")
-    .help("Boolean: Output equal area GeoJSON from input GeoJSON - no cartogram")
+    .help(
+      "Boolean: Output equal area GeoJSON from input GeoJSON - no cartogram")
     .default_value(false)
     .implicit_value(true);
   arguments.add_argument("-T", "--triangulation")

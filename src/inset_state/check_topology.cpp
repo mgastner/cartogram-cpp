@@ -31,16 +31,14 @@ void InsetState::holes_inside_polygons()
   return;
 }
 
-bool duplicates(std::vector<Point> v) {
+bool duplicates(std::vector<Point> v)
+{
   CGAL::set_pretty_mode(std::cerr);
   for (size_t i = 0; i < v.size() - 1; ++i) {
     if (points_almost_equal(v[i], v[i + 1])) {
       std::cerr << "i = " << i << std::endl;
       std::cerr << "Point: " << i << ", v[i]: " << v[i] << std::endl;
-      std::cerr << "Point: "
-                << i + 1
-                << ", v[i + 1]: "
-                << v[i + 1]
+      std::cerr << "Point: " << i + 1 << ", v[i + 1]: " << v[i + 1]
                 << std::endl;
       return true;
     }

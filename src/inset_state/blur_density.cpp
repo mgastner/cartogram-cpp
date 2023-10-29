@@ -15,16 +15,13 @@ void InsetState::blur_density(const double blur_width, bool plot_density)
                        (4 * lx_ * ly_);
     }
   }
-    
+
   if (plot_density) {
     std::string file_name = inset_name_ + "_blurred_density_" +
                             std::to_string(n_finished_integrations()) + ".svg";
     std::cerr << "Writing " << file_name << std::endl;
-    write_density_image(
-      file_name,
-      rho_init_.as_1d_array(),
-      false);
+    write_density_image(file_name, rho_init_.as_1d_array(), false);
   }
-  
+
   execute_fftw_bwd_plan();
 }

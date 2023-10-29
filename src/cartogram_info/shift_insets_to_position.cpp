@@ -50,37 +50,25 @@ void CartogramInfo::shift_insets_to_target_position()
     // We only need to modify either x-coordinates or y-coordinates, depending
     // on the inset position
     if (pos == "R") {
-      x = std::max({
-        bboxes.at("C").xmax(),
-        bboxes.at("B").xmax(),
-        bboxes.at("T").xmax()
-      });
+      x = std::max(
+        {bboxes.at("C").xmax(), bboxes.at("B").xmax(), bboxes.at("T").xmax()});
       x += bboxes.at("R").xmax();
       x += inset_spacing;
     } else if (pos == "L") {
-      x = std::min({
-        bboxes.at("C").xmin(),
-        bboxes.at("B").xmin(),
-        bboxes.at("T").xmin()
-      });
+      x = std::min(
+        {bboxes.at("C").xmin(), bboxes.at("B").xmin(), bboxes.at("T").xmin()});
 
       // At "L", xmin is negative and lies in the 2nd and 3rd quadrant
       x += bboxes.at("L").xmin();
       x -= inset_spacing;
     } else if (pos == "T") {
-      y = std::max({
-        bboxes.at("C").ymax(),
-        bboxes.at("R").ymax(),
-        bboxes.at("L").ymax()
-      });
+      y = std::max(
+        {bboxes.at("C").ymax(), bboxes.at("R").ymax(), bboxes.at("L").ymax()});
       y += bboxes.at("T").ymax();
       y += inset_spacing;
     } else if (pos == "B") {
-      y = std::min({
-        bboxes.at("C").ymin(),
-        bboxes.at("R").ymin(),
-        bboxes.at("L").ymin()
-      });
+      y = std::min(
+        {bboxes.at("C").ymin(), bboxes.at("R").ymin(), bboxes.at("L").ymin()});
 
       // At "B", ymin is negative and lies in the 3rd and 4th quadrant
       y += bboxes.at("B").ymin();
@@ -90,8 +78,7 @@ void CartogramInfo::shift_insets_to_target_position()
     // Translating inset according to translation vector calculated above
     const Transformation translate(
       CGAL::TRANSLATION,
-      CGAL::Vector_2<Scd>(x, y)
-    );
+      CGAL::Vector_2<Scd>(x, y));
 
     // Apply translation to all points
     inset_state.transform_points(translate);

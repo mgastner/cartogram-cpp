@@ -302,7 +302,7 @@ void InsetState::flatten_ellipse_density()
             << std::endl;
   std::cerr << "rho_mean = " << rho_mean << std::endl;
   std::cerr << "previous nu = " << nu << std::endl;
-  
+
   // Update the prefactor densities
   double acceptable_max = nu * rho_mean;
   if (delta_max > acceptable_max) {
@@ -349,8 +349,7 @@ void InsetState::flatten_ellipse_density()
 
   // Calculate densities
   for (const auto &[start_pt, curr_pt] : proj_qd_.triangle_transformation) {
-    double rho =
-      rho_mean;
+    double rho = rho_mean;
     double flux_x = 0.0;
     double flux_y = 0.0;
     for (unsigned int pgn_index = 0; pgn_index < ells.size(); ++pgn_index) {
@@ -436,17 +435,19 @@ void InsetState::flatten_ellipse_density()
             val.y() + 0.5 * delta_t * v_intp[key].y());
           Point v_intp_half_val(interpolate(n_val, proj_qd_.dt, velocity));
           v_intp_half.insert_or_assign(key, v_intp_half_val);
-          
+
           double mid_val_x = val.x() + delta_t * v_intp_half[key].x();
           double mid_val_y = val.y() + delta_t * v_intp_half[key].y();
-          
+
           // if close to 0 using EPS, make 0, or greater than lx or ly, make lx
           // or ly
-          if (abs(mid_val_x) < dbl_epsilon || abs(mid_val_x - lx_) < dbl_epsilon)
+          if (
+            abs(mid_val_x) < dbl_epsilon || abs(mid_val_x - lx_) < dbl_epsilon)
             mid_val_x = (abs(mid_val_x) < dbl_epsilon) ? 0 : lx_;
-          if (abs(mid_val_y) < dbl_epsilon || abs(mid_val_y - ly_) < dbl_epsilon)
+          if (
+            abs(mid_val_y) < dbl_epsilon || abs(mid_val_y - ly_) < dbl_epsilon)
             mid_val_y = (abs(mid_val_y) < dbl_epsilon) ? 0 : ly_;
-          
+
           Point mid_val(mid_val_x, mid_val_y);
           mid.insert_or_assign(key, mid_val);
 

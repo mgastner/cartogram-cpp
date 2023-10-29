@@ -25,7 +25,7 @@ private:
   nlohmann::json cgal_to_json(bool = false);
 
 public:
-  explicit CartogramInfo(bool, std::string );
+  explicit CartogramInfo(bool, std::string);
   [[nodiscard]] double cart_total_target_area() const;
   [[nodiscard]] double area() const;
   [[nodiscard]] bool is_world_map() const;
@@ -36,10 +36,10 @@ public:
   [[nodiscard]] unsigned int n_geo_divs() const;
   [[nodiscard]] unsigned int n_insets() const;
   void read_csv(const argparse::ArgumentParser &);
-  void read_geojson(const std::string&, bool, std::string *);
+  void read_geojson(const std::string &, bool, std::string *);
   std::map<std::string, InsetState> *ref_to_inset_states();
   void replace_missing_and_zero_target_areas();
-  void set_map_name(const std::string&);
+  void set_map_name(const std::string &);
   void shift_insets_to_target_position();
   void write_geojson(const std::string &, const std::string &, bool);
 };

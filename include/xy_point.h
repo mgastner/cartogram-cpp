@@ -9,7 +9,8 @@ struct XYPoint {
   double y;
 
   // Flip x and y coordinates
-  void flip() {
+  void flip()
+  {
     const double temp = x;
     x = y;
     y = temp;
@@ -17,7 +18,7 @@ struct XYPoint {
 
   // Overload "<" operator. Idea from
   // https://stackoverflow.com/questions/4892680/sorting-a-vector-of-structs
-  bool operator < (const XYPoint &rhs) const
+  bool operator<(const XYPoint &rhs) const
   {
     if (x != rhs.x) {
       return (x < rhs.x);
@@ -26,7 +27,7 @@ struct XYPoint {
   }
 
   // Overload "==" operator
-  bool operator == (const XYPoint &rhs) const
+  bool operator==(const XYPoint &rhs) const
   {
     return (x == rhs.x && y == rhs.y);
   }
@@ -39,7 +40,8 @@ struct XYPoint {
   }
 
   // Constructor with two values given
-  XYPoint(const double xg, const double yg) {
+  XYPoint(const double xg, const double yg)
+  {
     x = xg;
     y = yg;
   }
