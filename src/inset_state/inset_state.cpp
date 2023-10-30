@@ -498,7 +498,7 @@ void InsetState::adjust_grid()
     curr_max_area_error > max_area_errors_[n_finished_integrations_ - 2]) {
 
     // Multiply grid size with factor
-    std::cout << "Adjusting grid size." << std::endl;
+    std::cerr << "Adjusting grid size." << std::endl;
     lx_ *= grid_factor;
     ly_ *= grid_factor;
 
@@ -506,7 +506,7 @@ void InsetState::adjust_grid()
     ref_to_rho_init()->allocate(lx_, ly_);
     ref_to_rho_ft()->allocate(lx_, ly_);
     make_fftw_plans_for_rho();
-    std::cout << "New grid dimensions: " << lx_ << " " << ly_ << std::endl;
+    std::cerr << "New grid dimensions: " << lx_ << " " << ly_ << std::endl;
   }
 }
 

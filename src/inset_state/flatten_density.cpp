@@ -69,9 +69,6 @@ bool all_points_are_in_domain(
 // method
 void InsetState::flatten_density()
 {
-  // std::cerr << "In flatten_density()" << std::endl;
-  // std::cout << "rho_ft_[0][0] = " << rho_ft_(0, 0) << std::endl;
-
   // Constants for the numerical integrator
   const double inc_after_acc = 1.1;
   const double dec_after_not_acc = 0.75;

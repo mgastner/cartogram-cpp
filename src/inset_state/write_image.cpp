@@ -417,6 +417,7 @@ void InsetState::write_grid_heatmap_data(const std::string filename)
 
   std::ofstream f_csv;
   f_csv.open(filename);
+  
   // Fill rho_init with the ratio of rho_num to exists
   for (unsigned int i = 0; i < lx_; ++i) {
     for (unsigned int j = 0; j < ly_; ++j) {
@@ -426,7 +427,7 @@ void InsetState::write_grid_heatmap_data(const std::string filename)
       }
     }
   }
-  std::cout << "Grid heatmap data written" << std::endl;
+  std::cerr << "Grid heatmap data written " + filename << std::endl;
 }
 
 void write_grid_heatmap_bar_on_surface(

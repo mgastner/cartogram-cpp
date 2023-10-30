@@ -22,10 +22,10 @@ void TimeTracker::stop(const std::string &task_name)
 
 void TimeTracker::print_summary_report() const
 {
-  std::cout << "\n********** Time Report **********" << std::endl;
+  std::cerr << "\n********** Time Report **********" << std::endl;
   for (const auto &pair : durations) {
-    std::cout << pair.first << ": " << pair.second.count() << " ms"
+    std::cerr << pair.first << ": " << pair.second.count() << " ms"
               << std::endl;
   }
-  std::cout << "*********************************" << std::endl;
+  std::cerr << "*********************************" << std::endl;
 }
