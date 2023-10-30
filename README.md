@@ -24,7 +24,7 @@ Install [homebrew](brew.sh) by running the following command:
 
 Install llvm, pkg-config, boost, fftw, cgal, nlohmann-json, and cmake by running the following command:
 
-    brew install llvm@13 libomp pkg-config boost fftw cgal nlohmann-json cmake cairo
+    brew install llvm@13 libomp pkg-config boost fftw cgal nlohmann-json cmake cairo matplotplusplus
 
 ### Debian-based distributions (Ubuntu, Arch Linux etc.)
 
@@ -84,6 +84,12 @@ For posterity: Once version 5.3 is available through apt (you may check [here](h
 [CairoGraphics Homepage](https://www.cairographics.org/)
 
     sudo apt install libcairo2-dev
+    
+#### Installing Matplot++
+
+[Matplot++ Homepage](https://github.com/alandefreitas/matplotplusplus)
+
+    sudo apt install libmatplot++-dev
 
 
 ### Installation
@@ -121,7 +127,7 @@ _Note: use the `-h` flag to display more options._
 The CSV file should be in the following format:
 
 | NAME_1     | Data (e.g., Population) | Color   |
-|:-----------|:------------------------|:--------|
+| :--------- | :---------------------- | :------ |
 | Bruxelles  | 1208542                 | #e74c3c |
 | Vlaanderen | 6589069                 | #f1c40f |
 | Wallonie   | 3633795                 | #34495e |
