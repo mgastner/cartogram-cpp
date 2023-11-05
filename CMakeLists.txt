@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.1)
+cmake_minimum_required(VERSION 3.27)
 project(cartogram LANGUAGES CXX)
 
 # ========== Project Setup ==========
@@ -23,19 +23,6 @@ find_package(Matplot++ REQUIRED)
 find_package(PkgConfig REQUIRED)
 pkg_search_module(fftw REQUIRED fftw3 IMPORTED_TARGET)
 pkg_search_module(CAIRO REQUIRED CAIRO IMPORTED_TARGET)
-
-# OpenMP
-if(APPLE AND ${CMAKE_CXX_COMPILER_ID} MATCHES "Clang")
-  set(OpenMP_CXX "${CMAKE_CXX_COMPILER}")
-  set(OpenMP_CXX_FLAGS "-fopenmp=libomp -Wno-unused-command-line-argument")
-  set(OpenMP_CXX_LIB_NAMES "libomp" "libgomp" "libiomp5")
-  set(OpenMP_libomp_LIBRARY ${OpenMP_CXX_LIB_NAMES})
-  set(OpenMP_libgomp_LIBRARY ${OpenMP_CXX_LIB_NAMES})
-  set(OpenMP_libiomp5_LIBRARY ${OpenMP_CXX_LIB_NAMES})
-  find_path(LIBOMP_PATH NAMES libomp.dylib PATHS /opt/homebrew/opt/libomp/lib /usr/local/opt/libomp/lib)
-endif()
-
-find_package(OpenMP REQUIRED)
 
 # ========== Compiler Setup ==========
 if(APPLE)
@@ -84,12 +71,6 @@ target_link_libraries(cartogram
   PkgConfig::CAIRO
   Matplot++::matplot
 )
-
-if(APPLE AND ${CMAKE_CXX_COMPILER_ID} MATCHES "Clang")
-  target_link_libraries(cartogram ${OpenMP_CXX_FLAGS} ${LIBOMP_PATH}/libomp.dylib)
-else()
-  target_link_libraries(cartogram OpenMP::OpenMP_CXX)
-endif()
 
 # ========== Installation ==========
 install(TARGETS cartogram DESTINATION bin)
