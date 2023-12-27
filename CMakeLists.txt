@@ -26,10 +26,10 @@ pkg_search_module(CAIRO REQUIRED CAIRO IMPORTED_TARGET)
 
 # ========== Compiler Setup ==========
 if(APPLE)
-  set(LLVM_BASE_PATH "/usr/local/opt/llvm@13/bin/")
+  set(LLVM_BASE_PATH "/usr/local/opt/llvm@17/bin/")
 
   if(${CMAKE_HOST_SYSTEM_PROCESSOR} STREQUAL "arm64")
-    set(LLVM_BASE_PATH "/opt/homebrew/opt/llvm@13/bin/")
+    set(LLVM_BASE_PATH "/opt/homebrew/opt/llvm@17/bin/")
   endif()
 
   set(CMAKE_CXX_COMPILER "${LLVM_BASE_PATH}clang++")
@@ -58,6 +58,7 @@ target_include_directories(cartogram PUBLIC
 # ========== Compile Options ==========
 if(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
   target_compile_options(cartogram PRIVATE -isystem ${Boost_INCLUDE_DIRS})
+  target_compile_options(cartogram PRIVATE -ffp-contract=off)
 elseif(MSVC)
   target_compile_options(cartogram PRIVATE /external:I ${Boost_INCLUDE_DIRS})
 endif()
