@@ -24,7 +24,7 @@ Install [homebrew](brew.sh) by running the following command:
 
 Install llvm, pkg-config, boost, fftw, cgal, nlohmann-json, and cmake by running the following command:
 
-    brew install llvm@13 libomp pkg-config boost fftw cgal nlohmann-json cmake cairo matplotplusplus
+    brew install llvm@17 libomp pkg-config boost fftw cgal nlohmann-json cmake cairo matplotplusplus
 
 ### Debian-based distributions (Ubuntu, Arch Linux etc.)
 
