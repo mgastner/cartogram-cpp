@@ -7,7 +7,7 @@ CartogramInfo::CartogramInfo(const bool w, std::string v)
 {
 }
 
-double CartogramInfo::cart_total_target_area() const
+double CartogramInfo::cart_initial_total_target_area() const
 {
   double target_area = 0.0;
 
@@ -16,7 +16,7 @@ double CartogramInfo::cart_total_target_area() const
   // the-values-of-a-map-using-a-range-based-for-loop
   for (const auto &inset_info : inset_states_) {
     auto &inset_state = inset_info.second;
-    target_area += inset_state.total_target_area();
+    target_area += inset_state.initial_target_area();
   }
   return target_area;
 }

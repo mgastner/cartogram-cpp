@@ -25,7 +25,7 @@ private:
 
 public:
   explicit CartogramInfo(bool, std::string);
-  [[nodiscard]] double cart_total_target_area() const;
+  [[nodiscard]] double cart_initial_total_target_area() const;
   [[nodiscard]] double area() const;
   [[nodiscard]] bool is_world_map() const;
   void json_to_geojson(
