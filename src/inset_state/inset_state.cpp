@@ -295,6 +295,11 @@ double InsetState::initial_area() const
   return initial_area_;
 }
 
+double InsetState::initial_target_area() const
+{
+  return initial_target_area_;
+}
+
 bool InsetState::is_input_target_area_missing(const std::string &id) const
 {
   return is_input_target_area_missing_.at(id);
@@ -526,6 +531,11 @@ void InsetState::set_inset_name(const std::string &inset_name)
 void InsetState::store_initial_area()
 {
   initial_area_ = total_inset_area();
+}
+
+void InsetState::store_initial_target_area()
+{
+  initial_target_area_ = total_target_area();
 }
 
 bool InsetState::target_area_is_missing(const std::string &id) const

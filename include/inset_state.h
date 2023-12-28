@@ -58,6 +58,10 @@ private:
 
   // Variable to store initial inset area before integration
   double initial_area_;
+  
+  // Store initial total target area before normalization of target area
+  // to later be able to normalize inset area by comparing among the insets
+  double initial_target_area_;
 
   // Map name. Inset position is appended to the name if n_insets > 2.
   std::string inset_name_;
@@ -153,6 +157,7 @@ public:
     unsigned int) const;
   void increment_integration();
   double initial_area() const;
+  double initial_target_area() const;
   void initialize_cum_proj();
   void initialize_identity_proj();
   void insert_color(const std::string &, Color);
@@ -209,6 +214,7 @@ public:
   void set_geo_divs(std::vector<GeoDiv> new_geo_divs);
   void set_inset_name(const std::string &);
   void store_initial_area();
+  void store_initial_target_area();
   void simplify(unsigned int);
   void store_original_geo_divs();
   double target_area_at(const std::string &) const;
