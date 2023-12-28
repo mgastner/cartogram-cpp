@@ -29,9 +29,8 @@ int main(const int argc, const char *argv[])
   bool simplify;  // Should the polygons be simplified?
 
   // Other boolean values that are needed to parse the command line arguments
-  bool make_csv, output_equal_area, output_to_stdout, plot_density,
-    plot_grid, plot_intersections, plot_polygons, plot_quadtree,
-    remove_tiny_polygons;
+  bool make_csv, output_equal_area, output_to_stdout, plot_density, plot_grid,
+    plot_intersections, plot_polygons, plot_quadtree, remove_tiny_polygons;
 
   // If the proportion of the polygon area is smaller than
   // min_polygon_area * total area, then remove polygon
@@ -177,7 +176,7 @@ int main(const int argc, const char *argv[])
     // Normalize areas
     for (auto &[inset_pos, inset_state] : *cart_info.ref_to_inset_states()) {
       inset_state.normalize_inset_area(
-        cart_info.cart_total_target_area(),
+        cart_info.cart_initial_total_target_area(),
         output_equal_area);
     }
 
@@ -233,6 +232,9 @@ int main(const int argc, const char *argv[])
 
     // Store initial inset area to calculate area drift
     inset_state.store_initial_area();
+
+    // Store initial target area to normalize inset areas
+    inset_state.store_initial_target_area();
 
     // Normalize total target area to be equal to initial area
     inset_state.normalize_target_area();
@@ -481,6 +483,7 @@ int main(const int argc, const char *argv[])
       std::cerr << "Writing " << output_filename << std::endl;
       inset_state.write_cairo_map(output_filename, plot_grid);
     }
+
     if (world) {
       std::string output_file_name =
         map_name + "_cartogram_in_smyth_projection.geojson";
@@ -489,10 +492,6 @@ int main(const int argc, const char *argv[])
         output_file_name,
         output_to_stdout);
       inset_state.revert_smyth_craster_projection();
-    } else {
-
-      // Rescale insets in correct proportion to each other
-      inset_state.normalize_inset_area(cart_info.cart_total_target_area());
     }
 
     if (output_to_stdout) {
@@ -515,6 +514,14 @@ int main(const int argc, const char *argv[])
     // End of inset time
     time_tracker.stop("Inset " + inset_pos);
   }  // End of loop over insets
+
+  // Iterate over insets and normalize areas
+  for (auto &[inset_pos, inset_state] : *cart_info.ref_to_inset_states()) {
+
+    // Rescale insets in correct proportion to each other
+    inset_state.normalize_inset_area(
+      cart_info.cart_initial_total_target_area());
+  }
 
   // Shift insets so that they do not overlap
   cart_info.shift_insets_to_target_position();
