@@ -1580,7 +1580,7 @@ void InsetState::write_grid_colors_on_surface(
 Polygon InsetState::transform_to_equal_area_projection_coor(
   Polygon edge_points)
 {
-  Transformation scale(CGAL::SCALING, latt_const_);
+  Transformation scale(CGAL::SCALING, latt_const());
 
   Polygon cell_edge_points_equal_area_projection =
     transform(scale, edge_points);
