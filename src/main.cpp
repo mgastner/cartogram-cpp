@@ -227,6 +227,7 @@ int main(const int argc, const char *argv[])
     inset_state.ref_to_fluxy_init()->allocate(lx, ly);
     inset_state.make_fftw_plans_for_rho();
     inset_state.make_fftw_plans_for_flux();
+    inset_state.initialize_identity_proj();
     inset_state.initialize_cum_proj();
     inset_state.set_area_errors();
 
