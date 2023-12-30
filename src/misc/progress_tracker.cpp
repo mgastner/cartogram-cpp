@@ -3,7 +3,7 @@
 
 // Constructor
 ProgressTracker::ProgressTracker(double total_geo_divs)
-    : total_geo_divs(total_geo_divs), progress(0.0)
+    : total_geo_divs_(total_geo_divs), progress_(0.0)
 {
 }
 
@@ -24,16 +24,16 @@ void ProgressTracker::print_progress_mid_integration(
   // We make the approximation that the progress towards generating the
   // cartogram is proportional to the number of GeoDivs that are in the
   // finished insets
-  const double inset_max_frac = inset_state.n_geo_divs() / total_geo_divs;
-  print_progress(progress + (inset_max_frac / n_predicted_integrations));
+  const double inset_max_frac = inset_state.n_geo_divs() / total_geo_divs_;
+  print_progress(progress_ + (inset_max_frac / n_predicted_integrations));
 }
 
 // Method to update the progress and print it
 void ProgressTracker::update_and_print_progress(const InsetState &inset_state)
 {
-  const double inset_max_frac = inset_state.n_geo_divs() / total_geo_divs;
-  progress += inset_max_frac;
-  print_progress(progress);
+  const double inset_max_frac = inset_state.n_geo_divs() / total_geo_divs_;
+  progress_ += inset_max_frac;
+  print_progress(progress_);
 }
 
 // Method to print the current progress

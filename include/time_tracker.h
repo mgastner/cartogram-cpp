@@ -10,8 +10,8 @@ class TimeTracker
 {
 private:
   std::unordered_map<std::string, std::chrono::steady_clock::time_point>
-    start_times;
-  std::unordered_map<std::string, std::chrono::milliseconds> durations;
+    start_times_;
+  std::unordered_map<std::string, std::chrono::milliseconds> durations_;
 
 public:
   void start(const std::string &task_name);

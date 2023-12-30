@@ -20,8 +20,8 @@ public:
   void print_progress(const double progress);
 
 private:
-  double total_geo_divs;  // Total number of GeoDivs to monitor progress
-  double progress;  // Progress measured on a scale from 0 (start) to 1 (end)
+  double total_geo_divs_;  // Total number of GeoDivs to monitor progress
+  double progress_;  // Progress measured on a scale from 0 (start) to 1 (end)
 };
 
 #endif  // PROGRESS_TRACKER_H
