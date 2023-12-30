@@ -46,7 +46,7 @@ constexpr double max_font_size = 10.0;
 
 // Threshold as a fraction of non-na and non-zero total area for a target
 // area to be considered "too small"
-constexpr double small_area_threshold_frac = 2e-5;
+constexpr double small_area_threshold_frac = 0.0001;
 
 // Distance relative to the minimum enclosing ellipse of the polygon. If the
 // polygon's density is above (below) the mean, polygon preprocessing increases
