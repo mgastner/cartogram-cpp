@@ -40,7 +40,7 @@ private:
   double dens_mean_;
   double dens_max_;
 
-  // Scaling factor to convert albers unit to lx*ly unit
+  // Scaling factor to convert equal-area-projection unit to lx*ly unit.
   double latt_const_;
 
   // Cumulative cartogram projection
@@ -221,7 +221,7 @@ public:
   bool target_area_is_missing(const std::string &) const;
   double total_inset_area() const;
   double total_target_area() const;
-  Polygon transform_to_albers_coor(Polygon edge_points);
+  Polygon transform_to_equal_area_projection_coor(Polygon edge_points);
   std::array<Point, 3> transformed_triangle(
     const std::array<Point, 3> &,
     bool = false) const;

@@ -61,9 +61,10 @@ void write_grid_heatmap_bar_to_cairo_surface(
   std::vector<std::pair<double, double>> minor_ticks,
   const unsigned int ly);
 
-// Given area in the albers projection coordinate system, returns the
-// corresponding area in the square km^2
-double albers_area_to_earth_area(const double albers_area);
+// Given area in the equal_area_projection projection coordinate system,
+// returns the corresponding area in the square km^2
+double equal_area_projection_area_to_earth_area(
+  const double equal_area_projection_area);
 
 std::vector<std::pair<double, double>> get_major_ticks(
   const double min_target_area_per_km,

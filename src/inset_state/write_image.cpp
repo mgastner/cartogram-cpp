@@ -417,7 +417,7 @@ void InsetState::write_grid_heatmap_data(const std::string filename)
 
   std::ofstream f_csv;
   f_csv.open(filename);
-  
+
   // Fill rho_init with the ratio of rho_num to exists
   for (unsigned int i = 0; i < lx_; ++i) {
     for (unsigned int j = 0; j < ly_; ++j) {
@@ -1576,20 +1576,23 @@ void InsetState::write_grid_colors_on_surface(
 }
 
 // Given coordinates in lx by ly coordinate system, returns the corresponding
-// coordinates in the albers projection coordinate system
-Polygon InsetState::transform_to_albers_coor(Polygon edge_points)
+// coordinates in the equal_area_projection projection coordinate system
+Polygon InsetState::transform_to_equal_area_projection_coor(
+  Polygon edge_points)
 {
   Transformation scale(CGAL::SCALING, latt_const_);
 
-  Polygon cell_edge_points_albers = transform(scale, edge_points);
-  return cell_edge_points_albers;
+  Polygon cell_edge_points_equal_area_projection =
+    transform(scale, edge_points);
+  return cell_edge_points_equal_area_projection;
 }
 
-// Given area in the albers projection coordinate system, returns the
-// corresponding area in the square km^2
-double albers_area_to_earth_area(const double albers_area)
+// Given area in the equal_area_projection projection coordinate system,
+// returns the corresponding area in the square km^2
+double equal_area_projection_area_to_earth_area(
+  const double equal_area_projection_area)
 {
-  return (albers_area * earth_surface_area) / (4 * pi);
+  return (equal_area_projection_area * earth_surface_area) / (4 * pi);
 }
 
 double InsetState::grid_cell_area_km(
@@ -1597,10 +1600,11 @@ double InsetState::grid_cell_area_km(
   const unsigned int j = 0)
 {
   Polygon cell_edge_points = grid_cell_edge_points(i, j, 1, true);
-  const Polygon cell_edge_points_albers =
-    transform_to_albers_coor(cell_edge_points);
-  const double cell_area = cell_edge_points_albers.area();
-  const double cell_area_km = albers_area_to_earth_area(cell_area);
+  const Polygon cell_edge_points_equal_area_projection =
+    transform_to_equal_area_projection_coor(cell_edge_points);
+  const double cell_area = cell_edge_points_equal_area_projection.area();
+  const double cell_area_km =
+    equal_area_projection_area_to_earth_area(cell_area);
   return cell_area_km;
 }
 
