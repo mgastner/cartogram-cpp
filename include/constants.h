@@ -56,7 +56,9 @@ constexpr double small_area_threshold_frac = 2e-5;
 // (increases).
 constexpr double xi_sq = 4.0;
 
-// Grid cell width/height, as multiple of grid size of 1, when plotting heatmap
+// Distance between plotted grid lines on heatmap, measured in units of the
+// coordinate system in which the inset frame has a width of lx and a height of
+// ly
 constexpr unsigned int plotted_cell_length = 8;
 
 #endif
