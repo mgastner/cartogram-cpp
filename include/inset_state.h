@@ -28,10 +28,10 @@ private:
   proj_qd proj_qd_;
   std::vector<proj_qd> proj_sequence_;
 
-  // store vector of bounding box to draw quadtree
+  // Bounding boxes of Quadtree cells
   std::vector<Bbox> quadtree_bboxes_;
 
-  Bbox bbox_;  // Bounding box
+  Bbox bbox_;
   fftw_plan bwd_plan_for_rho_{};
   std::unordered_map<std::string, Color> colors_;
 
@@ -58,7 +58,7 @@ private:
 
   // Variable to store initial inset area before integration
   double initial_area_;
-  
+
   // Store initial total target area before normalization of target area
   // to later be able to normalize inset area by comparing among the insets
   double initial_target_area_;
@@ -247,8 +247,6 @@ public:
   void write_delaunay_triangles(const std::string &);
   void write_grid_heatmap_data(const std::string filename);
 
-  // Functions to write map to eps
-  // void write_density_to_eps(const std::string, const double *);
   void write_grid_heatmap_image(
     const std::string filename,
     const bool plot_equal_area_map,
