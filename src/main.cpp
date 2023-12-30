@@ -453,6 +453,9 @@ int main(const int argc, const char *argv[])
 
         time_tracker.stop("Simplification");
       }
+      if (plot_intersections) {
+        inset_state.write_intersections_image(intersections_resolution);
+      }
 
       // Print area drift information
       std::cerr << "Area drift: " << (inset_state.area_drift() - 1.0) * 100.0
