@@ -77,9 +77,6 @@ private:
   FTReal2d rho_ft_, rho_init_, grid_fluxx_init_, grid_fluxy_init_;
   std::unordered_map<std::string, double> target_areas_;
 
-  // Vertical adjacency graph
-  std::vector<std::vector<intersection>> vertical_adj_;
-
   // Area errors
   std::vector<double> max_area_errors_;
 
@@ -153,8 +150,6 @@ public:
   std::pair<double, unsigned int> get_km_legend_length();
   std::pair<double, unsigned int> get_visual_variable_legend_length();
 
-  const std::vector<std::vector<intersection>> horizontal_scans(
-    unsigned int) const;
   void increment_integration();
   double initial_area() const;
   double initial_target_area() const;
@@ -230,7 +225,6 @@ public:
   void transform_points(const std::function<Point(Point)> &, bool = false);
   std::array<Point, 3> untransformed_triangle(Point, bool = false) const;
   void trim_grid_heatmap(cairo_t *cr, double padding);
-  std::array<Point, 3> untransformed_triangle(const Point, bool = false);
 
   // Cairo functions
   void write_cairo_map(
