@@ -48,6 +48,12 @@ constexpr double max_font_size = 10.0;
 // area to be considered "too small"
 constexpr double small_area_threshold_frac = 2e-5;
 
+// Distance relative to the minimum enclosing ellipse of the polygon. If the
+// polygon's density is above (below) the mean, polygon preprocessing increases
+// (decreases) the projected area inside an ellipse with semimajor and
+// semiminor axes larger than the minimum enclosing ellipse by a factor of
+// xi_sq. Outside that enlarged ellipse, the projected area decreases
+// (increases).
 constexpr double xi_sq = 4.0;
 
 // Grid cell width/height, as multiple of grid size of 1, when plotting heatmap
