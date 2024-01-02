@@ -270,18 +270,18 @@ void InsetState::write_polygons_on_surface(
 
     // Vertical grid lines
     for (unsigned int i = 0; i <= lx_; i += grid_line_spacing) {
-      cairo_move_to(cr, cum_proj_[i][0].x, ly_ - cum_proj_[i][0].y);
+      cairo_move_to(cr, cum_proj_[i][0].x(), ly_ - cum_proj_[i][0].y());
       for (unsigned int j = 1; j < ly_; ++j) {
-        cairo_line_to(cr, cum_proj_[i][j].x, ly_ - cum_proj_[i][j].y);
+        cairo_line_to(cr, cum_proj_[i][j].x(), ly_ - cum_proj_[i][j].y());
       }
       cairo_stroke(cr);
     }
 
     // Horizontal grid lines
     for (unsigned int j = 0; j <= ly_; j += grid_line_spacing) {
-      cairo_move_to(cr, cum_proj_[0][j].x, ly_ - cum_proj_[0][j].y);
+      cairo_move_to(cr, cum_proj_[0][j].x(), ly_ - cum_proj_[0][j].y());
       for (unsigned int i = 1; i < lx_; ++i) {
-        cairo_line_to(cr, cum_proj_[i][j].x, ly_ - cum_proj_[i][j].y);
+        cairo_line_to(cr, cum_proj_[i][j].x(), ly_ - cum_proj_[i][j].y());
       }
       cairo_stroke(cr);
     }
@@ -1091,38 +1091,30 @@ Polygon InsetState::grid_cell_edge_points(
   bool plot_equal_area_map = false)
 {
   Polygon cell_edge_points;
-  const boost::multi_array<XYPoint, 2> &proj =
+  const boost::multi_array<Point, 2> &proj =
     plot_equal_area_map ? identity_proj_ : cum_proj_;
 
   // Horizontal lower edge points
   for (unsigned int i = x; i < x + cell_width; ++i) {
-    double x_coor_trans = proj[i][y].x;
-    double y_coor_trans = proj[i][y].y;
-    cell_edge_points.push_back(Point(x_coor_trans, y_coor_trans));
+    cell_edge_points.push_back(proj[i][y]);
   }
 
   // Vertical right edge points
   for (unsigned int i = y; i < y + cell_width; ++i) {
-    double x_coor_trans = proj[x + cell_width][i].x;
-    double y_coor_trans = proj[x + cell_width][i].y;
-    cell_edge_points.push_back(Point(x_coor_trans, y_coor_trans));
+    cell_edge_points.push_back(proj[x + cell_width][i]);
   }
 
   // Horizontal upper edge points
   for (unsigned int i = x + cell_width; i > x; --i) {
-    double x_coor_trans = proj[i][y + cell_width].x;
-    double y_coor_trans = proj[i][y + cell_width].y;
-    cell_edge_points.push_back(Point(x_coor_trans, y_coor_trans));
+    cell_edge_points.push_back(proj[i][y + cell_width]);
   }
 
   // Vertical left edge points
   for (unsigned int i = y + cell_width; i > y; --i) {
-    double x_coor_trans = proj[x][i].x;
-    double y_coor_trans = proj[x][i].y;
-    cell_edge_points.push_back(Point(x_coor_trans, y_coor_trans));
+    cell_edge_points.push_back(proj[x][i]);
   }
 
-  // Complete the polygon by making first and last point same
+  // Complete the polygon by making the first and last point the same
   cell_edge_points.push_back(cell_edge_points[0]);
 
   return cell_edge_points;

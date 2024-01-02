@@ -228,8 +228,7 @@ void InsetState::initialize_cum_proj()
 #pragma omp parallel for default(none)
   for (unsigned int i = 0; i < lx_; ++i) {
     for (unsigned int j = 0; j < ly_; ++j) {
-      cum_proj_[i][j].x = i + 0.5;
-      cum_proj_[i][j].y = j + 0.5;
+      cum_proj_[i][j] = Point(i + 0.5, j + 0.5);
     }
   }
 }
@@ -239,8 +238,7 @@ void InsetState::initialize_identity_proj()
   identity_proj_.resize(boost::extents[lx_][ly_]);
   for (unsigned int i = 0; i < lx_; ++i) {
     for (unsigned int j = 0; j < ly_; ++j) {
-      identity_proj_[i][j].x = i + 0.5;
-      identity_proj_[i][j].y = j + 0.5;
+      identity_proj_[i][j] = Point(i + 0.5, j + 0.5);
     }
   }
   return;

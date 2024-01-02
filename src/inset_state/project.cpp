@@ -27,12 +27,12 @@ void InsetState::project()
 #pragma omp parallel for default(none) shared(xdisp, ydisp)
   for (unsigned int i = 0; i < lx_; ++i) {
     for (unsigned int j = 0; j < ly_; ++j) {
-      xdisp[i][j] = proj_[i][j].x - i - 0.5;
-      ydisp[i][j] = proj_[i][j].y - j - 0.5;
+      xdisp[i][j] = proj_[i][j].x() - i - 0.5;
+      ydisp[i][j] = proj_[i][j].y() - j - 0.5;
     }
   }
 
-  // Cumulative projection
+// Cumulative projection
 #pragma omp parallel for default(none) shared(xdisp, ydisp)
   for (unsigned int i = 0; i < lx_; ++i) {
     for (unsigned int j = 0; j < ly_; ++j) {
@@ -40,23 +40,24 @@ void InsetState::project()
       // TODO: Should the interpolation be made on the basis of triangulation?
       // Calculate displacement for cumulative grid coordinates
       const double grid_intp_x = interpolate_bilinearly(
-        cum_proj_[i][j].x,
-        cum_proj_[i][j].y,
+        cum_proj_[i][j].x(),
+        cum_proj_[i][j].y(),
         &xdisp,
         'x',
         lx_,
         ly_);
       const double grid_intp_y = interpolate_bilinearly(
-        cum_proj_[i][j].x,
-        cum_proj_[i][j].y,
+        cum_proj_[i][j].x(),
+        cum_proj_[i][j].y(),
         &ydisp,
         'y',
         lx_,
         ly_);
 
       // Update cumulative grid coordinates
-      cum_proj_[i][j].x += grid_intp_x;
-      cum_proj_[i][j].y += grid_intp_y;
+      cum_proj_[i][j] = Point(
+        cum_proj_[i][j].x() + grid_intp_x,
+        cum_proj_[i][j].y() + grid_intp_y);
     }
   }
 
@@ -145,8 +146,8 @@ Point InsetState::projected_point(const Point p1, const bool project_original)
     static_cast<unsigned int>(ly_) - 1,
     static_cast<unsigned int>(p1.y()));
   return {
-    (p1.x() == 0.0 || p1.x() == lx_) ? p1.x() : proj[proj_x][proj_y].x,
-    (p1.y() == 0.0 || p1.y() == ly_) ? p1.y() : proj[proj_x][proj_y].y};
+    (p1.x() == 0.0 || p1.x() == lx_) ? p1.x() : proj[proj_x][proj_y].x(),
+    (p1.y() == 0.0 || p1.y() == ly_) ? p1.y() : proj[proj_x][proj_y].y()};
 }
 
 // TODO: chosen_diag() seems to be more naturally thought of as a boolean
@@ -221,9 +222,7 @@ int InsetState::chosen_diag(
 void InsetState::fill_grid_diagonals(const bool project_original)
 {
   // Initialize array if running for the first time
-  if (
-    grid_diagonals_.shape()[0] != lx_ ||
-    grid_diagonals_.shape()[1] != ly_) {
+  if (grid_diagonals_.shape()[0] != lx_ || grid_diagonals_.shape()[1] != ly_) {
     grid_diagonals_.resize(boost::extents[lx_ - 1][ly_ - 1]);
   }
   unsigned int n_concave = 0;  // Count concave grid cells
@@ -452,11 +451,7 @@ void InsetState::project_with_triangulation()
 #pragma omp parallel for default(none)
   for (unsigned int i = 0; i < lx_; ++i) {
     for (unsigned int j = 0; j < ly_; ++j) {
-      const Point old_cum_proj(cum_proj_[i][j].x, cum_proj_[i][j].y);
-      const auto new_cum_proj_pt =
-        projected_point_with_triangulation(old_cum_proj);
-      cum_proj_[i][j].x = new_cum_proj_pt.x();
-      cum_proj_[i][j].y = new_cum_proj_pt.y();
+      cum_proj_[i][j] = projected_point_with_triangulation(cum_proj_[i][j]);
     }
   }
 }

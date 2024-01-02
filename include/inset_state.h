@@ -44,7 +44,7 @@ private:
   double latt_const_;
 
   // Cumulative cartogram projection
-  boost::multi_array<XYPoint, 2> cum_proj_;
+  boost::multi_array<Point, 2> cum_proj_;
   fftw_plan fwd_plan_for_rho_{};
 
   // Geographic divisions in this inset
@@ -70,8 +70,8 @@ private:
   unsigned int lx_{}, ly_{};  // Lattice dimensions
   unsigned int n_finished_integrations_;
   std::string pos_;  // Position of inset ("C", "T" etc.)
-  boost::multi_array<XYPoint, 2> proj_;  // Cartogram projection
-  boost::multi_array<XYPoint, 2> identity_proj_;  // Original projection
+  boost::multi_array<Point, 2> proj_;  // Cartogram projection
+  boost::multi_array<Point, 2> identity_proj_;  // Original projection
 
   // Rasterized density, flux and its Fourier transform
   FTReal2d rho_ft_, rho_init_, grid_fluxx_init_, grid_fluxy_init_;

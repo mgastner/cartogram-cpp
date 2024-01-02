@@ -36,8 +36,8 @@ void calculate_velocity(
 
 bool all_points_are_in_domain(
   double delta_t,
-  boost::multi_array<XYPoint, 2> *proj,
-  boost::multi_array<XYPoint, 2> *v_intp,
+  boost::multi_array<Point, 2> *proj,
+  boost::multi_array<Point, 2> *v_intp,
   const unsigned int lx,
   const unsigned int ly)
 {
@@ -45,18 +45,18 @@ bool all_points_are_in_domain(
   // [0, lx] x [0, ly]
   bool in_domain = true;
 
-  // Parallelization as indicated by the comment below does not work:
-  // "Function 'all_points_are_in_domain' always returns false."
-  // The problem is probably because one thread may overwrite
-  // `in_domain = false` with `in_domain = true`.
-  // I am commenting out the #pragma to ensure correctness. Presumably
-  // parallelization could be implemented with reduction.
+// Parallelization as indicated by the comment below does not work:
+// "Function 'all_points_are_in_domain' always returns false."
+// The problem is probably because one thread may overwrite
+// `in_domain = false` with `in_domain = true`.
+// I am commenting out the #pragma to ensure correctness. Presumably
+// parallelization could be implemented with reduction.
 #pragma omp parallel for reduction(&& : in_domain) default(none) \
   shared(delta_t, proj, v_intp, lx, ly)
   for (unsigned int i = 0; i < lx; ++i) {
     for (unsigned int j = 0; j < ly; ++j) {
-      double x = (*proj)[i][j].x + 0.5 * delta_t * (*v_intp)[i][j].x;
-      double y = (*proj)[i][j].y + 0.5 * delta_t * (*v_intp)[i][j].y;
+      double x = (*proj)[i][j].x() + 0.5 * delta_t * (*v_intp)[i][j].x();
+      double y = (*proj)[i][j].y() + 0.5 * delta_t * (*v_intp)[i][j].y();
       if (x < 0.0 || x > lx || y < 0.0 || y > ly) {
         in_domain = false;
       }
@@ -79,11 +79,10 @@ void InsetState::flatten_density()
     proj_.resize(boost::extents[lx_][ly_]);
   }
 
-#pragma omp parallel for default(none)
+#pragma omp parallel for default(none) shared(proj_)
   for (unsigned int i = 0; i < lx_; ++i) {
     for (unsigned int j = 0; j < ly_; ++j) {
-      proj_[i][j].x = i + 0.5;
-      proj_[i][j].y = j + 0.5;
+      proj_[i][j] = Point(i + 0.5, j + 0.5);
     }
   }
 
@@ -94,20 +93,20 @@ void InsetState::flatten_density()
   // eul[i][j] will be the new position of proj_[i][j] proposed by a simple
   // Euler step: move a full time interval delta_t with the velocity at time t
   // and position (proj_[i][j].x, proj_[i][j].y)
-  boost::multi_array<XYPoint, 2> eul(boost::extents[lx_][ly_]);
+  boost::multi_array<Point, 2> eul(boost::extents[lx_][ly_]);
 
   // mid[i][j] will be the new displacement proposed by the midpoint
   // method (see comment below for the formula)
-  boost::multi_array<XYPoint, 2> mid(boost::extents[lx_][ly_]);
+  boost::multi_array<Point, 2> mid(boost::extents[lx_][ly_]);
 
   // (vx_intp, vy_intp) will be the velocity at position (proj_.x, proj_.y) at
   // time t
-  boost::multi_array<XYPoint, 2> v_intp(boost::extents[lx_][ly_]);
+  boost::multi_array<Point, 2> v_intp(boost::extents[lx_][ly_]);
 
   // (vx_intp_half, vy_intp_half) will be the velocity at the midpoint
   // (proj_.x + 0.5*delta_t*vx_intp, proj_.y + 0.5*delta_t*vy_intp) at time
   // t + 0.5*delta_t
-  boost::multi_array<XYPoint, 2> v_intp_half(boost::extents[lx_][ly_]);
+  boost::multi_array<Point, 2> v_intp_half(boost::extents[lx_][ly_]);
 
   // Initialize the Fourier transforms of gridvx[] and gridvy[] at
   // every point on the lx_-times-ly_ grid at t = 0. We must typecast lx_ and
@@ -166,41 +165,41 @@ void InsetState::flatten_density()
       &grid_vy,
       lx_,
       ly_);
-#pragma omp parallel for default(none) shared(v_intp, grid_vx, grid_vy)
+#pragma omp parallel for default(none) shared(proj_, v_intp, grid_vx, grid_vy)
     for (unsigned int i = 0; i < lx_; ++i) {
       for (unsigned int j = 0; j < ly_; ++j) {
-
         // We know, either because of the initialization or because of the
         // check at the end of the last iteration, that (proj_.x, proj_.y)
         // is inside the rectangle [0, lx_] x [0, ly_]. This fact guarantees
         // that interpolate_bilinearly() is given a point that cannot cause it
         // to fail.
-        v_intp[i][j].x = interpolate_bilinearly(
-          proj_[i][j].x,
-          proj_[i][j].y,
+        double vx = interpolate_bilinearly(
+          proj_[i][j].x(),
+          proj_[i][j].y(),
           &grid_vx,
           'x',
           lx_,
           ly_);
-        v_intp[i][j].y = interpolate_bilinearly(
-          proj_[i][j].x,
-          proj_[i][j].y,
+        double vy = interpolate_bilinearly(
+          proj_[i][j].x(),
+          proj_[i][j].y(),
           &grid_vy,
           'y',
           lx_,
           ly_);
+        v_intp[i][j] = Point(vx, vy);
       }
     }
+
     bool accept = false;
     while (!accept) {
-
-      // Simple Euler step.
-
-#pragma omp parallel for default(none) shared(delta_t, eul, v_intp)
+// Simple Euler step
+#pragma omp parallel for default(none) shared(proj_, v_intp, delta_t, eul)
       for (unsigned int i = 0; i < lx_; ++i) {
         for (unsigned int j = 0; j < ly_; ++j) {
-          eul[i][j].x = proj_[i][j].x + v_intp[i][j].x * delta_t;
-          eul[i][j].y = proj_[i][j].y + v_intp[i][j].y * delta_t;
+          eul[i][j] = Point(
+            proj_[i][j].x() + v_intp[i][j].x() * delta_t,
+            proj_[i][j].y() + v_intp[i][j].y() * delta_t);
         }
       }
 
@@ -225,9 +224,7 @@ void InsetState::flatten_density()
       // try again.
       accept = all_points_are_in_domain(delta_t, &proj_, &v_intp, lx_, ly_);
       if (accept) {
-
         // Okay, we can run interpolate_bilinearly()
-
 #pragma omp parallel for default(none) shared( \
     abs_tol,                                   \
       accept,                                  \
@@ -240,34 +237,35 @@ void InsetState::flatten_density()
       v_intp_half)
         for (unsigned int i = 0; i < lx_; ++i) {
           for (unsigned int j = 0; j < ly_; ++j) {
-            v_intp_half[i][j].x = interpolate_bilinearly(
-              proj_[i][j].x + 0.5 * delta_t * v_intp[i][j].x,
-              proj_[i][j].y + 0.5 * delta_t * v_intp[i][j].y,
+            double vx_half = interpolate_bilinearly(
+              proj_[i][j].x() + 0.5 * delta_t * v_intp[i][j].x(),
+              proj_[i][j].y() + 0.5 * delta_t * v_intp[i][j].y(),
               &grid_vx,
               'x',
               lx_,
               ly_);
-            v_intp_half[i][j].y = interpolate_bilinearly(
-              proj_[i][j].x + 0.5 * delta_t * v_intp[i][j].x,
-              proj_[i][j].y + 0.5 * delta_t * v_intp[i][j].y,
+            double vy_half = interpolate_bilinearly(
+              proj_[i][j].x() + 0.5 * delta_t * v_intp[i][j].x(),
+              proj_[i][j].y() + 0.5 * delta_t * v_intp[i][j].y(),
               &grid_vy,
               'y',
               lx_,
               ly_);
-            mid[i][j].x = proj_[i][j].x + v_intp_half[i][j].x * delta_t;
-            mid[i][j].y = proj_[i][j].y + v_intp_half[i][j].y * delta_t;
+            v_intp_half[i][j] = Point(vx_half, vy_half);
+            mid[i][j] = Point(
+              proj_[i][j].x() + v_intp_half[i][j].x() * delta_t,
+              proj_[i][j].y() + v_intp_half[i][j].y() * delta_t);
 
             // Do not accept the integration step if the maximum squared
             // difference between the Euler and midpoint proposals exceeds
             // abs_tol. Neither should we accept the integration step if one
             // of the positions wandered out of the domain. If one of these
             // problems occurred, decrease the time step.
-            const double sq_dist =
-              (mid[i][j].x - eul[i][j].x) * (mid[i][j].x - eul[i][j].x) +
-              (mid[i][j].y - eul[i][j].y) * (mid[i][j].y - eul[i][j].y);
+            double sq_dist = CGAL::squared_distance(mid[i][j], eul[i][j]);
             if (
-              sq_dist > abs_tol || mid[i][j].x < 0.0 || mid[i][j].x > lx_ ||
-              mid[i][j].y < 0.0 || mid[i][j].y > ly_) {
+              sq_dist > abs_tol || mid[i][j].x() < 0.0 ||
+              mid[i][j].x() > lx_ || mid[i][j].y() < 0.0 ||
+              mid[i][j].y() > ly_) {
               accept = false;
             }
           }
@@ -278,7 +276,7 @@ void InsetState::flatten_density()
       }
     }
 
-    // Control ouput
+    // Control output and update for next iteration
     if (iter % 10 == 0) {
       std::cerr << "iter = " << iter << ", t = " << t
                 << ", delta_t = " << delta_t << "\n";
