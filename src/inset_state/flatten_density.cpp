@@ -499,9 +499,7 @@ void InsetState::flatten_density_with_node_vertices()
           // abs_tol. Neither should we accept the integration step if one
           // of the positions wandered out of the domain. If one of these
           // problems occurred, decrease the time step.
-          const double sq_dist =
-            (mid[key].x() - eul[key].x()) * (mid[key].x() - eul[key].x()) +
-            (mid[key].y() - eul[key].y()) * (mid[key].y() - eul[key].y());
+          const double sq_dist = CGAL::squared_distance(mid[key], eul[key]);
           if (
             sq_dist > abs_tol || mid[key].x() < 0.0 || mid[key].x() > lx_ ||
             mid[key].y() < 0.0 || mid[key].y() > ly_) {
