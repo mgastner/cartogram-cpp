@@ -5,7 +5,6 @@
 #include "ft_real_2d.h"
 #include "geo_div.h"
 #include "intersection.h"
-#include "xy_point.h"
 #include <boost/multi_array.hpp>
 #include <cairo/cairo.h>
 #include <nlohmann/json.hpp>

@@ -2,7 +2,6 @@
 #define INTERSECTION_H_
 
 #include "cgal_typedef.h"
-#include "xy_point.h"
 
 // Struct to store intersection between line segment and grid line
 class intersection
