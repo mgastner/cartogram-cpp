@@ -13,6 +13,5 @@ double rounded_to_bicimal(
   const unsigned int,
   const unsigned int);
 Point rounded_point(const Point, const unsigned int, const unsigned int);
-XYPoint rounded_XYpoint(const XYPoint, const unsigned int, const unsigned int);
 
 #endif
