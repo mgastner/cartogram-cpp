@@ -31,7 +31,7 @@ public:
 
   [[nodiscard]] double x() const;
   [[nodiscard]] double y() const;
-  bool ray_intersects(XYPoint, XYPoint, double, double, double);
+  bool ray_intersects(Point, Point, double, double, double);
 };
 
 void add_intersections(
