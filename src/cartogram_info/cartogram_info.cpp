@@ -111,7 +111,7 @@ void CartogramInfo::replace_missing_and_zero_target_areas()
     double replacement_target_area;
 
     // We replace the zero and small areas, if any, with
-    // small_area_absolute_threshold if not all target areas are initially
+    // small_target_area_threshold if not all target areas are initially
     // missing or zero
     if (small_target_area_threshold > 0.0) {
       std::cerr << "Replacing small target areas..." << std::endl;
