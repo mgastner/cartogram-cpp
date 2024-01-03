@@ -57,7 +57,7 @@ void CartogramInfo::read_csv(const argparse::ArgumentParser &arguments)
 
   // Find index of column with inset specifiers. If no inset column header was
   // passed with the command-line flag --inset, the header is assumed to be
-  // "Inset"
+  // "Inset". This default value is set in parse_arguments.cpp.
   auto inset_header = arguments.get<std::string>("-I");
   int inset_col = reader.index_of(inset_header);
 
