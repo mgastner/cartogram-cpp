@@ -144,7 +144,7 @@ void CartogramInfo::replace_missing_and_zero_target_areas()
           (target_area >= 0.0) &&
           (target_area <= small_target_area_threshold)) {
 
-          // Do not let the replacement target area be smaller than the
+          // Do not allow the replacement target area to be smaller than the
           // GeoDiv's target area
           double gd_specific_replacement_target_area = std::max(
             std::min(replacement_target_area, gd.area() * mean_density),
