@@ -7,7 +7,7 @@
 double interpolate_bilinearly(
   double,
   double,
-  boost::multi_array<double, 2> *,
+  const boost::multi_array<double, 2> *,
   char,
   unsigned int,
   unsigned int);
