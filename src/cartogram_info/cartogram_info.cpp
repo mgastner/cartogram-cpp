@@ -181,9 +181,9 @@ void CartogramInfo::replace_missing_and_zero_target_areas()
           } else {
 
             // Replace target_area
-            const double mean_density =
+            const double adjusted_mean_density =
               total_target_area_with_data / total_start_area_with_data;
-            new_target_area = mean_density * gd.area();
+            new_target_area = adjusted_mean_density * gd.area();
           }
           inset_state.replace_target_area(gd.id(), new_target_area);
         }
