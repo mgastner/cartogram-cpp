@@ -91,8 +91,8 @@ void CartogramInfo::read_csv(const argparse::ArgumentParser &arguments)
     }
     ids_in_visual_variables_file_.insert(id);
 
-    csv::CSVField area_field = row[area_col];
     // Get target area as string
+    csv::CSVField area_field = row[area_col];
     std::string area_as_str = area_field.get();
 
     // Parsed area string will be stored here
