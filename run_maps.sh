@@ -1,8 +1,8 @@
 #!/bin/bash
 
-# Change to the directory containing the sample_data folder
-pushd "$(dirname "$0")" > /dev/null
-cd sample_data
+# Change to the directory containing the sample_data folder and exit if it fails
+pushd "$(dirname "$0")" > /dev/null || exit
+cd sample_data || exit
 
 # Initialize success and fail counters
 success_count=0
@@ -25,10 +25,6 @@ for map_dir in */; do
 
   # Construct the command to run
   command="./bin/cartogram \"${geojson_file}\" \"${csv_file}\" -Qrts"
-
-  # Print the exact command being run
-  # echo "Running command: $command"
-  
   # add ./sample_data/ to the command before geojson_file and csv_file
   command_2="./bin/cartogram \"./sample_data/${geojson_file}\" \"./sample_data/${csv_file}\" -Qrts"
   
@@ -58,5 +54,5 @@ done
 echo "Success count: $success_count"
 echo "Fail count: $fail_count"
 
-# Return to the original directory
-popd > /dev/null
+# Return to the original directory and exit if it fails
+popd > /dev/null || exit
