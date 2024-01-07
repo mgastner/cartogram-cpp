@@ -144,9 +144,15 @@ The CSV file should be in the following format:
 
 ### Testing
 
-If you'd like to contribute to the project, please run our test battery after you make any changes. You may do so by going to the `cartogram_cpp/tests` directory and running the following command:
+If you'd like to contribute to the project, please run our tests after you make any changes. 
 
-        bash stress_test.sh
+To run the unit tests, execute the following command:
+
+    ctest --verbose
+
+Additionally, you may go to the `cartogram_cpp/tests` directory and run the following command:
+
+     bash stress_test.sh
 
 ### Uninstallation
 
