@@ -46,7 +46,7 @@ add_executable(cartogram ${CARTOGRAM_SOURCES})
 # Add test executable
 file(GLOB_RECURSE CARTOGRAM_TEST_SOURCES "tests/*.cpp")
 set(CARTOGRAM_TEST_SOURCES_FROM_SRC
-  "src/misc/target_area_parser.cpp"
+  "src/misc/string_to_decimal_converter.cpp"
 
   # Add test sources from src here
 )

@@ -1,6 +1,6 @@
 #include "cartogram_info.h"
 #include "csv.hpp"
-#include "target_area_parser.h"
+#include "string_to_decimal_converter.h"
 
 void CartogramInfo::read_csv(const argparse::ArgumentParser &arguments)
 {
@@ -74,7 +74,7 @@ void CartogramInfo::read_csv(const argparse::ArgumentParser &arguments)
     // Parsed area string will be stored here
     double area;
 
-    if (!TargetAreaParser::is_area_str_valid_characters(area_as_str)) {
+    if (!StringToDecimalConverter::is_str_valid_characters(area_as_str)) {
       std::cerr << "ERROR: Invalid area string: " << area_as_str << std::endl;
       std::cerr
         << "Area string must only contain 0-9, '.', '-' and ',' or 'NA'."
@@ -83,20 +83,20 @@ void CartogramInfo::read_csv(const argparse::ArgumentParser &arguments)
     }
 
     if (
-      !TargetAreaParser::is_area_str_NA(area_as_str) and
-      !TargetAreaParser::is_area_str_correct_format(area_as_str)) {
+      !StringToDecimalConverter::is_str_NA(area_as_str) and
+      !StringToDecimalConverter::is_str_correct_format(area_as_str)) {
       std::cerr << "ERROR: Invalid area string format: " << area_as_str
                 << std::endl;
       _Exit(19);
     }
 
-    if (TargetAreaParser::is_area_str_NA(area_as_str)) {
+    if (StringToDecimalConverter::is_str_NA(area_as_str)) {
       area = -1.0;
     } else {
-      area = TargetAreaParser::parse_area_str(area_as_str);
+      area = StringToDecimalConverter::parse_str(area_as_str);
     }
 
-    if (area < 0.0 and !TargetAreaParser::is_area_str_NA(area_as_str)) {
+    if (area < 0.0 and !StringToDecimalConverter::is_str_NA(area_as_str)) {
       std::cerr << "ERROR: Negative area in CSV" << std::endl;
       _Exit(101);
     }

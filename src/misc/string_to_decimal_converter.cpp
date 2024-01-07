@@ -1,5 +1,5 @@
 /*
-Area String Parsing Algorithm:
+String to Decimal Parsing Algorithm:
 *) Check validity of string: only 0-9, ',' and '.' are allowed.
 
 *) Contains both points and commas (i.e: 123,456,789.123 or
@@ -37,42 +37,43 @@ a thousands separator and remove it. (e.g., "1.234" -> "1234", "12.345" ->
       (e.g., "1.234.567" -> "1234567").
 */
 
-#include "target_area_parser.h"
+#include "string_to_decimal_converter.h"
 #include <algorithm>
 #include <cassert>
 #include <cctype>
 
-const std::string TargetAreaParser::NA_ = "NA";
+const std::string StringToDecimalConverter::NA_ = "NA";
 
-bool TargetAreaParser::is_valid_char(char ch)
+bool StringToDecimalConverter::is_valid_char(char ch)
 {
   return (std::isdigit(ch)) || ch == point_ || ch == comma_ || ch == minus_;
 }
 
-std::string TargetAreaParser::remove_char(std::string str, char ch)
+std::string StringToDecimalConverter::remove_char(std::string str, char ch)
 {
   str.erase(std::remove(str.begin(), str.end(), ch), str.end());
   return str;
 }
 
-int TargetAreaParser::count_char(const std::string &str, char ch)
+int StringToDecimalConverter::count_char(const std::string &str, char ch)
 {
   return std::count(str.begin(), str.end(), ch);
 }
 
-bool TargetAreaParser::has_multiple_commas_and_points(
-  const std::string &area_str)
+bool StringToDecimalConverter::has_multiple_commas_and_points(
+  const std::string &str)
 {
-  return count_char(area_str, comma_) > 1 && count_char(area_str, point_) > 1;
+  return count_char(str, comma_) > 1 && count_char(str, point_) > 1;
 }
 
-bool TargetAreaParser::has_separator_at_the_end(const std::string &str)
+bool StringToDecimalConverter::has_separator_at_the_end(const std::string &str)
 {
   assert(str.length() > 0);
   return (str.back() == comma_ || str.back() == point_);
 }
 
-bool TargetAreaParser::has_invalid_comma_point_sequence(const std::string &str)
+bool StringToDecimalConverter::has_invalid_comma_point_sequence(
+  const std::string &str)
 {
   assert(!has_multiple_commas_and_points(str));
 
@@ -109,104 +110,103 @@ bool TargetAreaParser::has_invalid_comma_point_sequence(const std::string &str)
   return false;
 }
 
-bool TargetAreaParser::is_area_str_NA(const std::string &area_str)
+bool StringToDecimalConverter::is_str_NA(const std::string &str)
 {
-  return (area_str.compare(NA_) == 0);
+  return (str.compare(NA_) == 0);
 }
 
-bool TargetAreaParser::is_area_str_valid_characters(
-  const std::string &area_str)
+bool StringToDecimalConverter::is_str_valid_characters(const std::string &str)
 {
-  if (area_str.empty()) {
+  if (str.empty()) {
     return false;
   }
 
-  // Allow area_str being "NA"
-  if (area_str == NA_) {
+  // Allow str being "NA"
+  if (str == NA_) {
     return true;
   }
 
   // Only 0 to 9, '.', '-', and ',' are allowed
-  for (const auto &c : area_str) {
+  for (const auto &c : str) {
     if (!is_valid_char(c)) {
       return false;
     }
   }
 
   // '-' can only be used once
-  if (count_char(area_str, minus_) > 1) {
+  if (count_char(str, minus_) > 1) {
     return false;
   }
 
   // '-' can only be used at the beginning
-  if (count_char(area_str, minus_) == 1 and area_str[0] != minus_) {
+  if (count_char(str, minus_) == 1 and str[0] != minus_) {
     return false;
   }
   return true;
 }
 
-bool TargetAreaParser::is_area_str_correct_format(const std::string &area_str)
+bool StringToDecimalConverter::is_str_correct_format(const std::string &str)
 {
-  assert(is_area_str_valid_characters(area_str));
-  assert(is_area_str_NA(area_str) == false);
+  assert(is_str_valid_characters(str));
+  assert(is_str_NA(str) == false);
 
   // if the number of commas and points both are more than 1, then this format
   // does not belong to any known convention
-  if (has_multiple_commas_and_points(area_str)) {
+  if (has_multiple_commas_and_points(str)) {
     return false;
   }
 
   // Check for commas before and after a point, or points before and after a
   // comma
-  if (has_invalid_comma_point_sequence(area_str)) {
+  if (has_invalid_comma_point_sequence(str)) {
     return false;
   }
 
   // Check for separators at the end of the string
-  if (has_separator_at_the_end(area_str)) {
+  if (has_separator_at_the_end(str)) {
     return false;
   }
 
   return true;
 }
 
-double TargetAreaParser::parse_area_str(const std::string &area_str)
+double StringToDecimalConverter::parse_str(const std::string &str)
 {
-  assert(is_area_str_correct_format(area_str));
-  assert(!is_area_str_NA(area_str));
+  assert(is_str_correct_format(str));
+  assert(!is_str_NA(str));
 
-  std::string processed_area_str = area_str;
+  std::string processed_str = str;
 
-  int comma_count = count_char(area_str, comma_);
-  int point_count = count_char(area_str, point_);
+  int comma_count = count_char(str, comma_);
+  int point_count = count_char(str, point_);
 
   // Contains both commas and points
   if (comma_count > 0 && point_count > 0) {
-    if (area_str.find(point_) > area_str.find(comma_)) {
+    if (str.find(point_) > str.find(comma_)) {
 
       // Commas as thousand separators, remove them
-      processed_area_str = remove_char(processed_area_str, comma_);
+      processed_str = remove_char(processed_str, comma_);
     } else {
 
       // Points as thousand separators, remove them
-      processed_area_str = remove_char(processed_area_str, point_);
+      processed_str = remove_char(processed_str, point_);
 
-      assert(processed_area_str.find(comma_) != std::string::npos);
+      assert(processed_str.find(comma_) != std::string::npos);
 
       // Replace the comma with a point
-      processed_area_str[processed_area_str.find(comma_)] = point_;
+      processed_str[processed_str.find(comma_)] = point_;
     }
   }
   // Contains only commas
   else if (comma_count > 0) {
 
     // If only one comma and two digits after it, treat as a decimal
-    if (comma_count == 1 && area_str.size() - area_str.find(comma_) == 3) {
-      processed_area_str[processed_area_str.find(comma_)] = point_;
+    if (comma_count == 1 && str.size() - str.find(comma_) == 3) {
+      processed_str[processed_str.find(comma_)] = point_;
     } else {
 
       // Otherwise, remove all commas
-      processed_area_str = remove_char(processed_area_str, comma_);
+      processed_str = remove_char(processed_str, comma_);
     }
   }
   // Contains only points
@@ -217,30 +217,30 @@ double TargetAreaParser::parse_area_str(const std::string &area_str)
 
       // If there are multiple points, assume all points are used as
       // thousands separators and remove them.
-      processed_area_str = remove_char(processed_area_str, point_);
+      processed_str = remove_char(processed_str, point_);
     } else {
 
       // If there is only one point, check the number of digits following it.
-      size_t point_pos = processed_area_str.find(point_);
-      size_t digits_after_point = processed_area_str.length() - point_pos - 1;
+      size_t point_pos = processed_str.find(point_);
+      size_t digits_after_point = processed_str.length() - point_pos - 1;
 
       if (
-        digits_after_point == 3 && processed_area_str.length() > 4 &&
-        processed_area_str.size() < 8) {
+        digits_after_point == 3 && processed_str.length() > 4 &&
+        processed_str.size() < 8) {
 
         // If exactly three digits follow the point and the total length of
         // the number (excluding the point) is more than four, and
         // less than 8, assume the point is a thousands separator and remove
         // it. (e.g., "1.234" -> "1234", "123.456" -> "123456").
-        processed_area_str = remove_char(processed_area_str, point_);
+        processed_str = remove_char(processed_str, point_);
       }
 
       // In other cases, assume the point is a decimal separator and keep it.
       // (e.g., "
     }
 
-    // Parse the area_str or return it as needed.
+    // Parse the str or return it as needed.
   }
 
-  return std::stod(processed_area_str);
+  return std::stod(processed_str);
 }
