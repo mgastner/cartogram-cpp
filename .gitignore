@@ -26,6 +26,10 @@ cartogram
 # Ignore everything but scripts
 /tests/*
 !/tests/*.sh
+!/tests/*.cpp
+
+# Ignore the Testing logs
+/Testing
 
 # Don't ignore .gitkeep file
 !.gitkeep
@@ -73,6 +77,7 @@ CMakeFiles
 cmake-build-*/
 bin
 cmake_install.cmake
+CTestTestfile.cmake
 CMakeCache.txt
 Makefile
 .idea
