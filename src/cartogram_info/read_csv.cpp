@@ -1,33 +1,9 @@
 #include "cartogram_info.h"
 #include "csv.hpp"
-#include <string>
-
-bool is_area_str_valid(const std::string &area_str)
-{
-  // Allow area_str being "NA"
-  if (area_str == "NA") {
-    return true;
-  }
-
-  // Only 0 to 9, '.', '-', and ',' are allowed
-  for (const auto &c : area_str) {
-    if (!(c >= '0' && c <= '9') && c != '.' && c != '-' && c != ',') {
-      return false;
-    }
-  }
-
-  // '-' can only be used as negative sign
-  if (area_str.find('-') != std::string::npos) {
-    if (area_str.find('-') != 0) {
-      return false;
-    }
-  }
-  return true;
-}
+#include "target_area_parser.h"
 
 void CartogramInfo::read_csv(const argparse::ArgumentParser &arguments)
 {
-
   // Retrieve CSV Name
   const std::string csv_name =
     arguments.get<std::string>("visual_variable_file");
@@ -97,133 +73,30 @@ void CartogramInfo::read_csv(const argparse::ArgumentParser &arguments)
 
     // Parsed area string will be stored here
     double area;
-    const char comma = ',';
-    const char decimal = '.';
-    const int area_str_size = area_as_str.length();
 
-    /*
-    Area String Parsing Algorithm:
-    *) Check validity of string: only 0-9, ',' and '.' are allowed.
-
-    *) Contains both decimal and comma (i.e: 123,456,789.123 or
-    123.456.789,123):
-      i) Comma appears first, decimal second (123,456,789.123):
-      We consider it as US-convention, and remove the commas.
-      123,456,789.123 -> 123456789.123.
-      ii) Decimal appears first, comma second (123.456.789,123): We
-      consider it Europe-convention, and we remove the decimals and replace the
-      comma with decimal point (123.456.789,123 -> 123456789.123)
-      iii) Number of comma and decimals both are more than 1
-      (123,456,789.123.456): This format does not belong to any known
-      convention, so exit with error.
-      iv) Contains in random order (i.e: 123,456.789,123): Exit with error.
-
-    *) Contains only commas (i.e: 123,456,789 or 123456,78):
-      i) Only one comma is present and there are two digits after comma. We
-      treat the comma as deicmal. (123456,78 -> 123456.78)
-      ii) All other case, we assume the number does not contain any decimal
-      values. So, we remove the commas and parse as usual. (123,456,789 ->
-      123456789)
-
-    *) Contains only decimals (i.e: 123.456.789 or 123456.789):
-      i) Only one decimal present and there are three digits after that. Assume
-      the decimal is European convention. (123456.789 -> 123456789)
-      ii) Other cases, we assume the decimals were used to convey comma
-      meaning. So, we remove the decimals places and parse the string.
-      (123.456.789 -> 123456789)
-    */
-
-    if (!is_area_str_valid(area_as_str)) {
+    if (!TargetAreaParser::is_area_str_valid_characters(area_as_str)) {
       std::cerr << "ERROR: Invalid area string: " << area_as_str << std::endl;
-      std::cerr << "Area string must only contain 0-9, '.', '-' and ','."
-                << std::endl;
+      std::cerr
+        << "Area string must only contain 0-9, '.', '-' and ',' or 'NA'."
+        << std::endl;
       _Exit(18);
     }
 
-    // Both commas and decimals are present
     if (
-      (area_as_str.find(comma) != std::string::npos) &&
-      (area_as_str.find(decimal) != std::string::npos)) {
-
-      // Number of comma or decimals both more than 1, exit
-      // handles 123,456,789.123.456 case
-      int comma_count =
-        std::count(area_as_str.begin(), area_as_str.end(), comma);
-      int decimal_count =
-        std::count(area_as_str.begin(), area_as_str.end(), decimal);
-      if (comma_count > 1 and decimal_count > 1) {
-        std::cerr << "ERROR: Invalid area string: " << area_as_str
-                  << std::endl;
-        _Exit(19);
-      }
-
-      // TODO: Add logic to handle cases like 123,456.789,123
-      // and 123.456,789.123
-
-      // if commas come first, remove all commas and keep the decimal
-      if (area_as_str.find(comma) < area_as_str.find(decimal)) {
-        area_as_str.erase(
-          std::remove(area_as_str.begin(), area_as_str.end(), comma),
-          area_as_str.end());
-      } else {  // decimal comes first
-
-        // remove all decimals and replace commas with decimal
-        area_as_str.erase(
-          std::remove(area_as_str.begin(), area_as_str.end(), decimal),
-          area_as_str.end());
-        area_as_str[area_as_str.find(comma)] = '.';
-      }
-      area = std::stod(area_as_str);
-    } else if (area_as_str.find(comma) != std::string::npos) {  // only commas
-      int comma_count =
-        std::count(area_as_str.begin(), area_as_str.end(), comma);
-
-      // if there is only 1 comma, and there are only 2 numbers after the
-      // comma, convert to decimal: 12,56 -> 12.56
-      if (
-        (comma_count == 1) &&
-        (area_str_size - 1 - area_as_str.find(comma) == 2)) {
-        area_as_str[area_as_str.find(comma)] = '.';
-      } else {
-
-        // treat as US-convention, remove commas
-        area_as_str.erase(
-          std::remove(area_as_str.begin(), area_as_str.end(), comma),
-          area_as_str.end());
-      }
-      area = std::stod(area_as_str);
-    } else if (area_as_str.find(decimal) != std::string::npos) {  // only
-                                                                  // decimals
-      int decimal_count =
-        std::count(area_as_str.begin(), area_as_str.end(), decimal);
-
-      // If there is more than 1 decimal, remove all decimals, as we treat them
-      // as commas
-      if (decimal_count > 1) {
-        area_as_str.erase(
-          std::remove(area_as_str.begin(), area_as_str.end(), decimal),
-          area_as_str.end());
-      } else if (
-        (decimal_count == 1) &&
-        (area_str_size - 1 - area_as_str.find(decimal) == 3)) {
-
-        // if there is only 1 decimal, and there are only 3 numbers after the
-        // decimal, treat it as European-convention, pretend it is a comma.
-        // 12456.789 -> 12456789
-        area_as_str.erase(
-          std::remove(area_as_str.begin(), area_as_str.end(), decimal),
-          area_as_str.end());
-      }
-      area = std::stod(area_as_str);
-    } else if (area_as_str.empty() || area_as_str.compare("NA") == 0) {
-      area = -1.0;  // Use negative area as sign of a missing value
-    } else {
-      area = std::stod(area_as_str);
+      !TargetAreaParser::is_area_str_NA(area_as_str) and
+      !TargetAreaParser::is_area_str_correct_format(area_as_str)) {
+      std::cerr << "ERROR: Invalid area string format: " << area_as_str
+                << std::endl;
+      _Exit(19);
     }
 
-    if (
-      area < 0.0 and
-      (area_as_str.compare("NA") != 0 and !area_as_str.empty())) {
+    if (TargetAreaParser::is_area_str_NA(area_as_str)) {
+      area = -1.0;
+    } else {
+      area = TargetAreaParser::parse_area_str(area_as_str);
+    }
+
+    if (area < 0.0 and !TargetAreaParser::is_area_str_NA(area_as_str)) {
       std::cerr << "ERROR: Negative area in CSV" << std::endl;
       _Exit(101);
     }
