@@ -43,7 +43,7 @@ double InsetState::blur_width() const
 // that uses the shorter diagonal as a triangle edge.
 void InsetState::create_delaunay_t()
 {
-  // Store all the polygon vertices in std::unordered_map to remove
+  // Store all the polygon vertices in std::unordered_set to remove
   // duplicates
   std::unordered_set<Point> points;
 
