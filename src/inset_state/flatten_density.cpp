@@ -533,7 +533,7 @@ void InsetState::flatten_density_with_node_vertices()
       }
     }
 
-    // Control ouput
+    // Control output
     if (iter % 10 == 0) {
       std::cerr << "iter = " << iter << ", t = " << t
                 << ", delta_t = " << delta_t << "\n";

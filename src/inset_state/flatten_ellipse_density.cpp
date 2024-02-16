@@ -487,7 +487,8 @@ void InsetState::flatten_ellipse_density()
         delta_t *= dec_after_not_acc;
       }
     } while (!accept);
-    // Control ouput
+
+    // Control output
     if (iter % 10 == 0) {
       std::cerr << "iter = " << iter << ", t = " << t
                 << ", delta_t = " << delta_t << "\n";
