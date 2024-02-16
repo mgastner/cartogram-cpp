@@ -47,8 +47,9 @@ void InsetState::fill_with_density(bool plot_density)
   unsigned int long_grid_length = std::max(lx_, ly_);
   const unsigned int resolution =
     (long_grid_length > default_long_grid_length)
-      ? (default_resolution * default_long_grid_length) *
-          (1.0 / long_grid_length)
+      ? static_cast<unsigned int>(
+          (default_resolution * default_long_grid_length) *
+          (1.0 / long_grid_length))
       : default_resolution;
 
   auto intersections_with_rays = intersec_with_parallel_to('x', resolution);
