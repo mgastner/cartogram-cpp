@@ -365,6 +365,15 @@ void InsetState::flatten_ellipse_density()
       for (int i = -2; i <= 2; ++i) {
         double x = ((i + abs(i) % 2) * static_cast<int>(lx_)) +
                    (curr_pt.x() * (i % 2 == 0 ? 1 : -1));
+
+        // TODO: ell.center.x() needs to undergo the same transformation as
+        // curr_pt.x when it turned to x. That is, ell.center.x() needs to be
+        // replaced by ((i + abs(i) % 2) * static_cast<int>(lx_)) +
+        // (ell.center.x() * (i % 2 == 0 ? 1 : -1));. Furthermore, theta
+        // changes as a result of the transformation. An alternative would be
+        // to calculate x_tilde for the untransformed coordinates outside the
+        // nested for-loop and apply a transformation directly to x_tilde
+        // instead of applying it to the ingredients x, y and theta separately.
         for (int j = -2; j <= 2; ++j) {
           double y = ((j + abs(j) % 2) * static_cast<int>(ly_)) +
                      (curr_pt.y() * (j % 2 == 0 ? 1 : -1));
