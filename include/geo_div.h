@@ -27,7 +27,7 @@ public:
   [[nodiscard]] Bbox bbox() const;
   [[nodiscard]] std::string id() const;
   [[nodiscard]] Polygon_with_holes largest_polygon_with_holes() const;
-  const std::vector<Ellipse> min_ellipses() const;
+  std::vector<Ellipse> min_ellipses() const;
   [[nodiscard]] unsigned int n_points() const;
   unsigned int n_polygons_with_holes() const;
   [[nodiscard]] unsigned int n_rings() const;

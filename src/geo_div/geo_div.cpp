@@ -70,7 +70,7 @@ Polygon_with_holes GeoDiv::largest_polygon_with_holes() const
   return largest_pwh;
 }
 
-const std::vector<Ellipse> GeoDiv::min_ellipses() const
+std::vector<Ellipse> GeoDiv::min_ellipses() const
 {
   return min_ellipses_;
 }
@@ -178,7 +178,6 @@ std::vector<Polygon_with_holes> GeoDiv::polygons_with_holes() const
 void GeoDiv::push_back_ellipse(const Ellipse ell)
 {
   min_ellipses_.push_back(ell);
-  return;
 }
 
 void GeoDiv::push_back_polygon_with_holes(const Polygon_with_holes &pwh)
