@@ -322,11 +322,12 @@ void InsetState::flatten_ellipse_density()
     }
   }
 
-  // find the print the polygons with max delta density
-  int mx_pgn_index = std::max_element(
-                       ell_density_prefactors.begin(),
-                       ell_density_prefactors.end()) -
-                     ell_density_prefactors.begin();
+  // Print the polygons with max delta density
+  int mx_pgn_index = static_cast<int>(
+    std::max_element(
+      ell_density_prefactors.begin(),
+      ell_density_prefactors.end()) -
+    ell_density_prefactors.begin());
 
   std::cerr << "Max delta rho: " << ell_density_prefactors[mx_pgn_index]
             << ", GeoDiv: " << pgn_id_to_geo_id[mx_pgn_index] << std::endl;
@@ -334,8 +335,7 @@ void InsetState::flatten_ellipse_density()
   // print top 5 polygons with most delta density
   std::vector<std::pair<double, std::string>> pgn_density;
   for (unsigned int i = 0; i < ell_density_prefactors.size(); ++i) {
-    pgn_density.push_back(
-      std::make_pair(ell_density_prefactors[i], pgn_id_to_geo_id[i]));
+    pgn_density.emplace_back(ell_density_prefactors[i], pgn_id_to_geo_id[i]);
   }
 
   // Sort in descending order
