@@ -406,18 +406,19 @@ void InsetState::flatten_density_with_node_vertices()
   while (t < 1.0 && iter <= max_iter) {
 
     // calculate_velocity lambda function
-    std::function<double(unsigned int, unsigned int, char)> cal_velocity =
-      [&](unsigned int i, unsigned int j, char direction) {
-        return calculate_velocity_for_point(
-          i,
-          j,
-          direction,
-          t,
-          grid_fluxx_init_,
-          grid_fluxy_init_,
-          rho_ft_,
-          rho_init_);
-      };
+    std::function<double(unsigned int, unsigned int, char)>
+      cal_velocity_at_current_time =
+        [&](unsigned int i, unsigned int j, char direction) {
+          return calculate_velocity_for_point(
+            i,
+            j,
+            direction,
+            t,
+            grid_fluxx_init_,
+            grid_fluxy_init_,
+            rho_ft_,
+            rho_init_);
+        };
 
     for (const auto &[key, val] : proj_qd_.triangle_transformation) {
 
@@ -427,8 +428,20 @@ void InsetState::flatten_density_with_node_vertices()
       // that interpolate_bilinearly() is given a point that cannot cause it
       // to fail.
       Point v_intp_val(
-        interpolate_bilinearly(val.x(), val.y(), cal_velocity, 'x', lx_, ly_),
-        interpolate_bilinearly(val.x(), val.y(), cal_velocity, 'y', lx_, ly_));
+        interpolate_bilinearly(
+          val.x(),
+          val.y(),
+          cal_velocity_at_current_time,
+          'x',
+          lx_,
+          ly_),
+        interpolate_bilinearly(
+          val.x(),
+          val.y(),
+          cal_velocity_at_current_time,
+          'y',
+          lx_,
+          ly_));
       v_intp.insert_or_assign(key, v_intp_val);
     }
 
@@ -448,17 +461,19 @@ void InsetState::flatten_density_with_node_vertices()
       //                        y + 0.5*delta_t*v_y(x,y,t),
       //                        t + 0.5*delta_t)
       // and similarly for y.
-      cal_velocity = [&](unsigned int i, unsigned int j, char direction) {
-        return calculate_velocity_for_point(
-          i,
-          j,
-          direction,
-          t + 0.5 * delta_t,
-          grid_fluxx_init_,
-          grid_fluxy_init_,
-          rho_ft_,
-          rho_init_);
-      };
+      std::function<double(unsigned int, unsigned int, char)>
+        cal_velocity_at_mid_time =
+          [&](unsigned int i, unsigned int j, char direction) {
+            return calculate_velocity_for_point(
+              i,
+              j,
+              direction,
+              t + 0.5 * delta_t,
+              grid_fluxx_init_,
+              grid_fluxy_init_,
+              rho_ft_,
+              rho_init_);
+          };
 
       // Make sure we do not pass a point outside [0, lx_] x [0, ly_] to
       // interpolate_bilinearly(). Otherwise, decrease the time step below and
@@ -477,14 +492,14 @@ void InsetState::flatten_density_with_node_vertices()
             interpolate_bilinearly(
               val.x() + 0.5 * delta_t * v_intp[key].x(),
               val.y() + 0.5 * delta_t * v_intp[key].y(),
-              cal_velocity,
+              cal_velocity_at_mid_time,
               'x',
               lx_,
               ly_),
             interpolate_bilinearly(
               val.x() + 0.5 * delta_t * v_intp[key].x(),
               val.y() + 0.5 * delta_t * v_intp[key].y(),
-              cal_velocity,
+              cal_velocity_at_mid_time,
               'y',
               lx_,
               ly_));
