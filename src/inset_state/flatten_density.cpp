@@ -45,12 +45,6 @@ bool all_points_are_in_domain(
   // [0, lx] x [0, ly]
   bool in_domain = true;
 
-// Parallelization as indicated by the comment below does not work:
-// "Function 'all_points_are_in_domain' always returns false."
-// The problem is probably because one thread may overwrite
-// `in_domain = false` with `in_domain = true`.
-// I am commenting out the #pragma to ensure correctness. Presumably
-// parallelization could be implemented with reduction.
 #pragma omp parallel for reduction(&& : in_domain) default(none) \
   shared(delta_t, proj, v_intp, lx, ly)
   for (unsigned int i = 0; i < lx; ++i) {
