@@ -4,12 +4,16 @@ InsetState::InsetState()
 {
   initial_area_ = 0.0;
   n_finished_integrations_ = 0;
+  dens_min_ = 0.0;
+  dens_mean_ = 0.0;
+  dens_max_ = 0.0;
+  latt_const_ = 0.0;
+  initial_target_area_ = 0.0;
 }
 
 InsetState::InsetState(std::string pos) : pos_(std::move(pos))
 {
-  initial_area_ = 0.0;
-  n_finished_integrations_ = 0;
+  InsetState();
 }
 
 double InsetState::blur_width() const
