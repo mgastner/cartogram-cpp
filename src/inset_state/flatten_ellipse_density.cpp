@@ -13,11 +13,12 @@ void InsetState::min_ellipses()
       }
       std::nth_element(
         x_coords.begin(),
-        x_coords.begin() + x_coords.size() / 2,
+        x_coords.begin() + static_cast<std::ptrdiff_t>(x_coords.size() / 2),
         x_coords.end());
+
       std::nth_element(
         y_coords.begin(),
-        y_coords.begin() + y_coords.size() / 2,
+        y_coords.begin() + static_cast<std::ptrdiff_t>(y_coords.size() / 2),
         y_coords.end());
 
       const double x_median = x_coords[x_coords.size() / 2];
