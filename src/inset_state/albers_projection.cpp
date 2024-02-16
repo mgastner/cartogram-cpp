@@ -50,7 +50,6 @@ void InsetState::adjust_for_dual_hemisphere()
       }
     }
   }
-  return;
 }
 
 Point point_after_albers_projection(
@@ -117,5 +116,4 @@ void InsetState::apply_albers_projection()
 
   // Apply `lambda` to all points
   transform_points(lambda);
-  return;
 }

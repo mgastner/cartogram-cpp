@@ -51,7 +51,6 @@ void Matrix::scale(const double multiplier)
   p31 *= multiplier;
   p32 *= multiplier;
   p33 *= multiplier;
-  return;
 }
 
 // Determinant

@@ -11,7 +11,6 @@ void FTReal2d::set_array_size(const unsigned int i, const unsigned int j)
 {
   lx_ = i;
   ly_ = j;
-  return;
 }
 
 void FTReal2d::allocate(const unsigned int lx, const unsigned int ly)
@@ -24,13 +23,11 @@ void FTReal2d::allocate(const unsigned int lx, const unsigned int ly)
   lx_ = lx;
   ly_ = ly;
   array_ = static_cast<double*>(fftw_malloc(lx_ * ly_ * sizeof(double)));
-  return;
 }
 
 void FTReal2d::free()
 {
   fftw_free(array_);
-  return;
 }
 
 void FTReal2d::make_fftw_plan(fftw_r2r_kind kind0, fftw_r2r_kind kind1)
@@ -38,19 +35,16 @@ void FTReal2d::make_fftw_plan(fftw_r2r_kind kind0, fftw_r2r_kind kind1)
   plan_ = fftw_plan_r2r_2d(lx_, ly_,
                            array_, array_,
                            kind0, kind1, FFTW_ESTIMATE);
-  return;
 }
 
 void FTReal2d::execute_fftw_plan()
 {
   fftw_execute(plan_);
-  return;
 }
 
 void FTReal2d::destroy_fftw_plan()
 {
   fftw_destroy_plan(plan_);
-  return;
 }
 
 double &FTReal2d::operator() (const unsigned int i, const unsigned int j)

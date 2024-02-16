@@ -241,7 +241,6 @@ void InsetState::initialize_identity_proj()
       identity_proj_[i][j] = Point(i + 0.5, j + 0.5);
     }
   }
-  return;
 }
 
 void InsetState::insert_color(const std::string &id, const Color c)

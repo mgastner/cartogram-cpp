@@ -16,7 +16,6 @@ void InsetState::apply_smyth_craster_projection()
 {
   std::cerr << "Applying Smyth-Craster projection." << std::endl;
   transform_points(point_after_smyth_craster_projection);
-  return;
 }
 
 // Functions for the projection from Smyth-Craster coordinates to longitude
@@ -41,5 +40,4 @@ void InsetState::revert_smyth_craster_projection()
 
   // Apply `lambda` to all points
   transform_points(lambda);
-  return;
 }

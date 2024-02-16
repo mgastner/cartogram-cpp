@@ -1564,7 +1564,6 @@ void InsetState::write_grid_colors_on_surface(
       cairo_reset_clip(cr);
     }
   }
-  return;
 }
 
 // Given coordinates in lx by ly coordinate system, returns the corresponding

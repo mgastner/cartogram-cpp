@@ -83,5 +83,4 @@ void CartogramInfo::shift_insets_to_target_position()
     // Apply translation to all points
     inset_state.transform_points(translate);
   }
-  return;
 }

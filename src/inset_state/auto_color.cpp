@@ -58,5 +58,4 @@ void InsetState::auto_color()
     }
     max_i--;
   }
-  return;
 }

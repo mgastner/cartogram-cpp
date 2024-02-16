@@ -28,7 +28,6 @@ void InsetState::holes_inside_polygons()
       }
     }
   }
-  return;
 }
 
 bool duplicates(std::vector<Point> v)
@@ -67,7 +66,6 @@ void InsetState::rings_are_simple()
       }
     }
   }
-  return;
 }
 
 void InsetState::check_topology()
