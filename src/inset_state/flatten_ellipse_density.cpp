@@ -371,6 +371,8 @@ void InsetState::flatten_ellipse_density()
           double r_tilde_sq = (x_tilde * x_tilde) + (y_tilde * y_tilde);
           rho += ell_density_prefactors[pgn_index] *
                  ellipse_density_polynomial(r_tilde_sq);
+
+          // TODO: Conduct a meticulous check of the mathematical formula
           double flux_prefac =
             (abs(i) % 2 == 0 ? 1 : -1) * (abs(j) % 2 == 0 ? 1 : -1) *
             ellipse_flux_prefactor(r_tilde_sq, rho_p, rho_mean, pwh_area, nu);
