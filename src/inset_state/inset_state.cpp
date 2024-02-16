@@ -26,7 +26,7 @@ double InsetState::blur_width() const
   const unsigned int blur_default_pow =
     6 + log2(std::max(lx(), ly()) / default_long_grid_length);
   double blur_width =
-    std::pow(2.0, blur_default_pow - (0.5 * int(n_finished_integrations())));
+    std::pow(2.0, blur_default_pow - (0.5 * int(n_finished_integrations_)));
 
   // if (inset_state.n_finished_integrations() < max_integrations) {
   //   blur_width =
