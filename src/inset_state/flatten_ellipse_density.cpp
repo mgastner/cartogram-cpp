@@ -349,9 +349,8 @@ void InsetState::flatten_ellipse_density()
   }
 
   std::cerr << "Adjusted nu = " << nu << std::endl;
-  for (unsigned int pgn_index = 0; pgn_index < ell_density_prefactors.size();
-       ++pgn_index) {
-    ell_density_prefactors[pgn_index] *= nu;
+  for (auto &ell_density_prefactor : ell_density_prefactors) {
+    ell_density_prefactor *= nu;
   }
 
   // Calculate densities
