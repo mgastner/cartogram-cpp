@@ -339,10 +339,7 @@ void InsetState::flatten_ellipse_density()
   }
 
   // Sort in descending order
-  std::sort(
-    pgn_density.begin(),
-    pgn_density.end(),
-    std::greater<std::pair<double, std::string>>());
+  std::sort(pgn_density.begin(), pgn_density.end(), std::greater<>());
 
   // Print the top 5
   std::cerr << "Top 5 Polygons with most Delta density:" << std::endl;
