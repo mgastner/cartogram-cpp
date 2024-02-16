@@ -256,9 +256,15 @@ void InsetState::flatten_ellipse_density()
     proj_qd_.triangle_transformation.insert_or_assign(pt, pt);
   }
 
-  // TODO: Does the next line adjust rho_mean if the total inset area has
-  //       changed in previous runs of flatten_density() or
-  //       flatten_ellipse_density()?
+  // We assume that target areas that were zero or missing in the input have
+  // already been replaced by
+  // CartogramInfo::replace_missing_and_zero_target_areas().
+  // We also correct for a drift in the total inset area, in case it is
+  // present, by adjusting mean_density. The idea is to treat the exterior
+  // area as if it were a polygon with target area
+  // C * (lx * ly - initial_area_) and current area
+  // C * (lx * ly - total_inset_area). The constant prefactor C is the same
+  // in both areas and, thus, cancels out when taking the ratio.
   double rho_mean = (1.0 - (initial_area_ / (lx_ * ly_))) /
                     (1.0 - (total_inset_area() / (lx_ * ly_)));
 
