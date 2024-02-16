@@ -37,6 +37,10 @@ double InsetState::blur_width() const
   return blur_width;
 }
 
+// TODO: For the vertices of a square, there are two possible Delaunay
+// triangulations. In the current version, we lack control over the
+// triangulation chosen by CGAL. Ideally, the triangulation should be selected
+// that uses the shorter diagonal as a triangle edge.
 void InsetState::create_delaunay_t()
 {
   // Store all the polygon vertices in std::unordered_map to remove
