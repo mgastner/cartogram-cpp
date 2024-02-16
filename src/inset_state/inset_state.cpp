@@ -27,8 +27,8 @@ double InsetState::blur_width() const
   //       cell error when projecting with triangulation. Investigate
   //       why. As a temporary fix, we set blur_width to be always
   //       positive, regardless of the number of integrations.
-  const unsigned int blur_default_pow =
-    6 + log2(std::max(lx(), ly()) / default_long_grid_length);
+  const unsigned int blur_default_pow = static_cast<unsigned int>(
+    6 + log2(std::max(lx(), ly()) / default_long_grid_length));
   double blur_width =
     std::pow(2.0, blur_default_pow - (0.5 * int(n_finished_integrations_)));
 
