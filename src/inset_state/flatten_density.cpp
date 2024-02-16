@@ -285,17 +285,24 @@ void InsetState::flatten_density()
 }
 
 bool all_map_points_are_in_domain(
-  double delta_t,
-  std::unordered_map<Point, Point> &proj_map,
-  std::unordered_map<Point, Point> &v_intp,
+  const double delta_t,
+  const std::unordered_map<Point, Point> &proj_map,
+  const std::unordered_map<Point, Point> &v_intp,
   const unsigned int lx,
   const unsigned int ly)
 {
   // Return false if and only if there exists a point that would be outside
   // [0, lx] x [0, ly]
-  for (auto &[key, val] : proj_map) {
-    double x = val.x() + 0.5 * delta_t * v_intp[key].x();
-    double y = val.y() + 0.5 * delta_t * v_intp[key].y();
+  for (const auto &[key, val] : proj_map) {
+    double x = val.x() + 0.5 * delta_t * v_intp.at(key).x();
+    double y = val.y() + 0.5 * delta_t * v_intp.at(key).y();
+
+    // if close to 0 using EPS, make 0, or greater than lx or ly, make lx or ly
+    if (abs(x) < dbl_epsilon || abs(x - lx) < dbl_epsilon)
+      x = (abs(x) < dbl_epsilon) ? 0 : lx;
+    if (abs(y) < dbl_epsilon || abs(y - ly) < dbl_epsilon)
+      y = (abs(y) < dbl_epsilon) ? 0 : ly;
+
     if (x < 0.0 || x > lx || y < 0.0 || y > ly) {
       return false;
     }
