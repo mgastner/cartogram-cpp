@@ -8,14 +8,14 @@ void InsetState::auto_color()
   // Using default palette for now
   // TODO: Accept palette from user
   // From https://colorbrewer2.org/#type=qualitative&scheme=Set3&n=8
-  palette.push_back(Color("#8dd3c7"));  // green
-  palette.push_back(Color("#ffffb3"));  // yellow
-  palette.push_back(Color("#bebada"));  // purple
-  palette.push_back(Color("#fb8072"));  // red
-  palette.push_back(Color("#80b1d3"));  // blue
-  palette.push_back(Color("#fdb462"));  // orange
-  palette.push_back(Color("#b3de69"));  // green
-  palette.push_back(Color("#fccde5"));  // pink
+  palette.emplace_back("#8dd3c7");  // green
+  palette.emplace_back("#ffffb3");  // yellow
+  palette.emplace_back("#bebada");  // purple
+  palette.emplace_back("#fb8072");  // red
+  palette.emplace_back("#80b1d3");  // blue
+  palette.emplace_back("#fdb462");  // orange
+  palette.emplace_back("#b3de69");  // green
+  palette.emplace_back("#fccde5");  // pink
 
   // Find resolution
   const unsigned int resolution = default_resolution;
