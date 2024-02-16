@@ -175,18 +175,13 @@ void InsetState::fill_with_density(bool plot_density)
   }
 
   // Determine range of densities
-  double dens_min = dbl_inf;
-  double dens_max = -dbl_inf;
+  auto [min_iter, max_iter] = std::minmax_element(
+    rho_init_.as_1d_array(),
+    rho_init_.as_1d_array() + lx_ * ly_);
 
-  for (unsigned int i = 0; i < lx_; ++i) {
-    for (unsigned int j = 0; j < ly_; ++j) {
-      dens_min = std::min(rho_init_(i, j), dens_min);
-      dens_max = std::max(rho_init_(i, j), dens_max);
-    }
-  }
-  dens_min_ = dens_min;
+  dens_min_ = *min_iter;
   dens_mean_ = mean_density;
-  dens_max_ = dens_max;
+  dens_max_ = *max_iter;
 
   if (plot_density) {
     std::string file_name = inset_name_ + "_unblurred_density_" +
