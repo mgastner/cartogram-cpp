@@ -1,14 +1,5 @@
 #include "inset_state.h"
 
-void print_albers_bbox(Bbox bb)
-{
-  std::cerr << "Bounding box of Albers-transformed map:\n"
-            << "\tx_min = " << bb.xmin() << ", y_min = " << bb.ymin()
-            << ", x_max = " << bb.xmax() << ", y_max = " << bb.ymax()
-            << std::endl;
-  return;
-}
-
 void InsetState::adjust_for_dual_hemisphere()
 {
   // Determine the maximum longitude in the western hemisphere and the minimum
