@@ -366,6 +366,8 @@ void InsetState::flatten_density_with_node_vertices()
 
   // We temporarily insert the Fourier coefficients for the x-components and
   // y-components of the flux vector into grid_fluxx_init and grid_fluxy_init
+  // The reason for +1 in di+1 stems from the RODFT10 formula at:
+  // https://www.fftw.org/fftw3_doc/1d-Real_002dodd-DFTs-_0028DSTs_0029.html
 #pragma omp parallel for default(none) shared(dlx, dly)
   for (unsigned int i = 0; i < lx_ - 1; ++i) {
     const double di = i;
