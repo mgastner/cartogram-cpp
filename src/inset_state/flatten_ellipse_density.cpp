@@ -220,22 +220,26 @@ void InsetState::flatten_ellipse_density()
   std::unordered_map<Point, double> rho_mp;
   std::unordered_map<Point, Point> flux_mp;
 
-  // eul[i][j] will be the new position of proj_[i][j] proposed by a simple
-  // Euler step: move a full time interval delta_t with the velocity at time t
-  // and position (proj_[i][j].x, proj_[i][j].y)
+  // eul[(i, j)] will be the new position of
+  // proj_qd_.triangle_transformation[(i, j)] proposed by a simple Euler step:
+  // move a full time interval delta_t with the velocity at time t and position
+  // (proj_qd_.triangle_transformation[(i, j)].x,
+  // proj_qd_.triangle_transformation[(i, j)].y)
   std::unordered_map<Point, Point> eul;
 
-  // mid[i][j] will be the new displacement proposed by the midpoint
+  // mid[(i, j)] will be the new displacement proposed by the midpoint
   // method (see comment below for the formula)
   std::unordered_map<Point, Point> mid;
 
-  // (vx_intp, vy_intp) will be the velocity at position (proj_.x, proj_.y) at
-  // time t
+  // v_intp[(i, j)] will be the velocity at position
+  // (proj_qd_.triangle_transformation[(i, j)].x,
+  // proj_qd_.triangle_transformation[(i, j)].y) at time t
   std::unordered_map<Point, Point> v_intp;
 
-  // (vx_intp_half, vy_intp_half) will be the velocity at the midpoint
-  // (proj_.x + 0.5*delta_t*vx_intp, proj_.y + 0.5*delta_t*vy_intp) at time
-  // t + 0.5*delta_t
+  // v_intp_half[(i, j)] will be the velocity at the midpoint
+  // (proj_qd_.triangle_transformation[(i, j)].x + 0.5 * delta_t * v_intp[(i,
+  // j)].x, proj_qd_.triangle_transformation[(i, j)].y + 0.5 * delta_t *
+  // v_intp[(i, j)].y) at time t + 0.5 * delta_t
   std::unordered_map<Point, Point> v_intp_half;
 
   std::unordered_map<Point, Point> velocity;

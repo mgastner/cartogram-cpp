@@ -353,21 +353,19 @@ void InsetState::flatten_density_with_node_vertices()
   // method (see comment below for the formula)
   std::unordered_map<Point, Point> mid;
 
-  // (vx_intp, vy_intp) will be the velocity at position
-  // (proj_qd_.triangle_transformation.x, proj_qd_.triangle_transformation.y)
-  // at time t
+  // v_intp[(i, j)] will be the velocity at position
+  // (proj_qd_.triangle_transformation[(i, j)].x,
+  // proj_qd_.triangle_transformation[(i, j)].y) at time t
   std::unordered_map<Point, Point> v_intp;
 
-  // (vx_intp_half, vy_intp_half) will be the velocity at the midpoint
-  // (proj_qd_.triangle_transformation.x + 0.5*delta_t*vx_intp,
-  // proj_qd_.triangle_transformation.y + 0.5*delta_t*vy_intp) at time t +
-  // 0.5*delta_t
+  // v_intp_half[(i, j)] will be the velocity at the midpoint
+  // (proj_qd_.triangle_transformation[(i, j)].x + 0.5 * delta_t * v_intp[(i,
+  // j)].x, proj_qd_.triangle_transformation[(i, j)].y + 0.5 * delta_t *
+  // v_intp[(i, j)].y) at time t + 0.5 * delta_t
   std::unordered_map<Point, Point> v_intp_half;
 
-  // Initialize the Fourier transforms of gridvx[] and gridvy[] at
-  // every point on the lx_-times-ly_ grid at t = 0. We must typecast lx_ and
-  // ly_ as double-precision numbers. Otherwise, the ratios in the denominator
-  // will evaluate as zero.
+  // We must typecast lx_ and ly_ as double-precision numbers. Otherwise, the
+  // ratios in the denominator will evaluate as zero.
   double dlx = lx_;
   double dly = ly_;
 
@@ -430,10 +428,11 @@ void InsetState::flatten_density_with_node_vertices()
     for (const auto &[key, val] : proj_qd_.triangle_transformation) {
 
       // We know, either because of the initialization or because of the
-      // check at the end of the last iteration, that (proj_.x, proj_.y)
-      // is inside the rectangle [0, lx_] x [0, ly_]. This fact guarantees
-      // that interpolate_bilinearly() is given a point that cannot cause it
-      // to fail.
+      // check at the end of the last iteration, that
+      // proj_qd_.triangle_transformation[(i, j)] is inside the rectangle
+      // [0, lx_] x [0, ly_]. This fact guarantees that
+      // interpolate_bilinearly() is given a point that cannot cause it to
+      // fail.
       Point v_intp_val(
         interpolate_bilinearly(
           val.x(),
@@ -464,9 +463,9 @@ void InsetState::flatten_density_with_node_vertices()
       }
 
       // Use "explicit midpoint method"
-      // x <- x + delta_t * v_x(x + 0.5*delta_t*v_x(x,y,t),
-      //                        y + 0.5*delta_t*v_y(x,y,t),
-      //                        t + 0.5*delta_t)
+      // x <- x + delta_t * v_x(x + 0.5 * delta_t * v_x(x, y, t),
+      //                        y + 0.5 * delta_t *v_y(x, y, t),
+      //                        t + 0.5 * delta_t)
       // and similarly for y.
       std::function<double(unsigned int, unsigned int, char)>
         cal_velocity_at_mid_time =
