@@ -21,7 +21,7 @@ Matrix::Matrix()
 }
 
 // Matrix from three Points
-Matrix::Matrix(const Point a, const Point b, const Point c)
+Matrix::Matrix(const Point &a, const Point &b, const Point &c)
 {
   // First vertex
   p11 = a.x();
@@ -93,7 +93,7 @@ Matrix Matrix::inverse() const
   return inv;
 }
 
-Matrix Matrix::multiplied_with(const Matrix m1) const
+Matrix Matrix::multiplied_with(const Matrix &m1) const
 {
   Matrix result;
   result.p11 = (p11 * m1.p11) + (p12 * m1.p21) + (p13 * m1.p31);
@@ -109,7 +109,7 @@ Matrix Matrix::multiplied_with(const Matrix m1) const
 }
 
 // Transform point based on a transformation matrix
-Point Matrix::transformed_point(const Point point) const
+Point Matrix::transformed_point(const Point &point) const
 {
   return Point(
     p11 * (point.x()) + p12 * (point.y()) + p13,

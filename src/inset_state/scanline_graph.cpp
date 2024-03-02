@@ -70,10 +70,10 @@ std::vector<std::vector<intersection> > InsetState::intersec_with_parallel_to(
             axis);
 
           // Run algorithm on each hole
-          for (auto h = pwh.holes_begin(); h != pwh.holes_end(); ++h) {
+          for (const auto &h : pwh.holes()) {
             add_intersections(
               intersections,
-              *h,
+              h,
               ray,
               target_density,
               epsilon,

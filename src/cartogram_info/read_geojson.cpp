@@ -170,7 +170,7 @@ void print_properties_map(
 void CartogramInfo::read_geojson(
   const std::string &geometry_file_name,
   const bool make_csv,
-  std::string *crs)
+  std::string &crs)
 {
   // Open file
   std::ifstream in_file(geometry_file_name);
@@ -195,7 +195,7 @@ void CartogramInfo::read_geojson(
 
   // Read coordinate reference system if it is included in the GeoJSON
   if (j.contains(std::string{"crs"})) {
-    *crs = j["crs"]["properties"]["name"];
+    crs = j["crs"]["properties"]["name"];
   }
 
   // Iterate over each inset

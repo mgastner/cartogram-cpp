@@ -8,13 +8,13 @@ struct Matrix {
   Matrix();  // Constructor for identity matrix
 
   // Convert triangle to matrix
-  Matrix(const Point, const Point, const Point);
+  Matrix(const Point &, const Point &, const Point &);
   void scale(const double);
   double det() const;
   Matrix adjugate() const;
   Matrix inverse() const;
-  Matrix multiplied_with(const Matrix) const;
-  Point transformed_point(const Point) const;
+  Matrix multiplied_with(const Matrix &) const;
+  Point transformed_point(const Point &) const;
 };
 
 #endif

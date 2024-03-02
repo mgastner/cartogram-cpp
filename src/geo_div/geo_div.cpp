@@ -61,12 +61,12 @@ Polygon_with_holes GeoDiv::largest_polygon_with_holes() const
     double area = 0.0;
     const auto &ext_ring = pwh.outer_boundary();
     area += ext_ring.area();
-    for (auto h = pwh.holes_begin(); h != pwh.holes_end(); ++h) {
-      area += h->area();
+    for (auto const &h : pwh.holes()) {
+      area += h.area();
     }
     if (area > max_area) {
       max_area = area;
-      largest_pwh = Polygon_with_holes(pwh);
+      largest_pwh = pwh;
     }
   }
   return largest_pwh;
@@ -83,8 +83,8 @@ unsigned int GeoDiv::n_points() const
   for (const auto &pwh : polygons_with_holes_) {
     const auto &outer = pwh.outer_boundary();
     n_points += outer.size();
-    for (auto h = pwh.holes_begin(); h != pwh.holes_end(); ++h) {
-      n_points += h->size();
+    for (auto const &h : pwh.holes()) {
+      n_points += h.size();
     }
   }
   return n_points;
@@ -135,8 +135,8 @@ Point GeoDiv::point_on_surface_of_polygon_with_holes(
     'x');
 
   // Store hole intersections
-  for (auto hci = pwh.holes_begin(); hci != pwh.holes_end(); ++hci) {
-    add_intersections(intersections, *hci, line_y, 0, epsilon, id_, 'x');
+  for (const auto &h : pwh.holes()) {
+    add_intersections(intersections, h, line_y, 0, epsilon, id_, 'x');
   }
   std::sort(intersections.begin(), intersections.end());
 

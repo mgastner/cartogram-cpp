@@ -17,11 +17,11 @@ bool almost_equal(const double a, const double b)
 }
 
 // Determine whether points are almost equal
-bool points_almost_equal(const Point a, const Point b)
+bool points_almost_equal(const Point &a, const Point &b)
 {
   return (almost_equal(a.x(), b.x()) && almost_equal(a.y(), b.y()));
 }
-bool point_less_than(const Point a, const Point b)
+bool point_less_than(const Point &a, const Point &b)
 {
   return !(points_almost_equal(a, b) || a >= b);
 }
@@ -45,7 +45,7 @@ double rounded_to_bicimal(
 }
 
 Point rounded_point(
-  const Point a,
+  const Point &a,
   const unsigned int lx,
   const unsigned int ly)
 {

@@ -52,15 +52,15 @@ void InsetState::create_delaunay_t()
   points.max_load_factor(0.5);
   for (const auto &gd : geo_divs_) {
     for (const auto &pwh : gd.polygons_with_holes()) {
-      const Polygon ext_ring = pwh.outer_boundary();
+      const Polygon &ext_ring = pwh.outer_boundary();
 
       // Get exterior ring coordinates
       points.insert(ext_ring.begin(), ext_ring.end());
 
       // Get holes of polygon with holes
-      for (auto hci = pwh.holes_begin(); hci != pwh.holes_end(); ++hci) {
-        const Polygon &hole = *hci;
-        points.insert(hole.begin(), hole.end());
+
+      for (const auto &h : pwh.holes()) {
+        points.insert(h.begin(), h.end());
       }
     }
   }
@@ -243,15 +243,15 @@ void InsetState::initialize_identity_proj()
   }
 }
 
-void InsetState::insert_color(const std::string &id, const Color c)
+void InsetState::insert_color(const std::string &id, const Color &c)
 {
   if (colors_.count(id)) {
     colors_.erase(id);
   }
-  colors_.insert(std::pair<std::string, Color>(id, c));
+  colors_.insert({id, c});
 }
 
-void InsetState::insert_color(const std::string &id, std::string color)
+void InsetState::insert_color(const std::string &id, std::string &color)
 {
   if (colors_.count(id)) {
     colors_.erase(id);
@@ -261,25 +261,24 @@ void InsetState::insert_color(const std::string &id, std::string color)
   // https://stackoverflow.com/questions/313970/how-to-convert-stdstring-to-lower-case
   std::transform(color.begin(), color.end(), color.begin(), ::tolower);
   const Color c(color);
-  colors_.insert(std::pair<std::string, Color>(id, c));
+  colors_.insert({id, c});
 }
 
 void InsetState::insert_label(const std::string &id, const std::string &label)
 {
-  labels_.insert(std::pair<std::string, std::string>(id, label));
+  labels_.insert({id, label});
 }
 
 void InsetState::insert_target_area(const std::string &id, const double area)
 {
-  target_areas_.insert(std::pair<std::string, double>(id, area));
+  target_areas_.insert({id, area});
 }
 
 void InsetState::insert_whether_input_target_area_is_missing(
   const std::string &id,
   const bool is_missing)
 {
-  is_input_target_area_missing_.insert(
-    std::pair<std::string, bool>(id, is_missing));
+  is_input_target_area_missing_.insert({id, is_missing});
 }
 
 std::string InsetState::inset_name() const
@@ -604,10 +603,10 @@ void InsetState::transform_points(
       }
 
       // Iterate over holes
-      for (auto h = pwh.holes_begin(); h != pwh.holes_end(); ++h) {
+      for (auto &h : pwh.holes()) {
 
         // Iterate over hole's coordinates
-        for (auto &coords_hole : *h) {
+        for (auto &coords_hole : h) {
 
           // Assign hole's coordinates to transformed coordinates
           coords_hole = transform_point(coords_hole);

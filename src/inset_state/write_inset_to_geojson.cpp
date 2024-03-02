@@ -21,7 +21,7 @@ nlohmann::json InsetState::inset_to_geojson(
 
       // Get exterior ring coordinates
       nlohmann::json er_container;
-      for (auto &i : ext_ring) {
+      for (const auto &i : ext_ring) {
         er_container.push_back(
           {CGAL::to_double(i.x()), CGAL::to_double(i.y())});
       }
@@ -36,11 +36,11 @@ nlohmann::json InsetState::inset_to_geojson(
       polygon_container.push_back(er_container);
 
       // Get holes of polygon with holes
-      for (auto h = pwh.holes_begin(); h != pwh.holes_end(); ++h) {
+      for (const auto &h : pwh.holes()) {
 
         // We make a copy called `hole` of *h so that `reverse_orientation()`
         // does not change the original hole
-        Polygon hole = *h;
+        Polygon hole = h;
 
         // Set hole to counter-clockwise if it was originally like that
         if (original_ext_ring_is_clockwise) {
@@ -49,7 +49,7 @@ nlohmann::json InsetState::inset_to_geojson(
 
         // Get hole coordinates
         nlohmann::json hole_container;
-        for (auto &i : hole) {
+        for (const auto &i : hole) {
           hole_container.push_back(
             {CGAL::to_double(i.x()), CGAL::to_double(i.y())});
         }

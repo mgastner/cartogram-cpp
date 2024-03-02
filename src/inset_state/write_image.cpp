@@ -53,18 +53,17 @@ void InsetState::write_polygon_points_on_surface(cairo_t *cr, Color clr)
   // Draw the shapes
   for (const auto &gd : geo_divs_) {
     for (const auto &pwh : gd.polygons_with_holes()) {
-      const auto ext_ring = pwh.outer_boundary();
+      const auto &ext_ring = pwh.outer_boundary();
 
       // Plot each point in exterior ring
-      for (auto i : ext_ring) {
-        write_point_on_surface(cr, i, clr, ly_);
+      for (const auto &pt : ext_ring) {
+        write_point_on_surface(cr, pt, clr, ly_);
       }
 
       // Plot holes
-      for (auto hci = pwh.holes_begin(); hci != pwh.holes_end(); ++hci) {
-        Polygon hole = *hci;
-        for (unsigned int i = 1; i <= hole.size(); ++i) {
-          write_point_on_surface(cr, hole[i], clr, ly_);
+      for (const auto &h : pwh.holes()) {
+        for (const auto &pt : h) {
+          write_point_on_surface(cr, pt, clr, ly_);
         }
       }
     }
@@ -198,11 +197,10 @@ void InsetState::write_polygons_on_surface(
       }
 
       // Plot holes
-      for (auto h = pwh.holes_begin(); h != pwh.holes_end(); ++h) {
-        cairo_move_to(cr, (*h)[0].x(), ly_ - (*h)[0].y());
-        const unsigned int hsize = h->size();
-        for (unsigned int i = 1; i <= hsize; ++i) {
-          cairo_line_to(cr, (*h)[i % hsize].x(), ly_ - (*h)[i % hsize].y());
+      for (const auto &h : pwh.holes()) {
+        cairo_move_to(cr, h[0].x(), ly_ - h[0].y());
+        for (unsigned int i = 1; i <= h.size(); ++i) {
+          cairo_line_to(cr, h[i % h.size()].x(), ly_ - h[i % h.size()].y());
         }
       }
       if (colors || fill_polygons) {

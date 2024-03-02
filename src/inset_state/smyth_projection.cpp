@@ -6,7 +6,7 @@
 // https://en.wikipedia.org/wiki/Cylindrical_equal-area_projection
 // The purpose is to create a projection that has a 2:1 aspect ratio so that
 // the Fourier transforms work optimally when padding is reduced to zero.
-Point point_after_smyth_craster_projection(Point p1)
+Point point_after_smyth_craster_projection(const Point &p1)
 {
   return Point(
     p1.x() * std::sqrt(2.0 * pi) / 180.0,
@@ -23,7 +23,7 @@ void InsetState::apply_smyth_craster_projection()
 // latitude. We assume that the Smyth-Craster coordinates have been scaled
 // to fit in the box [0, lx] * [0, ly].
 Point point_before_smyth_craster_projection(
-  Point p1,
+  const Point &p1,
   const unsigned int lx,
   const unsigned int ly)
 {

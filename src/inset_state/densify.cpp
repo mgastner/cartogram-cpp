@@ -30,8 +30,8 @@ std::ostream &operator<<(std::ostream &cout, std::vector<A> const &v)
 // intersection point does not exist, the function returns the point called
 // OUT_OF_RANGE, which is always outside any grid cell.
 Point calc_intersection(
-  const Point a,
-  const Point b,
+  const Point &a,
+  const Point &b,
   const double coef_x,
   const double coef_y,
   const double coef_const)
@@ -61,8 +61,8 @@ Point calc_intersection(
 //   next diagonal.
 void add_diag_inter(
   std::set<Point, decltype(point_less_than) *> *intersections,
-  const Point a,
-  const Point b,
+  const Point &a,
+  const Point &b,
   double slope,
   double base_intercept,
   double step,
@@ -119,8 +119,8 @@ void add_diag_inter(
 // grid cells. The function assumes that grid cells start at
 // (0.5, 0.5).
 std::vector<Point> densification_points(
-  const Point pt1,
-  const Point pt2,
+  const Point &pt1,
+  const Point &pt2,
   const unsigned int lx,
   const unsigned int ly)
 {
@@ -219,7 +219,7 @@ void InsetState::densify_geo_divs()
   for (const auto &gd : geo_divs_) {
     GeoDiv gd_dens(gd.id());
     for (const auto &pwh : gd.polygons_with_holes()) {
-      const auto outer = pwh.outer_boundary();
+      const auto &outer = pwh.outer_boundary();
       Polygon outer_dens;
 
       // Iterate over each point in the outer boundary of the polygon
@@ -246,13 +246,13 @@ void InsetState::densify_geo_divs()
       std::vector<Polygon> holes_v_dens;
 
       // Iterate over each hole
-      for (auto h = pwh.holes_begin(); h != pwh.holes_end(); ++h) {
+      for (auto const &h : pwh.holes()) {
         Polygon hole_dens;
-        for (unsigned int j = 0; j < h->size(); ++j) {
+        for (unsigned int j = 0; j < h.size(); ++j) {
 
           // `c` and `d` are determined in the same way as `a` and `b` above
-          const Point c = (*h)[j];
-          const Point d = (j == h->size() - 1) ? (*h)[0] : (*h)[j + 1];
+          const Point c = h[j];
+          const Point d = (j == h.size() - 1) ? h[0] : h[j + 1];
           const std::vector<Point> hole_pts_dens =
             densification_points(c, d, lx_, ly_);
           for (unsigned int i = 0; i < (hole_pts_dens.size() - 1); ++i) {
@@ -269,8 +269,7 @@ void InsetState::densify_geo_divs()
     }
     geodivs_dens.push_back(gd_dens);
   }
-  geo_divs_.clear();
-  geo_divs_ = geodivs_dens;
+  geo_divs_ = std::move(geodivs_dens);
 }
 
 std::vector<Point> densification_points_with_delaunay_t(
@@ -404,7 +403,7 @@ void InsetState::densify_geo_divs_using_delaunay_t()
   for (const auto &gd : geo_divs_) {
     GeoDiv gd_dens(gd.id());
     for (const auto &pwh : gd.polygons_with_holes()) {
-      const auto outer = pwh.outer_boundary();
+      const auto &outer = pwh.outer_boundary();
       Polygon outer_dens;
 
       // Iterate over each point in the outer boundary of the polygon
@@ -430,13 +429,13 @@ void InsetState::densify_geo_divs_using_delaunay_t()
       std::vector<Polygon> holes_v_dens;
 
       // Iterate over each hole
-      for (auto h = pwh.holes_begin(); h != pwh.holes_end(); ++h) {
+      for (auto const &h : pwh.holes()) {
         Polygon hole_dens;
-        for (unsigned int j = 0; j < h->size(); ++j) {
+        for (unsigned int j = 0; j < h.size(); ++j) {
 
           // `c` and `d` are determined in the same way as `a` and `b` above
-          const Point c = (*h)[j];
-          const Point d = (j == h->size() - 1) ? (*h)[0] : (*h)[j + 1];
+          const Point c = h[j];
+          const Point d = (j == h.size() - 1) ? h[0] : h[j + 1];
           const std::vector<Point> hole_pts_dens =
             densification_points_with_delaunay_t(c, d, proj_qd_.dt, lx_, ly_);
           for (unsigned int i = 0; i < (hole_pts_dens.size() - 1); ++i) {
@@ -453,6 +452,5 @@ void InsetState::densify_geo_divs_using_delaunay_t()
     }
     geodivs_dens.push_back(gd_dens);
   }
-  geo_divs_.clear();
-  geo_divs_ = geodivs_dens;
+  geo_divs_ = std::move(geodivs_dens);
 }

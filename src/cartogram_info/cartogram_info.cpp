@@ -3,7 +3,7 @@
 #include <iostream>
 #include <utility>
 
-CartogramInfo::CartogramInfo(const bool w, std::string v)
+CartogramInfo::CartogramInfo(const bool w, const std::string &v)
     : is_world_map_(w), visual_variable_file_(std::move(v))
 {
 }

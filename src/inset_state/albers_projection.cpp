@@ -37,15 +37,15 @@ void InsetState::adjust_for_dual_hemisphere()
 
       // Iterate over Polygon_with_holes
       for (auto &pwh : gd.ref_to_polygons_with_holes()) {
-        auto *outer_boundary = &pwh.outer_boundary();
+        auto &outer_boundary = pwh.outer_boundary();
 
         // If pwh is in the western hemisphere
         if (pwh.bbox().xmin() < 0) {
-          *outer_boundary = transform(translate, *outer_boundary);
+          outer_boundary = transform(translate, outer_boundary);
 
           // Iterate over holes
-          for (auto h = pwh.holes_begin(); h != pwh.holes_end(); ++h) {
-            *h = transform(translate, *h);
+          for (auto &h : pwh.holes()) {
+            h = transform(translate, h);
           }
         }
       }
@@ -54,7 +54,7 @@ void InsetState::adjust_for_dual_hemisphere()
 }
 
 Point point_after_albers_projection(
-  Point coords,
+  const Point &coords,
   double lambda_0,
   double phi_0,
   double phi_1,

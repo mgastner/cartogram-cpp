@@ -15,7 +15,7 @@ public:
   void set_array_size(unsigned int, unsigned int);
   void allocate(unsigned int, unsigned int);
   void free();
-  void make_fftw_plan(fftw_r2r_kind, fftw_r2r_kind);
+  void make_fftw_plan(const fftw_r2r_kind &, const fftw_r2r_kind &);
   void execute_fftw_plan();
   void destroy_fftw_plan();
 

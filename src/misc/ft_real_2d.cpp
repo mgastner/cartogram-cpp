@@ -29,7 +29,9 @@ void FTReal2d::free()
   fftw_free(array_);
 }
 
-void FTReal2d::make_fftw_plan(fftw_r2r_kind kind0, fftw_r2r_kind kind1)
+void FTReal2d::make_fftw_plan(
+  const fftw_r2r_kind &kind0,
+  const fftw_r2r_kind &kind1)
 {
   plan_ =
     fftw_plan_r2r_2d(lx_, ly_, array_, array_, kind0, kind1, FFTW_ESTIMATE);

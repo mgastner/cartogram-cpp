@@ -68,12 +68,12 @@ void InsetState::rescale_map(
   const Transformation scale(CGAL::SCALING, (1.0 / latt_const));
   for (auto &gd : geo_divs_) {
     for (auto &pwh : gd.ref_to_polygons_with_holes()) {
-      auto *ext_ring = &pwh.outer_boundary();
-      *ext_ring = transform(translate, *ext_ring);
-      *ext_ring = transform(scale, *ext_ring);
-      for (auto h = pwh.holes_begin(); h != pwh.holes_end(); ++h) {
-        *h = transform(translate, *h);
-        *h = transform(scale, *h);
+      auto &ext_ring = pwh.outer_boundary();
+      ext_ring = transform(translate, ext_ring);
+      ext_ring = transform(scale, ext_ring);
+      for (auto &h : pwh.holes()) {
+        h = transform(translate, h);
+        h = transform(scale, h);
       }
     }
   }
@@ -104,12 +104,12 @@ void InsetState::normalize_inset_area(
   const Transformation scale(CGAL::SCALING, scale_factor);
   for (auto &gd : geo_divs_) {
     for (auto &pwh : gd.ref_to_polygons_with_holes()) {
-      auto *ext_ring = &pwh.outer_boundary();
-      *ext_ring = transform(translate, *ext_ring);
-      *ext_ring = transform(scale, *ext_ring);
-      for (auto h = pwh.holes_begin(); h != pwh.holes_end(); ++h) {
-        *h = transform(translate, *h);
-        *h = transform(scale, *h);
+      auto &ext_ring = pwh.outer_boundary();
+      ext_ring = transform(translate, ext_ring);
+      ext_ring = transform(scale, ext_ring);
+      for (auto &h : pwh.holes()) {
+        h = transform(translate, h);
+        h = transform(scale, h);
       }
     }
   }

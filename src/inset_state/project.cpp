@@ -72,7 +72,7 @@ void InsetState::project()
 }
 
 Point interpolate_point_with_barycentric_coordinates(
-  const Point p,
+  const Point &p,
   const Delaunay &dt,
   const std::unordered_map<Point, Point> &proj_map)
 {
@@ -132,7 +132,7 @@ void InsetState::exit_if_not_on_grid_or_edge(const Point p1) const
   }
 }
 
-Point InsetState::projected_point(const Point p1, const bool project_original)
+Point InsetState::projected_point(const Point &p1, const bool project_original)
   const
 {
   auto &proj = project_original ? cum_proj_ : proj_;
@@ -259,7 +259,7 @@ std::array<Point, 3> InsetState::transformed_triangle(
 // This function is needed because, sometimes,
 // `triangle.bounded_side(Point(x, y)) == CGAL::ON_BOUNDARY` does not return
 // `true` even if the point is on the boundary.
-bool is_on_triangle_boundary(const Point pt, const Polygon &triangle)
+bool is_on_triangle_boundary(const Point &pt, const Polygon &triangle)
 {
   for (unsigned int i = 0; i < triangle.size(); ++i) {
     const auto t1 = triangle[i];
@@ -277,7 +277,7 @@ bool is_on_triangle_boundary(const Point pt, const Polygon &triangle)
 // is located. After transformation, this triangle must be entirely inside
 // the transformed grid cell.
 std::array<Point, 3> InsetState::untransformed_triangle(
-  const Point pt,
+  const Point &pt,
   const bool project_original) const
 {
   if (pt.x() < 0 || pt.x() > lx_ || pt.y() < 0 || pt.y() > ly_) {
@@ -374,7 +374,7 @@ std::array<Point, 3> InsetState::untransformed_triangle(
 Point affine_trans(
   const std::array<Point, 3> &tri,
   const std::array<Point, 3> &org_tri,
-  const Point pt)
+  const Point &pt)
 {
   // For each point, we make the following transformation. Suppose we find
   // that, before the cartogram transformation, a point (x, y) is in the
@@ -418,7 +418,7 @@ Point affine_trans(
 }
 
 Point InsetState::projected_point_with_triangulation(
-  const Point pt,
+  const Point &pt,
   const bool project_original) const
 {
   // Get the untransformed triangle the point pt is in

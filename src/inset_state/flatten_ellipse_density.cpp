@@ -6,7 +6,7 @@ void InsetState::min_ellipses()
   for (auto &gd : geo_divs_) {
     gd.clear_min_ellipses();
     for (auto &pwh : gd.polygons_with_holes()) {
-      auto ext_ring_actual = pwh.outer_boundary();
+      auto &ext_ring_actual = pwh.outer_boundary();
       std::vector<double> x_coords, y_coords;
       for (const auto &pt : ext_ring_actual) {
         x_coords.push_back(pt.x());
@@ -173,7 +173,7 @@ void calculate_velocity(
 }
 
 Vector interpolate(
-  const Point p,
+  const Point &p,
   const Delaunay &dt,
   const std::unordered_map<Point, Vector> &velocity)
 {
@@ -287,10 +287,10 @@ void InsetState::flatten_ellipse_density()
     }
   }
 
-  for (auto &gd : geo_divs_) {
+  for (const auto &gd : geo_divs_) {
     const double rho_p = (target_area_at(gd.id()) / gd.area());
     for (unsigned int pgon = 0; pgon < gd.n_polygons_with_holes(); ++pgon) {
-      Polygon_with_holes pwh = gd.polygons_with_holes()[pgon];
+      const Polygon_with_holes &pwh = gd.polygons_with_holes()[pgon];
       const double area = pwh_area(pwh);
       pwh_areas.push_back(area);
       const Ellipse ell = gd.min_ellipses()[pgon];

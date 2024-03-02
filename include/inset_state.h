@@ -154,8 +154,8 @@ public:
   double initial_target_area() const;
   void initialize_cum_proj();
   void initialize_identity_proj();
-  void insert_color(const std::string &, Color);
-  void insert_color(const std::string &, std::string);
+  void insert_color(const std::string &, const Color &);
+  void insert_color(const std::string &, std::string &);
   void insert_label(const std::string &, const std::string &);
   void insert_target_area(const std::string &, double);
   void insert_whether_input_target_area_is_missing(const std::string &, bool);
@@ -186,8 +186,8 @@ public:
   void normalize_target_area();
   std::string pos() const;
   void project();
-  Point projected_point(Point, bool = false) const;
-  Point projected_point_with_triangulation(Point, bool = false) const;
+  Point projected_point(const Point &, bool = false) const;
+  Point projected_point_with_triangulation(const Point &, bool = false) const;
   void project_with_cum_proj();
   void project_with_delaunay_t();
   void project_with_triangulation();
@@ -222,7 +222,8 @@ public:
 
   // Apply given function to all points
   void transform_points(const std::function<Point(Point)> &, bool = false);
-  std::array<Point, 3> untransformed_triangle(Point, bool = false) const;
+  std::array<Point, 3> untransformed_triangle(const Point &, bool = false)
+    const;
   void trim_grid_heatmap(cairo_t *cr, double padding);
 
   // Cairo functions
