@@ -477,12 +477,14 @@ void InsetState::set_area_errors()
   double sum_target_area = 0.0;
   double sum_cart_area = 0.0;
 
-  // #pragma omp parallel for default(none) reduction(+ : sum_target_area,
-  // sum_cart_area)
+#pragma omp parallel for default(none) \
+  reduction(+ : sum_target_area, sum_cart_area)
   for (const auto &gd : geo_divs_) {
     sum_target_area += target_area_at(gd.id());
     sum_cart_area += gd.area();
   }
+
+#pragma omp parallel for default(none) shared(sum_cart_area, sum_target_area)
   for (const auto &gd : geo_divs_) {
     const double obj_area =
       target_area_at(gd.id()) * sum_cart_area / sum_target_area;
