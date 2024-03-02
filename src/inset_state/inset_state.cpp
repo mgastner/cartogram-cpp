@@ -620,6 +620,5 @@ void InsetState::transform_points(
 }
 void InsetState::set_geo_divs(std::vector<GeoDiv> new_geo_divs)
 {
-  geo_divs_.clear();
-  geo_divs_ = new_geo_divs;
+  geo_divs_ = std::move(new_geo_divs);
 }
