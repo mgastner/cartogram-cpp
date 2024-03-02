@@ -416,24 +416,24 @@ void InsetState::push_back(const GeoDiv &gd)
   geo_divs_.push_back(gd);
 }
 
-FTReal2d *InsetState::ref_to_fluxx_init()
+FTReal2d &InsetState::ref_to_fluxx_init()
 {
-  return &grid_fluxx_init_;
+  return grid_fluxx_init_;
 }
 
-FTReal2d *InsetState::ref_to_fluxy_init()
+FTReal2d &InsetState::ref_to_fluxy_init()
 {
-  return &grid_fluxy_init_;
+  return grid_fluxy_init_;
 }
 
-FTReal2d *InsetState::ref_to_rho_ft()
+FTReal2d &InsetState::ref_to_rho_ft()
 {
-  return &rho_ft_;
+  return rho_ft_;
 }
 
-FTReal2d *InsetState::ref_to_rho_init()
+FTReal2d &InsetState::ref_to_rho_init()
 {
-  return &rho_init_;
+  return rho_init_;
 }
 
 void InsetState::remove_tiny_polygons(const double &minimum_polygon_size)
@@ -510,8 +510,8 @@ void InsetState::adjust_grid()
     ly_ *= grid_factor;
 
     // Reallocate FFTW plans
-    ref_to_rho_init()->allocate(lx_, ly_);
-    ref_to_rho_ft()->allocate(lx_, ly_);
+    ref_to_rho_init().allocate(lx_, ly_);
+    ref_to_rho_ft().allocate(lx_, ly_);
     make_fftw_plans_for_rho();
     std::cerr << "New grid dimensions: " << lx_ << " " << ly_ << std::endl;
   }

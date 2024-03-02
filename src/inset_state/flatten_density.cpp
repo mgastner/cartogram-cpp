@@ -10,8 +10,8 @@ void calculate_velocity(
   FTReal2d &grid_fluxy_init,
   FTReal2d &rho_ft,
   FTReal2d &rho_init,
-  boost::multi_array<double, 2> *grid_vx,
-  boost::multi_array<double, 2> *grid_vy,
+  boost::multi_array<double, 2> &grid_vx,
+  boost::multi_array<double, 2> &grid_vy,
   const unsigned int lx,
   const unsigned int ly)
 {
@@ -28,16 +28,16 @@ void calculate_velocity(
   for (unsigned int i = 0; i < lx; ++i) {
     for (unsigned int j = 0; j < ly; ++j) {
       double rho = rho_ft(0, 0) + (1.0 - t) * (rho_init(i, j) - rho_ft(0, 0));
-      (*grid_vx)[i][j] = -grid_fluxx_init(i, j) / rho;
-      (*grid_vy)[i][j] = -grid_fluxy_init(i, j) / rho;
+      (grid_vx)[i][j] = -grid_fluxx_init(i, j) / rho;
+      (grid_vy)[i][j] = -grid_fluxy_init(i, j) / rho;
     }
   }
 }
 
 bool all_points_are_in_domain(
   double delta_t,
-  boost::multi_array<Point, 2> *proj,
-  boost::multi_array<Vector, 2> *v_intp,
+  boost::multi_array<Point, 2> &proj,
+  boost::multi_array<Vector, 2> &v_intp,
   const unsigned int lx,
   const unsigned int ly)
 {
@@ -49,8 +49,8 @@ bool all_points_are_in_domain(
   shared(delta_t, proj, v_intp, lx, ly)
   for (unsigned int i = 0; i < lx; ++i) {
     for (unsigned int j = 0; j < ly; ++j) {
-      double x = (*proj)[i][j].x() + 0.5 * delta_t * (*v_intp)[i][j].x();
-      double y = (*proj)[i][j].y() + 0.5 * delta_t * (*v_intp)[i][j].y();
+      double x = (proj)[i][j].x() + 0.5 * delta_t * (v_intp)[i][j].x();
+      double y = (proj)[i][j].y() + 0.5 * delta_t * (v_intp)[i][j].y();
       if (x < 0.0 || x > lx || y < 0.0 || y > ly) {
         in_domain = false;
       }
@@ -155,8 +155,8 @@ void InsetState::flatten_density()
       grid_fluxy_init_,
       rho_ft_,
       rho_init_,
-      &grid_vx,
-      &grid_vy,
+      grid_vx,
+      grid_vy,
       lx_,
       ly_);
 #pragma omp parallel for default(none) shared(proj_, v_intp, grid_vx, grid_vy)
@@ -170,14 +170,14 @@ void InsetState::flatten_density()
         double vx = interpolate_bilinearly(
           proj_[i][j].x(),
           proj_[i][j].y(),
-          &grid_vx,
+          grid_vx,
           'x',
           lx_,
           ly_);
         double vy = interpolate_bilinearly(
           proj_[i][j].x(),
           proj_[i][j].y(),
-          &grid_vy,
+          grid_vy,
           'y',
           lx_,
           ly_);
@@ -208,15 +208,15 @@ void InsetState::flatten_density()
         grid_fluxy_init_,
         rho_ft_,
         rho_init_,
-        &grid_vx,
-        &grid_vy,
+        grid_vx,
+        grid_vy,
         lx_,
         ly_);
 
       // Make sure we do not pass a point outside [0, lx_] x [0, ly_] to
       // interpolate_bilinearly(). Otherwise, decrease the time step below and
       // try again.
-      accept = all_points_are_in_domain(delta_t, &proj_, &v_intp, lx_, ly_);
+      accept = all_points_are_in_domain(delta_t, proj_, v_intp, lx_, ly_);
       if (accept) {
         // Okay, we can run interpolate_bilinearly()
 #pragma omp parallel for default(none) shared( \
@@ -234,14 +234,14 @@ void InsetState::flatten_density()
             double vx_half = interpolate_bilinearly(
               proj_[i][j].x() + 0.5 * delta_t * v_intp[i][j].x(),
               proj_[i][j].y() + 0.5 * delta_t * v_intp[i][j].y(),
-              &grid_vx,
+              grid_vx,
               'x',
               lx_,
               ly_);
             double vy_half = interpolate_bilinearly(
               proj_[i][j].x() + 0.5 * delta_t * v_intp[i][j].x(),
               proj_[i][j].y() + 0.5 * delta_t * v_intp[i][j].y(),
-              &grid_vy,
+              grid_vy,
               'y',
               lx_,
               ly_);

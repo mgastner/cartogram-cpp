@@ -193,10 +193,10 @@ public:
   void project_with_triangulation();
   void project_with_proj_sequence();
   void push_back(const GeoDiv &);
-  FTReal2d *ref_to_fluxx_init();
-  FTReal2d *ref_to_fluxy_init();
-  FTReal2d *ref_to_rho_ft();
-  FTReal2d *ref_to_rho_init();
+  FTReal2d &ref_to_fluxx_init();
+  FTReal2d &ref_to_fluxy_init();
+  FTReal2d &ref_to_rho_ft();
+  FTReal2d &ref_to_rho_init();
   void remove_tiny_polygons(const double &minimum_polygon_size);
   void reset_n_finished_integrations();
   void replace_target_area(const std::string &, double);

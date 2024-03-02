@@ -6,8 +6,8 @@
 
 Point interpolate_point_bilinearly(
   const Point p1,
-  const boost::multi_array<double, 2> *xdisp,
-  const boost::multi_array<double, 2> *ydisp,
+  const boost::multi_array<double, 2> &xdisp,
+  const boost::multi_array<double, 2> &ydisp,
   const unsigned int lx,
   const unsigned int ly)
 {
@@ -42,14 +42,14 @@ void InsetState::project()
       const double grid_intp_x = interpolate_bilinearly(
         cum_proj_[i][j].x(),
         cum_proj_[i][j].y(),
-        &xdisp,
+        xdisp,
         'x',
         lx_,
         ly_);
       const double grid_intp_y = interpolate_bilinearly(
         cum_proj_[i][j].x(),
         cum_proj_[i][j].y(),
-        &ydisp,
+        ydisp,
         'y',
         lx_,
         ly_);
@@ -65,7 +65,7 @@ void InsetState::project()
   // requires one argument (Point p1).
   std::function<Point(Point)> lambda =
     [&xdisp, &ydisp, lx = lx_, ly = ly_](Point p1) {
-      return interpolate_point_bilinearly(p1, &xdisp, &ydisp, lx, ly);
+      return interpolate_point_bilinearly(p1, xdisp, ydisp, lx, ly);
     };
 
   // Apply "lambda" to all points

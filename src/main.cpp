@@ -106,7 +106,7 @@ int main(const int argc, const char *argv[])
   double total_geo_divs = cart_info.n_geo_divs();
 
   // Project map and ensure that all holes are inside polygons
-  for (auto &[inset_pos, inset_state] : *cart_info.ref_to_inset_states()) {
+  for (auto &[inset_pos, inset_state] : cart_info.ref_to_inset_states()) {
 
     // Start of inset time
     time_tracker.start("Inset " + inset_pos);
@@ -174,7 +174,7 @@ int main(const int argc, const char *argv[])
   if (output_equal_area) {
 
     // Normalize areas
-    for (auto &[inset_pos, inset_state] : *cart_info.ref_to_inset_states()) {
+    for (auto &[inset_pos, inset_state] : cart_info.ref_to_inset_states()) {
       inset_state.normalize_inset_area(
         cart_info.cart_initial_total_target_area(),
         output_equal_area);
@@ -195,7 +195,7 @@ int main(const int argc, const char *argv[])
   ProgressTracker progress_tracker(total_geo_divs);
 
   // Iterate over insets
-  for (auto &[inset_pos, inset_state] : *cart_info.ref_to_inset_states()) {
+  for (auto &[inset_pos, inset_state] : cart_info.ref_to_inset_states()) {
 
     // Start of inset time
     time_tracker.start("Inset " + inset_pos);
@@ -221,10 +221,10 @@ int main(const int argc, const char *argv[])
     // Set up Fourier transforms
     const unsigned int lx = inset_state.lx();
     const unsigned int ly = inset_state.ly();
-    inset_state.ref_to_rho_init()->allocate(lx, ly);
-    inset_state.ref_to_rho_ft()->allocate(lx, ly);
-    inset_state.ref_to_fluxx_init()->allocate(lx, ly);
-    inset_state.ref_to_fluxy_init()->allocate(lx, ly);
+    inset_state.ref_to_rho_init().allocate(lx, ly);
+    inset_state.ref_to_rho_ft().allocate(lx, ly);
+    inset_state.ref_to_fluxx_init().allocate(lx, ly);
+    inset_state.ref_to_fluxy_init().allocate(lx, ly);
     inset_state.make_fftw_plans_for_rho();
     inset_state.make_fftw_plans_for_flux();
     inset_state.initialize_identity_proj();
@@ -414,17 +414,17 @@ int main(const int argc, const char *argv[])
     // Clean up after finishing all Fourier transforms for this inset
     inset_state.destroy_fftw_plans_for_rho();
     inset_state.destroy_fftw_plans_for_flux();
-    inset_state.ref_to_rho_init()->free();
-    inset_state.ref_to_rho_ft()->free();
-    inset_state.ref_to_fluxx_init()->free();
-    inset_state.ref_to_fluxy_init()->free();
+    inset_state.ref_to_rho_init().free();
+    inset_state.ref_to_rho_ft().free();
+    inset_state.ref_to_fluxx_init().free();
+    inset_state.ref_to_fluxy_init().free();
 
     // End of inset time
     time_tracker.stop("Inset " + inset_pos);
   }  // End of loop over insets
 
   // Iterate over insets and normalize areas
-  for (auto &[inset_pos, inset_state] : *cart_info.ref_to_inset_states()) {
+  for (auto &[inset_pos, inset_state] : cart_info.ref_to_inset_states()) {
 
     // Rescale insets in correct proportion to each other
     inset_state.normalize_inset_area(

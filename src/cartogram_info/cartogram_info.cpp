@@ -55,9 +55,9 @@ unsigned int CartogramInfo::n_insets() const
   return inset_states_.size();
 }
 
-std::map<std::string, InsetState> *CartogramInfo::ref_to_inset_states()
+std::map<std::string, InsetState> &CartogramInfo::ref_to_inset_states()
 {
-  return &inset_states_;
+  return inset_states_;
 }
 
 void CartogramInfo::replace_missing_and_zero_target_areas()
