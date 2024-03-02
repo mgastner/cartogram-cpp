@@ -33,9 +33,8 @@ void InsetState::fill_with_density(bool plot_density)
   // are outside any GeoDiv. Any grid cell where rho_den is zero will be
   // filled with the mean_density.
 
-  // TODO: rho_num and rho_den could be a boost::multi_array<double, 2>.
-  std::vector<std::vector<double> > rho_num(lx_, std::vector<double>(ly_, 0));
-  std::vector<std::vector<double> > rho_den(lx_, std::vector<double>(ly_, 0));
+  boost::multi_array<double, 2> rho_num(boost::extents[lx_][ly_]);
+  boost::multi_array<double, 2> rho_den(boost::extents[lx_][ly_]);
 
   // Resolution with which we sample polygons. "resolution" is the number of
   // horizontal "test rays" between each of the ly consecutive horizontal
