@@ -210,7 +210,7 @@ void InsetState::execute_fftw_fwd_plan() const
   fftw_execute(fwd_plan_for_rho_);
 }
 
-std::vector<GeoDiv> InsetState::geo_divs() const
+const std::vector<GeoDiv> &InsetState::geo_divs() const
 {
   return geo_divs_;
 }
@@ -593,7 +593,7 @@ void InsetState::transform_points(
     for (auto &pwh : gd.ref_to_polygons_with_holes()) {
 
       // Get outer boundary
-      auto &outer_boundary = *(&pwh.outer_boundary());
+      auto &outer_boundary = pwh.outer_boundary();
 
       // Iterate over outer boundary's coordinates
       for (auto &coords_outer : outer_boundary) {
@@ -615,6 +615,7 @@ void InsetState::transform_points(
     }
   }
 }
+
 void InsetState::set_geo_divs(std::vector<GeoDiv> new_geo_divs)
 {
   geo_divs_ = std::move(new_geo_divs);

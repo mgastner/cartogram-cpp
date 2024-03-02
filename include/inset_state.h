@@ -121,7 +121,7 @@ public:
   void flatten_ellipse_density();
   void flatten_density_with_node_vertices();
 
-  std::vector<GeoDiv> geo_divs() const;
+  const std::vector<GeoDiv> &geo_divs() const;
   std::vector<std::vector<Color>> grid_cell_colors(unsigned int cell_width);
   Polygon grid_cell_edge_points(
     unsigned int x,

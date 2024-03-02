@@ -4,7 +4,7 @@ GeoDiv::GeoDiv() = default;
 
 GeoDiv::GeoDiv(std::string i) : id_(std::move(i)) {}
 
-std::set<std::string> GeoDiv::adjacent_geodivs() const
+const std::set<std::string> &GeoDiv::adjacent_geodivs() const
 {
   return adjacent_geodivs_;
 }
@@ -41,7 +41,7 @@ Bbox GeoDiv::bbox() const
   return geo_div_bbox;
 }
 
-std::string GeoDiv::id() const
+const std::string &GeoDiv::id() const
 {
   return id_;
 }
@@ -70,7 +70,7 @@ Polygon_with_holes GeoDiv::largest_polygon_with_holes() const
   return largest_pwh;
 }
 
-std::vector<Ellipse> GeoDiv::min_ellipses() const
+const std::vector<Ellipse> &GeoDiv::min_ellipses() const
 {
   return min_ellipses_;
 }
@@ -170,7 +170,7 @@ Point GeoDiv::point_on_surface_of_polygon_with_holes(
   return {mid_x, line_y};
 }
 
-std::vector<Polygon_with_holes> GeoDiv::polygons_with_holes() const
+const std::vector<Polygon_with_holes> &GeoDiv::polygons_with_holes() const
 {
   return polygons_with_holes_;
 }
