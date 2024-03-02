@@ -136,7 +136,7 @@ std::pair<GeoDiv, bool> json_to_geodiv(
       ext_ring,
       int_ring_v.begin(),
       int_ring_v.end());
-    gd.push_back_polygon_with_holes(pwh);
+    gd.push_back(pwh);
   }
   return {gd, erico};
 }

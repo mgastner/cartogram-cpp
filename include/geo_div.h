@@ -2,10 +2,10 @@
 #define GEO_DIV_H_
 
 #include "cgal_typedef.h"
+#include "constants.h"
 #include "ellipse.h"
 #include "intersection.h"
 #include "pwh.h"
-#include "constants.h"
 #include <string>
 #include <vector>
 
@@ -35,8 +35,8 @@ public:
   [[nodiscard]] Point point_on_surface_of_polygon_with_holes(
     const Polygon_with_holes &) const;
   [[nodiscard]] std::vector<Polygon_with_holes> polygons_with_holes() const;
-  void push_back_ellipse(Ellipse);
-  void push_back_polygon_with_holes(const Polygon_with_holes &);
+  void push_back(const Ellipse &);
+  void push_back(const Polygon_with_holes &);
   std::vector<Polygon_with_holes> &ref_to_polygons_with_holes();
   void sort_pwh_descending_by_area();
 };

@@ -452,7 +452,7 @@ void InsetState::remove_tiny_polygons(const double &minimum_polygon_size)
     // Iterate over Polygon_with_holes
     for (unsigned int i = 0; i < pwhs.size(); ++i) {
       if (i == 0 || pwh_area(pwhs[i]) > threshold) {
-        gd_cleaned.push_back_polygon_with_holes(pwhs[i]);
+        gd_cleaned.push_back(pwhs[i]);
       }
     }
     geo_divs_cleaned.push_back(gd_cleaned);

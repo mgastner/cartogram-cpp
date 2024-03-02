@@ -266,7 +266,7 @@ void InsetState::densify_geo_divs()
         outer_dens,
         holes_v_dens.begin(),
         holes_v_dens.end());
-      gd_dens.push_back_polygon_with_holes(pwh_dens);
+      gd_dens.push_back(pwh_dens);
     }
     geodivs_dens.push_back(gd_dens);
   }
@@ -450,7 +450,7 @@ void InsetState::densify_geo_divs_using_delaunay_t()
         outer_dens,
         holes_v_dens.begin(),
         holes_v_dens.end());
-      gd_dens.push_back_polygon_with_holes(pwh_dens);
+      gd_dens.push_back(pwh_dens);
     }
     geodivs_dens.push_back(gd_dens);
   }

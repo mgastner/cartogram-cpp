@@ -94,7 +94,7 @@ void InsetState::min_ellipses()
         ell.cos_theta = cos(theta);
         ell.sin_theta = sin(theta);
       }
-      gd.push_back_ellipse(ell);
+      gd.push_back(ell);
     }
   }
 }
