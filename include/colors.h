@@ -2,7 +2,6 @@
 #define COLORS_H_
 
 #include <string>
-#include <unordered_map>
 
 struct Color {
 

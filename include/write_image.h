@@ -2,8 +2,7 @@
 #define WRITE_IMAGE_H
 
 #include "colors.h"
-#include "constants.h"
-#include "inset_state.h"
+#include "geo_div.h"
 #include <cairo/cairo-svg.h>
 
 // TODO: IS THERE A CGAL WAY OF DETERMINING WHETHER THE LABEL'S BOUNDING

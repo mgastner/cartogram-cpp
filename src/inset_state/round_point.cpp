@@ -1,6 +1,5 @@
 #include "round_point.h"
 #include "constants.h"
-#include <bit>
 
 // TODO: THE COMMENTED-OUT CODE TREATED DIFFERENCES OF 1e-13 TO BE
 //       DISTINGUISHABLE, WHICH WAS TOO STRICT IN PRACTICE. AS A TEMPORARY

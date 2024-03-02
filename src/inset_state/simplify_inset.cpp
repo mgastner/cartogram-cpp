@@ -1,6 +1,7 @@
 // TODO: What happens if two polygons have touching lines, but the corner
 //       points are not identical in both lines?
 
+#include "constants.h"
 #include "inset_state.h"
 
 void InsetState::simplify(const unsigned int target_points_per_inset)

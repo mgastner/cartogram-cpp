@@ -1,4 +1,5 @@
 #include "matrix.h"
+#include "constants.h"
 
 // TODO: IT WOULD BE LESS TYPING TO DEFINE Matrix AS A
 // boost::multi_array<double, 2>. THEN WE COULD WRITE THE IDENTITY MATRIX AS

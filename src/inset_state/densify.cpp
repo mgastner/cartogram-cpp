@@ -1,6 +1,5 @@
 #include "inset_state.h"
 #include "round_point.h"
-#include <CGAL/intersections.h>
 
 // For printing a vector (debugging purposes)
 template <typename A>

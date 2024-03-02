@@ -1,4 +1,5 @@
 #include "interpolate_bilinearly.h"
+#include <iostream>
 
 // TODO: REPLACE WITH LINEAR INTERPOLATION BASED ON TRIANGULATION
 

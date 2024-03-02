@@ -3,7 +3,6 @@
 #include "parse_arguments.h"
 #include "progress_tracker.h"
 #include "time_tracker.h"
-// #include <matplot/matplot.h>
 
 int main(const int argc, const char *argv[])
 {

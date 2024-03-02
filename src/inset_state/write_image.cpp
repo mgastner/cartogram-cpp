@@ -1,4 +1,6 @@
 #include "write_image.h"
+#include "constants.h"
+#include "inset_state.h"
 
 // ======================== Basic Plotting ========================
 
@@ -1004,7 +1006,7 @@ void InsetState::write_intersections_image(unsigned int res)
   for (auto seg : intersections) {
     // Move to starting coordinates
     cairo_move_to(cr, seg[0].x(), ly_ - seg[0].y());
-    
+
     // Draw line
     cairo_line_to(cr, seg[1].x(), ly_ - seg[1].y());
 

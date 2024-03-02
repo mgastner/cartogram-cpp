@@ -1,4 +1,5 @@
 #include "cartogram_info.h"
+#include "constants.h"
 #include <iostream>
 #include <utility>
 

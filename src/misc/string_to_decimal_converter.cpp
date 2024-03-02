@@ -38,9 +38,7 @@ a thousands separator and remove it. (e.g., "1.234" -> "1234", "12.345" ->
 */
 
 #include "string_to_decimal_converter.h"
-#include <algorithm>
 #include <cassert>
-#include <cctype>
 
 const std::string StringToDecimalConverter::NA_ = "NA";
 

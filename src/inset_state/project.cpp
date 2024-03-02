@@ -1,8 +1,7 @@
+#include "inset_state.h"
 #include "interpolate_bilinearly.h"
 #include "matrix.h"
 #include "round_point.h"
-#include <boost/multi_array.hpp>
-#include <iostream>
 
 Point interpolate_point_bilinearly(
   const Point p1,

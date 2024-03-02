@@ -2,7 +2,6 @@
 #define CARTOGRAM_INFO_H_
 
 #include "argparse.hpp"
-#include "constants.h"
 #include "inset_state.h"
 
 class CartogramInfo

@@ -1,3 +1,4 @@
+#include "constants.h"
 #include "inset_state.h"
 
 void InsetState::rescale_map(
@@ -89,7 +90,8 @@ void InsetState::normalize_inset_area(
 
   // Calculate scale_factor that makes inset areas proportional to their
   // target areas on the cartogram
-  const double inset_area_prop = initial_target_area() / total_cart_target_area;
+  const double inset_area_prop =
+    initial_target_area() / total_cart_target_area;
   const double scale_factor =
     equal_area ? 1.0 : sqrt(inset_area_prop / total_inset_area());
 

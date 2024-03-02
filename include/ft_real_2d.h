@@ -1,7 +1,6 @@
 #ifndef FT_REAL_2D_H_
 #define FT_REAL_2D_H_
 
-#include <cstddef>
 #include <fftw3.h>
 
 class FTReal2d

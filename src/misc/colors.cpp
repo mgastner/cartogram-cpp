@@ -1,6 +1,7 @@
 #include "colors.h"
 #include <iostream>
 #include <sstream>
+#include <unordered_map>
 
 Color::Color()
 {
@@ -206,7 +207,7 @@ Color::Color(std::string color_as_string)
     int hex_int = stoi(color_as_string, nullptr, 16);
     r = ((hex_int >> 16) & 0xFF);  // Extract the RR byte
     g = ((hex_int >> 8) & 0xFF);  // Extract the GG byte
-    b = ((hex_int)&0xFF);  // Extract the BB byte
+    b = ((hex_int) & 0xFF);  // Extract the BB byte
   } else if ("rgb" == color_as_string.substr(0, 3)) {
 
     // RGB value
