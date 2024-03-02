@@ -1,6 +1,6 @@
 #include "inset_state.h"
 
-InsetState::InsetState()
+InsetState::InsetState(std::string pos) : pos_(std::move(pos))
 {
   initial_area_ = 0.0;
   n_finished_integrations_ = 0;
@@ -9,11 +9,6 @@ InsetState::InsetState()
   dens_max_ = 0.0;
   latt_const_ = 0.0;
   initial_target_area_ = 0.0;
-}
-
-InsetState::InsetState(std::string pos) : pos_(std::move(pos))
-{
-  InsetState();
 }
 
 double InsetState::blur_width() const
