@@ -16,6 +16,7 @@ typedef CGAL::Polygon_2<Scd> Polygon;
 typedef CGAL::Polygon_with_holes_2<Scd> Polygon_with_holes;
 typedef CGAL::Aff_transformation_2<Scd> Transformation;
 typedef CGAL::Point_2<Scd> Point;
+typedef CGAL::Vector_2<Scd> Vector;
 typedef CGAL::Line_2<Scd> Line;
 typedef CGAL::Bbox_2 Bbox;
 typedef CGAL::Segment_2<Scd> Segment;

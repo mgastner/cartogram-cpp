@@ -37,7 +37,7 @@ void calculate_velocity(
 bool all_points_are_in_domain(
   double delta_t,
   boost::multi_array<Point, 2> *proj,
-  boost::multi_array<Point, 2> *v_intp,
+  boost::multi_array<Vector, 2> *v_intp,
   const unsigned int lx,
   const unsigned int ly)
 {
@@ -95,12 +95,12 @@ void InsetState::flatten_density()
 
   // (vx_intp, vy_intp) will be the velocity at position (proj_.x, proj_.y) at
   // time t
-  boost::multi_array<Point, 2> v_intp(boost::extents[lx_][ly_]);
+  boost::multi_array<Vector, 2> v_intp(boost::extents[lx_][ly_]);
 
   // (vx_intp_half, vy_intp_half) will be the velocity at the midpoint
   // (proj_.x + 0.5*delta_t*vx_intp, proj_.y + 0.5*delta_t*vy_intp) at time
   // t + 0.5*delta_t
-  boost::multi_array<Point, 2> v_intp_half(boost::extents[lx_][ly_]);
+  boost::multi_array<Vector, 2> v_intp_half(boost::extents[lx_][ly_]);
 
   // Initialize the Fourier transforms of gridvx[] and gridvy[] at
   // every point on the lx_-times-ly_ grid at t = 0. We must typecast lx_ and
@@ -181,7 +181,7 @@ void InsetState::flatten_density()
           'y',
           lx_,
           ly_);
-        v_intp[i][j] = Point(vx, vy);
+        v_intp[i][j] = Vector(vx, vy);
       }
     }
 
@@ -245,7 +245,7 @@ void InsetState::flatten_density()
               'y',
               lx_,
               ly_);
-            v_intp_half[i][j] = Point(vx_half, vy_half);
+            v_intp_half[i][j] = Vector(vx_half, vy_half);
             mid[i][j] = Point(
               proj_[i][j].x() + v_intp_half[i][j].x() * delta_t,
               proj_[i][j].y() + v_intp_half[i][j].y() * delta_t);
@@ -287,7 +287,7 @@ void InsetState::flatten_density()
 bool all_map_points_are_in_domain(
   const double delta_t,
   const std::unordered_map<Point, Point> &proj_map,
-  const std::unordered_map<Point, Point> &v_intp,
+  const std::unordered_map<Point, Vector> &v_intp,
   const unsigned int lx,
   const unsigned int ly)
 {
@@ -356,13 +356,13 @@ void InsetState::flatten_density_with_node_vertices()
   // v_intp[(i, j)] will be the velocity at position
   // (proj_qd_.triangle_transformation[(i, j)].x,
   // proj_qd_.triangle_transformation[(i, j)].y) at time t
-  std::unordered_map<Point, Point> v_intp;
+  std::unordered_map<Point, Vector> v_intp;
 
   // v_intp_half[(i, j)] will be the velocity at the midpoint
   // (proj_qd_.triangle_transformation[(i, j)].x + 0.5 * delta_t * v_intp[(i,
   // j)].x, proj_qd_.triangle_transformation[(i, j)].y + 0.5 * delta_t *
   // v_intp[(i, j)].y) at time t + 0.5 * delta_t
-  std::unordered_map<Point, Point> v_intp_half;
+  std::unordered_map<Point, Vector> v_intp_half;
 
   // We must typecast lx_ and ly_ as double-precision numbers. Otherwise, the
   // ratios in the denominator will evaluate as zero.
@@ -433,7 +433,7 @@ void InsetState::flatten_density_with_node_vertices()
       // [0, lx_] x [0, ly_]. This fact guarantees that
       // interpolate_bilinearly() is given a point that cannot cause it to
       // fail.
-      Point v_intp_val(
+      Vector v_intp_val(
         interpolate_bilinearly(
           val.x(),
           val.y(),
@@ -494,7 +494,7 @@ void InsetState::flatten_density_with_node_vertices()
 
         // Okay, we can run interpolate_bilinearly()
         for (const auto &[key, val] : proj_qd_.triangle_transformation) {
-          Point v_intp_half_val(
+          Vector v_intp_half_val(
             interpolate_bilinearly(
               val.x() + 0.5 * delta_t * v_intp[key].x(),
               val.y() + 0.5 * delta_t * v_intp[key].y(),

@@ -135,7 +135,7 @@ double ellipse_flux_prefactor(
 bool all_map_points_are_in_domain(
   const double &delta_t,
   const std::unordered_map<Point, Point> &proj_map,
-  const std::unordered_map<Point, Point> &v_intp,
+  const std::unordered_map<Point, Vector> &v_intp,
   const unsigned int &lx,
   const unsigned int &ly)
 {
@@ -160,21 +160,21 @@ bool all_map_points_are_in_domain(
 
 void calculate_velocity(
   const std::unordered_map<Point, double> &rho_mp,
-  const std::unordered_map<Point, Point> &flux_mp,
+  const std::unordered_map<Point, Vector> &flux_mp,
   const std::unordered_map<Point, Point> &triangle_transformation,
-  std::unordered_map<Point, Point> &velocity)
+  std::unordered_map<Point, Vector> &velocity)
 {
   for (const auto &[key, val] : triangle_transformation) {
-    velocity[key] = Point(
+    velocity[key] = Vector(
       flux_mp.at(key).x() / rho_mp.at(key),
       flux_mp.at(key).y() / rho_mp.at(key));
   }
 }
 
-Point interpolate(
+Vector interpolate(
   const Point p,
   const Delaunay &dt,
-  const std::unordered_map<Point, Point> &mp)
+  const std::unordered_map<Point, Vector> &velocity)
 {
   // Find the triangle containing the point
   const Face_handle fh = dt.locate(p);
@@ -198,16 +198,18 @@ Point interpolate(
   const double bary_y = std::get<1>(bary_coor);
   const double bary_z = std::get<2>(bary_coor);
 
-  // Get projected vertices
-  const Point v1_proj = mp.at(v1);
-  const Point v2_proj = mp.at(v2);
-  const Point v3_proj = mp.at(v3);
+  // Get projected vertex velocities
+  const Vector v1_velo_proj = velocity.at(v1);
+  const Vector v2_velo_proj = velocity.at(v2);
+  const Vector v3_velo_proj = velocity.at(v3);
 
-  // Calculate projected point of p
-  const Point p_proj = Point(
-    bary_x * v1_proj.x() + bary_y * v2_proj.x() + bary_z * v3_proj.x(),
-    bary_x * v1_proj.y() + bary_y * v2_proj.y() + bary_z * v3_proj.y());
-  return p_proj;
+  // Calculate projected velocity of p
+  const Vector p_velo_proj = Vector(
+    bary_x * v1_velo_proj.x() + bary_y * v2_velo_proj.x() +
+      bary_z * v3_velo_proj.x(),
+    bary_x * v1_velo_proj.y() + bary_y * v2_velo_proj.y() +
+      bary_z * v3_velo_proj.y());
+  return p_velo_proj;
 }
 
 void InsetState::flatten_ellipse_density()
@@ -218,7 +220,7 @@ void InsetState::flatten_ellipse_density()
   std::vector<std::string> pgn_id_to_geo_id;
 
   std::unordered_map<Point, double> rho_mp;
-  std::unordered_map<Point, Point> flux_mp;
+  std::unordered_map<Point, Vector> flux_mp;
 
   // eul[(i, j)] will be the new position of
   // proj_qd_.triangle_transformation[(i, j)] proposed by a simple Euler step:
@@ -234,15 +236,15 @@ void InsetState::flatten_ellipse_density()
   // v_intp[(i, j)] will be the velocity at position
   // (proj_qd_.triangle_transformation[(i, j)].x,
   // proj_qd_.triangle_transformation[(i, j)].y) at time t
-  std::unordered_map<Point, Point> v_intp;
+  std::unordered_map<Point, Vector> v_intp;
 
   // v_intp_half[(i, j)] will be the velocity at the midpoint
   // (proj_qd_.triangle_transformation[(i, j)].x + 0.5 * delta_t * v_intp[(i,
   // j)].x, proj_qd_.triangle_transformation[(i, j)].y + 0.5 * delta_t *
   // v_intp[(i, j)].y) at time t + 0.5 * delta_t
-  std::unordered_map<Point, Point> v_intp_half;
+  std::unordered_map<Point, Vector> v_intp_half;
 
-  std::unordered_map<Point, Point> velocity;
+  std::unordered_map<Point, Vector> velocity;
 
   // Constants for the numerical integrator
   const double inc_after_acc = 1.1;
@@ -401,7 +403,7 @@ void InsetState::flatten_ellipse_density()
       }
     }
     rho_mp[curr_pt] = rho;
-    flux_mp[curr_pt] = Point(flux_x, flux_y);
+    flux_mp[curr_pt] = Vector(flux_x, flux_y);
   }
 
   // Initial time and step size
@@ -418,7 +420,7 @@ void InsetState::flatten_ellipse_density()
 
     // calculating velocity at t by filling v_intp
     for (const auto &[key, val] : proj_qd_.triangle_transformation) {
-      Point v_intp_val(interpolate(val, proj_qd_.dt, velocity));
+      Vector v_intp_val(interpolate(val, proj_qd_.dt, velocity));
       v_intp.insert_or_assign(key, v_intp_val);
     }
     bool accept = false;
@@ -450,7 +452,7 @@ void InsetState::flatten_ellipse_density()
           Point n_val = Point(
             val.x() + 0.5 * delta_t * v_intp[key].x(),
             val.y() + 0.5 * delta_t * v_intp[key].y());
-          Point v_intp_half_val(interpolate(n_val, proj_qd_.dt, velocity));
+          Vector v_intp_half_val(interpolate(n_val, proj_qd_.dt, velocity));
           v_intp_half.insert_or_assign(key, v_intp_half_val);
 
           double mid_val_x = val.x() + delta_t * v_intp_half[key].x();
