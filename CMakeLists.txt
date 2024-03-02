@@ -43,28 +43,12 @@ endif()
 file(GLOB_RECURSE CARTOGRAM_SOURCES "src/*.cpp")
 add_executable(cartogram ${CARTOGRAM_SOURCES})
 
-# Add test executable
-file(GLOB_RECURSE CARTOGRAM_TEST_SOURCES "tests/*.cpp")
-set(CARTOGRAM_TEST_SOURCES_FROM_SRC
-  "src/misc/string_to_decimal_converter.cpp"
-
-  # Add test sources from src here
-)
-add_executable(cartogram_tests ${CARTOGRAM_TEST_SOURCES} ${CARTOGRAM_TEST_SOURCES_FROM_SRC})
-
 # ========== Include Directories ==========
 target_include_directories(cartogram PUBLIC
   ${PROJECT_SOURCE_DIR}/include
   ${Boost_INCLUDE_DIRS}
   PkgConfig::fftw
   PkgConfig::CAIRO
-)
-
-# Include directories for the test executable
-target_include_directories(cartogram_tests PUBLIC
-  ${PROJECT_SOURCE_DIR}/include
-  ${Boost_INCLUDE_DIRS}
-  PkgConfig::fftw
 )
 
 # ========== Compile Options ==========
@@ -75,18 +59,8 @@ elseif(MSVC)
   target_compile_options(cartogram PRIVATE /external:I ${Boost_INCLUDE_DIRS})
 endif()
 
-if(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
-  target_compile_options(cartogram_tests PRIVATE -isystem ${Boost_INCLUDE_DIRS})
-  target_compile_options(cartogram_tests PRIVATE -ffp-contract=off)
-elseif(MSVC)
-  target_compile_options(cartogram_tests PRIVATE /external:I ${Boost_INCLUDE_DIRS})
-endif()
-
 # Compiler warnings
 target_compile_options(cartogram PRIVATE -Wall -Wextra -pedantic -Wno-deprecated-declarations)
-
-# Compiler warnings for the test executable
-target_compile_options(cartogram_tests PRIVATE -Wall -Wextra -pedantic -Wno-deprecated-declarations)
 
 # ========== Linking Libraries ==========
 target_link_libraries(cartogram
@@ -95,20 +69,56 @@ target_link_libraries(cartogram
   Matplot++::matplot
 )
 
-# Linking Libraries for Test Executable
-target_link_libraries(cartogram_tests
-  ${Boost_UNIT_TEST_FRAMEWORK_LIBRARY}
-  PkgConfig::fftw
-)
-
 # ========== Installation ==========
 install(TARGETS cartogram DESTINATION bin)
 
 # Enable CTest testing
 enable_testing()
 
-# Register tests
-add_test(NAME cartogram_tests COMMAND cartogram_tests)
+# Add test executable
+file(GLOB_RECURSE TEST_FILES "tests/*.cpp")
+
+# Include the source files from the src directory that are needed for testing
+set(CARTOGRAM_TEST_SOURCES_FROM_SRC
+  "src/misc/string_to_decimal_converter.cpp"
+
+  # Add additional test sources from src here if necessary
+)
+
+# For each test file, create an executable and a test
+foreach(TEST_FILE ${TEST_FILES})
+  # Extract the filename without an extension to use as a test name
+  get_filename_component(TEST_NAME ${TEST_FILE} NAME_WE)
+
+  # Create an executable for each test file
+  add_executable(${TEST_NAME} ${TEST_FILE} ${CARTOGRAM_TEST_SOURCES_FROM_SRC})
+
+  # Include directories for the test executable
+  target_include_directories(${TEST_NAME} PUBLIC
+    ${PROJECT_SOURCE_DIR}/include
+    ${Boost_INCLUDE_DIRS}
+    PkgConfig::fftw
+  )
+
+  if(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
+    target_compile_options(${TEST_NAME} PRIVATE -isystem ${Boost_INCLUDE_DIRS})
+    target_compile_options(${TEST_NAME} PRIVATE -ffp-contract=off)
+  elseif(MSVC)
+    target_compile_options(${TEST_NAME} PRIVATE /external:I ${Boost_INCLUDE_DIRS})
+  endif()
+
+  # Compiler warnings for the test executable
+  target_compile_options(${TEST_NAME} PRIVATE -Wall -Wextra -pedantic -Wno-deprecated-declarations)
+
+  # Linking Libraries for Test Executable
+  target_link_libraries(${TEST_NAME}
+    ${Boost_UNIT_TEST_FRAMEWORK_LIBRARY}
+    PkgConfig::fftw
+  )
+
+  # Register the executable as a test
+  add_test(NAME ${TEST_NAME} COMMAND ${TEST_NAME})
+endforeach()
 
 # Uninstall target
 add_custom_target("uninstall")
