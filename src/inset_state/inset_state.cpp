@@ -348,8 +348,9 @@ void InsetState::make_fftw_plans_for_flux()
 
 struct max_area_error_info InsetState::max_area_error() const
 {
-  double value = -dbl_inf;
-  std::string worst_gd = "";
+  auto it = area_errors_.begin();
+  std::string worst_gd = it->first;
+  double value = it->second;
   for (const auto &[gd_id, area_error] : area_errors_) {
     if (area_error > value) {
       value = area_error;
