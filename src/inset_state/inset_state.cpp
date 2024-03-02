@@ -54,16 +54,12 @@ void InsetState::create_delaunay_t()
       const Polygon ext_ring = pwh.outer_boundary();
 
       // Get exterior ring coordinates
-      for (const auto &i : ext_ring) {
-        points.insert(Point(i[0], i[1]));
-      }
+      points.insert(ext_ring.begin(), ext_ring.end());
 
       // Get holes of polygon with holes
       for (auto hci = pwh.holes_begin(); hci != pwh.holes_end(); ++hci) {
         const Polygon &hole = *hci;
-        for (const auto &i : hole) {
-          points.insert(Point(i[0], i[1]));
-        }
+        points.insert(hole.begin(), hole.end());
       }
     }
   }
