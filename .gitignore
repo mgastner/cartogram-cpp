@@ -27,6 +27,7 @@ cartogram
 /tests/*
 !/tests/*.sh
 !/tests/*.cpp
+!/tests/*.md
 
 # Ignore the Testing logs
 /Testing
