@@ -457,8 +457,7 @@ void InsetState::remove_tiny_polygons(const double &minimum_polygon_size)
     }
     geo_divs_cleaned.push_back(gd_cleaned);
   }
-  geo_divs_.clear();
-  geo_divs_ = geo_divs_cleaned;
+  geo_divs_ = std::move(geo_divs_cleaned);
 }
 
 void InsetState::replace_target_area(const std::string &id, const double area)
