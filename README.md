@@ -28,69 +28,19 @@ Install llvm, pkg-config, boost, fftw, cgal, nlohmann-json, and cmake by running
 
 ### Debian-based distributions (Ubuntu, Arch Linux etc.)
 
-#### Installing GNU gcc-11
+#### Installing GNU g++-13
 
-GNU gcc-11 is currently unavailable from apt by default. You may find installation instructions [here](https://lindevs.com/install-gcc-on-ubuntu/). Alternatively, you may run the following commands to install it:
+Run the following commands to install it:
 
     sudo apt install build-essential manpages-dev software-properties-common
     sudo add-apt-repository ppa:ubuntu-toolchain-r/test
-    sudo apt update && sudo apt install gcc-11 g++-11
+    sudo apt update && sudo apt install gcc-13 g++-13
 
-#### Installing nlohmann's JSON parser
+#### Installing dependencies through apt
 
-1.  Go to <https://github.com/nlohmann/json>
-2.  Click on "Code" -> "Download Zip".
-3.  Go to Downloads folder.
-4.  Unzip the file you just installed (you can use the `unzip` command).
-5.  Go into the newly created unzipped folder json-develop (you can use the `cd` command).
-6.  Run the following commands (you may copy and paste all of them at once):
+Install nlohmann-json, cgal, openmp, fftw3, cairo, matplot++, boost, and cmake by running the following command:
 
-        cmake .
-        make
-        sudo make install
-
-#### Installing CGAL
-
-[CGAL Homepage](https://www.cgal.org/)
-
-CGAL Version 5.3 is currently unavailable from apt. Please follow the instructions on the CGAL website to build from source.
-
-You may download the latest release [here](https://github.com/CGAL/cgal/releases). You may find installation instructions [here](https://doc.cgal.org/latest/Manual/usage.html#title4).
-
-For posterity: Once version 5.3 is available through apt (you may check [here](https://packages.ubuntu.com/search?keywords=libcgal-dev&searchon=names&suite=impish§ion=all)), you may run the following command to install it.
-
-    sudo apt install libcgal-dev
-
-#### Installing OpenMP
-
-[OpenMP Homepage](https://www.openmp.org/)
-
-    sudo apt install libomp-dev
-
-#### Installing FFTW3
-
-1.  Go to [FFTW's website](http://www.fftw.org/download.html "FFTW Downloads Page").
-2.  Install the latest version of FFTW.
-3.  Unarchive the file with: `tar zxvf fftw-3.3.10.tar.gz` (Note: the version number may be different).
-4.  Go to the directory with: `cd fftw-3.3.10`.
-5.  Run the following commands (you may copy and paste all of them at once):
-
-        ./configure
-        make
-        sudo make install
-
-#### Installing CairoGraphics
-
-[CairoGraphics Homepage](https://www.cairographics.org/)
-
-    sudo apt install libcairo2-dev
-    
-#### Installing Matplot++
-
-[Matplot++ Homepage](https://github.com/alandefreitas/matplotplusplus)
-
-    sudo apt install libmatplot++-dev
-
+    sudo apt install nlohmann-json3-dev libcgal-dev libomp-dev libfftw3-dev libcairo2-dev libmatplot++-dev libboost-all-dev cmake
 
 ### Installation
 
@@ -149,6 +99,8 @@ If you'd like to contribute to the project, please run our tests after you make 
 To run the unit tests, execute the following command:
 
     ctest --verbose
+    
+To learn more about the tests, you may go to the `cartogram-cpp/tests` directory and read the `README.md` file.
 
 Additionally, you may go to the `cartogram-cpp/tests` directory and run the following command:
 
