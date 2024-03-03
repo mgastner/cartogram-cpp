@@ -94,7 +94,7 @@ For posterity: Once version 5.3 is available through apt (you may check [here](h
 
 ### Installation
 
-Go to the `cartogram_cpp` directory in your preferred terminal and execute the following commands.
+Go to the `cartogram-cpp` directory in your preferred terminal and execute the following commands.
 
     cmake -B build
     make -C build
@@ -140,7 +140,7 @@ The CSV file should be in the following format:
     2.  `"rgb(255, 0, 120)"` or `rgb(255 0 120)` or `"255, 0, 120"` or `255 0 120`: red, green and blue values out of 255.
     3.  `#e74c3c`: hex code of color, must start with `#`.
 
-**You may find sample GeoJSON (containing geographic data) and CSV (containing information about target areas, colors and other visual variables) files in the `cartogram_cpp/sample_data` directory.**
+**You may find sample GeoJSON (containing geographic data) and CSV (containing information about target areas, colors and other visual variables) files in the `cartogram-cpp/sample_data` directory.**
 
 ### Testing
 
@@ -150,13 +150,13 @@ To run the unit tests, execute the following command:
 
     ctest --verbose
 
-Additionally, you may go to the `cartogram_cpp/tests` directory and run the following command:
+Additionally, you may go to the `cartogram-cpp/tests` directory and run the following command:
 
      bash stress_test.sh
 
 ### Uninstallation
 
-Go to the `cartogram_cpp` directory in your preferred terminal and execute the following command:
+Go to the `cartogram-cpp` directory in your preferred terminal and execute the following command:
 
     sudo make uninstall -C build
 
