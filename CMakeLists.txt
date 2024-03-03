@@ -35,8 +35,8 @@ if(APPLE)
   set(CMAKE_CXX_COMPILER "${LLVM_BASE_PATH}clang++")
   set(CMAKE_C_COMPILER "${LLVM_BASE_PATH}clang")
 elseif(UNIX)
-  set(CMAKE_CXX_COMPILER "g++-11")
-  set(CMAKE_C_COMPILER "gcc-11")
+  set(CMAKE_CXX_COMPILER "g++-13")
+  set(CMAKE_C_COMPILER "gcc-13")
 endif()
 
 # ========== Source Files ==========
