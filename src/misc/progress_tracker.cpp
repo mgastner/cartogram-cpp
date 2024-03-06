@@ -25,19 +25,31 @@ void ProgressTracker::print_progress_mid_integration(
   // cartogram is proportional to the number of GeoDivs that are in the
   // finished insets
   const double inset_max_frac = inset_state.n_geo_divs() / total_geo_divs_;
-  print_progress(progress_ + (inset_max_frac / n_predicted_integrations));
+  double progress = progress_ + (inset_max_frac / n_predicted_integrations);
+  print_progress(progress);
+  print_progress_bar(progress);
 }
 
-// Method to update the progress and print it
-void ProgressTracker::update_and_print_progress(const InsetState &inset_state)
+// Method to update the progress and print progress at the end of the
+// integrations of the inset
+void ProgressTracker::update_and_print_progress_end_integration(
+  const InsetState &inset_state)
 {
   const double inset_max_frac = inset_state.n_geo_divs() / total_geo_divs_;
   progress_ += inset_max_frac;
   print_progress(progress_);
+  print_progress_bar(progress_);
 }
 
 // Method to print the current progress
 void ProgressTracker::print_progress(double progress)
 {
   std::cerr << "Progress: " << progress << std::endl;
+}
+
+// Method to print the progress bar
+void ProgressTracker::print_progress_bar(double progress)
+{
+  bar_.set_progress(round(progress * 100));
+  std::cerr << std::endl;
 }

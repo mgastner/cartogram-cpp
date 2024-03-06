@@ -378,7 +378,7 @@ int main(const int argc, const char *argv[])
 
     // Update and display progress information
     std::cerr << "Finished inset " << inset_pos << std::endl;
-    progress_tracker.update_and_print_progress(inset_state);
+    progress_tracker.update_and_print_progress_end_integration(inset_state);
 
     if (plot_polygons) {
       std::string output_filename = inset_state.inset_name();
