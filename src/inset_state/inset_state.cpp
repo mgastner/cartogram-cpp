@@ -1,5 +1,5 @@
-#include "inset_state.h"
-#include "constants.h"
+#include "inset_state.hpp"
+#include "constants.hpp"
 
 InsetState::InsetState(std::string pos) : pos_(std::move(pos))
 {

@@ -1,8 +1,8 @@
 #ifndef WRITE_IMAGE_H
 #define WRITE_IMAGE_H
 
-#include "colors.h"
-#include "geo_div.h"
+#include "colors.hpp"
+#include "geo_div.hpp"
 #include <cairo/cairo-svg.h>
 
 // TODO: IS THERE A CGAL WAY OF DETERMINING WHETHER THE LABEL'S BOUNDING
@@ -76,4 +76,4 @@ get_ticks(
 
 std::vector<int> get_nice_numbers_for_bar(double max_target_area_per_km);
 
-#endif
+#endif // WRITE_IMAGE_H

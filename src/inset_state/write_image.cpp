@@ -1,6 +1,6 @@
-#include "write_image.h"
-#include "constants.h"
-#include "inset_state.h"
+#include "write_image.hpp"
+#include "constants.hpp"
+#include "inset_state.hpp"
 
 // ======================== Basic Plotting ========================
 

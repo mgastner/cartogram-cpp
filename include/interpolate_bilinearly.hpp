@@ -1,5 +1,5 @@
-#ifndef INTERPOL_H_
-#define INTERPOL_H_
+#ifndef INTERPOL_HPP_
+#define INTERPOL_HPP_
 
 #include <boost/multi_array.hpp>
 
@@ -19,4 +19,4 @@ double interpolate_bilinearly(
   unsigned int,
   unsigned int);
 
-#endif
+#endif // INTERPOL_HPP_

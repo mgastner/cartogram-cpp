@@ -1,6 +1,6 @@
-#include "geo_div.h"
-#include "constants.h"
-#include "intersection.h"
+#include "geo_div.hpp"
+#include "constants.hpp"
+#include "intersection.hpp"
 
 GeoDiv::GeoDiv() = default;
 

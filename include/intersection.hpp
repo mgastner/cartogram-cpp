@@ -1,7 +1,7 @@
-#ifndef INTERSECTION_H_
-#define INTERSECTION_H_
+#ifndef INTERSECTION_HPP_
+#define INTERSECTION_HPP_
 
-#include "cgal_typedef.h"
+#include "cgal_typedef.hpp"
 
 // Struct to store intersection between line segment and grid line
 class intersection
@@ -42,4 +42,4 @@ void add_intersections(
   const std::string &,
   char);
 
-#endif
+#endif // INTERSECTION_HPP_

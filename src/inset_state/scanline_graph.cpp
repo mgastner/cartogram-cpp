@@ -1,4 +1,4 @@
-#include "inset_state.h"
+#include "inset_state.hpp"
 
 // TODO: THE OUTPUT FROM intersec_with_parallel_to() ALWAYS
 // SEEM TO COME WITH A NEED TO SORT AFTERWARDS. SHOULD SORTING BECOME PART of

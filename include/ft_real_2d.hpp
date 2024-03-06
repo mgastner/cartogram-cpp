@@ -1,5 +1,5 @@
-#ifndef FT_REAL_2D_H_
-#define FT_REAL_2D_H_
+#ifndef FT_REAL_2D_HPP_
+#define FT_REAL_2D_HPP_
 
 #include <fftw3.h>
 
@@ -26,4 +26,4 @@ public:
   double operator()(unsigned int, unsigned int) const;
 };
 
-#endif
+#endif // FT_REAL_2D_HPP_

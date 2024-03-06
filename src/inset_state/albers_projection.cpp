@@ -1,5 +1,5 @@
-#include "constants.h"
-#include "inset_state.h"
+#include "constants.hpp"
+#include "inset_state.hpp"
 
 void InsetState::adjust_for_dual_hemisphere()
 {

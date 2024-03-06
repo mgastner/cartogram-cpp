@@ -1,4 +1,4 @@
-#include "pwh.h"
+#include "pwh.hpp"
 
 double pwh_area(const Polygon_with_holes &pwh)
 {

@@ -1,8 +1,8 @@
-#include "cartogram_info.h"
-#include "constants.h"
-#include "parse_arguments.h"
-#include "progress_tracker.h"
-#include "time_tracker.h"
+#include "cartogram_info.hpp"
+#include "constants.hpp"
+#include "parse_arguments.hpp"
+#include "progress_tracker.hpp"
+#include "time_tracker.hpp"
 
 int main(const int argc, const char *argv[])
 {

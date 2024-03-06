@@ -1,4 +1,4 @@
-#include "inset_state.h"
+#include "inset_state.hpp"
 
 // Returns error if there are holes not inside their respective polygons
 void InsetState::holes_inside_polygons()

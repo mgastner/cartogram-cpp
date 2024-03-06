@@ -1,4 +1,4 @@
-#include "intersection.h"
+#include "intersection.hpp"
 
 intersection::intersection() = default;
 

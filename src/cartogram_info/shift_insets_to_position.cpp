@@ -1,5 +1,5 @@
-#include "cartogram_info.h"
-#include "constants.h"
+#include "cartogram_info.hpp"
+#include "constants.hpp"
 
 void CartogramInfo::shift_insets_to_target_position()
 {

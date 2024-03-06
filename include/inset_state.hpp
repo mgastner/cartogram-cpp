@@ -1,10 +1,10 @@
-#ifndef INSET_STATE_H_
-#define INSET_STATE_H_
+#ifndef INSET_STATE_HPP_
+#define INSET_STATE_HPP_
 
-#include "colors.h"
-#include "ft_real_2d.h"
-#include "geo_div.h"
-#include "intersection.h"
+#include "colors.hpp"
+#include "ft_real_2d.hpp"
+#include "geo_div.hpp"
+#include "intersection.hpp"
 #include <boost/multi_array.hpp>
 #include <cairo/cairo.h>
 #include <nlohmann/json.hpp>
@@ -266,4 +266,4 @@ public:
   void write_quadtree(const std::string &);
 };
 
-#endif
+#endif // INSET_STATE_HPP_

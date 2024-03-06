@@ -1,5 +1,5 @@
-#ifndef COLORS_H_
-#define COLORS_H_
+#ifndef COLORS_HPP_
+#define COLORS_HPP_
 
 #include <string>
 
@@ -56,4 +56,4 @@ struct Color {
   }
 };
 
-#endif
+#endif // COLORS_HPP_

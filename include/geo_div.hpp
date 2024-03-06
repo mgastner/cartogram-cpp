@@ -1,8 +1,8 @@
-#ifndef GEO_DIV_H_
-#define GEO_DIV_H_
+#ifndef GEO_DIV_HPP_
+#define GEO_DIV_HPP_
 
-#include "ellipse.h"
-#include "pwh.h"
+#include "ellipse.hpp"
+#include "pwh.hpp"
 
 class GeoDiv
 {
@@ -37,4 +37,4 @@ public:
   void sort_pwh_descending_by_area();
 };
 
-#endif
+#endif // GEO_DIV_HPP_

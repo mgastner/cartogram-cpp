@@ -1,7 +1,7 @@
-#include "inset_state.h"
-#include "interpolate_bilinearly.h"
-#include "matrix.h"
-#include "round_point.h"
+#include "inset_state.hpp"
+#include "interpolate_bilinearly.hpp"
+#include "matrix.hpp"
+#include "round_point.hpp"
 
 Point interpolate_point_bilinearly(
   const Point p1,

@@ -1,7 +1,7 @@
 #ifndef PROGRESS_TRACKER_H
 #define PROGRESS_TRACKER_H
 
-#include "inset_state.h"
+#include "inset_state.hpp"
 
 class ProgressTracker
 {

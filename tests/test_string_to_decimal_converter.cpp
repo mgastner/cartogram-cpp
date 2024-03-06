@@ -1,5 +1,5 @@
 #define BOOST_TEST_MODULE StringToDecimalConverterTest
-#include "string_to_decimal_converter.h"
+#include "string_to_decimal_converter.hpp"
 #include <boost/test/unit_test.hpp>
 
 BOOST_AUTO_TEST_CASE(TestIsStrNA_True)

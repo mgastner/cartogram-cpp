@@ -1,6 +1,6 @@
-#include "cartogram_info.h"
+#include "cartogram_info.hpp"
 #include "csv.hpp"
-#include "string_to_decimal_converter.h"
+#include "string_to_decimal_converter.hpp"
 
 void CartogramInfo::read_csv(const argparse::ArgumentParser &arguments)
 {

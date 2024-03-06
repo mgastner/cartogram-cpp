@@ -1,7 +1,7 @@
-#ifndef ELLIPSE_H_
-#define ELLIPSE_H_
+#ifndef ELLIPSE_HPP_
+#define ELLIPSE_HPP_
 
-#include "cgal_typedef.h"
+#include "cgal_typedef.hpp"
 
 struct Ellipse {
   double semimajor;
@@ -16,4 +16,4 @@ struct Ellipse {
   double sin_theta;
 };
 
-#endif
+#endif // ELLIPSE_HPP_

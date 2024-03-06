@@ -1,5 +1,5 @@
-#include "constants.h"
-#include "inset_state.h"
+#include "constants.hpp"
+#include "inset_state.hpp"
 
 void InsetState::rescale_map(
   unsigned int max_n_grid_rows_or_cols,

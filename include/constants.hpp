@@ -1,5 +1,5 @@
-#ifndef CONST_H_
-#define CONST_H_
+#ifndef CONST_HPP_
+#define CONST_HPP_
 
 #include <limits>
 #include <numbers>
@@ -61,4 +61,4 @@ constexpr double xi_sq = 4.0;
 // ly
 constexpr unsigned int plotted_cell_length = 8;
 
-#endif
+#endif // CONST_HPP_

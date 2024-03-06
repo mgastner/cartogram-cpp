@@ -1,6 +1,6 @@
-#include "constants.h"
-#include "inset_state.h"
-#include "interpolate_bilinearly.h"
+#include "constants.hpp"
+#include "inset_state.hpp"
+#include "interpolate_bilinearly.hpp"
 
 // Function to calculate the velocity at the grid points (x, y) with x =
 // 0.5, 1.5, ..., lx-0.5 and y = 0.5, 1.5, ..., ly-0.5 at time t

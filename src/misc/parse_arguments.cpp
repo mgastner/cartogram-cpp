@@ -1,5 +1,5 @@
-#include "parse_arguments.h"
-#include "constants.h"
+#include "parse_arguments.hpp"
+#include "constants.hpp"
 
 argparse::ArgumentParser parsed_arguments(
   const int argc,
@@ -38,7 +38,7 @@ argparse::ArgumentParser parsed_arguments(
     .help("File path: CSV file with ID, area, and (optionally) colour");
 
   // Optional argument accepting long grid side length (unsigned int) as
-  // input. Default value declared in "constants.h"
+  // input. Default value declared in "constants.hpp"
   arguments.add_argument("-n", "--n_grid_rows_or_cols")
     .default_value(default_long_grid_length)
     .scan<'u', unsigned int>()

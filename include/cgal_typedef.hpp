@@ -1,5 +1,5 @@
-#ifndef CGAL_TYPEDEF_H_
-#define CGAL_TYPEDEF_H_
+#ifndef CGAL_TYPEDEF_HPP_
+#define CGAL_TYPEDEF_HPP_
 
 #include <CGAL/Barycentric_coordinates_2.h>
 #include <CGAL/Delaunay_triangulation_2.h>
@@ -48,4 +48,4 @@ typedef CT::Constraint_id Constraint_id;
 typedef CGAL::Polyline_simplification_2::Stop_below_count_ratio_threshold Stop;
 typedef CGAL::Polyline_simplification_2::Squared_distance_cost Cost;
 
-#endif
+#endif // CGAL_TYPEDEF_HPP_

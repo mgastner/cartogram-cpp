@@ -1,5 +1,5 @@
-#include "constants.h"
-#include "inset_state.h"
+#include "constants.hpp"
+#include "inset_state.hpp"
 
 void InsetState::fill_with_density(bool plot_density)
 {
@@ -41,7 +41,7 @@ void InsetState::fill_with_density(bool plot_density)
   // horizontal "test rays" between each of the ly consecutive horizontal
   // grid lines.
   // Ensure that the number of rays per grid length is at least the default
-  // value specified by default_resolution in include/constants.h.
+  // value specified by default_resolution in include/constants.hpp.
   // Additionally, confirm that there are a minimum of long_grid_length *
   // resolution rays along the longer side of the lx*ly grid.
   unsigned int long_grid_length = std::max(lx_, ly_);

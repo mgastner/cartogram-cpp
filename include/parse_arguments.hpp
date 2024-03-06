@@ -1,5 +1,5 @@
-#ifndef PARSE_ARGUMENTS_H_
-#define PARSE_ARGUMENTS_H_
+#ifndef PARSE_ARGUMENTS_HPP_
+#define PARSE_ARGUMENTS_HPP_
 
 #include "argparse.hpp"
 
@@ -26,4 +26,4 @@ argparse::ArgumentParser parsed_arguments(
   double &minimum_polygon_area,
   bool &plot_quadtree);
 
-#endif
+#endif // PARSE_ARGUMENTS_HPP_

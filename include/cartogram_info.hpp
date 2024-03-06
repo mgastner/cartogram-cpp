@@ -1,8 +1,8 @@
-#ifndef CARTOGRAM_INFO_H_
-#define CARTOGRAM_INFO_H_
+#ifndef CARTOGRAM_INFO_HPP_
+#define CARTOGRAM_INFO_HPP_
 
 #include "argparse.hpp"
-#include "inset_state.h"
+#include "inset_state.hpp"
 
 class CartogramInfo
 {
@@ -41,4 +41,5 @@ public:
   void shift_insets_to_target_position();
   void write_geojson(const std::string &, const std::string &, bool);
 };
-#endif
+
+#endif // CARTOGRAM_INFO_HPP_

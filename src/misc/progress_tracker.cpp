@@ -1,5 +1,5 @@
-#include "progress_tracker.h"
-#include "constants.h"
+#include "progress_tracker.hpp"
+#include "constants.hpp"
 
 // Constructor
 ProgressTracker::ProgressTracker(double total_geo_divs)

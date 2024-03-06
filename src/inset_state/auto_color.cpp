@@ -1,5 +1,5 @@
-#include "constants.h"
-#include "inset_state.h"
+#include "constants.hpp"
+#include "inset_state.hpp"
 
 // Function to automatically color topology based on contiguity graph
 void InsetState::auto_color()

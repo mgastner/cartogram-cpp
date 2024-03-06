@@ -1,4 +1,4 @@
-#include "ft_real_2d.h"
+#include "ft_real_2d.hpp"
 #include <iostream>
 
 double *FTReal2d::as_1d_array() const
