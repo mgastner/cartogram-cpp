@@ -1,13 +1,19 @@
 name: Build and Upload Artifact
 
-on: [push, workflow_dispatch]
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
 
 jobs:
-  build:
+  build-and-release:
     runs-on: ubuntu-latest
     steps:
     - name: Checkout Repository
       uses: actions/checkout@v4
+      with:
+          fetch-depth: 0
 
     - name: Install Dependencies
       run: |
@@ -34,32 +40,46 @@ jobs:
       with:
         name: cartogram
         path: ./build/bin/cartogram
+        
+    - name: Generate and Push Tag
+      id: generate_tag
+      run: |
+        # Configure git committer
+        git config --local user.email "action@github.com"
+        git config --local user.name "GitHub Action"
+        # Fetch tags
+        git fetch --tags
+        
+        # Get the latest tag name, default to v1.0.0 if none exists
+        latest_tag=$(git describe --tags `git rev-list --tags --max-count=1` 2>/dev/null || echo "v1.0.0")
+        
+        # Extract the numeric components by stripping the 'v' prefix
+        version=${latest_tag#"v"}
+        # Split into array
+        IFS='.' read -ra version_parts <<< "$version"
+        
+        major=${version_parts[0]}
+        minor=${version_parts[1]}
+        patch=${version_parts[2]}
+        
+        # Increment the patch version
+        new_patch=$((patch + 1))
+        new_tag="v${major}.${minor}.${new_patch}"
+        
+        # Create the new tag
+        git tag -a "${new_tag}" -m "New release ${new_tag}"
+        
+        # Push the tag to the repository
+        git push origin "${new_tag}"
+        
+        echo "new_tag=${new_tag}" >> $GITHUB_OUTPUT
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-  build-and-push-docker:
-    needs: build
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout Repository
-        uses: actions/checkout@v4
-      - name: Download Artifact
-        uses: actions/download-artifact@v4
-        with:
-          name: cartogram
-          path: ./artifact
-      - name: Log in to GitHub Container Registry
-        uses: docker/login-action@v3
-        with:
-          registry: ghcr.io
-          username: ${{ github.repository_owner }}
-          password: ${{ secrets.GITHUB_TOKEN }}
-      - name: Set lowercased repo name
-        id: vars
-        run: echo "lowercase_repo=$(echo ${{ github.repository }} | tr '[:upper:]' '[:lower:]')" >> $GITHUB_ENV
-      - name: Build and Push Docker Image
-        uses: docker/build-push-action@v5
-        with:
-          context: .
-          file: ./docker/Dockerfile
-          push: true
-          tags: ghcr.io/${{ env.lowercase_repo }}/cartogram:latest
-          build-args: CARTOGRAM_BIN=./artifact/cartogram
+    - name: Release
+      uses: softprops/action-gh-release@v2
+      with:
+        tag_name: ${{ steps.generate_tag.outputs.new_tag }}
+        files: build/bin/cartogram
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
