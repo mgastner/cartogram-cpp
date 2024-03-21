@@ -108,7 +108,7 @@ void InsetState::fill_with_density(bool plot_density)
           static_cast<unsigned int>(intersections_at_y.back().x());
         const double last_weight =
           area_error_at(intersections_at_y.back().geo_div_id) *
-          (ceil(last_x) - last_x);
+          (last_x - floor(last_x));
         const double last_target_density =
           intersections_at_y.back().target_density;
         const auto uilx = static_cast<unsigned int>(ceil(left_x) - 1);
