@@ -1,4 +1,4 @@
-#include "inset_state.h"
+#include "inset_state.hpp"
 
 nlohmann::json InsetState::inset_to_geojson(
   bool original_ext_ring_is_clockwise,
@@ -21,15 +21,14 @@ nlohmann::json InsetState::inset_to_geojson(
 
       // Get exterior ring coordinates
       nlohmann::json er_container;
-      for (auto &i : ext_ring) {
-        double arr[2];
-        arr[0] = i[0];
-        arr[1] = i[1];
-        er_container.push_back(arr);
+      for (const auto &i : ext_ring) {
+        er_container.push_back(
+          {CGAL::to_double(i.x()), CGAL::to_double(i.y())});
       }
 
       // Repeat first point as last point as per GeoJSON standards
-      er_container.push_back({ext_ring[0][0], ext_ring[0][1]});
+      er_container.push_back(
+        {CGAL::to_double(ext_ring[0].x()), CGAL::to_double(ext_ring[0].y())});
 
       // Insert exterior ring into a container that stores all exterior and
       // interior rings for this polygon with holes
@@ -37,11 +36,11 @@ nlohmann::json InsetState::inset_to_geojson(
       polygon_container.push_back(er_container);
 
       // Get holes of polygon with holes
-      for (auto h = pwh.holes_begin(); h != pwh.holes_end(); ++h) {
+      for (const auto &h : pwh.holes()) {
 
         // We make a copy called `hole` of *h so that `reverse_orientation()`
         // does not change the original hole
-        Polygon hole = *h;
+        Polygon hole = h;
 
         // Set hole to counter-clockwise if it was originally like that
         if (original_ext_ring_is_clockwise) {
@@ -50,15 +49,14 @@ nlohmann::json InsetState::inset_to_geojson(
 
         // Get hole coordinates
         nlohmann::json hole_container;
-        for (auto &i : hole) {
-          double arr[2];
-          arr[0] = i[0];
-          arr[1] = i[1];
-          hole_container.push_back(arr);
+        for (const auto &i : hole) {
+          hole_container.push_back(
+            {CGAL::to_double(i.x()), CGAL::to_double(i.y())});
         }
 
         // Repeat first point as last point as per GeoJSON standards
-        hole_container.push_back({hole[0][0], hole[0][1]});
+        hole_container.push_back(
+          {CGAL::to_double(hole[0].x()), CGAL::to_double(hole[0].y())});
         polygon_container.push_back(hole_container);
       }
 

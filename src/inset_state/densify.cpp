@@ -1,6 +1,5 @@
-#include "inset_state.h"
-#include "round_point.h"
-#include <CGAL/intersections.h>
+#include "inset_state.hpp"
+#include "round_point.hpp"
 
 // For printing a vector (debugging purposes)
 template <typename A>
@@ -29,10 +28,10 @@ std::ostream &operator<<(std::ostream &cout, std::vector<A> const &v)
 //      coef_x * x + coef_y * y + coef_const = 0.
 // The function returns the unique intersection point between them. If this
 // intersection point does not exist, the function returns the point called
-// OUT_OF_RANGE, which is always outside any graticule grid cell.
+// OUT_OF_RANGE, which is always outside any grid cell.
 Point calc_intersection(
-  const Point a,
-  const Point b,
+  const Point &a,
+  const Point &b,
   const double coef_x,
   const double coef_y,
   const double coef_const)
@@ -62,8 +61,8 @@ Point calc_intersection(
 //   next diagonal.
 void add_diag_inter(
   std::set<Point, decltype(point_less_than) *> *intersections,
-  const Point a,
-  const Point b,
+  const Point &a,
+  const Point &b,
   double slope,
   double base_intercept,
   double step,
@@ -90,8 +89,8 @@ void add_diag_inter(
     //      (where base_intercept = 0.25),
     // where d is the double increasing by `step` after each iteration of the
     // loop.
-    // Steep and antisteep diagonals appear in graticule cells near x = 0
-    // and x = lx. Gentle and antigentle diagonals appear in graticules near
+    // Steep and antisteep diagonals appear in grid cells near x = 0
+    // and x = lx. Gentle and antigentle diagonals appear in grids near
     // y = 0 and y = ly.
     Point inter = calc_intersection(a, b, slope, -1.0, d);
     bool on_left_or_right_edge = inter.x() < 0.5 || inter.x() > (lx - 0.5);
@@ -115,13 +114,13 @@ void add_diag_inter(
 
 // This function takes two points (called pt1 and pt2) and returns all
 // horizontal and vertical intersections of the line segment between pt1 and
-// pt2 with a graticule whose graticule lines are placed one unit apart. The
+// pt2 with a grid whose grid lines are placed one unit apart. The
 // function also returns all intersections with the diagonals of these
-// graticule cells. The function assumes that graticule cells start at
+// grid cells. The function assumes that grid cells start at
 // (0.5, 0.5).
 std::vector<Point> densification_points(
-  const Point pt1,
-  const Point pt2,
+  const Point &pt1,
+  const Point &pt2,
   const unsigned int lx,
   const unsigned int ly)
 {
@@ -220,7 +219,7 @@ void InsetState::densify_geo_divs()
   for (const auto &gd : geo_divs_) {
     GeoDiv gd_dens(gd.id());
     for (const auto &pwh : gd.polygons_with_holes()) {
-      const auto outer = pwh.outer_boundary();
+      const auto &outer = pwh.outer_boundary();
       Polygon outer_dens;
 
       // Iterate over each point in the outer boundary of the polygon
@@ -247,13 +246,13 @@ void InsetState::densify_geo_divs()
       std::vector<Polygon> holes_v_dens;
 
       // Iterate over each hole
-      for (auto h = pwh.holes_begin(); h != pwh.holes_end(); ++h) {
+      for (auto const &h : pwh.holes()) {
         Polygon hole_dens;
-        for (unsigned int j = 0; j < h->size(); ++j) {
+        for (unsigned int j = 0; j < h.size(); ++j) {
 
           // `c` and `d` are determined in the same way as `a` and `b` above
-          const Point c = (*h)[j];
-          const Point d = (j == h->size() - 1) ? (*h)[0] : (*h)[j + 1];
+          const Point c = h[j];
+          const Point d = (j == h.size() - 1) ? h[0] : h[j + 1];
           const std::vector<Point> hole_pts_dens =
             densification_points(c, d, lx_, ly_);
           for (unsigned int i = 0; i < (hole_pts_dens.size() - 1); ++i) {
@@ -270,8 +269,7 @@ void InsetState::densify_geo_divs()
     }
     geodivs_dens.push_back(gd_dens);
   }
-  geo_divs_.clear();
-  geo_divs_ = geodivs_dens;
+  geo_divs_ = std::move(geodivs_dens);
 }
 
 std::vector<Point> densification_points_with_delaunay_t(
@@ -405,7 +403,7 @@ void InsetState::densify_geo_divs_using_delaunay_t()
   for (const auto &gd : geo_divs_) {
     GeoDiv gd_dens(gd.id());
     for (const auto &pwh : gd.polygons_with_holes()) {
-      const auto outer = pwh.outer_boundary();
+      const auto &outer = pwh.outer_boundary();
       Polygon outer_dens;
 
       // Iterate over each point in the outer boundary of the polygon
@@ -431,13 +429,13 @@ void InsetState::densify_geo_divs_using_delaunay_t()
       std::vector<Polygon> holes_v_dens;
 
       // Iterate over each hole
-      for (auto h = pwh.holes_begin(); h != pwh.holes_end(); ++h) {
+      for (auto const &h : pwh.holes()) {
         Polygon hole_dens;
-        for (unsigned int j = 0; j < h->size(); ++j) {
+        for (unsigned int j = 0; j < h.size(); ++j) {
 
           // `c` and `d` are determined in the same way as `a` and `b` above
-          const Point c = (*h)[j];
-          const Point d = (j == h->size() - 1) ? (*h)[0] : (*h)[j + 1];
+          const Point c = h[j];
+          const Point d = (j == h.size() - 1) ? h[0] : h[j + 1];
           const std::vector<Point> hole_pts_dens =
             densification_points_with_delaunay_t(c, d, proj_qd_.dt, lx_, ly_);
           for (unsigned int i = 0; i < (hole_pts_dens.size() - 1); ++i) {
@@ -454,6 +452,5 @@ void InsetState::densify_geo_divs_using_delaunay_t()
     }
     geodivs_dens.push_back(gd_dens);
   }
-  geo_divs_.clear();
-  geo_divs_ = geodivs_dens;
+  geo_divs_ = std::move(geodivs_dens);
 }

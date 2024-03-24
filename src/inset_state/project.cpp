@@ -1,13 +1,12 @@
-#include "interpolate_bilinearly.h"
-#include "matrix.h"
-#include "round_point.h"
-#include <boost/multi_array.hpp>
-#include <iostream>
+#include "inset_state.hpp"
+#include "interpolate_bilinearly.hpp"
+#include "matrix.hpp"
+#include "round_point.hpp"
 
 Point interpolate_point_bilinearly(
   const Point p1,
-  const boost::multi_array<double, 2> *xdisp,
-  const boost::multi_array<double, 2> *ydisp,
+  const boost::multi_array<double, 2> &xdisp,
+  const boost::multi_array<double, 2> &ydisp,
   const unsigned int lx,
   const unsigned int ly)
 {
@@ -27,36 +26,37 @@ void InsetState::project()
 #pragma omp parallel for default(none) shared(xdisp, ydisp)
   for (unsigned int i = 0; i < lx_; ++i) {
     for (unsigned int j = 0; j < ly_; ++j) {
-      xdisp[i][j] = proj_[i][j].x - i - 0.5;
-      ydisp[i][j] = proj_[i][j].y - j - 0.5;
+      xdisp[i][j] = proj_[i][j].x() - i - 0.5;
+      ydisp[i][j] = proj_[i][j].y() - j - 0.5;
     }
   }
 
-  // Cumulative projection
+// Cumulative projection
 #pragma omp parallel for default(none) shared(xdisp, ydisp)
   for (unsigned int i = 0; i < lx_; ++i) {
     for (unsigned int j = 0; j < ly_; ++j) {
 
       // TODO: Should the interpolation be made on the basis of triangulation?
-      // Calculate displacement for cumulative graticule coordinates
-      const double graticule_intp_x = interpolate_bilinearly(
-        cum_proj_[i][j].x,
-        cum_proj_[i][j].y,
-        &xdisp,
+      // Calculate displacement for cumulative grid coordinates
+      const double grid_intp_x = interpolate_bilinearly(
+        cum_proj_[i][j].x(),
+        cum_proj_[i][j].y(),
+        xdisp,
         'x',
         lx_,
         ly_);
-      const double graticule_intp_y = interpolate_bilinearly(
-        cum_proj_[i][j].x,
-        cum_proj_[i][j].y,
-        &ydisp,
+      const double grid_intp_y = interpolate_bilinearly(
+        cum_proj_[i][j].x(),
+        cum_proj_[i][j].y(),
+        ydisp,
         'y',
         lx_,
         ly_);
 
-      // Update cumulative graticule coordinates
-      cum_proj_[i][j].x += graticule_intp_x;
-      cum_proj_[i][j].y += graticule_intp_y;
+      // Update cumulative grid coordinates
+      cum_proj_[i][j] = Point(
+        cum_proj_[i][j].x() + grid_intp_x,
+        cum_proj_[i][j].y() + grid_intp_y);
     }
   }
 
@@ -64,7 +64,7 @@ void InsetState::project()
   // requires one argument (Point p1).
   std::function<Point(Point)> lambda =
     [&xdisp, &ydisp, lx = lx_, ly = ly_](Point p1) {
-      return interpolate_point_bilinearly(p1, &xdisp, &ydisp, lx, ly);
+      return interpolate_point_bilinearly(p1, xdisp, ydisp, lx, ly);
     };
 
   // Apply "lambda" to all points
@@ -72,7 +72,7 @@ void InsetState::project()
 }
 
 Point interpolate_point_with_barycentric_coordinates(
-  const Point p,
+  const Point &p,
   const Delaunay &dt,
   const std::unordered_map<Point, Point> &proj_map)
 {
@@ -132,7 +132,7 @@ void InsetState::exit_if_not_on_grid_or_edge(const Point p1) const
   }
 }
 
-Point InsetState::projected_point(const Point p1, const bool project_original)
+Point InsetState::projected_point(const Point &p1, const bool project_original)
   const
 {
   auto &proj = project_original ? cum_proj_ : proj_;
@@ -145,18 +145,18 @@ Point InsetState::projected_point(const Point p1, const bool project_original)
     static_cast<unsigned int>(ly_) - 1,
     static_cast<unsigned int>(p1.y()));
   return {
-    (p1.x() == 0.0 || p1.x() == lx_) ? p1.x() : proj[proj_x][proj_y].x,
-    (p1.y() == 0.0 || p1.y() == ly_) ? p1.y() : proj[proj_x][proj_y].y};
+    (p1.x() == 0.0 || p1.x() == lx_) ? p1.x() : proj[proj_x][proj_y].x(),
+    (p1.y() == 0.0 || p1.y() == ly_) ? p1.y() : proj[proj_x][proj_y].y()};
 }
 
 // TODO: chosen_diag() seems to be more naturally thought of as a boolean
 //       than an integer.
 
-// For a graticule cell with corners stored in the Point array v, determine
-// whether the diagonal from v[0] to v[2] is inside the graticule cell. If
+// For a grid cell with corners stored in the Point array v, determine
+// whether the diagonal from v[0] to v[2] is inside the grid cell. If
 // yes, return 0. Otherwise, if the diagonal from v[1] to v[3] is inside the
-// graticule cell, return 1. If neither of the two diagonals is inside the
-// graticule cell, then the cell's topology is invalid; thus, we exit with an
+// grid cell, return 1. If neither of the two diagonals is inside the
+// grid cell, then the cell's topology is invalid; thus, we exit with an
 // error message.
 int InsetState::chosen_diag(
   const Point v[4],
@@ -187,23 +187,23 @@ int InsetState::chosen_diag(
     (tv[1].x() + tv[3].x()) / 2,
     (tv[1].y() + tv[3].y()) / 2);
 
-  // Get the transformed graticule cell as a polygon
-  Polygon trans_graticule;
+  // Get the transformed grid cell as a polygon
+  Polygon trans_grid;
   for (auto &i : tv) {
-    trans_graticule.push_back(i);
+    trans_grid.push_back(i);
   }
 
-  // Check if graticule cell is concave
-  if (!trans_graticule.is_convex()) {
+  // Check if grid cell is concave
+  if (!trans_grid.is_convex()) {
     num_concave += 1;
   }
-  if (trans_graticule.bounded_side(midpoint_diag_0) == CGAL::ON_BOUNDED_SIDE) {
+  if (trans_grid.bounded_side(midpoint_diag_0) == CGAL::ON_BOUNDED_SIDE) {
     return 0;
   }
-  if (trans_graticule.bounded_side(midpoint_diag_1) == CGAL::ON_BOUNDED_SIDE) {
+  if (trans_grid.bounded_side(midpoint_diag_1) == CGAL::ON_BOUNDED_SIDE) {
     return 1;
   }
-  std::cerr << "Invalid graticule cell! At\n";
+  std::cerr << "Invalid grid cell! At\n";
   std::cerr << "(" << tv[0].x() << ", " << tv[0].y() << ")\n";
   std::cerr << "(" << tv[1].x() << ", " << tv[1].y() << ")\n";
   std::cerr << "(" << tv[2].x() << ", " << tv[2].y() << ")\n";
@@ -218,15 +218,13 @@ int InsetState::chosen_diag(
   exit(1);
 }
 
-void InsetState::fill_graticule_diagonals(const bool project_original)
+void InsetState::fill_grid_diagonals(const bool project_original)
 {
   // Initialize array if running for the first time
-  if (
-    graticule_diagonals_.shape()[0] != lx_ ||
-    graticule_diagonals_.shape()[1] != ly_) {
-    graticule_diagonals_.resize(boost::extents[lx_ - 1][ly_ - 1]);
+  if (grid_diagonals_.shape()[0] != lx_ || grid_diagonals_.shape()[1] != ly_) {
+    grid_diagonals_.resize(boost::extents[lx_ - 1][ly_ - 1]);
   }
-  unsigned int n_concave = 0;  // Count concave graticule cells
+  unsigned int n_concave = 0;  // Count concave grid cells
 
 #pragma omp parallel for default(none) shared(n_concave, project_original)
   for (unsigned int i = 0; i < lx_ - 1; ++i) {
@@ -236,10 +234,10 @@ void InsetState::fill_graticule_diagonals(const bool project_original)
       v[1] = Point(double(i) + 1.5, double(j) + 0.5);
       v[2] = Point(double(i) + 1.5, double(j) + 1.5);
       v[3] = Point(double(i) + 0.5, double(j) + 1.5);
-      graticule_diagonals_[i][j] = chosen_diag(v, n_concave, project_original);
+      grid_diagonals_[i][j] = chosen_diag(v, n_concave, project_original);
     }
   }
-  std::cerr << "Number of concave graticule cells: " << n_concave << std::endl;
+  std::cerr << "Number of concave grid cells: " << n_concave << std::endl;
 }
 
 std::array<Point, 3> InsetState::transformed_triangle(
@@ -261,7 +259,7 @@ std::array<Point, 3> InsetState::transformed_triangle(
 // This function is needed because, sometimes,
 // `triangle.bounded_side(Point(x, y)) == CGAL::ON_BOUNDARY` does not return
 // `true` even if the point is on the boundary.
-bool is_on_triangle_boundary(const Point pt, const Polygon &triangle)
+bool is_on_triangle_boundary(const Point &pt, const Polygon &triangle)
 {
   for (unsigned int i = 0; i < triangle.size(); ++i) {
     const auto t1 = triangle[i];
@@ -277,9 +275,9 @@ bool is_on_triangle_boundary(const Point pt, const Polygon &triangle)
 
 // Get the untransformed coordinates of the triangle in which the point `pt`
 // is located. After transformation, this triangle must be entirely inside
-// the transformed graticule cell.
+// the transformed grid cell.
 std::array<Point, 3> InsetState::untransformed_triangle(
-  const Point pt,
+  const Point &pt,
   const bool project_original) const
 {
   if (pt.x() < 0 || pt.x() > lx_ || pt.y() < 0 || pt.y() > ly_) {
@@ -289,7 +287,7 @@ std::array<Point, 3> InsetState::untransformed_triangle(
     exit(1);
   }
 
-  // Get original graticule coordinates
+  // Get original grid coordinates
   Point v[4];
   v[0] = Point(
     std::max(0.0, floor(pt.x() + 0.5) - 0.5),
@@ -303,25 +301,25 @@ std::array<Point, 3> InsetState::untransformed_triangle(
   v[3] = Point(v[0].x(), v[2].y());
 
   // TODO: diag SEEMS TO BE MORE NATURALLY THOUGHT OF AS bool INSTEAD OF int.
-  // Assuming that the transformed graticule does not have self-intersections,
-  // at least one of the diagonals must be completely inside the graticule.
-  // We use that diagonal to split the graticule into two triangles.
+  // Assuming that the transformed grid does not have self-intersections,
+  // at least one of the diagonals must be completely inside the grid.
+  // We use that diagonal to split the grid into two triangles.
   int diag;
   if (
     v[0].x() == 0.0 || v[0].y() == 0.0 || v[2].x() == lx_ || v[2].y() == ly_) {
 
-    // Case when the graticule is on the edge of the grid.
-    // We calculate the chosen diagonal because graticule_diagonals_ does not
+    // Case when the grid is on the edge of the grid.
+    // We calculate the chosen diagonal because grid_diagonals_ does not
     // store the diagonals for edge grid cells.
     unsigned int n_concave = 0;
     diag = chosen_diag(v, n_concave, project_original);
   } else {
 
-    // Case when the graticule is not on the edge of the grid. We can find the
-    // already computed chosen diagonal in graticule_diagonals_.
+    // Case when the grid is not on the edge of the grid. We can find the
+    // already computed chosen diagonal in grid_diagonals_.
     const auto x = static_cast<unsigned int>(v[0].x());
     const auto y = static_cast<unsigned int>(v[0].y());
-    diag = graticule_diagonals_[x][y];
+    diag = grid_diagonals_[x][y];
   }
 
   // Get the two possible triangles
@@ -359,10 +357,10 @@ std::array<Point, 3> InsetState::untransformed_triangle(
       triangle_coordinates[i] = triangle2[i];
     }
   } else {
-    std::cerr << "Point not in graticule cell!\n";
+    std::cerr << "Point not in grid cell!\n";
     std::cerr << "Point coordinates:\n";
     std::cerr << "(" << pt.x() << ", " << pt.y() << ")\n";
-    std::cerr << "Original graticule cell:\n";
+    std::cerr << "Original grid cell:\n";
     std::cerr << "(" << v[0].x() << ", " << v[0].y() << ")\n";
     std::cerr << "(" << v[1].x() << ", " << v[1].y() << ")\n";
     std::cerr << "(" << v[2].x() << ", " << v[2].y() << ")\n";
@@ -376,7 +374,7 @@ std::array<Point, 3> InsetState::untransformed_triangle(
 Point affine_trans(
   const std::array<Point, 3> &tri,
   const std::array<Point, 3> &org_tri,
-  const Point pt)
+  const Point &pt)
 {
   // For each point, we make the following transformation. Suppose we find
   // that, before the cartogram transformation, a point (x, y) is in the
@@ -420,7 +418,7 @@ Point affine_trans(
 }
 
 Point InsetState::projected_point_with_triangulation(
-  const Point pt,
+  const Point &pt,
   const bool project_original) const
 {
   // Get the untransformed triangle the point pt is in
@@ -452,11 +450,7 @@ void InsetState::project_with_triangulation()
 #pragma omp parallel for default(none)
   for (unsigned int i = 0; i < lx_; ++i) {
     for (unsigned int j = 0; j < ly_; ++j) {
-      const Point old_cum_proj(cum_proj_[i][j].x, cum_proj_[i][j].y);
-      const auto new_cum_proj_pt =
-        projected_point_with_triangulation(old_cum_proj);
-      cum_proj_[i][j].x = new_cum_proj_pt.x();
-      cum_proj_[i][j].y = new_cum_proj_pt.y();
+      cum_proj_[i][j] = projected_point_with_triangulation(cum_proj_[i][j]);
     }
   }
 }

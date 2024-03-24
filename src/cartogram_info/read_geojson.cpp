@@ -1,7 +1,5 @@
-#include "cartogram_info.h"
+#include "cartogram_info.hpp"
 #include "csv.hpp"
-#include <iostream>
-#include <nlohmann/json.hpp>
 
 void check_geojson_validity(const nlohmann::json &j)
 {
@@ -172,7 +170,7 @@ void print_properties_map(
 void CartogramInfo::read_geojson(
   const std::string &geometry_file_name,
   const bool make_csv,
-  std::string *crs)
+  std::string &crs)
 {
   // Open file
   std::ifstream in_file(geometry_file_name);
@@ -197,7 +195,7 @@ void CartogramInfo::read_geojson(
 
   // Read coordinate reference system if it is included in the GeoJSON
   if (j.contains(std::string{"crs"})) {
-    *crs = j["crs"]["properties"]["name"];
+    crs = j["crs"]["properties"]["name"];
   }
 
   // Iterate over each inset
@@ -206,6 +204,18 @@ void CartogramInfo::read_geojson(
       const auto geometry = feature["geometry"];
       const bool is_polygon = (geometry["type"] == "Polygon");
       if (!make_csv) {
+
+        // remove non characters from id_header_
+        std::string id_header = id_header_;
+        id_header.erase(
+          std::remove_if(
+            id_header.begin(),
+            id_header.end(),
+            [](unsigned char x) {
+              return x < 0 || x > 127;
+            }),
+          id_header.end());
+        id_header_ = id_header;
 
         // Store ID from properties
         const auto properties = feature["properties"];

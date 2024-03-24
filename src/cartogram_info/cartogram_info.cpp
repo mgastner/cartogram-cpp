@@ -1,13 +1,14 @@
-#include "cartogram_info.h"
+#include "cartogram_info.hpp"
+#include "constants.hpp"
 #include <iostream>
 #include <utility>
 
-CartogramInfo::CartogramInfo(const bool w, std::string v)
+CartogramInfo::CartogramInfo(const bool w, const std::string &v)
     : is_world_map_(w), visual_variable_file_(std::move(v))
 {
 }
 
-double CartogramInfo::cart_total_target_area() const
+double CartogramInfo::cart_initial_total_target_area() const
 {
   double target_area = 0.0;
 
@@ -16,7 +17,7 @@ double CartogramInfo::cart_total_target_area() const
   // the-values-of-a-map-using-a-range-based-for-loop
   for (const auto &inset_info : inset_states_) {
     auto &inset_state = inset_info.second;
-    target_area += inset_state.total_target_area();
+    target_area += inset_state.initial_target_area();
   }
   return target_area;
 }
@@ -55,9 +56,9 @@ unsigned int CartogramInfo::n_insets() const
   return inset_states_.size();
 }
 
-std::map<std::string, InsetState> *CartogramInfo::ref_to_inset_states()
+std::map<std::string, InsetState> &CartogramInfo::ref_to_inset_states()
 {
-  return &inset_states_;
+  return inset_states_;
 }
 
 void CartogramInfo::replace_missing_and_zero_target_areas()
@@ -75,10 +76,18 @@ void CartogramInfo::replace_missing_and_zero_target_areas()
     }
   }
 
+  const double mean_density =
+    total_target_area_with_data / total_start_area_with_data;
+
+  std::cerr << "Mean density: " << mean_density << std::endl;
+
   // Calculate threshold for small target areas. For GeoDivs below this
   // threshold, the target area is scaled up for easier calculation.
   const double small_target_area_threshold =
-    total_target_area_with_data * 0.0001;
+    total_target_area_with_data * small_area_threshold_frac;
+
+  std::cerr << "Using Small target area threshold: "
+            << small_target_area_threshold << std::endl;
 
   // Check whether target areas exist that are missing or very small
   bool small_target_area_exists = false;
@@ -103,10 +112,10 @@ void CartogramInfo::replace_missing_and_zero_target_areas()
     double replacement_target_area;
 
     // We replace the zero and small areas, if any, with
-    // small_area_absolute_threshold if not all target areas are initially
+    // small_target_area_threshold if not all target areas are initially
     // missing or zero
     if (small_target_area_threshold > 0.0) {
-      std::cerr << "Replacing small target areas." << std::endl;
+      std::cerr << "Replacing small target areas..." << std::endl;
       replacement_target_area = small_target_area_threshold;
     } else {
 
@@ -135,13 +144,22 @@ void CartogramInfo::replace_missing_and_zero_target_areas()
         if (
           (target_area >= 0.0) &&
           (target_area <= small_target_area_threshold)) {
-          inset_state.replace_target_area(gd.id(), replacement_target_area);
+
+          // Do not allow the replacement target area to be smaller than the
+          // GeoDiv's target area
+          double gd_specific_replacement_target_area = std::max(
+            std::min(replacement_target_area, gd.area() * mean_density),
+            target_area);
+          inset_state.replace_target_area(
+            gd.id(),
+            gd_specific_replacement_target_area);
           std::cerr << gd.id() << ": " << target_area << " to "
-                    << replacement_target_area << std::endl;
+                    << gd_specific_replacement_target_area
+                    << " Area: " << gd.area() << "\n";
 
           // Update total target area
           total_target_area_with_data +=
-            (replacement_target_area - target_area);
+            (gd_specific_replacement_target_area - target_area);
         }
       }
     }
@@ -164,9 +182,9 @@ void CartogramInfo::replace_missing_and_zero_target_areas()
           } else {
 
             // Replace target_area
-            const double mean_density =
+            const double adjusted_mean_density =
               total_target_area_with_data / total_start_area_with_data;
-            new_target_area = mean_density * gd.area();
+            new_target_area = adjusted_mean_density * gd.area();
           }
           inset_state.replace_target_area(gd.id(), new_target_area);
         }

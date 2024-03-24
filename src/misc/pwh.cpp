@@ -1,12 +1,12 @@
-#include "pwh.h"
+#include "pwh.hpp"
 
 double pwh_area(const Polygon_with_holes &pwh)
 {
   double a = 0.0;
   const Polygon &ext_ring = pwh.outer_boundary();
   a += ext_ring.area();
-  for (auto h = pwh.holes_begin(); h != pwh.holes_end(); ++h) {
-    a += h->area();
+  for (const auto &h : pwh.holes()) {
+    a += h.area();
   }
   return a;
 }

@@ -1,4 +1,4 @@
-#include "inset_state.h"
+#include "inset_state.hpp"
 
 // TODO: THE OUTPUT FROM intersec_with_parallel_to() ALWAYS
 // SEEM TO COME WITH A NEED TO SORT AFTERWARDS. SHOULD SORTING BECOME PART of
@@ -40,7 +40,7 @@ std::vector<std::vector<intersection> > InsetState::intersec_with_parallel_to(
            ++k) {
 
         // If the rays are in x-direction, iterate over each ray between the
-        // graticule lines y = k and y = k+1. Otherwise, iterate over each
+        // grid lines y = k and y = k+1. Otherwise, iterate over each
         // ray between x = k and x = k+1.
         for (double ray = k + 0.5 / resolution; ray < k + 1;
              ray += (1.0 / resolution)) {
@@ -70,10 +70,10 @@ std::vector<std::vector<intersection> > InsetState::intersec_with_parallel_to(
             axis);
 
           // Run algorithm on each hole
-          for (auto h = pwh.holes_begin(); h != pwh.holes_end(); ++h) {
+          for (const auto &h : pwh.holes()) {
             add_intersections(
               intersections,
-              *h,
+              h,
               ray,
               target_density,
               epsilon,

@@ -1,25 +1,49 @@
-#include "inset_state.h"
-#include "constants.h"
-#include "round_point.h"
-#include <cmath>
-#include <iostream>
-#include <utility>
-
-InsetState::InsetState()
-{
-  initial_area_ = 0.0;
-  n_finished_integrations_ = 0;
-}
+#include "inset_state.hpp"
+#include "constants.hpp"
 
 InsetState::InsetState(std::string pos) : pos_(std::move(pos))
 {
   initial_area_ = 0.0;
   n_finished_integrations_ = 0;
+  dens_min_ = 0.0;
+  dens_mean_ = 0.0;
+  dens_max_ = 0.0;
+  latt_const_ = 0.0;
+  initial_target_area_ = 0.0;
 }
 
+double InsetState::blur_width() const
+{
+
+  // Blur density to speed up the numerics in flatten_density() below.
+  // We slowly reduce the blur width so that the areas can reach their
+  // target values.
+  // TODO: whenever blur_width hits 0, the maximum area error will start
+  //       increasing again and eventually lead to an invalid grid
+  //       cell error when projecting with triangulation. Investigate
+  //       why. As a temporary fix, we set blur_width to be always
+  //       positive, regardless of the number of integrations.
+  const unsigned int blur_default_pow = static_cast<unsigned int>(
+    6 + log2(std::max(lx(), ly()) / default_long_grid_length));
+  double blur_width =
+    std::pow(2.0, blur_default_pow - (0.5 * int(n_finished_integrations_)));
+
+  // if (inset_state.n_finished_integrations() < max_integrations) {
+  //   blur_width =
+  //     std::pow(2.0, 5 - int(inset_state.n_finished_integrations()));
+  // } else {
+  //   blur_width = 0.0;
+  // }
+  return blur_width;
+}
+
+// TODO: For the vertices of a square, there are two possible Delaunay
+// triangulations. In the current version, we lack control over the
+// triangulation chosen by CGAL. Ideally, the triangulation should be selected
+// that uses the shorter diagonal as a triangle edge.
 void InsetState::create_delaunay_t()
 {
-  // Store all the polygon vertices in std::unordered_map to remove
+  // Store all the polygon vertices in std::unordered_set to remove
   // duplicates
   std::unordered_set<Point> points;
 
@@ -28,26 +52,15 @@ void InsetState::create_delaunay_t()
   points.max_load_factor(0.5);
   for (const auto &gd : geo_divs_) {
     for (const auto &pwh : gd.polygons_with_holes()) {
-      const Polygon ext_ring = pwh.outer_boundary();
+      const Polygon &ext_ring = pwh.outer_boundary();
 
       // Get exterior ring coordinates
-      for (const auto &i : ext_ring) {
-        points.insert(Point(i[0], i[1]));
-      }
+      points.insert(ext_ring.begin(), ext_ring.end());
 
       // Get holes of polygon with holes
-      //      for (auto hci = pwh.holes_begin(); hci != pwh.holes_end(); ++hci)
-      //      {
-      //        const Polygon &hole = *hci;
-      //        for (auto i : hole) {
-      //          points.insert(Point(i[0], i[1]));
-      //        }
-      //      }
-      for (auto hci = pwh.holes_begin(); hci != pwh.holes_end(); ++hci) {
-        const Polygon &hole = *hci;
-        for (const auto &i : hole) {
-          points.insert(Point(i[0], i[1]));
-        }
+
+      for (const auto &h : pwh.holes()) {
+        points.insert(h.begin(), h.end());
       }
     }
   }
@@ -78,11 +91,17 @@ void InsetState::create_delaunay_t()
   // Clear corner points from last iteration
   unique_quadtree_corners_.clear();
 
+  // Clear the vector of bounding boxes
+  quadtree_bboxes_.clear();
+
   // Get unique quadtree corners
   for (const auto &node : qt.traverse<CGAL::Orthtrees::Leaves_traversal>()) {
 
     // Get bounding box of the leaf node
     const Bbox bbox = qt.bbox(node);
+
+    // Store the bounding box
+    quadtree_bboxes_.push_back(bbox);
 
     // check if points are between lx_ and ly_
     if (
@@ -130,9 +149,8 @@ Bbox InsetState::bbox(bool original_bbox) const
   double inset_ymin = dbl_inf;
   double inset_ymax = -dbl_inf;
 #pragma omp parallel for default(none) shared(geo_divs) \
-  reduction(min                                         \
-            : inset_xmin, inset_ymin) reduction(max     \
-                                                : inset_xmax, inset_ymax)
+  reduction(min : inset_xmin, inset_ymin)               \
+  reduction(max : inset_xmax, inset_ymax)
   for (const auto &gd : geo_divs) {
     for (const auto &pwh : gd.polygons_with_holes()) {
       const auto bb = pwh.bbox();
@@ -165,6 +183,12 @@ unsigned int InsetState::colors_size() const
   return colors_.size();
 }
 
+void InsetState::destroy_fftw_plans_for_flux()
+{
+  grid_fluxx_init_.destroy_fftw_plan();
+  grid_fluxy_init_.destroy_fftw_plan();
+}
+
 void InsetState::destroy_fftw_plans_for_rho()
 {
   fftw_destroy_plan(fwd_plan_for_rho_);
@@ -176,12 +200,18 @@ void InsetState::execute_fftw_bwd_plan() const
   fftw_execute(bwd_plan_for_rho_);
 }
 
+void InsetState::execute_fftw_plans_for_flux()
+{
+  grid_fluxx_init_.execute_fftw_plan();
+  grid_fluxy_init_.execute_fftw_plan();
+}
+
 void InsetState::execute_fftw_fwd_plan() const
 {
   fftw_execute(fwd_plan_for_rho_);
 }
 
-std::vector<GeoDiv> InsetState::geo_divs() const
+const std::vector<GeoDiv> &InsetState::geo_divs() const
 {
   return geo_divs_;
 }
@@ -198,21 +228,30 @@ void InsetState::initialize_cum_proj()
 #pragma omp parallel for default(none)
   for (unsigned int i = 0; i < lx_; ++i) {
     for (unsigned int j = 0; j < ly_; ++j) {
-      cum_proj_[i][j].x = i + 0.5;
-      cum_proj_[i][j].y = j + 0.5;
+      cum_proj_[i][j] = Point(i + 0.5, j + 0.5);
     }
   }
 }
 
-void InsetState::insert_color(const std::string &id, const Color c)
+void InsetState::initialize_identity_proj()
+{
+  identity_proj_.resize(boost::extents[lx_][ly_]);
+  for (unsigned int i = 0; i < lx_; ++i) {
+    for (unsigned int j = 0; j < ly_; ++j) {
+      identity_proj_[i][j] = Point(i + 0.5, j + 0.5);
+    }
+  }
+}
+
+void InsetState::insert_color(const std::string &id, const Color &c)
 {
   if (colors_.count(id)) {
     colors_.erase(id);
   }
-  colors_.insert(std::pair<std::string, Color>(id, c));
+  colors_.insert({id, c});
 }
 
-void InsetState::insert_color(const std::string &id, std::string color)
+void InsetState::insert_color(const std::string &id, std::string &color)
 {
   if (colors_.count(id)) {
     colors_.erase(id);
@@ -222,25 +261,24 @@ void InsetState::insert_color(const std::string &id, std::string color)
   // https://stackoverflow.com/questions/313970/how-to-convert-stdstring-to-lower-case
   std::transform(color.begin(), color.end(), color.begin(), ::tolower);
   const Color c(color);
-  colors_.insert(std::pair<std::string, Color>(id, c));
+  colors_.insert({id, c});
 }
 
 void InsetState::insert_label(const std::string &id, const std::string &label)
 {
-  labels_.insert(std::pair<std::string, std::string>(id, label));
+  labels_.insert({id, label});
 }
 
 void InsetState::insert_target_area(const std::string &id, const double area)
 {
-  target_areas_.insert(std::pair<std::string, double>(id, area));
+  target_areas_.insert({id, area});
 }
 
 void InsetState::insert_whether_input_target_area_is_missing(
   const std::string &id,
   const bool is_missing)
 {
-  is_input_target_area_missing_.insert(
-    std::pair<std::string, bool>(id, is_missing));
+  is_input_target_area_missing_.insert({id, is_missing});
 }
 
 std::string InsetState::inset_name() const
@@ -248,9 +286,24 @@ std::string InsetState::inset_name() const
   return inset_name_;
 }
 
+double InsetState::initial_area() const
+{
+  return initial_area_;
+}
+
+double InsetState::initial_target_area() const
+{
+  return initial_target_area_;
+}
+
 bool InsetState::is_input_target_area_missing(const std::string &id) const
 {
   return is_input_target_area_missing_.at(id);
+}
+
+double InsetState::latt_const() const
+{
+  return latt_const_;
 }
 
 unsigned int InsetState::lx() const
@@ -283,10 +336,17 @@ void InsetState::make_fftw_plans_for_rho()
     FFTW_ESTIMATE);
 }
 
+void InsetState::make_fftw_plans_for_flux()
+{
+  grid_fluxx_init_.make_fftw_plan(FFTW_RODFT01, FFTW_REDFT01);
+  grid_fluxy_init_.make_fftw_plan(FFTW_REDFT01, FFTW_RODFT01);
+}
+
 struct max_area_error_info InsetState::max_area_error() const
 {
-  double value = -dbl_inf;
-  std::string worst_gd;
+  auto it = area_errors_.begin();
+  std::string worst_gd = it->first;
+  double value = it->second;
   for (const auto &[gd_id, area_error] : area_errors_) {
     if (area_error > value) {
       value = area_error;
@@ -352,14 +412,24 @@ void InsetState::push_back(const GeoDiv &gd)
   geo_divs_.push_back(gd);
 }
 
-FTReal2d *InsetState::ref_to_rho_ft()
+FTReal2d &InsetState::ref_to_fluxx_init()
 {
-  return &rho_ft_;
+  return grid_fluxx_init_;
 }
 
-FTReal2d *InsetState::ref_to_rho_init()
+FTReal2d &InsetState::ref_to_fluxy_init()
 {
-  return &rho_init_;
+  return grid_fluxy_init_;
+}
+
+FTReal2d &InsetState::ref_to_rho_ft()
+{
+  return rho_ft_;
+}
+
+FTReal2d &InsetState::ref_to_rho_init()
+{
+  return rho_init_;
 }
 
 void InsetState::remove_tiny_polygons(const double &minimum_polygon_size)
@@ -383,13 +453,17 @@ void InsetState::remove_tiny_polygons(const double &minimum_polygon_size)
     }
     geo_divs_cleaned.push_back(gd_cleaned);
   }
-  geo_divs_.clear();
-  geo_divs_ = geo_divs_cleaned;
+  geo_divs_ = std::move(geo_divs_cleaned);
 }
 
 void InsetState::replace_target_area(const std::string &id, const double area)
 {
   target_areas_[id] = area;
+}
+
+void InsetState::reset_n_finished_integrations()
+{
+  n_finished_integrations_ = 0;
 }
 
 void InsetState::set_area_errors()
@@ -399,15 +473,51 @@ void InsetState::set_area_errors()
   double sum_target_area = 0.0;
   double sum_cart_area = 0.0;
 
-#pragma omp parallel for default(none) reduction(+ : sum_target_area, sum_cart_area)
+#pragma omp parallel for default(none) \
+  reduction(+ : sum_target_area, sum_cart_area)
   for (const auto &gd : geo_divs_) {
     sum_target_area += target_area_at(gd.id());
     sum_cart_area += gd.area();
   }
+
+#pragma omp parallel for default(none) shared(sum_cart_area, sum_target_area)
   for (const auto &gd : geo_divs_) {
     const double obj_area =
       target_area_at(gd.id()) * sum_cart_area / sum_target_area;
     area_errors_[gd.id()] = std::abs((gd.area() / obj_area) - 1);
+  }
+}
+
+void InsetState::adjust_grid()
+{
+  unsigned int long_grid_length = std::max(lx_, ly_);
+  double curr_max_area_error = max_area_error().value;
+  unsigned int grid_factor =
+    (long_grid_length > default_long_grid_length) ? 2 : default_grid_factor;
+  max_area_errors_.push_back(curr_max_area_error);
+  if (
+    n_finished_integrations_ >= 2 &&
+    curr_max_area_error > max_area_errors_[n_finished_integrations_ - 1] &&
+    curr_max_area_error > max_area_errors_[n_finished_integrations_ - 2]) {
+
+    // Multiply grid size with factor
+    std::cerr << "Adjusting grid size." << std::endl;
+    if (
+      lx_ * grid_factor > max_allowed_grid_length or
+      ly_ * grid_factor > max_allowed_grid_length) {
+      std::cerr << "Cannot increase grid size further. ";
+      std::cerr << "Grid size exceeds maximum allowed grid length."
+                << std::endl;
+      return;
+    }
+    lx_ *= grid_factor;
+    ly_ *= grid_factor;
+
+    // Reallocate FFTW plans
+    ref_to_rho_init().allocate(lx_, ly_);
+    ref_to_rho_ft().allocate(lx_, ly_);
+    make_fftw_plans_for_rho();
+    std::cerr << "New grid dimensions: " << lx_ << " " << ly_ << std::endl;
   }
 }
 
@@ -427,6 +537,11 @@ void InsetState::set_inset_name(const std::string &inset_name)
 void InsetState::store_initial_area()
 {
   initial_area_ = total_inset_area();
+}
+
+void InsetState::store_initial_target_area()
+{
+  initial_target_area_ = total_target_area();
 }
 
 bool InsetState::target_area_is_missing(const std::string &id) const
@@ -483,10 +598,10 @@ void InsetState::transform_points(
   for (auto &gd : geo_divs) {
 
     // Iterate over Polygon_with_holes
-    for (auto &pwh : *gd.ref_to_polygons_with_holes()) {
+    for (auto &pwh : gd.ref_to_polygons_with_holes()) {
 
       // Get outer boundary
-      auto &outer_boundary = *(&pwh.outer_boundary());
+      auto &outer_boundary = pwh.outer_boundary();
 
       // Iterate over outer boundary's coordinates
       for (auto &coords_outer : outer_boundary) {
@@ -496,10 +611,10 @@ void InsetState::transform_points(
       }
 
       // Iterate over holes
-      for (auto h = pwh.holes_begin(); h != pwh.holes_end(); ++h) {
+      for (auto &h : pwh.holes()) {
 
         // Iterate over hole's coordinates
-        for (auto &coords_hole : *h) {
+        for (auto &coords_hole : h) {
 
           // Assign hole's coordinates to transformed coordinates
           coords_hole = transform_point(coords_hole);
@@ -507,4 +622,9 @@ void InsetState::transform_points(
       }
     }
   }
+}
+
+void InsetState::set_geo_divs(std::vector<GeoDiv> new_geo_divs)
+{
+  geo_divs_ = std::move(new_geo_divs);
 }
