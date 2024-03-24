@@ -74,6 +74,10 @@ void CartogramInfo::read_csv(const argparse::ArgumentParser &arguments)
     // Parsed area string will be stored here
     double area;
 
+    if (area_as_str.empty()) {
+      area_as_str = "NA";
+    }
+
     if (!StringToDecimalConverter::is_str_valid_characters(area_as_str)) {
       std::cerr << "ERROR: Invalid area string: " << area_as_str << std::endl;
       std::cerr
