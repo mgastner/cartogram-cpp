@@ -1,13 +1,12 @@
-#include "geo_div.h"
-#include "cgal_typedef.h"
-#include "constants.h"
-#include <utility>
+#include "geo_div.hpp"
+#include "constants.hpp"
+#include "intersection.hpp"
 
 GeoDiv::GeoDiv() = default;
 
 GeoDiv::GeoDiv(std::string i) : id_(std::move(i)) {}
 
-std::set<std::string> GeoDiv::adjacent_geodivs() const
+const std::set<std::string> &GeoDiv::adjacent_geodivs() const
 {
   return adjacent_geodivs_;
 }
@@ -26,9 +25,32 @@ double GeoDiv::area() const
   return a;
 }
 
-std::string GeoDiv::id() const
+// Find joint bounding for all polygons with holes in this geo_div
+Bbox GeoDiv::bbox() const
+{
+  double geo_div_xmin = dbl_inf;
+  double geo_div_xmax = -dbl_inf;
+  double geo_div_ymin = dbl_inf;
+  double geo_div_ymax = -dbl_inf;
+  for (const auto &pwh : polygons_with_holes_) {
+    const auto bb = pwh.bbox();
+    geo_div_xmin = std::min(bb.xmin(), geo_div_xmin);
+    geo_div_ymin = std::min(bb.ymin(), geo_div_ymin);
+    geo_div_xmax = std::max(bb.xmax(), geo_div_xmax);
+    geo_div_ymax = std::max(bb.ymax(), geo_div_ymax);
+  }
+  Bbox geo_div_bbox(geo_div_xmin, geo_div_ymin, geo_div_xmax, geo_div_ymax);
+  return geo_div_bbox;
+}
+
+const std::string &GeoDiv::id() const
 {
   return id_;
+}
+
+void GeoDiv::clear_min_ellipses()
+{
+  min_ellipses_.clear();
 }
 
 Polygon_with_holes GeoDiv::largest_polygon_with_holes() const
@@ -39,15 +61,20 @@ Polygon_with_holes GeoDiv::largest_polygon_with_holes() const
     double area = 0.0;
     const auto &ext_ring = pwh.outer_boundary();
     area += ext_ring.area();
-    for (auto h = pwh.holes_begin(); h != pwh.holes_end(); ++h) {
-      area += h->area();
+    for (auto const &h : pwh.holes()) {
+      area += h.area();
     }
     if (area > max_area) {
       max_area = area;
-      largest_pwh = Polygon_with_holes(pwh);
+      largest_pwh = pwh;
     }
   }
   return largest_pwh;
+}
+
+const std::vector<Ellipse> &GeoDiv::min_ellipses() const
+{
+  return min_ellipses_;
 }
 
 unsigned int GeoDiv::n_points() const
@@ -56,8 +83,8 @@ unsigned int GeoDiv::n_points() const
   for (const auto &pwh : polygons_with_holes_) {
     const auto &outer = pwh.outer_boundary();
     n_points += outer.size();
-    for (auto h = pwh.holes_begin(); h != pwh.holes_end(); ++h) {
-      n_points += h->size();
+    for (auto const &h : pwh.holes()) {
+      n_points += h.size();
     }
   }
   return n_points;
@@ -70,6 +97,11 @@ unsigned int GeoDiv::n_rings() const
     n_rings += pwh.number_of_holes() + 1;  // Add 1 for external ring
   }
   return n_rings;
+}
+
+unsigned int GeoDiv::n_polygons_with_holes() const
+{
+  return polygons_with_holes_.size();
 }
 
 // TODO: IS THIS THE USUAL DEFINITION OF point_on_surface()? SHOULD IT NOT BE
@@ -103,8 +135,8 @@ Point GeoDiv::point_on_surface_of_polygon_with_holes(
     'x');
 
   // Store hole intersections
-  for (auto hci = pwh.holes_begin(); hci != pwh.holes_end(); ++hci) {
-    add_intersections(intersections, *hci, line_y, 0, epsilon, id_, 'x');
+  for (const auto &h : pwh.holes()) {
+    add_intersections(intersections, h, line_y, 0, epsilon, id_, 'x');
   }
   std::sort(intersections.begin(), intersections.end());
 
@@ -140,9 +172,14 @@ Point GeoDiv::point_on_surface_of_polygon_with_holes(
   return {mid_x, line_y};
 }
 
-std::vector<Polygon_with_holes> GeoDiv::polygons_with_holes() const
+const std::vector<Polygon_with_holes> &GeoDiv::polygons_with_holes() const
 {
   return polygons_with_holes_;
+}
+
+void GeoDiv::push_back(const Ellipse &ell)
+{
+  min_ellipses_.push_back(ell);
 }
 
 void GeoDiv::push_back(const Polygon_with_holes &pwh)
@@ -150,9 +187,9 @@ void GeoDiv::push_back(const Polygon_with_holes &pwh)
   polygons_with_holes_.push_back(pwh);
 }
 
-std::vector<Polygon_with_holes> *GeoDiv::ref_to_polygons_with_holes()
+std::vector<Polygon_with_holes> &GeoDiv::ref_to_polygons_with_holes()
 {
-  return &polygons_with_holes_;
+  return polygons_with_holes_;
 }
 
 void GeoDiv::sort_pwh_descending_by_area()

@@ -1,18 +1,18 @@
-#include "cartogram_info.h"
+#include "cartogram_info.hpp"
 #include "csv.hpp"
-#include <string>
+#include "string_to_decimal_converter.hpp"
 
 void CartogramInfo::read_csv(const argparse::ArgumentParser &arguments)
 {
+  // Retrieve CSV Name
+  const std::string csv_name =
+    arguments.get<std::string>("visual_variable_file");
 
-  // Retrieve CSV Name.
-  auto csv_name = arguments.get<std::string>("visual_variable_file");
-
-  // Open CSV Reader.
+  // Open CSV Reader
   csv::CSVReader reader(csv_name);
 
   // Find index of column with IDs. If no ID column header was passed with the
-  // command-line flag --id, the ID column is assumed to have index 0.
+  // command-line flag --id, the ID column is assumed to have index 0
   auto is_id_header = arguments.present<std::string>("-D");
   int id_col = 0;
   if (is_id_header) {
@@ -24,7 +24,7 @@ void CartogramInfo::read_csv(const argparse::ArgumentParser &arguments)
 
   // Find index of column with target areas. If no area column header was
   // passed with the command-line flag --area, the area column is assumed to
-  // have index 1.
+  // have index 1
   int area_col = 1;
   if (auto area_header = arguments.present<std::string>("-A")) {
     std::cerr << "Area Header: " << *area_header << std::endl;
@@ -33,7 +33,7 @@ void CartogramInfo::read_csv(const argparse::ArgumentParser &arguments)
 
   // Find index of column with inset specifiers. If no inset column header was
   // passed with the command-line flag --inset, the header is assumed to be
-  // "Inset".
+  // "Inset". This default value is set in parse_arguments.cpp.
   auto inset_header = arguments.get<std::string>("-I");
   int inset_col = reader.index_of(inset_header);
 
@@ -67,40 +67,42 @@ void CartogramInfo::read_csv(const argparse::ArgumentParser &arguments)
     }
     ids_in_visual_variables_file_.insert(id);
 
-    // Get target area
+    // Get target area as string
     csv::CSVField area_field = row[area_col];
+    std::string area_as_str = area_field.get();
+
+    // Parsed area string will be stored here
     double area;
-    if (area_field.is_num()) {
-      area = area_field.get<double>();
-      if (area < 0.0) {
-        std::cerr << "ERROR: negative area in CSV" << std::endl;
-        _Exit(101);
-      }
+
+    if (area_as_str.empty()) {
+      area_as_str = "NA";
+    }
+
+    if (!StringToDecimalConverter::is_str_valid_characters(area_as_str)) {
+      std::cerr << "ERROR: Invalid area string: " << area_as_str << std::endl;
+      std::cerr
+        << "Area string must only contain 0-9, '.', '-' and ',' or 'NA'."
+        << std::endl;
+      _Exit(18);
+    }
+
+    if (
+      !StringToDecimalConverter::is_str_NA(area_as_str) and
+      !StringToDecimalConverter::is_str_correct_format(area_as_str)) {
+      std::cerr << "ERROR: Invalid area string format: " << area_as_str
+                << std::endl;
+      _Exit(19);
+    }
+
+    if (StringToDecimalConverter::is_str_NA(area_as_str)) {
+      area = -1.0;
     } else {
-      std::string area_as_str = area_field.get();
+      area = StringToDecimalConverter::parse_str(area_as_str);
+    }
 
-      // With inspiration from:
-      // https://stackoverflow.com/questions/2684491/remove-commas-from-string
-      area_as_str.erase(
-        std::remove(area_as_str.begin(), area_as_str.end(), ','),
-        area_as_str.end());
-
-      // Check if areas is missing or "NA"
-      if (area_as_str.empty() || area_as_str == "NA") {
-        area = -1.0;  // Use negative area as sign of a missing value
-      }
-      // With inspiration from:
-      // https://stackoverflow.com/questions/4654636/how-to-determine-if-a-string-is-a-number-with-c
-      else if (std::all_of(
-                 area_as_str.begin(),
-                 area_as_str.end(),
-                 ::isdigit)) {
-        area = std::stod(area_as_str);
-      } else {
-        std::cerr << "area_field: " << area_as_str << std::endl;
-        std::cerr << "ERROR: Areas must be numeric or NA" << std::endl;
-        _Exit(201);
-      }
+    if (area < 0.0 and !StringToDecimalConverter::is_str_NA(area_as_str)) {
+      std::cerr << "ERROR: Negative area in CSV" << std::endl;
+      _Exit(101);
     }
 
     // Read color

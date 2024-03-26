@@ -1,12 +1,11 @@
-#include "round_point.h"
-#include "constants.h"
-#include <bit>
+#include "round_point.hpp"
+#include "constants.hpp"
 
 // TODO: THE COMMENTED-OUT CODE TREATED DIFFERENCES OF 1e-13 TO BE
 //       DISTINGUISHABLE, WHICH WAS TOO STRICT IN PRACTICE. AS A TEMPORARY
 //       FIX, dbl_resolution IS HARDCODED. WOULD IT BE POSSIBLE TO REMOVE
 //       almost_equal() IF WE USE Simple_cartesian INSTEAD OF EPICK?
-// Use machine epsilon (defined in constants.h) to get almost equal doubles.
+// Use machine epsilon (defined in constants.hpp) to get almost equal doubles.
 // From https://en.cppreference.com/w/cpp/types/numeric_limits/epsilon
 // bool almost_equal(const double a, const double b) {
 //   return std::fabs(a - b) <= dbl_epsilon * std::fabs(a + b) * 2 ||
@@ -18,11 +17,11 @@ bool almost_equal(const double a, const double b)
 }
 
 // Determine whether points are almost equal
-bool points_almost_equal(const Point a, const Point b)
+bool points_almost_equal(const Point &a, const Point &b)
 {
   return (almost_equal(a.x(), b.x()) && almost_equal(a.y(), b.y()));
 }
-bool point_less_than(const Point a, const Point b)
+bool point_less_than(const Point &a, const Point &b)
 {
   return !(points_almost_equal(a, b) || a >= b);
 }
@@ -46,7 +45,7 @@ double rounded_to_bicimal(
 }
 
 Point rounded_point(
-  const Point a,
+  const Point &a,
   const unsigned int lx,
   const unsigned int ly)
 {

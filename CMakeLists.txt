@@ -1,114 +1,130 @@
-# Setting up CMake Project
-cmake_minimum_required(VERSION 3.1)
+cmake_minimum_required(VERSION 3.27)
 project(cartogram LANGUAGES CXX)
 
-# Setting compile options.
+# ========== Project Setup ==========
 set(CMAKE_CXX_STANDARD 20)
 set(THREADS_PREFER_PTHREAD_FLAG ON)
-
-# Setting CMake build options, adding path for binary.
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
 
-# Release mode by default, unless specified
-# https://stackoverflow.com/questions/48832233/
-# have-a-cmake-project-default-to-the-release-build-type
-if (NOT CMAKE_BUILD_TYPE)
+# Default build type
+if(NOT CMAKE_BUILD_TYPE)
   set(CMAKE_BUILD_TYPE "Release" CACHE STRING "" FORCE)
 endif()
 
-# Lots of warnings.
-add_compile_options(-Wall -Wextra -pedantic)
+# ========== Dependencies Setup ==========
 
-# Finding appropriate packages.
-find_package(OpenMP REQUIRED)
+# Boost
+find_package(Boost REQUIRED COMPONENTS unit_test_framework)
+
+# Matplot++
+find_package(Matplot++ REQUIRED)
+
+# PkgConfig, fftw, and cairo
 find_package(PkgConfig REQUIRED)
+pkg_search_module(fftw REQUIRED fftw3 IMPORTED_TARGET)
+pkg_search_module(CAIRO REQUIRED CAIRO IMPORTED_TARGET)
 
-# Finding and linking FFTW, and Cairo using PkgConfig.
-pkg_search_module(FFTW REQUIRED fftw3 IMPORTED_TARGET)
-pkg_search_module(Cairo REQUIRED cairo IMPORTED_TARGET)
-include_directories(PkgConfig::FFTW PkgConfig::Cairo)
-link_libraries(PkgConfig::FFTW PkgConfig::Cairo)
-
-
-# Adding C++ files needed for compilation.
-add_executable(
-  cartogram
-  src/main.cpp
-  src/cartogram_info/cartogram_info.cpp
-  src/cartogram_info/read_csv.cpp
-  src/cartogram_info/read_geojson.cpp
-  src/cartogram_info/shift_insets_to_position.cpp
-  src/cartogram_info/write_geojson.cpp
-  src/geo_div/geo_div.cpp
-  src/inset_state/albers_projection.cpp
-  src/inset_state/auto_color.cpp
-  src/inset_state/blur_density.cpp
-  src/inset_state/check_topology.cpp
-  src/inset_state/densify.cpp
-  src/inset_state/fill_with_density.cpp
-  src/inset_state/flatten_density.cpp
-  src/inset_state/inset_state.cpp
-  src/inset_state/interpolate_bilinearly.cpp
-  src/inset_state/matrix.cpp
-  src/inset_state/project.cpp
-  src/inset_state/rescale_map.cpp
-  src/inset_state/round_point.cpp
-  src/inset_state/scanline_graph.cpp
-  src/inset_state/simplify_inset.cpp
-  src/inset_state/smyth_projection.cpp
-  src/inset_state/write_cairo.cpp
-  src/inset_state/write_eps.cpp
-  src/inset_state/write_inset_to_geojson.cpp
-  src/misc/colors.cpp
-  src/misc/ft_real_2d.cpp
-  src/misc/intersection.cpp
-  src/misc/parse_arguments.cpp
-  src/misc/pwh.cpp
-)
-
-# Linking appropriate libraries required.
+# ========== Compiler Setup ==========
 if(APPLE)
+  set(LLVM_BASE_PATH "/usr/local/opt/llvm@17/bin/")
 
-  # Using LLVM clang, installed via homebrew, instaed of Apple clang.
   if(${CMAKE_HOST_SYSTEM_PROCESSOR} STREQUAL "arm64")
-
-    # Homebrew install path on arm64 (apple silicon, M1 etc.) machines.
-    set(CMAKE_CXX_COMPILER "/opt/homebrew/opt/llvm@13/bin/clang++")
-    set(CMAKE_C_COMPILER "/opt/homebrew/opt/llvm@13/bin/clang")
-  else()
-
-    # Homebrew install path on x86 machines (Intel).
-    set(CMAKE_C_COMPILER "/usr/local/opt/llvm@13/bin/clang")
-    set(CMAKE_CXX_COMPILER "/usr/local/opt/llvm@13/bin/clang++")
+    set(LLVM_BASE_PATH "/opt/homebrew/opt/llvm@17/bin/")
   endif()
-elseif(UNIX)
 
-  # Using GNU gcc-11.
-  set(CMAKE_CXX_COMPILER "g++-11")
-  set(CMAKE_C_COMPILER "gcc-11")
+  set(CMAKE_CXX_COMPILER "${LLVM_BASE_PATH}clang++")
+  set(CMAKE_C_COMPILER "${LLVM_BASE_PATH}clang")
+elseif(UNIX)
+  set(CMAKE_CXX_COMPILER "g++-13")
+  set(CMAKE_C_COMPILER "gcc-13")
 endif()
 
-target_include_directories(cartogram PUBLIC ${PROJECT_SOURCE_DIR}/include)
+# ========== Source Files ==========
+file(GLOB_RECURSE CARTOGRAM_SOURCES "src/*.cpp")
+add_executable(cartogram ${CARTOGRAM_SOURCES})
 
-# Linking appropriate libraries to cartogram target.
-target_link_libraries(
-  cartogram
-  PkgConfig::FFTW
-  PkgConfig::Cairo
-  OpenMP::OpenMP_CXX
+# ========== Include Directories ==========
+target_include_directories(cartogram PUBLIC
+  ${PROJECT_SOURCE_DIR}/include
+  ${Boost_INCLUDE_DIRS}
+  PkgConfig::fftw
+  PkgConfig::CAIRO
 )
 
-# Providing make with install target.
+# ========== Compile Options ==========
+if(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
+  target_compile_options(cartogram PRIVATE -isystem ${Boost_INCLUDE_DIRS})
+  target_compile_options(cartogram PRIVATE -ffp-contract=off)
+elseif(MSVC)
+  target_compile_options(cartogram PRIVATE /external:I ${Boost_INCLUDE_DIRS})
+endif()
+
+# Compiler warnings
+target_compile_options(cartogram PRIVATE -Wall -Wextra -pedantic -Wno-deprecated-declarations)
+
+# ========== Linking Libraries ==========
+target_link_libraries(cartogram
+  PkgConfig::fftw
+  PkgConfig::CAIRO
+  Matplot++::matplot
+)
+
+# ========== Installation ==========
 install(TARGETS cartogram DESTINATION bin)
 
-# Providing make with uninstall target.
-# TODO: Polish
-# From https://stackoverflow.com/questions/41471620/cmake-support-make-uninstall
+# Enable CTest testing
+enable_testing()
+
+# Add test executable
+file(GLOB_RECURSE TEST_FILES "tests/*.cpp")
+
+# Include the source files from the src directory that are needed for testing
+set(CARTOGRAM_TEST_SOURCES_FROM_SRC
+  "src/misc/string_to_decimal_converter.cpp"
+
+  # Add additional test sources from src here if necessary
+)
+
+# For each test file, create an executable and a test
+foreach(TEST_FILE ${TEST_FILES})
+  # Extract the filename without an extension to use as a test name
+  get_filename_component(TEST_NAME ${TEST_FILE} NAME_WE)
+
+  # Create an executable for each test file
+  add_executable(${TEST_NAME} ${TEST_FILE} ${CARTOGRAM_TEST_SOURCES_FROM_SRC})
+
+  # Include directories for the test executable
+  target_include_directories(${TEST_NAME} PUBLIC
+    ${PROJECT_SOURCE_DIR}/include
+    ${Boost_INCLUDE_DIRS}
+    PkgConfig::fftw
+  )
+
+  if(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
+    target_compile_options(${TEST_NAME} PRIVATE -isystem ${Boost_INCLUDE_DIRS})
+    target_compile_options(${TEST_NAME} PRIVATE -ffp-contract=off)
+  elseif(MSVC)
+    target_compile_options(${TEST_NAME} PRIVATE /external:I ${Boost_INCLUDE_DIRS})
+  endif()
+
+  # Compiler warnings for the test executable
+  target_compile_options(${TEST_NAME} PRIVATE -Wall -Wextra -pedantic -Wno-deprecated-declarations)
+
+  # Linking Libraries for Test Executable
+  target_link_libraries(${TEST_NAME}
+    ${Boost_UNIT_TEST_FRAMEWORK_LIBRARY}
+    PkgConfig::fftw
+  )
+
+  # Register the executable as a test
+  add_test(NAME ${TEST_NAME} COMMAND ${TEST_NAME})
+endforeach()
+
+# Uninstall target
 add_custom_target("uninstall")
 add_custom_command(
-    TARGET "uninstall"
-    POST_BUILD
-    COMMENT "Uninstalling cartogram..."
-    COMMAND xargs rm -vf < install_manifest.txt || echo Nothing in
-            install_manifest.txt to be uninstalled!
+  TARGET "uninstall"
+  POST_BUILD
+  COMMENT "Uninstalling cartogram..."
+  COMMAND xargs rm -vf < install_manifest.txt || echo "Nothing in install_manifest.txt to be uninstalled!"
 )

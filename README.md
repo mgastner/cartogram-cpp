@@ -24,71 +24,27 @@ Install [homebrew](brew.sh) by running the following command:
 
 Install llvm, pkg-config, boost, fftw, cgal, nlohmann-json, and cmake by running the following command:
 
-    brew install llvm@13 libomp pkg-config boost fftw cgal nlohmann-json cmake cairo
+    brew install llvm@17 libomp pkg-config boost fftw cgal nlohmann-json cmake cairo matplotplusplus
 
 ### Debian-based distributions (Ubuntu, Arch Linux etc.)
 
-#### Installing GNU gcc-11
+#### Installing GNU g++-13
 
-GNU gcc-11 is currently unavailable from apt by default. You may find installation instructions [here](https://lindevs.com/install-gcc-on-ubuntu/). Alternatively, you may run the following commands to install it:
+Run the following commands to install it:
 
     sudo apt install build-essential manpages-dev software-properties-common
     sudo add-apt-repository ppa:ubuntu-toolchain-r/test
-    sudo apt update && sudo apt install gcc-11 g++-11
+    sudo apt update && sudo apt install gcc-13 g++-13
 
-#### Installing nlohmann's JSON parser
+#### Installing dependencies through apt
 
-1.  Go to <https://github.com/nlohmann/json>
-2.  Click on "Code" -> "Download Zip".
-3.  Go to Downloads folder.
-4.  Unzip the file you just installed (you can use the `unzip` command).
-5.  Go into the newly created unzipped folder json-develop (you can use the `cd` command).
-6.  Run the following commands (you may copy and paste all of them at once):
+Install nlohmann-json, cgal, openmp, fftw3, cairo, matplot++, boost, and cmake by running the following command:
 
-        cmake .
-        make
-        sudo make install
-
-#### Installing CGAL
-
-[CGAL Homepage](https://www.cgal.org/)
-
-CGAL Version 5.3 is currently unavailable from apt. Please follow the instructions on the CGAL website to build from source.
-
-You may download the latest release [here](https://github.com/CGAL/cgal/releases). You may find installation instructions [here](https://doc.cgal.org/latest/Manual/usage.html#title4).
-
-For posterity: Once version 5.3 is available through apt (you may check [here](https://packages.ubuntu.com/search?keywords=libcgal-dev&searchon=names&suite=impish§ion=all)), you may run the following command to install it.
-
-    sudo apt install libcgal-dev
-
-#### Installing OpenMP
-
-[OpenMP Homepage](https://www.openmp.org/)
-
-    sudo apt install libomp-dev
-
-#### Installing FFTW3
-
-1.  Go to [FFTW's website](http://www.fftw.org/download.html "FFTW Downloads Page").
-2.  Install the latest version of FFTW.
-3.  Unarchive the file with: `tar zxvf fftw-3.3.10.tar.gz` (Note: the version number may be different).
-4.  Go to the directory with: `cd fftw-3.3.10`.
-5.  Run the following commands (you may copy and paste all of them at once):
-
-        ./configure
-        make
-        sudo make install
-
-#### Installing CairoGraphics
-
-[CairoGraphics Homepage](https://www.cairographics.org/)
-
-    sudo apt install libcairo2-dev
-
+    sudo apt install nlohmann-json3-dev libcgal-dev libomp-dev libfftw3-dev libcairo2-dev libmatplot++-dev libboost-all-dev cmake
 
 ### Installation
 
-Go to the `cartogram_cpp` directory in your preferred terminal and execute the following commands.
+Go to the `cartogram-cpp` directory in your preferred terminal and execute the following commands.
 
     cmake -B build
     make -C build
@@ -121,7 +77,7 @@ _Note: use the `-h` flag to display more options._
 The CSV file should be in the following format:
 
 | NAME_1     | Data (e.g., Population) | Color   |
-|:-----------|:------------------------|:--------|
+| :--------- | :---------------------- | :------ |
 | Bruxelles  | 1208542                 | #e74c3c |
 | Vlaanderen | 6589069                 | #f1c40f |
 | Wallonie   | 3633795                 | #34495e |
@@ -134,17 +90,25 @@ The CSV file should be in the following format:
     2.  `"rgb(255, 0, 120)"` or `rgb(255 0 120)` or `"255, 0, 120"` or `255 0 120`: red, green and blue values out of 255.
     3.  `#e74c3c`: hex code of color, must start with `#`.
 
-**You may find sample GeoJSON (containing geographic data) and CSV (containing information about target areas, colors and other visual variables) files in the `cartogram_cpp/sample_data` directory.**
+**You may find sample GeoJSON (containing geographic data) and CSV (containing information about target areas, colors and other visual variables) files in the `cartogram-cpp/sample_data` directory.**
 
 ### Testing
 
-If you'd like to contribute to the project, please run our test battery after you make any changes. You may do so by going to the `cartogram_cpp/tests` directory and running the following command:
+If you'd like to contribute to the project, please run our tests after you make any changes. 
 
-        bash stress_test.sh
+To run the unit tests, execute the following command:
+
+    ctest --verbose
+    
+To learn more about the tests, you may go to the `cartogram-cpp/tests` directory and read the `README.md` file.
+
+Additionally, you may go to the `cartogram-cpp/tests` directory and run the following command:
+
+     bash stress_test.sh
 
 ### Uninstallation
 
-Go to the `cartogram_cpp` directory in your preferred terminal and execute the following command:
+Go to the `cartogram-cpp` directory in your preferred terminal and execute the following command:
 
     sudo make uninstall -C build
 

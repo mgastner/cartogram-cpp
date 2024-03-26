@@ -1,7 +1,5 @@
-#include "parse_arguments.h"
-#include "constants.h"
-#include <iostream>
-#include <string>
+#include "parse_arguments.hpp"
+#include "constants.hpp"
 
 argparse::ArgumentParser parsed_arguments(
   const int argc,
@@ -18,7 +16,7 @@ argparse::ArgumentParser parsed_arguments(
   bool &output_equal_area,
   bool &output_to_stdout,
   bool &plot_density,
-  bool &plot_graticule,
+  bool &plot_grid,
   bool &plot_intersections,
   bool &plot_polygons,
   bool &remove_tiny_polygons,
@@ -40,52 +38,53 @@ argparse::ArgumentParser parsed_arguments(
     .help("File path: CSV file with ID, area, and (optionally) colour");
 
   // Optional argument accepting long grid side length (unsigned int) as
-  // input. Default value declared in "constants.h"
-  arguments.add_argument("-N", "--n_graticule_rows_or_cols")
-    .default_value(default_long_graticule_length)
+  // input. Default value declared in "constants.hpp"
+  arguments.add_argument("-n", "--n_grid_rows_or_cols")
+    .default_value(default_long_grid_length)
     .scan<'u', unsigned int>()
     .help(
       "Integer: Number of grid cells along longer Cartesian coordinate axis");
 
   // Optional boolean arguments
-  arguments.add_argument("-w", "--world")
+  arguments.add_argument("-W", "--world")
     .help("Boolean: is input a world map in longitude-latitude format?")
     .default_value(false)
     .implicit_value(true);
   arguments.add_argument("-p", "--plot_polygons")
-    .help("Boolean: make EPS image of input and output?")
+    .help("Boolean: Plot images of input and output cartogram")
     .default_value(false)
     .implicit_value(true);
-  arguments.add_argument("-T", "--quadtree_to_ps")
-    .help("Boolean: make PS images of Quadtree-Delaunay Triangulation?")
+  arguments.add_argument("-q", "--plot_quadtree")
+    .help("Boolean: Plot images of Quadtree-Delaunay Triangulation")
     .default_value(false)
     .implicit_value(true);
-  arguments.add_argument("-d", "--density_to_eps")
-    .help("Boolean: make EPS images *_density_*.eps?")
+  arguments.add_argument("-d", "--plot_density")
+    .help("Boolean: Plot images of flatten and blur density")
     .default_value(false)
     .implicit_value(true);
-  arguments.add_argument("-g", "--graticule_to_eps")
-    .help("Boolean: make EPS images with graticule?")
+  arguments.add_argument("-g", "--plot_grid")
+    .help("Boolean: Plot images of with transformed grid grid")
     .default_value(false)
     .implicit_value(true);
-  arguments.add_argument("-i", "--intersections_to_eps")
-    .help("Boolean: make EPS images *_intersections_*.eps?")
+  arguments.add_argument("-i", "--plot_intersections")
+    .help("Boolean: Plot images of intersections (if any)")
     .default_value(false)
     .implicit_value(true);
-  arguments.add_argument("-q", "--output_equal_area")
-    .help("Boolean: Output equal area GeoJSON")
+  arguments.add_argument("-E", "--output_equal_area")
+    .help(
+      "Boolean: Output equal area GeoJSON from input GeoJSON - no cartogram")
     .default_value(false)
     .implicit_value(true);
-  arguments.add_argument("-t", "--triangulation")
-    .help("Boolean: Project the cartogram using the triangulation method?")
+  arguments.add_argument("-T", "--triangulation")
+    .help("Boolean: Project the cartogram using the triangulation method")
     .default_value(false)
     .implicit_value(true);
   arguments.add_argument("-Q", "--qtdt_method")
-    .help("Boolean: Use Quadtree-Delaunay Triangulation Method?")
+    .help("Boolean: Use Quadtree-Delaunay Triangulation Method")
     .default_value(false)
     .implicit_value(true);
-  arguments.add_argument("-s", "--simplify")
-    .help("Boolean: Shall the polygons be simplified?")
+  arguments.add_argument("-S", "--simplify")
+    .help("Boolean: Simplify polygons")
     .default_value(false)
     .implicit_value(true);
   arguments.add_argument("-P", "--n_points")
@@ -93,19 +92,19 @@ argparse::ArgumentParser parsed_arguments(
       "Integer: If simplification enabled, target number of points per inset")
     .default_value(default_target_points_per_inset)
     .scan<'u', unsigned int>();
-  arguments.add_argument("-m", "--make_csv")
+  arguments.add_argument("-M", "--make_csv")
     .help("Boolean: create CSV file from given GeoJSON?")
     .default_value(false)
     .implicit_value(true);
-  arguments.add_argument("-o", "--output_to_stdout")
+  arguments.add_argument("-O", "--output_to_stdout")
     .help("Boolean: Output GeoJSON to stdout")
     .default_value(false)
     .implicit_value(true);
-  arguments.add_argument("-r", "--remove_tiny_polygons")
-    .help("Boolean: Output GeoJSON to stdout")
+  arguments.add_argument("-R", "--remove_tiny_polygons")
+    .help("Boolean: Remove tiny polygons")
     .default_value(false)
     .implicit_value(true);
-  arguments.add_argument("-M", "--minimum_polygon_size")
+  arguments.add_argument("-m", "--minimum_polygon_size")
     .help(
       std::string("Double: If remove-tiny-polygons enabled, ") +
       "minimum size of polygons as proportion of total area")
@@ -138,18 +137,18 @@ argparse::ArgumentParser parsed_arguments(
   }
 
   // Set long grid-side length
-  max_n_grid_rows_or_cols = arguments.get<unsigned int>("-N");
+  max_n_grid_rows_or_cols = arguments.get<unsigned int>("-n");
 
   // Set target_points_per_inset
   target_points_per_inset = arguments.get<unsigned int>("-P");
 
   // Set boolean values
-  world = arguments.get<bool>("-w");
-  triangulation = arguments.get<bool>("-t");
+  world = arguments.get<bool>("-W");
+  triangulation = arguments.get<bool>("-T");
   qtdt_method = arguments.get<bool>("-Q");
-  simplify = arguments.get<bool>("-s");
-  remove_tiny_polygons = arguments.get<bool>("-r");
-  minimum_polygon_area = arguments.get<double>("-M");
+  simplify = arguments.get<bool>("-S");
+  remove_tiny_polygons = arguments.get<bool>("-R");
+  minimum_polygon_area = arguments.get<double>("-m");
   if (!triangulation && simplify) {
 
     // If tracer points are on the FTReal2d, then simplification requires
@@ -160,32 +159,32 @@ argparse::ArgumentParser parsed_arguments(
     // non-simplified and simplified polygons.
     triangulation = true;
   }
-  make_csv = arguments.get<bool>("-m");
-  output_equal_area = arguments.get<bool>("-q");
-  output_to_stdout = arguments.get<bool>("-o");
+  make_csv = arguments.get<bool>("-M");
+  output_equal_area = arguments.get<bool>("-E");
+  output_to_stdout = arguments.get<bool>("-O");
   plot_density = arguments.get<bool>("-d");
-  plot_graticule = arguments.get<bool>("-g");
+  plot_grid = arguments.get<bool>("-g");
   plot_intersections = arguments.get<bool>("-i");
   plot_polygons = arguments.get<bool>("-p");
-  plot_quadtree = arguments.get<bool>("-T");
+  plot_quadtree = arguments.get<bool>("-q");
 
   if (
-    arguments.is_used("-o") && !arguments.is_used("-s") &&
+    arguments.is_used("-O") && !arguments.is_used("-S") &&
     !arguments.is_used("-Q")) {
     std::cerr << "ERROR: --simplify flag not passed!\n";
     std::cerr << "--output_to_stdout flag is only supported with "
                  "simplification or quadtree.\n";
-    std::cerr << "To enable simplification, pass the -s flag.\n";
+    std::cerr << "To enable simplification, pass the -S flag.\n";
     std::cerr << "To enable quadtree, pass the -Q flag.\n";
     std::cerr << arguments << std::endl;
     _Exit(18);
   }
 
   // Check whether n_points is specified but --simplify not passed
-  if (arguments.is_used("-P") && !arguments.is_used("-s")) {
+  if (arguments.is_used("-P") && !arguments.is_used("-S")) {
     std::cerr << "WARNING: --simplify flag not passed!" << std::endl;
     std::cerr << "Polygons will not be simplified." << std::endl;
-    std::cerr << "To enable simplification, pass the -s flag." << std::endl;
+    std::cerr << "To enable simplification, pass the -S flag." << std::endl;
     std::cerr << arguments << std::endl;
   }
 

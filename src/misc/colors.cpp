@@ -1,6 +1,7 @@
-#include "colors.h"
+#include "colors.hpp"
 #include <iostream>
 #include <sstream>
+#include <unordered_map>
 
 Color::Color()
 {
@@ -8,6 +9,10 @@ Color::Color()
   r = 238;
   g = 232;
   b = 213;
+}
+
+Color::Color(double red, double green, double blue) : r(red), g(green), b(blue)
+{
 }
 
 Color::Color(int red, int green, int blue) : r(red), g(green), b(blue) {}
@@ -202,7 +207,7 @@ Color::Color(std::string color_as_string)
     int hex_int = stoi(color_as_string, nullptr, 16);
     r = ((hex_int >> 16) & 0xFF);  // Extract the RR byte
     g = ((hex_int >> 8) & 0xFF);  // Extract the GG byte
-    b = ((hex_int)&0xFF);  // Extract the BB byte
+    b = ((hex_int) & 0xFF);  // Extract the BB byte
   } else if ("rgb" == color_as_string.substr(0, 3)) {
 
     // RGB value
@@ -240,16 +245,4 @@ Color::Color(std::string color_as_string)
               << "Please refer to README.md!" << std::endl;
     std::cerr << "Color: " << color_as_string << std::endl;
   }
-}
-
-std::string Color::eps() const
-{
-  std::string temp;
-  temp.append(std::to_string(static_cast<double>(r) / 255.0));
-  temp.append(" ");
-  temp.append(std::to_string(static_cast<double>(g) / 255.0));
-  temp.append(" ");
-  temp.append(std::to_string(static_cast<double>(b) / 255.0));
-  temp.append(" ");
-  return temp;
 }

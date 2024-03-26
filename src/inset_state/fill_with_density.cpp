@@ -1,5 +1,5 @@
-#include "cartogram_info.h"
-#include "inset_state.h"
+#include "constants.hpp"
+#include "inset_state.hpp"
 
 void InsetState::fill_with_density(bool plot_density)
 {
@@ -28,20 +28,30 @@ void InsetState::fill_with_density(bool plot_density)
     }
   }
 
-  // Density numerator and denominator for each graticule cell. The density of
-  // a graticule cell can be calculated with (rho_num / rho_den). We initially
-  // assign zero to all elements because we assume that all graticule cells
-  // are outside any GeoDiv. Any graticule cell where rho_den is zero will be
+  // Density numerator and denominator for each grid cell. The density of
+  // a grid cell can be calculated with (rho_num / rho_den). We initially
+  // assign zero to all elements because we assume that all grid cells
+  // are outside any GeoDiv. Any grid cell where rho_den is zero will be
   // filled with the mean_density.
 
-  // TODO: rho_num and rho_den could be a boost::multi_array<double, 2>.
-  std::vector<std::vector<double> > rho_num(lx_, std::vector<double>(ly_, 0));
-  std::vector<std::vector<double> > rho_den(lx_, std::vector<double>(ly_, 0));
+  boost::multi_array<double, 2> rho_num(boost::extents[lx_][ly_]);
+  boost::multi_array<double, 2> rho_den(boost::extents[lx_][ly_]);
 
   // Resolution with which we sample polygons. "resolution" is the number of
   // horizontal "test rays" between each of the ly consecutive horizontal
-  // graticule lines.
-  const unsigned int resolution = default_resolution;
+  // grid lines.
+  // Ensure that the number of rays per grid length is at least the default
+  // value specified by default_resolution in include/constants.hpp.
+  // Additionally, confirm that there are a minimum of long_grid_length *
+  // resolution rays along the longer side of the lx*ly grid.
+  unsigned int long_grid_length = std::max(lx_, ly_);
+  const unsigned int resolution =
+    (long_grid_length > default_long_grid_length)
+      ? static_cast<unsigned int>(
+          (default_resolution * default_long_grid_length) *
+          (1.0 / long_grid_length))
+      : default_resolution;
+
   auto intersections_with_rays = intersec_with_parallel_to('x', resolution);
 
   // Determine rho's numerator and denominator:
@@ -52,10 +62,10 @@ void InsetState::fill_with_density(bool plot_density)
   // (length of the segment inside the geo_div) * (area error of the geodiv).
 
 #pragma omp parallel for default(none) \
-  shared(intersections_with_rays, rho_den, rho_num, std::cerr)
+  shared(intersections_with_rays, rho_den, resolution, rho_num, std::cerr)
   for (unsigned int k = 0; k < ly_; ++k) {
 
-    // Iterate over each of the rays between the graticule lines y = k and
+    // Iterate over each of the rays between the grid lines y = k and
     // y = k+1
     for (double y = k + 0.5 / resolution; y < k + 1; y += 1.0 / resolution) {
 
@@ -79,7 +89,7 @@ void InsetState::fill_with_density(bool plot_density)
         if (left_x != right_x) {
           if (ceil(left_x) == ceil(right_x)) {
 
-            // The intersections are in the same graticule cell. The ray
+            // The intersections are in the same grid cell. The ray
             // enters and leaves a GeoDiv in this cell. We weigh the density
             // of the cell by the GeoDiv's area error.
             const double weight =
@@ -93,12 +103,12 @@ void InsetState::fill_with_density(bool plot_density)
         }
 
         // Fill last exiting intersection with GeoDiv where part of ray inside
-        // the graticule cell is inside the GeoDiv
+        // the grid cell is inside the GeoDiv
         const auto last_x =
           static_cast<unsigned int>(intersections_at_y.back().x());
         const double last_weight =
           area_error_at(intersections_at_y.back().geo_div_id) *
-          (ceil(last_x) - last_x);
+          (last_x - floor(last_x));
         const double last_target_density =
           intersections_at_y.back().target_density;
         const auto uilx = static_cast<unsigned int>(ceil(left_x) - 1);
@@ -124,7 +134,7 @@ void InsetState::fill_with_density(bool plot_density)
           std::cerr << "Left X-coordinate: " << left_x << std::endl;
           std::cerr << "Right X-coordinate: " << right_x << std::endl;
           std::cerr << std::endl;
-          // _Exit(8026519);
+          _Exit(8026519);
         }
 
         // Fill each cell between intersections
@@ -134,6 +144,7 @@ void InsetState::fill_with_density(bool plot_density)
         // for (unsigned int m = std::max(ceil(left_x), 1.0);
         //                   m <= std::max(ceil(right_x), 1.0);
         //                   ++m) {
+        // #pragma omp parallel for
         for (unsigned int m = ceil(left_x); m <= ceil(right_x); ++m) {
           double weight = area_error_at(intersections_at_y[i].geo_div_id);
           if (ceil(left_x) == ceil(right_x)) {
@@ -162,11 +173,23 @@ void InsetState::fill_with_density(bool plot_density)
       }
     }
   }
+
+  // Determine range of densities
+  auto [min_iter, max_iter] = std::minmax_element(
+    rho_init_.as_1d_array(),
+    rho_init_.as_1d_array() + lx_ * ly_);
+
+  dens_min_ = *min_iter;
+  dens_mean_ = mean_density;
+  dens_max_ = *max_iter;
+
   if (plot_density) {
     std::string file_name = inset_name_ + "_unblurred_density_" +
-                            std::to_string(n_finished_integrations()) + ".eps";
+                            std::to_string(n_finished_integrations()) + ".svg";
+
     std::cerr << "Writing " << file_name << std::endl;
-    write_density_to_eps(file_name, rho_init_.as_1d_array());
+    write_density_image(file_name, rho_init_.as_1d_array(), false);
   }
+
   execute_fftw_fwd_plan();
 }
