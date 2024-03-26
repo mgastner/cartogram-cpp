@@ -18,9 +18,9 @@ jobs:
     - name: Install Dependencies
       run: |
         sudo apt update
-        sudo apt install -y build-essential manpages-dev software-properties-common libcgal-dev libomp-dev libcairo2-dev nlohmann-json3-dev fftw3-dev
+        sudo apt install -y build-essential manpages-dev software-properties-common nlohmann-json3-dev libcgal-dev libomp-dev libfftw3-dev libcairo2-dev libmatplot++-dev libboost-all-dev cmake
         sudo add-apt-repository ppa:ubuntu-toolchain-r/test -y
-        sudo apt update && sudo apt install -y gcc-11 g++-11
+        sudo apt update && sudo apt install -y gcc-13 g++-13
 
     - name: Build Project
       run: |
@@ -84,14 +84,14 @@ jobs:
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-  deploy:
-    needs: build-and-release
-    runs-on: ubuntu-latest
-    steps:
-      - name: Deploy binary to go-cart.io
-        uses: appleboy/ssh-action@v1.0.3
-        with:
-          host: ${{ secrets.DEPLOY_HOST }}
-          username: ${{ secrets.DEPLOY_USER }}
-          key: ${{ secrets.DEPLOY_SSH_KEY }}
-          script: /home/cartogram/deploy-cartogram-cpp.sh
+  # deploy:
+  #   needs: build-and-release
+  #   runs-on: ubuntu-latest
+  #   steps:
+  #     - name: Deploy binary to go-cart.io
+  #       uses: appleboy/ssh-action@v1.0.3
+  #       with:
+  #         host: ${{ secrets.DEPLOY_HOST }}
+  #         username: ${{ secrets.DEPLOY_USER }}
+  #         key: ${{ secrets.DEPLOY_SSH_KEY }}
+  #         script: /home/cartogram/deploy-cartogram-cpp.sh
