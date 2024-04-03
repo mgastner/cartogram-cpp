@@ -1,0 +1,25 @@
+name: Build and Upload Artifact (macOS)
+
+on: [push, workflow_dispatch]
+
+jobs:
+  build-macos:
+    runs-on: macos-latest
+    steps:
+    - name: Checkout Repository
+      uses: actions/checkout@v4
+
+    - name: Install Dependencies with Homebrew
+      run: |
+        brew install llvm@17 libomp pkg-config boost fftw cgal nlohmann-json cmake cairo matplotplusplus
+
+    - name: Build Project
+      run: |
+        cmake -B build
+        make -C build
+
+    - name: Upload Artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: cartogram
+        path: ./build/bin/cartogram
