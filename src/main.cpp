@@ -139,7 +139,7 @@ int main(const int argc, const char *argv[])
       if (world) {
         inset_state.apply_smyth_craster_projection();
       } else {
-        inset_state.apply_albers_projection();
+        //inset_state.apply_albers_projection();
       }
     } else if (output_equal_area) {
       std::cerr << "ERROR: Input GeoJSON is not a longitude-latitude map."

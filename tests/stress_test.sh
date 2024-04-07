@@ -61,7 +61,7 @@ run_map()
   printed=0
   draw_progress_bar 0
   start=$SECONDS
-  cartogram ${map} ${csv} ${cli} 2>&1 |
+  gtimeout 10s cartogram ${map} ${csv} ${cli} 2>&1 |
     while read line
     do
       # save to temp file

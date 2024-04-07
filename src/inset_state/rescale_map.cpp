@@ -5,6 +5,33 @@ void InsetState::rescale_map(
   unsigned int max_n_grid_rows_or_cols,
   bool is_world_map)
 {
+
+  auto gd_0 = geo_divs()[0];
+  std::cerr << "Number of rings in gd_0: " << gd_0.n_rings()
+            << std::endl;
+  auto gd_1 = geo_divs()[1];
+  std::cerr << "Number of rings in gd_1: " << gd_1.n_rings()
+            << std::endl;
+  auto pwh_0 = gd_0.polygons_with_holes()[0];
+  std::cerr << "Number of holes in pwh_0: " << pwh_0.number_of_holes()
+            << std::endl;
+  auto hole = pwh_0.holes()[0];
+  std::cerr << "Number of points in hole: " << hole.size()
+            << std::endl;
+  auto pwh_1 = gd_1.polygons_with_holes()[0];
+  auto inner = pwh_1.outer_boundary();
+  std::cerr << "Number of points in inner: " << inner.size()
+            << std::endl;
+  for (unsigned int j = 1; j < hole.size(); ++j) {
+    auto hpt = hole[j];
+    auto ipt = inner[inner.size() - j];
+    std::cerr << std::scientific << "Hole point " << j << ": " << hpt
+              << ". Inner point: " << ipt << ". Is x identical? "
+              << (hpt.x() - ipt.x())
+              << ". Is y identical? " << (hpt.y() - ipt.y())
+              << std::endl;
+  }
+
   // padding 1 means no padding
   double padding = (is_world_map ? 1 : padding_unless_world);
   Bbox bb;
