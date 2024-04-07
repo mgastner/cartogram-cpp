@@ -4,8 +4,8 @@ library(tmap)
 phi <- seq(0, 2 * pi, by = 0.01 * pi)
 phi[length(phi)] <- 0
 outer <- cbind(2 * cos(phi), 2 * sin(phi))
-hole <- cbind(sin(phi), cos(phi))
-inner <- cbind(cos(phi), sin(phi))
+hole <- round(cbind(sin(phi), cos(phi)), digits = 6)
+inner <- round(cbind(cos(phi), sin(phi)), digits = 6)
 pol1 <- st_polygon(list(outer, hole))
 pol2 <- st_polygon(list(inner))
 sf_obj <-
@@ -13,7 +13,7 @@ sf_obj <-
         geometry = st_sfc(pol1, pol2))
 tm_shape(sf_obj) +
   tm_polygons(col = "name")
-st_write(sf_obj, "concentric_circles.geojson")
+st_write(sf_obj, "concentric_circles.geojson", delete_dsn = TRUE)
 
 # outer <- matrix(c(0, 0, 10, 0, 10, 10, 0, 10, 0, 0), ncol = 2, byrow = TRUE)
 # hole1 <- matrix(c(1, 1, 1, 2, 2, 2, 2, 1, 1, 1), ncol = 2, byrow = TRUE)
