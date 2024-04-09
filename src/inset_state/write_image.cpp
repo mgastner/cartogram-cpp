@@ -948,7 +948,11 @@ void InsetState::write_density_image(
         cairo_line_to(cr, x_max, ly_ - y_max);
         cairo_line_to(cr, x_min, ly_ - y_max);
 
-        cairo_set_source_rgb(cr, color.r, color.g, color.b);
+        cairo_set_source_rgb(
+          cr,
+          color.r / 255.0,
+          color.g / 255.0,
+          color.b / 255.0);
         cairo_fill(cr);
         cairo_set_source_rgb(cr, 0, 0, 0);
         cairo_stroke(cr);
