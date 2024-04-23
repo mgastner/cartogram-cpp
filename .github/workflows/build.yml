@@ -18,9 +18,9 @@ jobs:
     - name: Install Dependencies
       run: |
         sudo apt update
-        sudo apt install -y build-essential manpages-dev software-properties-common nlohmann-json3-dev libcgal-dev libomp-dev libfftw3-dev libcairo2-dev libmatplot++-dev libboost-all-dev cmake
+        sudo apt install -y build-essential manpages-dev software-properties-common nlohmann-json3-dev libcgal-dev libomp-dev libfftw3-dev libcairo2-dev libboost-all-dev cmake
         sudo add-apt-repository ppa:ubuntu-toolchain-r/test -y
-        sudo apt update && sudo apt install -y gcc-13 g++-13
+        sudo apt update && sudo apt install -y gcc-11 g++-11
 
     - name: Build Project
       run: |
@@ -41,48 +41,48 @@ jobs:
         name: cartogram
         path: ./build/bin/cartogram
         
-    - name: Generate and Push Tag
-      id: generate_tag
-      run: |
-        # Configure git committer
-        git config --local user.email "action@github.com"
-        git config --local user.name "GitHub Action"
-        # Fetch tags
-        git fetch --tags
+    # - name: Generate and Push Tag
+    #   id: generate_tag
+    #   run: |
+    #     # Configure git committer
+    #     git config --local user.email "action@github.com"
+    #     git config --local user.name "GitHub Action"
+    #     # Fetch tags
+    #     git fetch --tags
         
-        # Get the latest tag name, default to v1.0.0 if none exists
-        latest_tag=$(git describe --tags `git rev-list --tags --max-count=1` 2>/dev/null || echo "v1.0.0")
+    #     # Get the latest tag name, default to v1.0.0 if none exists
+    #     latest_tag=$(git describe --tags `git rev-list --tags --max-count=1` 2>/dev/null || echo "v1.0.0")
         
-        # Extract the numeric components by stripping the 'v' prefix
-        version=${latest_tag#"v"}
-        # Split into array
-        IFS='.' read -ra version_parts <<< "$version"
+    #     # Extract the numeric components by stripping the 'v' prefix
+    #     version=${latest_tag#"v"}
+    #     # Split into array
+    #     IFS='.' read -ra version_parts <<< "$version"
         
-        major=${version_parts[0]}
-        minor=${version_parts[1]}
-        patch=${version_parts[2]}
+    #     major=${version_parts[0]}
+    #     minor=${version_parts[1]}
+    #     patch=${version_parts[2]}
         
-        # Increment the patch version
-        new_patch=$((patch + 1))
-        new_tag="v${major}.${minor}.${new_patch}"
+    #     # Increment the patch version
+    #     new_patch=$((patch + 1))
+    #     new_tag="v${major}.${minor}.${new_patch}"
         
-        # Create the new tag
-        git tag -a "${new_tag}" -m "New release ${new_tag}"
+    #     # Create the new tag
+    #     git tag -a "${new_tag}" -m "New release ${new_tag}"
         
-        # Push the tag to the repository
-        git push origin "${new_tag}"
+    #     # Push the tag to the repository
+    #     git push origin "${new_tag}"
         
-        echo "new_tag=${new_tag}" >> $GITHUB_OUTPUT
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    #     echo "new_tag=${new_tag}" >> $GITHUB_OUTPUT
+    #   env:
+    #     GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-    - name: Release
-      uses: softprops/action-gh-release@v2
-      with:
-        tag_name: ${{ steps.generate_tag.outputs.new_tag }}
-        files: build/bin/cartogram
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    # - name: Release
+    #   uses: softprops/action-gh-release@v2
+    #   with:
+    #     tag_name: ${{ steps.generate_tag.outputs.new_tag }}
+    #     files: build/bin/cartogram
+    #   env:
+    #     GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
   # deploy:
   #   needs: build-and-release
