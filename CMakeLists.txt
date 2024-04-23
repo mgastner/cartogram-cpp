@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.27)
+cmake_minimum_required(VERSION 3.1)
 project(cartogram LANGUAGES CXX)
 
 # ========== Project Setup ==========
@@ -16,13 +16,10 @@ endif()
 # Boost
 find_package(Boost REQUIRED COMPONENTS unit_test_framework)
 
-# Matplot++
-find_package(Matplot++ REQUIRED)
-
 # PkgConfig, fftw, and cairo
 find_package(PkgConfig REQUIRED)
 pkg_search_module(fftw REQUIRED fftw3 IMPORTED_TARGET)
-pkg_search_module(CAIRO REQUIRED CAIRO IMPORTED_TARGET)
+pkg_search_module(cairo REQUIRED cairo IMPORTED_TARGET)
 
 # ========== Compiler Setup ==========
 if(APPLE)
@@ -35,8 +32,8 @@ if(APPLE)
   set(CMAKE_CXX_COMPILER "${LLVM_BASE_PATH}clang++")
   set(CMAKE_C_COMPILER "${LLVM_BASE_PATH}clang")
 elseif(UNIX)
-  set(CMAKE_CXX_COMPILER "g++-13")
-  set(CMAKE_C_COMPILER "gcc-13")
+  set(CMAKE_CXX_COMPILER "g++-11")
+  set(CMAKE_C_COMPILER "gcc-11")
 endif()
 
 # ========== Source Files ==========
@@ -48,12 +45,12 @@ target_include_directories(cartogram PUBLIC
   ${PROJECT_SOURCE_DIR}/include
   ${Boost_INCLUDE_DIRS}
   PkgConfig::fftw
-  PkgConfig::CAIRO
+  PkgConfig::cairo
 )
 
 # ========== Compile Options ==========
 if(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
-  target_compile_options(cartogram PRIVATE -isystem ${Boost_INCLUDE_DIRS})
+  target_compile_options(cartogram PRIVATE -I ${Boost_INCLUDE_DIRS})
   target_compile_options(cartogram PRIVATE -ffp-contract=off)
 elseif(MSVC)
   target_compile_options(cartogram PRIVATE /external:I ${Boost_INCLUDE_DIRS})
@@ -65,8 +62,7 @@ target_compile_options(cartogram PRIVATE -Wall -Wextra -pedantic -Wno-deprecated
 # ========== Linking Libraries ==========
 target_link_libraries(cartogram
   PkgConfig::fftw
-  PkgConfig::CAIRO
-  Matplot++::matplot
+  PkgConfig::cairo
 )
 
 # ========== Installation ==========
@@ -101,7 +97,7 @@ foreach(TEST_FILE ${TEST_FILES})
   )
 
   if(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
-    target_compile_options(${TEST_NAME} PRIVATE -isystem ${Boost_INCLUDE_DIRS})
+    target_compile_options(${TEST_NAME} PRIVATE -I ${Boost_INCLUDE_DIRS})
     target_compile_options(${TEST_NAME} PRIVATE -ffp-contract=off)
   elseif(MSVC)
     target_compile_options(${TEST_NAME} PRIVATE /external:I ${Boost_INCLUDE_DIRS})
