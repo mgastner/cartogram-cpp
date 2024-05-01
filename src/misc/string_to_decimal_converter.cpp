@@ -40,8 +40,6 @@ a thousands separator and remove it. (e.g., "1.234" -> "1234", "12.345" ->
 #include "string_to_decimal_converter.hpp"
 #include <cassert>
 
-const std::string StringToDecimalConverter::NA_ = "NA";
-
 bool StringToDecimalConverter::is_valid_char(char ch)
 {
   return (std::isdigit(ch)) || ch == point_ || ch == comma_ || ch == minus_;
@@ -110,7 +108,7 @@ bool StringToDecimalConverter::has_invalid_comma_point_sequence(
 
 bool StringToDecimalConverter::is_str_NA(const std::string &str)
 {
-  return (str.compare(NA_) == 0);
+  return (str == "NA");
 }
 
 bool StringToDecimalConverter::is_str_valid_characters(const std::string &str)
@@ -120,7 +118,7 @@ bool StringToDecimalConverter::is_str_valid_characters(const std::string &str)
   }
 
   // Allow str being "NA"
-  if (str == NA_) {
+  if (str == "NA") {
     return true;
   }
 

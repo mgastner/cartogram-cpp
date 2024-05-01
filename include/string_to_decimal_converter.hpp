@@ -9,7 +9,6 @@ private:
   static constexpr char point_ = '.';
   static constexpr char comma_ = ',';
   static constexpr char minus_ = '-';
-  static const std::string NA_;
 
   static bool is_valid_char(char ch);
   static std::string remove_char(std::string str, char ch);
