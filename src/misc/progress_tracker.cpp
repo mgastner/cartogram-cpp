@@ -1,10 +1,24 @@
 #include "progress_tracker.hpp"
 #include "constants.hpp"
+#include "indicators.hpp"
 
 // Constructor
 ProgressTracker::ProgressTracker(double total_geo_divs)
-    : total_geo_divs_(total_geo_divs), progress_(0.0)
+    : total_geo_divs_(total_geo_divs), progress_(0),
+      bar_(indicators::ProgressBar(
+        indicators::option::BarWidth{75},
+        indicators::option::Start{"["},
+        indicators::option::Fill{"■"},
+        indicators::option::Lead{"■"},
+        indicators::option::Remainder{"-"},
+        indicators::option::End{"]"},
+        indicators::option::FontStyles(
+          std::vector<indicators::FontStyle>{indicators::FontStyle::bold}),
+        indicators::option::ShowPercentage{true},
+        indicators::option::ShowElapsedTime{true},
+        indicators::option::Stream{std::cerr}))
 {
+  bar_.set_progress(0);  // Initialize progress to 0 at the start
 }
 
 // Destructor
@@ -50,6 +64,6 @@ void ProgressTracker::print_progress(double progress)
 // Method to print the progress bar
 void ProgressTracker::print_progress_bar(double progress)
 {
-  bar_.set_progress(round(progress * 100));
-  std::cerr << std::endl;
+  bar_.set_progress(static_cast<int>(round(progress * 100)));
+  std::cerr << std::endl;  // Print a new line after the progress bar
 }
