@@ -74,7 +74,6 @@ cartogram
 *.app
 
 # Ignore CMakeFiles directory
-CMakeFiles
 cmake-build-*/
 bin
 cmake_install.cmake

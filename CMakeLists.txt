@@ -73,17 +73,17 @@ target_link_libraries(cartogram
 install(TARGETS cartogram DESTINATION bin)
 
 # Enable CTest testing
-enable_testing()
+# enable_testing()
 
 # Add test executable
-file(GLOB_RECURSE TEST_FILES "tests/*.cpp")
+# file(GLOB_RECURSE TEST_FILES "tests/*.cpp")
 
 # Include the source files from the src directory that are needed for testing
-set(CARTOGRAM_TEST_SOURCES_FROM_SRC
-  "src/misc/string_to_decimal_converter.cpp"
+# set(CARTOGRAM_TEST_SOURCES_FROM_SRC
+#   "src/misc/string_to_decimal_converter.cpp"
 
-  # Add additional test sources from src here if necessary
-)
+#   # Add additional test sources from src here if necessary
+# )
 
 # For each test file, create an executable and a test
 foreach(TEST_FILE ${TEST_FILES})

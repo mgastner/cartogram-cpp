@@ -1,7 +1,6 @@
 #include "string_to_decimal_converter.hpp"
 #include <cassert>
 #include <iostream>
-#include <cstdlbib>
 
 /*
 String to Decimal Parsing Algorithm:
