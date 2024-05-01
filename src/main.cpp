@@ -333,7 +333,7 @@ int main(const int argc, const char *argv[])
         }
 
         // Project using the Delaunay triangulation
-        inset_state.project_with_delaunay_t();
+        inset_state.project_with_delaunay_t(output_to_stdout);
       } else if (triangulation) {
         time_tracker.start("Densification");
 
@@ -373,6 +373,7 @@ int main(const int argc, const char *argv[])
       progress_tracker.print_progress_mid_integration(inset_state);
       inset_state.increment_integration();
     }
+    // End of inset integrations
 
     time_tracker.stop("Integration Inset " + inset_pos);
 
@@ -401,13 +402,9 @@ int main(const int argc, const char *argv[])
       inset_state.revert_smyth_craster_projection();
     }
 
-    if (output_to_stdout) {
-      if (qtdt_method) {
-        inset_state.project_with_proj_sequence();
-      } else {
-        inset_state.fill_grid_diagonals(true);
-        inset_state.project_with_cum_proj();
-      }
+    if (output_to_stdout and !qtdt_method) {
+      inset_state.fill_grid_diagonals(true);
+      inset_state.project_with_cum_proj();
     }
 
     // Clean up after finishing all Fourier transforms for this inset

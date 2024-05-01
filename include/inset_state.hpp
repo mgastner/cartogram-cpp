@@ -25,7 +25,6 @@ private:
   std::unordered_map<std::string, double> area_errors_;
   std::unordered_set<Point> unique_quadtree_corners_;
   proj_qd proj_qd_;
-  std::vector<proj_qd> proj_sequence_;
 
   // Bounding boxes of Quadtree cells
   std::vector<Bbox> quadtree_bboxes_;
@@ -51,6 +50,10 @@ private:
 
   // Copy of original data
   std::vector<GeoDiv> geo_divs_original_;
+
+  // Copy to original data to be transform to keep the same points in the final
+  // cartogram
+  std::vector<GeoDiv> geo_divs_original_transformed_;
 
   // Chosen diagonal for each grid cell
   boost::multi_array<int, 2> grid_diagonals_;
@@ -189,9 +192,8 @@ public:
   Point projected_point(const Point &, bool = false) const;
   Point projected_point_with_triangulation(const Point &, bool = false) const;
   void project_with_cum_proj();
-  void project_with_delaunay_t();
+  void project_with_delaunay_t(bool);
   void project_with_triangulation();
-  void project_with_proj_sequence();
   void push_back(const GeoDiv &);
   FTReal2d &ref_to_fluxx_init();
   FTReal2d &ref_to_fluxy_init();
@@ -266,4 +268,4 @@ public:
   void write_quadtree(const std::string &);
 };
 
-#endif // INSET_STATE_HPP_
+#endif  // INSET_STATE_HPP_

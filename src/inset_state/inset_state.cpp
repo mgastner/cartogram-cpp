@@ -503,8 +503,8 @@ void InsetState::adjust_grid()
     // Multiply grid size with factor
     std::cerr << "Adjusting grid size." << std::endl;
     if (
-      lx_ * grid_factor > max_allowed_grid_length or
-      ly_ * grid_factor > max_allowed_grid_length) {
+      lx_ * grid_factor > max_allowed_autoscale_grid_length or
+      ly_ * grid_factor > max_allowed_autoscale_grid_length) {
       std::cerr << "Cannot increase grid size further. ";
       std::cerr << "Grid size exceeds maximum allowed grid length."
                 << std::endl;
@@ -584,6 +584,7 @@ std::string InsetState::label_at(const std::string &id) const
 void InsetState::store_original_geo_divs()
 {
   geo_divs_original_ = geo_divs_;
+  geo_divs_original_transformed_ = geo_divs_;
 }
 
 void InsetState::transform_points(
@@ -591,7 +592,8 @@ void InsetState::transform_points(
   bool project_original)
 {
 
-  auto &geo_divs = project_original ? geo_divs_original_ : geo_divs_;
+  auto &geo_divs =
+    project_original ? geo_divs_original_transformed_ : geo_divs_;
 
   // Iterate over GeoDivs
 #pragma omp parallel for default(none) shared(transform_point, geo_divs)
