@@ -72,38 +72,7 @@ void CartogramInfo::read_csv(const argparse::ArgumentParser &arguments)
     std::string area_as_str = area_field.get();
 
     // Parsed area string will be stored here
-    double area;
-
-    if (area_as_str.empty()) {
-      area_as_str = "NA";
-    }
-
-    if (!StringToDecimalConverter::is_str_valid_characters(area_as_str)) {
-      std::cerr << "ERROR: Invalid area string: " << area_as_str << std::endl;
-      std::cerr
-        << "Area string must only contain 0-9, '.', '-' and ',' or 'NA'."
-        << std::endl;
-      _Exit(18);
-    }
-
-    if (
-      !StringToDecimalConverter::is_str_NA(area_as_str) and
-      !StringToDecimalConverter::is_str_correct_format(area_as_str)) {
-      std::cerr << "ERROR: Invalid area string format: " << area_as_str
-                << std::endl;
-      _Exit(19);
-    }
-
-    if (StringToDecimalConverter::is_str_NA(area_as_str)) {
-      area = -1.0;
-    } else {
-      area = StringToDecimalConverter::parse_str(area_as_str);
-    }
-
-    if (area < 0.0 and !StringToDecimalConverter::is_str_NA(area_as_str)) {
-      std::cerr << "ERROR: Negative area in CSV" << std::endl;
-      _Exit(101);
-    }
+    double area = StringToDecimalConverter::parse_str(area_as_str);
 
     // Read color
     std::string color;
