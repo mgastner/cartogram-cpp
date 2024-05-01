@@ -1,11 +1,10 @@
 library(sf)
 library(tmap)
-
 phi <- seq(0, 2 * pi, by = 0.01 * pi)
 phi[length(phi)] <- 0
-outer <- round(cbind(2 * cos(phi), 2 * sin(phi)), digits = 6)
-hole <- round(cbind(sin(phi), cos(phi)), digits = 6)
-inner <- round(cbind(cos(phi), sin(phi)), digits = 6)
+outer <- cbind(2 * cos(phi), 2 * sin(phi))
+hole <- cbind(sin(phi), cos(phi))
+inner <- hole[nrow(hole):1, ]
 pol1 <- st_polygon(list(outer, hole))
 pol2 <- st_polygon(list(inner))
 sf_obj <-
