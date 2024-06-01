@@ -513,6 +513,18 @@ void InsetState::adjust_grid()
     lx_ *= grid_factor;
     ly_ *= grid_factor;
 
+    // Scale all map coordinates
+    const Transformation scale(CGAL::SCALING, grid_factor);
+    for (auto &gd : geo_divs_) {
+      for (auto &pwh : gd.ref_to_polygons_with_holes()) {
+        auto &ext_ring = pwh.outer_boundary();
+        ext_ring = transform(scale, ext_ring);
+        for (auto &h : pwh.holes()) {
+          h = transform(scale, h);
+        }
+      }
+    }
+
     // Reallocate FFTW plans
     ref_to_rho_init().allocate(lx_, ly_);
     ref_to_rho_ft().allocate(lx_, ly_);
