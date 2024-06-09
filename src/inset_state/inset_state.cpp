@@ -529,7 +529,10 @@ void InsetState::adjust_grid()
     ref_to_rho_init().allocate(lx_, ly_);
     ref_to_rho_ft().allocate(lx_, ly_);
     make_fftw_plans_for_rho();
-    std::cerr << "New grid dimensions: " << lx_ << " " << ly_ << std::endl;
+    Bbox bb = bbox();
+    std::cerr << "New grid dimensions: " << lx_ << " " << ly_
+              << " with bounding box\n\t(" << bb.xmin() << ", " << bb.ymin()
+              << ", " << bb.xmax() << ", " << bb.ymax() << ")" << std::endl;
   }
 }
 
