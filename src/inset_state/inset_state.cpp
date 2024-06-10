@@ -300,6 +300,23 @@ bool InsetState::is_input_target_area_missing(const std::string &id) const
 {
   return is_input_target_area_missing_.at(id);
 }
+void InsetState::is_simple() const
+{
+  for (const auto &gd : geo_divs_) {
+    for (const auto &pwh : gd.polygons_with_holes()) {
+      if (!pwh.outer_boundary().is_simple()) {
+        std::cerr << "ERROR: Outer boundary is not simple." << std::endl;
+        exit(1);
+      }
+      for (const auto &h : pwh.holes()) {
+        if (!h.is_simple()) {
+          std::cerr << "ERROR: Hole is not simple." << std::endl;
+          exit(1);
+        }
+      }
+    }
+  }
+}
 
 double InsetState::latt_const() const
 {
