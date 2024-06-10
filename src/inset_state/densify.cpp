@@ -1,5 +1,4 @@
 #include "inset_state.hpp"
-#include "round_point.hpp"
 
 // For printing a vector (debugging purposes)
 template <typename A>
@@ -270,6 +269,8 @@ void InsetState::densify_geo_divs()
     geodivs_dens.push_back(gd_dens);
   }
   geo_divs_ = std::move(geodivs_dens);
+
+  is_simple();
 }
 
 std::vector<Point> densification_points_with_delaunay_t(
@@ -359,8 +360,6 @@ std::vector<Point> densification_points_with_delaunay_t(
           // point.
           if (CGAL::assign(pt_intersec, p)) {
 
-            // round the point before adding
-            pt_intersec = rounded_point(pt_intersec, lx, ly);
             dens_points.push_back(pt_intersec);
           }
         }
@@ -453,4 +452,6 @@ void InsetState::densify_geo_divs_using_delaunay_t()
     geodivs_dens.push_back(gd_dens);
   }
   geo_divs_ = std::move(geodivs_dens);
+
+  is_simple();
 }
