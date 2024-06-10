@@ -266,7 +266,7 @@ int main(const int argc, const char *argv[])
     // Start map integration
     while (inset_state.n_finished_integrations() < max_integrations &&
            (inset_state.max_area_error().value > max_permitted_area_error ||
-            std::abs(inset_state.area_drift() - 1.0) > 0.01)) {
+            std::abs(inset_state.area_drift() - 1.0) > max_permitted_area_drift)) {
 
       std::cerr << "\nIntegration number "
                 << inset_state.n_finished_integrations() << std::endl;
