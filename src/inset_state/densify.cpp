@@ -1,4 +1,5 @@
 #include "inset_state.hpp"
+#include "round_point.hpp"
 
 // For printing a vector (debugging purposes)
 template <typename A>
