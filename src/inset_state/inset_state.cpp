@@ -300,6 +300,7 @@ bool InsetState::is_input_target_area_missing(const std::string &id) const
 {
   return is_input_target_area_missing_.at(id);
 }
+
 void InsetState::is_simple() const
 {
   for (const auto &gd : geo_divs_) {
@@ -542,10 +543,48 @@ void InsetState::adjust_grid()
       }
     }
 
+    for (auto &gd : geo_divs_original_) {
+      for (auto &pwh : gd.ref_to_polygons_with_holes()) {
+        auto &ext_ring = pwh.outer_boundary();
+        ext_ring = transform(scale, ext_ring);
+        for (auto &h : pwh.holes()) {
+          h = transform(scale, h);
+        }
+      }
+    }
+
+    initial_area_ *= grid_factor * grid_factor;
+
+    for (auto &gd : geo_divs_original_transformed_) {
+      for (auto &pwh : gd.ref_to_polygons_with_holes()) {
+        auto &ext_ring = pwh.outer_boundary();
+        ext_ring = transform(scale, ext_ring);
+        for (auto &h : pwh.holes()) {
+          h = transform(scale, h);
+        }
+      }
+    }
+
+    normalize_target_area();
+
+    destroy_fftw_plans_for_rho();
+    destroy_fftw_plans_for_flux();
+    ref_to_rho_init().free();
+    ref_to_rho_ft().free();
+    ref_to_fluxx_init().free();
+    ref_to_fluxy_init().free();
+
     // Reallocate FFTW plans
     ref_to_rho_init().allocate(lx_, ly_);
     ref_to_rho_ft().allocate(lx_, ly_);
+    ref_to_fluxx_init().allocate(lx_, ly_);
+    ref_to_fluxy_init().allocate(lx_, ly_);
     make_fftw_plans_for_rho();
+    make_fftw_plans_for_flux();
+    initialize_identity_proj();
+    initialize_cum_proj();
+    set_area_errors();
+
     Bbox bb = bbox();
     std::cerr << "New grid dimensions: " << lx_ << " " << ly_
               << " with bounding box\n\t(" << bb.xmin() << ", " << bb.ymin()
