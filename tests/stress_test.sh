@@ -6,17 +6,27 @@ results_file="results_${start_date}.txt"
 tmp_file="tmp_file.txt"
 SECONDS=0
 printf "\nWriting to ${results_file}\n"
-printf "Tested on ${start_date}\n" >> "${results_file}"
+printf "Tested on ${start_date}\n" >>"${results_file}"
 
 # Add colors
-red=1; green=2; yellow=3; blue=4; magenta=5; cyan=6; white=7
-color() { tput setaf $1; cat; tput sgr0; }
+red=1
+green=2
+yellow=3
+blue=4
+magenta=5
+cyan=6
+white=7
+color() {
+  tput setaf $1
+  cat
+  tput sgr0
+}
 
 # Parsing command line arguments
 # From https://unix.stackexchange.com/questions/462515/
 # check-command-line-arguments
 if [ $# -eq 0 ] || [ -z "$1" ]; then
-  cli="-pst"
+  cli="-QST"
 else
   cli="$1"
 fi
@@ -30,24 +40,23 @@ shopt -s extglob nocasematch
 # Simple progress bar:
 # Inspired from: https://github.com/pollev/bash_progress_bar
 
-PROGRESS_BAR_WIDTH=50  # default progress bar length in characters
+PROGRESS_BAR_WIDTH=50 # default progress bar length in characters
 
 draw_progress_bar() {
 
   local __percentage=$((10#$1))
 
   # Rescale the bar according to the progress bar width
-  local __num_bar=$(( $__percentage * $PROGRESS_BAR_WIDTH / 100 ))
+  local __num_bar=$(($__percentage * $PROGRESS_BAR_WIDTH / 100))
 
   # Draw progress bar
-  for b in $(seq 1 $__num_bar); do printf "⬜" ; done
+  for b in $(seq 1 $__num_bar); do printf "⬜"; done
   for s in $(seq 1 $(($PROGRESS_BAR_WIDTH - $__num_bar))); do printf " "; done
   printf "$__percentage%% \r"
 }
 
 # Function to test map with csv
-run_map()
-{
+run_map() {
 
   COLUMNS=$(tput cols)
   if [[ "$COLUMNS" -gt 60 ]]; then
@@ -59,16 +68,17 @@ run_map()
   fi
 
   printed=0
+  integration_count=0
+  max_area_err=""
   draw_progress_bar 0
   start=$SECONDS
-  cartogram ${map} ${csv} ${cli} 2>&1 |
-    while read line
-    do
+  "../bin/cartogram" ${map} ${csv} ${cli} 2>&1 |
+    while read line; do
       # save to temp file
-      echo $line >> ${tmp_file}
+      echo $line >>${tmp_file}
 
       # display warnings, errors etc.
-      if [[ $line =~ "error"  || $line =~ "warning" || $line =~ "invalid" ]]; then
+      if [[ $line =~ "error" || $line =~ "warning" || $line =~ "invalid" ]]; then
         printf "\n\n$line\n\n" | tee -a "${results_file}" | color $red
       fi
 
@@ -76,34 +86,45 @@ run_map()
         draw_progress_bar ${line:12:2}
       fi
 
-      # check if integration finished
+      # Check if integration is mentioned and update counter
+      if [[ $line =~ "Integration number" ]]; then
+        integration_count=$((integration_count + 1))
+      fi
+
+      # Check if max area error is mentioned and update the variable
+      if [[ $line =~ "max. area err:" ]]; then
+        max_area_err=$line
+      fi
+
+      # Check if integration finished
       if [[ $line =~ "progress: 1" && "$printed" -eq 0 ]]; then
         draw_progress_bar 100
         printed=1
-        printf "\n\n== Integration finished ==\n" | tee -a "${results_file}" | color $yellow
+        printf "\n\n== Integration finished ==\nTotal integrations done: %d\n%s\n" "$integration_count" "$max_area_err" | tee -a "${results_file}" | color $yellow
       fi
     done
   end=$SECONDS
-  runtime=$((end-start))
+  runtime=$((end - start))
   printf "== Runtime ${runtime}s == \n" | tee -a "${results_file}"
 
   # Checking for any errors, invalid geometry or unfinished integration
-  if grep -qi "invalid" ${tmp_file} || grep -qi "error" ${tmp_file} || ! grep -Fxq "Progress: 1" ${tmp_file} ; then
+  if grep -qi "invalid" ${tmp_file} || grep -qi "error" ${tmp_file} || ! grep -Fxq "Progress: 1" ${tmp_file}; then
     printf "== FAILED ==\n" | tee -a "${results_file}" | color $red
 
     # Printing country to failed_tmp.txt
     if [[ "${failed}" -eq 0 ]] || ! grep -qi "${country}" failed_tmp.txt; then
-      printf "\n${country}\n" >> failed_tmp.txt
+      printf "\n${country}\n" >>failed_tmp.txt
     fi
 
     # Increasing failed counter
-    failed=$((failed+1))
+    failed=$((failed + 1))
 
     # Saving data to file if FAILED
     map_wo_ext=${map_file_name%.*json}
     csv_wo_ext=${csv_name%.csv}
     err_file="results_${start_date}-${map_wo_ext}-${csv_wo_ext}.txt"
-    printf " - ${map_file_name} with ${csv_name}\n" >> failed_tmp.txt
+    printf " - ${map_file_name} with ${csv_name}\n" >>failed_tmp.txt
+    printf "../bin/cartogram %s %s %s\n" "$map" "$csv" "$cli" >>failed_tmp.txt
     printf "Full output saved to ${err_file}\n" | tee -a "${results_file}"
     mv ${tmp_file} ${err_file}
 
@@ -113,7 +134,7 @@ run_map()
   fi
 
   # Empty temporary file
-  > ${tmp_file}
+  >${tmp_file}
 
   # Printing new line
   printf "\n" | tee -a "${results_file}"
@@ -127,7 +148,7 @@ failed=0
 # Iterating through folders in ..sample_data/
 for folder in ../sample_data/*; do
   if [[ -d "${folder}" && "${folder}" != *"sandbox"* ]]; then
-    countries=$((countries+1))
+    countries=$((countries + 1))
     country=${folder##*/}
     printf " -------- Testing ${country}\n\n" | tee -a "${results_file}" | color $magenta
 
@@ -138,7 +159,7 @@ for folder in ../sample_data/*; do
 
       # Iterating through visual variable files (CSV(s)) in country's folder
       for csv in ${folder}/*.csv; do
-        total_tests=$((total_tests+1))
+        total_tests=$((total_tests + 1))
         csv_name=${csv##*/}
         printf " - with ${csv_name}\n\n" | tee -a "${results_file}" | color $cyan
 
@@ -157,15 +178,16 @@ printf "===== Finished testing all countries. =====\n\n" | tee -a "${results_fil
 duration="$(($SECONDS / 60))m $(($SECONDS % 60))s"
 printf "Finished ${total_tests} tests on ${countries} countries in ${duration}.\n"
 
-failed_per=$(( 100 * $failed / $total_tests))
-printf "Passed [$((total_tests-failed))/${total_tests}] | $((100-failed_per))%% \n" | tee -a "${results_file}" | color $green
-printf "Failed [${failed}/${total_tests}] | ${failed_per}%% \n"  | tee -a "${results_file}" | color $red
+failed_per=$((100 * $failed / $total_tests))
+printf "Passed [$((total_tests - failed))/${total_tests}] | $((100 - failed_per))%% \n" | tee -a "${results_file}" | color $green
+printf "Failed [${failed}/${total_tests}] | ${failed_per}%% \n" | tee -a "${results_file}" | color $red
 
 # Checking if any tests failed
 if [[ "${failed}" -gt 0 ]]; then
 
   # Showing failed tests and removing temporary file
-  printf "\nFailed tests:\n"  | tee -a "${results_file}" | color $red
+  printf "\nFailed tests:\n" | tee -a "${results_file}" | color $red
+
   cat failed_tmp.txt | tee -a "${results_file}"
   rm failed_tmp.txt
   printf "\n" | tee -a "${results_file}"
@@ -180,9 +202,9 @@ read -t 10 to_clear
 if [[ $? -ne 0 ]]; then
   printf "\nNo response received! " | color $red
 elif [ "$to_clear" == "y" ]; then
-  rm *.geojson;
-  rm *.png;
-  rm *.ps;
+  rm *.geojson
+  rm *.png
+  rm *.ps
   printf "All *.geojson, *.png and *.ps files deleted.\n" | color $red
   exit ${failed}
 fi
