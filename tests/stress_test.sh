@@ -72,7 +72,7 @@ run_map() {
   max_area_err=""
   draw_progress_bar 0
   start=$SECONDS
-  "../bin/cartogram" ${map} ${csv} ${cli} 2>&1 |
+  "cartogram" ${map} ${csv} ${cli} 2>&1 |
     while read line; do
       # save to temp file
       echo $line >>${tmp_file}
@@ -124,7 +124,7 @@ run_map() {
     csv_wo_ext=${csv_name%.csv}
     err_file="results_${start_date}-${map_wo_ext}-${csv_wo_ext}.txt"
     printf " - ${map_file_name} with ${csv_name}\n" >>failed_tmp.txt
-    printf "../bin/cartogram %s %s %s\n" "$map" "$csv" "$cli" >>failed_tmp.txt
+    printf "cartogram %s %s %s\n" "$map" "$csv" "$cli" >>failed_tmp.txt
     printf "Full output saved to ${err_file}\n" | tee -a "${results_file}"
     mv ${tmp_file} ${err_file}
 
