@@ -73,6 +73,9 @@ cartogram
 *.out
 *.app
 
+# Ignore backup files
+*.backup
+
 # Ignore CMakeFiles directory
 CMakeFiles
 cmake
