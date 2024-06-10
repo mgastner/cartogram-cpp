@@ -5,7 +5,7 @@ nlohmann::json InsetState::inset_to_geojson(
   bool original_geo_divs_to_geojson) const
 {
   auto &geo_divs =
-    original_geo_divs_to_geojson ? geo_divs_original_ : geo_divs_;
+    original_geo_divs_to_geojson ? geo_divs_original_transformed_ : geo_divs_;
   nlohmann::json inset_container;
   for (const auto &gd : geo_divs) {
     nlohmann::json gd_container;

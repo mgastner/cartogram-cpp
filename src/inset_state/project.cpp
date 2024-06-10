@@ -108,7 +108,7 @@ Point interpolate_point_with_barycentric_coordinates(
     bary_x * v1_proj.y() + bary_y * v2_proj.y() + bary_z * v3_proj.y()};
 }
 
-void InsetState::project_with_delaunay_t()
+void InsetState::project_with_delaunay_t(bool output_to_stdout)
 {
   std::function<Point(Point)> lambda_bary =
     [&dt = proj_qd_.dt,
@@ -116,6 +116,10 @@ void InsetState::project_with_delaunay_t()
       return interpolate_point_with_barycentric_coordinates(p1, dt, proj_map);
     };
   transform_points(lambda_bary);
+
+  if (output_to_stdout) {
+    transform_points(lambda_bary, true);
+  }
 }
 
 // In chosen_diag() and transformed_triangle(), the input x-coordinates can
@@ -462,27 +466,5 @@ void InsetState::project_with_cum_proj()
   };
 
   // Transforming all points based on triangulation
-  transform_points(lambda, true);
-}
-
-Point interpolate_point_with_proj_sequence(
-  Point p,
-  const std::vector<proj_qd> &proj_sequence_)
-{
-  for (const auto &prj_qd : proj_sequence_) {
-    auto &dt = prj_qd.dt;
-    auto &proj_map = prj_qd.triangle_transformation;
-    p = interpolate_point_with_barycentric_coordinates(p, dt, proj_map);
-  }
-  return p;
-}
-
-void InsetState::project_with_proj_sequence()
-{
-  std::function<Point(Point)> lambda = [&](Point p1) {
-    return interpolate_point_with_proj_sequence(p1, proj_sequence_);
-  };
-
-  // Apply the function on the original points
   transform_points(lambda, true);
 }

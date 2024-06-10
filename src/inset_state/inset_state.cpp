@@ -301,6 +301,24 @@ bool InsetState::is_input_target_area_missing(const std::string &id) const
   return is_input_target_area_missing_.at(id);
 }
 
+void InsetState::is_simple() const
+{
+  for (const auto &gd : geo_divs_) {
+    for (const auto &pwh : gd.polygons_with_holes()) {
+      if (!pwh.outer_boundary().is_simple()) {
+        std::cerr << "ERROR: Outer boundary is not simple." << std::endl;
+        exit(1);
+      }
+      for (const auto &h : pwh.holes()) {
+        if (!h.is_simple()) {
+          std::cerr << "ERROR: Hole is not simple." << std::endl;
+          exit(1);
+        }
+      }
+    }
+  }
+}
+
 double InsetState::latt_const() const
 {
   return latt_const_;
@@ -503,8 +521,8 @@ void InsetState::adjust_grid()
     // Multiply grid size with factor
     std::cerr << "Adjusting grid size." << std::endl;
     if (
-      lx_ * grid_factor > max_allowed_grid_length or
-      ly_ * grid_factor > max_allowed_grid_length) {
+      lx_ * grid_factor > max_allowed_autoscale_grid_length or
+      ly_ * grid_factor > max_allowed_autoscale_grid_length) {
       std::cerr << "Cannot increase grid size further. ";
       std::cerr << "Grid size exceeds maximum allowed grid length."
                 << std::endl;
@@ -513,11 +531,64 @@ void InsetState::adjust_grid()
     lx_ *= grid_factor;
     ly_ *= grid_factor;
 
+    // Scale all map coordinates
+    const Transformation scale(CGAL::SCALING, grid_factor);
+    for (auto &gd : geo_divs_) {
+      for (auto &pwh : gd.ref_to_polygons_with_holes()) {
+        auto &ext_ring = pwh.outer_boundary();
+        ext_ring = transform(scale, ext_ring);
+        for (auto &h : pwh.holes()) {
+          h = transform(scale, h);
+        }
+      }
+    }
+
+    for (auto &gd : geo_divs_original_) {
+      for (auto &pwh : gd.ref_to_polygons_with_holes()) {
+        auto &ext_ring = pwh.outer_boundary();
+        ext_ring = transform(scale, ext_ring);
+        for (auto &h : pwh.holes()) {
+          h = transform(scale, h);
+        }
+      }
+    }
+
+    initial_area_ *= grid_factor * grid_factor;
+
+    for (auto &gd : geo_divs_original_transformed_) {
+      for (auto &pwh : gd.ref_to_polygons_with_holes()) {
+        auto &ext_ring = pwh.outer_boundary();
+        ext_ring = transform(scale, ext_ring);
+        for (auto &h : pwh.holes()) {
+          h = transform(scale, h);
+        }
+      }
+    }
+
+    normalize_target_area();
+
+    destroy_fftw_plans_for_rho();
+    destroy_fftw_plans_for_flux();
+    ref_to_rho_init().free();
+    ref_to_rho_ft().free();
+    ref_to_fluxx_init().free();
+    ref_to_fluxy_init().free();
+
     // Reallocate FFTW plans
     ref_to_rho_init().allocate(lx_, ly_);
     ref_to_rho_ft().allocate(lx_, ly_);
+    ref_to_fluxx_init().allocate(lx_, ly_);
+    ref_to_fluxy_init().allocate(lx_, ly_);
     make_fftw_plans_for_rho();
-    std::cerr << "New grid dimensions: " << lx_ << " " << ly_ << std::endl;
+    make_fftw_plans_for_flux();
+    initialize_identity_proj();
+    initialize_cum_proj();
+    set_area_errors();
+
+    Bbox bb = bbox();
+    std::cerr << "New grid dimensions: " << lx_ << " " << ly_
+              << " with bounding box\n\t(" << bb.xmin() << ", " << bb.ymin()
+              << ", " << bb.xmax() << ", " << bb.ymax() << ")" << std::endl;
   }
 }
 
@@ -584,6 +655,7 @@ std::string InsetState::label_at(const std::string &id) const
 void InsetState::store_original_geo_divs()
 {
   geo_divs_original_ = geo_divs_;
+  geo_divs_original_transformed_ = geo_divs_;
 }
 
 void InsetState::transform_points(
@@ -591,7 +663,8 @@ void InsetState::transform_points(
   bool project_original)
 {
 
-  auto &geo_divs = project_original ? geo_divs_original_ : geo_divs_;
+  auto &geo_divs =
+    project_original ? geo_divs_original_transformed_ : geo_divs_;
 
   // Iterate over GeoDivs
 #pragma omp parallel for default(none) shared(transform_point, geo_divs)

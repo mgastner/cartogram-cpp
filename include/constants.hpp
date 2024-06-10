@@ -5,13 +5,14 @@
 #include <numbers>
 
 constexpr unsigned int default_long_grid_length = 128;
-constexpr unsigned int max_allowed_grid_length = 4096;
+constexpr unsigned int max_allowed_autoscale_grid_length = 2048;
 constexpr unsigned int default_grid_factor = 4;
 constexpr double dbl_epsilon = std::numeric_limits<double>::epsilon();
 constexpr double dbl_inf = std::numeric_limits<double>::infinity();
 constexpr double dbl_resolution = 1e-8;
 constexpr unsigned int max_integrations = 100;
 constexpr double max_permitted_area_error = 0.01;
+constexpr double max_permitted_area_drift = 0.05;
 constexpr double padding_unless_world = 1.5;
 constexpr double pi = std::numbers::pi;
 constexpr double earth_surface_area = 510.1e6;

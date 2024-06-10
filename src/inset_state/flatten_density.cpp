@@ -547,7 +547,4 @@ void InsetState::flatten_density_with_node_vertices()
     proj_qd_.triangle_transformation = mid;
     delta_t *= inc_after_acc;  // Try a larger step next time
   }
-
-  // Add current proj to proj_sequence vector
-  proj_sequence_.push_back(proj_qd_);
 }
