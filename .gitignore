@@ -75,6 +75,7 @@ cartogram
 
 # Ignore CMakeFiles directory
 CMakeFiles
+cmake
 cmake-build-*/
 bin
 cmake_install.cmake
