@@ -23,15 +23,7 @@ void InsetState::simplify(const unsigned int target_points_per_inset)
     for (const auto &pwh : gd.polygons_with_holes()) {
       pgn_id_to_constraint_id[pgn_id++] =
         ct.insert_constraint(pwh.outer_boundary());
-      if (!pwh.outer_boundary().is_simple()) {
-        std::cerr << "ERROR: Outer boundary is not simple." << std::endl;
-        // exit(1);
-      }
       for (const auto &h : pwh.holes()) {
-        if (!h.is_simple()) {
-          std::cerr << "ERROR: Hole is not simple." << std::endl;
-          // exit(1);
-        }
         pgn_id_to_constraint_id[pgn_id++] = ct.insert_constraint(h);
       }
     }
@@ -56,15 +48,10 @@ void InsetState::simplify(const unsigned int target_points_per_inset)
         ext_ring.push_back(((*it)->point()));
       }
 
-      // remove the last point which is identitcal to the first point to
+      // remove the last point which is identical to the first point to
       // make it a simple polygon
       ext_ring.erase(ext_ring.vertices_end() - 1);
 
-      if (!ext_ring.is_simple()) {
-        std::cerr << "ERROR: Ext Simplified polygon is not simple."
-                  << std::endl;
-        // exit(1);
-      }
       std::vector<Polygon> int_ring_v;
       for (auto h : pwh.holes()) {
         cit = pgn_id_to_constraint_id[pgn_id++];
@@ -75,14 +62,9 @@ void InsetState::simplify(const unsigned int target_points_per_inset)
           int_ring.push_back(((*it)->point()));
         }
 
-        // remove the last point which is identitcal to the first point to
+        // remove the last point which is identical to the first point to
         // make it a simple polygon
         int_ring.erase(int_ring.vertices_end() - 1);
-        if (!int_ring.is_simple()) {
-          std::cerr << "ERROR: Int Simplified polygon is not simple."
-                    << std::endl;
-          // exit(1);
-        }
         int_ring_v.push_back(int_ring);
       }
       Polygon_with_holes pgnwh =
@@ -90,5 +72,9 @@ void InsetState::simplify(const unsigned int target_points_per_inset)
       pwh = std::move(pgnwh);
     }
   }
+
+  // Check the simplicity of polygons
+  is_simple();
+
   std::cerr << n_points() << " points after simplification." << std::endl;
 }
