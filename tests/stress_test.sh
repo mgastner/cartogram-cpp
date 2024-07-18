@@ -3,10 +3,12 @@
 # Start time, and other metadata
 start_date=$(date '+%Y-%m-%d_%H-%M-%S')
 results_file="results_${start_date}.txt"
+successful_runs="successful_runs.txt"
+failed_runs="failed_runs.txt"
 tmp_file="tmp_file.txt"
 SECONDS=0
 printf "\nWriting to ${results_file}\n"
-printf "Tested on ${start_date}\n" >>"${results_file}"
+printf "Tested on ${start_date}\n" >> "${results_file}"
 
 # Add colors
 red=1
@@ -72,6 +74,7 @@ run_map() {
   max_area_err=""
   draw_progress_bar 0
   start=$SECONDS
+  printf "now trying: \n\ncartogram ${map} ${csv} ${cli}\n\n"
   "cartogram" ${map} ${csv} ${cli} 2>&1 |
     while read line; do
       # save to temp file
@@ -110,6 +113,7 @@ run_map() {
   # Checking for any errors, invalid geometry or unfinished integration
   if grep -qi "invalid" ${tmp_file} || grep -qi "error" ${tmp_file} || ! grep -Fxq "Progress: 1" ${tmp_file}; then
     printf "== FAILED ==\n" | tee -a "${results_file}" | color $red
+    printf "cartogram ${map} ${csv} ${cli}\n" >> ${failed_runs}
 
     # Printing country to failed_tmp.txt
     if [[ "${failed}" -eq 0 ]] || ! grep -qi "${country}" failed_tmp.txt; then
@@ -123,14 +127,15 @@ run_map() {
     map_wo_ext=${map_file_name%.*json}
     csv_wo_ext=${csv_name%.csv}
     err_file="results_${start_date}-${map_wo_ext}-${csv_wo_ext}.txt"
-    printf " - ${map_file_name} with ${csv_name}\n" >>failed_tmp.txt
-    printf "cartogram %s %s %s\n" "$map" "$csv" "$cli" >>failed_tmp.txt
+    printf " - ${map_file_name} with ${csv_name}\n" >> failed_tmp.txt
+    printf "cartogram %s %s %s\n" "$map" "$csv" "$cli" >> failed_tmp.txt
     printf "Full output saved to ${err_file}\n" | tee -a "${results_file}"
     mv ${tmp_file} ${err_file}
 
     # If no errors, and integration finished, pass
   else
     printf "== PASSED ==\n" | tee -a "${results_file}" | color $green
+    printf "cartogram ${map} ${csv} ${cli}\n" >> ${successful_runs}
   fi
 
   # Empty temporary file

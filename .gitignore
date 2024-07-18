@@ -87,3 +87,4 @@ CMakeCache.txt
 Makefile
 .idea
 .Rproj.user
+.vscode-ctags
