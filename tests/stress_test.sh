@@ -127,7 +127,7 @@ run_map() {
     map_wo_ext=${map_file_name%.*json}
     csv_wo_ext=${csv_name%.csv}
     err_file="results_${start_date}-${map_wo_ext}-${csv_wo_ext}.txt"
-    printf " - ${map_file_name} with ${csv_name}\n" >> failed_tmp.txt
+    printf " - with ${csv_name}\n" >> failed_tmp.txt
     printf "cartogram %s %s %s\n" "$map" "$csv" "$cli" >> failed_tmp.txt
     printf "Full output saved to ${err_file}\n" | tee -a "${results_file}"
     mv ${tmp_file} ${err_file}
@@ -192,6 +192,16 @@ if [[ "${failed}" -gt 0 ]]; then
 
   # Showing failed tests and removing temporary file
   printf "\nFailed tests:\n" | tee -a "${results_file}" | color $red
+
+while IFS= read -r line; do
+    if [[ $(echo $line | wc -w) -eq 1 ]]; then
+      printf "$line\n" | color $red
+    elif [[ $line == -* ]]; then
+      printf "$line\n" | color $yellow
+    else
+      printf "$line\n"
+    fi
+  done < failed_tmp.txt
 
   cat failed_tmp.txt | tee -a "${results_file}"
   rm failed_tmp.txt
