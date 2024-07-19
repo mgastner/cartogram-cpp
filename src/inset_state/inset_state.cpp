@@ -65,6 +65,26 @@ double InsetState::blur_width() const
   return blur_width;
 }
 
+Color InsetState::color_at(const std::string &id) const
+{
+  return colors_.at(id);
+}
+
+bool InsetState::color_found(const std::string &id) const
+{
+  return colors_.count(id);
+}
+
+bool InsetState::colors_empty() const
+{
+  return colors_.empty();
+}
+
+unsigned int InsetState::colors_size() const
+{
+  return colors_.size();
+}
+
 // TODO: For the vertices of a square, there are two possible Delaunay
 // triangulations. In the current version, we lack control over the
 // triangulation chosen by CGAL. Ideally, the triangulation should be selected
@@ -161,26 +181,6 @@ void InsetState::create_delaunay_t()
   proj_qd_.dt = dt;
   std::cerr << "Number of Delaunay triangles: " << dt.number_of_faces()
             << std::endl;
-}
-
-Color InsetState::color_at(const std::string &id) const
-{
-  return colors_.at(id);
-}
-
-bool InsetState::color_found(const std::string &id) const
-{
-  return colors_.count(id);
-}
-
-bool InsetState::colors_empty() const
-{
-  return colors_.empty();
-}
-
-unsigned int InsetState::colors_size() const
-{
-  return colors_.size();
 }
 
 void InsetState::destroy_fftw_plans_for_flux()
