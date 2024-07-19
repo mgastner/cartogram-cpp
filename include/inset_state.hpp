@@ -100,7 +100,8 @@ public:
   Bbox bbox(bool = false) const;
   void blur_density(double, bool);
   double blur_width() const;
-  void check_topology();
+  void check_completion() const;
+  void check_topology() const;
   int chosen_diag(const Point v[4], unsigned int &, bool = false) const;
   Color color_at(const std::string &) const;
   bool color_found(const std::string &) const;
@@ -141,7 +142,7 @@ public:
     unsigned int y,
     unsigned int cell_width);
   double grid_cell_area_km(const unsigned int i, const unsigned int j);
-  void holes_inside_polygons();
+  void holes_inside_polygons() const;
   double grid_cell_target_area_per_km(
     const unsigned int i,
     const unsigned int j,
@@ -205,7 +206,7 @@ public:
   void replace_target_area(const std::string &, double);
   void rescale_map(unsigned int, bool);
   void revert_smyth_craster_projection();
-  void rings_are_simple();
+  void rings_are_simple() const;
   void set_area_errors();
   void set_grid_dimensions(unsigned int, unsigned int);
   void set_geo_divs(std::vector<GeoDiv> new_geo_divs);

@@ -67,13 +67,14 @@ double InsetState::blur_width() const
 
 void InsetState::check_completion() const
 {
-  if (inset_state.max_area_error().value > max_permitted_area_error) {
-    std::cerr << "ERROR: Could not converge, max. area err: ."
+  if (max_area_error().value > max_permitted_area_error) {
+    std::cerr << "ERROR: Could not converge, max. area err: "
+              << max_area_error().value
               << std::endl;
   }
-  if (std::abs(inset_state.area_drift().value - 1.0) > max_permitted_area_error) {
+  if (std::abs(area_drift() - 1.0) > max_permitted_area_drift) {
     std::cerr << "ERROR: Area drift beyond limit: "
-              << (inset_state.area_drift() - 1.0) * 100.0 << "%"
+              << (area_drift() - 1.0) * 100.0 << "%"
               << std::endl;
   }
 }

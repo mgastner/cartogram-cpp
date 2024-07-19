@@ -1,7 +1,7 @@
 #include "inset_state.hpp"
 
 // Returns error if there are holes not inside their respective polygons
-void InsetState::holes_inside_polygons()
+void InsetState::holes_inside_polygons() const
 {
   for (const auto &gd : geo_divs_) {
     for (const auto &pwh : gd.polygons_with_holes()) {
@@ -28,7 +28,7 @@ void InsetState::holes_inside_polygons()
   }
 }
 
-void InsetState::rings_are_simple()
+void InsetState::rings_are_simple() const
 {
   for (const auto &gd : geo_divs_) {
     for (const auto &pwh : gd.polygons_with_holes()) {
@@ -51,7 +51,7 @@ void InsetState::rings_are_simple()
   }
 }
 
-void InsetState::check_topology()
+void InsetState::check_topology() const
 {
   holes_inside_polygons();
   rings_are_simple();
