@@ -17,6 +17,29 @@ double InsetState::area_error_at(const std::string &id) const
   return area_errors_.at(id);
 }
 
+Bbox InsetState::bbox(bool original_bbox) const
+{
+  auto &geo_divs = original_bbox ? geo_divs_original_ : geo_divs_;
+  // Find joint bounding box for all "polygons with holes" in this inset
+  double inset_xmin = dbl_inf;
+  double inset_xmax = -dbl_inf;
+  double inset_ymin = dbl_inf;
+  double inset_ymax = -dbl_inf;
+#pragma omp parallel for default(none) shared(geo_divs) \
+  reduction(min : inset_xmin, inset_ymin)               \
+  reduction(max : inset_xmax, inset_ymax)
+  for (const auto &gd : geo_divs) {
+    for (const auto &pwh : gd.polygons_with_holes()) {
+      const auto bb = pwh.bbox();
+      inset_xmin = std::min(bb.xmin(), inset_xmin);
+      inset_ymin = std::min(bb.ymin(), inset_ymin);
+      inset_xmax = std::max(bb.xmax(), inset_xmax);
+      inset_ymax = std::max(bb.ymax(), inset_ymax);
+    }
+  }
+  return {inset_xmin, inset_ymin, inset_xmax, inset_ymax};
+}
+
 double InsetState::blur_width() const
 {
 
@@ -138,29 +161,6 @@ void InsetState::create_delaunay_t()
   proj_qd_.dt = dt;
   std::cerr << "Number of Delaunay triangles: " << dt.number_of_faces()
             << std::endl;
-}
-
-Bbox InsetState::bbox(bool original_bbox) const
-{
-  auto &geo_divs = original_bbox ? geo_divs_original_ : geo_divs_;
-  // Find joint bounding box for all "polygons with holes" in this inset
-  double inset_xmin = dbl_inf;
-  double inset_xmax = -dbl_inf;
-  double inset_ymin = dbl_inf;
-  double inset_ymax = -dbl_inf;
-#pragma omp parallel for default(none) shared(geo_divs) \
-  reduction(min : inset_xmin, inset_ymin)               \
-  reduction(max : inset_xmax, inset_ymax)
-  for (const auto &gd : geo_divs) {
-    for (const auto &pwh : gd.polygons_with_holes()) {
-      const auto bb = pwh.bbox();
-      inset_xmin = std::min(bb.xmin(), inset_xmin);
-      inset_ymin = std::min(bb.ymin(), inset_ymin);
-      inset_xmax = std::max(bb.xmax(), inset_xmax);
-      inset_ymax = std::max(bb.ymax(), inset_ymax);
-    }
-  }
-  return {inset_xmin, inset_ymin, inset_xmax, inset_ymax};
 }
 
 Color InsetState::color_at(const std::string &id) const
