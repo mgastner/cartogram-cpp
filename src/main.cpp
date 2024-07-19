@@ -373,8 +373,9 @@ int main(const int argc, const char *argv[])
       progress_tracker.print_progress_mid_integration(inset_state);
       inset_state.increment_integration();
     }
-    // End of inset integrations
 
+    // End of inset integrations
+    inset_state.check_completion(); // prints error message if conditions still not met
     time_tracker.stop("Integration Inset " + inset_pos);
 
     // Update and display progress information

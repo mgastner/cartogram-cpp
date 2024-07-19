@@ -65,6 +65,19 @@ double InsetState::blur_width() const
   return blur_width;
 }
 
+void InsetState::check_completion() const
+{
+  if (inset_state.max_area_error().value > max_permitted_area_error) {
+    std::cerr << "ERROR: Could not converge, max. area err: ."
+              << std::endl;
+  }
+  if (std::abs(inset_state.area_drift().value - 1.0) > max_permitted_area_error) {
+    std::cerr << "ERROR: Area drift beyond limit: "
+              << (inset_state.area_drift() - 1.0) * 100.0 << "%"
+              << std::endl;
+  }
+}
+
 Color InsetState::color_at(const std::string &id) const
 {
   return colors_.at(id);
