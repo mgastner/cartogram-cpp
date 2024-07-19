@@ -1,14 +1,23 @@
 #!/usr/bin/env bash
 
 # Start time, and other metadata
-start_date=$(date '+%Y-%m-%d_%H-%M-%S')
-results_file="results_${start_date}.txt"
+start_date=$(date '+%Y-%m-%d_%H-%M')
+
+# Create results directory and change to it
+results_dir="results_${start_date}"
+mkdir -p "${results_dir}"
+cd "${results_dir}"
+
+results_file="log.txt"
 successful_runs="successful_runs.txt"
 failed_runs="failed_runs.txt"
 tmp_file="tmp_file.txt"
 SECONDS=0
-printf "\nWriting to ${results_file}\n"
-printf "Tested on ${start_date}\n" >> "${results_file}"
+
+
+# Arrays to store runtimes and map-csv pairs
+runtimes=()
+map_csv_pairs=()
 
 # Add colors
 red=1
@@ -32,6 +41,10 @@ if [ $# -eq 0 ] || [ -z "$1" ]; then
 else
   cli="$1"
 fi
+
+printf "\nWriting to ${results_file}\n"
+printf "Tested on ${start_date}\n" >> "${results_file}"
+
 printf "Passing" | tee -a "${results_file}"
 printf " ${cli} " | tee -a "${results_file}" | color $magenta
 printf "to cartogram\n\n" | tee -a "${results_file}"
@@ -72,9 +85,9 @@ run_map() {
   printed=0
   integration_count=0
   max_area_err=""
-  draw_progress_bar 0
   start=$SECONDS
   printf "now trying: \n\ncartogram ${map} ${csv} ${cli}\n\n"
+  draw_progress_bar 0
   "cartogram" ${map} ${csv} ${cli} 2>&1 |
     while read line; do
       # save to temp file
@@ -127,7 +140,7 @@ run_map() {
     map_wo_ext=${map_file_name%.*json}
     csv_wo_ext=${csv_name%.csv}
     err_file="results_${start_date}-${map_wo_ext}-${csv_wo_ext}.txt"
-    printf " - with ${csv_name}\n" >> failed_tmp.txt
+    printf " - with ${csv_name} in ${runtime}s\n" >> failed_tmp.txt
     printf "cartogram %s %s %s\n" "$map" "$csv" "$cli" >> failed_tmp.txt
     printf "Full output saved to ${err_file}\n" | tee -a "${results_file}"
     mv ${tmp_file} ${err_file}
@@ -136,6 +149,11 @@ run_map() {
   else
     printf "== PASSED ==\n" | tee -a "${results_file}" | color $green
     printf "cartogram ${map} ${csv} ${cli}\n" >> ${successful_runs}
+
+    # Store the runtime for the current map
+    runtimes+=($runtime)
+    map_csv_pairs+=("${map_file_name} with ${csv_name}")
+
   fi
 
   # Empty temporary file
@@ -151,7 +169,7 @@ total_tests=0
 failed=0
 
 # Iterating through folders in ..sample_data/
-for folder in ../sample_data/*; do
+for folder in ../../sample_data/*; do
   if [[ -d "${folder}" && "${folder}" != *"sandbox"* ]]; then
     countries=$((countries + 1))
     country=${folder##*/}
@@ -181,7 +199,53 @@ done
 printf "===== Finished testing all countries. =====\n\n" | tee -a "${results_file}" | color $magenta
 
 duration="$(($SECONDS / 60))m $(($SECONDS % 60))s"
+total_runtime=0
+max_runtime=0
+max_runtime_map=""
+median_runtime=0
+
+# Calculate total runtime, max runtime, and find the map with max runtime
+for i in "${!runtimes[@]}"; do
+  total_runtime=$((total_runtime + runtimes[i]))
+  if (( runtimes[i] > max_runtime )); then
+    max_runtime=${runtimes[i]}
+    max_runtime_map=${map_csv_pairs[i]}
+  fi
+done
+
+# Calculate average runtime
+average_runtime=$((total_runtime / total_tests))
+
+# Calculate median runtime
+sorted_runtimes=($(printf '%s\n' "${runtimes[@]}" | sort -n))
+if (( total_tests % 2 == 0 )); then
+  median_runtime=$(( (sorted_runtimes[total_tests/2 - 1] + sorted_runtimes[total_tests/2]) / 2 ))
+else
+  median_runtime=${sorted_runtimes[total_tests/2]}
+fi
+
+# Calculate the top quartile runtime maps
+# top_quartile_count=$((total_tests / 4))
+# if (( top_quartile_count == 0 )); then
+#   top_quartile_count=1
+# fi
+# sorted_indices=($(printf '%s\n' "${!runtimes[@]}" | sort -rn -k1,1 -t ' '))
+# top_quartile_maps=()
+# for i in $(seq 0 $((top_quartile_count - 1))); do
+#   idx=${sorted_indices[$i]}
+#   top_quartile_maps+=("${runtimes[$idx]}s - ${map_csv_pairs[$idx]}")
+# done
+
 printf "Finished ${total_tests} tests on ${countries} countries in ${duration}.\n"
+printf "Total runtime: ${total_runtime}s\n" | tee -a "${results_file}"
+printf "Average runtime: ${average_runtime}s\n" | tee -a "${results_file}"
+printf "Max runtime: ${max_runtime}s (Map: ${max_runtime_map})\n" | tee -a "${results_file}"
+printf "Median runtime: ${median_runtime}s\n" | tee -a "${results_file}"
+
+# printf "Top quartile maps with longest runtime:\n" | tee -a "${results_file}"
+# for map in "${top_quartile_maps[@]}"; do
+#   printf " - ${map}\n" | tee -a "${results_file}"
+# done
 
 failed_per=$((100 * $failed / $total_tests))
 printf "Passed [$((total_tests - failed))/${total_tests}] | $((100 - failed_per))%% \n" | tee -a "${results_file}" | color $green
@@ -191,19 +255,17 @@ printf "Failed [${failed}/${total_tests}] | ${failed_per}%% \n" | tee -a "${resu
 if [[ "${failed}" -gt 0 ]]; then
 
   # Showing failed tests and removing temporary file
-  printf "\nFailed tests:\n" | tee -a "${results_file}" | color $red
+  printf "\nFailed tests:\n" | tee -a "${results_file}" | color $magenta
 
 while IFS= read -r line; do
     if [[ $(echo $line | wc -w) -eq 1 ]]; then
-      printf "$line\n" | color $red
-    elif [[ $line == -* ]]; then
-      printf "$line\n" | color $yellow
+      printf "$line\n" | tee -a "${results_file}" | color $red
+    elif [[ $line == " - "* ]]; then
+      printf "$line\n" | tee -a "${results_file}" | color $yellow
     else
-      printf "$line\n"
+      printf "$line\n" | tee -a "${results_file}"
     fi
   done < failed_tmp.txt
-
-  cat failed_tmp.txt | tee -a "${results_file}"
   rm failed_tmp.txt
   printf "\n" | tee -a "${results_file}"
 fi
