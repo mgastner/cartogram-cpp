@@ -442,6 +442,45 @@ double InsetState::area_drift() const
   return (total_inset_area() / initial_area_);
 }
 
+// Fix area drift
+void InsetState::fix_area_drift()
+{
+  double area_drift_ = area_drift();
+    // Print area drift information
+    std::cerr << "Area drift: " << (area_drift_ - 1.0) * 100.0
+              << "%" << std::endl;
+
+  double factor = 1 / area_drift_;
+
+  // Scale all map coordinates
+  const Transformation scale(CGAL::SCALING, factor);
+  for (auto &gd : geo_divs_) {
+    for (auto &pwh : gd.ref_to_polygons_with_holes()) {
+      auto &ext_ring = pwh.outer_boundary();
+      ext_ring = transform(scale, ext_ring);
+      for (auto &h : pwh.holes()) {
+        h = transform(scale, h);
+      }
+    }
+  }
+
+  for (auto &gd : geo_divs_original_transformed_) {
+    for (auto &pwh : gd.ref_to_polygons_with_holes()) {
+      auto &ext_ring = pwh.outer_boundary();
+      ext_ring = transform(scale, ext_ring);
+      for (auto &h : pwh.holes()) {
+        h = transform(scale, h);
+      }
+    }
+  }
+
+  // Iterate over GeoDivs
+  for (auto &gd : geo_divs_) {
+    double new_area = target_area_at(gd.id()) * factor;
+    replace_target_area(gd.id(), new_area);
+  }
+}
+
 void InsetState::push_back(const GeoDiv &gd)
 {
   geo_divs_.push_back(gd);

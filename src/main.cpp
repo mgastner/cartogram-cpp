@@ -3,6 +3,7 @@
 #include "parse_arguments.hpp"
 #include "progress_tracker.hpp"
 #include "time_tracker.hpp"
+#include "main.h"
 
 int main(const int argc, const char *argv[])
 {
@@ -358,9 +359,8 @@ int main(const int argc, const char *argv[])
         inset_state.write_intersections_image(intersections_resolution);
       }
 
-      // Print area drift information
-      std::cerr << "Area drift: " << (inset_state.area_drift() - 1.0) * 100.0
-                << "%" << std::endl;
+      // Print area drift information and fix area drift by rescaling
+      inset_state.fix_area_drift();
 
       // Update area errors
       inset_state.set_area_errors();
