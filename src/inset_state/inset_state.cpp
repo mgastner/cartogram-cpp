@@ -56,21 +56,24 @@ double InsetState::blur_width() const
   double blur_width =
     std::pow(2.0, blur_default_pow - (0.5 * int(n_finished_integrations_)));
 
+  // NOTE: Read TODO above
   // if (inset_state.n_finished_integrations() < max_integrations) {
   //   blur_width =
   //     std::pow(2.0, 5 - int(inset_state.n_finished_integrations()));
   // } else {
   //   blur_width = 0.0;
   // }
+
+  std::cerr << "blur_width = " << blur_width << std::endl;
   return blur_width;
 }
 
 void InsetState::check_completion() const
 {
   if (max_area_error().value > max_permitted_area_error) {
-    std::cerr << "ERROR: Could not converge, max. area err: "
-              << max_area_error().value
-              << std::endl;
+      std::cerr << "Could not converge, max. area err: " << max_area_error().value
+                << ", GeoDiv: " << max_area_error().geo_div
+                << std::endl;
   }
   if (std::abs(area_drift() - 1.0) > max_permitted_area_drift) {
     std::cerr << "ERROR: Area drift beyond limit: "
