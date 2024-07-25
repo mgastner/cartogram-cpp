@@ -1,13 +1,15 @@
 #!/bin/bash
 
 # Path to the file containing the commands
-commands_file="commands.txt"
+test_folder=$1
 
 # Check if the commands file exists
-if [[ ! -f "$commands_file" ]]; then
-    echo "File not found: $commands_file"
+if [[ ! -d "./$test_tolder" ]]; then
+    echo "Directoy not found: $test_folder"
     exit 1
 fi
+
+cd "$test_folder"
 
 # Read each command from the file and execute it
 while IFS= read -r cmd; do
@@ -21,7 +23,10 @@ while IFS= read -r cmd; do
         # Otherwise, append the new results, excluding the header
         tail -n +2 tmp.csv >> final_results.csv
     fi
-done < "$commands_file"
+done < "successful_runs.txt"
 
 # Clean up the temporary file
 rm tmp.csv
+
+# Print full file location
+echo "Results saved to: $(pwd)/final_results.csv"

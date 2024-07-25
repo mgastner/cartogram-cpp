@@ -95,7 +95,7 @@ run_map() {
 
       # display warnings, errors etc.
       if [[ $line =~ "error" || $line =~ "warning" || $line =~ "invalid" ]]; then
-        printf "\n\n$line\n\n" | tee -a "${results_file}" | color $red
+        printf "\n\n%s\n\n" "$line" | tee -a "${results_file}" | color $red
       fi
 
       if [[ $line =~ "progress: 0." ]]; then
