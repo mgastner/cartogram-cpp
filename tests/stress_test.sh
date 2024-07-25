@@ -139,10 +139,10 @@ run_map() {
     # Saving data to file if FAILED
     map_wo_ext=${map_file_name%.*json}
     csv_wo_ext=${csv_name%.csv}
-    err_file="results_${start_date}-${map_wo_ext}-${csv_wo_ext}.txt"
+    err_file="DNF-${map_wo_ext}-with-${csv_wo_ext}.txt"
     printf " - with ${csv_name} in ${runtime}s\n" >> failed_tmp.txt
     printf "cartogram %s %s %s\n" "$map" "$csv" "$cli" >> failed_tmp.txt
-    printf "Full output saved to ${err_file}\n" | tee -a "${results_file}"
+    printf "Full output saved ro ${err_file}\n" | tee -a "${results_file}"
     mv ${tmp_file} ${err_file}
 
     # If no errors, and integration finished, pass
