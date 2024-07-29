@@ -3,7 +3,6 @@
 #include "parse_arguments.hpp"
 #include "progress_tracker.hpp"
 #include "time_tracker.hpp"
-#include "main.h"
 
 int main(const int argc, const char *argv[])
 {
@@ -212,6 +211,12 @@ int main(const int argc, const char *argv[])
     // Rescale map to fit into a rectangular box [0, lx] * [0, ly]
     inset_state.rescale_map(max_n_grid_rows_or_cols, cart_info.is_world_map());
 
+    // Output rescaled GeoJSON
+    cart_info.write_geojson(
+      geo_file_name,
+      map_name + "_input.geojson",
+      output_to_stdout);
+
     if (output_to_stdout) {
 
       // Store original coordinates
@@ -246,15 +251,8 @@ int main(const int argc, const char *argv[])
     }
     if (plot_polygons) {
 
-      // Write PNG and PS files if requested by command-line option
-      std::string input_filename = inset_state.inset_name();
-      if (plot_grid) {
-        input_filename += "_input_grid";
-      } else {
-        input_filename += "_input";
-      }
-      std::cerr << "Writing " << input_filename << std::endl;
-      inset_state.write_cairo_map(input_filename, plot_grid);
+      // Write input of SVG files if requested by command-line option
+      inset_state.write_cairo_map(inset_state.inset_name() + "_input", plot_grid);
     }
 
     // Remove tiny polygons below threshold
@@ -285,7 +283,6 @@ int main(const int argc, const char *argv[])
             inset_state.inset_name() + "_" +
             std::to_string(inset_state.n_finished_integrations()) +
             "_quadtree";
-          std::cerr << "Writing " << quadtree_filename << ".svg" << std::endl;
 
           // Draw the resultant quadtree
           inset_state.write_quadtree(quadtree_filename);
@@ -294,8 +291,6 @@ int main(const int argc, const char *argv[])
             inset_state.inset_name() + "_" +
             std::to_string(inset_state.n_finished_integrations()) +
             "_delaunay_t";
-          std::cerr << "Writing " << delaunay_t_filename << ".svg"
-                    << std::endl;
           inset_state.write_delaunay_triangles(delaunay_t_filename);
         }
       }
@@ -360,7 +355,7 @@ int main(const int argc, const char *argv[])
       }
 
       // Print area drift information and fix area drift by rescaling
-      inset_state.fix_area_drift();
+      // inset_state.fix_area_drift();
 
       // Update area errors
       inset_state.set_area_errors();
@@ -381,14 +376,7 @@ int main(const int argc, const char *argv[])
     progress_tracker.update_and_print_progress_end_integration(inset_state);
 
     if (plot_polygons) {
-      std::string output_filename = inset_state.inset_name();
-      if (plot_grid) {
-        output_filename += "_output_grid";
-      } else {
-        output_filename += "_output";
-      }
-      std::cerr << "Writing " << output_filename << std::endl;
-      inset_state.write_cairo_map(output_filename, plot_grid);
+      inset_state.write_cairo_map(inset_state.inset_name() + "_output", plot_grid);
     }
 
     if (world) {

@@ -93,6 +93,8 @@ void write_quadtree_rectangles_on_surface(
 
 void InsetState::write_delaunay_triangles(const std::string &filename)
 {
+  std::cerr << "Writing " << filename << ".svg"
+            << std::endl;
   cairo_surface_t *surface =
     cairo_svg_surface_create((filename + ".svg").c_str(), lx_, ly_);
   cairo_t *cr = cairo_create(surface);
@@ -105,6 +107,7 @@ void InsetState::write_delaunay_triangles(const std::string &filename)
 
 void InsetState::write_quadtree(const std::string &filename)
 {
+  std::cerr << "Writing " << filename << ".svg" << std::endl;
   cairo_surface_t *surface =
     cairo_svg_surface_create((filename + ".svg").c_str(), lx_, ly_);
   cairo_t *cr = cairo_create(surface);
@@ -375,6 +378,7 @@ void InsetState::write_cairo_map(
   std::unordered_map<Point, Point> vectors)
 {
   const auto svg_name = file_name + ".svg";
+  std::cerr << "Writing " << file_name << std::endl;
 
   // Check whether the has all GeoDivs colored
   const bool has_colors = (colors_size() == n_geo_divs());

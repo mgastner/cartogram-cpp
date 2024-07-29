@@ -71,7 +71,7 @@ double InsetState::blur_width() const
 void InsetState::check_completion() const
 {
   if (max_area_error().value > max_permitted_area_error) {
-      std::cerr << "Could not converge, max. area err: " << max_area_error().value
+      std::cerr << "ERROR: Could not converge, max. area err: " << max_area_error().value
                 << ", GeoDiv: " << max_area_error().geo_div
                 << std::endl;
   }
@@ -439,6 +439,11 @@ std::string InsetState::pos() const
 
 double InsetState::area_drift() const
 {
+  double area_drift_ = total_inset_area() / initial_area_;
+  // Print area drift information
+  std::cerr << "Area drift: " << (area_drift_ - 1.0) * 100.0
+            << "%" << std::endl;
+  return area_drift_;
   return (total_inset_area() / initial_area_);
 }
 
