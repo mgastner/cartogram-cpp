@@ -421,7 +421,7 @@ unsigned int InsetState::n_rings() const
 
 void InsetState::normalize_target_area()
 {
-  double initial_area = total_inset_area();
+  double initial_area = initial_area_;
   double ta = total_target_area();
 
   // Assign normalized target area to GeoDivs
