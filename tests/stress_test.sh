@@ -273,8 +273,10 @@ fi
 # Removing temporary files
 rm ${tmp_file}
 
+printf "Results saved to ${results_dir}\n\n"
+
 # Prompting for file deletion
-printf "Clear ALL *.geojson, *.png and *.ps files in current directory? [y/N]: " | color $yellow
+printf "Clear ALL *.geojson, *.png and *.ps files in directory? [y/N]: " | color $yellow
 read -t 10 to_clear
 if [[ $? -ne 0 ]]; then
   printf "\nNo response received! " | color $red
