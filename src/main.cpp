@@ -354,15 +354,9 @@ int main(const int argc, const char *argv[])
         inset_state.write_intersections_image(intersections_resolution);
       }
 
-      // Print area drift information and fix area drift by rescaling
-      // inset_state.fix_area_drift();
-
       // Update area errors
       inset_state.set_area_errors();
       inset_state.adjust_grid();
-      std::cerr << "max. area err: " << inset_state.max_area_error().value
-                << ", GeoDiv: " << inset_state.max_area_error().geo_div
-                << std::endl;
       progress_tracker.print_progress_mid_integration(inset_state);
       inset_state.increment_integration();
     }

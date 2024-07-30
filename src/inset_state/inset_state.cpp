@@ -70,14 +70,16 @@ double InsetState::blur_width() const
 
 void InsetState::check_completion() const
 {
-  if (max_area_error().value > max_permitted_area_error) {
-      std::cerr << "ERROR: Could not converge, max. area err: " << max_area_error().value
-                << ", GeoDiv: " << max_area_error().geo_div
+  auto [value, geo_div] = max_area_error();
+  if (value > max_permitted_area_error) {
+      std::cerr << "ERROR: Could not converge, max area error beyond limit (" << value
+                << ", " << geo_div << ")"
                 << std::endl;
   }
-  if (std::abs(area_expansion_factor() - 1.0) > max_permitted_area_expansion) {
+  double area_expansion_factor_ = area_expansion_factor();
+  if (std::abs(area_expansion_factor_ - 1.0) > max_permitted_area_expansion) {
     std::cerr << "ERROR: Area drift beyond limit: "
-              << (area_expansion_factor() - 1.0) * 100.0 << "%"
+              << (area_expansion_factor_ - 1.0) * 100.0 << "%"
               << std::endl;
   }
 }
@@ -388,6 +390,9 @@ struct max_area_error_info InsetState::max_area_error() const
       worst_gd = gd_id;
     }
   }
+  std::cerr << "max. area err: " << value
+            << ", GeoDiv: " << worst_gd
+            << std::endl;
   return {value, worst_gd};
 }
 
@@ -444,45 +449,6 @@ double InsetState::area_expansion_factor() const
   std::cerr << "Area drift: " << (area_expansion_factor_ - 1.0) * 100.0
             << "%" << std::endl;
   return area_expansion_factor_;
-}
-
-// Fix area drift
-void InsetState::fix_area_drift()
-{
-  double area_drift_ = area_expansion_factor();
-    // Print area drift information
-    std::cerr << "Area drift: " << (area_drift_ - 1.0) * 100.0
-              << "%" << std::endl;
-
-  double factor = 1 / area_drift_;
-
-  // Scale all map coordinates
-  const Transformation scale(CGAL::SCALING, factor);
-  for (auto &gd : geo_divs_) {
-    for (auto &pwh : gd.ref_to_polygons_with_holes()) {
-      auto &ext_ring = pwh.outer_boundary();
-      ext_ring = transform(scale, ext_ring);
-      for (auto &h : pwh.holes()) {
-        h = transform(scale, h);
-      }
-    }
-  }
-
-  for (auto &gd : geo_divs_original_transformed_) {
-    for (auto &pwh : gd.ref_to_polygons_with_holes()) {
-      auto &ext_ring = pwh.outer_boundary();
-      ext_ring = transform(scale, ext_ring);
-      for (auto &h : pwh.holes()) {
-        h = transform(scale, h);
-      }
-    }
-  }
-
-  // Iterate over GeoDivs
-  for (auto &gd : geo_divs_) {
-    double new_area = target_area_at(gd.id()) * factor;
-    replace_target_area(gd.id(), new_area);
-  }
 }
 
 void InsetState::push_back(const GeoDiv &gd)

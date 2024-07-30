@@ -12,6 +12,13 @@
 struct max_area_error_info {
   double value;
   std::string geo_div;
+
+    // Conversion to std::tuple to enable structured bindings
+    // this allows:
+    // auto [value, geo_div] = max_area_error();
+    operator std::tuple<double, std::string>() const {
+        return std::make_tuple(value, geo_div);
+    }
 };
 
 struct proj_qd {  // quadtree-delaunay projection
@@ -124,8 +131,6 @@ public:
   void flatten_density();  // Flatten said density with integration
   void flatten_ellipse_density();
   void flatten_density_with_node_vertices();
-
-  void fix_area_drift();
 
   const std::vector<GeoDiv> &geo_divs() const;
   std::vector<std::vector<Color>> grid_cell_colors(unsigned int cell_width);
