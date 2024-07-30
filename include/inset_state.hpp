@@ -94,7 +94,7 @@ public:
   void apply_smyth_craster_projection();
 
   // Calculate difference between initial area and current area
-  double area_drift() const;
+  double area_expansion_factor() const;
   double area_error_at(const std::string &) const;
   void auto_color();  // Automatically color GeoDivs
   Bbox bbox(bool = false) const;

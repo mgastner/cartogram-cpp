@@ -75,9 +75,9 @@ void InsetState::check_completion() const
                 << ", GeoDiv: " << max_area_error().geo_div
                 << std::endl;
   }
-  if (std::abs(area_drift() - 1.0) > max_permitted_area_drift) {
+  if (std::abs(area_expansion_factor() - 1.0) > max_permitted_area_expansion) {
     std::cerr << "ERROR: Area drift beyond limit: "
-              << (area_drift() - 1.0) * 100.0 << "%"
+              << (area_expansion_factor() - 1.0) * 100.0 << "%"
               << std::endl;
   }
 }
@@ -437,20 +437,19 @@ std::string InsetState::pos() const
   return pos_;
 }
 
-double InsetState::area_drift() const
+double InsetState::area_expansion_factor() const
 {
-  double area_drift_ = total_inset_area() / initial_area_;
+  double area_expansion_factor_ = total_inset_area() / initial_area_;
   // Print area drift information
-  std::cerr << "Area drift: " << (area_drift_ - 1.0) * 100.0
+  std::cerr << "Area drift: " << (area_expansion_factor_ - 1.0) * 100.0
             << "%" << std::endl;
-  return area_drift_;
-  return (total_inset_area() / initial_area_);
+  return area_expansion_factor_;
 }
 
 // Fix area drift
 void InsetState::fix_area_drift()
 {
-  double area_drift_ = area_drift();
+  double area_drift_ = area_expansion_factor();
     // Print area drift information
     std::cerr << "Area drift: " << (area_drift_ - 1.0) * 100.0
               << "%" << std::endl;
