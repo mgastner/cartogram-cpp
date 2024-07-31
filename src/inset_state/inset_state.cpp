@@ -54,7 +54,7 @@ double InsetState::blur_width() const
   const unsigned int blur_default_pow = static_cast<unsigned int>(
     6 + log2(std::max(lx(), ly()) / default_long_grid_length));
   double blur_width =
-    std::pow(2.0, blur_default_pow - (0.5 * int(n_finished_integrations_)));
+    std::pow(2.0, blur_default_pow - (0.5 * n_finished_integrations_));
 
   // NOTE: Read TODO above
   // if (inset_state.n_finished_integrations() < max_integrations) {
@@ -429,13 +429,12 @@ unsigned int InsetState::n_rings() const
 
 void InsetState::normalize_target_area()
 {
-  double initial_area = initial_area_;
   double ta = total_target_area();
 
   // Assign normalized target area to GeoDivs
   for (const auto &gd : geo_divs_) {
     double normalized_target_area =
-      (target_area_at(gd.id()) / ta) * initial_area;
+      (target_area_at(gd.id()) / ta) * initial_area_;
     replace_target_area(gd.id(), normalized_target_area);
   }
 }
