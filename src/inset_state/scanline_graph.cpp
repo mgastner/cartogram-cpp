@@ -20,7 +20,7 @@ std::vector<std::vector<intersection> > InsetState::intersec_with_parallel_to(
   for (const auto &gd : geo_divs_) {
 
     // Find target density
-    const double target_density = target_areas_.at(gd.id()) / gd.area();
+    const double target_density = target_area_at(gd.id()) / gd.area();
 
     // Iterate over "polygons with holes" in inset_state
     for (const auto &pwh : gd.polygons_with_holes()) {

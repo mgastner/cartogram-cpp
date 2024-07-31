@@ -55,6 +55,9 @@ private:
   // Geographic divisions in this inset
   std::vector<GeoDiv> geo_divs_;
 
+  // Create a map from GeoDiv ID to index in geo_divs_
+  std::map<std::string, size_t> geo_divs_id_to_index_;
+
   // Copy of original data
   std::vector<GeoDiv> geo_divs_original_;
 
@@ -156,6 +159,8 @@ public:
     const double total_target_area,
     const double total_inset_area);
   Bbox get_bbox_bar(const double bar_width, const double bar_height);
+
+  GeoDiv &get_geo_div(const std::string &);
 
   std::pair<double, unsigned int> get_km_legend_length();
   std::pair<double, unsigned int> get_visual_variable_legend_length();

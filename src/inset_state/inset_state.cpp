@@ -393,6 +393,9 @@ struct max_area_error_info InsetState::max_area_error() const
   std::cerr << "max. area err: " << value
             << ", GeoDiv: " << worst_gd
             << std::endl;
+  std::cerr << "Current Area: " << geo_divs_[geo_divs_id_to_index_.at(worst_gd)].area()
+            << ", Target Area: " << target_area_at(worst_gd)
+            << std::endl;
   return {value, worst_gd};
 }
 
@@ -453,6 +456,7 @@ double InsetState::area_expansion_factor() const
 
 void InsetState::push_back(const GeoDiv &gd)
 {
+  geo_divs_id_to_index_.insert({gd.id(), geo_divs_.size()});
   geo_divs_.push_back(gd);
 }
 
@@ -649,7 +653,14 @@ bool InsetState::target_area_is_missing(const std::string &id) const
 
 double InsetState::target_area_at(const std::string &id) const
 {
-  return target_areas_.at(id);
+    try {
+        return target_areas_.at(id);
+    } catch (const std::out_of_range &e) {
+        std::cerr << "ERROR: Key '" << id << "' not found in target_areas_. "
+                  << "Exception: " << e.what() << std::endl;
+        // Re-throw, or return a default value
+        throw;
+    }
 }
 
 double InsetState::total_inset_area() const
