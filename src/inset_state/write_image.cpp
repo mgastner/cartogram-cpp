@@ -937,7 +937,9 @@ void InsetState::write_density_image(
     }
   } else {
     for (unsigned int i = 0; i < lx_; ++i) {
-      for (unsigned int j = 0; j < ly_; ++j) {
+      // density[i * ly_ + j] != dens_mean ensures we do not plot unnecessary white squares
+      for (unsigned int j = 0; j < ly_ && density[i * ly_ + j] != dens_mean; ++j) {
+
         Color color =
           heatmap_color(density[i * ly_ + j], dens_min, dens_mean, dens_max);
 
