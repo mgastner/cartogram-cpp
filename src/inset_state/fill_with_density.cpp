@@ -16,7 +16,7 @@ void InsetState::fill_with_density(bool plot_density)
   // target areas in the desired proportion to the other polygons. That is,
   // we must call cart_info.replace_missing_and_zero_target_areas() before
   // calling this function.
-  double mean_density = (1.0 - (initial_area_ / (lx_ * ly_))) /
+  double mean_density = (1.0 - (total_target_area() / (lx_ * ly_))) /
                         (1.0 - (total_inset_area() / (lx_ * ly_)));
 
 #pragma omp parallel for default(none)
