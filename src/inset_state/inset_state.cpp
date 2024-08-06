@@ -379,9 +379,11 @@ void InsetState::make_fftw_plans_for_flux()
   grid_fluxy_init_.make_fftw_plan(FFTW_REDFT01, FFTW_RODFT01);
 }
 
-struct max_area_error_info InsetState::max_area_error() const
+struct max_area_error_info InsetState::max_area_error(bool print) const
 {
   auto it = area_errors_.begin();
+  double sum_errors = 0.0;
+  size_t count = 0;
   std::string worst_gd = it->first;
   double value = it->second;
   for (const auto &[gd_id, area_error] : area_errors_) {
@@ -389,13 +391,19 @@ struct max_area_error_info InsetState::max_area_error() const
       value = area_error;
       worst_gd = gd_id;
     }
+    sum_errors += area_error;
+    ++count;;
   }
-  std::cerr << "max. area err: " << value
-            << ", GeoDiv: " << worst_gd
-            << std::endl;
-  std::cerr << "Current Area: " << geo_divs_[geo_divs_id_to_index_.at(worst_gd)].area()
-            << ", Target Area: " << target_area_at(worst_gd)
-            << std::endl;
+  if (print) {
+    std::cerr << "max. area err: " << value
+              << ", GeoDiv: " << worst_gd
+              << std::endl;
+    std::cerr << "average area err: " << sum_errors / count
+              << std::endl;
+    std::cerr << "Current Area: " << geo_divs_[geo_divs_id_to_index_.at(worst_gd)].area()
+              << ", Target Area: " << target_area_at(worst_gd)
+              << std::endl;
+  }
   return {value, worst_gd};
 }
 
@@ -538,7 +546,7 @@ void InsetState::set_area_errors()
 void InsetState::adjust_grid()
 {
   unsigned int long_grid_length = std::max(lx_, ly_);
-  double curr_max_area_error = max_area_error().value;
+  double curr_max_area_error = max_area_error(false).value;
   unsigned int grid_factor =
     (long_grid_length > default_long_grid_length) ? 2 : default_grid_factor;
   max_area_errors_.push_back(curr_max_area_error);
