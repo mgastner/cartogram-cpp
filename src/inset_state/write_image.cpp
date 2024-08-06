@@ -851,6 +851,8 @@ void InsetState::write_density_image(
   const double *density,
   const bool plot_pycnophylactic)
 {
+
+  std::cerr << "Writing " << filename << std::endl;
   // Whether to draw bar on the cairo surface
   const bool draw_bar = false;
   cairo_surface_t *surface =
@@ -938,7 +940,8 @@ void InsetState::write_density_image(
   } else {
     for (unsigned int i = 0; i < lx_; ++i) {
       // density[i * ly_ + j] != dens_mean ensures we do not plot unnecessary white squares
-      for (unsigned int j = 0; j < ly_ && density[i * ly_ + j] != dens_mean; ++j) {
+      for (unsigned int j = 0; j < ly_; ++j) {
+        if (density[i * ly_ + j + 1] != dens_mean) {
 
         Color color =
           heatmap_color(density[i * ly_ + j], dens_min, dens_mean, dens_max);
@@ -962,6 +965,7 @@ void InsetState::write_density_image(
         cairo_fill(cr);
         cairo_set_source_rgb(cr, 0, 0, 0);
         cairo_stroke(cr);
+        }
       }
     }
   }
