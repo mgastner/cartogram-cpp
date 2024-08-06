@@ -941,7 +941,11 @@ void InsetState::write_density_image(
     for (unsigned int i = 0; i < lx_; ++i) {
       // density[i * ly_ + j] != dens_mean ensures we do not plot unnecessary white squares
       for (unsigned int j = 0; j < ly_; ++j) {
-        if (density[i * ly_ + j + 1] != dens_mean) {
+
+        // Skip plotting dens_mean
+        if (density[i * ly_ + j] == dens_mean) {
+          continue;
+        }
 
         Color color =
           heatmap_color(density[i * ly_ + j], dens_min, dens_mean, dens_max);
@@ -965,7 +969,6 @@ void InsetState::write_density_image(
         cairo_fill(cr);
         cairo_set_source_rgb(cr, 0, 0, 0);
         cairo_stroke(cr);
-        }
       }
     }
   }
