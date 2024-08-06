@@ -24,7 +24,7 @@ int main(const int argc, const char *argv[])
   // on the triangulation of grid cells. It can eliminate intersections
   // that occur when the projected grid lines are strongly curved. Only
   // use this method if the tracer points are an FTReal2d data structure.
-  bool triangulation;
+ bool triangulation;
   bool simplify;  // Should the polygons be simplified?
 
   // Other boolean values that are needed to parse the command line arguments

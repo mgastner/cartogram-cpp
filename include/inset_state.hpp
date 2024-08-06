@@ -190,7 +190,7 @@ public:
   void make_fftw_plans_for_flux();
   void make_fftw_plans_for_rho();
   void min_ellipses();
-  max_area_error_info max_area_error() const;
+  max_area_error_info max_area_error(bool print = true) const;
   std::pair<double, double> max_and_min_grid_cell_area(
     unsigned int cell_width);
   std::pair<Point, Point> max_and_min_grid_cell_area_index(
