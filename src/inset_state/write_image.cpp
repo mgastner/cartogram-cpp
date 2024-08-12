@@ -311,7 +311,7 @@ void InsetState::write_polygons_on_surface(
 
 void write_vectors_on_surface(
   cairo_t *cr,
-  std::unordered_map<Point, Point> &vectors,
+  std::unordered_map<Point, Vector> &vectors,
   unsigned int lx_,
   unsigned int ly_)
 {
@@ -356,7 +356,7 @@ void InsetState::write_cairo_polygons_to_svg(
   const bool fill_polygons,
   const bool colors,
   const bool plot_grid,
-  std::unordered_map<Point, Point> &vectors)
+  std::unordered_map<Point, Vector> &vectors)
 {
   const auto filename = fname.c_str();
   cairo_surface_t *surface = cairo_svg_surface_create(filename, lx_, ly_);
@@ -375,7 +375,7 @@ void InsetState::write_cairo_polygons_to_svg(
 void InsetState::write_cairo_map(
   const std::string &file_name,
   const bool plot_grid,
-  std::unordered_map<Point, Point> vectors)
+  std::unordered_map<Point, Vector> vectors)
 {
   const auto svg_name = file_name + ".svg";
   std::cerr << "Writing " << file_name << std::endl;
