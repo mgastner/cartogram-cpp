@@ -72,15 +72,13 @@ void InsetState::check_completion() const
 {
   auto [value, geo_div] = max_area_error();
   if (value > max_permitted_area_error) {
-      std::cerr << "ERROR: Could not converge, max area error beyond limit (" << value
-                << ", " << geo_div << ")"
-                << std::endl;
+    std::cerr << "ERROR: Could not converge, max area error beyond limit ("
+              << value << ", " << geo_div << ")" << std::endl;
   }
   double area_expansion_factor_ = area_expansion_factor();
   if (std::abs(area_expansion_factor_ - 1.0) > max_permitted_area_expansion) {
     std::cerr << "ERROR: Area drift beyond limit: "
-              << (area_expansion_factor_ - 1.0) * 100.0 << "%"
-              << std::endl;
+              << (area_expansion_factor_ - 1.0) * 100.0 << "%" << std::endl;
   }
 }
 
@@ -148,9 +146,35 @@ void InsetState::create_delaunay_t()
   const unsigned int depth =
     static_cast<unsigned int>(std::max(log2(lx_), log2(ly_)));
   std::cerr << "Using Quadtree depth: " << depth << std::endl;
+  
+  auto can_split = [&depth, &qt, this](const Quadtree::Node &node) -> bool {
+    // if the node depth is greater than depth, do not split
+    if (node.depth() >= depth) {
+      return false;
+    }
+    
+    auto bbox = qt.bbox(node);
+    double rho_min = 1e9;
+    double rho_max = -1e9;
+
+    // get the minimum rho_init of the bbox of the node
+    for (unsigned int i = bbox.xmin(); i < bbox.xmax(); ++i) {
+      for (unsigned int j = bbox.ymin(); j < bbox.ymax(); ++j) {
+        if (i >= this->lx() || j >= this->ly()) {
+          continue;
+        }
+        if (i < 0 || j < 0) {
+          continue;
+        }
+        rho_min = std::min(rho_min, this->ref_to_rho_init()(i, j));
+        rho_max = std::max(rho_max, this->ref_to_rho_init()(i, j));
+      }
+    }
+    return rho_max - rho_min > (0.01 + pow((1.0 / n_finished_integrations_), 2));
+  };
+
   qt.refine(
-    depth,
-    9);  // (maximum depth, splitting condition: max number of points per node)
+    can_split);  // (maximum depth, splitting condition: max number of points per node)
   qt.grade();
   std::cerr << "Quadtree root node bounding box: " << qt.bbox(qt.root())
             << std::endl;
@@ -390,12 +414,11 @@ struct max_area_error_info InsetState::max_area_error() const
       worst_gd = gd_id;
     }
   }
-  std::cerr << "max. area err: " << value
-            << ", GeoDiv: " << worst_gd
+  std::cerr << "max. area err: " << value << ", GeoDiv: " << worst_gd
             << std::endl;
-  std::cerr << "Current Area: " << geo_divs_[geo_divs_id_to_index_.at(worst_gd)].area()
-            << ", Target Area: " << target_area_at(worst_gd)
-            << std::endl;
+  std::cerr << "Current Area: "
+            << geo_divs_[geo_divs_id_to_index_.at(worst_gd)].area()
+            << ", Target Area: " << target_area_at(worst_gd) << std::endl;
   return {value, worst_gd};
 }
 
@@ -448,8 +471,8 @@ double InsetState::area_expansion_factor() const
 {
   double area_expansion_factor_ = total_inset_area() / initial_area_;
   // Print area drift information
-  std::cerr << "Area drift: " << (area_expansion_factor_ - 1.0) * 100.0
-            << "%" << std::endl;
+  std::cerr << "Area drift: " << (area_expansion_factor_ - 1.0) * 100.0 << "%"
+            << std::endl;
   return area_expansion_factor_;
 }
 
@@ -652,14 +675,14 @@ bool InsetState::target_area_is_missing(const std::string &id) const
 
 double InsetState::target_area_at(const std::string &id) const
 {
-    try {
-        return target_areas_.at(id);
-    } catch (const std::out_of_range &e) {
-        std::cerr << "ERROR: Key '" << id << "' not found in target_areas_. "
-                  << "Exception: " << e.what() << std::endl;
-        // Re-throw, or return a default value
-        throw;
-    }
+  try {
+    return target_areas_.at(id);
+  } catch (const std::out_of_range &e) {
+    std::cerr << "ERROR: Key '" << id << "' not found in target_areas_. "
+              << "Exception: " << e.what() << std::endl;
+    // Re-throw, or return a default value
+    throw;
+  }
 }
 
 double InsetState::total_inset_area() const
