@@ -29,6 +29,9 @@ struct proj_qd {  // quadtree-delaunay projection
 
 class InsetState
 {
+  public:
+  unsigned int n_fails_ = 0;
+  
 private:
   std::unordered_map<std::string, double> area_errors_;
   std::unordered_set<Point> unique_quadtree_corners_;
@@ -134,7 +137,7 @@ public:
   void fill_with_density(bool);  // Fill map with density, using scanlines
   void flatten_density();  // Flatten said density with integration
   void flatten_ellipse_density();
-  void flatten_density_with_node_vertices();
+  bool flatten_density_with_node_vertices();
 
   const std::vector<GeoDiv> &geo_divs() const;
   std::vector<std::vector<Color>> grid_cell_colors(unsigned int cell_width);
@@ -202,6 +205,7 @@ public:
   unsigned int n_rings() const;
   void normalize_inset_area(double total_cart_target_area, bool = false);
   void normalize_target_area();
+  void normalize_vertically();
   std::string pos() const;
   void project();
   Point projected_point(const Point &, bool = false) const;

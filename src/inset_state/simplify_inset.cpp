@@ -6,6 +6,9 @@
 
 void InsetState::simplify(const unsigned int target_points_per_inset)
 {
+  is_simple();
+
+  std::cerr << "Starting Simplification" << std::endl;
   const unsigned int n_pts_before = n_points();
   std::cerr << n_pts_before << " points in inset. ";
   if (n_pts_before <= target_points_per_inset) {

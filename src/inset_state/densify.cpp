@@ -407,6 +407,7 @@ std::vector<Point> densification_points_with_delaunay_t(
 
 void InsetState::densify_geo_divs_using_delaunay_t()
 {
+  std::cerr << "N points: " << n_points() << std::endl;
   std::cerr << "Densifying using Delaunay Triangulation" << std::endl;
   std::vector<GeoDiv> geodivs_dens;
   for (const auto &gd : geo_divs_) {
@@ -464,4 +465,6 @@ void InsetState::densify_geo_divs_using_delaunay_t()
   geo_divs_ = std::move(geodivs_dens);
 
   is_simple();
+  std::cerr << "N points: " << n_points() << std::endl;
+  
 }

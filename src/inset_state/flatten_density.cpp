@@ -326,7 +326,7 @@ double calculate_velocity_for_point(
 }
 
 // Return a map of initial quadtree point to point
-void InsetState::flatten_density_with_node_vertices()
+bool InsetState::flatten_density_with_node_vertices()
 {
   std::cerr << "In flatten_density_with_node_vertices()" << std::endl;
 
@@ -490,6 +490,50 @@ void InsetState::flatten_density_with_node_vertices()
         v_intp,
         lx_,
         ly_);
+      // for triangles in proj_qd_.dt, check if  then new are of the triangle
+      // has the same signed
+      for (Delaunay::Finite_faces_iterator fit =
+             proj_qd_.dt.finite_faces_begin();
+           fit != proj_qd_.dt.finite_faces_end();
+           ++fit) {
+        Point p1 = fit->vertex(0)->point();
+        Point p2 = fit->vertex(1)->point();
+        Point p3 = fit->vertex(2)->point();
+
+        Point p1_new = proj_qd_.triangle_transformation[p1];
+        Point p2_new = proj_qd_.triangle_transformation[p2];
+        Point p3_new = proj_qd_.triangle_transformation[p3];
+
+        double area = CGAL::area(p1_new, p2_new, p3_new);
+        double area_init = CGAL::area(p1, p2, p3);
+        // check if the new area has the same sign as the initial area
+        if (area * area_init < 0) {
+          accept = false;
+          std::cerr << "Increasing blur width" << std::endl;
+          // std::cerr << "Triangle flipped" << std::endl;
+          // std::cerr << "Original Points: " << p1 << ", " << p2 << ", " << p3
+          //           << std::endl;
+          // std::cerr << "New Points: " << p1_new << ", " << p2_new << ", "
+          //           << p3_new << std::endl;
+          // const std::string delaunay_t_filename =
+          //   inset_name() + "_" + std::to_string(n_finished_integrations()) +
+          //   "_delaunay_t";
+          // write_cairo_map(delaunay_t_filename + "_input", 0);
+          // std::string file_name = inset_name_ + "_unblurred_density_" +
+          //                         std::to_string(n_finished_integrations()) +
+          //                         ".svg";
+
+          // std::cerr << "Writing " << file_name << std::endl;
+          // write_density_image(file_name, rho_init_.as_1d_array(), false);
+
+          // std::string file_name = inset_name_ + "_blurred_density_" +
+          //                         std::to_string(n_finished_integrations()) +
+          //                         ".svg";
+          // std::cerr << "Writing " << file_name << std::endl;
+          // write_density_image(file_name, rho_init_.as_1d_array(), false);
+          return 1;
+        }
+      }
       if (accept) {
 
         // Okay, we can run interpolate_bilinearly()
@@ -547,4 +591,5 @@ void InsetState::flatten_density_with_node_vertices()
     proj_qd_.triangle_transformation = mid;
     delta_t *= inc_after_acc;  // Try a larger step next time
   }
+  return 0;
 }

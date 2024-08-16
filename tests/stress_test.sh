@@ -88,7 +88,7 @@ run_map() {
   start=$SECONDS
   printf "now trying: \n\ncartogram ${map} ${csv} ${cli}\n\n"
   draw_progress_bar 0
-  "cartogram" ${map} ${csv} ${cli} 2>&1 |
+  "../../bin/cartogram" ${map} ${csv} ${cli} 2>&1 |
     while read line; do
       # save to temp file
       echo $line >>${tmp_file}

@@ -51,8 +51,10 @@ double InsetState::blur_width() const
   //       cell error when projecting with triangulation. Investigate
   //       why. As a temporary fix, we set blur_width to be always
   //       positive, regardless of the number of integrations.
-  const unsigned int blur_default_pow = static_cast<unsigned int>(
-    6 + log2(std::max(lx(), ly()) / default_long_grid_length));
+  const unsigned int blur_default_pow =
+    static_cast<unsigned int>(
+      6 + log2(std::max(lx(), ly()) / default_long_grid_length)) +
+    n_fails_ * 2;
   double blur_width =
     std::pow(2.0, blur_default_pow - (0.5 * n_finished_integrations_));
 
@@ -146,13 +148,13 @@ void InsetState::create_delaunay_t()
   const unsigned int depth =
     static_cast<unsigned int>(std::max(log2(lx_), log2(ly_)));
   std::cerr << "Using Quadtree depth: " << depth << std::endl;
-  
+
   auto can_split = [&depth, &qt, this](const Quadtree::Node &node) -> bool {
     // if the node depth is greater than depth, do not split
     if (node.depth() >= depth) {
       return false;
     }
-    
+
     auto bbox = qt.bbox(node);
     double rho_min = 1e9;
     double rho_max = -1e9;
@@ -170,11 +172,12 @@ void InsetState::create_delaunay_t()
         rho_max = std::max(rho_max, this->ref_to_rho_init()(i, j));
       }
     }
-    return rho_max - rho_min > (0.01 + pow((1.0 / n_finished_integrations_), 2));
+    return rho_max - rho_min >
+           (0.001 + pow((1.0 / n_finished_integrations_), 2));
   };
 
-  qt.refine(
-    can_split);  // (maximum depth, splitting condition: max number of points per node)
+  qt.refine(depth, 3);  // (maximum depth, splitting condition: max number of
+                         // points per node)
   qt.grade();
   std::cerr << "Quadtree root node bounding box: " << qt.bbox(qt.root())
             << std::endl;
@@ -349,11 +352,14 @@ void InsetState::is_simple() const
   for (const auto &gd : geo_divs_) {
     for (const auto &pwh : gd.polygons_with_holes()) {
       if (!pwh.outer_boundary().is_simple()) {
+        // gd.id
+        std::cerr << gd.id() << std::endl;
         std::cerr << "ERROR: Outer boundary is not simple." << std::endl;
         exit(1);
       }
       for (const auto &h : pwh.holes()) {
         if (!h.is_simple()) {
+          std::cerr << gd.id() << std::endl;
           std::cerr << "ERROR: Hole is not simple." << std::endl;
           exit(1);
         }
@@ -459,6 +465,107 @@ void InsetState::normalize_target_area()
     double normalized_target_area =
       (target_area_at(gd.id()) / ta) * initial_area_;
     replace_target_area(gd.id(), normalized_target_area);
+  }
+}
+
+void InsetState::normalize_vertically()
+{
+  std::cerr << "In " << __func__ << std::endl;
+  // I have rho_init_ that is lx times ly dimension. I want to create a vector
+  // of dimension ly, that sums up the horizontal vector for a fixed ly
+  std::vector<double> rho_init_sum(ly_, 0.0);
+  for (unsigned int j = 0; j < ly_; ++j) {
+    for (unsigned int i = 0; i < lx_; ++i) {
+      rho_init_sum[j] += rho_init_(i, j);
+    }
+  }
+  // find Antarctica gd.id, and scale down the y coordinates of that antarctica
+  // double factor = 3;
+  // for (auto &gd : geo_divs_) {
+  //   if (gd.id() == "Antarctica") {
+  //     for (auto &pwh : gd.ref_to_polygons_with_holes()) {
+  //       for (auto &coords_outer : pwh.outer_boundary()) {
+  //         coords_outer = Point(coords_outer.x(), coords_outer.y() / factor);
+  //       }
+  //       for (auto &h : pwh.holes()) {
+  //         for (auto &coords_hole : h) {
+  //           coords_hole = Point(coords_hole.x(), coords_hole.y() / factor);
+  //         }
+  //       }
+  //     }
+  //   }
+  // }
+  // return;
+  // for each point in the inset_state, I want to first figure out
+  // which partition they belong to based on their y value, and suppose they
+  // belong to partition k, I want to scale that point by
+  // sqrt(rho_init_sum[k]/lx_) the points of the inset_state can have decimal
+  // values, so I will round them to the nearest integer
+  std::cout << lx_ << " " << ly_ << std::endl;
+  std::cout << bbox() << std::endl;
+  double const eps = 1e-6;
+  for (auto &gd : geo_divs_) {
+    for (auto &pwh : gd.ref_to_polygons_with_holes()) {
+      auto &ext_ring = pwh.outer_boundary();
+      for (auto &coords_outer : ext_ring) {
+        // round down the y value
+        int idx = static_cast<int>(coords_outer.y());
+        // but if it is eps close to the next integer, round up
+        if (std::abs(coords_outer.y() - idx - 1) < eps) {
+          idx += 1;
+          // if idx is equal to ly_, then it should be one less
+          if (idx == (int)ly_) {
+            idx -= 1;
+          }
+        }
+        double scale_factor = (rho_init_sum[idx] / lx_);
+        double new_y = coords_outer.y();
+        // move the new_y to the first block
+        new_y -= idx;
+        // scale the new_y
+        new_y *= scale_factor;
+
+        // move the new_y back to the original block, it will sum of the ratio
+        // of the blocks before idx
+        for (int i = 0; i < idx; ++i) {
+          new_y += rho_init_sum[i] / lx_;
+        }
+        coords_outer = Point(coords_outer.x(), new_y);
+      }
+      for (auto &h : pwh.holes()) {
+        for (auto &coords_hole : h) {
+          // round down the y value
+          int idx = static_cast<int>(coords_hole.y());
+          // but if it is eps close to the next integer, round up
+          if (std::abs(coords_hole.y() - idx - 1) < eps) {
+            idx += 1;
+            // if idx is equal to ly_, then it should be one less
+            if (idx == (int)ly_) {
+              idx -= 1;
+            }
+          }
+          double scale_factor = (rho_init_sum[idx] / lx_);
+          double new_y = coords_hole.y();
+          // move the new_y to the first block
+          new_y -= idx;
+          // scale the new_y
+          new_y *= scale_factor;
+
+          // move the new_y back to the original block, it will sum of the
+          // ratio of the blocks before idx
+          for (int i = 0; i < idx; ++i) {
+            new_y += rho_init_sum[i] / lx_;
+          }
+          coords_hole = Point(coords_hole.x(), new_y);
+        }
+      }
+    }
+  }
+  is_simple();
+  std::cout << bbox() << std::endl;
+  // print the rho_init_sum
+  for (unsigned int j = 0; j < ly_; ++j) {
+    std::cout << rho_init_sum[j] << std::endl;
   }
 }
 

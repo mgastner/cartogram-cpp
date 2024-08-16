@@ -110,6 +110,9 @@ Point interpolate_point_with_barycentric_coordinates(
 
 void InsetState::project_with_delaunay_t(bool output_to_stdout)
 {
+  is_simple();
+
+  std::cerr << "Starting project" << std::endl;
   std::function<Point(Point)> lambda_bary =
     [&dt = proj_qd_.dt,
      &proj_map = proj_qd_.triangle_transformation](Point p1) {
@@ -120,6 +123,9 @@ void InsetState::project_with_delaunay_t(bool output_to_stdout)
   if (output_to_stdout) {
     transform_points(lambda_bary, true);
   }
+  is_simple();
+
+  std::cerr << "Ending project" << std::endl;
 }
 
 // In chosen_diag() and transformed_triangle(), the input x-coordinates can

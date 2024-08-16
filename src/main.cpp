@@ -245,7 +245,9 @@ int main(const int argc, const char *argv[])
     if (plot_polygons) {
 
       // Write input of SVG files if requested by command-line option
-      inset_state.write_cairo_map(inset_state.inset_name() + "_input", plot_grid);
+      inset_state.write_cairo_map(
+        inset_state.inset_name() + "_input",
+        plot_grid);
     }
 
     // Remove tiny polygons below threshold
@@ -253,12 +255,26 @@ int main(const int argc, const char *argv[])
       inset_state.remove_tiny_polygons(min_polygon_area);
     }
 
+    inset_state.fill_with_density(plot_density);
+    inset_state.create_delaunay_t();
+    inset_state.densify_geo_divs_using_delaunay_t();
+    inset_state.normalize_vertically();
+  }
+
+  cart_info.write_geojson(
+    geo_file_name,
+    map_name + "_preprocessed.geojson",
+    output_to_stdout);
+
+  // Main loop
+  for (auto &[inset_pos, inset_state] : cart_info.ref_to_inset_states()) {
     time_tracker.start("Integration Inset " + inset_pos);
 
     // Start map integration
     while (inset_state.n_finished_integrations() < max_integrations &&
            (inset_state.max_area_error().value > max_permitted_area_error ||
-            std::abs(inset_state.area_expansion_factor() - 1.0) > max_permitted_area_expansion)) {
+            std::abs(inset_state.area_expansion_factor() - 1.0) >
+              max_permitted_area_expansion)) {
 
       std::cerr << "\nIntegration number "
                 << inset_state.n_finished_integrations() << std::endl;
@@ -292,22 +308,24 @@ int main(const int argc, const char *argv[])
 
       time_tracker.start("Fill with Density");
 
-      inset_state.fill_with_density(plot_density);
+      inset_state.fill_with_density(plot_density);      
 
       time_tracker.stop("Fill with Density");
 
       if (blur_width > 0.0) {
         inset_state.blur_density(blur_width, plot_density);
       }
-
       time_tracker.start("Flatten Density");
-
+      bool inc_blur_width = 0;
       if (qtdt_method) {
-        inset_state.flatten_density_with_node_vertices();
+        inc_blur_width = inset_state.flatten_density_with_node_vertices();
       } else {
         inset_state.flatten_density();
       }
-
+      if (inc_blur_width) {
+        inset_state.n_fails_++;
+        continue;
+      }
       time_tracker.stop("Flatten Density");
 
       if (qtdt_method) {
@@ -355,7 +373,8 @@ int main(const int argc, const char *argv[])
     }
 
     // End of inset integrations
-    inset_state.check_completion(); // prints error message if conditions still not met
+    inset_state
+      .check_completion();  // prints error message if conditions still not met
     time_tracker.stop("Integration Inset " + inset_pos);
 
     // Update and display progress information
@@ -363,7 +382,9 @@ int main(const int argc, const char *argv[])
     progress_tracker.update_and_print_progress_end_integration(inset_state);
 
     if (plot_polygons) {
-      inset_state.write_cairo_map(inset_state.inset_name() + "_output", plot_grid);
+      inset_state.write_cairo_map(
+        inset_state.inset_name() + "_output",
+        plot_grid);
     }
 
     if (world) {
