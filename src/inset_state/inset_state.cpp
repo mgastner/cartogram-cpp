@@ -479,28 +479,15 @@ void InsetState::normalize_vertically()
       rho_init_sum[j] += rho_init_(i, j);
     }
   }
-  // find Antarctica gd.id, and scale down the y coordinates of that antarctica
-  // double factor = 3;
-  // for (auto &gd : geo_divs_) {
-  //   if (gd.id() == "Antarctica") {
-  //     for (auto &pwh : gd.ref_to_polygons_with_holes()) {
-  //       for (auto &coords_outer : pwh.outer_boundary()) {
-  //         coords_outer = Point(coords_outer.x(), coords_outer.y() / factor);
-  //       }
-  //       for (auto &h : pwh.holes()) {
-  //         for (auto &coords_hole : h) {
-  //           coords_hole = Point(coords_hole.x(), coords_hole.y() / factor);
-  //         }
-  //       }
-  //     }
-  //   }
-  // }
-  // return;
-  // for each point in the inset_state, I want to first figure out
-  // which partition they belong to based on their y value, and suppose they
-  // belong to partition k, I want to scale that point by
-  // sqrt(rho_init_sum[k]/lx_) the points of the inset_state can have decimal
-  // values, so I will round them to the nearest integer
+  // scale the rho_init_sum so that total sum is lx_ times ly_
+  double sum = 0.0;
+  for (unsigned int j = 0; j < ly_; ++j) {
+    sum += rho_init_sum[j];
+  }
+  for (unsigned int j = 0; j < ly_; ++j) {
+    rho_init_sum[j] *= (lx_ * ly_) / sum;
+  }
+  
   std::cout << lx_ << " " << ly_ << std::endl;
   std::cout << bbox() << std::endl;
   double const eps = 1e-6;
