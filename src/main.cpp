@@ -339,9 +339,7 @@ int main(const int argc, const char *argv[])
       }
       if (simplify) {
         time_tracker.start("Simplification");
-        // inset_state.write_cairo_map(inset_state.inset_name() + "_pre_simplify_" + std::to_string(inset_state.n_finished_integrations()), plot_grid);
         inset_state.simplify(target_points_per_inset);
-        // inset_state.write_cairo_map(inset_state.inset_name() + "_post_simplify_" + std::to_string(inset_state.n_finished_integrations()), plot_grid);
 
         time_tracker.stop("Simplification");
       }

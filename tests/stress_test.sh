@@ -33,18 +33,6 @@ color() {
   tput sgr0
 }
 
-# Flag to indicate if the script should skip the current test
-skip_current_test=false
-
-# Function to handle SIGINT (Ctrl + C)
-handle_sigint() {
-  printf "\n\nSkipping current test...\n\n" | color $red
-  skip_current_test=true
-}
-
-# Trap SIGINT (Ctrl + C)
-trap handle_sigint SIGINT
-
 # Parsing command line arguments
 # From https://unix.stackexchange.com/questions/462515/
 # check-command-line-arguments
@@ -85,8 +73,6 @@ draw_progress_bar() {
 # Function to test map with csv
 run_map() {
 
-  skip_current_test=false
-
   COLUMNS=$(tput cols)
   if [[ "$COLUMNS" -gt 60 ]]; then
     PROGRESS_BAR_WIDTH=50
@@ -100,18 +86,10 @@ run_map() {
   integration_count=0
   max_area_err=""
   start=$SECONDS
-  printf "now trying: \ncartogram ${map} ${csv} ${cli}\n\n"
-  echo "cartogram ${map} ${csv} ${cli}" | pbcopy
+  printf "now trying: \n\ncartogram ${map} ${csv} ${cli}\n\n"
   draw_progress_bar 0
-  stdbuf -oL cartogram ${map} ${csv} ${cli} 2>&1 | \
-  # "cartogram" ${map} ${csv} ${cli} 2>&1 |
+  "cartogram" ${map} ${csv} ${cli} 2>&1 |
     while read line; do
-
-      # if $skip_current_test; then
-      #   printf "\nTest skipped by user.\n" | color $yellow
-      #   return
-      # fi
-
       # save to temp file
       echo $line >>${tmp_file}
 
@@ -127,21 +105,11 @@ run_map() {
       # Check if integration is mentioned and update counter
       if [[ $line =~ "Integration number" ]]; then
         integration_count=$((integration_count + 1))
-        printf "%s\n" "$line" | color $red
-      fi
-
-      if [[ $line =~ "New grid dimensions:" ]]; then
-        printf "%s\n" "$line" | color $blue
       fi
 
       # Check if max area error is mentioned and update the variable
       if [[ $line =~ "max. area err:" ]]; then
         max_area_err=$line
-        printf "%s\n" "$line" | color $yellow
-      fi
-
-      if [[ $line =~ "average area err:" ]]; then
-        printf "%s\n" "$line" | color $magenta
       fi
 
       # Check if integration finished
