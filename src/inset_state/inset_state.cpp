@@ -72,15 +72,13 @@ void InsetState::check_completion() const
 {
   auto [value, geo_div] = max_area_error();
   if (value > max_permitted_area_error) {
-      std::cerr << "ERROR: Could not converge, max area error beyond limit (" << value
-                << ", " << geo_div << ")"
-                << std::endl;
+    std::cerr << "ERROR: Could not converge, max area error beyond limit ("
+              << value << ", " << geo_div << ")" << std::endl;
   }
   double area_expansion_factor_ = area_expansion_factor();
   if (std::abs(area_expansion_factor_ - 1.0) > max_permitted_area_expansion) {
     std::cerr << "ERROR: Area drift beyond limit: "
-              << (area_expansion_factor_ - 1.0) * 100.0 << "%"
-              << std::endl;
+              << (area_expansion_factor_ - 1.0) * 100.0 << "%" << std::endl;
   }
 }
 
@@ -115,8 +113,8 @@ void InsetState::create_delaunay_t()
   std::unordered_set<Point> points;
 
   // Avoid collisions in hash table
-  points.reserve(8192);
-  points.max_load_factor(0.5);
+  points.reserve(4 * n_points());
+  // points.max_load_factor(0.5);
   for (const auto &gd : geo_divs_) {
     for (const auto &pwh : gd.polygons_with_holes()) {
       const Polygon &ext_ring = pwh.outer_boundary();
@@ -392,17 +390,15 @@ struct max_area_error_info InsetState::max_area_error(bool print) const
       worst_gd = gd_id;
     }
     sum_errors += area_error;
-    ++count;;
+    ++count;
   }
   if (print) {
-    std::cerr << "max. area err: " << value
-              << ", GeoDiv: " << worst_gd
+    std::cerr << "max. area err: " << value << ", GeoDiv: " << worst_gd
               << std::endl;
-    std::cerr << "average area err: " << sum_errors / count
-              << std::endl;
-    std::cerr << "Current Area: " << geo_divs_[geo_divs_id_to_index_.at(worst_gd)].area()
-              << ", Target Area: " << target_area_at(worst_gd)
-              << std::endl;
+    std::cerr << "average area err: " << sum_errors / count << std::endl;
+    std::cerr << "Current Area: "
+              << geo_divs_[geo_divs_id_to_index_.at(worst_gd)].area()
+              << ", Target Area: " << target_area_at(worst_gd) << std::endl;
   }
   return {value, worst_gd};
 }
@@ -456,8 +452,8 @@ double InsetState::area_expansion_factor() const
 {
   double area_expansion_factor_ = total_inset_area() / initial_area_;
   // Print area drift information
-  std::cerr << "Area drift: " << (area_expansion_factor_ - 1.0) * 100.0
-            << "%" << std::endl;
+  std::cerr << "Area drift: " << (area_expansion_factor_ - 1.0) * 100.0 << "%"
+            << std::endl;
   return area_expansion_factor_;
 }
 
@@ -546,14 +542,18 @@ void InsetState::set_area_errors()
 void InsetState::adjust_grid()
 {
   unsigned int long_grid_length = std::max(lx_, ly_);
-  double curr_max_area_error = max_area_error(false).value;
+  auto [curr_max_area_error, worst_gd] = max_area_error(false);
   unsigned int grid_factor =
     (long_grid_length > default_long_grid_length) ? 2 : default_grid_factor;
   max_area_errors_.push_back(curr_max_area_error);
+  // TODO: Change to a more sophisticated grid adjustment strategy
+  // (based on a tolerance of area error)
   if (
     n_finished_integrations_ >= 2 &&
-    curr_max_area_error > max_area_errors_[n_finished_integrations_ - 1] &&
-    curr_max_area_error > max_area_errors_[n_finished_integrations_ - 2]) {
+    curr_max_area_error >=
+      0.99 * max_area_errors_[n_finished_integrations_ - 1] &&
+    curr_max_area_error >=
+      0.99 * max_area_errors_[n_finished_integrations_ - 2]) {
 
     // Multiply grid size with factor
     std::cerr << "Adjusting grid size." << std::endl;
@@ -660,13 +660,16 @@ bool InsetState::target_area_is_missing(const std::string &id) const
 
 double InsetState::target_area_at(const std::string &id) const
 {
-    try {
-        return target_areas_.at(id);
-    } catch (const std::out_of_range &e) {
-        std::cerr << "ERROR: Key '" << id << "' not found in target_areas_. "
-                  << "Exception: " << e.what() << std::endl;
-        // Re-throw, or return a default value
-        throw;
+  try {
+    return target_areas_.at(id);
+  } catch (const std::out_of_range &e) {
+    std::cerr << "ERROR: Key '" << id << "' not found in target_areas_. "
+              << "Exception: " << e.what() << std::endl;
+    // Re-throw, or return a default value
+    throw;
+  }
+}
+
     }
 }
 

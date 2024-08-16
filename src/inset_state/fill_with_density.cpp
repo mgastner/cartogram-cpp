@@ -7,7 +7,7 @@ void InsetState::fill_with_density(bool plot_density)
   // already been replaced by
   // CartogramInfo::replace_missing_and_zero_target_areas().
   // We also correct for a drift in the total inset area, in case it is
-  // present, by adjusting mean_density. The idea is to treat the exterior
+  // present, by adjusting exterior_density. The idea is to treat the exterior
   // area as if it were a polygon with target area
   // C * (lx * ly - initial_area_) and current area
   // C * (lx * ly - total_inset_area). The constant prefactor C is the same
@@ -16,8 +16,8 @@ void InsetState::fill_with_density(bool plot_density)
   // target areas in the desired proportion to the other polygons. That is,
   // we must call cart_info.replace_missing_and_zero_target_areas() before
   // calling this function.
-  double mean_density = (1.0 - (initial_area_ / (lx_ * ly_))) /
-                        (1.0 - (total_inset_area() / (lx_ * ly_)));
+  double exterior_density = (1.0 - (initial_area_ / (lx_ * ly_))) /
+                            (1.0 - (total_inset_area() / (lx_ * ly_)));
 
 #pragma omp parallel for default(none)
 
@@ -32,7 +32,7 @@ void InsetState::fill_with_density(bool plot_density)
   // a grid cell can be calculated with (rho_num / rho_den). We initially
   // assign zero to all elements because we assume that all grid cells
   // are outside any GeoDiv. Any grid cell where rho_den is zero will be
-  // filled with the mean_density.
+  // filled with the exterior_density.
 
   boost::multi_array<double, 2> rho_num(boost::extents[lx_][ly_]);
   boost::multi_array<double, 2> rho_den(boost::extents[lx_][ly_]);
@@ -92,9 +92,9 @@ void InsetState::fill_with_density(bool plot_density)
             // The intersections are in the same grid cell. The ray
             // enters and leaves a GeoDiv in this cell. We weigh the density
             // of the cell by the GeoDiv's area error.
-            const double weight =
-              area_error_at(intersections_at_y[i].geo_div_id) *
-              (right_x - left_x);
+            double weight = area_error_at(intersections_at_y[i].geo_div_id) *
+                            (right_x - left_x);
+
             const double target_dens = intersections_at_y[i].target_density;
             const auto uilx = static_cast<unsigned int>(ceil(left_x) - 1);
             rho_num[uilx][k] += weight * target_dens;
@@ -180,14 +180,15 @@ void InsetState::fill_with_density(bool plot_density)
     rho_init_.as_1d_array() + lx_ * ly_);
 
   dens_min_ = *min_iter;
-  dens_mean_ = mean_density;
+  // double interior_mean_density = initial_area_ / total_inset_area();
+  // dens_mean_ = interior_mean_density;
+  dens_mean_ = exterior_density;
+  // exterior_density_ = exterior_density;
   dens_max_ = *max_iter;
 
   if (plot_density) {
     std::string file_name = inset_name_ + "_unblurred_density_" +
                             std::to_string(n_finished_integrations()) + ".svg";
-
-    std::cerr << "Writing " << file_name << std::endl;
     write_density_image(file_name, rho_init_.as_1d_array(), false);
   }
 

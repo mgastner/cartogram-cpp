@@ -111,6 +111,7 @@ void InsetState::write_quadtree(const std::string &filename)
   cairo_surface_t *surface =
     cairo_svg_surface_create((filename + ".svg").c_str(), lx_, ly_);
   cairo_t *cr = cairo_create(surface);
+  write_polygons_on_surface(cr, false, false, false);
   write_quadtree_rectangles_on_surface(
     cr,
     quadtree_bboxes_,
@@ -942,13 +943,11 @@ void InsetState::write_density_image(
       // density[i * ly_ + j] != dens_mean ensures we do not plot unnecessary white squares
       for (unsigned int j = 0; j < ly_; ++j) {
 
-        // Skip plotting dens_mean
-        if (density[i * ly_ + j] == dens_mean) {
-          continue;
-        }
-
         Color color =
           heatmap_color(density[i * ly_ + j], dens_min, dens_mean, dens_max);
+
+        // Skip plotting exterior_density color
+        if (color == Color(255, 255, 255)) continue;
 
         // Get four points of the square
         double x_min = i - 0.5 * sq_overlap;

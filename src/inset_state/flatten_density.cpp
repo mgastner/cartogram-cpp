@@ -348,21 +348,25 @@ void InsetState::flatten_density_with_node_vertices()
   // (proj_qd_.triangle_transformation[(i, j)].x,
   // proj_qd_.triangle_transformation[(i, j)].y)
   std::unordered_map<Point, Point> eul;
+  eul.reserve(4 * proj_qd_.triangle_transformation.size());
 
   // mid[(i, j)] will be the new displacement proposed by the midpoint
   // method (see comment below for the formula)
   std::unordered_map<Point, Point> mid;
+  mid.reserve(4 * proj_qd_.triangle_transformation.size());
 
   // v_intp[(i, j)] will be the velocity at position
   // (proj_qd_.triangle_transformation[(i, j)].x,
   // proj_qd_.triangle_transformation[(i, j)].y) at time t
   std::unordered_map<Point, Vector> v_intp;
+  v_intp.reserve(4 * proj_qd_.triangle_transformation.size());
 
   // v_intp_half[(i, j)] will be the velocity at the midpoint
   // (proj_qd_.triangle_transformation[(i, j)].x + 0.5 * delta_t * v_intp[(i,
   // j)].x, proj_qd_.triangle_transformation[(i, j)].y + 0.5 * delta_t *
   // v_intp[(i, j)].y) at time t + 0.5 * delta_t
   std::unordered_map<Point, Vector> v_intp_half;
+  v_intp_half.reserve(4 * proj_qd_.triangle_transformation.size());
 
   // We must typecast lx_ and ly_ as double-precision numbers. Otherwise, the
   // ratios in the denominator will evaluate as zero.
