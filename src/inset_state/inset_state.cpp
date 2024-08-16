@@ -146,13 +146,13 @@ void InsetState::create_delaunay_t()
   const unsigned int depth =
     static_cast<unsigned int>(std::max(log2(lx_), log2(ly_)));
   std::cerr << "Using Quadtree depth: " << depth << std::endl;
-  
+
   auto can_split = [&depth, &qt, this](const Quadtree::Node &node) -> bool {
     // if the node depth is greater than depth, do not split
     if (node.depth() >= depth) {
       return false;
     }
-    
+
     auto bbox = qt.bbox(node);
     double rho_min = 1e9;
     double rho_max = -1e9;
