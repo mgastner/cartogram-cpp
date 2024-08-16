@@ -117,21 +117,21 @@ run_map() {
       # Check if integration is mentioned and update counter
       if [[ $line =~ "Integration number" ]]; then
         integration_count=$((integration_count + 1))
-        printf "%s\n" "$line" | color $red
+        # printf "%s\n" "$line" | color $red
       fi
 
       if [[ $line =~ "New grid dimensions:" ]]; then
-        printf "%s\n" "$line" | color $blue
+        # printf "%s\n" "$line" | color $blue
       fi
 
       # Check if max area error is mentioned and update the variable
       if [[ $line =~ "max. area err:" ]]; then
         max_area_err=$line
-        printf "%s\n" "$line" | color $yellow
+        # printf "%s\n" "$line" | color $yellow
       fi
 
       if [[ $line =~ "average area err:" ]]; then
-        printf "%s\n" "$line" | color $magenta
+        # printf "%s\n" "$line" | color $magenta
       fi
 
       # Check if integration finished
