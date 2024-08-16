@@ -13,12 +13,13 @@ struct max_area_error_info {
   double value;
   std::string geo_div;
 
-    // Conversion to std::tuple to enable structured bindings
-    // this allows:
-    // auto [value, geo_div] = max_area_error();
-    operator std::tuple<double, std::string>() const {
-        return std::make_tuple(value, geo_div);
-    }
+  // Conversion to std::tuple to enable structured bindings
+  // this allows:
+  // auto [value, geo_div] = max_area_error();
+  operator std::tuple<double, std::string>() const
+  {
+    return std::make_tuple(value, geo_div);
+  }
 };
 
 struct proj_qd {  // quadtree-delaunay projection
@@ -246,13 +247,13 @@ public:
   void write_cairo_map(
     const std::string &,
     bool,
-    std::unordered_map<Point, Point> = std::unordered_map<Point, Point>());
+    std::unordered_map<Point, Vector> = std::unordered_map<Point, Vector>());
   void write_cairo_polygons_to_svg(
     const std::string &,
     bool,
     bool,
     bool,
-    std::unordered_map<Point, Point> &);
+    std::unordered_map<Point, Vector> &);
 
   void write_delaunay_triangles(const std::string &);
   void write_grid_heatmap_data(const std::string filename);
