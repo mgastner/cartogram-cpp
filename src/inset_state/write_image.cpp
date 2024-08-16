@@ -111,6 +111,7 @@ void InsetState::write_quadtree(const std::string &filename)
   cairo_surface_t *surface =
     cairo_svg_surface_create((filename + ".svg").c_str(), lx_, ly_);
   cairo_t *cr = cairo_create(surface);
+  write_polygons_on_surface(cr, false, false, false);
   write_quadtree_rectangles_on_surface(
     cr,
     quadtree_bboxes_,
@@ -265,10 +266,11 @@ void InsetState::write_polygons_on_surface(
 
   // Plot the grid
   if (plot_grid) {
-    const unsigned int grid_line_spacing = 7;
+    const unsigned int grid_line_spacing = 1;
 
     // Set line width of grid lines
-    cairo_set_line_width(cr, 5e-4 * std::min(lx_, ly_));
+    // cairo_set_line_width(cr, 5e-4 * std::min(lx_, ly_));
+    cairo_set_line_width(cr, 5e-4 * std::min(lx_, ly_) * 0.1);
     cairo_set_source_rgb(cr, 0.0, 0.0, 0.0);
 
     // Vertical grid lines
@@ -942,13 +944,11 @@ void InsetState::write_density_image(
       // density[i * ly_ + j] != dens_mean ensures we do not plot unnecessary white squares
       for (unsigned int j = 0; j < ly_; ++j) {
 
-        // Skip plotting dens_mean
-        if (density[i * ly_ + j] == dens_mean) {
-          continue;
-        }
-
         Color color =
           heatmap_color(density[i * ly_ + j], dens_min, dens_mean, dens_max);
+
+        // Skip plotting exterior_density color
+        if (color == Color(255, 255, 255)) continue;
 
         // Get four points of the square
         double x_min = i - 0.5 * sq_overlap;
@@ -1317,8 +1317,7 @@ Color grid_cell_color(
     Color("#ffffff"),
     Color("#efedf5"),
     Color("#dadaeb"),
-    Color("#bcbddc"),
-    Color("#9e9ac8"),
+    Color("#bcbddc"),    Color("#9e9ac8"),
     Color("#807dba"),
     Color("#6a51a3"),
     Color("#54278f"),

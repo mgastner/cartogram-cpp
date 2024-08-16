@@ -26,8 +26,9 @@ Bbox InsetState::bbox(bool original_bbox) const
   double inset_ymin = dbl_inf;
   double inset_ymax = -dbl_inf;
 #pragma omp parallel for default(none) shared(geo_divs) \
-  reduction(min : inset_xmin, inset_ymin)               \
-  reduction(max : inset_xmax, inset_ymax)
+  reduction(min                                         \
+            : inset_xmin, inset_ymin) reduction(max     \
+                                                : inset_xmax, inset_ymax)
   for (const auto &gd : geo_divs) {
     for (const auto &pwh : gd.polygons_with_holes()) {
       const auto bb = pwh.bbox();
@@ -72,15 +73,13 @@ void InsetState::check_completion() const
 {
   auto [value, geo_div] = max_area_error();
   if (value > max_permitted_area_error) {
-      std::cerr << "ERROR: Could not converge, max area error beyond limit (" << value
-                << ", " << geo_div << ")"
-                << std::endl;
+    std::cerr << "ERROR: Could not converge, max area error beyond limit ("
+              << value << ", " << geo_div << ")" << std::endl;
   }
   double area_expansion_factor_ = area_expansion_factor();
   if (std::abs(area_expansion_factor_ - 1.0) > max_permitted_area_expansion) {
     std::cerr << "ERROR: Area drift beyond limit: "
-              << (area_expansion_factor_ - 1.0) * 100.0 << "%"
-              << std::endl;
+              << (area_expansion_factor_ - 1.0) * 100.0 << "%" << std::endl;
   }
 }
 
@@ -115,8 +114,8 @@ void InsetState::create_delaunay_t()
   std::unordered_set<Point> points;
 
   // Avoid collisions in hash table
-  points.reserve(8192);
-  points.max_load_factor(0.5);
+  points.reserve(4 * n_points());
+  // points.max_load_factor(0.5);
   for (const auto &gd : geo_divs_) {
     for (const auto &pwh : gd.polygons_with_holes()) {
       const Polygon &ext_ring = pwh.outer_boundary();
@@ -150,7 +149,7 @@ void InsetState::create_delaunay_t()
   std::cerr << "Using Quadtree depth: " << depth << std::endl;
   qt.refine(
     depth,
-    9);  // (maximum depth, splitting condition: max number of points per node)
+    1);  // (maximum depth, splitting condition: max number of points per node)
   qt.grade();
   std::cerr << "Quadtree root node bounding box: " << qt.bbox(qt.root())
             << std::endl;
@@ -392,17 +391,16 @@ struct max_area_error_info InsetState::max_area_error(bool print) const
       worst_gd = gd_id;
     }
     sum_errors += area_error;
-    ++count;;
+    ++count;
+    ;
   }
   if (print) {
-    std::cerr << "max. area err: " << value
-              << ", GeoDiv: " << worst_gd
+    std::cerr << "max. area err: " << value << ", GeoDiv: " << worst_gd
               << std::endl;
-    std::cerr << "average area err: " << sum_errors / count
-              << std::endl;
-    std::cerr << "Current Area: " << geo_divs_[geo_divs_id_to_index_.at(worst_gd)].area()
-              << ", Target Area: " << target_area_at(worst_gd)
-              << std::endl;
+    std::cerr << "average area err: " << sum_errors / count << std::endl;
+    std::cerr << "Current Area: "
+              << geo_divs_[geo_divs_id_to_index_.at(worst_gd)].area()
+              << ", Target Area: " << target_area_at(worst_gd) << std::endl;
   }
   return {value, worst_gd};
 }
@@ -456,8 +454,8 @@ double InsetState::area_expansion_factor() const
 {
   double area_expansion_factor_ = total_inset_area() / initial_area_;
   // Print area drift information
-  std::cerr << "Area drift: " << (area_expansion_factor_ - 1.0) * 100.0
-            << "%" << std::endl;
+  std::cerr << "Area drift: " << (area_expansion_factor_ - 1.0) * 100.0 << "%"
+            << std::endl;
   return area_expansion_factor_;
 }
 
@@ -546,14 +544,21 @@ void InsetState::set_area_errors()
 void InsetState::adjust_grid()
 {
   unsigned int long_grid_length = std::max(lx_, ly_);
-  double curr_max_area_error = max_area_error(false).value;
+  auto [curr_max_area_error, worst_gd] = max_area_error(false);
   unsigned int grid_factor =
     (long_grid_length > default_long_grid_length) ? 2 : default_grid_factor;
   max_area_errors_.push_back(curr_max_area_error);
+  max_area_error_infos_.push_back({curr_max_area_error, worst_gd});
+  // TODO: Change to a more sophisticated grid adjustment strategy
+  // (based on a tolerance of area error)
   if (
     n_finished_integrations_ >= 2 &&
-    curr_max_area_error > max_area_errors_[n_finished_integrations_ - 1] &&
-    curr_max_area_error > max_area_errors_[n_finished_integrations_ - 2]) {
+    curr_max_area_error >=
+      0.99 * max_area_errors_[n_finished_integrations_ - 1] &&
+    curr_max_area_error >=
+      0.99 * max_area_errors_[n_finished_integrations_ - 2]) {
+    // curr_max_area_error > max_area_errors_[n_finished_integrations_ - 1] &&
+    // curr_max_area_error > max_area_errors_[n_finished_integrations_ - 2]) {
 
     // Multiply grid size with factor
     std::cerr << "Adjusting grid size." << std::endl;
@@ -660,14 +665,69 @@ bool InsetState::target_area_is_missing(const std::string &id) const
 
 double InsetState::target_area_at(const std::string &id) const
 {
-    try {
-        return target_areas_.at(id);
-    } catch (const std::out_of_range &e) {
-        std::cerr << "ERROR: Key '" << id << "' not found in target_areas_. "
-                  << "Exception: " << e.what() << std::endl;
-        // Re-throw, or return a default value
-        throw;
+  try {
+    return target_areas_.at(id);
+  } catch (const std::out_of_range &e) {
+    std::cerr << "ERROR: Key '" << id << "' not found in target_areas_. "
+              << "Exception: " << e.what() << std::endl;
+    // Re-throw, or return a default value
+    throw;
+  }
+}
+
+double InsetState::heuristic_target_area_at(const std::string &id) const
+{
+  // If the past 5 max_area_errors_ have been the same GeoDiv, we assume
+  // that the GeoDiv is having trouble converge, and we exaggerage the
+  // target area to help it converge.
+
+  // Define the number of entries to check
+  const size_t num_entries_to_check = 5;
+  const size_t min_n_integrations_before_exaggerating_again = 1;
+  size_t count = 0;
+
+  // Check the last `num_entries_to_check` entries in max_area_error_infos_
+  for (size_t i = 0;
+       i < std::min(num_entries_to_check, max_area_error_infos_.size());
+       ++i) {
+    if (
+      max_area_error_infos_[max_area_error_infos_.size() - 1 - i].geo_div ==
+      id) {
+      ++count;
     }
+  }
+
+  // If the same GeoDiv appears in all of the last `num_entries_to_check`
+  // entries, exaggerate the target area
+  if (
+    count == num_entries_to_check &&
+    (n_finished_integrations_ - last_exaggerated_.n_integrations >=
+       min_n_integrations_before_exaggerating_again ||
+     last_exaggerated_.geo_div != id)) {
+        double target_area = target_areas_.at(id);
+        double current_area = geo_divs_[geo_divs_id_to_index_.at(id)].area();
+
+        // Exaggerate the target area based on comparison with current area
+        double exaggerated_target_area = (target_area > current_area) ? target_area * 2.0 : target_area * 0.5;
+
+        last_exaggerated_ = {n_finished_integrations_, id}; // Update the last exaggerated info
+
+        std::cerr << std::endl << "Exaggerating target areas! " << std::endl;
+        std::cerr << "GeoDiv: " << id
+          << ", Actual Target Area: " << target_area
+          << ", Exaggerated Target Area: " << exaggerated_target_area
+          << std::endl;
+
+        return exaggerated_target_area;
+  }
+  try {
+    return target_areas_.at(id);
+  } catch (const std::out_of_range &e) {
+    std::cerr << "ERROR: Key '" << id << "' not found in target_areas_. "
+              << "Exception: " << e.what() << std::endl;
+    // Re-throw, or return a default value
+    throw;
+  }
 }
 
 double InsetState::total_inset_area() const
