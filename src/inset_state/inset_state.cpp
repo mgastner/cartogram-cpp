@@ -670,9 +670,6 @@ double InsetState::target_area_at(const std::string &id) const
   }
 }
 
-    }
-}
-
 double InsetState::total_inset_area() const
 {
   double total_inset_area = 0.0;

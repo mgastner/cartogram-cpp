@@ -167,7 +167,7 @@ void InsetState::fill_with_density(bool plot_density)
   for (unsigned int i = 0; i < lx_; ++i) {
     for (unsigned int j = 0; j < ly_; ++j) {
       if (rho_den[i][j] == 0) {
-        rho_init_(i, j) = mean_density;
+        rho_init_(i, j) = exterior_density;
       } else {
         rho_init_(i, j) = rho_num[i][j] / rho_den[i][j];
       }
