@@ -325,8 +325,7 @@ double calculate_velocity_for_point(
                             : (-grid_fluxy_init(i, j) / rho);
 }
 
-// Return a map of initial quadtree point to point
-void InsetState::flatten_density_with_node_vertices()
+bool InsetState::flatten_density_with_node_vertices()
 {
   std::cerr << "In flatten_density_with_node_vertices()" << std::endl;
 
@@ -490,6 +489,36 @@ void InsetState::flatten_density_with_node_vertices()
         v_intp,
         lx_,
         ly_);
+
+      // Check whether any Delaunay triangle projections flip the projected
+      // triangle. This is an issue as it can lead to intersection during
+      // project. We resolve by increasing the blur width and running the steps
+      // again.
+      for (Delaunay::Finite_faces_iterator fit =
+             proj_qd_.dt.finite_faces_begin();
+           fit != proj_qd_.dt.finite_faces_end();
+           ++fit) {
+        const Point p1_ori = fit->vertex(0)->point();
+        const Point p2_ori = fit->vertex(1)->point();
+        const Point p3_ori = fit->vertex(2)->point();
+
+        const Point p1_proj = proj_qd_.triangle_transformation[p1_ori];
+        const Point p2_proj = proj_qd_.triangle_transformation[p2_ori];
+        const Point p3_proj = proj_qd_.triangle_transformation[p3_ori];
+
+        const double area_ori_triangle = CGAL::area(p1_ori, p2_ori, p3_ori);
+        const double area_proj_triangle =
+          CGAL::area(p1_proj, p2_proj, p3_proj);
+
+        // If the area of the original triangle and the area of the projected
+        // triangle have different signs, then the triangle has flipped.
+        if (area_ori_triangle * area_proj_triangle < 0) {
+          std::cerr << "Delaunay triangle flipped detected. Increasing blur "
+                       "width and running again."
+                    << std::endl;
+          return 0;
+        }
+      }
       if (accept) {
 
         // Okay, we can run interpolate_bilinearly()
@@ -547,4 +576,7 @@ void InsetState::flatten_density_with_node_vertices()
     proj_qd_.triangle_transformation = mid;
     delta_t *= inc_after_acc;  // Try a larger step next time
   }
+
+  // Return 1 if the integration was successful
+  return 1;
 }
