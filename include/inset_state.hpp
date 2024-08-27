@@ -13,12 +13,13 @@ struct max_area_error_info {
   double value;
   std::string geo_div;
 
-    // Conversion to std::tuple to enable structured bindings
-    // this allows:
-    // auto [value, geo_div] = max_area_error();
-    operator std::tuple<double, std::string>() const {
-        return std::make_tuple(value, geo_div);
-    }
+  // Conversion to std::tuple to enable structured bindings
+  // this allows:
+  // auto [value, geo_div] = max_area_error();
+  operator std::tuple<double, std::string>() const
+  {
+    return std::make_tuple(value, geo_div);
+  }
 };
 
 struct proj_qd {  // quadtree-delaunay projection
@@ -80,6 +81,7 @@ private:
   std::unordered_map<std::string, bool> is_input_target_area_missing_;
   std::unordered_map<std::string, std::string> labels_;
   unsigned int lx_{}, ly_{};  // Lattice dimensions
+  unsigned int n_fails_during_flatten_density_{};
   unsigned int n_finished_integrations_;
   std::string pos_;  // Position of inset ("C", "T" etc.)
   boost::multi_array<Point, 2> proj_;  // Cartogram projection
@@ -133,7 +135,7 @@ public:
   void fill_with_density(bool);  // Fill map with density, using scanlines
   void flatten_density();  // Flatten said density with integration
   void flatten_ellipse_density();
-  void flatten_density_with_node_vertices();
+  bool flatten_density_with_node_vertices();
 
   const std::vector<GeoDiv> &geo_divs() const;
   std::vector<std::vector<Color>> grid_cell_colors(unsigned int cell_width);
@@ -165,6 +167,7 @@ public:
   std::pair<double, unsigned int> get_km_legend_length();
   std::pair<double, unsigned int> get_visual_variable_legend_length();
 
+  void increment_n_fails_during_flatten_density();
   void increment_integration();
   double initial_area() const;
   double initial_target_area() const;
@@ -246,13 +249,14 @@ public:
   void write_cairo_map(
     const std::string &,
     bool,
-    std::unordered_map<Point, Point> = std::unordered_map<Point, Point>());
+    const std::unordered_map<Point, Vector> & =
+      std::unordered_map<Point, Vector>());
   void write_cairo_polygons_to_svg(
     const std::string &,
     bool,
     bool,
     bool,
-    std::unordered_map<Point, Point> &);
+    const std::unordered_map<Point, Vector> &);
 
   void write_delaunay_triangles(const std::string &);
   void write_grid_heatmap_data(const std::string filename);

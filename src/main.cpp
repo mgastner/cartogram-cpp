@@ -245,7 +245,9 @@ int main(const int argc, const char *argv[])
     if (plot_polygons) {
 
       // Write input of SVG files if requested by command-line option
-      inset_state.write_cairo_map(inset_state.inset_name() + "_input", plot_grid);
+      inset_state.write_cairo_map(
+        inset_state.inset_name() + "_input",
+        plot_grid);
     }
 
     // Remove tiny polygons below threshold
@@ -258,7 +260,8 @@ int main(const int argc, const char *argv[])
     // Start map integration
     while (inset_state.n_finished_integrations() < max_integrations &&
            (inset_state.max_area_error().value > max_permitted_area_error ||
-            std::abs(inset_state.area_expansion_factor() - 1.0) > max_permitted_area_expansion)) {
+            std::abs(inset_state.area_expansion_factor() - 1.0) >
+              max_permitted_area_expansion)) {
 
       std::cerr << "\nIntegration number "
                 << inset_state.n_finished_integrations() << std::endl;
@@ -299,15 +302,18 @@ int main(const int argc, const char *argv[])
       if (blur_width > 0.0) {
         inset_state.blur_density(blur_width, plot_density);
       }
-
       time_tracker.start("Flatten Density");
-
       if (qtdt_method) {
-        inset_state.flatten_density_with_node_vertices();
+        if (not inset_state.flatten_density_with_node_vertices()) {
+          inset_state.increment_n_fails_during_flatten_density();
+
+          // Flatten density has failed and blur width will increase, and now
+          // try again
+          continue;
+        }
       } else {
         inset_state.flatten_density();
       }
-
       time_tracker.stop("Flatten Density");
 
       if (qtdt_method) {
@@ -355,7 +361,8 @@ int main(const int argc, const char *argv[])
     }
 
     // End of inset integrations
-    inset_state.check_completion(); // prints error message if conditions still not met
+    inset_state
+      .check_completion();  // prints error message if conditions still not met
     time_tracker.stop("Integration Inset " + inset_pos);
 
     // Update and display progress information
@@ -363,7 +370,9 @@ int main(const int argc, const char *argv[])
     progress_tracker.update_and_print_progress_end_integration(inset_state);
 
     if (plot_polygons) {
-      inset_state.write_cairo_map(inset_state.inset_name() + "_output", plot_grid);
+      inset_state.write_cairo_map(
+        inset_state.inset_name() + "_output",
+        plot_grid);
     }
 
     if (world) {

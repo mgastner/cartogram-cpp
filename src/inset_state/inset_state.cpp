@@ -45,14 +45,17 @@ double InsetState::blur_width() const
 
   // Blur density to speed up the numerics in flatten_density() below.
   // We slowly reduce the blur width so that the areas can reach their
-  // target values.
+  // target values. In case of failure during flatten_density, we increase
+  // the blur width to avoid the flipped Delaunay triangles.
   // TODO: whenever blur_width hits 0, the maximum area error will start
   //       increasing again and eventually lead to an invalid grid
   //       cell error when projecting with triangulation. Investigate
   //       why. As a temporary fix, we set blur_width to be always
   //       positive, regardless of the number of integrations.
-  const unsigned int blur_default_pow = static_cast<unsigned int>(
-    6 + log2(std::max(lx(), ly()) / default_long_grid_length));
+  const unsigned int blur_default_pow =
+    static_cast<unsigned int>(
+      6 + log2(std::max(lx(), ly()) / default_long_grid_length)) +
+    n_fails_during_flatten_density_ * 2;
   double blur_width =
     std::pow(2.0, blur_default_pow - (0.5 * n_finished_integrations_));
 
@@ -72,15 +75,13 @@ void InsetState::check_completion() const
 {
   auto [value, geo_div] = max_area_error();
   if (value > max_permitted_area_error) {
-      std::cerr << "ERROR: Could not converge, max area error beyond limit (" << value
-                << ", " << geo_div << ")"
-                << std::endl;
+    std::cerr << "ERROR: Could not converge, max area error beyond limit ("
+              << value << ", " << geo_div << ")" << std::endl;
   }
   double area_expansion_factor_ = area_expansion_factor();
   if (std::abs(area_expansion_factor_ - 1.0) > max_permitted_area_expansion) {
     std::cerr << "ERROR: Area drift beyond limit: "
-              << (area_expansion_factor_ - 1.0) * 100.0 << "%"
-              << std::endl;
+              << (area_expansion_factor_ - 1.0) * 100.0 << "%" << std::endl;
   }
 }
 
@@ -240,6 +241,11 @@ void InsetState::increment_integration()
   n_finished_integrations_ += 1;
 }
 
+void InsetState::increment_n_fails_during_flatten_density()
+{
+  n_fails_during_flatten_density_ += 1;
+}
+
 void InsetState::initialize_cum_proj()
 {
   cum_proj_.resize(boost::extents[lx_][ly_]);
@@ -325,12 +331,15 @@ void InsetState::is_simple() const
   for (const auto &gd : geo_divs_) {
     for (const auto &pwh : gd.polygons_with_holes()) {
       if (!pwh.outer_boundary().is_simple()) {
-        std::cerr << "ERROR: Outer boundary is not simple." << std::endl;
+        std::cerr << "ERROR: Outer boundary is not simple for GeoDiv "
+                  << gd.id() << std::endl;
         exit(1);
       }
       for (const auto &h : pwh.holes()) {
         if (!h.is_simple()) {
-          std::cerr << "ERROR: Hole is not simple." << std::endl;
+          std::cerr << gd.id() << std::endl;
+          std::cerr << "ERROR: Hole is not simple for GeoDiv " << gd.id()
+                    << std::endl;
           exit(1);
         }
       }
@@ -390,12 +399,11 @@ struct max_area_error_info InsetState::max_area_error() const
       worst_gd = gd_id;
     }
   }
-  std::cerr << "max. area err: " << value
-            << ", GeoDiv: " << worst_gd
+  std::cerr << "max. area err: " << value << ", GeoDiv: " << worst_gd
             << std::endl;
-  std::cerr << "Current Area: " << geo_divs_[geo_divs_id_to_index_.at(worst_gd)].area()
-            << ", Target Area: " << target_area_at(worst_gd)
-            << std::endl;
+  std::cerr << "Current Area: "
+            << geo_divs_[geo_divs_id_to_index_.at(worst_gd)].area()
+            << ", Target Area: " << target_area_at(worst_gd) << std::endl;
   return {value, worst_gd};
 }
 
@@ -447,9 +455,8 @@ std::string InsetState::pos() const
 double InsetState::area_expansion_factor() const
 {
   double area_expansion_factor_ = total_inset_area() / initial_area_;
-  // Print area drift information
-  std::cerr << "Area drift: " << (area_expansion_factor_ - 1.0) * 100.0
-            << "%" << std::endl;
+  std::cerr << "Area drift: " << (area_expansion_factor_ - 1.0) * 100.0 << "%"
+            << std::endl;
   return area_expansion_factor_;
 }
 
@@ -652,14 +659,14 @@ bool InsetState::target_area_is_missing(const std::string &id) const
 
 double InsetState::target_area_at(const std::string &id) const
 {
-    try {
-        return target_areas_.at(id);
-    } catch (const std::out_of_range &e) {
-        std::cerr << "ERROR: Key '" << id << "' not found in target_areas_. "
-                  << "Exception: " << e.what() << std::endl;
-        // Re-throw, or return a default value
-        throw;
-    }
+  try {
+    return target_areas_.at(id);
+  } catch (const std::out_of_range &e) {
+    std::cerr << "ERROR: Key '" << id << "' not found in target_areas_. "
+              << "Exception: " << e.what() << std::endl;
+    // Re-throw, or return a default value
+    throw;
+  }
 }
 
 double InsetState::total_inset_area() const
