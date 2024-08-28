@@ -105,11 +105,90 @@ unsigned int InsetState::colors_size() const
   return colors_.size();
 }
 
-// TODO: For the vertices of a square, there are two possible Delaunay
-// triangulations. In the current version, we lack control over the
-// triangulation chosen by CGAL. Ideally, the triangulation should be selected
-// that uses the shorter diagonal as a triangle edge.
 void InsetState::create_delaunay_t()
+{
+  Delaunay dt;
+  dt.insert(unique_quadtree_corners_.begin(), unique_quadtree_corners_.end());
+  proj_qd_.dt = dt;
+  std::cerr << "Number of Delaunay triangles: " << dt.number_of_faces()
+            << std::endl;
+}
+
+void InsetState::update_delaunay_t()
+{
+  // Create the Delauany triangulation from the projected corners
+  std::vector<Point> projected_unique_quadtree_corners;
+  for (auto &pt : unique_quadtree_corners_) {
+    projected_unique_quadtree_corners.push_back(
+      proj_qd_.triangle_transformation.at(pt));
+  }
+
+  Delaunay dt_projected;
+  dt_projected.insert(
+    projected_unique_quadtree_corners.begin(),
+    projected_unique_quadtree_corners.end());
+
+  std::unordered_map<Point, Point> reverse_triangle_transformation;
+  reverse_triangle_transformation.reserve(4 * unique_quadtree_corners_.size());
+  for (auto &[key, val] : proj_qd_.triangle_transformation) {
+    reverse_triangle_transformation[val] = key;
+  }
+
+  // Get the constraints to the existing Delaunay triangulation
+  std::vector<std::pair<Point, Point>> constraints;
+  for (Delaunay::Finite_faces_iterator fit = dt_projected.finite_faces_begin();
+       fit != dt_projected.finite_faces_end();
+       ++fit) {
+    Face_handle face = fit;
+    const Point p1 = face->vertex(0)->point();
+    const Point p2 = face->vertex(1)->point();
+    const Point p3 = face->vertex(2)->point();
+
+    const Point p1_orig = reverse_triangle_transformation.at(p1);
+    const Point p2_orig = reverse_triangle_transformation.at(p2);
+    const Point p3_orig = reverse_triangle_transformation.at(p3);
+
+    constraints.push_back(std::make_pair(p1_orig, p2_orig));
+    constraints.push_back(std::make_pair(p2_orig, p3_orig));
+    constraints.push_back(std::make_pair(p3_orig, p1_orig));
+  }
+  proj_qd_.dt.insert_constraints(constraints.begin(), constraints.end());
+}
+
+void InsetState::destroy_fftw_plans_for_flux()
+{
+  grid_fluxx_init_.destroy_fftw_plan();
+  grid_fluxy_init_.destroy_fftw_plan();
+}
+
+void InsetState::destroy_fftw_plans_for_rho()
+{
+  fftw_destroy_plan(fwd_plan_for_rho_);
+  fftw_destroy_plan(bwd_plan_for_rho_);
+}
+
+void InsetState::execute_fftw_bwd_plan() const
+{
+  fftw_execute(bwd_plan_for_rho_);
+}
+
+void InsetState::execute_fftw_plans_for_flux()
+{
+  grid_fluxx_init_.execute_fftw_plan();
+  grid_fluxy_init_.execute_fftw_plan();
+}
+
+void InsetState::execute_fftw_fwd_plan() const
+{
+  fftw_execute(fwd_plan_for_rho_);
+}
+
+const std::vector<GeoDiv> &InsetState::geo_divs() const
+{
+  return geo_divs_;
+}
+
+void InsetState::create_and_store_quadtree_cell_corners()
 {
   std::vector<Point> points;
 
@@ -118,7 +197,10 @@ void InsetState::create_delaunay_t()
       const Polygon &ext_ring = pwh.outer_boundary();
 
       // Get exterior ring coordinates
-      points.insert(points.end(), ext_ring.vertices_begin(), ext_ring.vertices_end());
+      points.insert(
+        points.end(),
+        ext_ring.vertices_begin(),
+        ext_ring.vertices_end());
 
       // Get holes of polygon with holes
       for (const auto &h : pwh.holes()) {
@@ -135,8 +217,10 @@ void InsetState::create_delaunay_t()
 
   // Remove the duplicates from points
   std::unordered_set<Point> unique_points(points.begin(), points.end());
-  
-  std::vector<Point> unique_points_vec(unique_points.begin(), unique_points.end());
+
+  std::vector<Point> unique_points_vec(
+    unique_points.begin(),
+    unique_points.end());
 
   // Create the quadtree and 'grade' it so that neighboring quadtree leaves
   // differ by a depth that can only be 0 or 1.
@@ -214,46 +298,6 @@ void InsetState::create_delaunay_t()
 
   std::cerr << "Number of unique corners: " << unique_quadtree_corners_.size()
             << std::endl;
-
-  // Create the Delaunay triangulation
-  Delaunay dt;
-  dt.insert(unique_quadtree_corners_.begin(), unique_quadtree_corners_.end());
-  proj_qd_.dt = dt;
-  std::cerr << "Number of Delaunay triangles: " << dt.number_of_faces()
-            << std::endl;
-}
-
-void InsetState::destroy_fftw_plans_for_flux()
-{
-  grid_fluxx_init_.destroy_fftw_plan();
-  grid_fluxy_init_.destroy_fftw_plan();
-}
-
-void InsetState::destroy_fftw_plans_for_rho()
-{
-  fftw_destroy_plan(fwd_plan_for_rho_);
-  fftw_destroy_plan(bwd_plan_for_rho_);
-}
-
-void InsetState::execute_fftw_bwd_plan() const
-{
-  fftw_execute(bwd_plan_for_rho_);
-}
-
-void InsetState::execute_fftw_plans_for_flux()
-{
-  grid_fluxx_init_.execute_fftw_plan();
-  grid_fluxy_init_.execute_fftw_plan();
-}
-
-void InsetState::execute_fftw_fwd_plan() const
-{
-  fftw_execute(fwd_plan_for_rho_);
-}
-
-const std::vector<GeoDiv> &InsetState::geo_divs() const
-{
-  return geo_divs_;
 }
 
 void InsetState::increment_integration()
