@@ -426,14 +426,6 @@ struct max_area_error_info InsetState::max_area_error(bool print) const
               << geo_divs_[geo_divs_id_to_index_.at(worst_gd)].area()
               << ", Target Area: " << target_area_at(worst_gd) << std::endl;
   }
-<<<<<<< HEAD
-=======
-  std::cerr << "max. area err: " << value << ", GeoDiv: " << worst_gd
-            << std::endl;
-  std::cerr << "Current Area: "
-            << geo_divs_[geo_divs_id_to_index_.at(worst_gd)].area()
-            << ", Target Area: " << target_area_at(worst_gd) << std::endl;
->>>>>>> velo-graticule
   return {value, worst_gd};
 }
 
@@ -554,21 +546,20 @@ void InsetState::reset_n_finished_integrations()
 void InsetState::set_area_errors()
 {
   // Formula for relative area error:
-  // area_on_cartogram / target_area - 1
-  double sum_target_area = 0.0;
-  double sum_cart_area = 0.0;
-
-#pragma omp parallel for default(none) \
-  reduction(+ : sum_target_area, sum_cart_area)
-  for (const auto &gd : geo_divs_) {
-    sum_target_area += target_area_at(gd.id());
-    sum_cart_area += gd.area();
-  }
+  // | area_on_cartogram / target_area - 1 |
+  // However, we must also either
+  // - multiply target area with aef or
+  // - divide gd.area() by aef
+  // To account for the area drift already introduced.
+  // For instance, if the actual cartogram is 10% larger than it was initially,
+  // And our GeoDiv is 5% larger than it initially was, it has actually become
+  // relatively smaller compared to the total cartogram area. Thus, we must
+  // accordingly inflate its target area to account for the area drift.
+  double aef = area_expansion_factor();
 
 #pragma omp parallel for default(none) shared(sum_cart_area, sum_target_area)
   for (const auto &gd : geo_divs_) {
-    const double obj_area =
-      target_area_at(gd.id()) * sum_cart_area / sum_target_area;
+    const double obj_area = target_area_at(gd.id()) * aef;
     area_errors_[gd.id()] = std::abs((gd.area() / obj_area) - 1);
   }
 }
@@ -585,9 +576,9 @@ void InsetState::adjust_grid()
   if (
     n_finished_integrations_ >= 2 &&
     curr_max_area_error >=
-      0.99 * max_area_errors_[n_finished_integrations_ - 1] &&
+      0.999 * max_area_errors_[n_finished_integrations_ - 1] &&
     curr_max_area_error >=
-      0.99 * max_area_errors_[n_finished_integrations_ - 2]) {
+      0.999 * max_area_errors_[n_finished_integrations_ - 2]) {
 
     // Multiply grid size with factor
     std::cerr << "Adjusting grid size." << std::endl;

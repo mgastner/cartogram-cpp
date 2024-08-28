@@ -64,6 +64,7 @@ void add_intersections(
   const double target_density,
   const double epsilon,
   const std::string &gd_id,
+  const size_t pwh_idx,
   const char axis)
 {
   if (axis != 'x' && axis != 'y') {
@@ -81,6 +82,7 @@ void add_intersections(
           target_density,
           epsilon)) {
       temp.geo_div_id = gd_id;
+      temp.pwh_idx = pwh_idx;
       intersections.push_back(temp);
     }
     prev_point = curr_point;

@@ -132,11 +132,12 @@ Point GeoDiv::point_on_surface_of_polygon_with_holes(
     0,
     epsilon,
     id_,
+    0,
     'x');
 
   // Store hole intersections
   for (const auto &h : pwh.holes()) {
-    add_intersections(intersections, h, line_y, 0, epsilon, id_, 'x');
+    add_intersections(intersections, h, line_y, 0, epsilon, id_, 0, 'x');
   }
   std::sort(intersections.begin(), intersections.end());
 
