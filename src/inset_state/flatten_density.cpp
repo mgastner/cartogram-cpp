@@ -282,6 +282,7 @@ void InsetState::flatten_density()
     proj_ = mid;
     delta_t *= inc_after_acc;  // Try a larger step next time
   }
+  is_simple();
 }
 
 bool all_map_points_are_in_domain(
@@ -551,4 +552,5 @@ void InsetState::flatten_density_with_node_vertices()
     proj_qd_.triangle_transformation = mid;
     delta_t *= inc_after_acc;  // Try a larger step next time
   }
+  is_simple();
 }
