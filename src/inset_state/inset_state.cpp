@@ -111,41 +111,36 @@ unsigned int InsetState::colors_size() const
 // that uses the shorter diagonal as a triangle edge.
 void InsetState::create_delaunay_t()
 {
-  // Store all the polygon vertices in std::unordered_set to remove
-  // duplicates
-  std::unordered_set<Point> points;
+  std::vector<Point> points;
 
-  // Avoid collisions in hash table
-  points.reserve(8192);
-  points.max_load_factor(0.5);
   for (const auto &gd : geo_divs_) {
     for (const auto &pwh : gd.polygons_with_holes()) {
       const Polygon &ext_ring = pwh.outer_boundary();
 
       // Get exterior ring coordinates
-      points.insert(ext_ring.begin(), ext_ring.end());
+      points.insert(points.end(), ext_ring.vertices_begin(), ext_ring.vertices_end());
 
       // Get holes of polygon with holes
-
       for (const auto &h : pwh.holes()) {
-        points.insert(h.begin(), h.end());
+        points.insert(points.end(), h.vertices_begin(), h.vertices_end());
       }
     }
   }
 
   // Add boundary points of mapping domain
-  points.insert(Point(0, 0));
-  points.insert(Point(0, ly_));
-  points.insert(Point(lx_, 0));
-  points.insert(Point(lx_, ly_));
-  std::vector<Point> points_vec;
+  points.push_back(Point(0, 0));
+  points.push_back(Point(0, ly_));
+  points.push_back(Point(lx_, 0));
+  points.push_back(Point(lx_, ly_));
 
-  // Copy points of unordered_set to vector
-  std::copy(points.begin(), points.end(), std::back_inserter(points_vec));
+  // Remove the duplicates from points
+  std::unordered_set<Point> unique_points(points.begin(), points.end());
+  
+  std::vector<Point> unique_points_vec(unique_points.begin(), unique_points.end());
 
   // Create the quadtree and 'grade' it so that neighboring quadtree leaves
   // differ by a depth that can only be 0 or 1.
-  Quadtree qt(points_vec, Quadtree::PointMap(), 1);
+  Quadtree qt(unique_points_vec, Quadtree::PointMap(), 1);
   const unsigned int depth =
     static_cast<unsigned int>(std::max(log2(lx_), log2(ly_)));
   std::cerr << "Using Quadtree depth: " << depth << std::endl;
