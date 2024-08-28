@@ -149,9 +149,34 @@ void InsetState::create_delaunay_t()
   const unsigned int depth =
     static_cast<unsigned int>(std::max(log2(lx_), log2(ly_)));
   std::cerr << "Using Quadtree depth: " << depth << std::endl;
-  qt.refine(
-    depth,
-    9);  // (maximum depth, splitting condition: max number of points per node)
+
+  auto can_split = [&depth, &qt, this](const Quadtree::Node &node) -> bool {
+    // if the node depth is greater than depth, do not split
+    if (node.depth() >= depth) {
+      return false;
+    }
+
+    auto bbox = qt.bbox(node);
+    double rho_min = 1e9;
+    double rho_max = -1e9;
+
+    // get the minimum rho_init of the bbox of the node
+    for (unsigned int i = bbox.xmin(); i < bbox.xmax(); ++i) {
+      for (unsigned int j = bbox.ymin(); j < bbox.ymax(); ++j) {
+        if (i >= this->lx() || j >= this->ly()) {
+          continue;
+        }
+        if (i < 0 || j < 0) {
+          continue;
+        }
+        rho_min = std::min(rho_min, this->ref_to_rho_init()(i, j));
+        rho_max = std::max(rho_max, this->ref_to_rho_init()(i, j));
+      }
+    }
+    return rho_max - rho_min >
+           (0.001 + pow((1.0 / n_finished_integrations_), 2));
+  };
+  qt.refine(can_split);
   qt.grade();
   std::cerr << "Quadtree root node bounding box: " << qt.bbox(qt.root())
             << std::endl;
