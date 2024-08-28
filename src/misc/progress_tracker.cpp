@@ -31,7 +31,7 @@ void ProgressTracker::print_progress_mid_integration(
   // Calculate progress percentage. We assume that the maximum area
   // error is typically reduced to 1/5 of the previous value.
   const double ratio_actual_to_permitted_max_area_error =
-    inset_state.max_area_error(false).value / max_permitted_area_error;
+    inset_state.max_area_error().value / max_permitted_area_error;
   const double n_predicted_integrations =
     std::max((log(ratio_actual_to_permitted_max_area_error) / log(5)), 1.0);
 
