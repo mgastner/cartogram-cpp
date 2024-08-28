@@ -73,8 +73,5 @@ void InsetState::simplify(const unsigned int target_points_per_inset)
     }
   }
 
-  // Check the simplicity of polygons
-  is_simple();
-
   std::cerr << n_points() << " points after simplification." << std::endl;
 }
