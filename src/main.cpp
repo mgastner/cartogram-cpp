@@ -24,7 +24,7 @@ int main(const int argc, const char *argv[])
   // on the triangulation of grid cells. It can eliminate intersections
   // that occur when the projected grid lines are strongly curved. Only
   // use this method if the tracer points are an FTReal2d data structure.
- bool triangulation;
+  bool triangulation;
   bool simplify;  // Should the polygons be simplified?
 
   // Other boolean values that are needed to parse the command line arguments
@@ -245,7 +245,9 @@ int main(const int argc, const char *argv[])
     if (plot_polygons) {
 
       // Write input of SVG files if requested by command-line option
-      inset_state.write_cairo_map(inset_state.inset_name() + "_input", plot_grid);
+      inset_state.write_cairo_map(
+        inset_state.inset_name() + "_input",
+        plot_grid);
     }
 
     // Remove tiny polygons below threshold
@@ -260,9 +262,8 @@ int main(const int argc, const char *argv[])
 
     // Start map integration
     while (inset_state.n_finished_integrations() < max_integrations &&
-           (std::abs(inset_state.area_expansion_factor() - 1.0) > max_permitted_area_expansion ||
-           inset_state.max_area_error(false).value > max_permitted_area_error)) {
-
+            (inset_state.max_area_error(false).value > max_permitted_area_error ||
+            std::abs(inset_state.area_expansion_factor() - 1.0) > max_permitted_area_expansion)) {
       std::cerr << "\nIntegration number "
                 << inset_state.n_finished_integrations() << std::endl;
       std::cerr << "Number of Points: " << inset_state.n_points() << std::endl;
@@ -275,14 +276,14 @@ int main(const int argc, const char *argv[])
 
         if (plot_quadtree) {
           const std::string file_prefix =
-            inset_state.inset_name() + "_" + std::to_string(inset_state.n_finished_integrations());
+            inset_state.inset_name() + "_" +
+            std::to_string(inset_state.n_finished_integrations());
 
           // Draw the resultant quadtree and Delaunay triangulation
           inset_state.write_quadtree(file_prefix + "_quadtree");
           inset_state.write_delaunay_triangles(file_prefix + "_delaunay_t");
         }
       }
-
 
       time_tracker.start("Fill with Density");
       inset_state.fill_with_density(plot_density);
@@ -318,7 +319,9 @@ int main(const int argc, const char *argv[])
         }
 
         // Project using the Delaunay triangulation
+        time_tracker.start("Project (Delanuay Triangulation)");
         inset_state.project_with_delaunay_t(output_to_stdout);
+        time_tracker.stop("Project (Delanuay Triangulation)");
       } else if (triangulation) {
 
         // Choose diagonals that are inside grid cells, then densify.
@@ -364,7 +367,9 @@ int main(const int argc, const char *argv[])
     progress_tracker.update_and_print_progress_end_integration(inset_state);
 
     if (plot_polygons) {
-      inset_state.write_cairo_map(inset_state.inset_name() + "_output", plot_grid);
+      inset_state.write_cairo_map(
+        inset_state.inset_name() + "_output",
+        plot_grid);
     }
 
     if (world) {
