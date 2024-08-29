@@ -116,7 +116,7 @@ void InsetState::create_delaunay_t()
 
 void InsetState::update_delaunay_t()
 {
-  // Create the Delauany triangulation from the projected corners
+  // Create the Delauany triangulation from the projected quadtree corners
   std::vector<Point> projected_unique_quadtree_corners;
   for (auto &pt : unique_quadtree_corners_) {
     projected_unique_quadtree_corners.push_back(
@@ -128,13 +128,15 @@ void InsetState::update_delaunay_t()
     projected_unique_quadtree_corners.begin(),
     projected_unique_quadtree_corners.end());
 
+  // Reverse map is useful to get the original point of the projected vertex
   std::unordered_map<Point, Point> reverse_triangle_transformation;
   reverse_triangle_transformation.reserve(4 * unique_quadtree_corners_.size());
   for (auto &[key, val] : proj_qd_.triangle_transformation) {
     reverse_triangle_transformation[val] = key;
   }
 
-  // Get the constraints to the existing Delaunay triangulation
+  // Add the chosen diagonal of the projected Delaunay triangles as constraints
+  // to the original Delaunay triangulation
   std::vector<std::pair<Point, Point>> constraints;
   for (Delaunay::Finite_faces_iterator fit = dt_projected.finite_faces_begin();
        fit != dt_projected.finite_faces_end();
@@ -148,10 +150,19 @@ void InsetState::update_delaunay_t()
     const Point p2_orig = reverse_triangle_transformation.at(p2);
     const Point p3_orig = reverse_triangle_transformation.at(p3);
 
-    constraints.push_back(std::make_pair(p1_orig, p2_orig));
-    constraints.push_back(std::make_pair(p2_orig, p3_orig));
-    constraints.push_back(std::make_pair(p3_orig, p1_orig));
+    // Only pick the edge if it is diagonal
+    if (p1_orig.x() != p2_orig.x() && p1_orig.y() != p2_orig.y()) {
+      constraints.push_back(std::make_pair(p1_orig, p2_orig));
+    }
+    if (p2_orig.x() != p3_orig.x() && p2_orig.y() != p3_orig.y()) {
+      constraints.push_back(std::make_pair(p2_orig, p3_orig));
+    }
+    if (p3_orig.x() != p1_orig.x() && p3_orig.y() != p1_orig.y()) {
+      constraints.push_back(std::make_pair(p3_orig, p1_orig));
+    }
   }
+
+  // Inserting range is faster than inserting one by one
   proj_qd_.dt.insert_constraints(constraints.begin(), constraints.end());
 }
 
