@@ -6,17 +6,24 @@
 
 void write_triangles_on_surface(
   cairo_t *cr,
-  const Delaunay &dt,
+  const proj_qd &proj,
   const Color &clr,
-  const unsigned int ly)
+  const unsigned int ly,
+  bool draw_projected_points)
 {
   // Draw the triangles
-  for (Delaunay::Finite_faces_iterator fit = dt.finite_faces_begin();
-       fit != dt.finite_faces_end();
+  for (Delaunay::Finite_faces_iterator fit = proj.dt.finite_faces_begin();
+       fit != proj.dt.finite_faces_end();
        ++fit) {
     Point p1 = fit->vertex(0)->point();
     Point p2 = fit->vertex(1)->point();
     Point p3 = fit->vertex(2)->point();
+    
+    if (draw_projected_points) {
+      p1 = proj.triangle_transformation.at(p1);
+      p2 = proj.triangle_transformation.at(p2);
+      p3 = proj.triangle_transformation.at(p3);
+    }
 
     // set width of line
     cairo_set_line_width(cr, 0.20);
@@ -91,13 +98,13 @@ void write_quadtree_rectangles_on_surface(
   }
 }
 
-void InsetState::write_delaunay_triangles(const std::string &filename)
+void InsetState::write_delaunay_triangles(const std::string &filename, const bool draw_projected_points)
 {
   std::cerr << "Writing " << filename << ".svg" << std::endl;
   cairo_surface_t *surface =
     cairo_svg_surface_create((filename + ".svg").c_str(), lx_, ly_);
   cairo_t *cr = cairo_create(surface);
-  write_triangles_on_surface(cr, proj_qd_.dt, Color{0.6, 0.6, 0.6}, ly_);
+  write_triangles_on_surface(cr, proj_qd_, Color{0.6, 0.6, 0.6}, ly_, draw_projected_points);
   write_polygon_points_on_surface(cr, Color{0.0, 0.0, 1.0});
   cairo_show_page(cr);
   cairo_surface_destroy(surface);

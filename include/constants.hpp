@@ -22,7 +22,7 @@ constexpr double earth_surface_area = 510.1e6;
 // default_resolution is used for filling grid cells with density.
 // intersection_resolution is used to specify the number of scanlines shown
 // in output files showing intersections.
-constexpr unsigned int default_resolution = 16;
+constexpr unsigned int default_resolution = 512;
 constexpr unsigned int intersections_resolution = 1;
 
 // Points after simplification

@@ -119,6 +119,7 @@ public:
   bool color_found(const std::string &) const;
   bool colors_empty() const;
   unsigned int colors_size() const;
+  void create_and_store_quadtree_cell_corners();
   void create_contiguity_graph(unsigned int);
   void create_delaunay_t();
   void densify_geo_divs();
@@ -244,6 +245,7 @@ public:
   std::array<Point, 3> untransformed_triangle(const Point &, bool = false)
     const;
   void trim_grid_heatmap(cairo_t *cr, double padding);
+  void update_delaunay_t();
 
   // Cairo functions
   void write_cairo_map(
@@ -258,9 +260,8 @@ public:
     bool,
     const std::unordered_map<Point, Vector> &);
 
-  void write_delaunay_triangles(const std::string &);
+  void write_delaunay_triangles(const std::string &, const bool);
   void write_grid_heatmap_data(const std::string filename);
-
   void write_grid_heatmap_image(
     const std::string filename,
     const bool plot_equal_area_map,

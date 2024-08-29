@@ -35,8 +35,8 @@ std::vector<std::vector<intersection> > InsetState::intersec_with_parallel_to(
       }
 
       // Iterate over coordinates in bounding box of pwh
-      for (unsigned int k = static_cast<unsigned int>(floor(min_lim)) - 1;
-           k <= ceil(max_lim) + 1;
+      for (unsigned int k = std::max(0, static_cast<int>(min_lim) - 1);
+           k <= max_lim + 1;
            ++k) {
 
         // If the rays are in x-direction, iterate over each ray between the

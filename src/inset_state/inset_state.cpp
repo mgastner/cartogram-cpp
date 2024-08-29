@@ -105,53 +105,168 @@ unsigned int InsetState::colors_size() const
   return colors_.size();
 }
 
-// TODO: For the vertices of a square, there are two possible Delaunay
-// triangulations. In the current version, we lack control over the
-// triangulation chosen by CGAL. Ideally, the triangulation should be selected
-// that uses the shorter diagonal as a triangle edge.
 void InsetState::create_delaunay_t()
 {
-  // Store all the polygon vertices in std::unordered_set to remove
-  // duplicates
-  std::unordered_set<Point> points;
+  Delaunay dt;
+  dt.insert(unique_quadtree_corners_.begin(), unique_quadtree_corners_.end());
+  proj_qd_.dt = dt;
+  std::cerr << "Number of Delaunay triangles: " << dt.number_of_faces()
+            << std::endl;
+}
 
-  // Avoid collisions in hash table
-  points.reserve(8192);
-  points.max_load_factor(0.5);
+void InsetState::update_delaunay_t()
+{
+  // Create the Delauany triangulation from the projected quadtree corners
+  std::vector<Point> projected_unique_quadtree_corners;
+  for (auto &pt : unique_quadtree_corners_) {
+    projected_unique_quadtree_corners.push_back(
+      proj_qd_.triangle_transformation.at(pt));
+  }
+
+  Delaunay dt_projected;
+  dt_projected.insert(
+    projected_unique_quadtree_corners.begin(),
+    projected_unique_quadtree_corners.end());
+
+  // Reverse map is useful to get the original point of the projected vertex
+  std::unordered_map<Point, Point> reverse_triangle_transformation;
+  reverse_triangle_transformation.reserve(4 * unique_quadtree_corners_.size());
+  for (auto &[key, val] : proj_qd_.triangle_transformation) {
+    reverse_triangle_transformation[val] = key;
+  }
+
+  // Add the chosen diagonal of the projected Delaunay triangles as constraints
+  // to the original Delaunay triangulation
+  std::vector<std::pair<Point, Point>> constraints;
+  for (Delaunay::Finite_faces_iterator fit = dt_projected.finite_faces_begin();
+       fit != dt_projected.finite_faces_end();
+       ++fit) {
+    Face_handle face = fit;
+    const Point p1 = face->vertex(0)->point();
+    const Point p2 = face->vertex(1)->point();
+    const Point p3 = face->vertex(2)->point();
+
+    const Point p1_orig = reverse_triangle_transformation.at(p1);
+    const Point p2_orig = reverse_triangle_transformation.at(p2);
+    const Point p3_orig = reverse_triangle_transformation.at(p3);
+
+    // Only pick the edge if it is diagonal
+    if (p1_orig.x() != p2_orig.x() && p1_orig.y() != p2_orig.y()) {
+      constraints.push_back(std::make_pair(p1_orig, p2_orig));
+    }
+    if (p2_orig.x() != p3_orig.x() && p2_orig.y() != p3_orig.y()) {
+      constraints.push_back(std::make_pair(p2_orig, p3_orig));
+    }
+    if (p3_orig.x() != p1_orig.x() && p3_orig.y() != p1_orig.y()) {
+      constraints.push_back(std::make_pair(p3_orig, p1_orig));
+    }
+  }
+
+  // Inserting range is faster than inserting one by one
+  proj_qd_.dt.insert_constraints(constraints.begin(), constraints.end());
+}
+
+void InsetState::destroy_fftw_plans_for_flux()
+{
+  grid_fluxx_init_.destroy_fftw_plan();
+  grid_fluxy_init_.destroy_fftw_plan();
+}
+
+void InsetState::destroy_fftw_plans_for_rho()
+{
+  fftw_destroy_plan(fwd_plan_for_rho_);
+  fftw_destroy_plan(bwd_plan_for_rho_);
+}
+
+void InsetState::execute_fftw_bwd_plan() const
+{
+  fftw_execute(bwd_plan_for_rho_);
+}
+
+void InsetState::execute_fftw_plans_for_flux()
+{
+  grid_fluxx_init_.execute_fftw_plan();
+  grid_fluxy_init_.execute_fftw_plan();
+}
+
+void InsetState::execute_fftw_fwd_plan() const
+{
+  fftw_execute(fwd_plan_for_rho_);
+}
+
+const std::vector<GeoDiv> &InsetState::geo_divs() const
+{
+  return geo_divs_;
+}
+
+void InsetState::create_and_store_quadtree_cell_corners()
+{
+  std::vector<Point> points;
+
   for (const auto &gd : geo_divs_) {
     for (const auto &pwh : gd.polygons_with_holes()) {
       const Polygon &ext_ring = pwh.outer_boundary();
 
       // Get exterior ring coordinates
-      points.insert(ext_ring.begin(), ext_ring.end());
+      points.insert(
+        points.end(),
+        ext_ring.vertices_begin(),
+        ext_ring.vertices_end());
 
       // Get holes of polygon with holes
-
       for (const auto &h : pwh.holes()) {
-        points.insert(h.begin(), h.end());
+        points.insert(points.end(), h.vertices_begin(), h.vertices_end());
       }
     }
   }
 
   // Add boundary points of mapping domain
-  points.insert(Point(0, 0));
-  points.insert(Point(0, ly_));
-  points.insert(Point(lx_, 0));
-  points.insert(Point(lx_, ly_));
-  std::vector<Point> points_vec;
+  points.push_back(Point(0, 0));
+  points.push_back(Point(0, ly_));
+  points.push_back(Point(lx_, 0));
+  points.push_back(Point(lx_, ly_));
 
-  // Copy points of unordered_set to vector
-  std::copy(points.begin(), points.end(), std::back_inserter(points_vec));
+  // Remove the duplicates from points
+  std::unordered_set<Point> unique_points(points.begin(), points.end());
+
+  std::vector<Point> unique_points_vec(
+    unique_points.begin(),
+    unique_points.end());
 
   // Create the quadtree and 'grade' it so that neighboring quadtree leaves
   // differ by a depth that can only be 0 or 1.
-  Quadtree qt(points_vec, Quadtree::PointMap(), 1);
+  Quadtree qt(unique_points_vec, Quadtree::PointMap(), 1);
   const unsigned int depth =
     static_cast<unsigned int>(std::max(log2(lx_), log2(ly_)));
   std::cerr << "Using Quadtree depth: " << depth << std::endl;
-  qt.refine(
-    depth,
-    9);  // (maximum depth, splitting condition: max number of points per node)
+
+  auto can_split = [&depth, &qt, this](const Quadtree::Node &node) -> bool {
+    // if the node depth is greater than depth, do not split
+    if (node.depth() >= depth) {
+      return false;
+    }
+
+    auto bbox = qt.bbox(node);
+    double rho_min = 1e9;
+    double rho_max = -1e9;
+
+    // get the minimum rho_init of the bbox of the node
+    for (unsigned int i = bbox.xmin(); i < bbox.xmax(); ++i) {
+      for (unsigned int j = bbox.ymin(); j < bbox.ymax(); ++j) {
+        if (i >= this->lx() || j >= this->ly()) {
+          continue;
+        }
+        if (i < 0 || j < 0) {
+          continue;
+        }
+        rho_min = std::min(rho_min, this->ref_to_rho_init()(i, j));
+        rho_max = std::max(rho_max, this->ref_to_rho_init()(i, j));
+      }
+    }
+    return rho_max - rho_min >
+           (0.001 + pow((1.0 / n_finished_integrations_), 2));
+  };
+  qt.refine(can_split);
   qt.grade();
   std::cerr << "Quadtree root node bounding box: " << qt.bbox(qt.root())
             << std::endl;
@@ -194,46 +309,6 @@ void InsetState::create_delaunay_t()
 
   std::cerr << "Number of unique corners: " << unique_quadtree_corners_.size()
             << std::endl;
-
-  // Create the Delaunay triangulation
-  Delaunay dt;
-  dt.insert(unique_quadtree_corners_.begin(), unique_quadtree_corners_.end());
-  proj_qd_.dt = dt;
-  std::cerr << "Number of Delaunay triangles: " << dt.number_of_faces()
-            << std::endl;
-}
-
-void InsetState::destroy_fftw_plans_for_flux()
-{
-  grid_fluxx_init_.destroy_fftw_plan();
-  grid_fluxy_init_.destroy_fftw_plan();
-}
-
-void InsetState::destroy_fftw_plans_for_rho()
-{
-  fftw_destroy_plan(fwd_plan_for_rho_);
-  fftw_destroy_plan(bwd_plan_for_rho_);
-}
-
-void InsetState::execute_fftw_bwd_plan() const
-{
-  fftw_execute(bwd_plan_for_rho_);
-}
-
-void InsetState::execute_fftw_plans_for_flux()
-{
-  grid_fluxx_init_.execute_fftw_plan();
-  grid_fluxy_init_.execute_fftw_plan();
-}
-
-void InsetState::execute_fftw_fwd_plan() const
-{
-  fftw_execute(fwd_plan_for_rho_);
-}
-
-const std::vector<GeoDiv> &InsetState::geo_divs() const
-{
-  return geo_divs_;
 }
 
 void InsetState::increment_integration()

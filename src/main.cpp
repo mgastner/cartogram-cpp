@@ -270,7 +270,7 @@ int main(const int argc, const char *argv[])
         time_tracker.start("Delaunay Triangulation");
 
         // Create the Delaunay triangulation
-        inset_state.create_delaunay_t();
+        inset_state.create_and_store_quadtree_cell_corners();
 
         time_tracker.stop("Delaunay Triangulation");
 
@@ -282,12 +282,6 @@ int main(const int argc, const char *argv[])
 
           // Draw the resultant quadtree
           inset_state.write_quadtree(quadtree_filename);
-
-          const std::string delaunay_t_filename =
-            inset_state.inset_name() + "_" +
-            std::to_string(inset_state.n_finished_integrations()) +
-            "_delaunay_t";
-          inset_state.write_delaunay_triangles(delaunay_t_filename);
         }
       }
 
@@ -304,6 +298,12 @@ int main(const int argc, const char *argv[])
       }
       time_tracker.start("Flatten Density");
       if (qtdt_method) {
+        time_tracker.start("Delaunay Triangulation");
+
+        inset_state.create_delaunay_t();
+
+        time_tracker.stop("Delaunay Triangulation");
+
         if (not inset_state.flatten_density_with_node_vertices()) {
           inset_state.increment_n_fails_during_flatten_density();
 
@@ -317,6 +317,39 @@ int main(const int argc, const char *argv[])
       time_tracker.stop("Flatten Density");
 
       if (qtdt_method) {
+        if (plot_quadtree) {
+
+          const std::string delaunay_t_filename =
+            inset_state.inset_name() + "_" +
+            std::to_string(inset_state.n_finished_integrations()) +
+            "_delaunay_t";
+          inset_state.write_delaunay_triangles(delaunay_t_filename, false);
+
+          const std::string delaunay_t_projected_filename =
+            inset_state.inset_name() + "_" +
+            std::to_string(inset_state.n_finished_integrations()) +
+            "_delaunay_t_projected";
+          inset_state.write_delaunay_triangles(
+            delaunay_t_projected_filename,
+            true);
+        }
+        time_tracker.start("Delanuay Triangulation");
+
+        inset_state.update_delaunay_t();
+
+        time_tracker.stop("Delanuay Triangulation");
+
+        if (plot_quadtree) {
+          const std::string updated_delaunay_t_projected_filename =
+            inset_state.inset_name() + "_" +
+            std::to_string(inset_state.n_finished_integrations()) +
+            "_updated_delaunay_t_projected";
+
+          inset_state.write_delaunay_triangles(
+            updated_delaunay_t_projected_filename,
+            true);
+        }
+
         if (simplify) {
           time_tracker.start("Densification");
 
@@ -361,8 +394,8 @@ int main(const int argc, const char *argv[])
     }
 
     // End of inset integrations
-    inset_state
-      .check_completion();  // prints error message if conditions still not met
+    inset_state.check_completion();  // prints error message if conditions
+                                     // still not met
     time_tracker.stop("Integration Inset " + inset_pos);
 
     // Update and display progress information
