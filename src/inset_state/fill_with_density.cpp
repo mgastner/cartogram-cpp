@@ -1,175 +1,159 @@
 #include "constants.hpp"
 #include "inset_state.hpp"
 
+Polygon clip_polygon_vertical_line(const Polygon &poly, double x, bool left)
+{
+  Polygon clipped;
+  Point prev = poly[poly.size() - 1];
+
+  for (unsigned int i = 0; i < poly.size(); ++i) {
+    const Point curr = poly[i];
+    const bool prev_inside = left ? prev.x() >= x : prev.x() <= x;
+    const bool curr_inside = left ? curr.x() >= x : curr.x() <= x;
+
+    if (curr_inside) {
+      if (!prev_inside) {  // Should add intersection point
+        double y = prev.y() + (curr.y() - prev.y()) * (x - prev.x()) /
+                                (curr.x() - prev.x());
+        clipped.push_back({x, y});
+      }
+      clipped.push_back(curr);
+    } else if (prev_inside) {  // Implies curr is outside
+      // Add intersection point
+      double y = prev.y() + (curr.y() - prev.y()) * (x - prev.x()) /
+                              (curr.x() - prev.x());
+      clipped.push_back({x, y});
+    }
+    prev = curr;
+  }
+  return clipped;
+}
+
+Polygon clip_polygon_horizontal_line(
+  const Polygon &poly,
+  double y,
+  bool bottom)
+{
+  Polygon clipped;
+  Point prev = poly[poly.size() - 1];
+
+  for (unsigned int i = 0; i < poly.size(); ++i) {
+    Point curr = poly[i];
+    bool prev_inside = bottom ? prev.y() >= y : prev.y() <= y;
+    bool curr_inside = bottom ? curr.y() >= y : curr.y() <= y;
+
+    if (curr_inside) {
+      if (!prev_inside) {  // Should add intersection point
+        double x = prev.x() + (curr.x() - prev.x()) * (y - prev.y()) /
+                                (curr.y() - prev.y());
+        clipped.push_back({x, y});
+      }
+      clipped.push_back(curr);
+    } else if (prev_inside) {  // Implies curr is outside
+      double x = prev.x() + (curr.x() - prev.x()) * (y - prev.y()) /
+                              (curr.y() - prev.y());
+      clipped.push_back({x, y});
+    }
+    prev = curr;
+  }
+  return clipped;
+}
+
+double square_poly_overlap_area(const Polygon &square, const Polygon &poly)
+{
+  Bbox bbox = square.bbox();
+  Polygon clipped = poly;
+  clipped = clip_polygon_vertical_line(clipped, bbox.xmin(), true);
+  clipped = clip_polygon_vertical_line(clipped, bbox.xmax(), false);
+  clipped = clip_polygon_horizontal_line(clipped, bbox.ymin(), true);
+  clipped = clip_polygon_horizontal_line(clipped, bbox.ymax(), false);
+
+  return abs(clipped.area());
+}
+
 void InsetState::fill_with_density(bool plot_density)
 {
-  // We assume that target areas that were zero or missing in the input have
-  // already been replaced by
-  // CartogramInfo::replace_missing_and_zero_target_areas().
-  // We also correct for a drift in the total inset area, in case it is
-  // present, by adjusting mean_density. The idea is to treat the exterior
-  // area as if it were a polygon with target area
-  // C * (lx * ly - initial_area_) and current area
-  // C * (lx * ly - total_inset_area). The constant prefactor C is the same
-  // in both areas and, thus, cancels out when taking the ratio. Note that
-  // missing, zero, and near-zero areas must already be filled with surrogate
-  // target areas in the desired proportion to the other polygons. That is,
-  // we must call cart_info.replace_missing_and_zero_target_areas() before
-  // calling this function.
-  double mean_density = (1.0 - (initial_area_ / (lx_ * ly_))) /
-                        (1.0 - (total_inset_area() / (lx_ * ly_)));
-
-#pragma omp parallel for default(none)
-
-  // Initially assign zero to all densities
+  // Reset the densities
   for (unsigned int i = 0; i < lx_; ++i) {
     for (unsigned int j = 0; j < ly_; ++j) {
       rho_init_(i, j) = 0;
     }
   }
 
-  // Density numerator and denominator for each grid cell. The density of
-  // a grid cell can be calculated with (rho_num / rho_den). We initially
-  // assign zero to all elements because we assume that all grid cells
-  // are outside any GeoDiv. Any grid cell where rho_den is zero will be
-  // filled with the mean_density.
+  // Total area accounted for each 1x1 cell
+  boost::multi_array<double, 2> area_filled(boost::extents[lx_][ly_]);
 
-  boost::multi_array<double, 2> rho_num(boost::extents[lx_][ly_]);
-  boost::multi_array<double, 2> rho_den(boost::extents[lx_][ly_]);
+  boost::multi_array<double, 2> numer(boost::extents[lx_][ly_]);
+  boost::multi_array<double, 2> denom(boost::extents[lx_][ly_]);
 
-  // Resolution with which we sample polygons. "resolution" is the number of
-  // horizontal "test rays" between each of the ly consecutive horizontal
-  // grid lines.
-  // Ensure that the number of rays per grid length is at least the default
-  // value specified by default_resolution in include/constants.hpp.
-  // Additionally, confirm that there are a minimum of long_grid_length *
-  // resolution rays along the longer side of the lx*ly grid.
-  unsigned int long_grid_length = std::max(lx_, ly_);
-  const unsigned int resolution =
-    (long_grid_length > default_long_grid_length)
-      ? static_cast<unsigned int>(
-          (default_resolution * default_long_grid_length) *
-          (1.0 / long_grid_length))
-      : default_resolution;
+  // Precalculate geodiv densities for fast access later
+  std::vector<double> gd_target_density;
+  for (const auto &gd : geo_divs_) {
+    gd_target_density.push_back(target_area_at(gd.id()) / gd.area());
+  }
 
-  auto intersections_with_rays = intersec_with_parallel_to('x', resolution);
+  for (unsigned int gd_id = 0; gd_id < geo_divs_.size(); ++gd_id) {
+    for (const auto &pwh : geo_divs_[gd_id].polygons_with_holes()) {
+      auto bbox = pwh.outer_boundary().bbox();
 
-  // Determine rho's numerator and denominator:
-  // - rho_num is the sum of (weight * target_density) for each segment of a
-  //   ray that is inside a GeoDiv.
-  // - rho_den is the sum of the weights of a ray that is inside a GeoDiv.
-  // The weight of a segment of a ray that is inside a GeoDiv is equal to
-  // (length of the segment inside the geo_div) * (area error of the geodiv).
+      // Iterate over all 1x1 cells that may intersect the polygon
+      for (unsigned int i = std::max(0, static_cast<int>(bbox.xmin()));
+           i < std::min(lx_, static_cast<unsigned int>(bbox.xmax()) + 1);
+           ++i) {
+        for (unsigned int j = std::max(0, static_cast<int>(bbox.ymin()));
+             j < std::min(ly_, static_cast<unsigned int>(bbox.ymax()) + 1);
+             ++j) {
 
-#pragma omp parallel for default(none) \
-  shared(intersections_with_rays, rho_den, resolution, rho_num, std::cerr)
-  for (unsigned int k = 0; k < ly_; ++k) {
+          // Create a 1x1 cell
+          Polygon cell;
+          cell.push_back(Point(i, j));
+          cell.push_back(Point(i + 1, j));
+          cell.push_back(Point(i + 1, j + 1));
+          cell.push_back(Point(i, j + 1));
 
-    // Iterate over each of the rays between the grid lines y = k and
-    // y = k+1
-    for (double y = k + 0.5 / resolution; y < k + 1; y += 1.0 / resolution) {
+          double intersect_area_pwh =
+            square_poly_overlap_area(cell, pwh.outer_boundary());
 
-      // Intersections for one ray
-      auto intersections_at_y = intersections_with_rays[std::lround(
-        (y - 0.5 / resolution) * resolution)];
-
-      // Sort intersections in ascending order
-      std::sort(intersections_at_y.begin(), intersections_at_y.end());
-
-      // If the ray has intersections, we fill any empty spaces between
-      // GeoDivs. Please note that we cannot write the loop condition as:
-      // i < intersections.size() - 1
-      // because intersection.size() is an unsigned integer. If
-      // intersections.size() equals zero, then the right-hand side would
-      // evaluate to a large positive number instead of -1. In this case,
-      // we would erroneously enter the loop.
-      for (unsigned int i = 1; i + 1 < intersections_at_y.size(); i += 2) {
-        const double left_x = intersections_at_y[i].x();
-        const double right_x = intersections_at_y[i + 1].x();
-        if (left_x != right_x) {
-          if (ceil(left_x) == ceil(right_x)) {
-
-            // The intersections are in the same grid cell. The ray
-            // enters and leaves a GeoDiv in this cell. We weigh the density
-            // of the cell by the GeoDiv's area error.
-            const double weight =
-              area_error_at(intersections_at_y[i].geo_div_id) *
-              (right_x - left_x);
-            const double target_dens = intersections_at_y[i].target_density;
-            const auto uilx = static_cast<unsigned int>(ceil(left_x) - 1);
-            rho_num[uilx][k] += weight * target_dens;
-            rho_den[uilx][k] += weight;
+          // Subtract the intersection area of the holes
+          for (auto hole = pwh.holes_begin(); hole != pwh.holes_end();
+               ++hole) {
+            intersect_area_pwh -= square_poly_overlap_area(cell, *hole);
           }
-        }
 
-        // Fill last exiting intersection with GeoDiv where part of ray inside
-        // the grid cell is inside the GeoDiv
-        const auto last_x =
-          static_cast<unsigned int>(intersections_at_y.back().x());
-        const double last_weight =
-          area_error_at(intersections_at_y.back().geo_div_id) *
-          (last_x - floor(last_x));
-        const double last_target_density =
-          intersections_at_y.back().target_density;
-        const auto uilx = static_cast<unsigned int>(ceil(left_x) - 1);
-        rho_num[uilx][k] += last_weight * last_target_density;
-        rho_den[uilx][k] += last_weight;
-      }
-
-      // Fill GeoDivs by iterating over intersections
-      for (unsigned int i = 0; i < intersections_at_y.size(); i += 2) {
-        const double left_x = intersections_at_y[i].x();
-        const double right_x = intersections_at_y[i + 1].x();
-
-        // Check for intersection of polygons, holes and GeoDivs
-        // TODO: Decide whether to comment out? (probably not)
-        if (
-          intersections_at_y[i].ray_enters ==
-          intersections_at_y[i + 1].ray_enters) {
-
-          // Highlight where intersection is present
-          std::cerr << "\nInvalid Geometry!" << std::endl;
-          std::cerr << "Intersection of Polygons/Holes/Geodivs" << std::endl;
-          std::cerr << "Y-coordinate: " << y << std::endl;
-          std::cerr << "Left X-coordinate: " << left_x << std::endl;
-          std::cerr << "Right X-coordinate: " << right_x << std::endl;
-          std::cerr << std::endl;
-          _Exit(8026519);
-        }
-
-        // Fill each cell between intersections
-        // TODO: WE ENCOUNTERED ISSUES WITH THE NEXT FOR_LOOP; THUS, WE
-        // TEMPORARILY REPLACED IT WITH THE VERSION COMMENTED-OUT BELOW.
-        // HOWEVER, NONE OF OUR CURRENT EXAMPLES EXHIBIT THIS PROBLEM.
-        // for (unsigned int m = std::max(ceil(left_x), 1.0);
-        //                   m <= std::max(ceil(right_x), 1.0);
-        //                   ++m) {
-        // #pragma omp parallel for
-        for (unsigned int m = ceil(left_x); m <= ceil(right_x); ++m) {
-          double weight = area_error_at(intersections_at_y[i].geo_div_id);
-          if (ceil(left_x) == ceil(right_x)) {
-            weight *= (right_x - left_x);
-          } else if (m == ceil(left_x)) {
-            weight *= (ceil(left_x) - left_x);
-          } else if (m == ceil(right_x)) {
-            weight *= (right_x - floor(right_x));
-          }
-          const double target_dens = intersections_at_y[i].target_density;
-          rho_num[m - 1][k] += weight * target_dens;
-          rho_den[m - 1][k] += weight;
+          const double weight =
+            intersect_area_pwh * area_errors_[geo_divs_[gd_id].id()];
+          numer[i][j] += weight * gd_target_density[gd_id];
+          denom[i][j] += weight;
+          area_filled[i][j] += intersect_area_pwh;
         }
       }
     }
   }
 
-  // Fill rho_init with the ratio of rho_num to rho_den
-#pragma omp parallel for default(none) shared(mean_density, rho_den, rho_num)
+  const double ocean_density =
+    (lx_ * ly_ - total_target_area()) / (lx_ * ly_ - total_inset_area());
+
+  const double ocean_area_error =
+    abs(
+      (lx_ * ly_ - total_inset_area()) / (lx_ * ly_ - total_target_area()) -
+      1);
+  
+  // Assume remaining area is ocean
   for (unsigned int i = 0; i < lx_; ++i) {
     for (unsigned int j = 0; j < ly_; ++j) {
-      if (rho_den[i][j] == 0) {
-        rho_init_(i, j) = mean_density;
-      } else {
-        rho_init_(i, j) = rho_num[i][j] / rho_den[i][j];
+      double weight = (1 - area_filled[i][j]) * ocean_area_error;
+      numer[i][j] += weight * ocean_density;
+      denom[i][j] += weight;
+    }
+  }
+  
+  // Calculate the densities
+  for (unsigned int i = 0; i < lx_; ++i) {
+    for (unsigned int j = 0; j < ly_; ++j) {
+      if (denom[i][j] > 0) {
+        rho_init_(i, j) = numer[i][j] / denom[i][j];
+      } else { // Ocean area error is 0
+        rho_init_(i, j) = ocean_density;
       }
     }
   }
@@ -180,7 +164,7 @@ void InsetState::fill_with_density(bool plot_density)
     rho_init_.as_1d_array() + lx_ * ly_);
 
   dens_min_ = *min_iter;
-  dens_mean_ = mean_density;
+  dens_mean_ = ocean_density;
   dens_max_ = *max_iter;
 
   if (plot_density) {
