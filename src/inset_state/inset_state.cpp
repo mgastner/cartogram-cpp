@@ -574,7 +574,7 @@ void InsetState::adjust_grid()
   // TODO: Change to a more sophisticated grid adjustment strategy
   // (based on a tolerance of area error)
   if (
-    n_finished_integrations_ >= 2 &&
+    n_finished_integrations_ > 4 &&
     curr_max_area_error >=
       0.999 * max_area_errors_[n_finished_integrations_ - 1] &&
     curr_max_area_error >=
