@@ -16,8 +16,15 @@ void InsetState::fill_with_density(bool plot_density)
   // target areas in the desired proportion to the other polygons. That is,
   // we must call cart_info.replace_missing_and_zero_target_areas() before
   // calling this function.
-  double exterior_density = (1.0 - (initial_area_ / (lx_ * ly_))) /
-                            (1.0 - (total_inset_area() / (lx_ * ly_)));
+  double exterior_density = (lx_ * ly_ - initial_area_) /
+                            (lx_ * ly_ - total_inset_area());
+  // We weight GeoDivs according to area errors, including the exterior.
+  // area error is defined as | ((area / target_area) - 1) |
+  // lx * ly - initial_area is thus, the target area, and
+  // lx * ly - total_inset_area is thus, the current area
+  // Thus, area / target_area of the exterior is the inverse
+  // of the exterior_density.
+  double ext_weight =  std::abs((1.0 / exterior_density) - 1);
 
 #pragma omp parallel for default(none)
 
@@ -180,10 +187,7 @@ void InsetState::fill_with_density(bool plot_density)
     rho_init_.as_1d_array() + lx_ * ly_);
 
   dens_min_ = *min_iter;
-  // double interior_mean_density = initial_area_ / total_inset_area();
-  // dens_mean_ = interior_mean_density;
-  dens_mean_ = exterior_density;
-  // exterior_density_ = exterior_density;
+  exterior_density_ = exterior_density;
   dens_max_ = *max_iter;
 
   if (plot_density) {

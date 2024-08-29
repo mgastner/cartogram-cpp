@@ -42,9 +42,7 @@ private:
   std::unordered_map<std::string, Color> colors_;
 
   // Unblurred density mean, min, max
-  double dens_min_;
-  double dens_mean_;
-  double dens_max_;
+  double dens_min_, dens_mean_, dens_max_, exterior_density_;
 
   // Scaling factor to convert equal-area-projection unit to lx*ly unit.
   double latt_const_;
