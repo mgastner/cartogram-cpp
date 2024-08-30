@@ -38,6 +38,9 @@ cartogram
 # Ignore test logs
 *.txt
 
+# But, don't ignore CMakeLists.txt
+!CMakeLists.txt
+
 # Boilerplate code for .gitignore
 
 # Prerequisites
