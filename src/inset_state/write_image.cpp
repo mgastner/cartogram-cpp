@@ -382,7 +382,11 @@ void InsetState::write_cairo_polygons_to_svg(
 void InsetState::write_cairo_map(
   const std::string &file_name,
   const bool plot_grid,
-  const std::unordered_map<Point, Vector> &vectors)
+
+  // TODO: This was the past signature of the function.
+  // Restoring this causes a bug. Investigate.
+  // const std::unordered_map<Point, Vector> &vectors)
+  const std::unordered_map<Point, Vector> vectors)
 {
   const auto svg_name = file_name + ".svg";
   std::cerr << "Writing " << file_name << std::endl;
