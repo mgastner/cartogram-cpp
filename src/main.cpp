@@ -313,7 +313,8 @@ int main(const int argc, const char *argv[])
       if (blur_width > 0.0) {
         time_tracker.start("Blur");
         inset_state.blur_density(blur_width, plot_density);
-      time_tracker.start("Flatten Density");
+        time_tracker.stop("Blur");
+      }
       if (qtdt_method) {
 
         time_tracker.start("Flatten Density (Quadtree Method)");
@@ -333,7 +334,6 @@ int main(const int argc, const char *argv[])
         inset_state.flatten_density();
         time_tracker.stop("Flatten Density (Full Grid Method)");
       }
-      time_tracker.stop("Flatten Density");
 
       if (qtdt_method) {
         time_tracker.start("Update Delanuay Triangulation");
