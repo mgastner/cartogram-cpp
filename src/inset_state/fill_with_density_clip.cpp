@@ -1,7 +1,7 @@
 #include "constants.hpp"
 #include "inset_state.hpp"
 
-Polygon clip_polygon_vertical_line_1(const Polygon &poly, double x, bool left)
+Polygon clip_polygon_vertical_line(const Polygon &poly, double x, bool left)
 {
   Polygon clipped;
   Point prev = poly[poly.size() - 1];
@@ -29,7 +29,7 @@ Polygon clip_polygon_vertical_line_1(const Polygon &poly, double x, bool left)
   return clipped;
 }
 
-Polygon clip_polygon_horizontal_line_1(
+Polygon clip_polygon_horizontal_line(
   const Polygon &poly,
   double y,
   bool bottom)
@@ -59,19 +59,19 @@ Polygon clip_polygon_horizontal_line_1(
   return clipped;
 }
 
-double square_poly_overlap_area_1(const Polygon &square, const Polygon &poly)
+double square_poly_overlap_area(const Polygon &square, const Polygon &poly)
 {
   Bbox bbox = square.bbox();
   Polygon clipped = poly;
-  clipped = clip_polygon_vertical_line_1(clipped, bbox.xmin(), true);
-  clipped = clip_polygon_vertical_line_1(clipped, bbox.xmax(), false);
-  clipped = clip_polygon_horizontal_line_1(clipped, bbox.ymin(), true);
-  clipped = clip_polygon_horizontal_line_1(clipped, bbox.ymax(), false);
+  clipped = clip_polygon_vertical_line(clipped, bbox.xmin(), true);
+  clipped = clip_polygon_vertical_line(clipped, bbox.xmax(), false);
+  clipped = clip_polygon_horizontal_line(clipped, bbox.ymin(), true);
+  clipped = clip_polygon_horizontal_line(clipped, bbox.ymax(), false);
 
   return abs(clipped.area());
 }
 
-void InsetState::fill_with_density_rays(bool plot_density)
+void InsetState::fill_with_density_clip(bool plot_density)
 {
   // Reset the densities
   for (unsigned int i = 0; i < lx_; ++i) {
@@ -112,12 +112,12 @@ void InsetState::fill_with_density_rays(bool plot_density)
           cell.push_back(Point(i, j + 1));
 
           double intersect_area_pwh =
-            square_poly_overlap_area_1(cell, pwh.outer_boundary());
+            square_poly_overlap_area(cell, pwh.outer_boundary());
 
           // Subtract the intersection area of the holes
           for (auto hole = pwh.holes_begin(); hole != pwh.holes_end();
                ++hole) {
-            intersect_area_pwh -= square_poly_overlap_area_1(cell, *hole);
+            intersect_area_pwh -= square_poly_overlap_area(cell, *hole);
           }
 
           const double weight =

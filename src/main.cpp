@@ -27,6 +27,10 @@ int main(const int argc, const char *argv[])
   bool triangulation;
   bool simplify;  // Should the polygons be simplified?
 
+
+  // If `rays` is true, we use the ray-shooting method to fill the grid cells.
+  bool rays;
+
   // Other boolean values that are needed to parse the command line arguments
   bool make_csv, output_equal_area, output_to_stdout, plot_density, plot_grid,
     plot_intersections, plot_polygons, plot_quadtree, remove_tiny_polygons;
@@ -57,7 +61,8 @@ int main(const int argc, const char *argv[])
     plot_polygons,
     remove_tiny_polygons,
     min_polygon_area,
-    plot_quadtree);
+    plot_quadtree,
+    rays);
 
   // Initialize cart_info. It contains all the information about the cartogram
   // that needs to be handled by functions called from main().
@@ -287,11 +292,19 @@ int main(const int argc, const char *argv[])
 
       const double blur_width = inset_state.blur_width();
 
-      time_tracker.start("Fill with Density");
 
-      inset_state.fill_with_density(plot_density);
 
-      time_tracker.stop("Fill with Density");
+      if (rays) {
+        // Fill density using ray-shooting method
+        time_tracker.start("Fill with Density (Ray Shooting Method)");
+          inset_state.fill_with_density_rays(plot_density);
+        time_tracker.stop("Fill with Density (Ray Shooting Method)");
+      } else {
+        time_tracker.start("Fill with Density (Clipping Method)");
+        inset_state.fill_with_density_clip(plot_density);
+        time_tracker.stop("Fill with Density (Clipping Method)");
+      }
+
 
       if (blur_width > 0.0) {
         inset_state.blur_density(blur_width, plot_density);

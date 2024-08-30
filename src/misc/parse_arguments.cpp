@@ -21,7 +21,8 @@ argparse::ArgumentParser parsed_arguments(
   bool &plot_polygons,
   bool &remove_tiny_polygons,
   double &minimum_polygon_area,
-  bool &plot_quadtree)
+  bool &plot_quadtree,
+  bool &rays)
 {
   // Create parser for arguments using argparse.
   // From https://github.com/p-ranav/argparse

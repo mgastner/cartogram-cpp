@@ -133,7 +133,8 @@ public:
   void fill_grid_diagonals(bool = false);
 
   // Density functions
-  void fill_with_density(bool);  // Fill map with density, using scanlines
+  void fill_with_density_rays(bool);  // Fill map with density, using scanlines
+  void fill_with_density_clip(bool);  // Fill map with density, using clipping
   void flatten_density();  // Flatten said density with integration
   void flatten_ellipse_density();
   bool flatten_density_with_node_vertices();
