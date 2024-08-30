@@ -4,6 +4,7 @@ project(cartogram LANGUAGES CXX)
 # ========== Project Setup ==========
 set(CMAKE_CXX_STANDARD 20)
 set(THREADS_PREFER_PTHREAD_FLAG ON)
+set(CMAKE_COLOR_DIAGNOSTICS ON)
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
 
 # Default build type
