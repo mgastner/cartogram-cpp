@@ -18,7 +18,7 @@ void write_triangles_on_surface(
     Point p1 = fit->vertex(0)->point();
     Point p2 = fit->vertex(1)->point();
     Point p3 = fit->vertex(2)->point();
-    
+
     if (draw_projected_points) {
       p1 = proj.triangle_transformation.at(p1);
       p2 = proj.triangle_transformation.at(p2);
@@ -117,6 +117,7 @@ void InsetState::write_quadtree(const std::string &filename)
   cairo_surface_t *surface =
     cairo_svg_surface_create((filename + ".svg").c_str(), lx_, ly_);
   cairo_t *cr = cairo_create(surface);
+  write_polygons_on_surface(cr, false, false, false);
   write_quadtree_rectangles_on_surface(
     cr,
     quadtree_bboxes_,
@@ -561,8 +562,7 @@ void InsetState::write_grid_heatmap_image(
 
   // White background
   cairo_set_source_rgb(cr, 1.0, 1.0, 1.0);
-  cairo_rectangle(cr, 0, 0, lx_, ly_);
-  cairo_fill(cr);
+  cairo_paint(cr);
 
   // Get inset areas
   const double total_ta = total_target_area();
@@ -857,6 +857,8 @@ void InsetState::write_density_image(
   const double *density,
   const bool plot_pycnophylactic)
 {
+
+  std::cerr << "Writing " << filename << std::endl;
   // Whether to draw bar on the cairo surface
   const bool draw_bar = false;
   cairo_surface_t *surface =
@@ -864,23 +866,22 @@ void InsetState::write_density_image(
 
   // Create a cairo surface
   cairo_t *cr = cairo_create(surface);
-
-  // White background
-  cairo_set_source_rgb(cr, 1.0, 1.0, 1.0);
-  cairo_rectangle(cr, 0, 0, lx_, ly_);
-  cairo_fill(cr);
-
   cairo_set_line_width(cr, 0);
 
   // Determine range of densities
   const double dens_min = dens_min_;
   const double dens_mean = dens_mean_;
   const double dens_max = dens_max_;
+  const double exterior_density = exterior_density_;
   const double each_grid_cell_area_km = grid_cell_area_km(0, 0);
 
   // Crop it too
   if (plot_pycnophylactic) {
     unsigned int cell_width = 1;
+
+    // White background
+    cairo_set_source_rgb(cr, 1.0, 1.0, 1.0);
+    cairo_paint(cr);
 
     // Clip to shape and print in sequential scale
     for (const auto &gd : geo_divs_) {
@@ -942,10 +943,19 @@ void InsetState::write_density_image(
       }
     }
   } else {
+
+    // Set background color to that of exterior_density
+    Color exterior_density_color = heatmap_color(exterior_density, dens_min, dens_mean, dens_max);
+    cairo_set_source_rgb(cr, exterior_density_color.r / 255.0, exterior_density_color.g / 255.0, exterior_density_color.b / 255.0);
+    cairo_paint(cr);
     for (unsigned int i = 0; i < lx_; ++i) {
       for (unsigned int j = 0; j < ly_; ++j) {
+
         Color color =
           heatmap_color(density[i * ly_ + j], dens_min, dens_mean, dens_max);
+
+        // Skip plotting exterior_density color
+        if (color == exterior_density_color) continue;
 
         // Get four points of the square
         double x_min = i - 0.5 * sq_overlap;

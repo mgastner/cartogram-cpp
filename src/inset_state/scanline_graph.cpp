@@ -23,7 +23,7 @@ std::vector<std::vector<intersection> > InsetState::intersec_with_parallel_to(
     const double target_density = target_area_at(gd.id()) / gd.area();
 
     // Iterate over "polygons with holes" in inset_state
-    for (const auto &pwh : gd.polygons_with_holes()) {
+    for (size_t i = 0; const auto &pwh : gd.polygons_with_holes()) {
       const Bbox bb = pwh.bbox();
       double min_lim, max_lim;
       if (axis == 'x') {
@@ -33,10 +33,19 @@ std::vector<std::vector<intersection> > InsetState::intersec_with_parallel_to(
         min_lim = bb.xmin();
         max_lim = bb.xmax();
       }
-
       // Iterate over coordinates in bounding box of pwh
-      for (unsigned int k = std::max(0, static_cast<int>(min_lim) - 1);
-           k <= max_lim + 1;
+      // TODO: In the past, switching to the commented lines created problems
+      // This should not be the case, as if floor and ceil return too low or
+      // too high values, the rays will not intersect the polygon.
+      // Investigate why the commented lines caused problems in the past.
+      for (int k = min_lim - 1;
+      // for (int k = floor(min_lim) - 1;
+      // for (int k = min_lim;
+      // for (int k = floor(min_lim);
+      // for (unsigned int k = static_cast<unsigned int>(std::max(0, (int)floor(min_lim) - 1));
+           k <= ceil(max_lim) + 1;
+           // Same issue as above TODO here.
+          //  k <= std::min((unsigned int)(max_lim), grid_length - 1);
            ++k) {
 
         // If the rays are in x-direction, iterate over each ray between the
@@ -67,6 +76,7 @@ std::vector<std::vector<intersection> > InsetState::intersec_with_parallel_to(
             target_density,
             epsilon,
             gd.id(),
+            i,
             axis);
 
           // Run algorithm on each hole
@@ -78,6 +88,7 @@ std::vector<std::vector<intersection> > InsetState::intersec_with_parallel_to(
               target_density,
               epsilon,
               gd.id(),
+              i,
               axis);
           }
 

@@ -14,6 +14,7 @@ private:
 public:
   double target_density{};  // GeoDiv's target_density
   std::string geo_div_id;  // GeoDIv's ID
+  size_t pwh_idx;  // Polygon ID
   bool ray_enters{};  // Does the ray enter (true) a GeoDiv or exit (false)?
 
   // Overloading "<" operator, similar to above
@@ -40,6 +41,7 @@ void add_intersections(
   double,
   double,
   const std::string &,
+  size_t,
   char);
 
 #endif // INTERSECTION_HPP_

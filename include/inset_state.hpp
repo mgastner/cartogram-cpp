@@ -42,9 +42,7 @@ private:
   std::unordered_map<std::string, Color> colors_;
 
   // Unblurred density mean, min, max
-  double dens_min_;
-  double dens_mean_;
-  double dens_max_;
+  double dens_min_, dens_mean_, dens_max_, exterior_density_;
 
   // Scaling factor to convert equal-area-projection unit to lx*ly unit.
   double latt_const_;
@@ -195,7 +193,7 @@ public:
   void make_fftw_plans_for_flux();
   void make_fftw_plans_for_rho();
   void min_ellipses();
-  max_area_error_info max_area_error() const;
+  max_area_error_info max_area_error(bool print = true) const;
   std::pair<double, double> max_and_min_grid_cell_area(
     unsigned int cell_width);
   std::pair<Point, Point> max_and_min_grid_cell_area_index(
@@ -252,8 +250,7 @@ public:
   void write_cairo_map(
     const std::string &,
     bool,
-    const std::unordered_map<Point, Vector> & =
-      std::unordered_map<Point, Vector>());
+    const std::unordered_map<Point, Vector> = std::unordered_map<Point, Vector>());
   void write_cairo_polygons_to_svg(
     const std::string &,
     bool,

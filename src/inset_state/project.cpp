@@ -69,6 +69,7 @@ void InsetState::project()
 
   // Apply "lambda" to all points
   transform_points(lambda);
+  is_simple();
 }
 
 Point interpolate_point_with_barycentric_coordinates(
@@ -120,6 +121,7 @@ void InsetState::project_with_delaunay_t(bool output_to_stdout)
   if (output_to_stdout) {
     transform_points(lambda_bary, true);
   }
+  is_simple();
 }
 
 // In chosen_diag() and transformed_triangle(), the input x-coordinates can
@@ -457,6 +459,7 @@ void InsetState::project_with_triangulation()
       cum_proj_[i][j] = projected_point_with_triangulation(cum_proj_[i][j]);
     }
   }
+  is_simple();
 }
 
 void InsetState::project_with_cum_proj()
@@ -467,4 +470,5 @@ void InsetState::project_with_cum_proj()
 
   // Transforming all points based on triangulation
   transform_points(lambda, true);
+  is_simple();
 }

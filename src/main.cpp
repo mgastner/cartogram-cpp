@@ -262,37 +262,41 @@ int main(const int argc, const char *argv[])
 
     time_tracker.start("Integration Inset " + inset_pos);
 
+    // Print initial values, and initial progress (0)
+    progress_tracker.print_progress_mid_integration(inset_state);
+
     // Start map integration
     while (inset_state.n_finished_integrations() < max_integrations &&
-           (inset_state.max_area_error().value > max_permitted_area_error ||
-            std::abs(inset_state.area_expansion_factor() - 1.0) >
-              max_permitted_area_expansion)) {
-
+            (inset_state.max_area_error(false).value > max_permitted_area_error ||
+            std::abs(inset_state.area_expansion_factor() - 1.0) > max_permitted_area_expansion)) {
       std::cerr << "\nIntegration number "
                 << inset_state.n_finished_integrations() << std::endl;
       std::cerr << "Number of Points: " << inset_state.n_points() << std::endl;
+      // File prefix for output files for this integration
+      const std::string file_prefix =
+        inset_state.inset_name() + "_" +
+        std::to_string(inset_state.n_finished_integrations());
+
       if (qtdt_method) {
-        time_tracker.start("Delaunay Triangulation");
+
 
         // Create the Delaunay triangulation
+        time_tracker.start("Delaunay Triangulation");
         inset_state.create_and_store_quadtree_cell_corners();
+        time_tracker.stop("Delaunay Triangulation");
 
+        time_tracker.start("Delaunay Triangulation");
+        inset_state.create_delaunay_t();
         time_tracker.stop("Delaunay Triangulation");
 
         if (plot_quadtree) {
-          const std::string quadtree_filename =
-            inset_state.inset_name() + "_" +
-            std::to_string(inset_state.n_finished_integrations()) +
-            "_quadtree";
 
-          // Draw the resultant quadtree
-          inset_state.write_quadtree(quadtree_filename);
+          // Draw the resultant quadtree and Delaunay triangulation
+          inset_state.write_quadtree(file_prefix + "_quadtree");
+          inset_state.write_delaunay_triangles(file_prefix + "_delaunay_t", false);
+          inset_state.write_delaunay_triangles(file_prefix + "_delaunay_t_projected", true);
         }
       }
-
-      const double blur_width = inset_state.blur_width();
-
-
 
       if (rays) {
         // Fill density using ray-shooting method
@@ -305,94 +309,75 @@ int main(const int argc, const char *argv[])
         time_tracker.stop("Fill with Density (Clipping Method)");
       }
 
-
+      const double blur_width = inset_state.blur_width();
       if (blur_width > 0.0) {
+        time_tracker.start("Blur");
         inset_state.blur_density(blur_width, plot_density);
-      }
       time_tracker.start("Flatten Density");
       if (qtdt_method) {
-        time_tracker.start("Delaunay Triangulation");
 
-        inset_state.create_delaunay_t();
-
-        time_tracker.stop("Delaunay Triangulation");
-
-        if (not inset_state.flatten_density_with_node_vertices()) {
-          inset_state.increment_n_fails_during_flatten_density();
+        time_tracker.start("Flatten Density (Quadtree Method)");
+        bool passed = not inset_state.flatten_density_with_node_vertices();
+        time_tracker.stop("Flatten Density (Quadtree Method)");
+        if (not passed) {
 
           // Flatten density has failed and blur width will increase, and now
           // try again
+          inset_state.increment_n_fails_during_flatten_density();
           continue;
         }
       } else {
+
+        // Using entire grid
+        time_tracker.start("Flatten Density (Full Grid Method)");
         inset_state.flatten_density();
+        time_tracker.stop("Flatten Density (Full Grid Method)");
       }
       time_tracker.stop("Flatten Density");
 
       if (qtdt_method) {
-        if (plot_quadtree) {
-
-          const std::string delaunay_t_filename =
-            inset_state.inset_name() + "_" +
-            std::to_string(inset_state.n_finished_integrations()) +
-            "_delaunay_t";
-          inset_state.write_delaunay_triangles(delaunay_t_filename, false);
-
-          const std::string delaunay_t_projected_filename =
-            inset_state.inset_name() + "_" +
-            std::to_string(inset_state.n_finished_integrations()) +
-            "_delaunay_t_projected";
-          inset_state.write_delaunay_triangles(
-            delaunay_t_projected_filename,
-            true);
-        }
-        time_tracker.start("Delanuay Triangulation");
-
+        time_tracker.start("Update Delanuay Triangulation");
         inset_state.update_delaunay_t();
-
-        time_tracker.stop("Delanuay Triangulation");
+        time_tracker.stop("Update Delanuay Triangulation");
 
         if (plot_quadtree) {
-          const std::string updated_delaunay_t_projected_filename =
-            inset_state.inset_name() + "_" +
-            std::to_string(inset_state.n_finished_integrations()) +
-            "_updated_delaunay_t_projected";
-
-          inset_state.write_delaunay_triangles(
-            updated_delaunay_t_projected_filename,
-            true);
+          inset_state.write_delaunay_triangles(file_prefix + "_updated_delaunay_t_projected", true);
         }
 
         if (simplify) {
-          time_tracker.start("Densification");
 
+          time_tracker.start("Densification (using Delanuay Triangles)");
           inset_state.densify_geo_divs_using_delaunay_t();
-
-          time_tracker.stop("Densification");
+          time_tracker.stop("Densification (using Delanuay Triangles)");
         }
 
         // Project using the Delaunay triangulation
+        time_tracker.start("Project (Delanuay Triangulation)");
         inset_state.project_with_delaunay_t(output_to_stdout);
+        time_tracker.stop("Project (Delanuay Triangulation)");
       } else if (triangulation) {
-        time_tracker.start("Densification");
 
-        // Choose diagonals that are inside grid cells
+        // Choose diagonals that are inside grid cells, then densify.
+        time_tracker.start("Densification (using Grid Diagonals)");
         inset_state.fill_grid_diagonals();
-
-        // Densify map
         inset_state.densify_geo_divs();
-
-        time_tracker.stop("Densification");
+        time_tracker.stop("Densification (using Grid Diagonals)");
 
         // Project with triangulation
+        time_tracker.start("Project (Triangulation)");
         inset_state.project_with_triangulation();
+        time_tracker.stop("Project (Triangulation)");
       } else {
+
+        // Project using bilinear interpolation
+        time_tracker.start("Project (Bilinear Interpolation)");
         inset_state.project();
+        time_tracker.stop("Project (Bilinear Interpolation)");
       }
       if (simplify) {
+
         time_tracker.start("Simplification");
         inset_state.simplify(target_points_per_inset);
-
         time_tracker.stop("Simplification");
       }
       if (plot_intersections) {
@@ -422,11 +407,9 @@ int main(const int argc, const char *argv[])
     }
 
     if (world) {
-      std::string output_file_name =
-        map_name + "_cartogram_in_smyth_projection.geojson";
       cart_info.write_geojson(
         geo_file_name,
-        output_file_name,
+        map_name + "_cartogram_in_smyth_projection.geojson",
         output_to_stdout);
       inset_state.revert_smyth_craster_projection();
     }
