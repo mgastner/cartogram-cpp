@@ -521,7 +521,7 @@ bool InsetState::flatten_density_with_node_vertices()
           std::cerr << "Delaunay triangle flipped detected. Increasing blur "
                        "width and running again."
                     << std::endl;
-          return 0;
+          return false;
         }
       }
       if (accept) {
@@ -583,6 +583,6 @@ bool InsetState::flatten_density_with_node_vertices()
   }
   is_simple();
 
-  // Return 1 if the integration was successful
-  return 1;
+  // Return true if the integration was successful
+  return true;
 }

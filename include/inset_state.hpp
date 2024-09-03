@@ -199,6 +199,7 @@ public:
   std::pair<Point, Point> max_and_min_grid_cell_area_index(
     unsigned int cell_width);
   unsigned int n_finished_integrations() const;
+  unsigned int n_fails_during_flatten_density() const;
   unsigned int n_geo_divs() const;
   unsigned long n_points() const;
   unsigned int n_rings() const;

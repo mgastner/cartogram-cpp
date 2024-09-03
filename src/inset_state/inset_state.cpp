@@ -54,7 +54,7 @@ double InsetState::blur_width() const
   //       positive, regardless of the number of integrations.
   const unsigned int blur_default_pow =
     static_cast<unsigned int>(
-      6 + log2(std::max(lx(), ly()) / default_long_grid_length)) +
+      4 + log2(std::max(lx(), ly()) / default_long_grid_length)) +
     n_fails_during_flatten_density_ * 2;
   double blur_width =
     std::pow(2.0, blur_default_pow - (0.5 * n_finished_integrations_));
@@ -494,6 +494,10 @@ unsigned int InsetState::n_finished_integrations() const
   return n_finished_integrations_;
 }
 
+unsigned int InsetState::n_fails_during_flatten_density() const
+{
+  return n_fails_during_flatten_density_;
+}
 unsigned int InsetState::n_geo_divs() const
 {
   return geo_divs_.size();
