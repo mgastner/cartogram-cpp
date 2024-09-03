@@ -111,6 +111,10 @@ argparse::ArgumentParser parsed_arguments(
       "minimum size of polygons as proportion of total area")
     .default_value(default_minimum_polygon_area)
     .scan<'g', double>();
+  arguments.add_argument("-r", "--use_ray_shooting_method")
+    .help("Boolean: Use old ray shooting method to fill density")
+    .default_value(false)
+    .implicit_value(true);
 
   // Arguments of column names in provided visual variables file (CSV)
   std::string pre = "String: Column name for ";
@@ -150,6 +154,7 @@ argparse::ArgumentParser parsed_arguments(
   simplify = arguments.get<bool>("-S");
   remove_tiny_polygons = arguments.get<bool>("-R");
   minimum_polygon_area = arguments.get<double>("-m");
+  rays = arguments.get<bool>("-r");
   if (!triangulation && simplify) {
 
     // If tracer points are on the FTReal2d, then simplification requires
