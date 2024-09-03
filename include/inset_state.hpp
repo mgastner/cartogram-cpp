@@ -79,7 +79,7 @@ private:
   std::unordered_map<std::string, bool> is_input_target_area_missing_;
   std::unordered_map<std::string, std::string> labels_;
   unsigned int lx_{}, ly_{};  // Lattice dimensions
-  unsigned int n_fails_during_flatten_density_{};
+  unsigned int n_fails_during_flatten_density_;
   unsigned int n_finished_integrations_;
   std::string pos_;  // Position of inset ("C", "T" etc.)
   boost::multi_array<Point, 2> proj_;  // Cartogram projection
