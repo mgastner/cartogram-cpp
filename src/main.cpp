@@ -232,10 +232,11 @@ int main(const int argc, const char *argv[])
     inset_state.make_fftw_plans_for_flux();
     inset_state.initialize_identity_proj();
     inset_state.initialize_cum_proj();
-    inset_state.set_area_errors();
 
-    // Store initial inset area to calculate area drift
+    // Store initial inset area to calculate area drift,
+    // set area errors based on this initial_area
     inset_state.store_initial_area();
+    inset_state.set_area_errors();
 
     // Store initial target area to normalize inset areas
     inset_state.store_initial_target_area();
@@ -318,13 +319,16 @@ int main(const int argc, const char *argv[])
       if (qtdt_method) {
 
         time_tracker.start("Flatten Density (Quadtree Method)");
-        bool passed = not inset_state.flatten_density_with_node_vertices();
+        bool passed = inset_state.flatten_density_with_node_vertices();
         time_tracker.stop("Flatten Density (Quadtree Method)");
         if (not passed) {
 
           // Flatten density has failed and blur width will increase, and now
           // try again
           inset_state.increment_n_fails_during_flatten_density();
+          std::cerr << "Flatten density failed. Increasing blur width and trying again."
+                    << std::endl;
+          std::cerr << "n_fails: " << inset_state.n_fails_during_flatten_density() << std::endl;
           continue;
         }
       } else {
