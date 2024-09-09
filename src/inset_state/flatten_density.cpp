@@ -282,7 +282,7 @@ void InsetState::flatten_density()
     proj_ = mid;
     delta_t *= inc_after_acc;  // Try a larger step next time
   }
-  is_simple();
+  is_simple(__func__);
 }
 
 bool all_map_points_are_in_domain(
@@ -581,7 +581,7 @@ bool InsetState::flatten_density_with_node_vertices()
     proj_qd_.triangle_transformation = mid;
     delta_t *= inc_after_acc;  // Try a larger step next time
   }
-  is_simple();
+  is_simple(__func__);
 
   // Return true if the integration was successful
   return true;

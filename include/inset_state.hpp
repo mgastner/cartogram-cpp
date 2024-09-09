@@ -185,7 +185,7 @@ public:
     char,
     unsigned int) const;
   bool is_input_target_area_missing(const std::string &) const;
-  void is_simple() const;
+  void is_simple(const char* caller_func);
   std::string label_at(const std::string &) const;
   double latt_const() const;
   unsigned int lx() const;

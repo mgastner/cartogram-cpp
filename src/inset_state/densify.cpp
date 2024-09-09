@@ -271,7 +271,7 @@ void InsetState::densify_geo_divs()
   }
   geo_divs_ = std::move(geodivs_dens);
 
-  is_simple();
+  is_simple(__func__);
 }
 
 std::vector<Point> densification_points_with_delaunay_t(
@@ -462,6 +462,5 @@ void InsetState::densify_geo_divs_using_delaunay_t()
     geodivs_dens.push_back(gd_dens);
   }
   geo_divs_ = std::move(geodivs_dens);
-
-  is_simple();
+  is_simple(__func__);
 }

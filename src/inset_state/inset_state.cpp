@@ -27,8 +27,9 @@ Bbox InsetState::bbox(bool original_bbox) const
   double inset_ymin = dbl_inf;
   double inset_ymax = -dbl_inf;
 #pragma omp parallel for default(none) shared(geo_divs) \
-  reduction(min : inset_xmin, inset_ymin)               \
-  reduction(max : inset_xmax, inset_ymax)
+  reduction(min                                         \
+            : inset_xmin, inset_ymin) reduction(max     \
+                                                : inset_xmax, inset_ymax)
   for (const auto &gd : geo_divs) {
     for (const auto &pwh : gd.polygons_with_holes()) {
       const auto bb = pwh.bbox();
@@ -265,7 +266,8 @@ void InsetState::create_and_store_quadtree_cell_corners()
         rho_max = std::max(rho_max, this->ref_to_rho_init()(i, j));
       }
     }
-    return rho_max - rho_min > (0.001 + pow((1.0 / n_finished_integrations_), 2));
+    return rho_max - rho_min >
+           (0.001 + pow((1.0 / n_finished_integrations_), 2));
   };
   qt.refine(can_split);
   qt.grade();
@@ -402,13 +404,18 @@ bool InsetState::is_input_target_area_missing(const std::string &id) const
   return is_input_target_area_missing_.at(id);
 }
 
-void InsetState::is_simple() const
+void InsetState::is_simple(const char* caller_func)
 {
   for (const auto &gd : geo_divs_) {
     for (const auto &pwh : gd.polygons_with_holes()) {
       if (!pwh.outer_boundary().is_simple()) {
         std::cerr << "ERROR: Outer boundary is not simple for GeoDiv "
                   << gd.id() << std::endl;
+        std::cerr << "is_simple() called from " << caller_func << std::endl;
+        write_cairo_map(
+          inset_name_ + "_"  + std::to_string(n_finished_integrations_) +
+            "_not_simple_after_" + caller_func,
+          false);
         exit(1);
       }
       for (const auto &h : pwh.holes()) {
@@ -416,6 +423,11 @@ void InsetState::is_simple() const
           std::cerr << gd.id() << std::endl;
           std::cerr << "ERROR: Hole is not simple for GeoDiv " << gd.id()
                     << std::endl;
+          std::cerr << "is_simple() called from " << caller_func << std::endl;
+        write_cairo_map(
+          inset_name_ + "_" + std::to_string(n_finished_integrations_) +
+            "_not_simple_after_" + caller_func,
+          false);
           exit(1);
         }
       }
@@ -487,7 +499,7 @@ struct max_area_error_info InsetState::max_area_error(bool print) const
               << geo_divs_[geo_divs_id_to_index_.at(worst_gd)].area()
               << ", Target Area: " << target_area_at(worst_gd) << std::endl;
   }
- return {value, worst_gd};
+  return {value, worst_gd};
 }
 
 unsigned int InsetState::n_finished_integrations() const
