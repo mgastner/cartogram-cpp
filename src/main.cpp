@@ -136,6 +136,11 @@ int main(const int argc, const char *argv[])
       // projection.
       if (world) {
         inset_state.apply_smyth_craster_projection();
+
+        // Further, the world map warrants a higher starting grid size, otherwise
+        // there are too few squares between Antarctica and the rest of the world.
+        // This causes the southern hemisphere to "melt" into Antarctica.
+        max_n_grid_rows_or_cols = 512;
       } else {
         inset_state.apply_albers_projection();
       }
