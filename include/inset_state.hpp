@@ -175,6 +175,7 @@ public:
   void initialize_identity_proj();
   void insert_color(const std::string &, const Color &);
   void insert_color(const std::string &, std::string &);
+  bool insert_constraint_safely(const Point &p1, const Point &p2);
   void insert_label(const std::string &, const std::string &);
   void insert_target_area(const std::string &, double);
   void insert_whether_input_target_area_is_missing(const std::string &, bool);

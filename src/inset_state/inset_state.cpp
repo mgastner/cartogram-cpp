@@ -56,8 +56,8 @@ double InsetState::blur_width() const
   //       positive, regardless of the number of integrations.
   const unsigned int blur_default_pow =
     static_cast<unsigned int>(
-      4 + log2(std::max(lx(), ly()) / default_long_grid_length)) +
-    n_fails_during_flatten_density_ * 2;
+      1 + log2(std::max(lx(), ly()) / default_long_grid_length)) +
+    n_fails_during_flatten_density_;
   double blur_width =
     std::pow(2.0, blur_default_pow - (0.5 * n_finished_integrations_));
 
@@ -116,6 +116,35 @@ void InsetState::create_delaunay_t()
             << std::endl;
 }
 
+// TODO: Choose which insert_constraint_safely to keep
+bool insert_constraint_safely(Delaunay &dt, const Point &p1, const Point &p2)
+{
+  // Try-catch block to avoid inserting intersecting constraints
+  try {
+    dt.insert_constraint(p1, p2);
+    return true;
+  } catch (const std::exception &e) {
+    // Print more information about the exception
+    std::cerr << "WARNING: Could not insert constraint between " << p1
+              << " and " << p2 << std::endl;
+    std::cerr << e.what() << std::endl;
+    return false;
+  }
+}
+
+bool InsetState::insert_constraint_safely(const Point &p1, const Point &p2)
+{
+  // Try-catch block to avoid inserting intersecting constraints
+  try {
+    proj_qd_.dt.insert_constraint(p1, p2);
+    return true;
+  } catch (const std::exception &e) {
+    std::cerr << "WARNING: Could not insert constraint between " << p1
+              << " and " << p2 << std::endl;
+    std::cerr << e.what() << std::endl;
+    return false;
+  }
+}
 void InsetState::update_delaunay_t()
 {
   // Create the Delauany triangulation from the projected quadtree corners
@@ -139,7 +168,7 @@ void InsetState::update_delaunay_t()
 
   // Add the chosen diagonal of the projected Delaunay triangles as constraints
   // to the original Delaunay triangulation
-  std::vector<std::pair<Point, Point>> constraints;
+  // std::vector<std::pair<Point, Point>> constraints;
   for (Delaunay::Finite_faces_iterator fit = dt_projected.finite_faces_begin();
        fit != dt_projected.finite_faces_end();
        ++fit) {
@@ -152,20 +181,21 @@ void InsetState::update_delaunay_t()
     const Point p2_orig = reverse_triangle_transformation.at(p2);
     const Point p3_orig = reverse_triangle_transformation.at(p3);
 
+    // TODO: Can we replace this with else_if?
+    // Or an entirely different, cleaner check perhaps?
+    // NOTE: This is different from checking if the points are different,
+    // as we want both, the x and y coordinates to be different, not just one.
     // Only pick the edge if it is diagonal
     if (p1_orig.x() != p2_orig.x() && p1_orig.y() != p2_orig.y()) {
-      constraints.push_back(std::make_pair(p1_orig, p2_orig));
+      insert_constraint_safely(p1_orig, p2_orig);
     }
     if (p2_orig.x() != p3_orig.x() && p2_orig.y() != p3_orig.y()) {
-      constraints.push_back(std::make_pair(p2_orig, p3_orig));
+      insert_constraint_safely(p2_orig, p3_orig);
     }
     if (p3_orig.x() != p1_orig.x() && p3_orig.y() != p1_orig.y()) {
-      constraints.push_back(std::make_pair(p3_orig, p1_orig));
+      insert_constraint_safely(p3_orig, p1_orig);
     }
   }
-
-  // Inserting range is faster than inserting one by one
-  proj_qd_.dt.insert_constraints(constraints.begin(), constraints.end());
 }
 
 void InsetState::destroy_fftw_plans_for_flux()
