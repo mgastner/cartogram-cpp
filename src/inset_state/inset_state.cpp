@@ -676,8 +676,6 @@ void InsetState::adjust_grid()
 {
   unsigned int long_grid_length = std::max(lx_, ly_);
   auto [curr_max_area_error, worst_gd] = max_area_error(false);
-  unsigned int grid_factor =
-    (long_grid_length > default_long_grid_length) ? 2 : default_grid_factor;
   max_area_errors_.push_back(curr_max_area_error);
   // TODO: Change to a more sophisticated grid adjustment strategy
   // (based on a tolerance of area error)
@@ -691,18 +689,18 @@ void InsetState::adjust_grid()
     // Multiply grid size with factor
     std::cerr << "Adjusting grid size." << std::endl;
     if (
-      lx_ * grid_factor > max_allowed_autoscale_grid_length or
-      ly_ * grid_factor > max_allowed_autoscale_grid_length) {
+      lx_ * default_grid_factor > max_allowed_autoscale_grid_length or
+      ly_ * default_grid_factor > max_allowed_autoscale_grid_length) {
       std::cerr << "Cannot increase grid size further. ";
       std::cerr << "Grid size exceeds maximum allowed grid length."
                 << std::endl;
       return;
     }
-    lx_ *= grid_factor;
-    ly_ *= grid_factor;
+    lx_ *= default_grid_factor;
+    ly_ *= default_grid_factor;
 
     // Scale all map coordinates
-    const Transformation scale(CGAL::SCALING, grid_factor);
+    const Transformation scale(CGAL::SCALING, default_grid_factor);
     for (auto &gd : geo_divs_) {
       for (auto &pwh : gd.ref_to_polygons_with_holes()) {
         auto &ext_ring = pwh.outer_boundary();
@@ -723,7 +721,7 @@ void InsetState::adjust_grid()
       }
     }
 
-    initial_area_ *= grid_factor * grid_factor;
+    initial_area_ *= default_grid_factor * default_grid_factor;
 
     for (auto &gd : geo_divs_original_transformed_) {
       for (auto &pwh : gd.ref_to_polygons_with_holes()) {
