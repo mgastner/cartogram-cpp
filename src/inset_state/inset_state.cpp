@@ -306,6 +306,8 @@ void InsetState::create_and_store_quadtree_cell_corners()
 
   // Clear corner points from last iteration
   unique_quadtree_corners_.clear();
+  sorted_unique_corners_per_y_coord_.clear();
+  sorted_unique_corners_per_x_coord_.clear();
 
   // Clear the vector of bounding boxes
   quadtree_bboxes_.clear();
@@ -342,6 +344,13 @@ void InsetState::create_and_store_quadtree_cell_corners()
 
   std::cerr << "Number of unique corners: " << unique_quadtree_corners_.size()
             << std::endl;
+
+  // Create a map of corners sorted by x and y coordinates
+  for (const Point &pt : unique_quadtree_corners_) {
+    sorted_unique_corners_per_y_coord_[pt.y()].insert(pt);
+    sorted_unique_corners_per_x_coord_[pt.x()].insert(pt);
+  }
+
 }
 
 void InsetState::increment_integration()
