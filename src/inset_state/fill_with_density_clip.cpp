@@ -35,6 +35,13 @@ Polygon clip_polygon_horizontal_line(
   bool bottom)
 {
   Polygon clipped;
+  // NOTE: This line causes a segmentation fault in
+  // cartogram ../../sample_data/world_by_country_since_2022/world_by_country_since_2022.geojson ../../sample_data/world_by_country_since_2022/world_population_2010.csv -QSTW
+
+  // TODO: This seems to often give a precondition violation, but only in debug mode
+  // This is one command that causes this, for instance.
+  // Should also work without the -o?
+  // llldb -o "b update_delaunay_t" -o "b create_and_store_quadtree_cell_corners" -o "b create_delaunay_t" -- cartogram ../../sample_data/world/geo_ne50_antimeridian_minus169_brewer.geojson ../../sample_data/world/csv_ne50_antimeridian_minus169_brewer_pop.csv -QSTWqp -n 2048
   Point prev = poly[poly.size() - 1];
 
   for (unsigned int i = 0; i < poly.size(); ++i) {

@@ -159,11 +159,11 @@ bool InsetState::insert_constraint_safely_to_dt(
     dt.insert_constraint(p1, p2);
     return true;
   } catch (const std::exception &e) {
-    Print more information about the exception
-    std::cerr << "WARNING inserting constraint to dt: Could not insert constraint between " << p1
+    // Print more information about the exception
+    std::cerr << "WARNING (dt projected): Could not insert constraint between " << p1
               << " and " << p2 << std::endl;
     std::cerr << e.what() << std::endl;
-    Add to the list of failed constraints
+    // Add to the list of failed constraints
     failed_constraints_dt_projected_.push_back(Segment(p1, p2));
     return false;
   }
@@ -192,6 +192,8 @@ void InsetState::update_delaunay_t()
     projected_unique_quadtree_corners.push_back(
       proj_qd_.triangle_transformation.at(pt));
   }
+  std::unordered_map<double, std::set<Point>> projected_unique_quadtree_corners_per_y_coord;
+  std::unordered_map<double, std::set<Point>> projected_unique_quadtree_corners_per_x_coord;
 
   Delaunay dt_projected;
   dt_projected.insert(
@@ -208,6 +210,37 @@ void InsetState::update_delaunay_t()
   // Add the chosen diagonal of the projected Delaunay triangles as constraints
   // to the original Delaunay triangulation
   // std::vector<std::pair<Point, Point>> constraints;
+
+  // Iterate over projected quadtree corners
+  for (const auto& [y_coord, points_set] : sorted_unique_corners_per_y_coord_) {
+    std::optional<Point> prev_point;
+    for (const auto& point : points_set) {
+
+      // Skip the first iteration
+      if (!prev_point.has_value()) {
+        prev_point = point;
+        continue;
+      }
+      Point p1_proj = proj_qd_.triangle_transformation.at(*prev_point);
+      Point p2_proj = proj_qd_.triangle_transformation.at(point);
+      insert_constraint_safely_to_dt(dt_projected, p1_proj, p2_proj);
+    }
+  }
+
+  for (const auto& [x_coord, points_set] : sorted_unique_corners_per_x_coord_) {
+    std::optional<Point> prev_point;
+    for (const auto& point : points_set) {
+
+      // Skip the first iteration
+      if (!prev_point.has_value()) {
+        prev_point = point;
+        continue;
+      }
+      Point p1_proj = proj_qd_.triangle_transformation.at(*prev_point);
+      Point p2_proj = proj_qd_.triangle_transformation.at(point);
+      insert_constraint_safely_to_dt(dt_projected, p1_proj, p2_proj);
+    }
+  }
   for (Delaunay::Finite_faces_iterator fit = dt_projected.finite_faces_begin();
        fit != dt_projected.finite_faces_end();
        ++fit) {
@@ -357,15 +390,15 @@ void InsetState::create_and_store_quadtree_cell_corners()
     // Get bounding box of the leaf node
     const Bbox bbox = qt.bbox(node);
 
-    // Store the bounding box
-    quadtree_bboxes_.push_back(bbox);
-
     // check if points are between lx_ and ly_
     if (
       bbox.xmin() < 0 || bbox.xmax() > lx_ || bbox.ymin() < 0 ||
       bbox.ymax() > ly_) {
       continue;
     }
+
+    // Store the bounding box
+    quadtree_bboxes_.push_back(bbox);
 
     // Insert the four vertices of the bbox into the corners set
     unique_quadtree_corners_.insert(Point(bbox.xmin(), bbox.ymin()));

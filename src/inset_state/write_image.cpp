@@ -26,7 +26,7 @@ void write_triangles_on_surface(
     }
 
     // set width of line
-    cairo_set_line_width(cr, 0.20);
+    cairo_set_line_width(cr, 0.05);
 
     // set color
     cairo_set_source_rgb(cr, clr.r, clr.g, clr.b);
@@ -128,11 +128,15 @@ void InsetState::write_delaunay_triangles(const std::string &filename, const boo
   cairo_surface_t *surface =
     cairo_svg_surface_create((filename + ".svg").c_str(), lx_, ly_);
   cairo_t *cr = cairo_create(surface);
+  write_segments_on_surface(cr, failed_constraints_dt_projected_, Color{1.0, 0.0, 0.0}, ly_);
+  write_segments_on_surface(cr, failed_constraints_, Color{0.0, 0.0, 1.0}, ly_);
   write_triangles_on_surface(cr, proj_qd_, Color{0.6, 0.6, 0.6}, ly_, draw_projected_points);
   write_polygon_points_on_surface(cr, Color{0.0, 0.0, 1.0});
   cairo_show_page(cr);
   cairo_surface_destroy(surface);
   cairo_destroy(cr);
+  failed_constraints_dt_projected_.clear();
+  failed_constraints_.clear();
 }
 
 void InsetState::write_quadtree(const std::string &filename)

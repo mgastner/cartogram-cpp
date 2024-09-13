@@ -300,7 +300,6 @@ int main(const int argc, const char *argv[])
           // Draw the resultant quadtree and Delaunay triangulation
           inset_state.write_quadtree(file_prefix + "_quadtree");
           inset_state.write_delaunay_triangles(file_prefix + "_delaunay_t", false);
-          inset_state.write_delaunay_triangles(file_prefix + "_delaunay_t_projected", true);
         }
       }
 
@@ -326,6 +325,9 @@ int main(const int argc, const char *argv[])
         time_tracker.start("Flatten Density (Quadtree Method)");
         bool passed = inset_state.flatten_density_with_node_vertices();
         time_tracker.stop("Flatten Density (Quadtree Method)");
+        if (plot_quadtree) {
+                  inset_state.write_delaunay_triangles(file_prefix + "_delaunay_t_after_flatten", true);
+        }
         if (not passed) {
 
           // Flatten density has failed and blur width will increase, and now
