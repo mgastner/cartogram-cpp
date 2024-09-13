@@ -96,10 +96,16 @@ run_map() {
   integration_count=0
   max_area_err=""
   start=$SECONDS
-  printf "now trying: \ncartogram ${map} ${csv} ${cli}\n\n"
-  echo "cartogram ${map} ${csv} ${cli}" | pbcopy
+  # if world map then use -W flag
+  curr_cli=$cli
+  if [[ "${country}" == world* ]]; then
+    curr_cli="${cli} -W"
+  fi
+
+  printf "now trying: \ncartogram ${map} ${csv} ${curr_cli}\n\n"
+  echo "cartogram ${map} ${csv} ${curr_cli}" | pbcopy
   draw_progress_bar 0
-  stdbuf -oL cartogram ${map} ${csv} ${cli} 2>&1 | \
+  stdbuf -oL cartogram ${map} ${csv} ${curr_cli} 2>&1 | \
   # "cartogram" ${map} ${csv} ${cli} 2>&1 |
     while read line; do
       # save to temp file
