@@ -207,9 +207,12 @@ void InsetState::update_delaunay_t()
     reverse_triangle_transformation[val] = key;
   }
 
+  // TODO: Insert constraints as a range, like below
   // Add the chosen diagonal of the projected Delaunay triangles as constraints
   // to the original Delaunay triangulation
-  // std::vector<std::pair<Point, Point>> constraints;
+  // std::vector<std::pair<Point, Point>> c
+  // Inserting range is faster than inserting one by one
+  // proj_qd_.dt.insert_constraints(constraints.begin(), constraints.end());onstraints;
 
   // Iterate over projected quadtree corners
   for (const auto& [y_coord, points_set] : sorted_unique_corners_per_y_coord_) {
