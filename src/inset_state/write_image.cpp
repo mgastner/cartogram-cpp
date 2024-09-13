@@ -39,6 +39,30 @@ void write_triangles_on_surface(
   }
 }
 
+// Write segments on surface
+void write_segments_on_surface(
+  cairo_t *cr,
+  const std::vector<Segment> &segments,
+  const Color &clr,
+  const unsigned int ly)
+{
+  // Draw the segments
+  for (const auto &seg : segments) {
+    Point p1 = seg.source();
+    Point p2 = seg.target();
+
+    // set width of line
+    cairo_set_line_width(cr, 0.15);
+
+    // set color
+    cairo_set_source_rgb(cr, clr.r, clr.g, clr.b);
+
+    cairo_move_to(cr, p1.x(), ly - p1.y());
+    cairo_line_to(cr, p2.x(), ly - p2.y());
+    cairo_stroke(cr);
+  }
+}
+
 void write_point_on_surface(
   cairo_t *cr,
   const Point &pt,
