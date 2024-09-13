@@ -31,10 +31,16 @@ class InsetState
 {
 private:
   std::unordered_map<std::string, double> area_errors_;
+
   std::unordered_set<Point> unique_quadtree_corners_;
   std::unordered_map<double, std::set<Point>> sorted_unique_corners_per_y_coord_;
   std::unordered_map<double, std::set<Point>> sorted_unique_corners_per_x_coord_;
   proj_qd proj_qd_;
+
+  // Failed constraints
+  std::vector<Segment> failed_constraints_dt_projected_;
+  std::vector<Segment> failed_constraints_;
+  Delaunay og_dt_;
 
   // Bounding boxes of Quadtree cells
   std::vector<Bbox> quadtree_bboxes_;
@@ -178,6 +184,7 @@ public:
   void insert_color(const std::string &, const Color &);
   void insert_color(const std::string &, std::string &);
   bool insert_constraint_safely(const Point &p1, const Point &p2);
+  bool insert_constraint_safely_to_dt(Delaunay &dt, const Point &p1, const Point &p2);
   void insert_label(const std::string &, const std::string &);
   void insert_target_area(const std::string &, double);
   void insert_whether_input_target_area_is_missing(const std::string &, bool);

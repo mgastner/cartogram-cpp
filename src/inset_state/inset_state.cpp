@@ -110,24 +110,61 @@ unsigned int InsetState::colors_size() const
 void InsetState::create_delaunay_t()
 {
   Delaunay dt;
-  dt.insert(unique_quadtree_corners_.begin(), unique_quadtree_corners_.end());
+
+  // We don't want the Delaunay triangulation to be span across multiple cells.
+  // Thus, we add the cell edges as constraints for the dt.
+  // TODO: Add all these constraints at once
+  for (const auto& [y_coord, points_set] : sorted_unique_corners_per_y_coord_) {
+    std::optional<Point> prev_point;
+    for (const auto& point : points_set) {
+
+      // Skip the first iteration
+      if (!prev_point.has_value()) {
+        prev_point = point;
+        continue;
+      }
+      insert_constraint_safely_to_dt(dt, *prev_point, point);
+      prev_point = point;
+    }
+  }
+
+  for (const auto& [x_coord, points_set] : sorted_unique_corners_per_x_coord_) {
+    std::optional<Point> prev_point;
+    for (const auto& point : points_set) {
+
+      // Skip the first iteration
+      if (!prev_point.has_value()) {
+        prev_point = point;
+        continue;
+      }
+      insert_constraint_safely_to_dt(dt, *prev_point, point);
+      prev_point = point;
+    }
+  }
+
   proj_qd_.dt = dt;
   std::cerr << "Number of Delaunay triangles: " << dt.number_of_faces()
             << std::endl;
+  og_dt_ = dt;
 }
 
 // TODO: Choose which insert_constraint_safely to keep
-bool insert_constraint_safely(Delaunay &dt, const Point &p1, const Point &p2)
+bool InsetState::insert_constraint_safely_to_dt(
+  Delaunay &dt,
+  const Point &p1,
+  const Point &p2)
 {
   // Try-catch block to avoid inserting intersecting constraints
   try {
     dt.insert_constraint(p1, p2);
     return true;
   } catch (const std::exception &e) {
-    // Print more information about the exception
-    std::cerr << "WARNING: Could not insert constraint between " << p1
+    Print more information about the exception
+    std::cerr << "WARNING inserting constraint to dt: Could not insert constraint between " << p1
               << " and " << p2 << std::endl;
     std::cerr << e.what() << std::endl;
+    Add to the list of failed constraints
+    failed_constraints_dt_projected_.push_back(Segment(p1, p2));
     return false;
   }
 }
@@ -139,9 +176,11 @@ bool InsetState::insert_constraint_safely(const Point &p1, const Point &p2)
     proj_qd_.dt.insert_constraint(p1, p2);
     return true;
   } catch (const std::exception &e) {
-    std::cerr << "WARNING: Could not insert constraint between " << p1
+    std::cout << "WARNING DIAGONAL: Could not insert constraint between " << p1
               << " and " << p2 << std::endl;
     std::cerr << e.what() << std::endl;
+    // Add to the list of failed constraints
+    failed_constraints_.push_back(Segment(p1, p2));
     return false;
   }
 }
