@@ -326,6 +326,31 @@ double calculate_velocity_for_point(
                             : (-grid_fluxy_init(i, j) / rho);
 }
 
+bool delaunay_triangle_flipped(proj_qd &proj_qd)
+{
+  for (Delaunay::Finite_faces_iterator fit = proj_qd.dt.finite_faces_begin();
+       fit != proj_qd.dt.finite_faces_end();
+       ++fit) {
+    const Point p1_ori = fit->vertex(0)->point();
+    const Point p2_ori = fit->vertex(1)->point();
+    const Point p3_ori = fit->vertex(2)->point();
+
+    const Point p1_proj = proj_qd.triangle_transformation[p1_ori];
+    const Point p2_proj = proj_qd.triangle_transformation[p2_ori];
+    const Point p3_proj = proj_qd.triangle_transformation[p3_ori];
+
+    const double area_ori_triangle = CGAL::area(p1_ori, p2_ori, p3_ori);
+    const double area_proj_triangle = CGAL::area(p1_proj, p2_proj, p3_proj);
+
+    // If the area of the original triangle and the area of the projected
+    // triangle have different signs, then the triangle has flipped.
+    if (area_ori_triangle * area_proj_triangle < 0) {
+      return true;
+    }
+  }
+  return false;
+}
+
 bool InsetState::flatten_density_with_node_vertices()
 {
   std::cerr << "In flatten_density_with_node_vertices()" << std::endl;
@@ -348,25 +373,25 @@ bool InsetState::flatten_density_with_node_vertices()
   // (proj_qd_.triangle_transformation[(i, j)].x,
   // proj_qd_.triangle_transformation[(i, j)].y)
   std::unordered_map<Point, Point> eul;
-  eul.reserve(4 * proj_qd_.triangle_transformation.size());
+  eul.reserve(2 * proj_qd_.triangle_transformation.size());
 
   // mid[(i, j)] will be the new displacement proposed by the midpoint
   // method (see comment below for the formula)
   std::unordered_map<Point, Point> mid;
-  mid.reserve(4 * proj_qd_.triangle_transformation.size());
+  mid.reserve(2 * proj_qd_.triangle_transformation.size());
 
   // v_intp[(i, j)] will be the velocity at position
   // (proj_qd_.triangle_transformation[(i, j)].x,
   // proj_qd_.triangle_transformation[(i, j)].y) at time t
   std::unordered_map<Point, Vector> v_intp;
-  v_intp.reserve(4 * proj_qd_.triangle_transformation.size());
+  v_intp.reserve(2 * proj_qd_.triangle_transformation.size());
 
   // v_intp_half[(i, j)] will be the velocity at the midpoint
   // (proj_qd_.triangle_transformation[(i, j)].x + 0.5 * delta_t * v_intp[(i,
   // j)].x, proj_qd_.triangle_transformation[(i, j)].y + 0.5 * delta_t *
   // v_intp[(i, j)].y) at time t + 0.5 * delta_t
   std::unordered_map<Point, Vector> v_intp_half;
-  v_intp_half.reserve(4 * proj_qd_.triangle_transformation.size());
+  v_intp_half.reserve(2 * proj_qd_.triangle_transformation.size());
 
   // We must typecast lx_ and ly_ as double-precision numbers. Otherwise, the
   // ratios in the denominator will evaluate as zero.
@@ -495,35 +520,6 @@ bool InsetState::flatten_density_with_node_vertices()
         lx_,
         ly_);
 
-      // Check whether any Delaunay triangle projections flip the projected
-      // triangle. This is an issue as it can lead to intersection during
-      // project. We resolve by increasing the blur width and running the steps
-      // again.
-      for (Delaunay::Finite_faces_iterator fit =
-             proj_qd_.dt.finite_faces_begin();
-           fit != proj_qd_.dt.finite_faces_end();
-           ++fit) {
-        const Point p1_ori = fit->vertex(0)->point();
-        const Point p2_ori = fit->vertex(1)->point();
-        const Point p3_ori = fit->vertex(2)->point();
-
-        const Point p1_proj = proj_qd_.triangle_transformation[p1_ori];
-        const Point p2_proj = proj_qd_.triangle_transformation[p2_ori];
-        const Point p3_proj = proj_qd_.triangle_transformation[p3_ori];
-
-        const double area_ori_triangle = CGAL::area(p1_ori, p2_ori, p3_ori);
-        const double area_proj_triangle =
-          CGAL::area(p1_proj, p2_proj, p3_proj);
-
-        // If the area of the original triangle and the area of the projected
-        // triangle have different signs, then the triangle has flipped.
-        if (area_ori_triangle * area_proj_triangle < 0) {
-          std::cerr << "Delaunay triangle flipped detected. Increasing blur "
-                       "width and running again."
-                    << std::endl;
-          return false;
-        }
-      }
       if (accept) {
 
         // Okay, we can run interpolate_bilinearly()
@@ -579,9 +575,19 @@ bool InsetState::flatten_density_with_node_vertices()
 
     // Update the triangle transformation map
     proj_qd_.triangle_transformation = mid;
+
+    // Check whether any Delaunay triangle projections flip the projected
+    // triangle. This is an issue as it can lead to intersection during
+    // project. We resolve by increasing the blur width and running the steps
+    // again.
+    if (delaunay_triangle_flipped(proj_qd_)) {
+      std::cerr << "Delaunay triangle flipped detected. Increasing blur width "
+                   "and running again."
+                << std::endl;
+      return false;
+    }
     delta_t *= inc_after_acc;  // Try a larger step next time
   }
-  is_simple(__func__);
 
   // Return true if the integration was successful
   return true;
