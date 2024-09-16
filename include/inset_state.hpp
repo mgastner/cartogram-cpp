@@ -33,8 +33,6 @@ private:
   std::unordered_map<std::string, double> area_errors_;
 
   std::unordered_set<Point> unique_quadtree_corners_;
-  std::unordered_map<double, std::set<Point>> sorted_unique_corners_per_y_coord_;
-  std::unordered_map<double, std::set<Point>> sorted_unique_corners_per_x_coord_;
   proj_qd proj_qd_;
 
   // Failed constraints
