@@ -35,13 +35,6 @@ Polygon clip_polygon_horizontal_line(
   bool bottom)
 {
   Polygon clipped;
-  // NOTE: This line causes a segmentation fault in
-  // cartogram ../../sample_data/world_by_country_since_2022/world_by_country_since_2022.geojson ../../sample_data/world_by_country_since_2022/world_population_2010.csv -QSTW
-
-  // TODO: This seems to often give a precondition violation, but only in debug mode
-  // This is one command that causes this, for instance.
-  // Should also work without the -o?
-  // llldb -o "b update_delaunay_t" -o "b create_and_store_quadtree_cell_corners" -o "b create_delaunay_t" -- cartogram ../../sample_data/world/geo_ne50_antimeridian_minus169_brewer.geojson ../../sample_data/world/csv_ne50_antimeridian_minus169_brewer_pop.csv -QSTWqp -n 2048
   Point prev = poly[poly.size() - 1];
 
   for (unsigned int i = 0; i < poly.size(); ++i) {
@@ -81,6 +74,7 @@ double square_poly_overlap_area(const Polygon &square, const Polygon &poly)
 void InsetState::fill_with_density_clip(bool plot_density)
 {
   // Reset the densities
+#pragma omp parallel for collapse(2)
   for (unsigned int i = 0; i < lx_; ++i) {
     for (unsigned int j = 0; j < ly_; ++j) {
       rho_init_(i, j) = 0;
@@ -99,11 +93,13 @@ void InsetState::fill_with_density_clip(bool plot_density)
     gd_target_density.push_back(target_area_at(gd.id()) / gd.area());
   }
 
+#pragma omp parallel for collapse(2)
   for (unsigned int gd_id = 0; gd_id < geo_divs_.size(); ++gd_id) {
     for (const auto &pwh : geo_divs_[gd_id].polygons_with_holes()) {
       auto bbox = pwh.outer_boundary().bbox();
 
       // Iterate over all 1x1 cells that may intersect the polygon
+#pragma omp parallel for collapse(2)
       for (unsigned int i = std::max(0, static_cast<int>(bbox.xmin()));
            i < std::min(lx_, static_cast<unsigned int>(bbox.xmax()) + 1);
            ++i) {
@@ -129,8 +125,11 @@ void InsetState::fill_with_density_clip(bool plot_density)
 
           const double weight =
             intersect_area_pwh * area_errors_[geo_divs_[gd_id].id()];
+#pragma omp atomic
           numer[i][j] += weight * gd_target_density[gd_id];
+#pragma omp atomic
           denom[i][j] += weight;
+#pragma omp atomic
           area_filled[i][j] += intersect_area_pwh;
         }
       }
@@ -140,12 +139,11 @@ void InsetState::fill_with_density_clip(bool plot_density)
   const double ocean_density =
     (lx_ * ly_ - total_target_area()) / (lx_ * ly_ - total_inset_area());
 
-  const double ocean_area_error =
-    abs(
-      (lx_ * ly_ - total_inset_area()) / (lx_ * ly_ - total_target_area()) -
-      1);
+  const double ocean_area_error = abs(
+    (lx_ * ly_ - total_inset_area()) / (lx_ * ly_ - total_target_area()) - 1);
 
   // Assume remaining area is ocean
+#pragma omp parallel for collapse(2)
   for (unsigned int i = 0; i < lx_; ++i) {
     for (unsigned int j = 0; j < ly_; ++j) {
       double weight = (1 - area_filled[i][j]) * ocean_area_error;
@@ -155,11 +153,12 @@ void InsetState::fill_with_density_clip(bool plot_density)
   }
 
   // Calculate the densities
+#pragma omp parallel for collapse(2)
   for (unsigned int i = 0; i < lx_; ++i) {
     for (unsigned int j = 0; j < ly_; ++j) {
       if (denom[i][j] > 0) {
         rho_init_(i, j) = numer[i][j] / denom[i][j];
-      } else { // Ocean area error is 0
+      } else {  // Ocean area error is 0
         rho_init_(i, j) = ocean_density;
       }
     }
