@@ -379,14 +379,15 @@ std::vector<Point> densification_points_with_delaunay_t(
   }
 
   // if densification points are in reverse order, reverse them
-  if (dens_points.front() != pt1) {
+  if (!points_almost_equal(dens_points.front(), pt1)) {
     reverse(dens_points.begin(), dens_points.end());
   }
 
   // check validity of densification points: in case the first and last
   // points are not the originally given points, we consider the densificaiton
   // points invalid and return the original points
-  if (dens_points.front() != pt1 || dens_points.back() != pt2) {
+  if (!points_almost_equal(dens_points.front(), pt1) ||
+      !points_almost_equal(dens_points.back(), pt2)) {
     return {pt1, pt2};
   }
 
@@ -394,9 +395,9 @@ std::vector<Point> densification_points_with_delaunay_t(
   std::vector<Point> dens_points_unique;
   dens_points_unique.push_back(dens_points.front());
   for (unsigned int i = 1; i < dens_points.size() - 1; ++i) {
-    if (
-      dens_points[i] != dens_points.front() and
-      dens_points[i] != dens_points.back()) {
+    if (!points_almost_equal(dens_points[i], dens_points.front()) &&
+        !points_almost_equal(dens_points[i], dens_points.back()) &&
+        !points_almost_equal(dens_points[i], dens_points[i - 1])) {
       dens_points_unique.push_back(dens_points[i]);
     }
   }
