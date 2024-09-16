@@ -11,5 +11,6 @@ double rounded_to_bicimal(
   const unsigned int,
   const unsigned int);
 Point rounded_point(const Point &, const unsigned int, const unsigned int);
+Point rounded_point(const Point &, const unsigned int);
 
 #endif // ROUND_POINT_HPP_
