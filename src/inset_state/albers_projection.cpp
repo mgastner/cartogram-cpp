@@ -1,5 +1,6 @@
 #include "constants.hpp"
 #include "inset_state.hpp"
+#include "round_point.hpp"
 
 void InsetState::adjust_for_dual_hemisphere()
 {
@@ -83,7 +84,7 @@ Point point_after_albers_projection(
     x = rho * sin(theta);
     y = rho_0 - (rho * cos(theta));
   }
-  return Point(x, y);
+  return rounded_point({x, y}, 15);
 }
 
 void InsetState::apply_albers_projection()
