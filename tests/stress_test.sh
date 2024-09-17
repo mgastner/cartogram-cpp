@@ -77,32 +77,34 @@ shopt -s extglob nocasematch
 # Simple progress bar:
 # Inspired from: https://github.com/pollev/bash_progress_bar
 
-PROGRESS_BAR_WIDTH=50 # default progress bar length in characters
-
 draw_progress_bar() {
-
+  local terminal_width=$(tput cols)
+  local progress_bar_width=0
+  local max_progress_bar_width=50
+  local padding=0
+  if [[ "$terminal_width" -gt 60 ]]; then
+    progress_bar_width=$(( (terminal_width - 56) < max_progress_bar_width ? (terminal_width - 56) : max_progress_bar_width ))
+    padding=50
+  else
+    progress_bar_width=$((terminal_width - 6))
+  fi
   local __percentage=$((10#$1))
 
   # Rescale the bar according to the progress bar width
-  local __num_bar=$(($__percentage * $PROGRESS_BAR_WIDTH / 100))
+  local __num_bar=$(($__percentage * $progress_bar_width / 100))
+
+  # Add padding before the progress bar
+  for p in $(seq 1 $padding); do printf " "; done
 
   # Draw progress bar
   for b in $(seq 1 $__num_bar); do printf "⬜"; done
-  for s in $(seq 1 $(($PROGRESS_BAR_WIDTH - $__num_bar))); do printf " "; done
+  for s in $(seq 1 $(($progress_bar_width - $__num_bar))); do printf " "; done
   printf "$__percentage%% \r"
 }
 
 # Function to test map with csv
 run_map() {
 
-  COLUMNS=$(tput cols)
-  if [[ "$COLUMNS" -gt 60 ]]; then
-    PROGRESS_BAR_WIDTH=50
-  elif [[ "$COLUMNS" -gt 35 ]]; then
-    PROGRESS_BAR_WIDTH=25
-  else
-    PROGRESS_BAR_WIDTH=0
-  fi
 
   printed=0
   integration_count=0
@@ -149,6 +151,9 @@ run_map() {
           printed=1
           printf "\n\n== Integration finished ==\nTotal integrations done: %d\n%s\n" "$integration_count" "$max_area_err" | tee -a "${results_file}" | color $yellow
         fi
+        ;;
+      *" ms")
+        printf "%s\n" "$line" | tee -a "${results_file}" | color $cyan
         ;;
       *)
         if [ $verbose -eq 1 ]; then
