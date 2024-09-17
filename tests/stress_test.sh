@@ -46,10 +46,22 @@ trap handle_sigint SIGINT
 # Parsing command line arguments
 # From https://unix.stackexchange.com/questions/462515/
 # check-command-line-arguments
-if [ $# -eq 0 ] || [ -z "$1" ]; then
+
+verbose=0  # Initialize verbose flag to 0 (off)
+cli="-QST"  # Default CLI options
+
+# Parsing command line arguments
+if [ $# -eq 0 ]; then
   cli="-QST"
 else
-  cli="$1"
+  for arg in "$@"; do
+    if [ "$arg" == "--verbose" ]; then
+      verbose=1
+      printf "\VERBOSE mode turned on.\n"
+    else
+      cli="$arg"
+    fi
+  done
 fi
 
 printf "\nWriting to ${results_file}\n"
@@ -106,47 +118,45 @@ run_map() {
   echo "cartogram ${map} ${csv} ${curr_cli}" | pbcopy
   draw_progress_bar 0
   stdbuf -oL cartogram ${map} ${csv} ${curr_cli} 2>&1 | \
-  # "cartogram" ${map} ${csv} ${cli} 2>&1 |
-    while read line; do
-      # save to temp file
-      echo $line >>${tmp_file}
+  while read line; do
+    # save to temp file
+    echo $line >>${tmp_file}
 
-      # display warnings, errors etc.
-      if [[ $line =~ "error" || $line =~ "warning" || $line =~ "invalid" ]]; then
+    case "$line" in
+      *"error"*|*"warning"*|*"invalid"*)
         printf "\n\n%s\n\n" "$line" | tee -a "${results_file}" | color $red
-      fi
-
-      if [[ $line =~ "progress: 0." ]]; then
+        ;;
+      *"progress: 0."*)
         draw_progress_bar ${line:12:2}
-      fi
-
-      # Check if integration is mentioned and update counter
-      if [[ $line =~ "Integration number" ]]; then
+        ;;
+      *"Integration number"*)
         integration_count=$((integration_count + 1))
         printf "%s\n" "$line" | color $red
-      fi
-
-      if [[ $line =~ "New grid dimensions:" ]]; then
+        ;;
+      *"New grid dimensions:"*)
         printf "%s\n" "$line" | color $blue
-      fi
-
-      # Check if max area error is mentioned and update the variable
-      if [[ $line =~ "max. area err:" ]]; then
+        ;;
+      *"max. area err:"*)
         max_area_err=$line
         printf "%s\n" "$line" | color $yellow
-      fi
-
-      if [[ $line =~ "average area err:" ]]; then
+        ;;
+      *"average area err:"*)
         printf "%s\n" "$line" | color $magenta
-      fi
-
-      # Check if integration finished
-      if [[ $line =~ "progress: 1" && "$printed" -eq 0 ]]; then
-        draw_progress_bar 100
-        printed=1
-        printf "\n\n== Integration finished ==\nTotal integrations done: %d\n%s\n" "$integration_count" "$max_area_err" | tee -a "${results_file}" | color $yellow
-      fi
-    done
+        ;;
+      *"progress: 1"*)
+        if [[ "$printed" -eq 0 ]]; then
+          draw_progress_bar 100
+          printed=1
+          printf "\n\n== Integration finished ==\nTotal integrations done: %d\n%s\n" "$integration_count" "$max_area_err" | tee -a "${results_file}" | color $yellow
+        fi
+        ;;
+      *)
+        if [ $verbose -eq 1 ]; then
+          printf "%s\n" "$line"
+        fi
+        ;;
+    esac
+  done
   end=$SECONDS
   runtime=$((end - start))
   printf "== Runtime ${runtime}s == \n" | tee -a "${results_file}"
