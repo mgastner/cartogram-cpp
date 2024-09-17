@@ -25,21 +25,6 @@ find_package(PkgConfig REQUIRED)
 pkg_search_module(fftw REQUIRED fftw3 IMPORTED_TARGET)
 pkg_search_module(CAIRO REQUIRED CAIRO IMPORTED_TARGET)
 
-# ========== Compiler Setup ==========
-if(APPLE)
-  set(LLVM_BASE_PATH "/usr/local/opt/llvm@17/bin/")
-
-  if(${CMAKE_HOST_SYSTEM_PROCESSOR} STREQUAL "arm64")
-    set(LLVM_BASE_PATH "/opt/homebrew/opt/llvm@17/bin/")
-  endif()
-
-  set(CMAKE_CXX_COMPILER "${LLVM_BASE_PATH}clang++")
-  set(CMAKE_C_COMPILER "${LLVM_BASE_PATH}clang")
-elseif(UNIX)
-  set(CMAKE_CXX_COMPILER "g++-13")
-  set(CMAKE_C_COMPILER "gcc-13")
-endif()
-
 # ========== Source Files ==========
 file(GLOB_RECURSE CARTOGRAM_SOURCES "src/*.cpp")
 add_executable(cartogram ${CARTOGRAM_SOURCES})
