@@ -1,8 +1,10 @@
 cmake_minimum_required(VERSION 3.27)
 project(cartogram LANGUAGES CXX)
+set(CMAKE_FIND_LIBRARY_SUFFIXES .a)  # Prefer static libraries
 
 # ========== Project Setup ==========
 set(CMAKE_CXX_STANDARD 20)
+set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -static-libgcc -static-libstdc++")  # Static linking for GCC and stdc++
 set(THREADS_PREFER_PTHREAD_FLAG ON)
 set(CMAKE_COLOR_DIAGNOSTICS ON)
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
@@ -16,6 +18,7 @@ endif()
 
 # Boost
 find_package(Boost REQUIRED COMPONENTS unit_test_framework)
+set(Boost_USE_STATIC_LIBS ON)  # Force Boost to use static libraries
 
 # Matplot++
 find_package(Matplot++ REQUIRED)
@@ -53,7 +56,9 @@ target_link_libraries(cartogram
   PkgConfig::fftw
   PkgConfig::CAIRO
   Matplot++::matplot
+  ${CMAKE_DL_LIBS}  # Ensure dynamic loader libraries are linked
 )
+
 
 # ========== Installation ==========
 install(TARGETS cartogram DESTINATION bin)
@@ -100,6 +105,7 @@ foreach(TEST_FILE ${TEST_FILES})
   target_link_libraries(${TEST_NAME}
     ${Boost_UNIT_TEST_FRAMEWORK_LIBRARY}
     PkgConfig::fftw
+    ${CMAKE_DL_LIBS}  # Ensure dynamic loader libraries are linked
   )
 
   # Register the executable as a test
