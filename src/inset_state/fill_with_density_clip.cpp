@@ -3,6 +3,9 @@
 
 Polygon clip_polygon_vertical_line(const Polygon &poly, double x, bool left)
 {
+  // Skip if polygon is empty
+  if (poly.size() == 0) return poly;
+
   Polygon clipped;
   Point prev = poly[poly.size() - 1];
 
@@ -34,6 +37,9 @@ Polygon clip_polygon_horizontal_line(
   double y,
   bool bottom)
 {
+  // Skip if polygon is empty
+  if (poly.size() == 0) return poly;
+
   Polygon clipped;
   Point prev = poly[poly.size() - 1];
 
