@@ -117,7 +117,7 @@ run_map() {
   fi
 
   printf "now trying: \ncartogram ${map} ${csv} ${curr_cli}\n\n"
-  echo "cartogram ${map} ${csv} ${curr_cli}" | pbcopy
+  echo "cartogram ${map} ${csv} ${curr_cli}"
   draw_progress_bar 0
   stdbuf -oL cartogram ${map} ${csv} ${curr_cli} 2>&1 | \
   while read line; do
@@ -169,8 +169,8 @@ run_map() {
   # Checking for any errors, invalid geometry or unfinished integration
   if grep -qi "invalid" ${tmp_file} || grep -qi "error" ${tmp_file} || ! grep -Fxq "Progress: 1" ${tmp_file}; then
     printf "== FAILED ==\n" | tee -a "${results_file}" | color $red
-    printf "cartogram ${map} ${csv} ${cli}\n" >> ${failed_runs}
-
+    printf "cartogram ${map} ${csv} ${cli}" | tee -a ${failed_runs} | pbcopy
+    printf "\n" >> ${failed_runs}
     # Printing country to failed_tmp.txt
     if [[ "${failed}" -eq 0 ]] || ! grep -qi "${country}" failed_tmp.txt; then
       printf "\n${country}\n" >>failed_tmp.txt
