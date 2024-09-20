@@ -193,7 +193,14 @@ void CartogramInfo::replace_missing_and_zero_target_areas()
   }
 }
 
-void CartogramInfo::set_map_name(const std::string &map_name)
+std::string CartogramInfo::set_map_name(const std::string &map_name)
 {
   map_name_ = map_name;
+  if (map_name_.find_last_of("/\\") != std::string::npos) {
+    map_name_ = map_name_.substr(map_name_.find_last_of("/\\") + 1);
+  }
+  if (map_name_.find('.') != std::string::npos) {
+    map_name_ = map_name_.substr(0, map_name_.find('.'));
+  }
+  return map_name_;
 }

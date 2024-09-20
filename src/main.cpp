@@ -14,7 +14,7 @@ int main(const int argc, const char *argv[])
   std::string geo_file_name, visual_file_name;
 
   // Default number of grid cells along longer Cartesian coordinate axis
-  unsigned int max_n_grid_rows_or_cols;
+  unsigned int long_grid_side_length;
 
   // Target number of points to retain after simplification
   unsigned int target_points_per_inset;
@@ -26,6 +26,9 @@ int main(const int argc, const char *argv[])
   // use this method if the tracer points are an FTReal2d data structure.
   bool triangulation;
   bool simplify;  // Should the polygons be simplified?
+
+  // If `rays` is true, we use the ray-shooting method to fill the grid cells.
+  bool rays;
 
   // Other boolean values that are needed to parse the command line arguments
   bool make_csv, output_equal_area, output_to_stdout, plot_density, plot_grid,
@@ -42,7 +45,7 @@ int main(const int argc, const char *argv[])
     argv,
     geo_file_name,
     visual_file_name,
-    max_n_grid_rows_or_cols,
+    long_grid_side_length,
     target_points_per_inset,
     world,
     triangulation,
@@ -57,48 +60,25 @@ int main(const int argc, const char *argv[])
     plot_polygons,
     remove_tiny_polygons,
     min_polygon_area,
-    plot_quadtree);
+    plot_quadtree,
+    rays);
 
   // Initialize cart_info. It contains all the information about the cartogram
   // that needs to be handled by functions called from main().
   CartogramInfo cart_info(world, visual_file_name);
 
-  // Determine name of input map and store it
-  std::string map_name = geo_file_name;
-  if (map_name.find_last_of("/\\") != std::string::npos) {
-    map_name = map_name.substr(map_name.find_last_of("/\\") + 1);
-  }
-  if (map_name.find('.') != std::string::npos) {
-    map_name = map_name.substr(0, map_name.find('.'));
-  }
-  cart_info.set_map_name(map_name);
+  // Determine name of input map based on the geo_file_name and store it
+  std::string map_name = cart_info.set_map_name(geo_file_name);
   if (!make_csv) {
 
     // Read visual variables (e.g., area and color) from CSV
-    try {
-      cart_info.read_csv(arguments);
-    } catch (const std::system_error &e) {
-      std::cerr << "ERROR reading CSV: " << e.what() << " (" << e.code() << ")"
-                << std::endl;
-      return EXIT_FAILURE;
-    } catch (const std::runtime_error &e) {
-
-      // If there is an error, it is probably because of an invalid CSV file
-      std::cerr << "ERROR reading CSV: " << e.what() << std::endl;
-      return EXIT_FAILURE;
-    }
+    cart_info.read_csv(arguments);
   }
 
   // Read geometry. If the GeoJSON does not explicitly contain a "crs" field,
   // we assume that the coordinates are in longitude and latitude.
   std::string crs = "+proj=longlat";
-  try {
-    cart_info.read_geojson(geo_file_name, make_csv, crs);
-  } catch (const std::system_error &e) {
-    std::cerr << "ERROR reading GeoJSON: " << e.what() << " (" << e.code()
-              << ")" << std::endl;
-    return EXIT_FAILURE;
-  }
+  cart_info.read_geojson(geo_file_name, make_csv, crs);
   std::cerr << "Coordinate reference system: " << crs << std::endl;
 
   // Store total number of GeoDivs to monitor progress
@@ -111,13 +91,7 @@ int main(const int argc, const char *argv[])
     time_tracker.start("Inset " + inset_pos);
 
     // Check for errors in the input topology
-    try {
-      inset_state.check_topology();
-    } catch (const std::system_error &e) {
-      std::cerr << "ERROR while checking topology: " << e.what() << " ("
-                << e.code() << ")" << std::endl;
-      return EXIT_FAILURE;
-    }
+    inset_state.check_topology();
 
     // Can the coordinates be interpreted as longitude and latitude?
     // TODO: The "crs" field for GeoJSON files seems to be deprecated.
@@ -209,7 +183,13 @@ int main(const int argc, const char *argv[])
     inset_state.set_inset_name(inset_name);
 
     // Rescale map to fit into a rectangular box [0, lx] * [0, ly]
-    inset_state.rescale_map(max_n_grid_rows_or_cols, cart_info.is_world_map());
+    inset_state.rescale_map(long_grid_side_length, cart_info.is_world_map());
+
+    // Output rescaled GeoJSON
+    cart_info.write_geojson(
+      geo_file_name,
+      map_name + "_input.geojson",
+      output_to_stdout);
 
     if (output_to_stdout) {
 
@@ -228,10 +208,11 @@ int main(const int argc, const char *argv[])
     inset_state.make_fftw_plans_for_flux();
     inset_state.initialize_identity_proj();
     inset_state.initialize_cum_proj();
-    inset_state.set_area_errors();
 
-    // Store initial inset area to calculate area drift
+    // Store initial inset area to calculate area drift,
+    // set area errors based on this initial_area
     inset_state.store_initial_area();
+    inset_state.set_area_errors();
 
     // Store initial target area to normalize inset areas
     inset_state.store_initial_target_area();
@@ -245,15 +226,10 @@ int main(const int argc, const char *argv[])
     }
     if (plot_polygons) {
 
-      // Write PNG and PS files if requested by command-line option
-      std::string input_filename = inset_state.inset_name();
-      if (plot_grid) {
-        input_filename += "_input_grid";
-      } else {
-        input_filename += "_input";
-      }
-      std::cerr << "Writing " << input_filename << std::endl;
-      inset_state.write_cairo_map(input_filename, plot_grid);
+      // Write input of SVG files if requested by command-line option
+      inset_state.write_cairo_map(
+        inset_state.inset_name() + "_input",
+        plot_grid);
     }
 
     // Remove tiny polygons below threshold
@@ -263,117 +239,138 @@ int main(const int argc, const char *argv[])
 
     time_tracker.start("Integration Inset " + inset_pos);
 
-    // Start map integration
-    while (inset_state.n_finished_integrations() < max_integrations &&
-           (inset_state.max_area_error().value > max_permitted_area_error ||
-            std::abs(inset_state.area_drift() - 1.0) > 0.01)) {
+    // Print initial values, and initial progress (0)
+    progress_tracker.print_progress_mid_integration(inset_state);
 
-      std::cerr << "\nIntegration number "
-                << inset_state.n_finished_integrations() << std::endl;
-      std::cerr << "Number of Points: " << inset_state.n_points() << std::endl;
+    // Start map integration
+    while (inset_state.continue_integrating()) {
+      // File prefix for output files for this integration
+      const std::string file_prefix =
+        inset_state.inset_name() + "_" +
+        std::to_string(inset_state.n_finished_integrations());
+
       if (qtdt_method) {
-        time_tracker.start("Delaunay Triangulation");
 
         // Create the Delaunay triangulation
-        inset_state.create_delaunay_t();
+        time_tracker.start("Delaunay Triangulation");
+        inset_state.create_and_store_quadtree_cell_corners();
+        time_tracker.stop("Delaunay Triangulation");
 
+        time_tracker.start("Delaunay Triangulation");
+        inset_state.create_delaunay_t();
         time_tracker.stop("Delaunay Triangulation");
 
         if (plot_quadtree) {
-          const std::string quadtree_filename =
-            inset_state.inset_name() + "_" +
-            std::to_string(inset_state.n_finished_integrations()) +
-            "_quadtree";
-          std::cerr << "Writing " << quadtree_filename << ".svg" << std::endl;
 
-          // Draw the resultant quadtree
-          inset_state.write_quadtree(quadtree_filename);
-
-          const std::string delaunay_t_filename =
-            inset_state.inset_name() + "_" +
-            std::to_string(inset_state.n_finished_integrations()) +
-            "_delaunay_t";
-          std::cerr << "Writing " << delaunay_t_filename << ".svg"
-                    << std::endl;
-          inset_state.write_delaunay_triangles(delaunay_t_filename);
+          // Draw the resultant quadtree and Delaunay triangulation
+          inset_state.write_quadtree(file_prefix + "_quadtree");
+          inset_state.write_delaunay_triangles(
+            file_prefix + "_delaunay_t",
+            false);
         }
+      }
+
+      if (rays) {
+        // Fill density using ray-shooting method
+        time_tracker.start("Fill with Density (Ray Shooting Method)");
+        inset_state.fill_with_density_rays(plot_density);
+        time_tracker.stop("Fill with Density (Ray Shooting Method)");
+      } else {
+        time_tracker.start("Fill with Density (Clipping Method)");
+        inset_state.fill_with_density_clip(plot_density);
+        time_tracker.stop("Fill with Density (Clipping Method)");
       }
 
       const double blur_width = inset_state.blur_width();
-
-      std::cerr << "blur_width = " << blur_width << std::endl;
-
-      time_tracker.start("Fill with Density");
-
-      inset_state.fill_with_density(plot_density);
-
-      time_tracker.stop("Fill with Density");
-
       if (blur_width > 0.0) {
+        time_tracker.start("Blur");
         inset_state.blur_density(blur_width, plot_density);
+        time_tracker.stop("Blur");
       }
-
-      time_tracker.start("Flatten Density");
-
       if (qtdt_method) {
-        inset_state.flatten_density_with_node_vertices();
+
+        time_tracker.start("Flatten Density (Quadtree Method)");
+        if (!inset_state.flatten_density_with_node_vertices()) {
+
+          // Flatten density has failed. Incrrease blur width and try again
+          time_tracker.stop("Flatten Density (Quadtree Method)");
+          inset_state.increment_n_fails_during_flatten_density();
+          continue;
+        }
+
+        // Flatten density passed
+        time_tracker.stop("Flatten Density (Quadtree Method)");
+
+        if (plot_quadtree) {
+          inset_state.write_delaunay_triangles(
+            file_prefix + "_delaunay_t_after_flatten",
+            true);
+        }
       } else {
+
+        // Using entire grid
+        time_tracker.start("Flatten Density (Full Grid Method)");
         inset_state.flatten_density();
+        time_tracker.stop("Flatten Density (Full Grid Method)");
       }
 
-      time_tracker.stop("Flatten Density");
-
       if (qtdt_method) {
+        time_tracker.start("Update Delanuay Triangulation");
+        inset_state.update_delaunay_t();
+        time_tracker.stop("Update Delanuay Triangulation");
+
+        if (plot_quadtree) {
+          inset_state.write_delaunay_triangles(
+            file_prefix + "_updated_delaunay_t_projected",
+            true);
+        }
+
         if (simplify) {
-          time_tracker.start("Densification");
 
+          time_tracker.start("Densification (using Delanuay Triangles)");
           inset_state.densify_geo_divs_using_delaunay_t();
-
-          time_tracker.stop("Densification");
+          time_tracker.stop("Densification (using Delanuay Triangles)");
         }
 
         // Project using the Delaunay triangulation
-        inset_state.project_with_delaunay_t();
+        time_tracker.start("Project (Delanuay Triangulation)");
+        inset_state.project_with_delaunay_t(output_to_stdout);
+        time_tracker.stop("Project (Delanuay Triangulation)");
       } else if (triangulation) {
-        time_tracker.start("Densification");
 
-        // Choose diagonals that are inside grid cells
+        // Choose diagonals that are inside grid cells, then densify.
+        time_tracker.start("Densification (using Grid Diagonals)");
         inset_state.fill_grid_diagonals();
-
-        // Densify map
         inset_state.densify_geo_divs();
-
-        time_tracker.stop("Densification");
+        time_tracker.stop("Densification (using Grid Diagonals)");
 
         // Project with triangulation
+        time_tracker.start("Project (Triangulation)");
         inset_state.project_with_triangulation();
+        time_tracker.stop("Project (Triangulation)");
       } else {
+
+        // Project using bilinear interpolation
+        time_tracker.start("Project (Bilinear Interpolation)");
         inset_state.project();
+        time_tracker.stop("Project (Bilinear Interpolation)");
       }
       if (simplify) {
+
         time_tracker.start("Simplification");
         inset_state.simplify(target_points_per_inset);
-
         time_tracker.stop("Simplification");
       }
       if (plot_intersections) {
         inset_state.write_intersections_image(intersections_resolution);
       }
 
-      // Print area drift information
-      std::cerr << "Area drift: " << (inset_state.area_drift() - 1.0) * 100.0
-                << "%" << std::endl;
-
       // Update area errors
       inset_state.set_area_errors();
       inset_state.adjust_grid();
-      std::cerr << "max. area err: " << inset_state.max_area_error().value
-                << ", GeoDiv: " << inset_state.max_area_error().geo_div
-                << std::endl;
       progress_tracker.print_progress_mid_integration(inset_state);
       inset_state.increment_integration();
     }
-
     time_tracker.stop("Integration Inset " + inset_pos);
 
     // Update and display progress information
@@ -381,33 +378,22 @@ int main(const int argc, const char *argv[])
     progress_tracker.update_and_print_progress_end_integration(inset_state);
 
     if (plot_polygons) {
-      std::string output_filename = inset_state.inset_name();
-      if (plot_grid) {
-        output_filename += "_output_grid";
-      } else {
-        output_filename += "_output";
-      }
-      std::cerr << "Writing " << output_filename << std::endl;
-      inset_state.write_cairo_map(output_filename, plot_grid);
+      inset_state.write_cairo_map(
+        inset_state.inset_name() + "_output",
+        plot_grid);
     }
 
     if (world) {
-      std::string output_file_name =
-        map_name + "_cartogram_in_smyth_projection.geojson";
       cart_info.write_geojson(
         geo_file_name,
-        output_file_name,
+        map_name + "_cartogram_in_smyth_projection.geojson",
         output_to_stdout);
       inset_state.revert_smyth_craster_projection();
     }
 
-    if (output_to_stdout) {
-      if (qtdt_method) {
-        inset_state.project_with_proj_sequence();
-      } else {
-        inset_state.fill_grid_diagonals(true);
-        inset_state.project_with_cum_proj();
-      }
+    if (output_to_stdout and !qtdt_method) {
+      inset_state.fill_grid_diagonals(true);
+      inset_state.project_with_cum_proj();
     }
 
     // Clean up after finishing all Fourier transforms for this inset

@@ -6,7 +6,7 @@ argparse::ArgumentParser parsed_arguments(
   const char *argv[],
   std::string &geo_file_name,
   std::string &visual_file_name,
-  unsigned int &max_n_grid_rows_or_cols,
+  unsigned int &long_grid_side_length,
   unsigned int &target_points_per_inset,
   bool &world,
   bool &triangulation,
@@ -21,11 +21,12 @@ argparse::ArgumentParser parsed_arguments(
   bool &plot_polygons,
   bool &remove_tiny_polygons,
   double &minimum_polygon_area,
-  bool &plot_quadtree)
+  bool &plot_quadtree,
+  bool &rays)
 {
   // Create parser for arguments using argparse.
   // From https://github.com/p-ranav/argparse
-  argparse::ArgumentParser arguments("./cartogram", "1.0");
+  argparse::ArgumentParser arguments("./cartogram", "2.0");
 
   // Positional argument accepting geometry file (GeoJSON, JSON) as input
   arguments.add_argument("geometry_file")
@@ -76,17 +77,17 @@ argparse::ArgumentParser parsed_arguments(
     .default_value(false)
     .implicit_value(true);
   arguments.add_argument("-T", "--triangulation")
-    .help("Boolean: Project the cartogram using the triangulation method")
-    .default_value(false)
-    .implicit_value(true);
+    .help("Boolean: Disable cartogram projection via triangulation")
+    .default_value(true)
+    .implicit_value(false);
   arguments.add_argument("-Q", "--qtdt_method")
-    .help("Boolean: Use Quadtree-Delaunay Triangulation Method")
-    .default_value(false)
-    .implicit_value(true);
+    .help("Boolean: Disable Quadtree-Delaunay Triangulation Method")
+    .default_value(true)
+    .implicit_value(false);
   arguments.add_argument("-S", "--simplify")
-    .help("Boolean: Simplify polygons")
-    .default_value(false)
-    .implicit_value(true);
+    .help("Boolean: Disable simplification of polygons")
+    .default_value(true)
+    .implicit_value(false);
   arguments.add_argument("-P", "--n_points")
     .help(
       "Integer: If simplification enabled, target number of points per inset")
@@ -110,6 +111,10 @@ argparse::ArgumentParser parsed_arguments(
       "minimum size of polygons as proportion of total area")
     .default_value(default_minimum_polygon_area)
     .scan<'g', double>();
+  arguments.add_argument("-r", "--use_ray_shooting_method")
+    .help("Boolean: Use old ray shooting method to fill density")
+    .default_value(false)
+    .implicit_value(true);
 
   // Arguments of column names in provided visual variables file (CSV)
   std::string pre = "String: Column name for ";
@@ -137,7 +142,13 @@ argparse::ArgumentParser parsed_arguments(
   }
 
   // Set long grid-side length
-  max_n_grid_rows_or_cols = arguments.get<unsigned int>("-n");
+  long_grid_side_length = arguments.get<unsigned int>("-n");
+
+  // If world flag is set, and long-gride side length is not explicitly set,
+  // then 512 makes the output look better
+  if (arguments.get<bool>("-W") && !arguments.is_used("-n")) {
+    long_grid_side_length = 512;
+  }
 
   // Set target_points_per_inset
   target_points_per_inset = arguments.get<unsigned int>("-P");
@@ -149,6 +160,7 @@ argparse::ArgumentParser parsed_arguments(
   simplify = arguments.get<bool>("-S");
   remove_tiny_polygons = arguments.get<bool>("-R");
   minimum_polygon_area = arguments.get<double>("-m");
+  rays = arguments.get<bool>("-r");
   if (!triangulation && simplify) {
 
     // If tracer points are on the FTReal2d, then simplification requires
@@ -169,30 +181,29 @@ argparse::ArgumentParser parsed_arguments(
   plot_quadtree = arguments.get<bool>("-q");
 
   if (
-    arguments.is_used("-O") && !arguments.is_used("-S") &&
-    !arguments.is_used("-Q")) {
-    std::cerr << "ERROR: --simplify flag not passed!\n";
+    arguments.is_used("-O") && !simplify && !qtdt_method) {
+    std::cerr << "ERROR: simplification disabled!\n";
     std::cerr << "--output_to_stdout flag is only supported with "
                  "simplification or quadtree.\n";
-    std::cerr << "To enable simplification, pass the -S flag.\n";
-    std::cerr << "To enable quadtree, pass the -Q flag.\n";
+    std::cerr << "To enable simplification, do not pass the -S flag.\n";
+    std::cerr << "To enable quadtree, do not pass the -Q flag.\n";
     std::cerr << arguments << std::endl;
     _Exit(18);
   }
 
   // Check whether n_points is specified but --simplify not passed
-  if (arguments.is_used("-P") && !arguments.is_used("-S")) {
-    std::cerr << "WARNING: --simplify flag not passed!" << std::endl;
+  if (arguments.is_used("-P") && !simplify) {
+    std::cerr << "WARNING: Simplification disabled!" << std::endl;
     std::cerr << "Polygons will not be simplified." << std::endl;
     std::cerr << "To enable simplification, pass the -S flag." << std::endl;
     std::cerr << arguments << std::endl;
   }
 
   // Check whether T flag is set, but not Q
-  if (arguments.is_used("-T") && !arguments.is_used("-Q")) {
-    std::cerr << "ERROR: --qtdt_method flag not passed!" << std::endl;
+  if (triangulation && !qtdt_method) {
+    std::cerr << "ERROR: Can't disable qtdt_method without disabling triangulation." << std::endl;
     std::cerr << "QTDT method is necessary for Quadtree images." << std::endl;
-    std::cerr << "To use qtdt method, pass the -Q flag." << std::endl;
+    std::cerr << "To disable Triangulation, pass the -T flag." << std::endl;
     std::cerr << arguments << std::endl;
     _Exit(17);
   }

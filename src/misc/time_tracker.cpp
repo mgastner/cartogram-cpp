@@ -1,5 +1,6 @@
 #include "time_tracker.hpp"
 #include <iostream>
+#include <vector>
 
 void TimeTracker::start(const std::string &task_name)
 {
@@ -24,9 +25,20 @@ void TimeTracker::stop(const std::string &task_name)
 void TimeTracker::print_summary_report() const
 {
   std::cerr << "\n********** Time Report **********" << std::endl;
-  for (const auto &pair : durations_) {
-    std::cerr << pair.first << ": " << pair.second.count() << " ms"
-              << std::endl;
+  std::vector<std::pair<std::string, std::chrono::milliseconds>>
+    sorted_durations;
+  for (const auto &[task, time_taken] : durations_) {
+    sorted_durations.push_back({task, time_taken});
+  }
+  std::sort(
+    sorted_durations.begin(),
+    sorted_durations.end(),
+    [](const auto &a, const auto &b) {
+      return a.second > b.second;
+    });
+
+  for (const auto &[task, time_taken] : sorted_durations) {
+    std::cerr << task << ": " << time_taken.count() << " ms" << std::endl;
   }
   std::cerr << "*********************************" << std::endl;
 }

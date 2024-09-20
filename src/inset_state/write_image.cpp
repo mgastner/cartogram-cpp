@@ -6,20 +6,27 @@
 
 void write_triangles_on_surface(
   cairo_t *cr,
-  const Delaunay &dt,
+  const proj_qd &proj,
   const Color &clr,
-  const unsigned int ly)
+  const unsigned int ly,
+  bool draw_projected_points)
 {
   // Draw the triangles
-  for (Delaunay::Finite_faces_iterator fit = dt.finite_faces_begin();
-       fit != dt.finite_faces_end();
+  for (Delaunay::Finite_faces_iterator fit = proj.dt.finite_faces_begin();
+       fit != proj.dt.finite_faces_end();
        ++fit) {
     Point p1 = fit->vertex(0)->point();
     Point p2 = fit->vertex(1)->point();
     Point p3 = fit->vertex(2)->point();
 
+    if (draw_projected_points) {
+      p1 = proj.triangle_transformation.at(p1);
+      p2 = proj.triangle_transformation.at(p2);
+      p3 = proj.triangle_transformation.at(p3);
+    }
+
     // set width of line
-    cairo_set_line_width(cr, 0.20);
+    cairo_set_line_width(cr, 0.05);
 
     // set color
     cairo_set_source_rgb(cr, clr.r, clr.g, clr.b);
@@ -28,6 +35,30 @@ void write_triangles_on_surface(
     cairo_line_to(cr, p2.x(), ly - p2.y());
     cairo_line_to(cr, p3.x(), ly - p3.y());
     cairo_line_to(cr, p1.x(), ly - p1.y());
+    cairo_stroke(cr);
+  }
+}
+
+// Write segments on surface
+void write_segments_on_surface(
+  cairo_t *cr,
+  const std::vector<Segment> &segments,
+  const Color &clr,
+  const unsigned int ly)
+{
+  // Draw the segments
+  for (const auto &seg : segments) {
+    Point p1 = seg.source();
+    Point p2 = seg.target();
+
+    // set width of line
+    cairo_set_line_width(cr, 0.15);
+
+    // set color
+    cairo_set_source_rgb(cr, clr.r, clr.g, clr.b);
+
+    cairo_move_to(cr, p1.x(), ly - p1.y());
+    cairo_line_to(cr, p2.x(), ly - p2.y());
     cairo_stroke(cr);
   }
 }
@@ -91,23 +122,30 @@ void write_quadtree_rectangles_on_surface(
   }
 }
 
-void InsetState::write_delaunay_triangles(const std::string &filename)
+void InsetState::write_delaunay_triangles(const std::string &filename, const bool draw_projected_points)
 {
+  std::cerr << "Writing " << filename << ".svg" << std::endl;
   cairo_surface_t *surface =
     cairo_svg_surface_create((filename + ".svg").c_str(), lx_, ly_);
   cairo_t *cr = cairo_create(surface);
-  write_triangles_on_surface(cr, proj_qd_.dt, Color{0.6, 0.6, 0.6}, ly_);
+  write_segments_on_surface(cr, failed_constraints_dt_projected_, Color{1.0, 0.0, 0.0}, ly_);
+  write_segments_on_surface(cr, failed_constraints_, Color{0.0, 0.0, 1.0}, ly_);
+  write_triangles_on_surface(cr, proj_qd_, Color{0.6, 0.6, 0.6}, ly_, draw_projected_points);
   write_polygon_points_on_surface(cr, Color{0.0, 0.0, 1.0});
   cairo_show_page(cr);
   cairo_surface_destroy(surface);
   cairo_destroy(cr);
+  failed_constraints_dt_projected_.clear();
+  failed_constraints_.clear();
 }
 
 void InsetState::write_quadtree(const std::string &filename)
 {
+  std::cerr << "Writing " << filename << ".svg" << std::endl;
   cairo_surface_t *surface =
     cairo_svg_surface_create((filename + ".svg").c_str(), lx_, ly_);
   cairo_t *cr = cairo_create(surface);
+  write_polygons_on_surface(cr, false, false, false);
   write_quadtree_rectangles_on_surface(
     cr,
     quadtree_bboxes_,
@@ -176,7 +214,7 @@ void InsetState::write_polygons_on_surface(
   cairo_t *cr,
   const bool fill_polygons,
   const bool colors,
-  const bool plot_grid)
+  const bool plot_grid) const
 {
   cairo_set_line_width(cr, 1e-3 * std::min(lx_, ly_));
 
@@ -308,7 +346,7 @@ void InsetState::write_polygons_on_surface(
 
 void write_vectors_on_surface(
   cairo_t *cr,
-  std::unordered_map<Point, Point> &vectors,
+  const std::unordered_map<Point, Vector> &vectors,
   unsigned int lx_,
   unsigned int ly_)
 {
@@ -353,7 +391,7 @@ void InsetState::write_cairo_polygons_to_svg(
   const bool fill_polygons,
   const bool colors,
   const bool plot_grid,
-  std::unordered_map<Point, Point> &vectors)
+  const std::unordered_map<Point, Vector> &vectors) const
 {
   const auto filename = fname.c_str();
   cairo_surface_t *surface = cairo_svg_surface_create(filename, lx_, ly_);
@@ -372,9 +410,14 @@ void InsetState::write_cairo_polygons_to_svg(
 void InsetState::write_cairo_map(
   const std::string &file_name,
   const bool plot_grid,
-  std::unordered_map<Point, Point> vectors)
+
+  // TODO: This was the past signature of the function.
+  // Restoring this causes a bug. Investigate.
+  // const std::unordered_map<Point, Vector> &vectors)
+  const std::unordered_map<Point, Vector> vectors) const
 {
   const auto svg_name = file_name + ".svg";
+  std::cerr << "Writing " << file_name << std::endl;
 
   // Check whether the has all GeoDivs colored
   const bool has_colors = (colors_size() == n_geo_divs());
@@ -551,8 +594,7 @@ void InsetState::write_grid_heatmap_image(
 
   // White background
   cairo_set_source_rgb(cr, 1.0, 1.0, 1.0);
-  cairo_rectangle(cr, 0, 0, lx_, ly_);
-  cairo_fill(cr);
+  cairo_paint(cr);
 
   // Get inset areas
   const double total_ta = total_target_area();
@@ -847,6 +889,8 @@ void InsetState::write_density_image(
   const double *density,
   const bool plot_pycnophylactic)
 {
+
+  std::cerr << "Writing " << filename << std::endl;
   // Whether to draw bar on the cairo surface
   const bool draw_bar = false;
   cairo_surface_t *surface =
@@ -854,23 +898,22 @@ void InsetState::write_density_image(
 
   // Create a cairo surface
   cairo_t *cr = cairo_create(surface);
-
-  // White background
-  cairo_set_source_rgb(cr, 1.0, 1.0, 1.0);
-  cairo_rectangle(cr, 0, 0, lx_, ly_);
-  cairo_fill(cr);
-
   cairo_set_line_width(cr, 0);
 
   // Determine range of densities
   const double dens_min = dens_min_;
   const double dens_mean = dens_mean_;
   const double dens_max = dens_max_;
+  const double exterior_density = exterior_density_;
   const double each_grid_cell_area_km = grid_cell_area_km(0, 0);
 
   // Crop it too
   if (plot_pycnophylactic) {
     unsigned int cell_width = 1;
+
+    // White background
+    cairo_set_source_rgb(cr, 1.0, 1.0, 1.0);
+    cairo_paint(cr);
 
     // Clip to shape and print in sequential scale
     for (const auto &gd : geo_divs_) {
@@ -932,10 +975,19 @@ void InsetState::write_density_image(
       }
     }
   } else {
+
+    // Set background color to that of exterior_density
+    Color exterior_density_color = heatmap_color(exterior_density, dens_min, dens_mean, dens_max);
+    cairo_set_source_rgb(cr, exterior_density_color.r / 255.0, exterior_density_color.g / 255.0, exterior_density_color.b / 255.0);
+    cairo_paint(cr);
     for (unsigned int i = 0; i < lx_; ++i) {
       for (unsigned int j = 0; j < ly_; ++j) {
+
         Color color =
           heatmap_color(density[i * ly_ + j], dens_min, dens_mean, dens_max);
+
+        // Skip plotting exterior_density color
+        if (color == exterior_density_color) continue;
 
         // Get four points of the square
         double x_min = i - 0.5 * sq_overlap;
@@ -948,7 +1000,11 @@ void InsetState::write_density_image(
         cairo_line_to(cr, x_max, ly_ - y_max);
         cairo_line_to(cr, x_min, ly_ - y_max);
 
-        cairo_set_source_rgb(cr, color.r, color.g, color.b);
+        cairo_set_source_rgb(
+          cr,
+          color.r / 255.0,
+          color.g / 255.0,
+          color.b / 255.0);
         cairo_fill(cr);
         cairo_set_source_rgb(cr, 0, 0, 0);
         cairo_stroke(cr);

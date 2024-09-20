@@ -32,7 +32,7 @@ typedef CGAL::Orthtree<CGAL::Orthtree_traits_2<Scd>, std::vector<Point>>
   Quadtree;
 
 // Delaunay triangulation
-typedef CGAL::Delaunay_triangulation_2<Scd> Delaunay;
+typedef CGAL::Constrained_Delaunay_triangulation_2<Scd> Delaunay;
 typedef Delaunay::Line_face_circulator Line_face_circulator;
 typedef Delaunay::Face_handle Face_handle;
 

@@ -5,134 +5,12 @@ InsetState::InsetState(std::string pos) : pos_(std::move(pos))
 {
   initial_area_ = 0.0;
   n_finished_integrations_ = 0;
+  n_fails_during_flatten_density_ = 0;
   dens_min_ = 0.0;
   dens_mean_ = 0.0;
   dens_max_ = 0.0;
   latt_const_ = 0.0;
   initial_target_area_ = 0.0;
-}
-
-double InsetState::blur_width() const
-{
-
-  // Blur density to speed up the numerics in flatten_density() below.
-  // We slowly reduce the blur width so that the areas can reach their
-  // target values.
-  // TODO: whenever blur_width hits 0, the maximum area error will start
-  //       increasing again and eventually lead to an invalid grid
-  //       cell error when projecting with triangulation. Investigate
-  //       why. As a temporary fix, we set blur_width to be always
-  //       positive, regardless of the number of integrations.
-  const unsigned int blur_default_pow = static_cast<unsigned int>(
-    6 + log2(std::max(lx(), ly()) / default_long_grid_length));
-  double blur_width =
-    std::pow(2.0, blur_default_pow - (0.5 * int(n_finished_integrations_)));
-
-  // if (inset_state.n_finished_integrations() < max_integrations) {
-  //   blur_width =
-  //     std::pow(2.0, 5 - int(inset_state.n_finished_integrations()));
-  // } else {
-  //   blur_width = 0.0;
-  // }
-  return blur_width;
-}
-
-// TODO: For the vertices of a square, there are two possible Delaunay
-// triangulations. In the current version, we lack control over the
-// triangulation chosen by CGAL. Ideally, the triangulation should be selected
-// that uses the shorter diagonal as a triangle edge.
-void InsetState::create_delaunay_t()
-{
-  // Store all the polygon vertices in std::unordered_set to remove
-  // duplicates
-  std::unordered_set<Point> points;
-
-  // Avoid collisions in hash table
-  points.reserve(8192);
-  points.max_load_factor(0.5);
-  for (const auto &gd : geo_divs_) {
-    for (const auto &pwh : gd.polygons_with_holes()) {
-      const Polygon &ext_ring = pwh.outer_boundary();
-
-      // Get exterior ring coordinates
-      points.insert(ext_ring.begin(), ext_ring.end());
-
-      // Get holes of polygon with holes
-
-      for (const auto &h : pwh.holes()) {
-        points.insert(h.begin(), h.end());
-      }
-    }
-  }
-
-  // Add boundary points of mapping domain
-  points.insert(Point(0, 0));
-  points.insert(Point(0, ly_));
-  points.insert(Point(lx_, 0));
-  points.insert(Point(lx_, ly_));
-  std::vector<Point> points_vec;
-
-  // Copy points of unordered_set to vector
-  std::copy(points.begin(), points.end(), std::back_inserter(points_vec));
-
-  // Create the quadtree and 'grade' it so that neighboring quadtree leaves
-  // differ by a depth that can only be 0 or 1.
-  Quadtree qt(points_vec, Quadtree::PointMap(), 1);
-  const unsigned int depth =
-    static_cast<unsigned int>(std::max(log2(lx_), log2(ly_)));
-  std::cerr << "Using Quadtree depth: " << depth << std::endl;
-  qt.refine(
-    depth,
-    9);  // (maximum depth, splitting condition: max number of points per node)
-  qt.grade();
-  std::cerr << "Quadtree root node bounding box: " << qt.bbox(qt.root())
-            << std::endl;
-
-  // Clear corner points from last iteration
-  unique_quadtree_corners_.clear();
-
-  // Clear the vector of bounding boxes
-  quadtree_bboxes_.clear();
-
-  // Get unique quadtree corners
-  for (const auto &node : qt.traverse<CGAL::Orthtrees::Leaves_traversal>()) {
-
-    // Get bounding box of the leaf node
-    const Bbox bbox = qt.bbox(node);
-
-    // Store the bounding box
-    quadtree_bboxes_.push_back(bbox);
-
-    // check if points are between lx_ and ly_
-    if (
-      bbox.xmin() < 0 || bbox.xmax() > lx_ || bbox.ymin() < 0 ||
-      bbox.ymax() > ly_) {
-      continue;
-    }
-
-    // Insert the four vertices of the bbox into the corners set
-    unique_quadtree_corners_.insert(Point(bbox.xmin(), bbox.ymin()));
-    unique_quadtree_corners_.insert(Point(bbox.xmax(), bbox.ymax()));
-    unique_quadtree_corners_.insert(Point(bbox.xmin(), bbox.ymax()));
-    unique_quadtree_corners_.insert(Point(bbox.xmax(), bbox.ymin()));
-  }
-
-  // Add boundary points of mapping domain in case they are omitted due to
-  // quadtree structure
-  unique_quadtree_corners_.insert(Point(0, 0));
-  unique_quadtree_corners_.insert(Point(0, ly_));
-  unique_quadtree_corners_.insert(Point(lx_, 0));
-  unique_quadtree_corners_.insert(Point(lx_, ly_));
-
-  std::cerr << "Number of unique corners: " << unique_quadtree_corners_.size()
-            << std::endl;
-
-  // Create the Delaunay triangulation
-  Delaunay dt;
-  dt.insert(unique_quadtree_corners_.begin(), unique_quadtree_corners_.end());
-  proj_qd_.dt = dt;
-  std::cerr << "Number of Delaunay triangles: " << dt.number_of_faces()
-            << std::endl;
 }
 
 double InsetState::area_error_at(const std::string &id) const
@@ -149,8 +27,9 @@ Bbox InsetState::bbox(bool original_bbox) const
   double inset_ymin = dbl_inf;
   double inset_ymax = -dbl_inf;
 #pragma omp parallel for default(none) shared(geo_divs) \
-  reduction(min : inset_xmin, inset_ymin)               \
-  reduction(max : inset_xmax, inset_ymax)
+  reduction(min                                         \
+            : inset_xmin, inset_ymin) reduction(max     \
+                                                : inset_xmax, inset_ymax)
   for (const auto &gd : geo_divs) {
     for (const auto &pwh : gd.polygons_with_holes()) {
       const auto bb = pwh.bbox();
@@ -161,6 +40,89 @@ Bbox InsetState::bbox(bool original_bbox) const
     }
   }
   return {inset_xmin, inset_ymin, inset_xmax, inset_ymax};
+}
+
+double InsetState::blur_width() const
+{
+
+  // Blur density to speed up the numerics in flatten_density() below.
+  // We slowly reduce the blur width so that the areas can reach their
+  // target values. In case of failure during flatten_density, we increase
+  // the blur width to avoid the flipped Delaunay triangles.
+  // TODO: whenever blur_width hits 0, the maximum area error will start
+  //       increasing again and eventually lead to an invalid grid
+  //       cell error when projecting with triangulation. Investigate
+  //       why. As a temporary fix, we set blur_width to be always
+  //       positive, regardless of the number of integrations.
+  const unsigned int blur_default_pow =
+    static_cast<unsigned int>(
+      1 + log2(std::max(lx(), ly()) / default_long_grid_length)) +
+    n_fails_during_flatten_density_;
+  double blur_width =
+    std::pow(2.0, blur_default_pow - (0.5 * n_finished_integrations_));
+
+  // NOTE: Read TODO above
+  // if (inset_state.n_finished_integrations() < max_integrations) {
+  //   blur_width =
+  //     std::pow(2.0, 5 - int(inset_state.n_finished_integrations()));
+  // } else {
+  //   blur_width = 0.0;
+  // }
+
+  std::cerr << "blur_width = " << blur_width << std::endl;
+  return blur_width;
+}
+
+bool InsetState::continue_integrating() const
+{
+
+  // Calculate all the necessary information to decide whether to continue
+  auto [max_area_err, worst_gd] = max_area_error();
+
+  // A GeoDiv is still above our area error threshold
+  bool area_error_above_threshold =
+    max_area_err > max_permitted_area_error;
+
+  // Area expansion factor is above our threshold
+  // i.e. cartogram has become too big or too small
+  double area_drift = area_expansion_factor() - 1.0;
+  bool area_expansion_factor_above_threshold =
+    std::abs(area_drift) > max_permitted_area_drift;
+
+  // If both the above metrics are above our threshold
+  bool has_converged =
+    !area_error_above_threshold && !area_expansion_factor_above_threshold;
+
+  // Make sure to not continue endlesslely: cap at max_integrations
+  bool within_integration_limit = n_finished_integrations() < max_integrations;
+
+  // We continue if we are within the integration limit and have not converged
+  bool continue_integration = within_integration_limit && !has_converged;
+
+  // Actually hasn't converged, just reached integration limit
+  if (!within_integration_limit && !has_converged) {
+    std::cerr << "ERROR: Could not converge!" << std::endl;
+    if (area_error_above_threshold)
+      std::cerr << "Max area error above threshold!" << std::endl;
+    if (area_expansion_factor_above_threshold)
+      std::cerr << "Area expansion factor above threshold!" << std::endl;
+  }
+
+  // Print control output (at end of previous integration)
+  std::cerr << "Max. area err: " << max_area_err << ", GeoDiv: " << worst_gd
+            << std::endl;
+  std::cerr << "Current Area: "
+            << geo_divs_[geo_divs_id_to_index_.at(worst_gd)].area()
+            << ", Target Area: " << target_area_at(worst_gd) << std::endl;
+  std::cerr << "Area drift: " << area_drift * 100.0 << "%" << std::endl;
+
+  if (continue_integration) {
+    // Print next integration information.
+    std::cerr << "\nIntegration number " << n_finished_integrations()
+              << std::endl;
+    std::cerr << "Number of Points: " << n_points() << std::endl;
+  }
+  return continue_integration;
 }
 
 Color InsetState::color_at(const std::string &id) const
@@ -181,6 +143,194 @@ bool InsetState::colors_empty() const
 unsigned int InsetState::colors_size() const
 {
   return colors_.size();
+}
+
+void InsetState::create_delaunay_t()
+{
+  Delaunay dt;
+  dt.insert(unique_quadtree_corners_.begin(), unique_quadtree_corners_.end());
+  proj_qd_.dt = dt;
+  std::cerr << "Number of Delaunay triangles: " << dt.number_of_faces()
+            << std::endl;
+}
+
+// TODO: Choose which insert_constraint_safely to keep
+bool InsetState::insert_constraint_safely_to_dt(
+  Delaunay &dt,
+  const Point &p1,
+  const Point &p2)
+{
+  // Try-catch block to avoid inserting intersecting constraints
+  try {
+    dt.insert_constraint(p1, p2);
+    return true;
+  } catch (const std::exception &e) {
+    // Print more information about the exception
+    std::cerr << "WARNING (dt projected): Could not insert constraint between "
+              << p1 << " and " << p2 << std::endl;
+    std::cerr << e.what() << std::endl;
+    // Add to the list of failed constraints
+    failed_constraints_dt_projected_.push_back(Segment(p1, p2));
+    return false;
+  }
+}
+
+bool InsetState::insert_constraint_safely(const Point &p1, const Point &p2)
+{
+  // Try-catch block to avoid inserting intersecting constraints
+  try {
+    proj_qd_.dt.insert_constraint(p1, p2);
+    return true;
+  } catch (const std::exception &e) {
+    std::cout << "WARNING DIAGONAL: Could not insert constraint between " << p1
+              << " and " << p2 << std::endl;
+    std::cerr << e.what() << std::endl;
+    // Add to the list of failed constraints
+    failed_constraints_.push_back(Segment(p1, p2));
+    return false;
+  }
+}
+void InsetState::update_delaunay_t()
+{
+  // Create the Delauany triangulation from the projected quadtree corners
+  std::vector<Point> projected_unique_quadtree_corners;
+  for (auto &pt : unique_quadtree_corners_) {
+    projected_unique_quadtree_corners.push_back(
+      proj_qd_.triangle_transformation.at(pt));
+  }
+
+  // Create the projected Delaunay triangulation to get the shorter diagonal of
+  // the projected quadtree cells
+  Delaunay dt_projected;
+  dt_projected.insert(
+    projected_unique_quadtree_corners.begin(),
+    projected_unique_quadtree_corners.end());
+
+  // To make sure that we do get the triangles with the same endpoints as the
+  // original Delaunay triangulation, we now need to insert the edges of the
+  // projected quadtree cells as constraints to the projected Delaunay.
+
+  // To later check if a segment is an edge of the quadtree cell
+  std::unordered_set<Segment> is_edge;
+  is_edge.reserve(8 * quadtree_bboxes_.size());
+  for (auto bbox : quadtree_bboxes_) {
+    Point xmin_ymin = Point(bbox.xmin(), bbox.ymin());
+    Point xmax_ymax = Point(bbox.xmax(), bbox.ymax());
+    Point xmin_ymax = Point(bbox.xmin(), bbox.ymax());
+    Point xmax_ymin = Point(bbox.xmax(), bbox.ymin());
+    is_edge.insert(Segment(xmin_ymin, xmax_ymin));
+    is_edge.insert(Segment(xmax_ymin, xmin_ymin));
+    is_edge.insert(Segment(xmin_ymin, xmin_ymax));
+    is_edge.insert(Segment(xmin_ymax, xmin_ymin));
+    is_edge.insert(Segment(xmin_ymax, xmax_ymax));
+    is_edge.insert(Segment(xmax_ymax, xmin_ymax));
+    is_edge.insert(Segment(xmax_ymax, xmax_ymin));
+    is_edge.insert(Segment(xmax_ymin, xmax_ymax));
+  }
+
+  // Reverse map is necessary to get the original point of the projected vertex
+  // Then we can project back the chosen projected diagonal to the unprojected
+  // diagonal and insert it as a constraint to the original Delaunay
+  std::unordered_map<Point, Point> reverse_triangle_transformation;
+  reverse_triangle_transformation.reserve(2 * unique_quadtree_corners_.size());
+  for (auto &[key, val] : proj_qd_.triangle_transformation) {
+    reverse_triangle_transformation[val] = key;
+  }
+
+  // Potential edges of the quadtree cells
+  std::unordered_map<double, std::vector<double>> same_x_coor_points;
+  std::unordered_map<double, std::vector<double>> same_y_coor_points;
+
+  same_x_coor_points.reserve(2 * lx_);
+  same_y_coor_points.reserve(2 * ly_);
+
+  for (auto &pt : unique_quadtree_corners_) {
+    auto x = pt.x();
+    auto y = pt.y();
+    same_x_coor_points[x].push_back(y);
+    same_y_coor_points[y].push_back(x);
+  }
+
+  // Add the edges of the quadtree cells to the projected quadtree cell polygon
+  // We check now whether the potential edges are edges of the quadtree cells
+  // and if so, we insert them as constraints to the projected Delaunay
+  std::vector<std::pair<Point, Point>> constraints_for_projed_dt;
+  for (auto &[x_coor, points] : same_x_coor_points) {
+    // Remove the duplicates and sort
+    std::sort(points.begin(), points.end());
+    points.erase(std::unique(points.begin(), points.end()), points.end());
+
+    for (unsigned int i = 0; i < points.size() - 1; ++i) {
+      Point p1(x_coor, points[i]);
+      Point p2(x_coor, points[i + 1]);
+
+      // if not a Quadtree cell edge, then ignore
+      if (is_edge.count(Segment(p1, p2)) == 0) {
+        continue;
+      }
+      Point p1_proj = proj_qd_.triangle_transformation.at(p1);
+      Point p2_proj = proj_qd_.triangle_transformation.at(p2);
+
+      // To add the constraint later to the projected Delaunay triangulation
+      constraints_for_projed_dt.push_back({p1_proj, p2_proj});
+    }
+  }
+
+  for (auto &[y_coor, points] : same_y_coor_points) {
+    // Remove the duplicates and sort
+    std::sort(points.begin(), points.end());
+    points.erase(std::unique(points.begin(), points.end()), points.end());
+
+    for (unsigned int i = 0; i < points.size() - 1; ++i) {
+      Point p1(points[i], y_coor);
+      Point p2(points[i + 1], y_coor);
+      if (is_edge.count(Segment(p1, p2)) == 0) {
+        continue;
+      }
+      Point p1_proj = proj_qd_.triangle_transformation.at(p1);
+      Point p2_proj = proj_qd_.triangle_transformation.at(p2);
+
+      // To add the constraint later to the projected Delaunay triangulation
+      constraints_for_projed_dt.push_back({p1_proj, p2_proj});
+    }
+  }
+
+  // Finally, we add the projected quadtree cell edges as constraints to the
+  // projected Delaunay triangulation
+  dt_projected.insert_constraints(
+    constraints_for_projed_dt.begin(),
+    constraints_for_projed_dt.end());
+
+  // Add the chosen diagonal of the pojected Delaunay triangles as constraints
+  // to the original Delaunay triangulation
+  std::vector<std::pair<Point, Point>> constraints;
+  for (Delaunay::Finite_faces_iterator fit = dt_projected.finite_faces_begin();
+       fit != dt_projected.finite_faces_end();
+       ++fit) {
+    Face_handle face = fit;
+    const Point p1 = face->vertex(0)->point();
+    const Point p2 = face->vertex(1)->point();
+    const Point p3 = face->vertex(2)->point();
+
+    // Project back the chosen diagonal to the unprojected diagonal
+    const Point p1_orig = reverse_triangle_transformation.at(p1);
+    const Point p2_orig = reverse_triangle_transformation.at(p2);
+    const Point p3_orig = reverse_triangle_transformation.at(p3);
+
+    // Only pick the edge if it is diagonal
+    if (p1_orig.x() != p2_orig.x() && p1_orig.y() != p2_orig.y()) {
+      constraints.push_back({p1_orig, p2_orig});
+    }
+    if (p2_orig.x() != p3_orig.x() && p2_orig.y() != p3_orig.y()) {
+      constraints.push_back({p2_orig, p3_orig});
+    }
+    if (p3_orig.x() != p1_orig.x() && p3_orig.y() != p1_orig.y()) {
+      constraints.push_back({p3_orig, p1_orig});
+    }
+  }
+
+  // Inserting range is faster than inserting one by one
+  proj_qd_.dt.insert_constraints(constraints.begin(), constraints.end());
 }
 
 void InsetState::destroy_fftw_plans_for_flux()
@@ -216,9 +366,127 @@ const std::vector<GeoDiv> &InsetState::geo_divs() const
   return geo_divs_;
 }
 
+void InsetState::create_and_store_quadtree_cell_corners()
+{
+  std::vector<Point> points;
+
+  for (const auto &gd : geo_divs_) {
+    for (const auto &pwh : gd.polygons_with_holes()) {
+      const Polygon &ext_ring = pwh.outer_boundary();
+
+      // Get exterior ring coordinates
+      points.insert(
+        points.end(),
+        ext_ring.vertices_begin(),
+        ext_ring.vertices_end());
+
+      // Get holes of polygon with holes
+      for (const auto &h : pwh.holes()) {
+        points.insert(points.end(), h.vertices_begin(), h.vertices_end());
+      }
+    }
+  }
+
+  // Add boundary points of mapping domain
+  points.push_back(Point(0, 0));
+  points.push_back(Point(0, ly_));
+  points.push_back(Point(lx_, 0));
+  points.push_back(Point(lx_, ly_));
+
+  // Remove the duplicates from points
+  std::unordered_set<Point> unique_points(points.begin(), points.end());
+
+  std::vector<Point> unique_points_vec(
+    unique_points.begin(),
+    unique_points.end());
+
+  // Create the quadtree and 'grade' it so that neighboring quadtree leaves
+  // differ by a depth that can only be 0 or 1.
+  Quadtree qt(unique_points_vec, Quadtree::PointMap(), 1);
+  const unsigned int depth =
+    static_cast<unsigned int>(std::max(log2(lx_), log2(ly_)));
+  std::cerr << "Using Quadtree depth: " << depth << std::endl;
+
+  // Custom predicate to decide whether to split a node
+  auto can_split = [&depth, &qt, this](const Quadtree::Node &node) -> bool {
+    // if the node depth is greater than depth, do not split
+    if (node.depth() >= depth) {
+      return false;
+    }
+
+    auto bbox = qt.bbox(node);
+    double rho_min = 1e9;
+    double rho_max = -1e9;
+
+    // get the minimum rho_init of the bbox of the node
+    for (unsigned int i = bbox.xmin(); i < bbox.xmax(); ++i) {
+      for (unsigned int j = bbox.ymin(); j < bbox.ymax(); ++j) {
+        if (i >= this->lx() || j >= this->ly()) {
+          continue;
+        }
+        if (i < 0 || j < 0) {
+          continue;
+        }
+        rho_min = std::min(rho_min, this->ref_to_rho_init()(i, j));
+        rho_max = std::max(rho_max, this->ref_to_rho_init()(i, j));
+      }
+    }
+    return rho_max - rho_min >
+           (0.001 + pow((1.0 / n_finished_integrations_), 2));
+  };
+  qt.refine(can_split);
+  qt.grade();
+  std::cerr << "Quadtree root node bounding box: " << qt.bbox(qt.root())
+            << std::endl;
+
+  // Clear corner points from last iteration
+  unique_quadtree_corners_.clear();
+
+  // Clear the vector of bounding boxes
+  quadtree_bboxes_.clear();
+
+  // Get unique quadtree corners
+  for (const auto &node : qt.traverse<CGAL::Orthtrees::Leaves_traversal>()) {
+
+    // Get bounding box of the leaf node
+    const Bbox bbox = qt.bbox(node);
+
+    // check if points are between lx_ and ly_
+    if (
+      bbox.xmin() < 0 || bbox.xmax() > lx_ || bbox.ymin() < 0 ||
+      bbox.ymax() > ly_) {
+      continue;
+    }
+
+    // Store the bounding box
+    quadtree_bboxes_.push_back(bbox);
+
+    // Insert the four vertices of the bbox into the corners set
+    unique_quadtree_corners_.insert(Point(bbox.xmin(), bbox.ymin()));
+    unique_quadtree_corners_.insert(Point(bbox.xmax(), bbox.ymax()));
+    unique_quadtree_corners_.insert(Point(bbox.xmin(), bbox.ymax()));
+    unique_quadtree_corners_.insert(Point(bbox.xmax(), bbox.ymin()));
+  }
+
+  // Add boundary points of mapping domain in case they are omitted due to
+  // quadtree structure
+  unique_quadtree_corners_.insert(Point(0, 0));
+  unique_quadtree_corners_.insert(Point(0, ly_));
+  unique_quadtree_corners_.insert(Point(lx_, 0));
+  unique_quadtree_corners_.insert(Point(lx_, ly_));
+
+  std::cerr << "Number of unique corners: " << unique_quadtree_corners_.size()
+            << std::endl;
+}
+
 void InsetState::increment_integration()
 {
   n_finished_integrations_ += 1;
+}
+
+void InsetState::increment_n_fails_during_flatten_density()
+{
+  n_fails_during_flatten_density_ += 1;
 }
 
 void InsetState::initialize_cum_proj()
@@ -345,6 +613,11 @@ void InsetState::make_fftw_plans_for_flux()
 struct max_area_error_info InsetState::max_area_error() const
 {
   auto it = area_errors_.begin();
+  // Previously used to calculate average area error
+  // TODO: max_area_error_info should return more information
+  // including average and absolute area error
+  // double sum_errors = 0.0;
+  // size_t count = 0;
   std::string worst_gd = it->first;
   double value = it->second;
   for (const auto &[gd_id, area_error] : area_errors_) {
@@ -352,6 +625,8 @@ struct max_area_error_info InsetState::max_area_error() const
       value = area_error;
       worst_gd = gd_id;
     }
+    // sum_errors += area_error;
+    // ++count;
   }
   return {value, worst_gd};
 }
@@ -359,6 +634,11 @@ struct max_area_error_info InsetState::max_area_error() const
 unsigned int InsetState::n_finished_integrations() const
 {
   return n_finished_integrations_;
+}
+
+unsigned int InsetState::n_fails_during_flatten_density() const
+{
+  return n_fails_during_flatten_density_;
 }
 
 unsigned int InsetState::n_geo_divs() const
@@ -386,13 +666,12 @@ unsigned int InsetState::n_rings() const
 
 void InsetState::normalize_target_area()
 {
-  double initial_area = total_inset_area();
   double ta = total_target_area();
 
   // Assign normalized target area to GeoDivs
   for (const auto &gd : geo_divs_) {
     double normalized_target_area =
-      (target_area_at(gd.id()) / ta) * initial_area;
+      (target_area_at(gd.id()) / ta) * initial_area_;
     replace_target_area(gd.id(), normalized_target_area);
   }
 }
@@ -402,13 +681,14 @@ std::string InsetState::pos() const
   return pos_;
 }
 
-double InsetState::area_drift() const
+double InsetState::area_expansion_factor() const
 {
-  return (total_inset_area() / initial_area_);
+  return total_inset_area() / initial_area_;
 }
 
 void InsetState::push_back(const GeoDiv &gd)
 {
+  geo_divs_id_to_index_.insert({gd.id(), geo_divs_.size()});
   geo_divs_.push_back(gd);
 }
 
@@ -469,55 +749,108 @@ void InsetState::reset_n_finished_integrations()
 void InsetState::set_area_errors()
 {
   // Formula for relative area error:
-  // area_on_cartogram / target_area - 1
-  double sum_target_area = 0.0;
-  double sum_cart_area = 0.0;
-
-#pragma omp parallel for default(none) \
-  reduction(+ : sum_target_area, sum_cart_area)
-  for (const auto &gd : geo_divs_) {
-    sum_target_area += target_area_at(gd.id());
-    sum_cart_area += gd.area();
-  }
+  // | area_on_cartogram / target_area - 1 |
+  // However, we must also either
+  // - multiply target area with aef or
+  // - divide gd.area() by aef
+  // To account for the area drift already introduced.
+  // For instance, if the actual cartogram is 10% larger than it was initially,
+  // And our GeoDiv is 5% larger than it initially was, it has actually become
+  // relatively smaller compared to the total cartogram area. Thus, we must
+  // accordingly inflate its target area to account for the area drift.
+  double aef = area_expansion_factor();
 
 #pragma omp parallel for default(none) shared(sum_cart_area, sum_target_area)
   for (const auto &gd : geo_divs_) {
-    const double obj_area =
-      target_area_at(gd.id()) * sum_cart_area / sum_target_area;
+    const double obj_area = target_area_at(gd.id()) * aef;
     area_errors_[gd.id()] = std::abs((gd.area() / obj_area) - 1);
   }
 }
 
 void InsetState::adjust_grid()
 {
-  unsigned int long_grid_length = std::max(lx_, ly_);
-  double curr_max_area_error = max_area_error().value;
-  unsigned int grid_factor =
-    (long_grid_length > default_long_grid_length) ? 2 : default_grid_factor;
+  auto [curr_max_area_error, worst_gd] = max_area_error();
   max_area_errors_.push_back(curr_max_area_error);
+  // TODO: Change to a more sophisticated grid adjustment strategy
+  // (based on a tolerance of area error)
   if (
-    n_finished_integrations_ >= 2 &&
-    curr_max_area_error > max_area_errors_[n_finished_integrations_ - 1] &&
-    curr_max_area_error > max_area_errors_[n_finished_integrations_ - 2]) {
+    n_finished_integrations_ > 4 &&
+    curr_max_area_error >=
+      0.999 * max_area_errors_[n_finished_integrations_ - 1] &&
+    curr_max_area_error >=
+      0.999 * max_area_errors_[n_finished_integrations_ - 2]) {
 
     // Multiply grid size with factor
     std::cerr << "Adjusting grid size." << std::endl;
     if (
-      lx_ * grid_factor > max_allowed_grid_length or
-      ly_ * grid_factor > max_allowed_grid_length) {
+      lx_ * default_grid_factor > max_allowed_autoscale_grid_length or
+      ly_ * default_grid_factor > max_allowed_autoscale_grid_length) {
       std::cerr << "Cannot increase grid size further. ";
       std::cerr << "Grid size exceeds maximum allowed grid length."
                 << std::endl;
       return;
     }
-    lx_ *= grid_factor;
-    ly_ *= grid_factor;
+    lx_ *= default_grid_factor;
+    ly_ *= default_grid_factor;
+
+    // Scale all map coordinates
+    const Transformation scale(CGAL::SCALING, default_grid_factor);
+    for (auto &gd : geo_divs_) {
+      for (auto &pwh : gd.ref_to_polygons_with_holes()) {
+        auto &ext_ring = pwh.outer_boundary();
+        ext_ring = transform(scale, ext_ring);
+        for (auto &h : pwh.holes()) {
+          h = transform(scale, h);
+        }
+      }
+    }
+
+    for (auto &gd : geo_divs_original_) {
+      for (auto &pwh : gd.ref_to_polygons_with_holes()) {
+        auto &ext_ring = pwh.outer_boundary();
+        ext_ring = transform(scale, ext_ring);
+        for (auto &h : pwh.holes()) {
+          h = transform(scale, h);
+        }
+      }
+    }
+
+    initial_area_ *= default_grid_factor * default_grid_factor;
+
+    for (auto &gd : geo_divs_original_transformed_) {
+      for (auto &pwh : gd.ref_to_polygons_with_holes()) {
+        auto &ext_ring = pwh.outer_boundary();
+        ext_ring = transform(scale, ext_ring);
+        for (auto &h : pwh.holes()) {
+          h = transform(scale, h);
+        }
+      }
+    }
+
+    normalize_target_area();
+
+    destroy_fftw_plans_for_rho();
+    destroy_fftw_plans_for_flux();
+    ref_to_rho_init().free();
+    ref_to_rho_ft().free();
+    ref_to_fluxx_init().free();
+    ref_to_fluxy_init().free();
 
     // Reallocate FFTW plans
     ref_to_rho_init().allocate(lx_, ly_);
     ref_to_rho_ft().allocate(lx_, ly_);
+    ref_to_fluxx_init().allocate(lx_, ly_);
+    ref_to_fluxy_init().allocate(lx_, ly_);
     make_fftw_plans_for_rho();
-    std::cerr << "New grid dimensions: " << lx_ << " " << ly_ << std::endl;
+    make_fftw_plans_for_flux();
+    initialize_identity_proj();
+    initialize_cum_proj();
+    set_area_errors();
+
+    Bbox bb = bbox();
+    std::cerr << "New grid dimensions: " << lx_ << " " << ly_
+              << " with bounding box\n\t(" << bb.xmin() << ", " << bb.ymin()
+              << ", " << bb.xmax() << ", " << bb.ymax() << ")" << std::endl;
   }
 }
 
@@ -552,7 +885,14 @@ bool InsetState::target_area_is_missing(const std::string &id) const
 
 double InsetState::target_area_at(const std::string &id) const
 {
-  return target_areas_.at(id);
+  try {
+    return target_areas_.at(id);
+  } catch (const std::out_of_range &e) {
+    std::cerr << "ERROR: Key '" << id << "' not found in target_areas_. "
+              << "Exception: " << e.what() << std::endl;
+    // Re-throw, or return a default value
+    throw;
+  }
 }
 
 double InsetState::total_inset_area() const
@@ -584,6 +924,7 @@ std::string InsetState::label_at(const std::string &id) const
 void InsetState::store_original_geo_divs()
 {
   geo_divs_original_ = geo_divs_;
+  geo_divs_original_transformed_ = geo_divs_;
 }
 
 void InsetState::transform_points(
@@ -591,7 +932,8 @@ void InsetState::transform_points(
   bool project_original)
 {
 
-  auto &geo_divs = project_original ? geo_divs_original_ : geo_divs_;
+  auto &geo_divs =
+    project_original ? geo_divs_original_transformed_ : geo_divs_;
 
   // Iterate over GeoDivs
 #pragma omp parallel for default(none) shared(transform_point, geo_divs)
