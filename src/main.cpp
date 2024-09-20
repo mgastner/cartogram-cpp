@@ -72,18 +72,7 @@ int main(const int argc, const char *argv[])
   if (!make_csv) {
 
     // Read visual variables (e.g., area and color) from CSV
-    try {
-      cart_info.read_csv(arguments);
-    } catch (const std::system_error &e) {
-      std::cerr << "ERROR reading CSV: " << e.what() << " (" << e.code() << ")"
-                << std::endl;
-      return EXIT_FAILURE;
-    } catch (const std::runtime_error &e) {
-
-      // If there is an error, it is probably because of an invalid CSV file
-      std::cerr << "ERROR reading CSV: " << e.what() << std::endl;
-      return EXIT_FAILURE;
-    }
+    cart_info.read_csv(arguments);
   }
 
   // Read geometry. If the GeoJSON does not explicitly contain a "crs" field,
