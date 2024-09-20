@@ -27,7 +27,6 @@ int main(const int argc, const char *argv[])
   bool triangulation;
   bool simplify;  // Should the polygons be simplified?
 
-
   // If `rays` is true, we use the ray-shooting method to fill the grid cells.
   bool rays;
 
@@ -68,7 +67,7 @@ int main(const int argc, const char *argv[])
   // that needs to be handled by functions called from main().
   CartogramInfo cart_info(world, visual_file_name);
 
-  // Determine name of input map and store it
+  // Determine name of input map based on the geo_file_name and store it
   std::string map_name = cart_info.set_map_name(geo_file_name);
   if (!make_csv) {
 
@@ -267,9 +266,11 @@ int main(const int argc, const char *argv[])
     progress_tracker.print_progress_mid_integration(inset_state);
 
     // Start map integration
-    while (inset_state.n_finished_integrations() < max_integrations &&
-            (inset_state.max_area_error(false).value > max_permitted_area_error ||
-            std::abs(inset_state.area_expansion_factor() - 1.0) > max_permitted_area_expansion)) {
+    while (
+      inset_state.n_finished_integrations() < max_integrations &&
+      (inset_state.max_area_error(false).value > max_permitted_area_error ||
+       std::abs(inset_state.area_expansion_factor() - 1.0) >
+         max_permitted_area_expansion)) {
       std::cerr << "\nIntegration number "
                 << inset_state.n_finished_integrations() << std::endl;
       std::cerr << "Number of Points: " << inset_state.n_points() << std::endl;
@@ -279,7 +280,6 @@ int main(const int argc, const char *argv[])
         std::to_string(inset_state.n_finished_integrations());
 
       if (qtdt_method) {
-
 
         // Create the Delaunay triangulation
         time_tracker.start("Delaunay Triangulation");
@@ -294,14 +294,16 @@ int main(const int argc, const char *argv[])
 
           // Draw the resultant quadtree and Delaunay triangulation
           inset_state.write_quadtree(file_prefix + "_quadtree");
-          inset_state.write_delaunay_triangles(file_prefix + "_delaunay_t", false);
+          inset_state.write_delaunay_triangles(
+            file_prefix + "_delaunay_t",
+            false);
         }
       }
 
       if (rays) {
         // Fill density using ray-shooting method
         time_tracker.start("Fill with Density (Ray Shooting Method)");
-          inset_state.fill_with_density_rays(plot_density);
+        inset_state.fill_with_density_rays(plot_density);
         time_tracker.stop("Fill with Density (Ray Shooting Method)");
       } else {
         time_tracker.start("Fill with Density (Clipping Method)");
@@ -321,16 +323,21 @@ int main(const int argc, const char *argv[])
         bool passed = inset_state.flatten_density_with_node_vertices();
         time_tracker.stop("Flatten Density (Quadtree Method)");
         if (plot_quadtree) {
-                  inset_state.write_delaunay_triangles(file_prefix + "_delaunay_t_after_flatten", true);
+          inset_state.write_delaunay_triangles(
+            file_prefix + "_delaunay_t_after_flatten",
+            true);
         }
         if (not passed) {
 
           // Flatten density has failed and blur width will increase, and now
           // try again
           inset_state.increment_n_fails_during_flatten_density();
-          std::cerr << "Flatten density failed. Increasing blur width and trying again."
+          std::cerr << "Flatten density failed. Increasing blur width and "
+                       "trying again."
                     << std::endl;
-          std::cerr << "n_fails: " << inset_state.n_fails_during_flatten_density() << std::endl;
+          std::cerr << "n_fails: "
+                    << inset_state.n_fails_during_flatten_density()
+                    << std::endl;
           continue;
         }
       } else {
@@ -347,7 +354,9 @@ int main(const int argc, const char *argv[])
         time_tracker.stop("Update Delanuay Triangulation");
 
         if (plot_quadtree) {
-          inset_state.write_delaunay_triangles(file_prefix + "_updated_delaunay_t_projected", true);
+          inset_state.write_delaunay_triangles(
+            file_prefix + "_updated_delaunay_t_projected",
+            true);
         }
 
         if (simplify) {
