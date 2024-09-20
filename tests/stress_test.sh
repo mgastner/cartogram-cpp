@@ -136,11 +136,11 @@ run_map() {
       *"New grid dimensions:"*)
         printf "%s\n" "$line" | color $blue
         ;;
-      *"max. area err:"*)
+      *"Max. area err:"*)
         max_area_err=$line
         printf "%s\n" "$line" | color $yellow
         ;;
-      *"average area err:"*)
+      *"Area drift:"*)
         printf "%s\n" "$line" | color $magenta
         ;;
       *"progress: 1"*)
