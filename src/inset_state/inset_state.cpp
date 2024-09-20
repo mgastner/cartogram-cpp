@@ -27,8 +27,9 @@ Bbox InsetState::bbox(bool original_bbox) const
   double inset_ymin = dbl_inf;
   double inset_ymax = -dbl_inf;
 #pragma omp parallel for default(none) shared(geo_divs) \
-  reduction(min : inset_xmin, inset_ymin)               \
-  reduction(max : inset_xmax, inset_ymax)
+  reduction(min                                         \
+            : inset_xmin, inset_ymin) reduction(max     \
+                                                : inset_xmax, inset_ymax)
   for (const auto &gd : geo_divs) {
     for (const auto &pwh : gd.polygons_with_holes()) {
       const auto bb = pwh.bbox();
@@ -72,18 +73,56 @@ double InsetState::blur_width() const
   return blur_width;
 }
 
-void InsetState::check_completion() const
+bool InsetState::continue_integrating() const
 {
-  auto [value, geo_div] = max_area_error();
-  if (value > max_permitted_area_error) {
-    std::cerr << "ERROR: Could not converge, max area error beyond limit ("
-              << value << ", " << geo_div << ")" << std::endl;
+
+  // Calculate all the necessary information to decide whether to continue
+  auto [max_area_err, worst_gd] = max_area_error();
+
+  // A GeoDiv is still above our area error threshold
+  bool area_error_above_threshold =
+    max_area_err > max_permitted_area_error;
+
+  // Area expansion factor is above our threshold
+  // i.e. cartogram has become too big or too small
+  double area_drift = area_expansion_factor() - 1.0;
+  bool area_expansion_factor_above_threshold =
+    std::abs(area_drift) > max_permitted_area_drift;
+
+  // If both the above metrics are above our threshold
+  bool has_converged =
+    !area_error_above_threshold && !area_expansion_factor_above_threshold;
+
+  // Make sure to not continue endlesslely: cap at max_integrations
+  bool within_integration_limit = n_finished_integrations() < max_integrations;
+
+  // We continue if we are within the integration limit and have not converged
+  bool continue_integration = within_integration_limit && !has_converged;
+
+  // Actually hasn't converged, just reached integration limit
+  if (!within_integration_limit && !has_converged) {
+    std::cerr << "ERROR: Could not converge!" << std::endl;
+    if (area_error_above_threshold)
+      std::cerr << "Max area error above threshold!" << std::endl;
+    if (area_expansion_factor_above_threshold)
+      std::cerr << "Area expansion factor above threshold!" << std::endl;
   }
-  double area_expansion_factor_ = area_expansion_factor();
-  if (std::abs(area_expansion_factor_ - 1.0) > max_permitted_area_expansion) {
-    std::cerr << "ERROR: Area drift beyond limit: "
-              << (area_expansion_factor_ - 1.0) * 100.0 << "%" << std::endl;
+
+  // Print control output (at end of previous integration)
+  std::cerr << "Max. area err: " << max_area_error << ", GeoDiv: " << worst_gd
+            << std::endl;
+  std::cerr << "Current Area: "
+            << geo_divs_[geo_divs_id_to_index_.at(worst_gd)].area()
+            << ", Target Area: " << target_area_at(worst_gd) << std::endl;
+  std::cerr << "Area drift: " << area_drift * 100.0 << "%" << std::endl;
+
+  if (continue_integration) {
+    // Print next integration information.
+    std::cerr << "\nIntegration number " << n_finished_integrations()
+              << std::endl;
+    std::cerr << "Number of Points: " << n_points() << std::endl;
   }
+  return continue_integration;
 }
 
 Color InsetState::color_at(const std::string &id) const
@@ -571,11 +610,14 @@ void InsetState::make_fftw_plans_for_flux()
   grid_fluxy_init_.make_fftw_plan(FFTW_REDFT01, FFTW_RODFT01);
 }
 
-struct max_area_error_info InsetState::max_area_error(bool print) const
+struct max_area_error_info InsetState::max_area_error() const
 {
   auto it = area_errors_.begin();
-  double sum_errors = 0.0;
-  size_t count = 0;
+  // Previously used to calculate average area error
+  // TODO: max_area_error_info should return more information
+  // including average and absolute area error
+  // double sum_errors = 0.0;
+  // size_t count = 0;
   std::string worst_gd = it->first;
   double value = it->second;
   for (const auto &[gd_id, area_error] : area_errors_) {
@@ -583,16 +625,8 @@ struct max_area_error_info InsetState::max_area_error(bool print) const
       value = area_error;
       worst_gd = gd_id;
     }
-    sum_errors += area_error;
-    ++count;
-  }
-  if (print) {
-    std::cerr << "max. area err: " << value << ", GeoDiv: " << worst_gd
-              << std::endl;
-    std::cerr << "average area err: " << sum_errors / count << std::endl;
-    std::cerr << "Current Area: "
-              << geo_divs_[geo_divs_id_to_index_.at(worst_gd)].area()
-              << ", Target Area: " << target_area_at(worst_gd) << std::endl;
+    // sum_errors += area_error;
+    // ++count;
   }
   return {value, worst_gd};
 }
@@ -649,12 +683,7 @@ std::string InsetState::pos() const
 
 double InsetState::area_expansion_factor() const
 {
-  double area_expansion_factor_ = total_inset_area() / initial_area_;
-
-  // Print area drift information
-  std::cerr << "Area drift: " << (area_expansion_factor_ - 1.0) * 100.0 << "%"
-            << std::endl;
-  return area_expansion_factor_;
+  return total_inset_area() / initial_area_;
 }
 
 void InsetState::push_back(const GeoDiv &gd)

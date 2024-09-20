@@ -116,13 +116,13 @@ public:
   Bbox bbox(bool = false) const;
   void blur_density(double, bool);
   double blur_width() const;
-  void check_completion() const;
   void check_topology() const;
   int chosen_diag(const Point v[4], unsigned int &, bool = false) const;
   Color color_at(const std::string &) const;
   bool color_found(const std::string &) const;
   bool colors_empty() const;
   unsigned int colors_size() const;
+  bool continue_integrating() const;
   void create_and_store_quadtree_cell_corners();
   void create_contiguity_graph(unsigned int);
   void create_delaunay_t();
@@ -201,7 +201,7 @@ public:
   void make_fftw_plans_for_flux();
   void make_fftw_plans_for_rho();
   void min_ellipses();
-  max_area_error_info max_area_error(bool print = true) const;
+  max_area_error_info max_area_error() const;
   std::pair<double, double> max_and_min_grid_cell_area(
     unsigned int cell_width);
   std::pair<Point, Point> max_and_min_grid_cell_area_index(

@@ -584,6 +584,8 @@ bool InsetState::flatten_density_with_node_vertices()
       std::cerr << "Delaunay triangle flipped detected. Increasing blur width "
                    "and running again."
                 << std::endl;
+
+      inset_state.increment_n_fails_during_flatten_density();
       return false;
     }
     delta_t *= inc_after_acc;  // Try a larger step next time

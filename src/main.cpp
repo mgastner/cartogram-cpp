@@ -266,14 +266,7 @@ int main(const int argc, const char *argv[])
     progress_tracker.print_progress_mid_integration(inset_state);
 
     // Start map integration
-    while (
-      inset_state.n_finished_integrations() < max_integrations &&
-      (inset_state.max_area_error(false).value > max_permitted_area_error ||
-       std::abs(inset_state.area_expansion_factor() - 1.0) >
-         max_permitted_area_expansion)) {
-      std::cerr << "\nIntegration number "
-                << inset_state.n_finished_integrations() << std::endl;
-      std::cerr << "Number of Points: " << inset_state.n_points() << std::endl;
+    while (inset_state.continue_integrating()) {
       // File prefix for output files for this integration
       const std::string file_prefix =
         inset_state.inset_name() + "_" +
@@ -320,25 +313,21 @@ int main(const int argc, const char *argv[])
       if (qtdt_method) {
 
         time_tracker.start("Flatten Density (Quadtree Method)");
-        bool passed = inset_state.flatten_density_with_node_vertices();
+        if (!inset_state.flatten_density_with_node_vertices()) {
+
+          // Flatten density has failed. Incrrease blur width and try again
+          time_tracker.stop("Flatten Density (Quadtree Method)");
+          inset_state.increment_n_fails_during_flatten_density();
+          continue;
+        }
+
+        // Flatten density passed
         time_tracker.stop("Flatten Density (Quadtree Method)");
+
         if (plot_quadtree) {
           inset_state.write_delaunay_triangles(
             file_prefix + "_delaunay_t_after_flatten",
             true);
-        }
-        if (not passed) {
-
-          // Flatten density has failed and blur width will increase, and now
-          // try again
-          inset_state.increment_n_fails_during_flatten_density();
-          std::cerr << "Flatten density failed. Increasing blur width and "
-                       "trying again."
-                    << std::endl;
-          std::cerr << "n_fails: "
-                    << inset_state.n_fails_during_flatten_density()
-                    << std::endl;
-          continue;
         }
       } else {
 
@@ -405,10 +394,6 @@ int main(const int argc, const char *argv[])
       progress_tracker.print_progress_mid_integration(inset_state);
       inset_state.increment_integration();
     }
-
-    // End of inset integrations
-    inset_state.check_completion();  // prints error message if conditions
-                                     // still not met
     time_tracker.stop("Integration Inset " + inset_pos);
 
     // Update and display progress information
