@@ -175,8 +175,9 @@ void CartogramInfo::read_geojson(
   // Open file
   std::ifstream in_file(geometry_file_name);
   if (!in_file) {
-    std::cerr << "ERROR reading GeoJSON: failed to open " + geometry_file_name << std::endl;
-    std::exit();
+    std::cerr << "ERROR reading GeoJSON: failed to open " + geometry_file_name
+              << std::endl;
+    _Exit(3);
   }
 
   // Parse JSON
@@ -244,7 +245,6 @@ void CartogramInfo::read_geojson(
 
           InsetState *inset_state = &inset_states_.at(inset_pos);
           inset_state->insert_target_area(id, -1.0);
-
         }
         if (inset_pos == gd_to_inset_.at(id)) {
           if (ids_in_geojson.contains(id)) {
@@ -362,10 +362,9 @@ void CartogramInfo::read_geojson(
     const auto csv_name = map_name_ + ".csv";
     out_file_csv.open(csv_name);
     if (!out_file_csv) {
-      throw std::system_error(
-        errno,
-        std::system_category(),
-        "failed to open template_from_geojson.csv");
+      std::cerr
+        << "ERROR writing GeoJSON: failed to open template_from_geojson.csv"
+        << std::endl;
     }
 
     // Each vector of strings will represent one row
