@@ -201,7 +201,7 @@ void InsetState::update_delaunay_t()
   // Potential edges of the quadtree cells
   std::unordered_map<double, std::vector<double>> same_x_coor_points;
   std::unordered_map<double, std::vector<double>> same_y_coor_points;
-  
+
   same_x_coor_points.reserve(2 * lx_);
   same_y_coor_points.reserve(2 * ly_);
 
@@ -272,7 +272,7 @@ void InsetState::update_delaunay_t()
     const Point p1 = face->vertex(0)->point();
     const Point p2 = face->vertex(1)->point();
     const Point p3 = face->vertex(2)->point();
-    
+
     // Project back the chosen diagonal to the unprojected diagonal
     const Point p1_orig = reverse_triangle_transformation.at(p1);
     const Point p2_orig = reverse_triangle_transformation.at(p2);

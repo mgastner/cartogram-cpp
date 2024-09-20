@@ -6,7 +6,7 @@ argparse::ArgumentParser parsed_arguments(
   const char *argv[],
   std::string &geo_file_name,
   std::string &visual_file_name,
-  unsigned int &max_n_grid_rows_or_cols,
+  unsigned int &long_grid_side_length,
   unsigned int &target_points_per_inset,
   bool &world,
   bool &triangulation,
@@ -26,7 +26,7 @@ argparse::ArgumentParser parsed_arguments(
 {
   // Create parser for arguments using argparse.
   // From https://github.com/p-ranav/argparse
-  argparse::ArgumentParser arguments("./cartogram", "1.0");
+  argparse::ArgumentParser arguments("./cartogram", "2.0");
 
   // Positional argument accepting geometry file (GeoJSON, JSON) as input
   arguments.add_argument("geometry_file")
@@ -142,7 +142,13 @@ argparse::ArgumentParser parsed_arguments(
   }
 
   // Set long grid-side length
-  max_n_grid_rows_or_cols = arguments.get<unsigned int>("-n");
+  long_grid_side_length = arguments.get<unsigned int>("-n");
+
+  // If world flag is set, and long-gride side length is not explicitly set,
+  // then 512 makes the output look better
+  if (arguments.get<bool>("-W") && !arguments.is_used("-n")) {
+    long_grid_side_length = 512;
+  }
 
   // Set target_points_per_inset
   target_points_per_inset = arguments.get<unsigned int>("-P");
