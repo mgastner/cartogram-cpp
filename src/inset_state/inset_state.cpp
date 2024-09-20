@@ -109,7 +109,7 @@ bool InsetState::continue_integrating() const
   }
 
   // Print control output (at end of previous integration)
-  std::cerr << "Max. area err: " << max_area_error << ", GeoDiv: " << worst_gd
+  std::cerr << "Max. area err: " << max_area_err << ", GeoDiv: " << worst_gd
             << std::endl;
   std::cerr << "Current Area: "
             << geo_divs_[geo_divs_id_to_index_.at(worst_gd)].area()
