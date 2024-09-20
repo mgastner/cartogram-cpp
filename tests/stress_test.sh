@@ -119,7 +119,7 @@ run_map() {
     curr_cli="${cli} -W"
   fi
 
-  printf "\ncartogram ${map} ${csv} ${curr_cli}\n\n"
+  printf "cartogram ${map} ${csv} ${curr_cli}\n\n"
   draw_progress_bar 0
   stdbuf -oL cartogram ${map} ${csv} ${curr_cli} 2>&1 |
     while read line; do
