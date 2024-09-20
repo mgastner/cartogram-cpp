@@ -14,7 +14,6 @@ failed_runs="failed_runs.txt"
 tmp_file="tmp_file.txt"
 SECONDS=0
 
-
 # Arrays to store runtimes and map-csv pairs
 runtimes=()
 map_csv_pairs=()
@@ -48,7 +47,7 @@ trap handle_sigint SIGINT
 # check-command-line-arguments
 
 verbose=0  # Initialize verbose flag to 0 (off)
-cli="-QST"  # Default CLI options
+cli="-QST" # Default CLI options
 
 # Parsing command line arguments
 if [ $# -eq 0 ]; then
@@ -65,7 +64,7 @@ else
 fi
 
 printf "\nWriting to ${results_file}\n"
-printf "Tested on ${start_date}\n" >> "${results_file}"
+printf "Tested on ${start_date}\n" >>"${results_file}"
 
 printf "Passing" | tee -a "${results_file}"
 printf " ${cli} " | tee -a "${results_file}" | color $magenta
@@ -83,7 +82,7 @@ draw_progress_bar() {
   local max_progress_bar_width=50
   local padding=0
   if [[ "$terminal_width" -gt 60 ]]; then
-    progress_bar_width=$(( (terminal_width - 56) < max_progress_bar_width ? (terminal_width - 56) : max_progress_bar_width ))
+    progress_bar_width=$(((terminal_width - 56) < max_progress_bar_width ? (terminal_width - 56) : max_progress_bar_width))
     padding=50
   else
     progress_bar_width=$((terminal_width - 6))
@@ -105,7 +104,6 @@ draw_progress_bar() {
 # Function to test map with csv
 run_map() {
 
-
   printed=0
   integration_count=0
   max_area_err=""
@@ -119,13 +117,13 @@ run_map() {
   printf "now trying: \ncartogram ${map} ${csv} ${curr_cli}\n\n"
   echo "cartogram ${map} ${csv} ${curr_cli}"
   draw_progress_bar 0
-  stdbuf -oL cartogram ${map} ${csv} ${curr_cli} 2>&1 | \
-  while read line; do
-    # save to temp file
-    echo $line >>${tmp_file}
+  stdbuf -oL cartogram ${map} ${csv} ${curr_cli} 2>&1 |
+    while read line; do
+      # save to temp file
+      echo $line >>${tmp_file}
 
-    case "$line" in
-      *"error"*|*"warning"*|*"invalid"*)
+      case "$line" in
+      *"error"* | *"warning"* | *"invalid"*)
         printf "\n\n%s\n\n" "$line" | tee -a "${results_file}" | color $red
         ;;
       *"progress: 0."*)
@@ -160,8 +158,8 @@ run_map() {
           printf "%s\n" "$line"
         fi
         ;;
-    esac
-  done
+      esac
+    done
   end=$SECONDS
   runtime=$((end - start))
   printf "== Runtime ${runtime}s == \n" | tee -a "${results_file}"
@@ -170,7 +168,7 @@ run_map() {
   if grep -qi "invalid" ${tmp_file} || grep -qi "error" ${tmp_file} || ! grep -Fxq "Progress: 1" ${tmp_file}; then
     printf "== FAILED ==\n" | tee -a "${results_file}" | color $red
     printf "cartogram ${map} ${csv} ${cli}" | tee -a ${failed_runs} | pbcopy
-    printf "\n" >> ${failed_runs}
+    printf "\n" >>${failed_runs}
     # Printing country to failed_tmp.txt
     if [[ "${failed}" -eq 0 ]] || ! grep -qi "${country}" failed_tmp.txt; then
       printf "\n${country}\n" >>failed_tmp.txt
@@ -183,15 +181,15 @@ run_map() {
     map_wo_ext=${map_file_name%.*json}
     csv_wo_ext=${csv_name%.csv}
     err_file="DNF-${map_wo_ext}-with-${csv_wo_ext}.txt"
-    printf " - with ${csv_name} in ${runtime}s\n" >> failed_tmp.txt
-    printf "cartogram %s %s %s\n" "$map" "$csv" "$cli" >> failed_tmp.txt
+    printf " - with ${csv_name} in ${runtime}s\n" >>failed_tmp.txt
+    printf "cartogram %s %s %s\n" "$map" "$csv" "$cli" >>failed_tmp.txt
     printf "Full output saved ro ${err_file}\n" | tee -a "${results_file}"
     mv ${tmp_file} ${err_file}
 
     # If no errors, and integration finished, pass
   else
     printf "== PASSED ==\n" | tee -a "${results_file}" | color $green
-    printf "cartogram ${map} ${csv} ${cli}\n" >> ${successful_runs}
+    printf "cartogram ${map} ${csv} ${cli}\n" >>${successful_runs}
 
     # Store the runtime for the current map
     runtimes+=($runtime)
@@ -250,7 +248,7 @@ median_runtime=0
 # Calculate total runtime, max runtime, and find the map with max runtime
 for i in "${!runtimes[@]}"; do
   total_runtime=$((total_runtime + runtimes[i]))
-  if (( runtimes[i] > max_runtime )); then
+  if ((runtimes[i] > max_runtime)); then
     max_runtime=${runtimes[i]}
     max_runtime_map=${map_csv_pairs[i]}
   fi
@@ -261,10 +259,10 @@ average_runtime=$((total_runtime / total_tests))
 
 # Calculate median runtime
 sorted_runtimes=($(printf '%s\n' "${runtimes[@]}" | sort -n))
-if (( total_tests % 2 == 0 )); then
-  median_runtime=$(( (sorted_runtimes[total_tests/2 - 1] + sorted_runtimes[total_tests/2]) / 2 ))
+if ((total_tests % 2 == 0)); then
+  median_runtime=$(((sorted_runtimes[total_tests / 2 - 1] + sorted_runtimes[total_tests / 2]) / 2))
 else
-  median_runtime=${sorted_runtimes[total_tests/2]}
+  median_runtime=${sorted_runtimes[total_tests / 2]}
 fi
 
 # Calculate the top quartile runtime maps
@@ -300,7 +298,7 @@ if [[ "${failed}" -gt 0 ]]; then
   # Showing failed tests and removing temporary file
   printf "\nFailed tests:\n" | tee -a "${results_file}" | color $magenta
 
-while IFS= read -r line; do
+  while IFS= read -r line; do
     if [[ $(echo $line | wc -w) -eq 1 ]]; then
       printf "$line\n" | tee -a "${results_file}" | color $red
     elif [[ $line == " - "* ]]; then
@@ -308,7 +306,7 @@ while IFS= read -r line; do
     else
       printf "$line\n" | tee -a "${results_file}"
     fi
-  done < failed_tmp.txt
+  done <failed_tmp.txt
   rm failed_tmp.txt
   printf "\n" | tee -a "${results_file}"
 fi
