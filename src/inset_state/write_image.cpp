@@ -214,7 +214,7 @@ void InsetState::write_polygons_on_surface(
   cairo_t *cr,
   const bool fill_polygons,
   const bool colors,
-  const bool plot_grid)
+  const bool plot_grid) const
 {
   cairo_set_line_width(cr, 1e-3 * std::min(lx_, ly_));
 
@@ -391,7 +391,7 @@ void InsetState::write_cairo_polygons_to_svg(
   const bool fill_polygons,
   const bool colors,
   const bool plot_grid,
-  const std::unordered_map<Point, Vector> &vectors)
+  const std::unordered_map<Point, Vector> &vectors) const
 {
   const auto filename = fname.c_str();
   cairo_surface_t *surface = cairo_svg_surface_create(filename, lx_, ly_);
@@ -414,7 +414,7 @@ void InsetState::write_cairo_map(
   // TODO: This was the past signature of the function.
   // Restoring this causes a bug. Investigate.
   // const std::unordered_map<Point, Vector> &vectors)
-  const std::unordered_map<Point, Vector> vectors)
+  const std::unordered_map<Point, Vector> vectors) const
 {
   const auto svg_name = file_name + ".svg";
   std::cerr << "Writing " << file_name << std::endl;

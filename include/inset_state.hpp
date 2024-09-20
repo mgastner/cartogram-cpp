@@ -193,7 +193,7 @@ public:
     char,
     unsigned int) const;
   bool is_input_target_area_missing(const std::string &) const;
-  void is_simple(const char* caller_func);
+  void is_simple(const char* caller_func) const;
   std::string label_at(const std::string &) const;
   double latt_const() const;
   unsigned int lx() const;
@@ -230,7 +230,6 @@ public:
   void replace_target_area(const std::string &, double);
   void rescale_map(unsigned int, bool);
   void revert_smyth_craster_projection();
-  void rings_are_simple() const;
   void set_area_errors();
   void set_grid_dimensions(unsigned int, unsigned int);
   void set_geo_divs(std::vector<GeoDiv> new_geo_divs);
@@ -259,13 +258,13 @@ public:
   void write_cairo_map(
     const std::string &,
     bool,
-    const std::unordered_map<Point, Vector> = std::unordered_map<Point, Vector>());
+    const std::unordered_map<Point, Vector> = std::unordered_map<Point, Vector>()) const;
   void write_cairo_polygons_to_svg(
     const std::string &,
     bool,
     bool,
     bool,
-    const std::unordered_map<Point, Vector> &);
+    const std::unordered_map<Point, Vector> &) const;
 
   void write_delaunay_triangles(const std::string &, const bool);
   void write_grid_heatmap_data(const std::string filename);
@@ -282,7 +281,7 @@ public:
     cairo_t *cr,
     const bool fill_polygons,
     const bool colors,
-    const bool plot_equal_area_map);
+    const bool plot_equal_area_map) const;
   void write_labels_on_surface(cairo_t *cr);
   void write_density_image(
     const std::string filename,

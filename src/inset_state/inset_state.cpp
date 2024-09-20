@@ -530,37 +530,6 @@ bool InsetState::is_input_target_area_missing(const std::string &id) const
   return is_input_target_area_missing_.at(id);
 }
 
-void InsetState::is_simple(const char *caller_func)
-{
-  for (const auto &gd : geo_divs_) {
-    for (const auto &pwh : gd.polygons_with_holes()) {
-      if (!pwh.outer_boundary().is_simple()) {
-        std::cerr << "ERROR: Outer boundary is not simple for GeoDiv "
-                  << gd.id() << std::endl;
-        std::cerr << "is_simple() called from " << caller_func << std::endl;
-        write_cairo_map(
-          inset_name_ + "_" + std::to_string(n_finished_integrations_) +
-            "_not_simple_after_" + caller_func,
-          false);
-        exit(1);
-      }
-      for (const auto &h : pwh.holes()) {
-        if (!h.is_simple()) {
-          std::cerr << gd.id() << std::endl;
-          std::cerr << "ERROR: Hole is not simple for GeoDiv " << gd.id()
-                    << std::endl;
-          std::cerr << "is_simple() called from " << caller_func << std::endl;
-          write_cairo_map(
-            inset_name_ + "_" + std::to_string(n_finished_integrations_) +
-              "_not_simple_after_" + caller_func,
-            false);
-          exit(1);
-        }
-      }
-    }
-  }
-}
-
 double InsetState::latt_const() const
 {
   return latt_const_;

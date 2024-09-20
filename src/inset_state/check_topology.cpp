@@ -28,23 +28,27 @@ void InsetState::holes_inside_polygons() const
   }
 }
 
-void InsetState::rings_are_simple() const
+void InsetState::is_simple(const char *caller_func) const
 {
   for (const auto &gd : geo_divs_) {
     for (const auto &pwh : gd.polygons_with_holes()) {
-      const auto &ext_ring = pwh.outer_boundary();
-      if (!ext_ring.is_simple()) {
-        std::cerr << "External ring not a simple polygon!" << std::endl;
-        std::cerr << "Coordinates: " << ext_ring << std::endl;
-        std::cerr << "GeoDiv: " << gd.id() << std::endl;
-        _Exit(43567);
+      if (!pwh.outer_boundary().is_simple()) {
+        std::cerr << "ERROR: Outer boundary is not simple for GeoDiv "
+                  << gd.id() << std::endl;
+        std::cerr << "is_simple() called from " << caller_func << std::endl;
+        write_cairo_map(
+          inset_name_ + "_" + std::to_string(n_finished_integrations_) +
+            "_not_simple_after_" + caller_func,
+          false);
+        exit(1);
       }
-      for (const auto &h : pwh.holes()) {
-        if (!h.is_simple()) {
-          std::cerr << "Hole is not a simple polygon!" << std::endl;
-          std::cerr << "Coordinates: " << h << std::endl;
-          std::cerr << "GeoDiv: " << gd.id() << std::endl;
-          _Exit(43568);
+      for (const auto &h : pwh.holes()) { if (!h.is_simple()) { std::cerr << gd.id() << std::endl; std::cerr << "ERROR: Hole is not simple for GeoDiv " << gd.id() << std::endl;
+          std::cerr << "is_simple() called from " << caller_func << std::endl;
+          write_cairo_map(
+            inset_name_ + "_" + std::to_string(n_finished_integrations_) +
+              "_not_simple_after_" + caller_func,
+            false);
+          exit(1);
         }
       }
     }
@@ -54,5 +58,5 @@ void InsetState::rings_are_simple() const
 void InsetState::check_topology() const
 {
   holes_inside_polygons();
-  rings_are_simple();
+  is_simple(__func__);
 }
