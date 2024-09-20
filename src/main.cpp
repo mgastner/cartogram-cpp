@@ -91,13 +91,7 @@ int main(const int argc, const char *argv[])
     time_tracker.start("Inset " + inset_pos);
 
     // Check for errors in the input topology
-    try {
-      inset_state.check_topology();
-    } catch (const std::system_error &e) {
-      std::cerr << "ERROR while checking topology: " << e.what() << " ("
-                << e.code() << ")" << std::endl;
-      return EXIT_FAILURE;
-    }
+    inset_state.check_topology();
 
     // Can the coordinates be interpreted as longitude and latitude?
     // TODO: The "crs" field for GeoJSON files seems to be deprecated.

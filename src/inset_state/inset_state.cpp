@@ -769,7 +769,7 @@ void InsetState::set_area_errors()
 
 void InsetState::adjust_grid()
 {
-  auto [curr_max_area_error, worst_gd] = max_area_error(false);
+  auto [curr_max_area_error, worst_gd] = max_area_error();
   max_area_errors_.push_back(curr_max_area_error);
   // TODO: Change to a more sophisticated grid adjustment strategy
   // (based on a tolerance of area error)
