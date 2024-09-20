@@ -14,7 +14,7 @@ int main(const int argc, const char *argv[])
   std::string geo_file_name, visual_file_name;
 
   // Default number of grid cells along longer Cartesian coordinate axis
-  unsigned int max_n_grid_rows_or_cols;
+  unsigned int long_grid_side_length;
 
   // Target number of points to retain after simplification
   unsigned int target_points_per_inset;
@@ -46,7 +46,7 @@ int main(const int argc, const char *argv[])
     argv,
     geo_file_name,
     visual_file_name,
-    max_n_grid_rows_or_cols,
+    long_grid_side_length,
     target_points_per_inset,
     world,
     triangulation,
@@ -136,11 +136,6 @@ int main(const int argc, const char *argv[])
       // projection.
       if (world) {
         inset_state.apply_smyth_craster_projection();
-
-        // Further, the world map warrants a higher starting grid size, otherwise
-        // there are too few squares between Antarctica and the rest of the world.
-        // This causes the southern hemisphere to "melt" into Antarctica.
-        max_n_grid_rows_or_cols = 512;
       } else {
         inset_state.apply_albers_projection();
       }
@@ -212,7 +207,7 @@ int main(const int argc, const char *argv[])
     inset_state.set_inset_name(inset_name);
 
     // Rescale map to fit into a rectangular box [0, lx] * [0, ly]
-    inset_state.rescale_map(max_n_grid_rows_or_cols, cart_info.is_world_map());
+    inset_state.rescale_map(long_grid_side_length, cart_info.is_world_map());
 
     // Output rescaled GeoJSON
     cart_info.write_geojson(
