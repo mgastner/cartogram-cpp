@@ -22,38 +22,38 @@ max_area_err=""
 # Read lines from standard input
 while read line; do
   case "$line" in
-    *"error"*|*"warning"*|*"invalid"*)
-      printf "\n\n%s\n\n" "$line" | color $red
-      ;;
-    *"progress: 0."*)
-      draw_progress_bar ${line:12:2}
-      ;;
-    *"Integration number"*)
-      integration_count=$((integration_count + 1))
-      printf "%s\n" "$line" | color $red
-      ;;
-    *"New grid dimensions:"*)
-      printf "%s\n" "$line" | color $blue
-      ;;
-    *"max. area err:"*)
-      max_area_err=$line
-      printf "%s\n" "$line" | color $yellow
-      ;;
-    *"average area err:"*)
-      printf "%s\n" "$line" | color $magenta
-      ;;
-    *"progress: 1"*)
-      if [[ "$printed" -eq 0 ]]; then
-        draw_progress_bar 100
-        printed=1
-        printf "\n\n== Integration finished ==\nTotal integrations done: %d\n%s\n" "$integration_count" "$max_area_err" | color $yellow
-      fi
-      ;;
-    *" ms")
-      printf "%s\n" "$line" | color $cyan
-      ;;
-    *)
-      printf "%s\n" "$line"
-      ;;
+  *"error"* | *"warning"* | *"invalid"*)
+    printf "\n\n%s\n\n" "$line" | color $red
+    ;;
+  *"progress: 0."*)
+    draw_progress_bar ${line:12:2}
+    ;;
+  *"Integration number"*)
+    integration_count=$((integration_count + 1))
+    printf "%s\n" "$line" | color $red
+    ;;
+  *"New grid dimensions:"*)
+    printf "%s\n" "$line" | color $blue
+    ;;
+  *"max. area err:"*)
+    max_area_err=$line
+    printf "%s\n" "$line" | color $yellow
+    ;;
+  *"average area err:"*)
+    printf "%s\n" "$line" | color $magenta
+    ;;
+  *"progress: 1"*)
+    if [[ "$printed" -eq 0 ]]; then
+      draw_progress_bar 100
+      printed=1
+      printf "\n\n== Integration finished ==\nTotal integrations done: %d\n%s\n" "$integration_count" "$max_area_err" | color $yellow
+    fi
+    ;;
+  *" ms")
+    printf "%s\n" "$line" | color $cyan
+    ;;
+  *)
+    printf "%s\n" "$line"
+    ;;
   esac
 done
