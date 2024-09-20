@@ -46,12 +46,12 @@ trap handle_sigint SIGINT
 # From https://unix.stackexchange.com/questions/462515/
 # check-command-line-arguments
 
-verbose=0  # Initialize verbose flag to 0 (off)
-cli="-QST" # Default CLI options
+verbose=0 # Initialize verbose flag to 0 (off)
+cli=""    # Default CLI options
 
 # Parsing command line arguments
 if [ $# -eq 0 ]; then
-  cli="-QST"
+  cli=""
 else
   for arg in "$@"; do
     if [ "$arg" == "--verbose" ]; then
@@ -66,9 +66,13 @@ fi
 printf "\nWriting to ${results_file}\n"
 printf "Tested on ${start_date}\n" >>"${results_file}"
 
-printf "Passing" | tee -a "${results_file}"
-printf " ${cli} " | tee -a "${results_file}" | color $magenta
-printf "to cartogram\n\n" | tee -a "${results_file}"
+if [ -n "$cli" ]; then
+  printf "Passing" | tee -a "${results_file}"
+  printf " ${cli} " | tee -a "${results_file}" | color $magenta
+  printf "to cartogram\n\n" | tee -a "${results_file}"
+else
+  printf "No command line flags passed to /usr/bin/cartogram\n\n" | tee -a "${results_file}"
+fi
 
 # Turning on extended glob option
 shopt -s extglob nocasematch
@@ -111,11 +115,11 @@ run_map() {
   # if world map then use -W flag
   curr_cli=$cli
   if [[ "${country}" == world* ]]; then
+    printf "World map detected. Passing -W flag.\n" | tee -a "${results_file}" | color $magenta
     curr_cli="${cli} -W"
   fi
 
-  printf "now trying: \ncartogram ${map} ${csv} ${curr_cli}\n\n"
-  echo "cartogram ${map} ${csv} ${curr_cli}"
+  printf "\ncartogram ${map} ${csv} ${curr_cli}\n\n"
   draw_progress_bar 0
   stdbuf -oL cartogram ${map} ${csv} ${curr_cli} 2>&1 |
     while read line; do

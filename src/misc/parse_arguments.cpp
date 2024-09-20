@@ -77,17 +77,17 @@ argparse::ArgumentParser parsed_arguments(
     .default_value(false)
     .implicit_value(true);
   arguments.add_argument("-T", "--triangulation")
-    .help("Boolean: Project the cartogram using the triangulation method")
-    .default_value(false)
-    .implicit_value(true);
+    .help("Boolean: Disable cartogram projection via triangulation")
+    .default_value(true)
+    .implicit_value(false);
   arguments.add_argument("-Q", "--qtdt_method")
-    .help("Boolean: Use Quadtree-Delaunay Triangulation Method")
-    .default_value(false)
-    .implicit_value(true);
+    .help("Boolean: Disable Quadtree-Delaunay Triangulation Method")
+    .default_value(true)
+    .implicit_value(false);
   arguments.add_argument("-S", "--simplify")
-    .help("Boolean: Simplify polygons")
-    .default_value(false)
-    .implicit_value(true);
+    .help("Boolean: Disable simplification of polygons")
+    .default_value(true)
+    .implicit_value(false);
   arguments.add_argument("-P", "--n_points")
     .help(
       "Integer: If simplification enabled, target number of points per inset")
@@ -181,30 +181,29 @@ argparse::ArgumentParser parsed_arguments(
   plot_quadtree = arguments.get<bool>("-q");
 
   if (
-    arguments.is_used("-O") && !arguments.is_used("-S") &&
-    !arguments.is_used("-Q")) {
-    std::cerr << "ERROR: --simplify flag not passed!\n";
+    arguments.is_used("-O") && !simplify && !qtdt_method) {
+    std::cerr << "ERROR: simplification disabled!\n";
     std::cerr << "--output_to_stdout flag is only supported with "
                  "simplification or quadtree.\n";
-    std::cerr << "To enable simplification, pass the -S flag.\n";
-    std::cerr << "To enable quadtree, pass the -Q flag.\n";
+    std::cerr << "To enable simplification, do not pass the -S flag.\n";
+    std::cerr << "To enable quadtree, do not pass the -Q flag.\n";
     std::cerr << arguments << std::endl;
     _Exit(18);
   }
 
   // Check whether n_points is specified but --simplify not passed
-  if (arguments.is_used("-P") && !arguments.is_used("-S")) {
-    std::cerr << "WARNING: --simplify flag not passed!" << std::endl;
+  if (arguments.is_used("-P") && !simplify) {
+    std::cerr << "WARNING: Simplification disabled!" << std::endl;
     std::cerr << "Polygons will not be simplified." << std::endl;
     std::cerr << "To enable simplification, pass the -S flag." << std::endl;
     std::cerr << arguments << std::endl;
   }
 
   // Check whether T flag is set, but not Q
-  if (arguments.is_used("-T") && !arguments.is_used("-Q")) {
-    std::cerr << "ERROR: --qtdt_method flag not passed!" << std::endl;
+  if (triangulation && !qtdt_method) {
+    std::cerr << "ERROR: Can't disable qtdt_method without disabling triangulation." << std::endl;
     std::cerr << "QTDT method is necessary for Quadtree images." << std::endl;
-    std::cerr << "To use qtdt method, pass the -Q flag." << std::endl;
+    std::cerr << "To disable Triangulation, pass the -T flag." << std::endl;
     std::cerr << arguments << std::endl;
     _Exit(17);
   }
