@@ -175,10 +175,8 @@ void CartogramInfo::read_geojson(
   // Open file
   std::ifstream in_file(geometry_file_name);
   if (!in_file) {
-    throw std::system_error(
-      errno,
-      std::system_category(),
-      "failed to open " + geometry_file_name);
+    std::cerr << "ERROR reading GeoJSON: failed to open " + geometry_file_name << std::endl;
+    std::exit();
   }
 
   // Parse JSON

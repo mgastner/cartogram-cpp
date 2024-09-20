@@ -89,13 +89,7 @@ int main(const int argc, const char *argv[])
   // Read geometry. If the GeoJSON does not explicitly contain a "crs" field,
   // we assume that the coordinates are in longitude and latitude.
   std::string crs = "+proj=longlat";
-  try {
-    cart_info.read_geojson(geo_file_name, make_csv, crs);
-  } catch (const std::system_error &e) {
-    std::cerr << "ERROR reading GeoJSON: " << e.what() << " (" << e.code()
-              << ")" << std::endl;
-    return EXIT_FAILURE;
-  }
+  cart_info.read_geojson(geo_file_name, make_csv, crs);
   std::cerr << "Coordinate reference system: " << crs << std::endl;
 
   // Store total number of GeoDivs to monitor progress
