@@ -53,6 +53,7 @@ target_compile_options(cartogram PRIVATE -Wall -Wextra -pedantic -Wno-deprecated
 target_link_libraries(cartogram
   PkgConfig::fftw
   PkgConfig::CAIRO
+  Matplot++::matplot
 )
 
 # ========== Installation ==========
