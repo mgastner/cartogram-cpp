@@ -1,4 +1,10 @@
-cmake_minimum_required(VERSION 3.1)
+cmake_minimum_required(VERSION 3.5)
+
+if(UNIX AND NOT APPLE)
+  set(CMAKE_CXX_COMPILER "g++-11")
+  set(CMAKE_C_COMPILER "gcc-11")
+endif()
+
 project(cartogram LANGUAGES CXX)
 
 # ========== Project Setup ==========
@@ -21,6 +27,11 @@ find_package(Boost REQUIRED COMPONENTS unit_test_framework)
 find_package(PkgConfig REQUIRED)
 pkg_search_module(fftw REQUIRED fftw3 IMPORTED_TARGET)
 pkg_search_module(cairo REQUIRED cairo IMPORTED_TARGET)
+
+# OpenMP: allows parallelisation
+# REQUIRED argument purposely not passed.
+# We can test if OpenMP is available by with OpenMP_FOUND
+find_package(OpenMP)
 
 # ========== Source Files ==========
 file(GLOB_RECURSE CARTOGRAM_SOURCES "src/*.cpp")
