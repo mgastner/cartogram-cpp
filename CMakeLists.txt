@@ -1,10 +1,5 @@
 cmake_minimum_required(VERSION 3.27)
 
-if(UNIX AND NOT APPLE)
-  set(CMAKE_CXX_COMPILER "g++-11")
-  set(CMAKE_C_COMPILER "gcc-11")
-endif()
-
 project(cartogram LANGUAGES CXX)
 
 # ========== Project Setup ==========
@@ -23,15 +18,13 @@ endif()
 # Boost
 find_package(Boost REQUIRED COMPONENTS unit_test_framework)
 
+# Matplot++
+find_package(Matplot++ REQUIRED)
+
 # PkgConfig, fftw, and cairo
 find_package(PkgConfig REQUIRED)
 pkg_search_module(fftw REQUIRED fftw3 IMPORTED_TARGET)
-pkg_search_module(cairo REQUIRED cairo IMPORTED_TARGET)
-
-# OpenMP: allows parallelisation
-# REQUIRED argument purposely not passed.
-# We can test if OpenMP is available by with OpenMP_FOUND
-find_package(OpenMP)
+pkg_search_module(CAIRO REQUIRED CAIRO IMPORTED_TARGET)
 
 # ========== Source Files ==========
 file(GLOB_RECURSE CARTOGRAM_SOURCES "src/*.cpp")
@@ -42,7 +35,7 @@ target_include_directories(cartogram PUBLIC
   ${PROJECT_SOURCE_DIR}/include
   ${Boost_INCLUDE_DIRS}
   PkgConfig::fftw
-  PkgConfig::cairo
+  PkgConfig::CAIRO
 )
 
 # ========== Compile Options ==========
@@ -59,7 +52,7 @@ target_compile_options(cartogram PRIVATE -Wall -Wextra -pedantic -Wno-deprecated
 # ========== Linking Libraries ==========
 target_link_libraries(cartogram
   PkgConfig::fftw
-  PkgConfig::cairo
+  PkgConfig::CAIRO
 )
 
 # ========== Installation ==========
