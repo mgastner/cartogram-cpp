@@ -270,14 +270,14 @@ void InsetState::densify_geo_divs()
     geodivs_dens.push_back(gd_dens);
   }
   geo_divs_ = std::move(geodivs_dens);
+
+  is_simple(__func__);
 }
 
 std::vector<Point> densification_points_with_delaunay_t(
   const Point &pt1,
   const Point &pt2,
-  const Delaunay &dt,
-  const unsigned int lx,
-  const unsigned int ly)
+  const Delaunay &dt)
 {
   std::vector<Point> dens_points;
 
@@ -358,9 +358,6 @@ std::vector<Point> densification_points_with_delaunay_t(
           // empty or a line. CGAL::assign() only returns `true` if p is a
           // point.
           if (CGAL::assign(pt_intersec, p)) {
-
-            // round the point before adding
-            pt_intersec = rounded_point(pt_intersec, lx, ly);
             dens_points.push_back(pt_intersec);
           }
         }
@@ -382,18 +379,31 @@ std::vector<Point> densification_points_with_delaunay_t(
   }
 
   // if densification points are in reverse order, reverse them
-  if (dens_points.front() != pt1) {
+  if (!points_almost_equal(dens_points.front(), pt1)) {
     reverse(dens_points.begin(), dens_points.end());
   }
 
   // check validity of densification points: in case the first and last
   // points are not the originally given points, we consider the densificaiton
   // points invalid and return the original points
-  if (dens_points.front() != pt1 || dens_points.back() != pt2) {
+  if (!points_almost_equal(dens_points.front(), pt1) ||
+      !points_almost_equal(dens_points.back(), pt2)) {
     return {pt1, pt2};
   }
 
-  return dens_points;
+  // keep densified points those are different from the first and last points
+  std::vector<Point> dens_points_unique;
+  dens_points_unique.push_back(dens_points.front());
+  for (unsigned int i = 1; i < dens_points.size() - 1; ++i) {
+    if (!points_almost_equal(dens_points[i], dens_points.front()) &&
+        !points_almost_equal(dens_points[i], dens_points.back()) &&
+        !points_almost_equal(dens_points[i], dens_points[i - 1])) {
+      dens_points_unique.push_back(dens_points[i]);
+    }
+  }
+  dens_points_unique.push_back(dens_points.back());
+
+  return dens_points_unique;
 }
 
 void InsetState::densify_geo_divs_using_delaunay_t()
@@ -417,7 +427,7 @@ void InsetState::densify_geo_divs_using_delaunay_t()
         const auto b = (i == outer.size() - 1) ? outer[0] : outer[i + 1];
         // Densify the segment
         const std::vector<Point> outer_pts_dens =
-          densification_points_with_delaunay_t(a, b, proj_qd_.dt, lx_, ly_);
+          densification_points_with_delaunay_t(a, b, proj_qd_.dt);
 
         // Push all points. Omit the last point because it will be included
         // in the next iteration. Otherwise, we would have duplicated points
@@ -437,7 +447,7 @@ void InsetState::densify_geo_divs_using_delaunay_t()
           const Point c = h[j];
           const Point d = (j == h.size() - 1) ? h[0] : h[j + 1];
           const std::vector<Point> hole_pts_dens =
-            densification_points_with_delaunay_t(c, d, proj_qd_.dt, lx_, ly_);
+            densification_points_with_delaunay_t(c, d, proj_qd_.dt);
           for (unsigned int i = 0; i < (hole_pts_dens.size() - 1); ++i) {
             hole_dens.push_back(hole_pts_dens[i]);
           }
@@ -453,4 +463,5 @@ void InsetState::densify_geo_divs_using_delaunay_t()
     geodivs_dens.push_back(gd_dens);
   }
   geo_divs_ = std::move(geodivs_dens);
+  is_simple(__func__);
 }

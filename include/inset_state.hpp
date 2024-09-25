@@ -12,6 +12,14 @@
 struct max_area_error_info {
   double value;
   std::string geo_div;
+
+  // Conversion to std::tuple to enable structured bindings
+  // this allows:
+  // auto [value, geo_div] = max_area_error();
+  operator std::tuple<double, std::string>() const
+  {
+    return std::make_tuple(value, geo_div);
+  }
 };
 
 struct proj_qd {  // quadtree-delaunay projection
@@ -23,9 +31,14 @@ class InsetState
 {
 private:
   std::unordered_map<std::string, double> area_errors_;
+
   std::unordered_set<Point> unique_quadtree_corners_;
   proj_qd proj_qd_;
-  std::vector<proj_qd> proj_sequence_;
+
+  // Failed constraints
+  std::vector<Segment> failed_constraints_dt_projected_;
+  std::vector<Segment> failed_constraints_;
+  Delaunay og_dt_;
 
   // Bounding boxes of Quadtree cells
   std::vector<Bbox> quadtree_bboxes_;
@@ -35,9 +48,7 @@ private:
   std::unordered_map<std::string, Color> colors_;
 
   // Unblurred density mean, min, max
-  double dens_min_;
-  double dens_mean_;
-  double dens_max_;
+  double dens_min_, dens_mean_, dens_max_, exterior_density_;
 
   // Scaling factor to convert equal-area-projection unit to lx*ly unit.
   double latt_const_;
@@ -49,8 +60,15 @@ private:
   // Geographic divisions in this inset
   std::vector<GeoDiv> geo_divs_;
 
+  // Create a map from GeoDiv ID to index in geo_divs_
+  std::map<std::string, size_t> geo_divs_id_to_index_;
+
   // Copy of original data
   std::vector<GeoDiv> geo_divs_original_;
+
+  // Copy to original data to be transform to keep the same points in the final
+  // cartogram
+  std::vector<GeoDiv> geo_divs_original_transformed_;
 
   // Chosen diagonal for each grid cell
   boost::multi_array<int, 2> grid_diagonals_;
@@ -67,6 +85,7 @@ private:
   std::unordered_map<std::string, bool> is_input_target_area_missing_;
   std::unordered_map<std::string, std::string> labels_;
   unsigned int lx_{}, ly_{};  // Lattice dimensions
+  unsigned int n_fails_during_flatten_density_;
   unsigned int n_finished_integrations_;
   std::string pos_;  // Position of inset ("C", "T" etc.)
   boost::multi_array<Point, 2> proj_;  // Cartogram projection
@@ -91,18 +110,20 @@ public:
   void apply_smyth_craster_projection();
 
   // Calculate difference between initial area and current area
-  double area_drift() const;
+  double area_expansion_factor() const;
   double area_error_at(const std::string &) const;
   void auto_color();  // Automatically color GeoDivs
   Bbox bbox(bool = false) const;
   void blur_density(double, bool);
   double blur_width() const;
-  void check_topology();
+  void check_topology() const;
   int chosen_diag(const Point v[4], unsigned int &, bool = false) const;
   Color color_at(const std::string &) const;
   bool color_found(const std::string &) const;
   bool colors_empty() const;
   unsigned int colors_size() const;
+  bool continue_integrating() const;
+  void create_and_store_quadtree_cell_corners();
   void create_contiguity_graph(unsigned int);
   void create_delaunay_t();
   void densify_geo_divs();
@@ -116,10 +137,11 @@ public:
   void fill_grid_diagonals(bool = false);
 
   // Density functions
-  void fill_with_density(bool);  // Fill map with density, using scanlines
+  void fill_with_density_rays(bool);  // Fill map with density, using scanlines
+  void fill_with_density_clip(bool);  // Fill map with density, using clipping
   void flatten_density();  // Flatten said density with integration
   void flatten_ellipse_density();
-  void flatten_density_with_node_vertices();
+  bool flatten_density_with_node_vertices();
 
   const std::vector<GeoDiv> &geo_divs() const;
   std::vector<std::vector<Color>> grid_cell_colors(unsigned int cell_width);
@@ -138,7 +160,7 @@ public:
     unsigned int y,
     unsigned int cell_width);
   double grid_cell_area_km(const unsigned int i, const unsigned int j);
-  void holes_inside_polygons();
+  void holes_inside_polygons() const;
   double grid_cell_target_area_per_km(
     const unsigned int i,
     const unsigned int j,
@@ -146,9 +168,12 @@ public:
     const double total_inset_area);
   Bbox get_bbox_bar(const double bar_width, const double bar_height);
 
+  GeoDiv &get_geo_div(const std::string &);
+
   std::pair<double, unsigned int> get_km_legend_length();
   std::pair<double, unsigned int> get_visual_variable_legend_length();
 
+  void increment_n_fails_during_flatten_density();
   void increment_integration();
   double initial_area() const;
   double initial_target_area() const;
@@ -156,6 +181,8 @@ public:
   void initialize_identity_proj();
   void insert_color(const std::string &, const Color &);
   void insert_color(const std::string &, std::string &);
+  bool insert_constraint_safely(const Point &p1, const Point &p2);
+  bool insert_constraint_safely_to_dt(Delaunay &dt, const Point &p1, const Point &p2);
   void insert_label(const std::string &, const std::string &);
   void insert_target_area(const std::string &, double);
   void insert_whether_input_target_area_is_missing(const std::string &, bool);
@@ -166,6 +193,7 @@ public:
     char,
     unsigned int) const;
   bool is_input_target_area_missing(const std::string &) const;
+  void is_simple(const char* caller_func) const;
   std::string label_at(const std::string &) const;
   double latt_const() const;
   unsigned int lx() const;
@@ -179,6 +207,7 @@ public:
   std::pair<Point, Point> max_and_min_grid_cell_area_index(
     unsigned int cell_width);
   unsigned int n_finished_integrations() const;
+  unsigned int n_fails_during_flatten_density() const;
   unsigned int n_geo_divs() const;
   unsigned long n_points() const;
   unsigned int n_rings() const;
@@ -189,9 +218,8 @@ public:
   Point projected_point(const Point &, bool = false) const;
   Point projected_point_with_triangulation(const Point &, bool = false) const;
   void project_with_cum_proj();
-  void project_with_delaunay_t();
+  void project_with_delaunay_t(bool);
   void project_with_triangulation();
-  void project_with_proj_sequence();
   void push_back(const GeoDiv &);
   FTReal2d &ref_to_fluxx_init();
   FTReal2d &ref_to_fluxy_init();
@@ -202,7 +230,6 @@ public:
   void replace_target_area(const std::string &, double);
   void rescale_map(unsigned int, bool);
   void revert_smyth_craster_projection();
-  void rings_are_simple();
   void set_area_errors();
   void set_grid_dimensions(unsigned int, unsigned int);
   void set_geo_divs(std::vector<GeoDiv> new_geo_divs);
@@ -225,22 +252,22 @@ public:
   std::array<Point, 3> untransformed_triangle(const Point &, bool = false)
     const;
   void trim_grid_heatmap(cairo_t *cr, double padding);
+  void update_delaunay_t();
 
   // Cairo functions
   void write_cairo_map(
     const std::string &,
     bool,
-    std::unordered_map<Point, Point> = std::unordered_map<Point, Point>());
+    const std::unordered_map<Point, Vector> = std::unordered_map<Point, Vector>()) const;
   void write_cairo_polygons_to_svg(
     const std::string &,
     bool,
     bool,
     bool,
-    std::unordered_map<Point, Point> &);
+    const std::unordered_map<Point, Vector> &) const;
 
-  void write_delaunay_triangles(const std::string &);
+  void write_delaunay_triangles(const std::string &, const bool);
   void write_grid_heatmap_data(const std::string filename);
-
   void write_grid_heatmap_image(
     const std::string filename,
     const bool plot_equal_area_map,
@@ -254,7 +281,7 @@ public:
     cairo_t *cr,
     const bool fill_polygons,
     const bool colors,
-    const bool plot_equal_area_map);
+    const bool plot_equal_area_map) const;
   void write_labels_on_surface(cairo_t *cr);
   void write_density_image(
     const std::string filename,
@@ -266,4 +293,4 @@ public:
   void write_quadtree(const std::string &);
 };
 
-#endif // INSET_STATE_HPP_
+#endif  // INSET_STATE_HPP_

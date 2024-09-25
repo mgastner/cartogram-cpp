@@ -21,6 +21,7 @@ bool points_almost_equal(const Point &a, const Point &b)
 {
   return (almost_equal(a.x(), b.x()) && almost_equal(a.y(), b.y()));
 }
+
 bool point_less_than(const Point &a, const Point &b)
 {
   return !(points_almost_equal(a, b) || a >= b);
@@ -52,4 +53,14 @@ Point rounded_point(
   return {
     rounded_to_bicimal(a.x(), lx, ly),
     rounded_to_bicimal(a.y(), lx, ly)};
+}
+
+Point rounded_point(const Point &p, const unsigned int n_decimals)
+{
+  double x = p.x();
+  double y = p.y();
+  const double factor = std::pow(10, n_decimals);
+  x = std::round(x * factor) / factor;
+  y = std::round(y * factor) / factor;
+  return {x, y};
 }

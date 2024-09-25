@@ -26,18 +26,7 @@ public:
 private:
   double total_geo_divs_;  // Total number of GeoDivs to monitor progress
   double progress_;  // Progress measured on a scale from 0 (start) to 1 (end)
-  indicators::ProgressBar bar_{
-    indicators::option::BarWidth{75},
-    indicators::option::Start{"["},
-    indicators::option::Fill{"■"},
-    indicators::option::Lead{"■"},
-    indicators::option::Remainder{"-"},
-    indicators::option::End{"]"},
-    indicators::option::FontStyles{
-      std::vector<indicators::FontStyle>{indicators::FontStyle::bold}},
-    indicators::option::ShowPercentage{true},
-    indicators::option::ShowElapsedTime{true},
-    indicators::option::Stream{std::cerr}};
+  indicators::ProgressBar bar_;
 };
 
 #endif  // PROGRESS_TRACKER_H

@@ -175,10 +175,9 @@ void CartogramInfo::read_geojson(
   // Open file
   std::ifstream in_file(geometry_file_name);
   if (!in_file) {
-    throw std::system_error(
-      errno,
-      std::system_category(),
-      "failed to open " + geometry_file_name);
+    std::cerr << "ERROR reading GeoJSON: failed to open " + geometry_file_name
+              << std::endl;
+    _Exit(3);
   }
 
   // Parse JSON
@@ -238,6 +237,14 @@ void CartogramInfo::read_geojson(
         // non-NULL string that is not an integer
         if (id.front() == '"') {
           id = id.substr(1, id.length() - 2);
+        }
+
+        // Likely did not exist in the CSV at all, give it NA
+        if (!gd_to_inset_.contains(id)) {
+          gd_to_inset_.insert(std::pair<std::string, std::string>(id, "C"));
+
+          InsetState *inset_state = &inset_states_.at(inset_pos);
+          inset_state->insert_target_area(id, -1.0);
         }
         if (inset_pos == gd_to_inset_.at(id)) {
           if (ids_in_geojson.contains(id)) {
@@ -355,10 +362,9 @@ void CartogramInfo::read_geojson(
     const auto csv_name = map_name_ + ".csv";
     out_file_csv.open(csv_name);
     if (!out_file_csv) {
-      throw std::system_error(
-        errno,
-        std::system_category(),
-        "failed to open template_from_geojson.csv");
+      std::cerr
+        << "ERROR writing GeoJSON: failed to open template_from_geojson.csv"
+        << std::endl;
     }
 
     // Each vector of strings will represent one row
@@ -426,13 +432,14 @@ void CartogramInfo::read_geojson(
     ids_in_vv_file.end(),
     std::inserter(ids_not_in_vv, ids_not_in_vv.end()));
   if (!ids_not_in_vv.empty()) {
-    std::cerr << "ERROR: Mismatch between GeoJSON and "
+    std::cerr << "WARNING: Mismatch between GeoJSON and "
               << visual_variable_file_ << "." << std::endl;
     std::cerr << "The following IDs do not appear in " << visual_variable_file_
               << ": " << std::endl;
     for (const auto &id : ids_not_in_vv) {
       std::cerr << "  " << id << std::endl;
     }
-    _Exit(21);
+    // _Exit(21);
+    // TODO: Decide, is this an error, or warning?
   }
 }

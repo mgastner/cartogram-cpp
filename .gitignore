@@ -38,6 +38,9 @@ cartogram
 # Ignore test logs
 *.txt
 
+# But, don't ignore CMakeLists.txt
+!CMakeLists.txt
+
 # Boilerplate code for .gitignore
 
 # Prerequisites
@@ -73,8 +76,12 @@ cartogram
 *.out
 *.app
 
+# Ignore backup files
+*.backup
+
 # Ignore CMakeFiles directory
 CMakeFiles
+cmake
 cmake-build-*/
 bin
 cmake_install.cmake
@@ -83,3 +90,4 @@ CMakeCache.txt
 Makefile
 .idea
 .Rproj.user
+.vscode-ctags

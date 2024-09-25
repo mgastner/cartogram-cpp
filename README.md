@@ -94,12 +94,12 @@ The CSV file should be in the following format:
 
 ### Testing
 
-If you'd like to contribute to the project, please run our tests after you make any changes. 
+If you'd like to contribute to the project, please run our tests after you make any changes.
 
 To run the unit tests, execute the following command:
 
     ctest --verbose
-    
+
 To learn more about the tests, you may go to the `cartogram-cpp/tests` directory and read the `README.md` file.
 
 Additionally, you may go to the `cartogram-cpp/tests` directory and run the following command:
