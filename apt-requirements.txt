@@ -1,0 +1,10 @@
+build-essential
+manpages-dev
+software-properties-common
+nlohmann-json3-dev
+libcgal-dev
+libomp-dev
+libfftw3-dev
+libcairo2-dev
+libboost-all-dev
+cmake
