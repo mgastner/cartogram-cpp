@@ -1,14 +1,19 @@
 name: Build and Upload Artifact
 
 on:
+  # either when a push is made to the main branch or when a pull request is merged
   push:
-    branches:
-      - main
+    branches: [ "main" ]
   workflow_dispatch:
+
+env:
+  BUILD_TYPE: Release
 
 jobs:
   build-and-release:
+
     runs-on: ubuntu-latest
+
     steps:
     - name: Checkout Repository
       uses: actions/checkout@v4
@@ -22,12 +27,26 @@ jobs:
         sudo add-apt-repository ppa:ubuntu-toolchain-r/test -y
         sudo apt update && sudo apt install -y gcc-11 g++-11
 
-    - name: Build Project
+
+    - name: Configure CMake
+      run: cmake -B ${{github.workspace}}/build -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}}
+
+    - name: Build
       run: |
         CORES=$(nproc)
+        cmake --build ${{github.workspace}}/build --config ${{env.BUILD_TYPE}} ---target install -j${CORES} --
+
+    # - name: Test
+    #   working-directory: ${{github.workspace}}/build
+    #   # Execute tests defined by the CMake configuration.
+    #   # See https://cmake.org/cmake/help/latest/manual/ctest.1.html for more detail
+    #   run: ctest -C ${{env.BUILD_TYPE}}
+
+    - name: Build Project
+      run: |
         sudo cmake -B build
         sudo make -j${CORES} -C build
-        
+
     #- name: Run Tests
     #  run: |
     #    sudo make install -C build
@@ -40,36 +59,35 @@ jobs:
       with:
         name: cartogram
         path: ./build/bin/cartogram
-        
-    - name: Generate and Push Tag
-      id: generate_tag
-      run: |
-        # Configure git committer
-        git config --local user.email "action@github.com"
-        git config --local user.name "GitHub Action"
-        # Fetch tags
-        git fetch --tags
-        
-        # Get the latest tag name, default to Release 0 if none exists
-        latest_tag=$(git describe --tags `git rev-list --tags --max-count=1` 2>/dev/null || echo "Release-0")
-        
-        # Extract the release number by stripping the 'Release ' prefix
-        release_number=${latest_tag#"Release-"}
 
-        # Increment the release number
-        new_release_number=$((release_number + 1))
-        new_tag="Release-${new_release_number}"
+    -  name: Generate and Push Tag
+       id: generate_tag
+       run: |
+         # Configure git committer
+         git config --local user.email "action@github.com"
+         git config --local user.name "GitHub Action"
 
-        # Create the new tag
-        git tag -a "${new_tag}" -m "New release ${new_tag}"
+         # Fetch tags
+         git fetch --tags
 
-        # Push the tag to the repository
-        git push origin "${new_tag}"
-        
-        echo "release_number=${new_release_number}" >> $GITHUB_OUTPUT
-        echo "new_tag=${new_tag}" >> $GITHUB_OUTPUT
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+         # Get the current date
+         current_date=$(date +'%Y-%m-%d')
+
+         # Get the short SHA of the current HEAD
+         short_sha=$(git rev-parse --short HEAD)
+
+         # Create the new tag
+         new_tag="${current_date}-${short_sha}"
+
+         # Create the new tag
+         git tag -a "${new_tag}" -m "New release ${new_tag}"
+
+         # Push the tag to the repository
+         git push origin "${new_tag}"
+
+         echo "new_tag=${new_tag}" >> $GITHUB_OUTPUT
+       env:
+         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
     - name: Release
       uses: softprops/action-gh-release@v2
