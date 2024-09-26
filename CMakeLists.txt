@@ -1,5 +1,10 @@
 cmake_minimum_required(VERSION 3.6)
 
+if(UNIX AND NOT APPLE)
+  set(CMAKE_CXX_COMPILER "g++-11")
+  set(CMAKE_C_COMPILER "gcc-11")
+endif()
+
 project(cartogram LANGUAGES CXX)
 
 # ========== Project Setup ==========
@@ -39,8 +44,11 @@ target_include_directories(cartogram PUBLIC
 )
 
 # ========== Compile Options ==========
-if(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
+if(CMAKE_CXX_COMPILER_ID MATCHES "Clang")
   target_compile_options(cartogram PRIVATE -isystem ${Boost_INCLUDE_DIRS})
+  target_compile_options(cartogram PRIVATE -ffp-contract=off)
+elseif(UNIX AND NOT APPLE)
+  target_compile_options(cartogram PRIVATE -I ${Boost_INCLUDE_DIRS})
   target_compile_options(cartogram PRIVATE -ffp-contract=off)
 elseif(MSVC)
   target_compile_options(cartogram PRIVATE /external:I ${Boost_INCLUDE_DIRS})
@@ -87,9 +95,12 @@ foreach(TEST_FILE ${TEST_FILES})
     PkgConfig::fftw
   )
 
-  if(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
+  if(CMAKE_CXX_COMPILER_ID MATCHES "Clang")
     target_compile_options(${TEST_NAME} PRIVATE -isystem ${Boost_INCLUDE_DIRS})
     target_compile_options(${TEST_NAME} PRIVATE -ffp-contract=off)
+  elseif(UNIX AND NOT APPLE)
+    target_compile_options(cartogram PRIVATE -I ${Boost_INCLUDE_DIRS})
+    target_compile_options(cartogram PRIVATE -ffp-contract=off)
   elseif(MSVC)
     target_compile_options(${TEST_NAME} PRIVATE /external:I ${Boost_INCLUDE_DIRS})
   endif()
