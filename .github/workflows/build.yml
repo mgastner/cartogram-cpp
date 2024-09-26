@@ -2,9 +2,9 @@ name: Build and Upload Artifact
 
 on:
   # either when a push is made to the main branch or when a pull request is merged
+  workflow_dispatch:
   push:
     branches: [ "main", "pr/adisidev/201" ]
-  workflow_dispatch:
 
 env:
   BUILD_TYPE: Release

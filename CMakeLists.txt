@@ -24,7 +24,7 @@ find_package(Matplot++)
 # PkgConfig, fftw, and cairo
 find_package(PkgConfig REQUIRED)
 pkg_search_module(fftw REQUIRED fftw3 IMPORTED_TARGET)
-pkg_search_module(CAIRO REQUIRED CAIRO IMPORTED_TARGET)
+pkg_search_module(cairo REQUIRED cairo IMPORTED_TARGET)
 
 # ========== Source Files ==========
 file(GLOB_RECURSE CARTOGRAM_SOURCES "src/*.cpp")
@@ -35,7 +35,7 @@ target_include_directories(cartogram PUBLIC
   ${PROJECT_SOURCE_DIR}/include
   ${Boost_INCLUDE_DIRS}
   PkgConfig::fftw
-  PkgConfig::CAIRO
+  PkgConfig::cairo
 )
 
 # ========== Compile Options ==========
@@ -52,7 +52,7 @@ target_compile_options(cartogram PRIVATE -Wall -Wextra -pedantic -Wno-deprecated
 # ========== Linking Libraries ==========
 target_link_libraries(cartogram
   PkgConfig::fftw
-  PkgConfig::CAIRO
+  PkgConfig::cairo
   $<$<BOOL:${Matplot++_FOUND}>:Matplot++::matplot>
 )
 
