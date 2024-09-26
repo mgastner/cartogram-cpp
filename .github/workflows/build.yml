@@ -46,7 +46,7 @@ jobs:
 
     - name: Build
       run: |
-        cmake --build ${{github.workspace}}/build --config ${{env.BUILD_TYPE}} ---target install -j$(nproc) --
+        cmake --build ${{github.workspace}}/build --config ${{env.BUILD_TYPE}} --target install -j$(nproc) --
 
     # - name: Test
     #   working-directory: ${{github.workspace}}/build
