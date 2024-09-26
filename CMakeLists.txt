@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.27)
+cmake_minimum_required(VERSION 3.6)
 
 project(cartogram LANGUAGES CXX)
 
@@ -19,7 +19,7 @@ endif()
 find_package(Boost REQUIRED COMPONENTS unit_test_framework)
 
 # Matplot++
-find_package(Matplot++ REQUIRED)
+find_package(Matplot++)
 
 # PkgConfig, fftw, and cairo
 find_package(PkgConfig REQUIRED)
@@ -53,7 +53,7 @@ target_compile_options(cartogram PRIVATE -Wall -Wextra -pedantic -Wno-deprecated
 target_link_libraries(cartogram
   PkgConfig::fftw
   PkgConfig::CAIRO
-  Matplot++::matplot
+  $<$<BOOL:${Matplot++_FOUND}>:Matplot++::matplot>
 )
 
 # ========== Installation ==========
