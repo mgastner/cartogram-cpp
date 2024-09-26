@@ -3,7 +3,7 @@ name: Build and Upload Artifact
 on:
   # either when a push is made to the main branch or when a pull request is merged
   push:
-    branches: [ "main" ]
+    branches: [ "main", "pr/adisidev/201" ]
   workflow_dispatch:
 
 env:
