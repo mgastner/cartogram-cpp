@@ -59,12 +59,12 @@ jobs:
         sudo cmake -B build
         sudo make -j${CORES} -C build
 
-    #- name: Run Tests
-    #  run: |
-    #    sudo make install -C build
-    #    cd tests/
-    #    chmod +x stress_test.sh
-    #    bash stress_test.sh
+    - name: Run Tests
+      run: |
+        sudo make install -C build
+        cd tests/
+        chmod +x stress_test.sh
+        bash stress_test.sh
 
     - name: Upload Artifact
       uses: actions/upload-artifact@v4
@@ -89,10 +89,7 @@ jobs:
          short_sha=$(git rev-parse --short HEAD)
 
          # Create the new tag
-         new_tag="${current_date}-${short_sha}"
-
-         # Create the new tag
-         git tag -a "${new_tag}" -m "New release ${new_tag}"
+         git tag -a "${short_sha}" -m "New release on ${current_date}"
 
          # Push the tag to the repository
          git push origin "${new_tag}"
