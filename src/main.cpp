@@ -185,17 +185,17 @@ int main(const int argc, const char *argv[])
     // Rescale map to fit into a rectangular box [0, lx] * [0, ly]
     inset_state.rescale_map(long_grid_side_length, cart_info.is_world_map());
 
-    // Output rescaled GeoJSON
-    cart_info.write_geojson(
-      geo_file_name,
-      map_name + "_input.geojson",
-      output_to_stdout);
-
     if (output_to_stdout) {
 
       // Store original coordinates
       inset_state.store_original_geo_divs();
     }
+
+    // Output rescaled GeoJSON
+    cart_info.write_geojson(
+      geo_file_name,
+      map_name + "_input.geojson",
+      output_to_stdout);
 
     // Set up Fourier transforms
     const unsigned int lx = inset_state.lx();
