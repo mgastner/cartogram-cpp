@@ -87,9 +87,9 @@ jobs:
          git tag -a "${short_sha}" -m "New release on ${current_date}"
 
          # Push the tag to the repository
-         git push origin "${new_tag}"
+         git push origin "${short_sha}"
 
-         echo "new_tag=${new_tag}" >> $GITHUB_OUTPUT
+         echo "new_tag=${short_sha}" >> $GITHUB_OUTPUT
        env:
          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
