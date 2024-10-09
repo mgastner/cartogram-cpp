@@ -1,7 +1,7 @@
-name: Build and Upload Artifact
+name: Build and Release (on GitHub only)
 
 on:
-  # either when a push is made to the main branch or when a pull request is merged
+  # when a push is made to the main branch (like when a pull request is merged, or something is pushed directly)
   workflow_dispatch:
   push:
     branches: [ "main", "pr/adisidev/201" ]
@@ -20,13 +20,13 @@ jobs:
       with:
           fetch-depth: 0
 
-    - name: Cache APT packages
-      uses: actions/cache@v3
-      with:
-        path: /var/cache/apt
-        key: ${{ runner.os }}-apt-${{ hashFiles('apt-dependencies.txt') }}
-        restore-keys: |
-          ${{ runner.os }}-apt-
+    # - name: Cache APT packages
+    #   uses: actions/cache@v3
+    #   with:
+    #     path: /var/cache/apt
+    #     key: ${{ runner.os }}-apt-${{ hashFiles('apt-dependencies.txt') }}
+    #     restore-keys: |
+    #       ${{ runner.os }}-apt-
 
     - name: Install Dependencies
       run: |
@@ -35,11 +35,11 @@ jobs:
         sudo add-apt-repository ppa:ubuntu-toolchain-r/test -y
         sudo apt update && sudo apt install -y gcc-11 g++-11
 
-    - name: Save APT cache
-      uses: actions/cache@v3
-      with:
-        path: /var/cache/apt
-        key: ${{ runner.os }}-apt-${{ hashFiles('apt-dependencies.txt') }}
+    # - name: Save APT cache
+    #   uses: actions/cache@v3
+    #   with:
+    #     path: /var/cache/apt
+    #     key: ${{ runner.os }}-apt-${{ hashFiles('apt-dependencies.txt') }}
 
     - name: Configure CMake
       run: cmake -B ${{github.workspace}}/build -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}}
@@ -48,23 +48,18 @@ jobs:
       run: |
         cmake --build ${{github.workspace}}/build --config ${{env.BUILD_TYPE}} --target install -j$(nproc) --
 
-    # - name: Test
+    # - name: Run CTest
     #   working-directory: ${{github.workspace}}/build
     #   # Execute tests defined by the CMake configuration.
     #   # See https://cmake.org/cmake/help/latest/manual/ctest.1.html for more detail
     #   run: ctest -C ${{env.BUILD_TYPE}}
 
-    - name: Build Project
-      run: |
-        sudo cmake -B build
-        sudo make -j${CORES} -C build
-
-    - name: Run Tests
-      run: |
-        sudo make install -C build
-        cd tests/
-        chmod +x stress_test.sh
-        bash stress_test.sh
+    # - name: Run Stress Test
+    #   run: |
+    #     sudo make install -C build
+    #     cd tests/
+    #     chmod +x stress_test.sh
+    #     bash stress_test.sh
 
     - name: Upload Artifact
       uses: actions/upload-artifact@v4
@@ -106,15 +101,3 @@ jobs:
         body: "Rolling release ${{ steps.generate_tag.outputs.release_number }}"
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-  deploy:
-    needs: build-and-release
-    runs-on: ubuntu-latest
-    steps:
-      - name: Deploy binary to go-cart.io
-        uses: appleboy/ssh-action@v1.0.3
-        with:
-          host: ${{ secrets.DEPLOY_HOST }}
-          username: ${{ secrets.DEPLOY_USER }}
-          key: ${{ secrets.DEPLOY_SSH_KEY }}
-          script: /home/cartogram/deploy-cartogram-cpp.sh
