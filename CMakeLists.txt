@@ -34,9 +34,12 @@ add_executable(cartogram ${CARTOGRAM_SOURCES})
 
 # ========== Include Directories ==========
 target_include_directories(cartogram
-  PRIVATE
+  PUBLIC
     ${PROJECT_SOURCE_DIR}/include
-  SYSTEM
+)
+
+target_include_directories(cartogram
+  SYSTEM PUBLIC
     ${Boost_INCLUDE_DIRS}
     PkgConfig::fftw
     PkgConfig::cairo
@@ -45,12 +48,6 @@ target_include_directories(cartogram
 
 # ========== Compile Options ==========
 target_compile_options(cartogram PRIVATE -ffp-contract=off)
-if(CMAKE_CXX_COMPILER_ID MATCHES "Clang")
-  target_compile_options(cartogram PRIVATE -isystem ${Boost_INCLUDE_DIRS})
-else()
-  # Likely compiling on ubuntu with G++, like in the CI
-  target_compile_options(cartogram PRIVATE -I ${Boost_INCLUDE_DIRS})
-endif()
 
 # Compiler warnings
 target_compile_options(cartogram PRIVATE
@@ -93,7 +90,9 @@ foreach(TEST_FILE ${TEST_FILES})
   target_include_directories(${TEST_NAME}
     PUBLIC
       ${PROJECT_SOURCE_DIR}/include
-    SYSTEM
+  )
+  target_include_directories(${TEST_NAME}
+    SYSTEM PUBLIC
       ${Boost_INCLUDE_DIRS}
       PkgConfig::fftw
       PkgConfig::cairo
@@ -101,11 +100,6 @@ foreach(TEST_FILE ${TEST_FILES})
   )
 
   target_compile_options(${TEST_NAME} PRIVATE -ffp-contract=off)
-  if(CMAKE_CXX_COMPILER_ID MATCHES "Clang")
-    target_compile_options(${TEST_NAME} PRIVATE -isystem ${Boost_INCLUDE_DIRS})
-  else()
-    target_compile_options(cartogram PRIVATE -I ${Boost_INCLUDE_DIRS})
-  endif()
 
   # Compiler warnings for the test executable
   target_compile_options(${TEST_NAME} PRIVATE -Wall -Wextra -pedantic -Wno-deprecated-declarations)
