@@ -36,11 +36,13 @@ file(GLOB_RECURSE CARTOGRAM_SOURCES "src/*.cpp")
 add_executable(cartogram ${CARTOGRAM_SOURCES})
 
 # ========== Include Directories ==========
-target_include_directories(cartogram PUBLIC
-  ${PROJECT_SOURCE_DIR}/include
-  ${Boost_INCLUDE_DIRS}
-  PkgConfig::fftw
-  PkgConfig::cairo
+target_include_directories(cartogram
+  PRIVATE
+    ${PROJECT_SOURCE_DIR}/include
+  SYSTEM
+    ${Boost_INCLUDE_DIRS}
+    PkgConfig::fftw
+    PkgConfig::cairo
     $<$<BOOL:${APPLE}>:/opt/homebrew/include>
 )
 
@@ -54,12 +56,16 @@ else()
 endif()
 
 # Compiler warnings
-target_compile_options(cartogram PRIVATE -Wall -Wextra -pedantic -Wno-deprecated-declarations)
+target_compile_options(cartogram PRIVATE
+  -Wall  # Enable all warnings
+  -Wextra  # Enable extra warnings
+  -Wpedantic  # Enable pedantic warnings
+)
 
 # ========== Linking Libraries ==========
 target_link_libraries(cartogram
-  PkgConfig::fftw
-  PkgConfig::cairo
+    PkgConfig::fftw
+    PkgConfig::cairo
 )
 
 # ========== Installation ==========
@@ -87,10 +93,13 @@ foreach(TEST_FILE ${TEST_FILES})
   add_executable(${TEST_NAME} ${TEST_FILE} ${CARTOGRAM_TEST_SOURCES_FROM_SRC})
 
   # Include directories for the test executable
-  target_include_directories(${TEST_NAME} PUBLIC
-    ${PROJECT_SOURCE_DIR}/include
-    ${Boost_INCLUDE_DIRS}
-    PkgConfig::fftw
+  target_include_directories(${TEST_NAME}
+    PUBLIC
+      ${PROJECT_SOURCE_DIR}/include
+    SYSTEM
+      ${Boost_INCLUDE_DIRS}
+      PkgConfig::fftw
+      PkgConfig::cairo
       $<$<BOOL:${APPLE}>:/opt/homebrew/include>
   )
 
