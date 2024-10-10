@@ -1,6 +1,9 @@
 cmake_minimum_required(VERSION 3.6)
 
-if(UNIX AND NOT APPLE)
+# We only support macOS (Darwin) and Linux
+set(SUPPORTED_SYSTEMS "Linux" "Darwin")
+
+if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
   set(CMAKE_CXX_COMPILER "g++-11")
   set(CMAKE_C_COMPILER "gcc-11")
 endif()
@@ -44,14 +47,12 @@ target_include_directories(cartogram PUBLIC
 )
 
 # ========== Compile Options ==========
+target_compile_options(cartogram PRIVATE -ffp-contract=off)
 if(CMAKE_CXX_COMPILER_ID MATCHES "Clang")
   target_compile_options(cartogram PRIVATE -isystem ${Boost_INCLUDE_DIRS})
-  target_compile_options(cartogram PRIVATE -ffp-contract=off)
-elseif(UNIX AND NOT APPLE)
+else()
+  # Likely compiling on ubuntu with G++, like in the CI
   target_compile_options(cartogram PRIVATE -I ${Boost_INCLUDE_DIRS})
-  target_compile_options(cartogram PRIVATE -ffp-contract=off)
-elseif(MSVC)
-  target_compile_options(cartogram PRIVATE /external:I ${Boost_INCLUDE_DIRS})
 endif()
 
 # Compiler warnings
@@ -95,14 +96,11 @@ foreach(TEST_FILE ${TEST_FILES})
     PkgConfig::fftw
   )
 
+  target_compile_options(${TEST_NAME} PRIVATE -ffp-contract=off)
   if(CMAKE_CXX_COMPILER_ID MATCHES "Clang")
     target_compile_options(${TEST_NAME} PRIVATE -isystem ${Boost_INCLUDE_DIRS})
-    target_compile_options(${TEST_NAME} PRIVATE -ffp-contract=off)
-  elseif(UNIX AND NOT APPLE)
+  else()
     target_compile_options(cartogram PRIVATE -I ${Boost_INCLUDE_DIRS})
-    target_compile_options(cartogram PRIVATE -ffp-contract=off)
-  elseif(MSVC)
-    target_compile_options(${TEST_NAME} PRIVATE /external:I ${Boost_INCLUDE_DIRS})
   endif()
 
   # Compiler warnings for the test executable
