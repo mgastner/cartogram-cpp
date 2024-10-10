@@ -1,9 +1,6 @@
 cmake_minimum_required(VERSION 3.6)
 
-# We only support macOS (Darwin) and Linux
-set(SUPPORTED_SYSTEMS "Linux" "Darwin")
-
-if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
+if(UNIX AND NOT APPLE)
   set(CMAKE_CXX_COMPILER "g++-11")
   set(CMAKE_C_COMPILER "gcc-11")
 endif()

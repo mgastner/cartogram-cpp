@@ -12,6 +12,8 @@ Data produced by code in this repository are subject to the MIT license found [h
 
 ## Dependencies
 
+Please note, we only support UNIX-based systems, and have only tested on macOS, Linux, and GNU.
+
 ### macOS
 
 #### Installing Homebrew
@@ -24,23 +26,23 @@ Install [homebrew](brew.sh) by running the following command:
 
 Install llvm, pkg-config, boost, fftw, cgal, nlohmann-json, and cmake by running the following command:
 
-    brew install llvm@17 libomp pkg-config boost fftw cgal nlohmann-json cmake cairo matplotplusplus
+    brew install libomp pkg-config boost fftw cgal nlohmann-json cmake cairo
 
 ### Debian-based distributions (Ubuntu, Arch Linux etc.)
 
-#### Installing GNU g++-13
+#### Installing GNU g++-11
 
 Run the following commands to install it:
 
     sudo apt install build-essential manpages-dev software-properties-common
     sudo add-apt-repository ppa:ubuntu-toolchain-r/test
-    sudo apt update && sudo apt install gcc-13 g++-13
+    sudo apt update && sudo apt install gcc-11 g++-11
 
 #### Installing dependencies through apt
 
-Install nlohmann-json, cgal, openmp, fftw3, cairo, matplot++, boost, and cmake by running the following command:
+Install other dependencies available from apt by running the following command:
 
-    sudo apt install nlohmann-json3-dev libcgal-dev libomp-dev libfftw3-dev libcairo2-dev libmatplot++-dev libboost-all-dev cmake
+    cat apt-requirements.txt | xargs sudo apt install
 
 ### Installation
 
