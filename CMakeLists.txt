@@ -41,8 +41,6 @@ target_include_directories(cartogram
 target_include_directories(cartogram
   SYSTEM PUBLIC
     ${Boost_INCLUDE_DIRS}
-    PkgConfig::fftw
-    PkgConfig::cairo
     $<$<BOOL:${APPLE}>:/opt/homebrew/include>
 )
 
@@ -94,8 +92,6 @@ foreach(TEST_FILE ${TEST_FILES})
   target_include_directories(${TEST_NAME}
     SYSTEM PUBLIC
       ${Boost_INCLUDE_DIRS}
-      PkgConfig::fftw
-      PkgConfig::cairo
       $<$<BOOL:${APPLE}>:/opt/homebrew/include>
   )
 
