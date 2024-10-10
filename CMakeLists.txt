@@ -26,9 +26,6 @@ endif()
 # Boost
 find_package(Boost REQUIRED COMPONENTS unit_test_framework)
 
-# Matplot++
-find_package(Matplot++)
-
 # PkgConfig, fftw, and cairo
 find_package(PkgConfig REQUIRED)
 pkg_search_module(fftw REQUIRED fftw3 IMPORTED_TARGET)
@@ -44,6 +41,7 @@ target_include_directories(cartogram PUBLIC
   ${Boost_INCLUDE_DIRS}
   PkgConfig::fftw
   PkgConfig::cairo
+    $<$<BOOL:${APPLE}>:/opt/homebrew/include>
 )
 
 # ========== Compile Options ==========
@@ -62,7 +60,6 @@ target_compile_options(cartogram PRIVATE -Wall -Wextra -pedantic -Wno-deprecated
 target_link_libraries(cartogram
   PkgConfig::fftw
   PkgConfig::cairo
-  $<$<BOOL:${Matplot++_FOUND}>:Matplot++::matplot>
 )
 
 # ========== Installation ==========
@@ -94,6 +91,7 @@ foreach(TEST_FILE ${TEST_FILES})
     ${PROJECT_SOURCE_DIR}/include
     ${Boost_INCLUDE_DIRS}
     PkgConfig::fftw
+      $<$<BOOL:${APPLE}>:/opt/homebrew/include>
   )
 
   target_compile_options(${TEST_NAME} PRIVATE -ffp-contract=off)
