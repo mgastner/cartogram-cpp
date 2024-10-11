@@ -21,8 +21,7 @@ endif()
 # ========== Dependencies Setup ==========
 
 # Direct CMake to local CGAL installation
-set(CMAKE_PREFIX_PATH ${PROJECT_SOURCE_DIR}/external/cgal/Installation/lib/cmake/CGAL)
-set(CGAL_DIR ${PROJECT_SOURCE_DIR}/external/cgal/Installation/lib/cmake/CGAL)
+set(CGAL_DIR ${PROJECT_SOURCE_DIR}/external/cgal)
 find_package(CGAL REQUIRED)
 
 # Boost
