@@ -15,30 +15,22 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+    - name: Install dependencies
+      uses: awalsh128/cache-apt-pkgs-action@latest
+      with:
+        packages: gcc-11 g++-11 build-essential manpages-dev software-properties-common nlohmann-json3-dev libomp-dev libfftw3-dev libcairo2-dev libboost-all-dev cmake
+        version: 1.0
+
     - name: Checkout Repository
       uses: actions/checkout@v4
       with:
           fetch-depth: 0
 
-    # - name: Cache APT packages
-    #   uses: actions/cache@v3
-    #   with:
-    #     path: /var/cache/apt
-    #     key: ${{ runner.os }}-apt-${{ hashFiles('apt-dependencies.txt') }}
-    #     restore-keys: |
-    #       ${{ runner.os }}-apt-
-
-    - name: Install Dependencies
-      run: |
-        sudo apt update
-        sudo add-apt-repository ppa:ubuntu-toolchain-r/test
-        cat apt-requirements.txt | xargs sudo apt install -y
-
-    # - name: Save APT cache
-    #   uses: actions/cache@v3
-    #   with:
-    #     path: /var/cache/apt
-    #     key: ${{ runner.os }}-apt-${{ hashFiles('apt-dependencies.txt') }}
+    # - name: Install Dependencies
+    #   run: |
+    #     sudo apt update
+    #     sudo add-apt-repository ppa:ubuntu-toolchain-r/test
+    #     cat apt-requirements.txt | xargs sudo apt install -y
 
     - name: Configure CMake
       run: cmake -B ${{github.workspace}}/build -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}}
