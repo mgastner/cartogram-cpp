@@ -30,7 +30,8 @@ jobs:
 
     - name: Install Dependencies
       run: |
-        sudo apt update && add-apt-repository ppa:ubuntu-toolchain-r/test
+        sudo apt update
+        sudo add-apt-repository ppa:ubuntu-toolchain-r/test
         cat apt-requirements.txt | xargs sudo apt install -y
 
     # - name: Save APT cache
