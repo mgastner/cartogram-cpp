@@ -9,3 +9,6 @@ libfftw3-dev
 libcairo2-dev
 libboost-all-dev
 cmake
+libgmp3-dev
+libmpfr-dev
+libeigen3-dev
