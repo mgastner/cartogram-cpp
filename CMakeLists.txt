@@ -20,6 +20,10 @@ endif()
 
 # ========== Dependencies Setup ==========
 
+# Direct CMake to local CGAL installation
+set(CGAL_DIR ${PROJECT_SOURCE_DIR}/external/cgal)
+find_package(CGAL REQUIRED)
+
 # Boost
 find_package(Boost REQUIRED COMPONENTS unit_test_framework)
 
@@ -40,8 +44,9 @@ target_include_directories(cartogram
 
 target_include_directories(cartogram
   SYSTEM PUBLIC
+    ${CGAL_INCLUDE_DIRS}
     ${Boost_INCLUDE_DIRS}
-    $<$<BOOL:${APPLE}>:/opt/homebrew/include>
+    ${PROJECT_SOURCE_DIR}/external
 )
 
 # ========== Compile Options ==========
@@ -91,8 +96,9 @@ foreach(TEST_FILE ${TEST_FILES})
   )
   target_include_directories(${TEST_NAME}
     SYSTEM PUBLIC
+      ${CGAL_INCLUDE_DIRS}
       ${Boost_INCLUDE_DIRS}
-      $<$<BOOL:${APPLE}>:/opt/homebrew/include>
+      ${PROJECT_SOURCE_DIR}/external
   )
 
   target_compile_options(${TEST_NAME} PRIVATE -ffp-contract=off)

@@ -10,6 +10,10 @@ Gastner MT, Seguy V, More P. _Fast flow-based algorithm for creating density-equ
 
 Data produced by code in this repository are subject to the MIT license found [here](./LICENSE) and should cite the aforementioned paper by Gastner et al. (2018).
 
+While cloning this repository, please ensure you use the `--recurse-submodules` flag like so:
+
+    git clone --recurse-submodules https://github.com/mgastner/cartogram-cpp.git
+
 ## Dependencies
 
 Please note, we only support UNIX-based systems, and have only tested on macOS, Linux, and GNU.
@@ -24,25 +28,19 @@ Install [homebrew](brew.sh) by running the following command:
 
 #### Installing dependencies through Homebrew
 
-Install llvm, pkg-config, boost, fftw, cgal, nlohmann-json, and cmake by running the following command:
+Install pkg-config, boost, fftw, nlohmann-json, and cmake by running the following command:
 
-    brew install libomp pkg-config boost fftw cgal nlohmann-json cmake cairo
+    brew install libomp pkg-config boost fftw nlohmann-json cmake cairo
 
 ### Debian-based distributions (Ubuntu, Arch Linux etc.)
 
-#### Installing GNU g++-11
+#### Installing relevant dependencies through apt:
 
-Run the following commands to install it:
+Have a look through to apt-requirements.txt if you'd like to see what all will be installed. Then, run the following commands to install all dependencies through apt:
 
-    sudo apt install build-essential manpages-dev software-properties-common
-    sudo add-apt-repository ppa:ubuntu-toolchain-r/test
-    sudo apt update && sudo apt install gcc-11 g++-11
+    sudo apt update && add-apt-repository ppa:ubuntu-toolchain-r/test
+    cat apt-requirements.txt | xargs sudo apt install -y
 
-#### Installing dependencies through apt
-
-Install other dependencies available from apt by running the following command:
-
-    cat apt-requirements.txt | xargs sudo apt install
 
 ### Installation
 
