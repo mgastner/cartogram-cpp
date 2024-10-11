@@ -10,6 +10,10 @@ Gastner MT, Seguy V, More P. _Fast flow-based algorithm for creating density-equ
 
 Data produced by code in this repository are subject to the MIT license found [here](./LICENSE) and should cite the aforementioned paper by Gastner et al. (2018).
 
+While cloning this repository, please ensure you use the `--recurse-submodules` flag like so:
+
+    git clone --recurse-submodules https://github.com/mgastner/cartogram-cpp.git
+
 ## Dependencies
 
 Please note, we only support UNIX-based systems, and have only tested on macOS, Linux, and GNU.
