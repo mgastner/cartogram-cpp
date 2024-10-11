@@ -24,25 +24,19 @@ Install [homebrew](brew.sh) by running the following command:
 
 #### Installing dependencies through Homebrew
 
-Install llvm, pkg-config, boost, fftw, cgal, nlohmann-json, and cmake by running the following command:
+Install pkg-config, boost, fftw, nlohmann-json, and cmake by running the following command:
 
-    brew install libomp pkg-config boost fftw cgal nlohmann-json cmake cairo
+    brew install libomp pkg-config boost fftw nlohmann-json cmake cairo
 
 ### Debian-based distributions (Ubuntu, Arch Linux etc.)
 
-#### Installing GNU g++-11
+#### Installing relevant dependencies through apt:
 
-Run the following commands to install it:
+Have a look through to apt-requirements.txt if you'd like to see what all will be installed. Then, run the following commands to install all dependencies through apt:
 
-    sudo apt install build-essential manpages-dev software-properties-common
-    sudo add-apt-repository ppa:ubuntu-toolchain-r/test
-    sudo apt update && sudo apt install gcc-11 g++-11
-
-#### Installing dependencies through apt
-
-Install other dependencies available from apt by running the following command:
-
+    sudo apt update && add-apt-repository ppa:ubuntu-toolchain-r/test
     cat apt-requirements.txt | xargs sudo apt install
+
 
 ### Installation
 
