@@ -35,7 +35,7 @@ Install pkg-config, boost, fftw, nlohmann-json, and cmake by running the followi
 Have a look through to apt-requirements.txt if you'd like to see what all will be installed. Then, run the following commands to install all dependencies through apt:
 
     sudo apt update && add-apt-repository ppa:ubuntu-toolchain-r/test
-    cat apt-requirements.txt | xargs sudo apt install
+    cat apt-requirements.txt | xargs sudo apt install -y
 
 
 ### Installation
