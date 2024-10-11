@@ -80,6 +80,8 @@ jobs:
 
          # Push the tag to the repository
          git push origin "${short_sha}"
+
+         echo "new_tag=${short_sha}" >> $GITHUB_OUTPUT
        env:
          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
