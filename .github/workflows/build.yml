@@ -13,13 +13,17 @@ jobs:
   build-and-release:
 
     runs-on: ubuntu-latest
+    container:
+      image: gocartio/cartogram-web:latest
 
     steps:
-    - name: Install dependencies
-      uses: awalsh128/cache-apt-pkgs-action@latest
-      with:
-        packages: gcc-11 g++-11 build-essential manpages-dev software-properties-common nlohmann-json3-dev libomp-dev libfftw3-dev libcairo2-dev libboost-all-dev cmake libgmp3-dev libmpfr-dev libeigen3-dev
-        version: 1.1
+
+    # Dependencies should already be installed in the container
+    # - name: Install dependencies
+    #   uses: awalsh128/cache-apt-pkgs-action@latest
+    #   with:
+    #     packages: gcc-11 g++-11 build-essential manpages-dev software-properties-common nlohmann-json3-dev libomp-dev libfftw3-dev libcairo2-dev libboost-all-dev cmake libgmp3-dev libmpfr-dev libeigen3-dev
+    #     version: 1.1
 
     - name: Checkout Repository
       uses: actions/checkout@v4
