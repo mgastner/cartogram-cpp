@@ -62,7 +62,7 @@ jobs:
       uses: actions/upload-artifact@v4
       with:
         name: cartogram
-        path: ./build/bin/cartogram
+        path: ${{github.workspace}}/build/bin/cartogram
 
     -  name: Generate and Push Tag
        id: generate_tag
