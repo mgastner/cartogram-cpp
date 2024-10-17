@@ -72,8 +72,8 @@ jobs:
        id: generate_tag
        run: |
          # Configure git committer
-         git config --local user.email "action@github.com"
-         git config --local user.name "GitHub Action"
+         git config user.email "action@github.com"
+         git config user.name "GitHub Action"
 
          # Fetch tags
          git fetch --tags
