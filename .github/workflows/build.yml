@@ -18,11 +18,17 @@ jobs:
 
     steps:
 
+    - name: Install Dependencies
+      run: |
+        apt update -y
+        add-apt-repository ppa:ubuntu-toolchain-r/test
+        cat apt-requirements.txt | xargs apt install -y
+
     # Dependencies should already be installed in the container
     # - name: Install dependencies
     #   uses: awalsh128/cache-apt-pkgs-action@latest
     #   with:
-    #     packages: gcc-11 g++-11 build-essential manpages-dev software-properties-common nlohmann-json3-dev libomp-dev libfftw3-dev libcairo2-dev libboost-all-dev cmake libgmp3-dev libmpfr-dev libeigen3-dev
+    #     packages: gcc-11 g++-11 build-essential manpages-dev software-properties-common nlohmann-json3-dev libomp-dev libfftw3-dev libcairo2-dev libboost-all-dev cmake libgmp3-dev libmpfr-dev libeigen3-dev git
     #     version: 1.1
 
     - name: Checkout Repository
@@ -30,12 +36,6 @@ jobs:
       with:
           submodules: 'recursive'
           fetch-depth: 0
-
-    # - name: Install Dependencies
-    #   run: |
-    #     sudo apt update
-    #     sudo add-apt-repository ppa:ubuntu-toolchain-r/test
-    #     cat apt-requirements.txt | xargs sudo apt install -y
 
     - name: Configure CMake
       run: cmake -B ${{github.workspace}}/build -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}}
