@@ -425,6 +425,9 @@ int main(const int argc, const char *argv[])
     map_name + "_cartogram",
     output_to_stdout);
 
+  // Write final JSON to stdout, if requested
+  if (output_to_stdout) cart_info.output_to_stdout();
+
   // Stop of main function time
   time_tracker.stop("Total Time");
 
