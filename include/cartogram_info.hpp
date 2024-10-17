@@ -11,6 +11,7 @@ private:
   std::string id_header_;
   std::set<std::string> ids_in_visual_variables_file_;
   std::map<std::string, InsetState> inset_states_;
+  nlohmann::json stdout_json;
   bool is_world_map_;
   std::string map_name_;
 
@@ -33,6 +34,7 @@ public:
     const nlohmann::json &);
   [[nodiscard]] unsigned int n_geo_divs() const;
   [[nodiscard]] unsigned int n_insets() const;
+  void output_to_stdout() const;
   void read_csv(const argparse::ArgumentParser &);
   void read_geojson(const std::string &, bool, std::string &);
   std::map<std::string, InsetState> &ref_to_inset_states();

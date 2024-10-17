@@ -159,7 +159,7 @@ int main(const int argc, const char *argv[])
     // Output to GeoJSON
     cart_info.write_geojson(
       geo_file_name,
-      map_name + "_equal_area.geojson",
+      map_name + "_equal_area",
       output_to_stdout);
     return EXIT_SUCCESS;
   }
@@ -194,7 +194,7 @@ int main(const int argc, const char *argv[])
     // Output rescaled GeoJSON
     cart_info.write_geojson(
       geo_file_name,
-      map_name + "_input.geojson",
+      map_name + "_input",
       output_to_stdout);
 
     // Set up Fourier transforms
@@ -386,7 +386,7 @@ int main(const int argc, const char *argv[])
     if (world) {
       cart_info.write_geojson(
         geo_file_name,
-        map_name + "_cartogram_in_smyth_projection.geojson",
+        map_name + "_cartogram_in_smyth_projection",
         output_to_stdout);
       inset_state.revert_smyth_craster_projection();
     }
@@ -422,8 +422,11 @@ int main(const int argc, const char *argv[])
   // Output to GeoJSON
   cart_info.write_geojson(
     geo_file_name,
-    map_name + "_cartogram.geojson",
+    map_name + "_cartogram",
     output_to_stdout);
+
+  // Write final JSON to stdout, if requested
+  if (output_to_stdout) cart_info.output_to_stdout();
 
   // Stop of main function time
   time_tracker.stop("Total Time");
