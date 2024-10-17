@@ -73,6 +73,6 @@
        "execution": "cpp"
     },
     "files.exclude": {
-        "**/cgal": true
+        "**/external": true
       }
 }
