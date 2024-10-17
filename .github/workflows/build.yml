@@ -58,11 +58,15 @@ jobs:
     #     chmod +x stress_test.sh
     #     bash stress_test.sh
 
+    - name: Figure out working directory
+      run: |
+        pwd
+
     - name: Upload Artifact
       uses: actions/upload-artifact@v4
       with:
         name: cartogram
-        path: ${{github.workspace}}/build/bin/cartogram
+        path: /usr/local/bin/cartogram
 
     -  name: Generate and Push Tag
        id: generate_tag
