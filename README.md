@@ -10,7 +10,13 @@ Gastner MT, Seguy V, More P. _Fast flow-based algorithm for creating density-equ
 
 Data produced by code in this repository are subject to the MIT license found [here](./LICENSE) and should cite the aforementioned paper by Gastner et al. (2018).
 
+While cloning this repository, please ensure you use the `--recurse-submodules` flag like so:
+-
+    git clone --recurse-submodules https://github.com/mgastner/cartogram-cpp.git
+
 ## Dependencies
+
+Please note, we only support UNIX-based systems, and have only tested on macOS, Linux, and GNU.
 
 ### macOS
 
@@ -22,25 +28,19 @@ Install [homebrew](brew.sh) by running the following command:
 
 #### Installing dependencies through Homebrew
 
-Install llvm, pkg-config, boost, fftw, cgal, nlohmann-json, and cmake by running the following command:
+Install pkg-config, boost, fftw, nlohmann-json, and cmake by running the following command:
 
-    brew install llvm@17 libomp pkg-config boost fftw cgal nlohmann-json cmake cairo matplotplusplus
+    brew install libomp pkg-config boost fftw nlohmann-json cmake cairo
 
 ### Debian-based distributions (Ubuntu, Arch Linux etc.)
 
-#### Installing GNU g++-13
+#### Installing relevant dependencies through apt:
 
-Run the following commands to install it:
+Have a look through to apt-requirements.txt if you'd like to see what all will be installed. Then, run the following commands to install all dependencies through apt:
 
-    sudo apt install build-essential manpages-dev software-properties-common
-    sudo add-apt-repository ppa:ubuntu-toolchain-r/test
-    sudo apt update && sudo apt install gcc-13 g++-13
+    sudo apt update && add-apt-repository ppa:ubuntu-toolchain-r/test
+    cat apt-requirements.txt | xargs sudo apt install -y
 
-#### Installing dependencies through apt
-
-Install nlohmann-json, cgal, openmp, fftw3, cairo, matplot++, boost, and cmake by running the following command:
-
-    sudo apt install nlohmann-json3-dev libcgal-dev libomp-dev libfftw3-dev libcairo2-dev libmatplot++-dev libboost-all-dev cmake
 
 ### Installation
 

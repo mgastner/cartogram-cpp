@@ -182,7 +182,7 @@ bool InsetState::insert_constraint_safely(const Point &p1, const Point &p2)
     proj_qd_.dt.insert_constraint(p1, p2);
     return true;
   } catch (const std::exception &e) {
-    std::cout << "WARNING DIAGONAL: Could not insert constraint between " << p1
+    std::cerr << "WARNING DIAGONAL: Could not insert constraint between " << p1
               << " and " << p2 << std::endl;
     std::cerr << e.what() << std::endl;
     // Add to the list of failed constraints

@@ -1666,7 +1666,7 @@ static inline std::wstring utf8_decode(const std::string& s) {
     setlocale(LC_ALL, curLocale.c_str());
     return result;
 }
-#else 
+#else
 static inline std::wstring utf8_decode(const std::string& s) {
     auto r = setlocale(LC_ALL, "");
     std::string curLocale;

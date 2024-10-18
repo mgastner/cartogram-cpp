@@ -1,0 +1,3 @@
+[submodule "external/cgal"]
+	path = external/cgal
+	url = https://github.com/CGAL/cgal.git
