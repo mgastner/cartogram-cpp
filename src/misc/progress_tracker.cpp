@@ -40,6 +40,11 @@ void ProgressTracker::print_progress_mid_integration(
   // finished insets
   const double inset_max_frac = inset_state.n_geo_divs() / total_geo_divs_;
   double progress = progress_ + (inset_max_frac / n_predicted_integrations);
+
+  // Increase max_progress by 0.5% at least
+  progress = std::max(progress, max_progress_ + 0.005);
+
+  max_progress_ = progress;
   print_progress(progress);
   print_progress_bar(progress);
 }
@@ -49,6 +54,7 @@ void ProgressTracker::print_progress_mid_integration(
 void ProgressTracker::update_and_print_progress_end_integration(
   const InsetState &inset_state)
 {
+  max_progress_ = 0;
   const double inset_max_frac = inset_state.n_geo_divs() / total_geo_divs_;
   progress_ += inset_max_frac;
   print_progress(progress_);
