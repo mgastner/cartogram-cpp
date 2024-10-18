@@ -23,7 +23,7 @@ jobs:
         apt update -y
         # add-apt-repository ppa:ubuntu-toolchain-r/test
         # cat apt-requirements.txt | xargs apt install -y
-        apt install -y git gcc-11 g++-11 build-essential manpages-dev software-properties-common nlohmann-json3-dev libomp-dev libfftw3-dev libcairo2-dev libboost-all-dev cmake libgmp3-dev libmpfr-dev libeigen3-dev
+        apt install -y git gcc-11 g++-11 build-essential manpages-dev software-properties-common nlohmann-json3-dev libomp-dev libfftw3-dev libcairo2-dev libboost-all-dev cmake libgmp3-dev libmpfr-dev libeigen3-dev tree dbus polkitd
 
     # Dependencies should already be installed in the container
     # - name: Install dependencies
@@ -61,6 +61,8 @@ jobs:
     - name: Figure out working directory
       run: |
         pwd
+        ls
+        tree
 
     - name: Upload Artifact
       uses: actions/upload-artifact@v4
