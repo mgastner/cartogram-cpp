@@ -54,7 +54,8 @@ void ProgressTracker::print_progress_mid_integration(
     progress = std::min(progress, max_progress_);
   }
 
-  // Increase max_progress by 0.5% at least
+  // Increase max_progress by dynamic increment that gets smaller
+  // as we get closer to 100%.
   progress = std::max(progress, max_progress_ + dynamic_increment);
 
   max_progress_ = progress;
