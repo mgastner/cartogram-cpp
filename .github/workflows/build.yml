@@ -8,10 +8,9 @@ on:
 
 env:
   BUILD_TYPE: Release
-  GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
 jobs:
-  build-and-release:
+  build-and-upload:
 
     runs-on: ubuntu-latest
     container:
@@ -54,33 +53,52 @@ jobs:
         name: cartogram
         path: /usr/local/bin/cartogram
 
-    -  name: Generate and Push Tag
-       id: generate_tag
-       run: |
-         pwd
-         ls -la
+  release:
 
-         # Configure git committer
-         git config user.email "action@github.com"
-         git config user.name "GitHub Action"
+    runs-on: ubuntu-latest
+    needs: build-and-upload
+    env:
+      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-         # # t the current date
-         current_date=$(date +'%Y-%m-%d')
+    steps:
+    - name: Checkout Repository
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
 
-         # Get the short SHA of the current HEAD
-         short_sha=$(git rev-parse --short HEAD)
+    - name: Download Artifact
+      uses: actions/download-artifact@v4
+      with:
+        name: cartogram
 
-         # Create the new tag
-         git tag -a "${short_sha}" -m "New release on ${current_date}"
+    - name: Generate and Push Tag
+      id: generate_tag
+      run: |
+        # Configure git committer
+        git config user.email "action@github.com"
+        git config user.name "GitHub Action"
 
-         # Push the tag to the repository
-         git push origin "${short_sha}"
+        # Get the current date
+        current_date=$(date +'%Y-%m-%d')
 
-         echo "new_tag=${short_sha}" >> $GITHUB_OUTPUT
+        # Get the short SHA of the current HEAD
+        short_sha=$(git rev-parse --short HEAD)
+
+        # Create the new tag
+        git tag -a "${short_sha}" -m "New release on ${current_date}"
+
+        # Push the tag to the repository
+        git push origin "${short_sha}"
+
+        echo "new_tag=${short_sha}" >> $GITHUB_OUTPUT
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
     - name: Release
       uses: softprops/action-gh-release@v2
       with:
         tag_name: ${{ steps.generate_tag.outputs.new_tag }}
-        files: build/bin/cartogram
-        body: "Rolling release ${{ steps.generate_tag.outputs.release_number }}"
+        files: cartogram
+        body: "Rolling release ${{ steps.generate_tag.outputs.new_tag }}"
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
