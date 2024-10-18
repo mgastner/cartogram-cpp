@@ -20,6 +20,7 @@ jobs:
 
     - name: Install Dependencies
       run: |
+        apt update -y
         apt install -y git g++-11 build-essential cmake libboost-all-dev
 
     - name: Checkout Repository
@@ -47,13 +48,6 @@ jobs:
     #     cd tests/
     #     chmod +x stress_test.sh
     #     bash stress_test.sh
-
-    - name: Figure out working directory
-      run: |
-        pwd
-        ls -a
-        tree
-
     - name: Upload Artifact
       uses: actions/upload-artifact@v4
       with:
@@ -66,6 +60,9 @@ jobs:
          # Configure git committer
          git config user.email "action@github.com"
          git config user.name "GitHub Action"
+
+         pwd
+         ls -la
 
          # Get the current date
          current_date=$(date +'%Y-%m-%d')
