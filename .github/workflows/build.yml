@@ -20,17 +20,7 @@ jobs:
 
     - name: Install Dependencies
       run: |
-        apt update -y
-        # add-apt-repository ppa:ubuntu-toolchain-r/test
-        # cat apt-requirements.txt | xargs apt install -y
-        apt install -y git gcc-11 g++-11 build-essential manpages-dev software-properties-common nlohmann-json3-dev libomp-dev libfftw3-dev libcairo2-dev libboost-all-dev cmake libgmp3-dev libmpfr-dev libeigen3-dev tree dbus polkitd
-
-    # Dependencies should already be installed in the container
-    # - name: Install dependencies
-    #   uses: awalsh128/cache-apt-pkgs-action@latest
-    #   with:
-    #     packages: gcc-11 g++-11 build-essential manpages-dev software-properties-common nlohmann-json3-dev libomp-dev libfftw3-dev libcairo2-dev libboost-all-dev cmake libgmp3-dev libmpfr-dev libeigen3-dev git
-    #     version: 1.1
+        apt install -y git g++-11 build-essential cmake libboost-all-dev
 
     - name: Checkout Repository
       uses: actions/checkout@v4
@@ -61,7 +51,7 @@ jobs:
     - name: Figure out working directory
       run: |
         pwd
-        ls
+        ls -a
         tree
 
     - name: Upload Artifact
@@ -76,9 +66,6 @@ jobs:
          # Configure git committer
          git config user.email "action@github.com"
          git config user.name "GitHub Action"
-
-         # Fetch tags
-         git fetch --tags
 
          # Get the current date
          current_date=$(date +'%Y-%m-%d')

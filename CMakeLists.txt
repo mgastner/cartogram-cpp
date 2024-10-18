@@ -2,7 +2,6 @@ cmake_minimum_required(VERSION 3.25)
 
 if(UNIX AND NOT APPLE)
   set(CMAKE_CXX_COMPILER "g++-11")
-  set(CMAKE_C_COMPILER "gcc-11")
 endif()
 
 project(cartogram LANGUAGES CXX)
