@@ -6,16 +6,16 @@ on:
   push:
     branches: [ "main", "pr/adisidev/201" ]
 
+env:
+  BUILD_TYPE: Release
+  GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
 jobs:
   build-and-release:
 
     runs-on: ubuntu-latest
     container:
       image: gocartio/cartogram-web:latest
-      env:
-        BUILD_TYPE: Release
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
     steps:
 
     - name: Install Dependencies
@@ -64,7 +64,7 @@ jobs:
          git config user.email "action@github.com"
          git config user.name "GitHub Action"
 
-         # Get the current date
+         # # t the current date
          current_date=$(date +'%Y-%m-%d')
 
          # Get the short SHA of the current HEAD
