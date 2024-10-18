@@ -46,7 +46,13 @@ void ProgressTracker::print_progress_mid_integration(
   double dynamic_increment = remaining_progress * 0.1;
 
   // Leave buffer at end so that we don't reach 100% prematurely
-  progress = std::min(progress, 0.935);
+  progress = std::min(progress, 0.75);
+
+  // Our assumption above causes the progress bar to start at 36%.
+  // Thus, we temper it down for the first few integrations.
+  if (inset_state.n_finished_integrations() < 4) {
+    progress = std::min(progress, max_progress_);
+  }
 
   // Increase max_progress by 0.5% at least
   progress = std::max(progress, max_progress_ + dynamic_increment);
