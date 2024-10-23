@@ -27,9 +27,8 @@ Bbox InsetState::bbox(bool original_bbox) const
   double inset_ymin = dbl_inf;
   double inset_ymax = -dbl_inf;
 #pragma omp parallel for default(none) shared(geo_divs) \
-  reduction(min                                         \
-            : inset_xmin, inset_ymin) reduction(max     \
-                                                : inset_xmax, inset_ymax)
+  reduction(min : inset_xmin, inset_ymin)               \
+  reduction(max : inset_xmax, inset_ymax)
   for (const auto &gd : geo_divs) {
     for (const auto &pwh : gd.polygons_with_holes()) {
       const auto bb = pwh.bbox();
@@ -80,8 +79,7 @@ bool InsetState::continue_integrating() const
   auto [max_area_err, worst_gd] = max_area_error();
 
   // A GeoDiv is still above our area error threshold
-  bool area_error_above_threshold =
-    max_area_err > max_permitted_area_error;
+  bool area_error_above_threshold = max_area_err > max_permitted_area_error;
 
   // Area expansion factor is above our threshold
   // i.e. cartogram has become too big or too small
@@ -564,6 +562,11 @@ double InsetState::initial_target_area() const
   return initial_target_area_;
 }
 
+bool InsetState::is_conic_projection_applied() const
+{
+  return is_conic_projection_applied_;
+}
+
 bool InsetState::is_input_target_area_missing(const std::string &id) const
 {
   return is_input_target_area_missing_.at(id);
@@ -852,6 +855,11 @@ void InsetState::adjust_grid()
               << " with bounding box\n\t(" << bb.xmin() << ", " << bb.ymin()
               << ", " << bb.xmax() << ", " << bb.ymax() << ")" << std::endl;
   }
+}
+
+void InsetState::set_conic_projection_applied()
+{
+  is_conic_projection_applied_ = true;
 }
 
 void InsetState::set_grid_dimensions(

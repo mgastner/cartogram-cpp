@@ -97,6 +97,9 @@ private:
 
   // Area errors
   std::vector<double> max_area_errors_;
+  
+  // Whether a map projection is applied or not
+  bool is_conic_projection_applied_{0};
 
   // Make default constructor private so that only
   // InsetState(const std::string) can be called as constructor
@@ -192,6 +195,7 @@ public:
   std::vector<std::vector<intersection>> intersec_with_parallel_to(
     char,
     unsigned int) const;
+  bool is_conic_projection_applied() const;
   bool is_input_target_area_missing(const std::string &) const;
   void is_simple(const char* caller_func) const;
   std::string label_at(const std::string &) const;
@@ -231,6 +235,7 @@ public:
   void rescale_map(unsigned int, bool);
   void revert_smyth_craster_projection();
   void set_area_errors();
+  void set_conic_projection_applied();
   void set_grid_dimensions(unsigned int, unsigned int);
   void set_geo_divs(std::vector<GeoDiv> new_geo_divs);
   void set_inset_name(const std::string &);

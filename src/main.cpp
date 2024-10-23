@@ -107,6 +107,7 @@ int main(const int argc, const char *argv[])
       (bb.ymin() >= -90.0 && bb.ymax() <= 90.0) &&
       (crs == "+proj=longlat" || crs == "urn:ogc:def:crs:OGC:1.3:CRS84")) {
 
+      inset_state.set_conic_projection_applied();
       // If yes, transform the coordinates with the Albers projection if the
       // input map is not a world map. Otherwise, use the Smyth-Craster
       // projection.
