@@ -167,11 +167,11 @@ int main(const int argc, const char *argv[])
       // Rescale map to fit into a rectangular box [0, lx] * [0, ly]
       inset_state.rescale_map(long_grid_side_length, cart_info.is_world_map());
 
-    // Output rescaled GeoJSON
-    cart_info.write_geojson(
-      geo_file_name,
-      map_name + "_input.geojson",
-      output_to_stdout);
+      // Output rescaled/conic projected GeoJSON
+      cart_info.write_geojson(
+        geo_file_name,
+        map_name + "_input_processed.geojson",
+        false);
 
       if (output_to_stdout) {
 
@@ -389,8 +389,7 @@ int main(const int argc, const char *argv[])
       cart_info.write_geojson(
         geo_file_name,
         map_name + "_cartogram_in_smyth_projection.geojson",
-        output_to_stdout);
-      inset_state.revert_smyth_craster_projection();
+        false);
     }
 
     if (output_to_stdout and !qtdt_method) {
