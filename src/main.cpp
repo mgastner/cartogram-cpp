@@ -122,69 +122,50 @@ int main(const int argc, const char *argv[])
       return EXIT_FAILURE;
     }
 
-    if (simplify) {
-      std::cerr << "Start of initial simplification of " << inset_pos
-                << std::endl;
-      time_tracker.start("Simplification");
+    // Replace missing and zero target areas with positive values
+    cart_info.replace_missing_and_zero_target_areas();
 
-      // Simplification reduces the number of points used to represent the
-      // GeoDivs in the inset, thereby reducing output file sizes and
-      // run-times
-      inset_state.simplify(target_points_per_inset);
+    // Project and exit
+    if (output_equal_area) {
 
-      // Update time
-      time_tracker.stop("Simplification");
+      // Normalize areas
+      for (auto &[inset_pos, inset_state] : cart_info.ref_to_inset_states()) {
+        inset_state.normalize_inset_area(
+          cart_info.cart_initial_total_target_area(),
+          output_equal_area);
+      }
+
+      // Shift insets so that they do not overlap
+      cart_info.shift_insets_to_target_position();
+
+      // Output to GeoJSON
+      cart_info.write_geojson(
+        geo_file_name,
+        map_name + "_equal_area.geojson",
+        output_to_stdout);
+      return EXIT_SUCCESS;
     }
-    std::cerr << "End of initial simplification of " << inset_pos << std::endl;
 
-    // End of inset time
-    time_tracker.stop("Inset " + inset_pos);
-  }
+    // Track progress of the cartogram generation
+    ProgressTracker progress_tracker(total_geo_divs);
 
-  // Replace missing and zero target areas with positive values
-  cart_info.replace_missing_and_zero_target_areas();
-
-  // Project and exit
-  if (output_equal_area) {
-
-    // Normalize areas
+    // Iterate over insets
     for (auto &[inset_pos, inset_state] : cart_info.ref_to_inset_states()) {
-      inset_state.normalize_inset_area(
-        cart_info.cart_initial_total_target_area(),
-        output_equal_area);
-    }
 
-    // Shift insets so that they do not overlap
-    cart_info.shift_insets_to_target_position();
+      // Start of inset time
+      time_tracker.start("Inset " + inset_pos);
 
-    // Output to GeoJSON
-    cart_info.write_geojson(
-      geo_file_name,
-      map_name + "_equal_area.geojson",
-      output_to_stdout);
-    return EXIT_SUCCESS;
-  }
+      // Determine the name of the inset
+      std::string inset_name = map_name;
+      if (cart_info.n_insets() > 1) {
+        inset_name += "_" + inset_pos;
+        std::cerr << "\nWorking on inset at position: " << inset_pos
+                  << std::endl;
+      }
+      inset_state.set_inset_name(inset_name);
 
-  // Track progress of the cartogram generation
-  ProgressTracker progress_tracker(total_geo_divs);
-
-  // Iterate over insets
-  for (auto &[inset_pos, inset_state] : cart_info.ref_to_inset_states()) {
-
-    // Start of inset time
-    time_tracker.start("Inset " + inset_pos);
-
-    // Determine the name of the inset
-    std::string inset_name = map_name;
-    if (cart_info.n_insets() > 1) {
-      inset_name += "_" + inset_pos;
-      std::cerr << "\nWorking on inset at position: " << inset_pos
-                << std::endl;
-    }
-    inset_state.set_inset_name(inset_name);
-
-    // Rescale map to fit into a rectangular box [0, lx] * [0, ly]
-    inset_state.rescale_map(long_grid_side_length, cart_info.is_world_map());
+      // Rescale map to fit into a rectangular box [0, lx] * [0, ly]
+      inset_state.rescale_map(long_grid_side_length, cart_info.is_world_map());
 
     // Output rescaled GeoJSON
     cart_info.write_geojson(
@@ -192,10 +173,30 @@ int main(const int argc, const char *argv[])
       map_name + "_input.geojson",
       output_to_stdout);
 
-    if (output_to_stdout) {
+      if (output_to_stdout) {
 
-      // Store original coordinates
-      inset_state.store_original_geo_divs();
+        // Store original coordinates
+        inset_state.store_original_geo_divs();
+      }
+
+      if (simplify) {
+        std::cerr << "Start of initial simplification of " << inset_pos
+                  << std::endl;
+        time_tracker.start("Simplification");
+
+        // Simplification reduces the number of points used to represent the
+        // GeoDivs in the inset, thereby reducing output file sizes and
+        // run-times
+        inset_state.simplify(target_points_per_inset);
+
+        // Update time
+        time_tracker.stop("Simplification");
+      }
+      std::cerr << "End of initial simplification of " << inset_pos
+                << std::endl;
+
+      // End of inset time
+      time_tracker.stop("Inset " + inset_pos);
     }
 
     // Set up Fourier transforms
