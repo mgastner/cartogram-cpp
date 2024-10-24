@@ -194,6 +194,8 @@ int main(const int argc, const char *argv[])
     // Output rescaled GeoJSON
     cart_info.write_geojson(
       geo_file_name,
+      // processed = simplified + rescaled
+      // and potentially projected + small polygons removed
       map_name + "_input_processed",
       false);
 
