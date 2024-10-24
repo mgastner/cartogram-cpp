@@ -56,11 +56,6 @@ unsigned int CartogramInfo::n_insets() const
   return inset_states_.size();
 }
 
-void CartogramInfo::output_to_stdout() const
-{
-  std::cout << stdout_json << std::endl;
-}
-
 std::map<std::string, InsetState> &CartogramInfo::ref_to_inset_states()
 {
   return inset_states_;
