@@ -17,7 +17,10 @@ jobs:
       short_sha: ${{ steps.vars.outputs.short_sha }}
     steps:
 
-    - name: Set
+    - name: Checkout Repository
+      uses: actions/checkout@v4
+
+    - name: Calculate short_sha
       id: vars
       run: echo "short_sha=$(git rev-parse --short HEAD)" >> $GITHUB_OUTPUT
 
@@ -84,26 +87,10 @@ jobs:
       with:
         name: cartogram
 
-    # - name: Generate and Push Tag
-    #   id: generate_tag
-    #   run: |
-    #     # Configure git committer
-    #     git config user.email "action@github.com"
-    #     git config user.name "GitHub Action"
-
-    #     # Get the current date
-    #     current_date=$(date +'%Y-%m-%d')
-
-    #     # Get the short SHA of the current HEAD
-
-    #     # Create the new tag
-    #     git tag -a "${{ needs.set-outputs.outputs.short_sha }}"
-
-    #     # Push the tag to the repository
-    #     git push origin "${{ needs.set-outputs.outputs.short_sha }}"
-
-    #   env:
-    #     GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    - name: Push short_sha Tag
+      uses: actions-ecosystem/action-push-tag@v1
+      with:
+        tag: ${{ needs.set-outputs.outputs.short_sha }}
 
     - name: Release
       uses: softprops/action-gh-release@v2
