@@ -121,21 +121,6 @@ int main(const int argc, const char *argv[])
       return EXIT_FAILURE;
     }
 
-    if (simplify) {
-      std::cerr << "Start of initial simplification of " << inset_pos
-                << std::endl;
-      time_tracker.start("Simplification");
-
-      // Simplification reduces the number of points used to represent the
-      // GeoDivs in the inset, thereby reducing output file sizes and
-      // run-times
-      inset_state.simplify(target_points_per_inset);
-
-      // Update time
-      time_tracker.stop("Simplification");
-    }
-    std::cerr << "End of initial simplification of " << inset_pos << std::endl;
-
     // End of inset time
     time_tracker.stop("Inset " + inset_pos);
   }
@@ -159,8 +144,7 @@ int main(const int argc, const char *argv[])
     // Output to GeoJSON
     cart_info.write_geojson(
       geo_file_name,
-      map_name + "_equal_area",
-      output_to_stdout);
+      map_name + "_equal_area");
     return EXIT_SUCCESS;
   }
 
@@ -191,11 +175,27 @@ int main(const int argc, const char *argv[])
       inset_state.store_original_geo_divs();
     }
 
+    if (simplify) {
+      std::cerr << "Start of initial simplification of " << inset_pos
+                << std::endl;
+      time_tracker.start("Simplification");
+
+      // Simplification reduces the number of points used to represent the
+      // GeoDivs in the inset, thereby reducing output file sizes and
+      // run-times
+      inset_state.simplify(target_points_per_inset);
+
+      // Update time
+      time_tracker.stop("Simplification");
+    }
+    std::cerr << "End of initial simplification of " << inset_pos << std::endl;
+
     // Output rescaled GeoJSON
     cart_info.write_geojson(
       geo_file_name,
-      map_name + "_input",
-      output_to_stdout);
+      // processed = simplified + rescaled
+      // and potentially projected + small polygons removed
+      map_name + "_input_processed");
 
     // Set up Fourier transforms
     const unsigned int lx = inset_state.lx();
@@ -383,14 +383,6 @@ int main(const int argc, const char *argv[])
         plot_grid);
     }
 
-    if (world) {
-      cart_info.write_geojson(
-        geo_file_name,
-        map_name + "_cartogram_in_smyth_projection",
-        output_to_stdout);
-      inset_state.revert_smyth_craster_projection();
-    }
-
     if (output_to_stdout and !qtdt_method) {
       inset_state.fill_grid_diagonals(true);
       inset_state.project_with_cum_proj();
@@ -424,9 +416,6 @@ int main(const int argc, const char *argv[])
     geo_file_name,
     map_name + "_cartogram",
     output_to_stdout);
-
-  // Write final JSON to stdout, if requested
-  if (output_to_stdout) cart_info.output_to_stdout();
 
   // Stop of main function time
   time_tracker.stop("Total Time");

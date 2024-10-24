@@ -191,7 +191,7 @@ void CartogramInfo::write_geojson(
     nlohmann::json combined_json;
     combined_json["Simplified"] = new_json;
     combined_json["Original"] = new_json_original;
-    stdout_json[new_geo_file_name] = combined_json;
+    std::cout << combined_json << std::endl;
   } else {
     std::ofstream o(new_geo_file_name + ".geojson");
     o << new_json << std::endl;
