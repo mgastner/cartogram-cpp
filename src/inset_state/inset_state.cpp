@@ -421,10 +421,10 @@ void InsetState::create_and_store_quadtree_cell_corners()
     // get the minimum rho_init of the bbox of the node
     for (int i = bbox.xmin(); i < bbox.xmax(); ++i) {
       for (int j = bbox.ymin(); j < bbox.ymax(); ++j) {
-        if (i >= this->lx() || j >= this->ly()) {
+        if (i < 0 || j < 0) {
           continue;
         }
-        if (i < 0 || j < 0) {
+        if (i >= (int) this->lx() || j >= (int) this->ly()) {
           continue;
         }
         rho_min = std::min(rho_min, this->ref_to_rho_init()(i, j));
