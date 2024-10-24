@@ -12,6 +12,9 @@ set(THREADS_PREFER_PTHREAD_FLAG ON)
 set(CMAKE_COLOR_DIAGNOSTICS ON)
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
 
+# Assume development build by default
+set(RELEASE_TAG "development" CACHE STRING "Release tag for the build")
+
 # Default build type
 if(NOT CMAKE_BUILD_TYPE)
   set(CMAKE_BUILD_TYPE "Release" CACHE STRING "" FORCE)
@@ -34,6 +37,8 @@ pkg_search_module(cairo REQUIRED cairo IMPORTED_TARGET)
 # ========== Source Files ==========
 file(GLOB_RECURSE CARTOGRAM_SOURCES "src/*.cpp")
 add_executable(cartogram ${CARTOGRAM_SOURCES})
+
+target_compile_definitions(cartogram PRIVATE RELEASE_TAG="${RELEASE_TAG}")
 
 # ========== Include Directories ==========
 target_include_directories(cartogram

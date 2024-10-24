@@ -10,9 +10,21 @@ env:
   BUILD_TYPE: Release
 
 jobs:
+
+  set-outputs:
+    runs-on: ubuntu-latest
+    outputs:
+      short_sha: ${{ steps.vars.outputs.short_sha }}
+    steps:
+
+    - name: Set
+      id: vars
+      run: echo "short_sha=$(git rev-parse --short HEAD)" >> $GITHUB_OUTPUT
+
   build-and-upload:
 
     runs-on: ubuntu-latest
+    needs: set-outputs
     container:
       image: gocartio/cartogram-web:latest
     steps:
@@ -29,7 +41,7 @@ jobs:
           fetch-depth: 0
 
     - name: Configure CMake
-      run: cmake -B ${{github.workspace}}/build -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}}
+      run: cmake -B ${{github.workspace}}/build -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} -DRELEASE_TAG=${{ needs.set-outputs.outputs.short_sha }}
 
     - name: Build
       run: |
@@ -47,6 +59,7 @@ jobs:
     #     cd tests/
     #     chmod +x stress_test.sh
     #     bash stress_test.sh
+
     - name: Upload Artifact
       uses: actions/upload-artifact@v4
       with:
@@ -56,7 +69,7 @@ jobs:
   release:
 
     runs-on: ubuntu-latest
-    needs: build-and-upload
+    needs: [build-and-upload, set-outputs]
     env:
       GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
@@ -71,34 +84,32 @@ jobs:
       with:
         name: cartogram
 
-    - name: Generate and Push Tag
-      id: generate_tag
-      run: |
-        # Configure git committer
-        git config user.email "action@github.com"
-        git config user.name "GitHub Action"
+    # - name: Generate and Push Tag
+    #   id: generate_tag
+    #   run: |
+    #     # Configure git committer
+    #     git config user.email "action@github.com"
+    #     git config user.name "GitHub Action"
 
-        # Get the current date
-        current_date=$(date +'%Y-%m-%d')
+    #     # Get the current date
+    #     current_date=$(date +'%Y-%m-%d')
 
-        # Get the short SHA of the current HEAD
-        short_sha=$(git rev-parse --short HEAD)
+    #     # Get the short SHA of the current HEAD
 
-        # Create the new tag
-        git tag -a "${short_sha}" -m "New release on ${current_date}"
+    #     # Create the new tag
+    #     git tag -a "${{ needs.set-outputs.outputs.short_sha }}"
 
-        # Push the tag to the repository
-        git push origin "${short_sha}"
+    #     # Push the tag to the repository
+    #     git push origin "${{ needs.set-outputs.outputs.short_sha }}"
 
-        echo "new_tag=${short_sha}" >> $GITHUB_OUTPUT
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    #   env:
+    #     GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
     - name: Release
       uses: softprops/action-gh-release@v2
       with:
-        tag_name: ${{ steps.generate_tag.outputs.new_tag }}
+        tag_name: ${{ needs.set-outputs.outputs.short_sha }}
         files: cartogram
-        body: "Rolling release ${{ steps.generate_tag.outputs.new_tag }}"
+        body: "Rolling release ${{ needs.set-outputs.outputs.short_sha }}"
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

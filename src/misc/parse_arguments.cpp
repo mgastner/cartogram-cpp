@@ -26,7 +26,7 @@ argparse::ArgumentParser parsed_arguments(
 {
   // Create parser for arguments using argparse.
   // From https://github.com/p-ranav/argparse
-  argparse::ArgumentParser arguments("./cartogram", "2.0");
+  argparse::ArgumentParser arguments("./cartogram", RELEASE_TAG);
 
   // Positional argument accepting geometry file (GeoJSON, JSON) as input
   arguments.add_argument("geometry_file")
