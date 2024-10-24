@@ -48,7 +48,7 @@ jobs:
 
     - name: Build
       run: |
-        cmake --build ${{github.workspace}}/build --config ${{env.BUILD_TYPE}} --target install -j$(nproc) --
+        cmake --build ${{github.workspace}}/build --config ${{env.BUILD_TYPE}} --target install -j4 --
 
     # - name: Run CTest
     #   working-directory: ${{github.workspace}}/build
@@ -87,16 +87,21 @@ jobs:
       with:
         name: cartogram
 
-    - name: Push short_sha Tag
-      uses: actions-ecosystem/action-push-tag@v1
+    - name: Push tag
+      uses: actions/github-script@v5
       with:
-        tag: ${{ needs.set-outputs.outputs.short_sha }}
+        script: |
+          github.rest.git.createRef({
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            ref: 'refs/tags/${{ needs.set-outputs.outputs.short_sha }}',
+            sha: context.sha
+          })
 
     - name: Release
       uses: softprops/action-gh-release@v2
       with:
         tag_name: ${{ needs.set-outputs.outputs.short_sha }}
         files: cartogram
-        body: "Rolling release ${{ needs.set-outputs.outputs.short_sha }}"
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
