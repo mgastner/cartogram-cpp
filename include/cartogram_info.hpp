@@ -39,7 +39,7 @@ public:
   void replace_missing_and_zero_target_areas();
   std::string set_map_name(const std::string &);
   void shift_insets_to_target_position();
-  void write_geojson(const std::string &, const std::string &, bool);
+  void write_geojson(const std::string &, const std::string &, bool = false);
 };
 
 #endif // CARTOGRAM_INFO_HPP_

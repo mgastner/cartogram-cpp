@@ -144,8 +144,7 @@ int main(const int argc, const char *argv[])
     // Output to GeoJSON
     cart_info.write_geojson(
       geo_file_name,
-      map_name + "_equal_area",
-      false);
+      map_name + "_equal_area");
     return EXIT_SUCCESS;
   }
 
@@ -196,8 +195,7 @@ int main(const int argc, const char *argv[])
       geo_file_name,
       // processed = simplified + rescaled
       // and potentially projected + small polygons removed
-      map_name + "_input_processed",
-      false);
+      map_name + "_input_processed");
 
     // Set up Fourier transforms
     const unsigned int lx = inset_state.lx();
