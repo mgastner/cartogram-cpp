@@ -91,12 +91,10 @@ jobs:
       uses: actions/github-script@v5
       with:
         script: |
-          github.rest.git.createRef({
-            owner: context.repo.owner,
-            repo: context.repo.repo,
-            ref: 'refs/tags/${{ needs.set-outputs.outputs.short_sha }}',
-            sha: context.sha
-          })
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+          git tag ${{ needs.set-outputs.outputs.short_sha }}
+          git push origin ${{ needs.set-outputs.outputs.short_sha }}
 
     - name: Release
       uses: softprops/action-gh-release@v2
