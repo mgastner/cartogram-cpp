@@ -88,13 +88,11 @@ jobs:
         name: cartogram
 
     - name: Push tag
-      uses: actions/github-script@v5
-      with:
-        script: |
-          git config --global user.name "github-actions[bot]"
-          git config --global user.email "github-actions[bot]@users.noreply.github.com"
-          git tag ${{ needs.set-outputs.outputs.short_sha }}
-          git push origin ${{ needs.set-outputs.outputs.short_sha }}
+      run: |
+        git config --global user.name "github-actions[bot]"
+        git config --global user.email "github-actions[bot]@users.noreply.github.com"
+        git tag ${{ needs.set-outputs.outputs.short_sha }}
+        git push origin ${{ needs.set-outputs.outputs.short_sha }}
 
     - name: Release
       uses: softprops/action-gh-release@v2
