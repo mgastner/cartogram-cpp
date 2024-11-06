@@ -32,7 +32,8 @@ int main(const int argc, const char *argv[])
 
   // Other boolean values that are needed to parse the command line arguments
   bool make_csv, output_equal_area, output_to_stdout, plot_density, plot_grid,
-    plot_intersections, plot_polygons, plot_quadtree, remove_tiny_polygons;
+    plot_intersections, plot_polygons, plot_quadtree, remove_tiny_polygons,
+    output_preprocessed;
 
   // If the proportion of the polygon area is smaller than
   // min_polygon_area * total area, then remove polygon
@@ -61,7 +62,8 @@ int main(const int argc, const char *argv[])
     remove_tiny_polygons,
     min_polygon_area,
     plot_quadtree,
-    rays);
+    rays,
+    output_preprocessed);
 
   // Initialize cart_info. It contains all the information about the cartogram
   // that needs to be handled by functions called from main().
@@ -142,9 +144,7 @@ int main(const int argc, const char *argv[])
     cart_info.shift_insets_to_target_position();
 
     // Output to GeoJSON
-    cart_info.write_geojson(
-      geo_file_name,
-      map_name + "_equal_area");
+    cart_info.write_geojson(geo_file_name, map_name + "_equal_area");
     return EXIT_SUCCESS;
   }
 
@@ -190,12 +190,17 @@ int main(const int argc, const char *argv[])
     }
     std::cerr << "End of initial simplification of " << inset_pos << std::endl;
 
-    // Output rescaled GeoJSON
-    cart_info.write_geojson(
-      geo_file_name,
-      // processed = simplified + rescaled
-      // and potentially projected + small polygons removed
-      map_name + "_input_processed");
+    if (output_preprocessed) {
+      // Output rescaled GeoJSON
+      cart_info.write_geojson(
+        geo_file_name,
+        // processed = simplified + rescaled
+        // and potentially projected + small polygons removed
+        map_name + "_input_processed");
+
+      // Output preprocessed CSV file
+      cart_info.write_csv(map_name + "_input_processed");
+    }
 
     // Set up Fourier transforms
     const unsigned int lx = inset_state.lx();
