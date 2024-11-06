@@ -1,5 +1,6 @@
 #include "cartogram_info.hpp"
 #include "constants.hpp"
+#include "csv.hpp"
 #include <iostream>
 #include <utility>
 
@@ -203,4 +204,37 @@ std::string CartogramInfo::set_map_name(const std::string &map_name)
     map_name_ = map_name_.substr(0, map_name_.find('.'));
   }
   return map_name_;
+}
+
+void CartogramInfo::write_csv(const std::string &csv_file_name) {
+  // Write a csv file with the current target areas
+    std::ofstream out_file_csv;
+    out_file_csv.open(csv_file_name + ".csv");
+    if (!out_file_csv) {
+      std::cerr
+        << "ERROR writing GeoJSON: failed to open " << csv_file_name << ".csv"
+        << std::endl;
+    }
+
+    // Each vector of strings will represent one row, starting with column names
+    std::vector<std::vector<std::string> > csv_rows(1);
+
+    csv_rows[0].push_back(id_header_);
+    csv_rows[0].push_back("Target Area");
+
+    // Fill up the rows with the IDs and target areas
+    for (const auto &[id, inset_pos] : gd_to_inset_) {
+      const auto &inset_state = inset_states_.at(inset_pos);
+      const auto target_area = inset_state.target_area_at(id);
+      csv_rows.push_back({id, std::to_string(target_area)});
+    }
+
+  // Write to CSV object
+  auto writer = csv::make_csv_writer(out_file_csv);
+  for (const auto &row : csv_rows) {
+    writer << row;
+  }
+
+  // Close out_file and exit
+  out_file_csv.close();
 }
