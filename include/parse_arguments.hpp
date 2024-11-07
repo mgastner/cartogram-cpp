@@ -25,6 +25,7 @@ argparse::ArgumentParser parsed_arguments(
   bool &remove_tiny_polygons,
   double &minimum_polygon_area,
   bool &plot_quadtree,
-  bool &rays);
+  bool &rays,
+  bool &output_preprocessed);
 
 #endif // PARSE_ARGUMENTS_HPP_

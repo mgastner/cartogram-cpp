@@ -22,11 +22,12 @@ argparse::ArgumentParser parsed_arguments(
   bool &remove_tiny_polygons,
   double &minimum_polygon_area,
   bool &plot_quadtree,
-  bool &rays)
+  bool &rays,
+  bool &output_preprocessed)
 {
   // Create parser for arguments using argparse.
   // From https://github.com/p-ranav/argparse
-  argparse::ArgumentParser arguments("./cartogram", "2.0");
+  argparse::ArgumentParser arguments("./cartogram", RELEASE_TAG);
 
   // Positional argument accepting geometry file (GeoJSON, JSON) as input
   arguments.add_argument("geometry_file")
@@ -115,6 +116,10 @@ argparse::ArgumentParser parsed_arguments(
     .help("Boolean: Use old ray shooting method to fill density")
     .default_value(false)
     .implicit_value(true);
+  arguments.add_argument("--output_preprocessed")
+    .help("Boolean: output input GeoJSON and CSV after preprocessing")
+    .default_value(false)
+    .implicit_value(true);
 
   // Arguments of column names in provided visual variables file (CSV)
   std::string pre = "String: Column name for ";
@@ -174,6 +179,7 @@ argparse::ArgumentParser parsed_arguments(
   make_csv = arguments.get<bool>("-M");
   output_equal_area = arguments.get<bool>("-E");
   output_to_stdout = arguments.get<bool>("-O");
+  output_preprocessed = arguments.get<bool>("--output_preprocessed");
   plot_density = arguments.get<bool>("-d");
   plot_grid = arguments.get<bool>("-g");
   plot_intersections = arguments.get<bool>("-i");

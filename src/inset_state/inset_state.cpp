@@ -182,7 +182,7 @@ bool InsetState::insert_constraint_safely(const Point &p1, const Point &p2)
     proj_qd_.dt.insert_constraint(p1, p2);
     return true;
   } catch (const std::exception &e) {
-    std::cout << "WARNING DIAGONAL: Could not insert constraint between " << p1
+    std::cerr << "WARNING DIAGONAL: Could not insert constraint between " << p1
               << " and " << p2 << std::endl;
     std::cerr << e.what() << std::endl;
     // Add to the list of failed constraints
@@ -419,12 +419,12 @@ void InsetState::create_and_store_quadtree_cell_corners()
     double rho_max = -1e9;
 
     // get the minimum rho_init of the bbox of the node
-    for (unsigned int i = bbox.xmin(); i < bbox.xmax(); ++i) {
-      for (unsigned int j = bbox.ymin(); j < bbox.ymax(); ++j) {
-        if (i >= this->lx() || j >= this->ly()) {
+    for (int i = bbox.xmin(); i < bbox.xmax(); ++i) {
+      for (int j = bbox.ymin(); j < bbox.ymax(); ++j) {
+        if (i < 0 || j < 0) {
           continue;
         }
-        if (i < 0 || j < 0) {
+        if (i >= (int) this->lx() || j >= (int) this->ly()) {
           continue;
         }
         rho_min = std::min(rho_min, this->ref_to_rho_init()(i, j));

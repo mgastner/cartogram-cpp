@@ -32,7 +32,8 @@ int main(const int argc, const char *argv[])
 
   // Other boolean values that are needed to parse the command line arguments
   bool make_csv, output_equal_area, output_to_stdout, plot_density, plot_grid,
-    plot_intersections, plot_polygons, plot_quadtree, remove_tiny_polygons;
+    plot_intersections, plot_polygons, plot_quadtree, remove_tiny_polygons,
+    output_preprocessed;
 
   // If the proportion of the polygon area is smaller than
   // min_polygon_area * total area, then remove polygon
@@ -61,7 +62,8 @@ int main(const int argc, const char *argv[])
     remove_tiny_polygons,
     min_polygon_area,
     plot_quadtree,
-    rays);
+    rays,
+    output_preprocessed);
 
   // Initialize cart_info. It contains all the information about the cartogram
   // that needs to be handled by functions called from main().
@@ -121,21 +123,6 @@ int main(const int argc, const char *argv[])
       return EXIT_FAILURE;
     }
 
-    if (simplify) {
-      std::cerr << "Start of initial simplification of " << inset_pos
-                << std::endl;
-      time_tracker.start("Simplification");
-
-      // Simplification reduces the number of points used to represent the
-      // GeoDivs in the inset, thereby reducing output file sizes and
-      // run-times
-      inset_state.simplify(target_points_per_inset);
-
-      // Update time
-      time_tracker.stop("Simplification");
-    }
-    std::cerr << "End of initial simplification of " << inset_pos << std::endl;
-
     // End of inset time
     time_tracker.stop("Inset " + inset_pos);
   }
@@ -157,10 +144,7 @@ int main(const int argc, const char *argv[])
     cart_info.shift_insets_to_target_position();
 
     // Output to GeoJSON
-    cart_info.write_geojson(
-      geo_file_name,
-      map_name + "_equal_area.geojson",
-      output_to_stdout);
+    cart_info.write_geojson(geo_file_name, map_name + "_equal_area");
     return EXIT_SUCCESS;
   }
 
@@ -185,16 +169,37 @@ int main(const int argc, const char *argv[])
     // Rescale map to fit into a rectangular box [0, lx] * [0, ly]
     inset_state.rescale_map(long_grid_side_length, cart_info.is_world_map());
 
-    // Output rescaled GeoJSON
-    cart_info.write_geojson(
-      geo_file_name,
-      map_name + "_input.geojson",
-      output_to_stdout);
-
     if (output_to_stdout) {
 
       // Store original coordinates
       inset_state.store_original_geo_divs();
+    }
+
+    if (simplify) {
+      std::cerr << "Start of initial simplification of " << inset_pos
+                << std::endl;
+      time_tracker.start("Simplification");
+
+      // Simplification reduces the number of points used to represent the
+      // GeoDivs in the inset, thereby reducing output file sizes and
+      // run-times
+      inset_state.simplify(target_points_per_inset);
+
+      // Update time
+      time_tracker.stop("Simplification");
+    }
+    std::cerr << "End of initial simplification of " << inset_pos << std::endl;
+
+    if (output_preprocessed) {
+      // Output rescaled GeoJSON
+      cart_info.write_geojson(
+        geo_file_name,
+        // processed = simplified + rescaled
+        // and potentially projected + small polygons removed
+        map_name + "_input_processed");
+
+      // Output preprocessed CSV file
+      cart_info.write_csv(map_name + "_input_processed");
     }
 
     // Set up Fourier transforms
@@ -383,14 +388,6 @@ int main(const int argc, const char *argv[])
         plot_grid);
     }
 
-    if (world) {
-      cart_info.write_geojson(
-        geo_file_name,
-        map_name + "_cartogram_in_smyth_projection.geojson",
-        output_to_stdout);
-      inset_state.revert_smyth_craster_projection();
-    }
-
     if (output_to_stdout and !qtdt_method) {
       inset_state.fill_grid_diagonals(true);
       inset_state.project_with_cum_proj();
@@ -422,7 +419,7 @@ int main(const int argc, const char *argv[])
   // Output to GeoJSON
   cart_info.write_geojson(
     geo_file_name,
-    map_name + "_cartogram.geojson",
+    map_name + "_cartogram",
     output_to_stdout);
 
   // Stop of main function time

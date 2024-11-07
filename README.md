@@ -10,7 +10,13 @@ Gastner MT, Seguy V, More P. _Fast flow-based algorithm for creating density-equ
 
 Data produced by code in this repository are subject to the MIT license found [here](./LICENSE) and should cite the aforementioned paper by Gastner et al. (2018).
 
+While cloning this repository, please ensure you use the `--recurse-submodules` flag like so:
+-
+    git clone --recurse-submodules https://github.com/mgastner/cartogram-cpp.git
+
 ## Dependencies
+
+Please note, we only support UNIX-based systems, and have only tested on macOS, Linux, and GNU.
 
 ### macOS
 
@@ -22,25 +28,17 @@ Install [homebrew](brew.sh) by running the following command:
 
 #### Installing dependencies through Homebrew
 
-Install llvm, pkg-config, boost, fftw, cgal, nlohmann-json, and cmake by running the following command:
+Install pkg-config, boost, fftw, nlohmann-json, and cmake by running the following command:
 
-    brew install llvm@17 libomp pkg-config boost fftw cgal nlohmann-json cmake cairo matplotplusplus
+    brew install libomp pkg-config boost fftw nlohmann-json cmake cairo
 
 ### Debian-based distributions (Ubuntu, Arch Linux etc.)
 
-#### Installing GNU g++-13
+#### Installing relevant dependencies through apt:
 
-Run the following commands to install it:
+Have a look through to apt-requirements.txt if you'd like to see what all will be installed. Then, run the following commands to install all dependencies through apt:
 
-    sudo apt install build-essential manpages-dev software-properties-common
-    sudo add-apt-repository ppa:ubuntu-toolchain-r/test
-    sudo apt update && sudo apt install gcc-13 g++-13
-
-#### Installing dependencies through apt
-
-Install nlohmann-json, cgal, openmp, fftw3, cairo, matplot++, boost, and cmake by running the following command:
-
-    sudo apt install nlohmann-json3-dev libcgal-dev libomp-dev libfftw3-dev libcairo2-dev libmatplot++-dev libboost-all-dev cmake
+    apt install -y g++-11 build-essential cmake libboost-all-dev nlohmann-json3-dev libomp-dev libfftw3-dev libcairo2-dev
 
 ### Installation
 
@@ -62,6 +60,7 @@ Using lesser cores than you have is recommended so that your computer still has 
 - If running `cmake -B build` gives you an error, it is likely that a dependency was not installed correctly. Rerun the appropriate commands above to install the required dependencies and try again.
 - If you get an error which mentions permission issues, try running the command that gave you the error with `sudo` prefixed, as done with `sudo make install -C build` above.
 - If `cmake` complains that it could not find a particular library, please try uninstalling it and installing it again. After reinstalling it, please also unlink it and link it with the `--force` flag.
+- If you get errors related to CGAL, it's likely you have another version of CGAL installed on your computer that is getting chosen instead of the one contained as a submodule within this repository. It's also possible that when cloning this repository, the `--recurse-submodule` flag was missing. Try running `git submodule init` and `git submodule update` in the root directory of the repository.
 
 ### Usage
 
