@@ -38,9 +38,7 @@ Install pkg-config, boost, fftw, nlohmann-json, and cmake by running the followi
 
 Have a look through to apt-requirements.txt if you'd like to see what all will be installed. Then, run the following commands to install all dependencies through apt:
 
-    sudo apt update && add-apt-repository ppa:ubuntu-toolchain-r/test
-    cat apt-requirements.txt | xargs sudo apt install -y
-
+    apt install -y g++-11 build-essential cmake libboost-all-dev nlohmann-json3-dev libomp-dev libfftw3-dev libcairo2-dev
 
 ### Installation
 
