@@ -895,10 +895,11 @@ double InsetState::target_area_at(const std::string &id) const
   }
 }
 
-double InsetState::total_inset_area() const
+double InsetState::total_inset_area(bool original_area) const
 {
+  auto &geo_divs = original_area ? geo_divs_original_transformed_ : geo_divs_;
   double total_inset_area = 0.0;
-  for (const auto &gd : geo_divs_) {
+  for (const auto &gd : geo_divs) {
     total_inset_area += gd.area();
   }
   return total_inset_area;

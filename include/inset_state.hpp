@@ -240,7 +240,7 @@ public:
   void store_original_geo_divs();
   double target_area_at(const std::string &) const;
   bool target_area_is_missing(const std::string &) const;
-  double total_inset_area() const;
+  double total_inset_area(bool = false) const;
   double total_target_area() const;
   Polygon transform_to_equal_area_projection_coor(Polygon edge_points);
   std::array<Point, 3> transformed_triangle(
