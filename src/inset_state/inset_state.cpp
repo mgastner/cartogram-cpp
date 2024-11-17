@@ -20,7 +20,7 @@ double InsetState::area_error_at(const std::string &id) const
 
 Bbox InsetState::bbox(bool original_bbox) const
 {
-  auto &geo_divs = original_bbox ? geo_divs_original_ : geo_divs_;
+  auto &geo_divs = original_bbox ? geo_divs_original_transformed_ : geo_divs_;
   // Find joint bounding box for all "polygons with holes" in this inset
   double inset_xmin = dbl_inf;
   double inset_xmax = -dbl_inf;
