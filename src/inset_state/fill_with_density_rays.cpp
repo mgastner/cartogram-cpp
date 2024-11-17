@@ -122,7 +122,7 @@ void InsetState::fill_with_density_rays(bool plot_density)
           intersections_at_y[i + 1].ray_enters) {
 
           // Highlight where intersection is present
-          std::cerr << "\nInvalid Geometry!" << std::endl;
+          std::cerr << "\n ERROR: Invalid Geometry!" << std::endl;
           std::cerr << "Intersection of Polygons/Holes/Geodivs" << std::endl;
           std::cerr << "Y-coordinate: " << y << std::endl;
           std::cerr << "Left X-coordinate: " << left_x << std::endl;

@@ -51,10 +51,10 @@ void CartogramInfo::read_csv(const argparse::ArgumentParser &arguments)
   std::set<std::string> inset_pos_set;
   for (auto &row : reader) {
     if (row.size() < 2) {
-      std::cerr << "ERROR: CSV with >= 2 columns (IDs, target areas) required"
-                << std::endl
-                << "Some rows in your CSV may not have values for all columns"
-                << std::endl;
+      std::cerr
+        << "ERROR: CSV with >= 2 columns (IDs, target areas) required. Some "
+           "rows in your CSV may not have values for all columns"
+        << std::endl;
       _Exit(17);
     }
 
@@ -79,9 +79,9 @@ void CartogramInfo::read_csv(const argparse::ArgumentParser &arguments)
     }
 
     if (!StringToDecimalConverter::is_str_valid_characters(area_as_str)) {
-      std::cerr << "ERROR: Invalid area string: " << area_as_str << std::endl;
       std::cerr
-        << "Area string must only contain 0-9, '.', '-' and ',' or 'NA'."
+        << "ERROR: Invalid area string: " << area_as_str
+        << ". Area string must only contain 0-9, '.', '-' and ',' or 'NA'."
         << std::endl;
       _Exit(18);
     }

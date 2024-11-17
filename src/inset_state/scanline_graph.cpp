@@ -9,7 +9,7 @@ std::vector<std::vector<intersection> > InsetState::intersec_with_parallel_to(
   unsigned int resolution) const
 {
   if (axis != 'x' && axis != 'y') {
-    std::cerr << "Invalid axis in " << __func__ << "()" << std::endl;
+    std::cerr << "ERROR: Invalid axis in " << __func__ << "()" << std::endl;
     exit(984320);
   }
   const unsigned int grid_length = (axis == 'x' ? ly_ : lx_);
@@ -94,15 +94,15 @@ std::vector<std::vector<intersection> > InsetState::intersec_with_parallel_to(
 
           // Check whether the number of intersections is odd
           if (intersections.size() % 2 != 0) {
-            std::cerr << "Incorrect Topology.\n"
+            std::cerr << "ERROR: Incorrect Topology. "
                       << "Number of intersections: " << intersections.size()
-                      << "\n"
-                      << axis << "-coordinate: " << ray << "\n"
-                      << "Intersection points: " << std::endl;
+                      << ". "
+                      << axis << "-coordinate: " << ray << ". "
+                      << "Intersection points: ";
 
             for (auto &intersection : intersections) {
               std::cerr << (axis == 'x' ? intersection.x() : intersection.y())
-                        << std::endl;
+                        << " ";
             }
             std::cerr << std::endl << std::endl;
             _Exit(932875);

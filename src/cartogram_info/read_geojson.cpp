@@ -185,8 +185,8 @@ void CartogramInfo::read_geojson(
   try {
     in_file >> j;
   } catch (nlohmann::json::parse_error &e) {
-    std::cerr << "ERROR: " << e.what() << ".\nexception id: " << e.id
-              << "\nbyte position of error: " << e.byte << std::endl;
+    std::cerr << "ERROR: " << e.what() << ". Exception id: " << e.id
+              << ". Byte position of error: " << e.byte << std::endl;
     _Exit(3);
   }
   check_geojson_validity(j);
@@ -222,7 +222,7 @@ void CartogramInfo::read_geojson(
           !properties.contains(id_header_) &&
           !id_header_.empty()) {  // Visual file not provided
           std::cerr << "ERROR: In GeoJSON, there is no property " << id_header_
-                    << " in feature.\nAvailable properties are: " << properties
+                    << " in feature. Available properties are: " << properties
                     << std::endl;
           _Exit(16);
         }
@@ -414,12 +414,18 @@ void CartogramInfo::read_geojson(
     std::inserter(ids_not_in_geojson, ids_not_in_geojson.end()));
   if (!ids_not_in_geojson.empty()) {
     std::cerr << "ERROR: Mismatch between GeoJSON and "
-              << visual_variable_file_ << "." << std::endl;
-    std::cerr << "The following IDs do not appear in the GeoJSON:"
-              << std::endl;
-    for (const auto &id : ids_not_in_geojson) {
-      std::cerr << "  " << id << std::endl;
+              << visual_variable_file_
+              << ". The following IDs do not appear in the GeoJSON: ";
+    std::vector<std::string> ids_not_in_geojson_vec(
+      ids_not_in_geojson.begin(),
+      ids_not_in_geojson.end());
+    for (size_t i = 0; i < ids_not_in_geojson_vec.size(); ++i) {
+      std::cerr << ids_not_in_geojson_vec[i];
+      if (i < ids_not_in_geojson_vec.size() - 1) {
+        std::cerr << ", ";
+      }
     }
+    std::cerr << std::endl;
     _Exit(20);
   }
 
@@ -433,12 +439,19 @@ void CartogramInfo::read_geojson(
     std::inserter(ids_not_in_vv, ids_not_in_vv.end()));
   if (!ids_not_in_vv.empty()) {
     std::cerr << "WARNING: Mismatch between GeoJSON and "
-              << visual_variable_file_ << "." << std::endl;
-    std::cerr << "The following IDs do not appear in " << visual_variable_file_
-              << ": " << std::endl;
-    for (const auto &id : ids_not_in_vv) {
-      std::cerr << "  " << id << std::endl;
+              << visual_variable_file_
+              << ". The following IDs do not appear in "
+              << visual_variable_file_ << ": ";
+    std::vector<std::string> ids_not_in_vv_vec(
+      ids_not_in_vv.begin(),
+      ids_not_in_vv.end());
+    for (size_t i = 0; i < ids_not_in_vv_vec.size(); ++i) {
+      std::cerr << ids_not_in_vv_vec[i];
+      if (i < ids_not_in_vv_vec.size() - 1) {
+        std::cerr << ", ";
+      }
     }
+    std::cerr << std::endl;
     // _Exit(21);
     // TODO: Decide, is this an error, or warning?
   }

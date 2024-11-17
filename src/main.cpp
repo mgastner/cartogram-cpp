@@ -118,8 +118,10 @@ int main(const int argc, const char *argv[])
         inset_state.apply_albers_projection();
       }
     } else if (output_equal_area) {
-      std::cerr << "ERROR: Input GeoJSON is not a longitude-latitude map."
-                << std::endl;
+      std::cerr
+        << "ERROR: Input GeoJSON is not a longitude-latitude map. Therefore, "
+           "it is not possible to produce an equal-area map."
+        << std::endl;
       return EXIT_FAILURE;
     }
 
@@ -410,9 +412,13 @@ int main(const int argc, const char *argv[])
 
     // Rescale insets in correct proportion to each other
     inset_state.normalize_inset_area(
-      cart_info.cart_initial_total_target_area(), false, false);
+      cart_info.cart_initial_total_target_area(),
+      false,
+      false);
     inset_state.normalize_inset_area(
-      cart_info.cart_initial_total_target_area(), false, output_to_stdout);
+      cart_info.cart_initial_total_target_area(),
+      false,
+      output_to_stdout);
   }
 
   // Shift insets so that they do not overlap

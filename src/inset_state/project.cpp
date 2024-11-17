@@ -132,7 +132,7 @@ void InsetState::exit_if_not_on_grid_or_edge(const Point p1) const
   if (
     (p1.x() != 0.0 && p1.x() != lx_ && p1.x() - int(p1.x()) != 0.5) ||
     (p1.y() != 0.0 && p1.y() != ly_ && p1.y() - int(p1.y()) != 0.5)) {
-    std::cerr << "Error: Invalid input coordinate in triangulation\n"
+    std::cerr << "ERROR: Invalid input coordinate in triangulation. "
               << "\tpt = (" << p1.x() << ", " << p1.y() << ")" << std::endl;
     exit(1);
   }
@@ -289,7 +289,7 @@ std::array<Point, 3> InsetState::untransformed_triangle(
   if (pt.x() < 0 || pt.x() > lx_ || pt.y() < 0 || pt.y() > ly_) {
     CGAL::set_pretty_mode(std::cerr);
     std::cerr << "ERROR: coordinate outside bounding box in " << __func__
-              << "().\npt = " << pt << std::endl;
+              << "(). pt = " << pt << std::endl;
     exit(1);
   }
 
