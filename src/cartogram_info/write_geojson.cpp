@@ -91,7 +91,7 @@ nlohmann::json CartogramInfo::cgal_to_json(
 
   // Insert divider lines between all insets
   for (const auto &[inset_pos, inset_state] : inset_states_) {
-    const Bbox inset_bb = inset_state.bbox();
+    const Bbox inset_bb = inset_state.bbox(original_geo_divs_to_geojson);
     if (inset_pos == "T") {
       divider_container.push_back(divider_points(
         min_xmin_tcb,

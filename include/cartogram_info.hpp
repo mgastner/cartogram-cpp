@@ -38,7 +38,7 @@ public:
   std::map<std::string, InsetState> &ref_to_inset_states();
   void replace_missing_and_zero_target_areas();
   std::string set_map_name(const std::string &);
-  void shift_insets_to_target_position();
+  void shift_insets_to_target_position(bool = false);
   void write_csv(const std::string &csv_file_name);
   void write_geojson(const std::string &, const std::string &, bool = false);
 };

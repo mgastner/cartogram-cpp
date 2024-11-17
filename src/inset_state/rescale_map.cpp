@@ -84,9 +84,10 @@ void InsetState::rescale_map(
 
 void InsetState::normalize_inset_area(
   double total_cart_target_area,
-  bool equal_area)
+  bool equal_area, bool normalize_original)
 {
-  const auto bb = bbox();
+  auto &geo_divs = normalize_original ? geo_divs_original_transformed_ : geo_divs_;
+  const auto bb = bbox(normalize_original);
 
   // Calculate scale_factor that makes inset areas proportional to their
   // target areas on the cartogram
@@ -102,7 +103,7 @@ void InsetState::normalize_inset_area(
       -(bb.xmin() + bb.xmax()) / 2,
       -(bb.ymin() + bb.ymax()) / 2));
   const Transformation scale(CGAL::SCALING, scale_factor);
-  for (auto &gd : geo_divs_) {
+  for (auto &gd : geo_divs) {
     for (auto &pwh : gd.ref_to_polygons_with_holes()) {
       auto &ext_ring = pwh.outer_boundary();
       ext_ring = transform(translate, ext_ring);

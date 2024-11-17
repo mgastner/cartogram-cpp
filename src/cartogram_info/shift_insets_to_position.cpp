@@ -1,7 +1,7 @@
 #include "cartogram_info.hpp"
 #include "constants.hpp"
 
-void CartogramInfo::shift_insets_to_target_position()
+void CartogramInfo::shift_insets_to_target_position(bool output_to_stdout)
 {
   // For simplicity's sake, let us formally insert bounding boxes for
   // all conceivable inset positions
@@ -13,7 +13,7 @@ void CartogramInfo::shift_insets_to_target_position()
 
   // If the inset actually exists, we get its current bounding box
   for (const auto &[inset_pos, inset_state] : inset_states_) {
-    bboxes.at(inset_pos) = inset_state.bbox();
+    bboxes.at(inset_pos) = inset_state.bbox(output_to_stdout);
   }
 
   // Calculate the width and height of all positioned insets without spacing
@@ -82,6 +82,6 @@ void CartogramInfo::shift_insets_to_target_position()
       CGAL::Vector_2<Scd>(x, y));
 
     // Apply translation to all points
-    inset_state.transform_points(translate);
+    inset_state.transform_points(translate, output_to_stdout);
   }
 }

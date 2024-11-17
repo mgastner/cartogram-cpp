@@ -410,11 +410,14 @@ int main(const int argc, const char *argv[])
 
     // Rescale insets in correct proportion to each other
     inset_state.normalize_inset_area(
-      cart_info.cart_initial_total_target_area());
+      cart_info.cart_initial_total_target_area(), false, false);
+    inset_state.normalize_inset_area(
+      cart_info.cart_initial_total_target_area(), false, output_to_stdout);
   }
 
   // Shift insets so that they do not overlap
-  cart_info.shift_insets_to_target_position();
+  cart_info.shift_insets_to_target_position(false);
+  cart_info.shift_insets_to_target_position(output_to_stdout);
 
   // Output to GeoJSON
   cart_info.write_geojson(

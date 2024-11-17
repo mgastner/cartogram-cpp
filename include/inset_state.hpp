@@ -211,7 +211,7 @@ public:
   unsigned int n_geo_divs() const;
   unsigned long n_points() const;
   unsigned int n_rings() const;
-  void normalize_inset_area(double total_cart_target_area, bool = false);
+  void normalize_inset_area(double, bool = false, bool = false);
   void normalize_target_area();
   std::string pos() const;
   void project();
