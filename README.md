@@ -12,7 +12,9 @@ Data produced by code in this repository are subject to the MIT license found [h
 
 While cloning this repository, please ensure you use the `--recurse-submodules` flag like so:
 
-    git clone --recurse-submodules https://github.com/mgastner/cartogram-cpp.git
+```shell script
+git clone --recurse-submodules https://github.com/mgastner/cartogram-cpp.git
+```
 
 ## Dependencies
 
@@ -24,13 +26,17 @@ Please note, we only support UNIX-based systems, and have only tested on macOS, 
 
 Install [homebrew](brew.sh) by running the following command:
 
-    /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+```shell script
+/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+```
 
 #### Installing dependencies through Homebrew
 
 Install pkg-config, boost, fftw, nlohmann-json, and cmake by running the following command:
 
-    brew install libomp pkg-config boost fftw nlohmann-json cmake cairo
+```shell script
+brew install libomp pkg-config boost fftw nlohmann-json cmake cairo
+```
 
 ### Debian-based distributions (Ubuntu, Arch Linux etc.)
 
@@ -44,9 +50,11 @@ Have a look through to apt-requirements.txt if you'd like to see what all will b
 
 Go to the `cartogram-cpp` directory in your preferred terminal and execute the following commands.
 
-    cmake -B build
-    make -C build
-    sudo make install -C build
+```shell script
+cmake -B build
+make -C build
+sudo make install -C build
+```
 
 If your computer has multiple cores, you may use the `make` command with the `-j` flag to use all your cores, or `-j` followed by a number to use the specified number of cores (for example, `-j4` to use 4 cores). You may perform the entire installation at once with:
 
@@ -67,7 +75,9 @@ Using lesser cores than you have is recommended so that your computer still has 
 
 Run the following command (replace `your-geojson-file.geojson` file with your geographic data and `your-csv-file.csv` with your visual variables file, containing target areas for each geographic region):
 
-        cartogram your-geojson-file.geojson your-csv-file.csv
+```shell script
+cartogram your-geojson-file.geojson your-csv-file.csv
+```
 
 -   The first argument's input is a GeoJSON or JSON file, in the standard GeoJSON format.
 -   The second argument's input is a `.csv` file with data about target areas.
@@ -94,7 +104,9 @@ You may find sample GeoJSON (containing geographic data) and CSV (containing inf
 
 To test whether whether the program was installed successfully and is working fine, you may run the following command from the repository root:
 
-    cartogram sample_data/world_by_country_since_2022/world_by_country_since_2022.geojson sample_data/world_by_country_since_2022/world_population_by_country_2010.csv --plot_polygons --world
+```shell script
+cartogram sample_data/world_by_country_since_2022/world_by_country_since_2022.geojson sample_data/world_by_country_since_2022/world_population_by_country_2010.csv --plot_polygons --world
+```
 
 You may inspect the resultant SVG to check if everything looks as expected.
 
@@ -110,19 +122,25 @@ If you'd like to contribute to the project, please run our tests after you make 
 
 To run the unit tests, execute the following command:
 
-    ctest --verbose
+```shell script
+ctest --verbose
+```
 
 To learn more about the tests, you may go to the `cartogram-cpp/tests` directory and read the `README.md` file.
 
 Additionally, you may go to the `cartogram-cpp/tests` directory and run the following command:
 
-     bash stress_test.sh
+```shell script
+bash stress_test.sh
+```
 
 ### Uninstallation
 
 Go to the `cartogram-cpp` directory in your preferred terminal and execute the following command:
 
-    sudo make uninstall -C build
+```shell script
+sudo make uninstall -C build
+```
 
 Upon successful uninstallation, the following will be outputted:
 
