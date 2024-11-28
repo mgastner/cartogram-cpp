@@ -90,7 +90,13 @@ The CSV file should be in the following format:
     2.  `"rgb(255, 0, 120)"` or `rgb(255 0 120)` or `"255, 0, 120"` or `255 0 120`: red, green and blue values out of 255.
     3.  `#e74c3c`: hex code of color, must start with `#`.
 
-**You may find sample GeoJSON (containing geographic data) and CSV (containing information about target areas, colors and other visual variables) files in the `cartogram-cpp/sample_data` directory.**
+You may find sample GeoJSON (containing geographic data) and CSV (containing information about target areas, colors and other visual variables) files in the `cartogram-cpp/sample_data` directory.
+
+To test whether whether the program was installed successfully and is working fine, you may run the following command from the repository root:
+
+    cartogram sample_data/world_by_country_since_2022/world_by_country_since_2022.geojson sample_data/world_by_country_since_2022/world_population_by_country_2010.csv --plot_polygons --world
+
+You may inspect the resultant SVG to check if everything looks as expected.
 
 ### Contributing
 
