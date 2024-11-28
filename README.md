@@ -11,7 +11,7 @@ Gastner MT, Seguy V, More P. _Fast flow-based algorithm for creating density-equ
 Data produced by code in this repository are subject to the MIT license found [here](./LICENSE) and should cite the aforementioned paper by Gastner et al. (2018).
 
 While cloning this repository, please ensure you use the `--recurse-submodules` flag like so:
--
+
     git clone --recurse-submodules https://github.com/mgastner/cartogram-cpp.git
 
 ## Dependencies
@@ -61,6 +61,7 @@ Using lesser cores than you have is recommended so that your computer still has 
 - If you get an error which mentions permission issues, try running the command that gave you the error with `sudo` prefixed, as done with `sudo make install -C build` above.
 - If `cmake` complains that it could not find a particular library, please try uninstalling it and installing it again. After reinstalling it, please also unlink it and link it with the `--force` flag.
 - If you get errors related to CGAL, it's likely you have another version of CGAL installed on your computer that is getting chosen instead of the one contained as a submodule within this repository. It's also possible that when cloning this repository, the `--recurse-submodule` flag was missing. Try running `git submodule init` and `git submodule update` in the root directory of the repository.
+- If VScode's `CMake: Install` does not work, make sure you own `/usr/local/bin` and the working directory. You may assign ownership to your account with `sudo chown -R $(whoami) .`, replacing `.` with the directory of choice.
 
 ### Usage
 
@@ -90,6 +91,12 @@ The CSV file should be in the following format:
     3.  `#e74c3c`: hex code of color, must start with `#`.
 
 **You may find sample GeoJSON (containing geographic data) and CSV (containing information about target areas, colors and other visual variables) files in the `cartogram-cpp/sample_data` directory.**
+
+### Contributing
+
+Contributions are highly encouraged! Please feel free to take a stab at any at any of the open issues and send in a pull request. If you need help getting setup or more guidance contributing, please @ any of the main contributors (@adisidev, @nihalzp, @mgastner) under any of the open issues (or after creating your own issue), and we'll be happy to guide you!
+
+Maintainers, please make sure to run the "Build and Release" workflow under GitHub Actions before approving the pull request. You may delete the newly created release before merging the pull-request. Another release should be automatically created after merging with main.
 
 ### Testing
 
