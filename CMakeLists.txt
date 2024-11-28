@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.25)
+cmake_minimum_required(VERSION 3.22)
 
 if(UNIX AND NOT APPLE)
   set(CMAKE_CXX_COMPILER "g++-11")
@@ -70,7 +70,7 @@ target_link_libraries(cartogram
 )
 
 # ========== Installation ==========
-install(TARGETS cartogram DESTINATION bin)
+install(TARGETS cartogram  DESTINATION /usr/local/bin)
 
 # Enable CTest testing
 enable_testing()
