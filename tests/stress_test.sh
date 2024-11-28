@@ -58,7 +58,7 @@ else
       verbose=1
       printf "\VERBOSE mode turned on.\n"
     else
-      cli="$arg"
+      cli="$cli $arg"
     fi
   done
 fi
