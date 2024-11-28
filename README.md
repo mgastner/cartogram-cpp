@@ -44,7 +44,9 @@ brew install libomp pkg-config boost fftw nlohmann-json cmake cairo
 
 Have a look through to apt-requirements.txt if you'd like to see what all will be installed. Then, run the following commands to install all dependencies through apt:
 
-    apt install -y g++-11 build-essential cmake libboost-all-dev nlohmann-json3-dev libomp-dev libfftw3-dev libcairo2-dev
+```shell script
+apt install -y g++-11 build-essential cmake libboost-all-dev nlohmann-json3-dev libomp-dev libfftw3-dev libcairo2-dev
+```
 
 ### Installation
 
@@ -58,9 +60,17 @@ sudo make install -C build
 
 If your computer has multiple cores, you may use the `make` command with the `-j` flag to use all your cores, or `-j` followed by a number to use the specified number of cores (for example, `-j4` to use 4 cores). You may perform the entire installation at once with:
 
-    sudo cmake -B build && sudo make install -j -C build
+```shell script
+sudo cmake -B build && sudo make install -j -C build
+```
 
 Using lesser cores than you have is recommended so that your computer still has some headroom for other tasks. Thus, it may be a good idea for you to modify the above snippet, appending your preferred number of cores to `-j`.
+
+#### Installing using VScode
+
+If you are using VScode, you may also install the program by running the `CMake: Install` command from the command palette (accessible via `Ctrl/Command + Shift + P`). By default, VSCode builds the `DEBUG` version. If you would like to build the `RELEASE` version, you may change the build type in the `CMake: Select Variant` command. The `RELEASE` version will be much faster.
+
+If you encounter any issues, please look at the troubleshooting section below, especially the last bullet point.
 
 ### Troubleshooting
 
