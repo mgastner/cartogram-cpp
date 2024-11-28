@@ -83,9 +83,9 @@ In each subdirectory, there should be:
 
   Examples:
 
-    * `world_population_2018.csv`
-    * `india_agricultural_production_in_inr_2012.csv`
-    * `germany_votes_for_green_party_2017.csv`
+    * `world_population_by_country_2018.csv`
+    * `india_agricultural_production_in_inr_by_state_2012.csv`
+    * `germany_votes_for_green_party_by_electoral_district_2017.csv`
 - exactly one Markdown file with the name:
 
   `(geographic_region)_by_(division)_(optional_descrip)_(year[s]).md`
