@@ -211,7 +211,7 @@ void CartogramInfo::read_geojson(
             id_header.begin(),
             id_header.end(),
             [](unsigned char x) {
-              return x < 0 || x > 127;
+              return x > 127;
             }),
           id_header.end());
         id_header_ = id_header;
