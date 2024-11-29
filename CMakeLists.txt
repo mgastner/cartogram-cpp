@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.25)
+cmake_minimum_required(VERSION 3.22)
 
 if(UNIX AND NOT APPLE)
   set(CMAKE_CXX_COMPILER "g++-11")
@@ -27,7 +27,7 @@ set(CGAL_DIR ${PROJECT_SOURCE_DIR}/external/cgal)
 find_package(CGAL REQUIRED)
 
 # Boost
-find_package(Boost REQUIRED COMPONENTS unit_test_framework)
+find_package(Boost REQUIRED CONFIG COMPONENTS unit_test_framework)
 
 # PkgConfig, fftw, and cairo
 find_package(PkgConfig REQUIRED)
