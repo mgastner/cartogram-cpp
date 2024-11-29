@@ -26,4 +26,4 @@ public:
   double operator()(unsigned int, unsigned int) const;
 };
 
-#endif // FT_REAL_2D_HPP_
+#endif  // FT_REAL_2D_HPP_

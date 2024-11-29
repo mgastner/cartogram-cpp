@@ -11,8 +11,10 @@ Gastner MT, Seguy V, More P. _Fast flow-based algorithm for creating density-equ
 Data produced by code in this repository are subject to the MIT license found [here](./LICENSE) and should cite the aforementioned paper by Gastner et al. (2018).
 
 While cloning this repository, please ensure you use the `--recurse-submodules` flag like so:
--
-    git clone --recurse-submodules https://github.com/mgastner/cartogram-cpp.git
+
+```shell script
+git clone --recurse-submodules https://github.com/mgastner/cartogram-cpp.git
+```
 
 ## Dependencies
 
@@ -24,13 +26,17 @@ Please note, we only support UNIX-based systems, and have only tested on macOS, 
 
 Install [homebrew](brew.sh) by running the following command:
 
-    /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+```shell script
+/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+```
 
 #### Installing dependencies through Homebrew
 
 Install pkg-config, boost, fftw, nlohmann-json, and cmake by running the following command:
 
-    brew install libomp pkg-config boost fftw nlohmann-json cmake cairo
+```shell script
+brew install libomp pkg-config boost fftw nlohmann-json cmake cairo
+```
 
 ### Debian-based distributions (Ubuntu, Arch Linux etc.)
 
@@ -38,21 +44,33 @@ Install pkg-config, boost, fftw, nlohmann-json, and cmake by running the followi
 
 Have a look through to apt-requirements.txt if you'd like to see what all will be installed. Then, run the following commands to install all dependencies through apt:
 
-    apt install -y g++-11 build-essential cmake libboost-all-dev nlohmann-json3-dev libomp-dev libfftw3-dev libcairo2-dev
+```shell script
+apt install -y g++-11 build-essential cmake libboost-all-dev nlohmann-json3-dev libomp-dev libfftw3-dev libcairo2-dev
+```
 
 ### Installation
 
 Go to the `cartogram-cpp` directory in your preferred terminal and execute the following commands.
 
-    cmake -B build
-    make -C build
-    sudo make install -C build
+```shell script
+cmake -B build
+make -C build
+sudo make install -C build
+```
 
 If your computer has multiple cores, you may use the `make` command with the `-j` flag to use all your cores, or `-j` followed by a number to use the specified number of cores (for example, `-j4` to use 4 cores). You may perform the entire installation at once with:
 
-    sudo cmake -B build && sudo make install -j -C build
+```shell script
+sudo cmake -B build && sudo make install -j -C build
+```
 
 Using lesser cores than you have is recommended so that your computer still has some headroom for other tasks. Thus, it may be a good idea for you to modify the above snippet, appending your preferred number of cores to `-j`.
+
+#### Installing using VScode
+
+If you are using VScode, you may also install the program by running the `CMake: Install` command from the command palette (accessible via `Ctrl/Command + Shift + P`). By default, VSCode builds the `DEBUG` version. If you would like to build the `RELEASE` version, you may change the build type in the `CMake: Select Variant` command. The `RELEASE` version will be much faster.
+
+If you encounter any issues, please look at the troubleshooting section below, especially the last bullet point.
 
 ### Troubleshooting
 
@@ -61,12 +79,15 @@ Using lesser cores than you have is recommended so that your computer still has 
 - If you get an error which mentions permission issues, try running the command that gave you the error with `sudo` prefixed, as done with `sudo make install -C build` above.
 - If `cmake` complains that it could not find a particular library, please try uninstalling it and installing it again. After reinstalling it, please also unlink it and link it with the `--force` flag.
 - If you get errors related to CGAL, it's likely you have another version of CGAL installed on your computer that is getting chosen instead of the one contained as a submodule within this repository. It's also possible that when cloning this repository, the `--recurse-submodule` flag was missing. Try running `git submodule init` and `git submodule update` in the root directory of the repository.
+- If VScode's `CMake: Install` does not work, make sure you own `/usr/local/bin` and the working directory. You may assign ownership to your account with `sudo chown -R $(whoami) .`, replacing `.` with the directory of choice.
 
 ### Usage
 
 Run the following command (replace `your-geojson-file.geojson` file with your geographic data and `your-csv-file.csv` with your visual variables file, containing target areas for each geographic region):
 
-        cartogram your-geojson-file.geojson your-csv-file.csv
+```shell script
+cartogram your-geojson-file.geojson your-csv-file.csv
+```
 
 -   The first argument's input is a GeoJSON or JSON file, in the standard GeoJSON format.
 -   The second argument's input is a `.csv` file with data about target areas.
@@ -89,7 +110,21 @@ The CSV file should be in the following format:
     2.  `"rgb(255, 0, 120)"` or `rgb(255 0 120)` or `"255, 0, 120"` or `255 0 120`: red, green and blue values out of 255.
     3.  `#e74c3c`: hex code of color, must start with `#`.
 
-**You may find sample GeoJSON (containing geographic data) and CSV (containing information about target areas, colors and other visual variables) files in the `cartogram-cpp/sample_data` directory.**
+You may find sample GeoJSON (containing geographic data) and CSV (containing information about target areas, colors and other visual variables) files in the `cartogram-cpp/sample_data` directory.
+
+To test whether whether the program was installed successfully and is working fine, you may run the following command from the repository root:
+
+```shell script
+cartogram sample_data/world_by_country_since_2022/world_by_country_since_2022.geojson sample_data/world_by_country_since_2022/world_population_by_country_2010.csv --plot_polygons --world
+```
+
+You may inspect the resultant SVG to check if everything looks as expected.
+
+### Contributing
+
+Contributions are highly encouraged! Please feel free to take a stab at any at any of the open issues and send in a pull request. If you need help getting setup or more guidance contributing, please @ any of the main contributors (@adisidev, @nihalzp, @mgastner) under any of the open issues (or after creating your own issue), and we'll be happy to guide you!
+
+Maintainers, please make sure to run the "Build and Release" workflow under GitHub Actions before approving the pull request. You may delete the newly created release before merging the pull-request. Another release should be automatically created after merging with main.
 
 ### Testing
 
@@ -97,19 +132,25 @@ If you'd like to contribute to the project, please run our tests after you make 
 
 To run the unit tests, execute the following command:
 
-    ctest --verbose
+```shell script
+ctest --verbose
+```
 
 To learn more about the tests, you may go to the `cartogram-cpp/tests` directory and read the `README.md` file.
 
 Additionally, you may go to the `cartogram-cpp/tests` directory and run the following command:
 
-     bash stress_test.sh
+```shell script
+bash stress_test.sh
+```
 
 ### Uninstallation
 
 Go to the `cartogram-cpp` directory in your preferred terminal and execute the following command:
 
-    sudo make uninstall -C build
+```shell script
+sudo make uninstall -C build
+```
 
 Upon successful uninstallation, the following will be outputted:
 

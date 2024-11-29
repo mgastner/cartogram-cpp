@@ -359,6 +359,7 @@ void CartogramInfo::read_geojson(
 
     // Write CSV
     std::ofstream out_file_csv;
+    set_map_name(geometry_file_name);
     const auto csv_name = map_name_ + ".csv";
     out_file_csv.open(csv_name);
     if (!out_file_csv) {

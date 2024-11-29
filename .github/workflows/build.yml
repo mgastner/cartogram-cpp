@@ -41,7 +41,7 @@ jobs:
       uses: actions/checkout@v4
       with:
           submodules: 'recursive'
-          fetch-depth: 0
+          fetch-depth: 1
 
     - name: Configure CMake
       run: cmake -B ${{github.workspace}}/build -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} -DRELEASE_TAG=${{ needs.set-outputs.outputs.short_sha }}
