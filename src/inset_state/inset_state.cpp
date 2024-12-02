@@ -27,9 +27,8 @@ Bbox InsetState::bbox(bool original_bbox) const
   double inset_ymin = dbl_inf;
   double inset_ymax = -dbl_inf;
 #pragma omp parallel for default(none) shared(geo_divs) \
-  reduction(min                                         \
-            : inset_xmin, inset_ymin) reduction(max     \
-                                                : inset_xmax, inset_ymax)
+  reduction(min : inset_xmin, inset_ymin)               \
+  reduction(max : inset_xmax, inset_ymax)
   for (const auto &gd : geo_divs) {
     for (const auto &pwh : gd.polygons_with_holes()) {
       const auto bb = pwh.bbox();
@@ -80,8 +79,7 @@ bool InsetState::continue_integrating() const
   auto [max_area_err, worst_gd] = max_area_error();
 
   // A GeoDiv is still above our area error threshold
-  bool area_error_above_threshold =
-    max_area_err > max_permitted_area_error;
+  bool area_error_above_threshold = max_area_err > max_permitted_area_error;
 
   // Area expansion factor is above our threshold
   // i.e. cartogram has become too big or too small
@@ -424,7 +422,7 @@ void InsetState::create_and_store_quadtree_cell_corners()
         if (i < 0 || j < 0) {
           continue;
         }
-        if (i >= (int) this->lx() || j >= (int) this->ly()) {
+        if (i >= (int)this->lx() || j >= (int)this->ly()) {
           continue;
         }
         rho_min = std::min(rho_min, this->ref_to_rho_init()(i, j));
@@ -970,4 +968,12 @@ void InsetState::transform_points(
 void InsetState::set_geo_divs(std::vector<GeoDiv> new_geo_divs)
 {
   geo_divs_ = std::move(new_geo_divs);
+}
+
+void InsetState::update_gd_ids(
+  const std::map<std::string, std::string> &gd_id_map)
+{
+  for (auto &gd : geo_divs_) {
+    gd.update_id(gd_id_map.at(gd.id()));
+  }
 }

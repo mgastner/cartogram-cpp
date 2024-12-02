@@ -182,7 +182,10 @@ public:
   void insert_color(const std::string &, const Color &);
   void insert_color(const std::string &, std::string &);
   bool insert_constraint_safely(const Point &p1, const Point &p2);
-  bool insert_constraint_safely_to_dt(Delaunay &dt, const Point &p1, const Point &p2);
+  bool insert_constraint_safely_to_dt(
+    Delaunay &dt,
+    const Point &p1,
+    const Point &p2);
   void insert_label(const std::string &, const std::string &);
   void insert_target_area(const std::string &, double);
   void insert_whether_input_target_area_is_missing(const std::string &, bool);
@@ -193,7 +196,7 @@ public:
     char,
     unsigned int) const;
   bool is_input_target_area_missing(const std::string &) const;
-  void is_simple(const char* caller_func) const;
+  void is_simple(const char *caller_func) const;
   std::string label_at(const std::string &) const;
   double latt_const() const;
   unsigned int lx() const;
@@ -253,12 +256,14 @@ public:
     const;
   void trim_grid_heatmap(cairo_t *cr, double padding);
   void update_delaunay_t();
+  void update_gd_ids(const std::map<std::string, std::string> &);
 
   // Cairo functions
   void write_cairo_map(
     const std::string &,
     bool,
-    const std::unordered_map<Point, Vector> = std::unordered_map<Point, Vector>()) const;
+    const std::unordered_map<Point, Vector> =
+      std::unordered_map<Point, Vector>()) const;
   void write_cairo_polygons_to_svg(
     const std::string &,
     bool,
