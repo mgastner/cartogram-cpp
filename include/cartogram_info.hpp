@@ -19,7 +19,6 @@ private:
   //       files in the wild, but it would still be sensible to allow cases
   //       where there are external rings with opposite winding directions.
   bool original_ext_ring_is_clockwise_{};
-  std::string visual_variable_file_;
   nlohmann::json cgal_to_json(bool = false);
 
 public:
