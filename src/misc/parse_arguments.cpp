@@ -186,8 +186,7 @@ argparse::ArgumentParser parsed_arguments(
   plot_polygons = arguments.get<bool>("-p");
   plot_quadtree = arguments.get<bool>("-q");
 
-  if (
-    arguments.is_used("-O") && !simplify && !qtdt_method) {
+  if (arguments.is_used("-O") && !simplify && !qtdt_method) {
     std::cerr << "ERROR: simplification disabled!\n";
     std::cerr << "--output_to_stdout flag is only supported with "
                  "simplification or quadtree.\n";
@@ -207,7 +206,9 @@ argparse::ArgumentParser parsed_arguments(
 
   // Check whether T flag is set, but not Q
   if (triangulation && !qtdt_method) {
-    std::cerr << "ERROR: Can't disable qtdt_method without disabling triangulation." << std::endl;
+    std::cerr
+      << "ERROR: Can't disable qtdt_method without disabling triangulation."
+      << std::endl;
     std::cerr << "QTDT method is necessary for Quadtree images." << std::endl;
     std::cerr << "To disable Triangulation, pass the -T flag." << std::endl;
     std::cerr << arguments << std::endl;
@@ -233,7 +234,7 @@ argparse::ArgumentParser parsed_arguments(
     visual_file_name = arguments.get<std::string>("visual_variable_file");
     std::cerr << "Using visual variables from file " << visual_file_name
               << std::endl;
-  } else if (!make_csv) {
+  } else if (!make_csv and !output_equal_area) {
 
     // CSV file not given, and user does not want to create one
     std::cerr << arguments << std::endl;
