@@ -35,6 +35,7 @@ public:
   void push_back(const Polygon_with_holes &);
   std::vector<Polygon_with_holes> &ref_to_polygons_with_holes();
   void sort_pwh_descending_by_area();
+  void update_id(const std::string &);
 };
 
-#endif // GEO_DIV_HPP_
+#endif  // GEO_DIV_HPP_
