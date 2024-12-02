@@ -187,6 +187,10 @@ void CartogramInfo::write_geojson(
   nlohmann::ordered_json new_json;
   json_to_geojson(old_json, new_json, container);
   if (output_to_stdout) {
+    if (output_equal_area) {
+      std::cout << new_json << std::endl;
+      return;
+    }
     nlohmann::ordered_json new_json_original;
     nlohmann::json container_original = cgal_to_json(true);
     json_to_geojson(old_json, new_json_original, container_original);
