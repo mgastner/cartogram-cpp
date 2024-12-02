@@ -133,7 +133,8 @@ void CartogramInfo::json_to_geojson(
   std::map<std::string, unsigned int> index_of_id_in_old_json;
   for (unsigned int index = 0; index < old_json["features"].size(); ++index) {
     const std::string id =
-      old_json["features"][index]["properties"][id_header_];
+      old_json["features"][index]["properties"].at(id_header_).dump();
+
     const std::pair<std::string, unsigned int> pair(id, index);
     index_of_id_in_old_json.insert(pair);
   }
@@ -153,7 +154,7 @@ void CartogramInfo::json_to_geojson(
   // n_geo_divs() elements
   for (unsigned int i = 0; i < n_geo_divs(); ++i) {
     const unsigned int index =
-      index_of_id_in_old_json.at(container[i]["gd_id"]);
+      index_of_id_in_old_json.at(container[i]["gd_id"].dump());
     new_json["features"][i]["type"] = "Feature";
     new_json["features"][i]["properties"] =
       old_json["features"][index]["properties"];
@@ -175,7 +176,8 @@ void CartogramInfo::json_to_geojson(
 void CartogramInfo::write_geojson(
   const std::string &old_geo_file_name,
   const std::string &new_geo_file_name,
-  const bool output_to_stdout)
+  const bool output_to_stdout,
+  const bool output_equal_area)
 {
   std::cerr << "Writing " << new_geo_file_name << ".geojson" << std::endl;
   std::ifstream old_file(old_geo_file_name);
