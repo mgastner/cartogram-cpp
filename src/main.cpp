@@ -67,21 +67,22 @@ int main(const int argc, const char *argv[])
 
   // Initialize cart_info. It contains all the information about the cartogram
   // that needs to be handled by functions called from main().
-  CartogramInfo cart_info(world, visual_file_name);
+  CartogramInfo cart_info(world);
 
   // Determine name of input map based on the geo_file_name and store it
   std::string map_name = cart_info.set_map_name(geo_file_name);
-  if (!make_csv) {
+
+  std::string crs = "+proj=longlat";
+  // Read geometry. If the GeoJSON does not explicitly contain a "crs" field,
+  // we assume that the coordinates are in longitude and latitude.
+  cart_info.read_geojson(geo_file_name, make_csv, crs);
+  std::cerr << "Coordinate reference system: " << crs << std::endl;
+
+  if (arguments.get<std::string>("visual_variable_file") != "none") {
 
     // Read visual variables (e.g., area and color) from CSV
     cart_info.read_csv(arguments);
   }
-
-  // Read geometry. If the GeoJSON does not explicitly contain a "crs" field,
-  // we assume that the coordinates are in longitude and latitude.
-  std::string crs = "+proj=longlat";
-  cart_info.read_geojson(geo_file_name, make_csv, crs);
-  std::cerr << "Coordinate reference system: " << crs << std::endl;
 
   // Store total number of GeoDivs to monitor progress
   double total_geo_divs = cart_info.n_geo_divs();
@@ -129,9 +130,6 @@ int main(const int argc, const char *argv[])
     time_tracker.stop("Inset " + inset_pos);
   }
 
-  // Replace missing and zero target areas with positive values
-  cart_info.replace_missing_and_zero_target_areas();
-
   // Project and exit
   if (output_equal_area) {
 
@@ -139,16 +137,22 @@ int main(const int argc, const char *argv[])
     for (auto &[inset_pos, inset_state] : cart_info.ref_to_inset_states()) {
       inset_state.normalize_inset_area(
         cart_info.cart_initial_total_target_area(),
-        output_equal_area);
+        true);
     }
-
     // Shift insets so that they do not overlap
     cart_info.shift_insets_to_target_position();
 
     // Output to GeoJSON
-    cart_info.write_geojson(geo_file_name, map_name + "_equal_area");
+    cart_info.write_geojson(
+      geo_file_name,
+      map_name + "_equal_area",
+      output_to_stdout,
+      true);
     return EXIT_SUCCESS;
   }
+
+  // Replace missing and zero target areas with positive values
+  cart_info.replace_missing_and_zero_target_areas();
 
   // Track progress of the cartogram generation
   ProgressTracker progress_tracker(total_geo_divs);
