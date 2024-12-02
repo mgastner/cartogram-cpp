@@ -36,7 +36,7 @@ argparse::ArgumentParser parsed_arguments(
 
   // Positional argument accepting visual variables file (CSV) as input
   arguments.add_argument("visual_variable_file")
-    .default_value("none")
+    .default_value(std::string("none"))
     .help("File path: CSV file with ID, area, and (optionally) colour");
 
   // Optional argument accepting long grid side length (unsigned int) as
