@@ -68,13 +68,13 @@ In each subdirectory, there should be:
 
   The column header for the divisions (e.g. `shapeName`) must match a key in the
   GeoJSON file.
-  The names of the divisions (e.g. Wallonia etc.) must match the corresponding values 
+  The names of the divisions (e.g. Wallonia etc.) must match the corresponding values
   in the GeoJSON.
   There are additional examples available in the directory `sample_data`.
 
   CSV file names should follow the pattern:
 
-  `(geographic_region)_(statistic)_(optional_unit)_(year[s]).csv`
+  `(geographic_region)_(statistic)_(optional_unit)_by_(division)_(year[s]).csv`
 
   Years refer to the time applicable to the data, not the years when the data
   were obtained.
@@ -83,9 +83,9 @@ In each subdirectory, there should be:
 
   Examples:
 
-    * `world_population_2018.csv`
-    * `india_agricultural_production_in_inr_2012.csv`
-    * `germany_votes_for_green_party_2017.csv`
+    * `world_population_by_country_2018.csv`
+    * `india_agricultural_production_in_inr_by_state_2012.csv`
+    * `germany_votes_for_green_party_by_electoral_district_2017.csv`
 - exactly one Markdown file with the name:
 
   `(geographic_region)_by_(division)_(optional_descrip)_(year[s]).md`

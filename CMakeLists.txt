@@ -70,7 +70,7 @@ target_link_libraries(cartogram
 )
 
 # ========== Installation ==========
-install(TARGETS cartogram DESTINATION bin)
+install(TARGETS cartogram  DESTINATION /usr/local/bin)
 
 # Enable CTest testing
 enable_testing()
