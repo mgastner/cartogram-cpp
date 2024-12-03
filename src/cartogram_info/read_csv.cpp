@@ -81,7 +81,7 @@ int extract_label_col_index(
   return label_col;
 }
 
-std::string process_area_str(const std::string &area_as_str)
+void check_validity_of_area_str(const std::string &area_as_str)
 {
   std::string area_process_str = area_as_str;
 
@@ -105,20 +105,10 @@ std::string process_area_str(const std::string &area_as_str)
     _Exit(19);
   }
 
-  double area = 0.0;
-
-  if (StringToDecimalConverter::is_str_NA(area_process_str)) {
-    area = -1.0;
-  } else {
-    area = StringToDecimalConverter::parse_str(area_process_str);
-  }
-
-  if (area < 0.0 and !StringToDecimalConverter::is_str_NA(area_process_str)) {
+  if (area_process_str.front() == '-') {
     std::cerr << "ERROR: Negative area in CSV" << std::endl;
     _Exit(101);
   }
-
-  return std::to_string(area);
 }
 
 std::string process_inset_pos_str(const std::string &inset_pos_as_str)
@@ -272,6 +262,32 @@ void CartogramInfo::relocate_geodivs_based_on_inset_pos(
   }
 }
 
+bool is_point_as_separator(
+  const std::map<std::string, std::map<std::string, std::string>> &csv_data)
+{
+  std::vector<std::string> area_strs;
+  for (const auto &[id, data] : csv_data) {
+    area_strs.push_back(data.at("area"));
+  }
+
+  if (StringToDecimalConverter::is_comma_as_separator(area_strs)) {
+    return false;
+  }
+
+  return true;
+}
+
+void process_area_strs(
+  std::map<std::string, std::map<std::string, std::string>> &csv_data)
+{
+  const bool uses_point_separator = is_point_as_separator(csv_data);
+  for (auto &[id, data] : csv_data) {
+    std::string &area_as_str = data.at("area");
+    area_as_str =
+      StringToDecimalConverter::parse_str(area_as_str, uses_point_separator);
+  }
+}
+
 void CartogramInfo::read_csv(const argparse::ArgumentParser &arguments)
 {
   csv::CSVReader reader = load_csv(arguments);
@@ -294,7 +310,7 @@ void CartogramInfo::read_csv(const argparse::ArgumentParser &arguments)
 
     const std::string id = row[id_col].get();
     const std::string area_as_str = row[area_col].get();
-    const std::string area = process_area_str(area_as_str);
+    check_validity_of_area_str(area_as_str);
 
     const std::string color =
       (color_col != csv::CSV_NOT_FOUND) ? row[color_col].get() : "";
@@ -309,11 +325,13 @@ void CartogramInfo::read_csv(const argparse::ArgumentParser &arguments)
     check_validity_of_inset_pos(inset_pos, id);
 
     csv_data[id] = {
-      {"area", area},
+      {"area", area_as_str},
       {"color", color},
       {"label", label},
       {"inset_pos", inset_pos}};
   }
+
+  process_area_strs(csv_data);
 
   const std::string id_header = reader.get_col_names()[id_col];
   update_id_header_info(id_header);
