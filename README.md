@@ -152,6 +152,26 @@ Additionally, you may go to the `cartogram-cpp/tests` directory and run the foll
 bash stress_test.sh
 ```
 
+### Benchmarking
+
+To benchmark the program, first install [hyperfine](https://github.com/sharkdp/hyperfine). You can install it using Homebrew on macOS:
+
+```shell script
+brew install hyperfine
+```
+
+Or using apt on Debian-based distributions:
+
+```shell script
+apt install hyperfine
+```
+
+Then, go to the `cartogram-cpp/tests` directory and run the following command:
+
+```shell script
+bash stress_test.sh
+```
+
 ### Uninstallation
 
 Go to the `cartogram-cpp` directory in your preferred terminal and execute the following command:
