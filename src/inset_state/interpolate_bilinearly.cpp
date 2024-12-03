@@ -24,7 +24,7 @@ double interpolate_bilinearly(
 {
   if (x < 0 || x > lx || y < 0 || y > ly) {
     std::cerr << "ERROR: coordinate outside bounding box in " << __func__
-              << "().\n"
+              << "(). "
               << "x=" << x << ", y=" << y << std::endl;
     exit(1);
   }
@@ -114,7 +114,7 @@ double interpolate_bilinearly(
 {
   if (x < 0 || x > lx || y < 0 || y > ly) {
     std::cerr << "ERROR: coordinate outside bounding box in " << __func__
-              << "().\n"
+              << "(). "
               << "x=" << x << ", y=" << y << std::endl;
     exit(1);
   }
