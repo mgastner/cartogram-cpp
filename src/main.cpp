@@ -426,7 +426,6 @@ int main(const int argc, const char *argv[])
   }
 
   // Shift insets so that they do not overlap
-  cart_info.shift_insets_to_target_position(false);
   cart_info.shift_insets_to_target_position(output_to_stdout);
 
   // Output to GeoJSON

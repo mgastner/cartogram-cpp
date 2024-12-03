@@ -82,6 +82,10 @@ void CartogramInfo::shift_insets_to_target_position(bool output_to_stdout)
       CGAL::Vector_2<Scd>(x, y));
 
     // Apply translation to all points
-    inset_state.transform_points(translate, output_to_stdout);
+    inset_state.transform_points(translate, false);
+
+    if (output_to_stdout) {
+      inset_state.transform_points(translate, true);
+    }
   }
 }
