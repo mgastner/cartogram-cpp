@@ -1,44 +1,6 @@
-/*
-String to Decimal Parsing Algorithm:
-*) Check validity of string: only 0-9, ',' and '.' are allowed.
-
-*) Contains both points and commas (i.e: 123,456,789.123 or
-123.456.789,123):
-  i) Number of commas and points both are more than 1
-  (123,456,789.123.456): This format does not belong to any known
-  convention, so exit with error.
-  ii) If number of one type of separator is 1 and the other is more than 1,
-  we assume the separator with count 1 is the decimal separator and it must
-  come before the other separator. (valid: 123,456,789.123 -> 123456789.123,
-  123.456.789,123 -> 123456789.123; invalid: 123,456.789.123 -> error)
-  iii) Comma appears first (123,456,789.123):
-  We assume commas are used as big-number separators and remove them.
-  (123,456,789.123 -> 123456789.123).
-  iv) Point appears first (123.456.789,123): We assume points are used as
-  big-number separators and remove them (123.456.789,123 -> 123456789.123)
-
-*) Contains only commas (i.e: 123,456,789 or 123456,78):
-  i) Only one comma is present and there are two digits after comma. We
-  treat the comma as decimal separator. (123456,78 -> 123456.78)
-  ii) All other cases, we assume the number does not contain any fractional
-  part. So, we remove the commas and parse as usual. (123,456,789 ->
-  123456789)
-
-*) Contains only points (i.e., "123.456.789" or "123456.789"):
-  i) Only one point is present:
-    - If the point is followed by exactly three digits and the total length
-    of the number (excluding the point) is more than four, assume the point is
-a thousands separator and remove it. (e.g., "1.234" -> "1234", "12.345" ->
-    "12345").
-    - In other cases, assume the point is a decimal separator and keep it.
-      (e.g., "123.45" remains "123.45", "1234.5" remains "1234.5").
-  ii) Multiple points are present:
-    - Assume all points are used as thousands separators and remove them.
-      (e.g., "1.234.567" -> "1234567").
-*/
-
 #include "string_to_decimal_converter.hpp"
 #include <cassert>
+#include <iostream>
 
 const std::string StringToDecimalConverter::NA_ = "NA";
 
@@ -53,7 +15,7 @@ std::string StringToDecimalConverter::remove_char(std::string str, char ch)
   return str;
 }
 
-int StringToDecimalConverter::count_char(const std::string &str, char ch)
+int count_char(const std::string &str, char ch)
 {
   return std::count(str.begin(), str.end(), ch);
 }
@@ -168,77 +130,150 @@ bool StringToDecimalConverter::is_str_correct_format(const std::string &str)
   return true;
 }
 
-double StringToDecimalConverter::parse_str(const std::string &str)
+bool is_comma_as_decimal_separator(const std::string &str)
 {
+  int comma_count = count_char(str, ',');
+  int point_count = count_char(str, '.');
+
+  // Case 1: One comma, and if points exist, the last point appears before the
+  // comma
+  if (comma_count == 1) {
+    size_t comma_pos = str.find(',');
+    size_t last_point_pos = str.rfind('.');
+
+    // Check if the last point (if any) appears before the comma
+    if (point_count > 0 && last_point_pos < comma_pos) {
+      return true;
+    }
+
+    // Case 2: One comma, no point, and digits after the comma differ from 3
+    if (point_count == 0) {
+      size_t digits_after_comma = str.size() - comma_pos - 1;
+      if (digits_after_comma != 3) {
+        return true;
+      }
+    }
+  }
+
+  // Case 3: If comma count is 0 and there are more than 1 point, assume
+  // comma as a decimal separator
+  if (comma_count == 0 && point_count > 1) {
+    return true;
+  }
+
+  return false;
+}
+
+bool is_point_as_decimal_separator(const std::string &str)
+{
+  int comma_count = count_char(str, ',');
+  int point_count = count_char(str, '.');
+
+  // Case 1: One point, and if commas exist, the last comma appears before the
+  // point
+  if (point_count == 1) {
+    size_t point_pos = str.find('.');
+    size_t last_comma_pos = str.rfind(',');
+
+    // Check if the last comma (if any) appears before the point
+    if (comma_count > 0 && last_comma_pos < point_pos) {
+      return true;
+    }
+
+    // Case 2: One point, no comma, and digits after the point differ from 3
+    if (comma_count == 0) {
+      size_t digits_after_point = str.size() - point_pos - 1;
+
+      if (digits_after_point != 3) {
+        return true;
+      }
+    }
+  }
+
+  // Case 3: If point count is 0 and there are more than 1 comma, assume point
+  // as a decimal separator
+  if (point_count == 0 && comma_count > 1) {
+    return true;
+  }
+
+  return false;
+}
+
+bool StringToDecimalConverter::is_comma_as_separator(
+  const std::vector<std::string> &strs)
+{
+  std::vector<std::string> comma_as_separator_strs;
+  std::vector<std::string> point_as_separator_strs;
+
+  for (const auto &str : strs) {
+    bool is_comma_sep_for_sure = is_comma_as_decimal_separator(str);
+    bool is_point_sep_for_sure = is_point_as_decimal_separator(str);
+
+    if (is_comma_sep_for_sure) {
+      comma_as_separator_strs.push_back(str);
+    }
+    if (is_point_sep_for_sure) {
+      point_as_separator_strs.push_back(str);
+    }
+  }
+
+  if (comma_as_separator_strs.empty()) {
+    return false;
+  }
+
+  if (!point_as_separator_strs.empty()) {
+    std::cerr << "Warning: Cannot determine separator with certainty.\n";
+    std::cerr << "Comma as separator areas:\n";
+    std::cerr << "Contradictory example areas:\n";
+    std::cerr << "  Comma as separator: " << comma_as_separator_strs[0]
+              << "\n";
+    std::cerr << "  Point as separator: " << point_as_separator_strs[0]
+              << "\n";
+    return false;
+  }
+
+  assert(!comma_as_separator_strs.empty());
+  assert(!point_as_separator_strs.empty());
+
+  return true;
+}
+
+std::string StringToDecimalConverter::parse_str(
+  const std::string &str,
+  bool is_point_as_separator)
+{
+  if (is_str_NA(str)) {
+    return "-1.0";
+  }
+
   assert(is_str_correct_format(str));
-  assert(!is_str_NA(str));
 
   std::string processed_str = str;
 
-  int comma_count = count_char(str, comma_);
-  int point_count = count_char(str, point_);
+  if (is_point_as_separator) {
+    processed_str = remove_char(processed_str, comma_);
 
-  // Contains both commas and points
-  if (comma_count > 0 && point_count > 0) {
-    if (str.find(point_) > str.find(comma_)) {
+    if (count_char(processed_str, point_) > 1) {
+      size_t last_point_pos =
+        processed_str.rfind(point_);
+      std::string cleaned_str;
 
-      // Commas as thousand separators, remove them
-      processed_str = remove_char(processed_str, comma_);
-    } else {
-
-      // Points as thousand separators, remove them
-      processed_str = remove_char(processed_str, point_);
-
-      assert(processed_str.find(comma_) != std::string::npos);
-
-      // Replace the comma with a point
-      processed_str[processed_str.find(comma_)] = point_;
-    }
-  }
-  // Contains only commas
-  else if (comma_count > 0) {
-
-    // If only one comma and two digits after it, treat as a decimal
-    if (comma_count == 1 && str.size() - str.find(comma_) == 3) {
-      processed_str[processed_str.find(comma_)] = point_;
-    } else {
-
-      // Otherwise, remove all commas
-      processed_str = remove_char(processed_str, comma_);
-    }
-  }
-  // Contains only points
-  else if (point_count > 0) {
-
-    // Check for the presence of multiple points
-    if (point_count > 1) {
-
-      // If there are multiple points, assume all points are used as
-      // thousands separators and remove them.
-      processed_str = remove_char(processed_str, point_);
-    } else {
-
-      // If there is only one point, check the number of digits following it.
-      size_t point_pos = processed_str.find(point_);
-      size_t digits_after_point = processed_str.length() - point_pos - 1;
-
-      if (
-        digits_after_point == 3 && processed_str.length() > 4 &&
-        processed_str.size() < 8) {
-
-        // If exactly three digits follow the point and the total length of
-        // the number (excluding the point) is more than four, and
-        // less than 8, assume the point is a thousands separator and remove
-        // it. (e.g., "1.234" -> "1234", "123.456" -> "123456").
-        processed_str = remove_char(processed_str, point_);
+      // Only keep the last point. This should not arise in practice if data is
+      // consistent
+      for (size_t i = 0; i < processed_str.size(); ++i) {
+        if (processed_str[i] != point_ || i == last_point_pos) {
+          cleaned_str += processed_str[i];
+        }
       }
 
-      // In other cases, assume the point is a decimal separator and keep it.
-      // (e.g., "
+      processed_str = cleaned_str;
     }
 
-    // Parse the str or return it as needed.
+  } else {
+    processed_str = remove_char(processed_str, point_);
+    processed_str[processed_str.rfind(comma_)] = point_;
+    processed_str = remove_char(processed_str, comma_);
   }
 
-  return std::stod(processed_str);
+  return processed_str;
 }
