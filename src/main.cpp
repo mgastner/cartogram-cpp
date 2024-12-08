@@ -70,7 +70,7 @@ int main(const int argc, const char *argv[])
   CartogramInfo cart_info(world);
 
   // Determine name of input map based on the geo_file_name and store it
-  std::string map_name = cart_info.set_map_name(geo_file_name);
+  std::string map_name = cart_info.set_map_name(visual_file_name);
 
   std::string crs = "+proj=longlat";
   // Read geometry. If the GeoJSON does not explicitly contain a "crs" field,
