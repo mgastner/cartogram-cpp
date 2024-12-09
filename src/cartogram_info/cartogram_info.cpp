@@ -4,10 +4,7 @@
 #include <iostream>
 #include <utility>
 
-CartogramInfo::CartogramInfo(const bool w, const std::string &v)
-    : is_world_map_(w), visual_variable_file_(std::move(v))
-{
-}
+CartogramInfo::CartogramInfo(const bool w) : is_world_map_(w) {}
 
 double CartogramInfo::cart_initial_total_target_area() const
 {
@@ -194,6 +191,11 @@ void CartogramInfo::replace_missing_and_zero_target_areas()
   }
 }
 
+void CartogramInfo::set_id_header(const std::string &id_header)
+{
+  id_header_ = id_header;
+}
+
 std::string CartogramInfo::set_map_name(const std::string &map_name)
 {
   map_name_ = map_name;
@@ -206,14 +208,14 @@ std::string CartogramInfo::set_map_name(const std::string &map_name)
   return map_name_;
 }
 
-void CartogramInfo::write_csv(const std::string &csv_file_name) {
+void CartogramInfo::write_csv(const std::string &csv_file_name)
+{
   // Write a csv file with the current target areas
   std::ofstream out_file_csv;
   out_file_csv.open(csv_file_name + ".csv");
   if (!out_file_csv) {
-    std::cerr
-      << "ERROR writing CSV: failed to open " << csv_file_name << ".csv"
-      << std::endl;
+    std::cerr << "ERROR writing CSV: failed to open " << csv_file_name
+              << ".csv" << std::endl;
   }
 
   // Each vector of strings will represent one row, starting with column names
