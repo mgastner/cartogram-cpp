@@ -48,6 +48,14 @@ Have a look through to apt-requirements.txt if you'd like to see what all will b
 apt install -y g++-11 build-essential cmake libboost-all-dev nlohmann-json3-dev libomp-dev libfftw3-dev libcairo2-dev
 ```
 
+### Using WSL (Windows Subsystem for Linux)
+
+For Windows users, we recommend using our program through Windows Subsystem for Linux (WSL).
+
+Please install [Ubuntu](https://apps.microsoft.com/detail/9pdxgncfsczv) from the Microsoft Store, and then follow the same instructions as for Debian-based distributions (found above).
+
+We recommend you to compile anywhere outside the `/mnt` directory, as compiling in the `/mnt` directory may lead to unexpected behavior.
+
 ### Installation
 
 Go to the `cartogram-cpp` directory in your preferred terminal and execute the following commands.
@@ -139,6 +147,26 @@ ctest --verbose
 To learn more about the tests, you may go to the `cartogram-cpp/tests` directory and read the `README.md` file.
 
 Additionally, you may go to the `cartogram-cpp/tests` directory and run the following command:
+
+```shell script
+bash stress_test.sh
+```
+
+### Benchmarking
+
+To benchmark the program, first install [hyperfine](https://github.com/sharkdp/hyperfine). You can install it using Homebrew on macOS:
+
+```shell script
+brew install hyperfine
+```
+
+Or using apt on Debian-based distributions:
+
+```shell script
+apt install hyperfine
+```
+
+Then, go to the `cartogram-cpp/tests` directory and run the following command:
 
 ```shell script
 bash stress_test.sh
