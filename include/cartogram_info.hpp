@@ -44,7 +44,7 @@ public:
   void replace_missing_and_zero_target_areas();
   std::string set_map_name(const std::string &);
   void set_id_header(const std::string &);
-  void shift_insets_to_target_position(bool = false);
+  void shift_insets_to_target_position(bool output_to_stdout = false);
   void update_id_header_info(const std::string &);
   void write_csv(const std::string &csv_file_name);
   void write_geojson(
