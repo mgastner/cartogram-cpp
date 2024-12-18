@@ -23,6 +23,14 @@ std::vector<double> divider_points(
   return {x1d, y1d, x2d, y2d};
 }
 
+inline std::string strip_quotes(const std::string &s)
+{
+  if (s.front() == '"' && s.back() == '"') {
+    return s.substr(1, s.size() - 2);
+  }
+  return s;
+}
+
 nlohmann::json CartogramInfo::cgal_to_json(
   const bool original_geo_divs_to_geojson)
 {
@@ -91,7 +99,7 @@ nlohmann::json CartogramInfo::cgal_to_json(
 
   // Insert divider lines between all insets
   for (const auto &[inset_pos, inset_state] : inset_states_) {
-    const Bbox inset_bb = inset_state.bbox();
+    const Bbox inset_bb = inset_state.bbox(original_geo_divs_to_geojson);
     if (inset_pos == "T") {
       divider_container.push_back(divider_points(
         min_xmin_tcb,
@@ -132,8 +140,8 @@ void CartogramInfo::json_to_geojson(
   // in an std::map.
   std::map<std::string, unsigned int> index_of_id_in_old_json;
   for (unsigned int index = 0; index < old_json["features"].size(); ++index) {
-    const std::string id =
-      old_json["features"][index]["properties"][id_header_];
+    const std::string id = strip_quotes(
+      old_json["features"][index]["properties"].at(id_header_).dump());
     const std::pair<std::string, unsigned int> pair(id, index);
     index_of_id_in_old_json.insert(pair);
   }
@@ -152,8 +160,8 @@ void CartogramInfo::json_to_geojson(
   // exclude these two indices in the next loop. Hence, we only iterate over
   // n_geo_divs() elements
   for (unsigned int i = 0; i < n_geo_divs(); ++i) {
-    const unsigned int index =
-      index_of_id_in_old_json.at(container[i]["gd_id"]);
+    const unsigned int index = index_of_id_in_old_json.at(
+      strip_quotes(container[i].at("gd_id").dump()));
     new_json["features"][i]["type"] = "Feature";
     new_json["features"][i]["properties"] =
       old_json["features"][index]["properties"];
@@ -175,7 +183,8 @@ void CartogramInfo::json_to_geojson(
 void CartogramInfo::write_geojson(
   const std::string &old_geo_file_name,
   const std::string &new_geo_file_name,
-  const bool output_to_stdout)
+  const bool output_to_stdout,
+  const bool output_equal_area)
 {
   std::cerr << "Writing " << new_geo_file_name << ".geojson" << std::endl;
   std::ifstream old_file(old_geo_file_name);
@@ -185,6 +194,10 @@ void CartogramInfo::write_geojson(
   nlohmann::ordered_json new_json;
   json_to_geojson(old_json, new_json, container);
   if (output_to_stdout) {
+    if (output_equal_area) {
+      std::cout << new_json << std::endl;
+      return;
+    }
     nlohmann::ordered_json new_json_original;
     nlohmann::json container_original = cgal_to_json(true);
     json_to_geojson(old_json, new_json_original, container_original);

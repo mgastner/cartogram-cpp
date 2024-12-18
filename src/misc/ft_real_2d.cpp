@@ -15,7 +15,7 @@ void FTReal2d::set_array_size(const unsigned int i, const unsigned int j)
 void FTReal2d::allocate(const unsigned int lx, const unsigned int ly)
 {
   if (lx * ly <= 0) {
-    std::cerr << "Invalid array dimensions in FTReal2dArray::allocate_ft()"
+    std::cerr << "ERROR: Invalid array dimensions in FTReal2dArray::allocate_ft()"
               << std::endl;
     _Exit(98915);
   }

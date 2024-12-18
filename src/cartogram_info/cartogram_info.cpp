@@ -4,10 +4,7 @@
 #include <iostream>
 #include <utility>
 
-CartogramInfo::CartogramInfo(const bool w, const std::string &v)
-    : is_world_map_(w), visual_variable_file_(std::move(v))
-{
-}
+CartogramInfo::CartogramInfo(const bool w) : is_world_map_(w) {}
 
 double CartogramInfo::cart_initial_total_target_area() const
 {
@@ -194,6 +191,11 @@ void CartogramInfo::replace_missing_and_zero_target_areas()
   }
 }
 
+void CartogramInfo::set_id_header(const std::string &id_header)
+{
+  id_header_ = id_header;
+}
+
 std::string CartogramInfo::set_map_name(const std::string &map_name)
 {
   map_name_ = map_name;
@@ -206,14 +208,14 @@ std::string CartogramInfo::set_map_name(const std::string &map_name)
   return map_name_;
 }
 
-void CartogramInfo::write_csv(const std::string &csv_file_name) {
+void CartogramInfo::write_csv(const std::string &csv_file_name)
+{
   // Write a csv file with the current target areas
   std::ofstream out_file_csv;
   out_file_csv.open(csv_file_name + ".csv");
   if (!out_file_csv) {
-    std::cerr
-      << "ERROR writing CSV: failed to open " << csv_file_name << ".csv"
-      << std::endl;
+    std::cerr << "ERROR writing CSV: failed to open " << csv_file_name
+              << ".csv" << std::endl;
   }
 
   // Each vector of strings will represent one row, starting with column names
@@ -237,4 +239,34 @@ void CartogramInfo::write_csv(const std::string &csv_file_name) {
 
   // Close out_file and exit
   out_file_csv.close();
+}
+
+InsetState CartogramInfo::convert_to_inset_state() {
+
+  InsetState new_inset_state("");
+
+  for (const auto &inset_info : inset_states_) {
+    const auto &inset_state = inset_info.second;
+    for (const auto &geo_div : inset_state.geo_divs()) {
+      new_inset_state.push_back(geo_div);
+      new_inset_state.insert_color(geo_div.id(), inset_state.color_at(geo_div.id()));
+    }
+  }
+  return new_inset_state;
+}
+
+void CartogramInfo::write_svg(const std::string &suffix) {
+  InsetState insets_combined = convert_to_inset_state();
+  double scale_factor = cart_initial_total_target_area() / insets_combined.total_inset_area();
+  insets_combined.set_grid_dimensions(128, 128);
+  scale_factor = sqrt(scale_factor);
+  insets_combined.scale_points(scale_factor);
+  insets_combined.move_points(32, 32);
+
+  // Figure out combined name
+  std::string inset_names = "";
+  for (const auto &inset_info : inset_states_) {
+    inset_names += inset_info.first;
+  }
+  insets_combined.write_cairo_map(map_name_ + "_" + inset_names + "_" + suffix, true);
 }

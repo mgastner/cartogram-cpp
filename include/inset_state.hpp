@@ -168,8 +168,6 @@ public:
     const double total_inset_area);
   Bbox get_bbox_bar(const double bar_width, const double bar_height);
 
-  GeoDiv &get_geo_div(const std::string &);
-
   std::pair<double, unsigned int> get_km_legend_length();
   std::pair<double, unsigned int> get_visual_variable_legend_length();
 
@@ -182,7 +180,10 @@ public:
   void insert_color(const std::string &, const Color &);
   void insert_color(const std::string &, std::string &);
   bool insert_constraint_safely(const Point &p1, const Point &p2);
-  bool insert_constraint_safely_to_dt(Delaunay &dt, const Point &p1, const Point &p2);
+  bool insert_constraint_safely_to_dt(
+    Delaunay &dt,
+    const Point &p1,
+    const Point &p2);
   void insert_label(const std::string &, const std::string &);
   void insert_target_area(const std::string &, double);
   void insert_whether_input_target_area_is_missing(const std::string &, bool);
@@ -193,7 +194,7 @@ public:
     char,
     unsigned int) const;
   bool is_input_target_area_missing(const std::string &) const;
-  void is_simple(const char* caller_func) const;
+  void is_simple(const char *caller_func) const;
   std::string label_at(const std::string &) const;
   double latt_const() const;
   unsigned int lx() const;
@@ -211,7 +212,10 @@ public:
   unsigned int n_geo_divs() const;
   unsigned long n_points() const;
   unsigned int n_rings() const;
-  void normalize_inset_area(double total_cart_target_area, bool = false);
+  void normalize_inset_area(
+    double total_cart_target_area,
+    bool equal_area = false,
+    bool normalize_original = false);
   void normalize_target_area();
   std::string pos() const;
   void project();
@@ -235,12 +239,12 @@ public:
   void set_geo_divs(std::vector<GeoDiv> new_geo_divs);
   void set_inset_name(const std::string &);
   void store_initial_area();
-  void store_initial_target_area();
+  void store_initial_target_area(const double override = 0.0);
   void simplify(unsigned int);
   void store_original_geo_divs();
   double target_area_at(const std::string &) const;
   bool target_area_is_missing(const std::string &) const;
-  double total_inset_area() const;
+  double total_inset_area(bool = false) const;
   double total_target_area() const;
   Polygon transform_to_equal_area_projection_coor(Polygon edge_points);
   std::array<Point, 3> transformed_triangle(
@@ -249,16 +253,21 @@ public:
 
   // Apply given function to all points
   void transform_points(const std::function<Point(Point)> &, bool = false);
+  void transform_polygons(const std::function<Polygon(Polygon)> &, bool = false);
+  void scale_points(double scale_factor, bool project_original = false);
+  void move_points(double dx, double dy, bool project_original = false);
   std::array<Point, 3> untransformed_triangle(const Point &, bool = false)
     const;
   void trim_grid_heatmap(cairo_t *cr, double padding);
   void update_delaunay_t();
+  void update_gd_ids(const std::map<std::string, std::string> &);
 
   // Cairo functions
   void write_cairo_map(
     const std::string &,
     bool,
-    const std::unordered_map<Point, Vector> = std::unordered_map<Point, Vector>()) const;
+    const std::unordered_map<Point, Vector> =
+      std::unordered_map<Point, Vector>()) const;
   void write_cairo_polygons_to_svg(
     const std::string &,
     bool,
