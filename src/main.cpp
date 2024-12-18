@@ -260,6 +260,17 @@ int main(const int argc, const char *argv[])
         inset_state.inset_name() + "_" +
         std::to_string(inset_state.n_finished_integrations());
 
+      if (rays) {
+        // Fill density using ray-shooting method
+        time_tracker.start("Fill with Density (Ray Shooting Method)");
+        inset_state.fill_with_density_rays(plot_density);
+        time_tracker.stop("Fill with Density (Ray Shooting Method)");
+      } else {
+        time_tracker.start("Fill with Density (Clipping Method)");
+        inset_state.fill_with_density_clip(plot_density);
+        time_tracker.stop("Fill with Density (Clipping Method)");
+      }
+
       if (qtdt_method) {
 
         // Create the Delaunay triangulation
@@ -279,17 +290,6 @@ int main(const int argc, const char *argv[])
             file_prefix + "_delaunay_t",
             false);
         }
-      }
-
-      if (rays) {
-        // Fill density using ray-shooting method
-        time_tracker.start("Fill with Density (Ray Shooting Method)");
-        inset_state.fill_with_density_rays(plot_density);
-        time_tracker.stop("Fill with Density (Ray Shooting Method)");
-      } else {
-        time_tracker.start("Fill with Density (Clipping Method)");
-        inset_state.fill_with_density_clip(plot_density);
-        time_tracker.stop("Fill with Density (Clipping Method)");
       }
 
       const double blur_width = inset_state.blur_width();

@@ -2,6 +2,7 @@
 #define STRING_TO_DECIMAL_CONVERTER_H
 
 #include <string>
+#include <vector>
 
 class StringToDecimalConverter
 {

@@ -283,6 +283,9 @@ void process_area_strs(
   const bool uses_point_separator = is_point_as_separator(csv_data);
   for (auto &[id, data] : csv_data) {
     std::string &area_as_str = data.at("area");
+    if (area_as_str.empty()) {
+      area_as_str = "NA";
+    }
     area_as_str =
       StringToDecimalConverter::parse_str(area_as_str, uses_point_separator);
   }
