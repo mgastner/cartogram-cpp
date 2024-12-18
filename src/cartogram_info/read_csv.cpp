@@ -340,10 +340,9 @@ void CartogramInfo::read_csv(const argparse::ArgumentParser &arguments)
       {"inset_pos", inset_pos}};
   }
 
-  process_area_strs(csv_data);
-
   const std::string id_header = reader.get_col_names()[id_col];
   update_id_header_info(id_header);
   check_validity_of_csv_ids(csv_data, initial_id_order_);
+  process_area_strs(csv_data);
   relocate_geodivs_based_on_inset_pos(csv_data);
 }
