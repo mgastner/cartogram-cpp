@@ -240,3 +240,33 @@ void CartogramInfo::write_csv(const std::string &csv_file_name)
   // Close out_file and exit
   out_file_csv.close();
 }
+
+InsetState CartogramInfo::convert_to_inset_state() {
+
+  InsetState new_inset_state("");
+
+  for (const auto &inset_info : inset_states_) {
+    const auto &inset_state = inset_info.second;
+    for (const auto &geo_div : inset_state.geo_divs()) {
+      new_inset_state.push_back(geo_div);
+      new_inset_state.insert_color(geo_div.id(), inset_state.color_at(geo_div.id()));
+    }
+  }
+  return new_inset_state;
+}
+
+void CartogramInfo::write_svg(const std::string &suffix) {
+  InsetState insets_combined = convert_to_inset_state();
+  double scale_factor = cart_initial_total_target_area() / insets_combined.total_inset_area();
+  insets_combined.set_grid_dimensions(128, 128);
+  scale_factor = sqrt(scale_factor);
+  insets_combined.scale_points(scale_factor);
+  insets_combined.move_points(32, 32);
+
+  // Figure out combined name
+  std::string inset_names = "";
+  for (const auto &inset_info : inset_states_) {
+    inset_names += inset_info.first;
+  }
+  insets_combined.write_cairo_map(map_name_ + "_" + inset_names + "_" + suffix, true);
+}
