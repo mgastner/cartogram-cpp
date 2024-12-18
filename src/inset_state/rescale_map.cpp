@@ -66,17 +66,8 @@ void InsetState::rescale_map(
     CGAL::TRANSLATION,
     CGAL::Vector_2<Scd>(-new_xmin, -new_ymin));
   const Transformation scale(CGAL::SCALING, (1.0 / latt_const));
-  for (auto &gd : geo_divs_) {
-    for (auto &pwh : gd.ref_to_polygons_with_holes()) {
-      auto &ext_ring = pwh.outer_boundary();
-      ext_ring = transform(translate, ext_ring);
-      ext_ring = transform(scale, ext_ring);
-      for (auto &h : pwh.holes()) {
-        h = transform(translate, h);
-        h = transform(scale, h);
-      }
-    }
-  }
+  transform_points(translate);
+  transform_points(scale);
 
   // Transformed Bounding Box:
   std::cerr << "New bounding box: " << bbox() << std::endl;
@@ -86,7 +77,6 @@ void InsetState::normalize_inset_area(
   double total_cart_target_area,
   bool equal_area, bool normalize_original)
 {
-  auto &geo_divs = normalize_original ? geo_divs_original_transformed_ : geo_divs_;
   const auto bb = bbox(normalize_original);
 
   // Calculate scale_factor that makes inset areas proportional to their
@@ -102,15 +92,6 @@ void InsetState::normalize_inset_area(
       -(bb.xmin() + bb.xmax()) / 2,
       -(bb.ymin() + bb.ymax()) / 2));
   const Transformation scale(CGAL::SCALING, scale_factor);
-  for (auto &gd : geo_divs) {
-    for (auto &pwh : gd.ref_to_polygons_with_holes()) {
-      auto &ext_ring = pwh.outer_boundary();
-      ext_ring = transform(translate, ext_ring);
-      ext_ring = transform(scale, ext_ring);
-      for (auto &h : pwh.holes()) {
-        h = transform(translate, h);
-        h = transform(scale, h);
-      }
-    }
-  }
+  transform_points(translate, normalize_original);
+  transform_points(scale, normalize_original);
 }
