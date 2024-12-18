@@ -199,7 +199,7 @@ void CartogramInfo::update_id_header_info(const std::string &csv_id_header)
 }
 
 void check_validity_of_csv_ids(
-  const std::map<std::string, std::map<std::string, std::string>> &csv_data,
+  std::map<std::string, std::map<std::string, std::string>> &csv_data,
   const std::vector<std::string> &initial_id_order)
 {
   std::vector<std::string> csv_ids;
@@ -219,9 +219,15 @@ void check_validity_of_csv_ids(
 
   for (const auto &id : initial_id_order) {
     if (std::find(csv_ids.begin(), csv_ids.end(), id) == csv_ids.end()) {
-      std::cerr << "ERROR: ID " << id << " in GeoJSON is not in CSV"
+      std::cerr << "Warning: ID " << id << " in GeoJSON is not in CSV"
                 << std::endl;
-      _Exit(22);
+      csv_data[id] = {
+        {"area", "NA"},
+        {"color", ""},
+        {"label", ""},
+        {"inset_pos", "C"}
+      };
+      // _Exit(22);
     }
   }
 }
