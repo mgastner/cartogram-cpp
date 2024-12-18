@@ -52,6 +52,8 @@ public:
     const std::string &,
     bool = false,
     bool = false);
+  InsetState convert_to_inset_state();
+  void write_svg(const std::string &suffix = "");
 };
 
 #endif  // CARTOGRAM_INFO_HPP_

@@ -168,8 +168,6 @@ public:
     const double total_inset_area);
   Bbox get_bbox_bar(const double bar_width, const double bar_height);
 
-  GeoDiv &get_geo_div(const std::string &);
-
   std::pair<double, unsigned int> get_km_legend_length();
   std::pair<double, unsigned int> get_visual_variable_legend_length();
 
@@ -241,7 +239,7 @@ public:
   void set_geo_divs(std::vector<GeoDiv> new_geo_divs);
   void set_inset_name(const std::string &);
   void store_initial_area();
-  void store_initial_target_area();
+  void store_initial_target_area(const double override = 0.0);
   void simplify(unsigned int);
   void store_original_geo_divs();
   double target_area_at(const std::string &) const;
@@ -255,6 +253,9 @@ public:
 
   // Apply given function to all points
   void transform_points(const std::function<Point(Point)> &, bool = false);
+  void transform_polygons(const std::function<Polygon(Polygon)> &, bool = false);
+  void scale_points(double scale_factor, bool project_original = false);
+  void move_points(double dx, double dy, bool project_original = false);
   std::array<Point, 3> untransformed_triangle(const Point &, bool = false)
     const;
   void trim_grid_heatmap(cairo_t *cr, double padding);

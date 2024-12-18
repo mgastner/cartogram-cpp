@@ -429,11 +429,23 @@ void InsetState::create_and_store_quadtree_cell_corners()
         rho_max = std::max(rho_max, this->ref_to_rho_init()(i, j));
       }
     }
+    // Logic: as more integrations we increase, we split more aggressively
+    // (the difference threshold becomes smaller)
+    // TODO: Change to threshold that matches how densities are scaled
     return rho_max - rho_min >
            (0.001 + pow((1.0 / n_finished_integrations_), 2));
+    // return rho_max - rho_min >
+    //        (0.001 + pow((1.0 / n_finished_integrations_), 2));
+    // return (rho_max / rho_min) >
+    //        (1.0 + pow((1.0 / n_finished_integrations_), 2));
+    return (rho_max / rho_min) > (1.0 + 1.0 / n_finished_integrations_);
+    // rho_max / rho_min > 2;
   };
+  // std::cerr << "Splitting threshold (difference must be greater than): " << (0.001 + pow((1.0 / n_finished_integrations_), 2)) << std::endl;
+  std::cerr << "Split criteria: rho_max / rho_min > "
+            << (1.0 + pow((8.0 / n_finished_integrations_), 2)) << std::endl;
   qt.refine(can_split);
-  qt.grade();
+  // qt.grade();
   std::cerr << "Quadtree root node bounding box: " << qt.bbox(qt.root())
             << std::endl;
 
@@ -791,17 +803,9 @@ void InsetState::adjust_grid()
     lx_ *= default_grid_factor;
     ly_ *= default_grid_factor;
 
-    // Scale all map coordinates
-    const Transformation scale(CGAL::SCALING, default_grid_factor);
-    for (auto &gd : geo_divs_) {
-      for (auto &pwh : gd.ref_to_polygons_with_holes()) {
-        auto &ext_ring = pwh.outer_boundary();
-        ext_ring = transform(scale, ext_ring);
-        for (auto &h : pwh.holes()) {
-          h = transform(scale, h);
-        }
-      }
-    }
+     const Transformation scale(CGAL::SCALING, default_grid_factor);
+    // transform_points(scale);
+    // transform_points(scale, true);
 
     for (auto &gd : geo_divs_original_) {
       for (auto &pwh : gd.ref_to_polygons_with_holes()) {
@@ -870,9 +874,9 @@ void InsetState::store_initial_area()
   initial_area_ = total_inset_area();
 }
 
-void InsetState::store_initial_target_area()
+void InsetState::store_initial_target_area(const double override)
 {
-  initial_target_area_ = total_target_area();
+  initial_target_area_ = override ? override : total_target_area();
 }
 
 bool InsetState::target_area_is_missing(const std::string &id) const
@@ -965,6 +969,12 @@ void InsetState::transform_points(
   }
 }
 
+void InsetState::scale_points(double scale_factor, bool project_original)
+{
+  const Transformation scale(CGAL::SCALING, scale_factor);
+  transform_points(scale, project_original);
+}
+
 void InsetState::set_geo_divs(std::vector<GeoDiv> new_geo_divs)
 {
   geo_divs_ = std::move(new_geo_divs);
@@ -975,5 +985,43 @@ void InsetState::update_gd_ids(
 {
   for (auto &gd : geo_divs_) {
     gd.update_id(gd_id_map.at(gd.id()));
+  }
+}
+
+void InsetState::move_points(double dx, double dy, bool project_original)
+{
+  const Transformation translate(
+    CGAL::TRANSLATION,
+    CGAL::Vector_2<Scd>(dx, dy));
+  transform_points(translate, project_original);
+}
+
+void InsetState::transform_polygons(
+  const std::function<Polygon(Polygon)> &transform_polygon,
+  bool project_original)
+{
+  auto &geo_divs =
+    project_original ? geo_divs_original_transformed_ : geo_divs_;
+
+  // Iterate over GeoDivs
+#pragma omp parallel for default(none) shared(transform_polygon, geo_divs)
+  for (auto &gd : geo_divs) {
+
+    // Iterate over Polygon_with_holes
+    for (auto &pwh : gd.ref_to_polygons_with_holes()) {
+
+      // Get outer boundary
+      auto &outer_boundary = pwh.outer_boundary();
+
+      // Transform outer boundary
+      outer_boundary = transform_polygon(outer_boundary);
+
+      // Iterate over holes
+      for (auto &h : pwh.holes()) {
+
+        // Transform hole
+        h = transform_polygon(h);
+      }
+    }
   }
 }
