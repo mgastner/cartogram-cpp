@@ -421,6 +421,8 @@ void CartogramInfo::read_geojson(
   check_geojson_validity(j);
 
   if (make_csv) {
+    // Update map_name to be based on geometry file name instead
+    set_map_name(geometry_file_name);
     generate_csv_template(j, map_name_);
     _Exit(19);
   }
