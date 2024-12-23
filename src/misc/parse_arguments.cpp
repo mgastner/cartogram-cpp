@@ -20,7 +20,7 @@ argparse::ArgumentParser parsed_arguments(
   bool &plot_intersections,
   bool &plot_polygons,
   bool &remove_tiny_polygons,
-  double &minimum_polygon_area,
+  double &min_polygon_area,
   bool &plot_quadtree,
   bool &rays,
   bool &output_preprocessed)
@@ -164,7 +164,7 @@ argparse::ArgumentParser parsed_arguments(
   qtdt_method = arguments.get<bool>("-Q");
   simplify = arguments.get<bool>("-S");
   remove_tiny_polygons = arguments.get<bool>("-R");
-  minimum_polygon_area = arguments.get<double>("-m");
+  min_polygon_area = arguments.get<double>("-m");
   rays = arguments.get<bool>("-r");
   if (!triangulation && simplify) {
 
