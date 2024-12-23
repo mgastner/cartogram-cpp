@@ -294,7 +294,6 @@ public:
   void write_labels_on_surface(cairo_t *cr);
   void write_density_image(
     const std::string filename,
-    const double *density,
     const bool plot_pycnophylactic);
   void write_intersections_image(unsigned int res);
   void write_legend_on_surface(cairo_t *cr, bool equal_area_map);

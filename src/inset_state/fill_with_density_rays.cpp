@@ -244,11 +244,5 @@ void InsetState::fill_with_density_rays(bool plot_density)
   exterior_density_ = exterior_density;
   dens_max_ = *max_iter;
 
-  if (plot_density) {
-    std::string file_name = inset_name_ + "_unblurred_density_" +
-                            std::to_string(n_finished_integrations()) + ".svg";
-    write_density_image(file_name, rho_init_.as_1d_array(), false);
-  }
-
   execute_fftw_fwd_plan();
 }

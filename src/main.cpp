@@ -292,6 +292,12 @@ int main(const int argc, const char *argv[])
         }
       }
 
+      if (plot_density) {
+        std::string file_name = inset_state.inset_name() + "_unblurred_density_" +
+                                std::to_string(inset_state.n_finished_integrations()) + ".svg";
+        inset_state.write_density_image(file_name, false);
+      }
+
       const double blur_width = inset_state.blur_width();
       if (blur_width > 0.0) {
         time_tracker.start("Blur");

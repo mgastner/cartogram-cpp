@@ -886,10 +886,9 @@ void InsetState::write_legend_on_surface(cairo_t *cr, bool equal_area_map)
 
 void InsetState::write_density_image(
   const std::string filename,
-  const double *density,
   const bool plot_pycnophylactic)
 {
-
+  double *density = rho_init_.as_1d_array();
   std::cerr << "Writing " << filename << std::endl;
   // Whether to draw bar on the cairo surface
   const bool draw_bar = false;

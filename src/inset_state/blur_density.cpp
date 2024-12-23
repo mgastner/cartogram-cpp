@@ -22,6 +22,6 @@ void InsetState::blur_density(const double blur_width, bool plot_density)
   if (plot_density && blur_width > 0.1) {
     std::string file_name = inset_name_ + "_blurred_density_" +
                             std::to_string(n_finished_integrations()) + ".svg";
-    write_density_image(file_name, rho_init_.as_1d_array(), false);
+    write_density_image(file_name, false);
   }
 }
