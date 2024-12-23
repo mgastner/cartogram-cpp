@@ -23,7 +23,7 @@ argparse::ArgumentParser parsed_arguments(
   bool &plot_intersections,
   bool &plot_polygons,
   bool &remove_tiny_polygons,
-  double &minimum_polygon_area,
+  double &min_polygon_area,
   bool &plot_quadtree,
   bool &rays,
   bool &output_preprocessed);
