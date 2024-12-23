@@ -290,7 +290,8 @@ public:
     cairo_t *cr,
     const bool fill_polygons,
     const bool colors,
-    const bool plot_equal_area_map) const;
+    const bool plot_equal_area_map,
+    const double line_width = 0.0) const;
   void write_labels_on_surface(cairo_t *cr);
   void write_density_image(
     const std::string filename,

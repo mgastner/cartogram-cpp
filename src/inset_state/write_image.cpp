@@ -214,9 +214,14 @@ void InsetState::write_polygons_on_surface(
   cairo_t *cr,
   const bool fill_polygons,
   const bool colors,
-  const bool plot_grid) const
+  const bool plot_grid,
+  const double line_width) const
 {
-  cairo_set_line_width(cr, 1e-3 * std::min(lx_, ly_));
+  if (line_width) {
+    cairo_set_line_width(cr, line_width);
+  } else {
+    cairo_set_line_width(cr, 1e-3 * std::min(lx_, ly_));
+  }
 
   // Draw the shapes
   for (const auto &gd : geo_divs_) {
@@ -1010,7 +1015,12 @@ void InsetState::write_density_image(
       }
     }
   }
-  write_polygons_on_surface(cr, false, false, false);
+  write_quadtree_rectangles_on_surface(
+  cr,
+  quadtree_bboxes_,
+  Color{0.6, 0.6, 0.6},
+  ly_);
+  write_polygons_on_surface(cr, false, false, false, 0.025);
 
   if (draw_bar && !plot_pycnophylactic) {
     std::string bar_filename = "bar_" + filename;
