@@ -23,7 +23,8 @@ argparse::ArgumentParser parsed_arguments(
   double &min_polygon_area,
   bool &plot_quadtree,
   bool &rays,
-  bool &output_preprocessed)
+  bool &output_preprocessed,
+  bool &shift_insets_to_target_position)
 {
   // Create parser for arguments using argparse.
   // From https://github.com/p-ranav/argparse
@@ -100,6 +101,11 @@ argparse::ArgumentParser parsed_arguments(
     .implicit_value(true);
   arguments.add_argument("-O", "--output_to_stdout")
     .help("Boolean: Output GeoJSON to stdout")
+    .default_value(false)
+    .implicit_value(true);
+  arguments.add_argument("--shift_insets_to_target_position")
+    .help(
+      "Boolean: Output GeoJSON with insets shifted into position - no projection")
     .default_value(false)
     .implicit_value(true);
   arguments.add_argument("-R", "--remove_tiny_polygons")
@@ -185,7 +191,8 @@ argparse::ArgumentParser parsed_arguments(
   plot_intersections = arguments.get<bool>("-i");
   plot_polygons = arguments.get<bool>("-p");
   plot_quadtree = arguments.get<bool>("-q");
-
+  shift_insets_to_target_position =
+    arguments.get<bool>("--shift_insets_to_target_position");
   if (arguments.is_used("-O") && !simplify && !qtdt_method) {
     std::cerr << "ERROR: simplification disabled!\n";
     std::cerr << "--output_to_stdout flag is only supported with "
