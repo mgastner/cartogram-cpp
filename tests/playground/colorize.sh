@@ -19,11 +19,15 @@ printed=0
 integration_count=0
 max_area_err=""
 
+# File to save colored lines
+colored_lines_file="colored_lines.txt"
+
 # Read lines from standard input
 while read line; do
   case "$line" in
   *"error"* | *"warning"* | *"invalid"*)
     printf "\n\n%s\n\n" "$line" | color $red
+    echo "$line" >> "$colored_lines_file"
     ;;
   *"progress: 0."*)
     draw_progress_bar ${line:12:2}
@@ -38,6 +42,13 @@ while read line; do
   *"Max. area err:"*)
     max_area_err=$line
     printf "%s\n" "$line" | color $yellow
+    echo "$line" >> "$colored_lines_file"
+    ;;
+  *"Current. area err:"*)
+    max_area_err=$line
+    printf "%s\n" "$line" | color $yellow
+    echo "$line" >> "$colored_lines_file"
+    echo "" >> "$colored_lines_file"
     ;;
   *"Area drift:"*)
     printf "%s\n" "$line" | color $magenta
