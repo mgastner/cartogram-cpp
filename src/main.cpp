@@ -79,7 +79,7 @@ int main(const int argc, const char *argv[])
   cart_info.read_geojson(geo_file_name, make_csv, crs);
   std::cerr << "Coordinate reference system: " << crs << std::endl;
 
-  if (arguments.get<std::string>("visual_variable_file") != "none") {
+  if (arguments.is_used("visual_variable_file")) {
 
     // Read visual variables (e.g., area and color) from CSV
     cart_info.read_csv(arguments);
