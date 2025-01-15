@@ -18,7 +18,7 @@ git clone --recurse-submodules https://github.com/mgastner/cartogram-cpp.git
 
 ## Dependencies
 
-Please note, we only support UNIX-based systems, and have only tested on macOS, Linux, and GNU.
+Please note, we only support UNIX-based systems, and have only tested on macOS, Linux, and GNU. That being said, the program should work on Windows Subsystem for Linux (WSL) as well, for which we have conducted minor testing.
 
 ### macOS
 
@@ -48,13 +48,13 @@ Have a look through to apt-requirements.txt if you'd like to see what all will b
 apt install -y g++-11 build-essential cmake libboost-all-dev nlohmann-json3-dev libomp-dev libfftw3-dev libcairo2-dev
 ```
 
-### Using WSL (Windows Subsystem for Linux)
+### Windows (Using WSL)
 
 For Windows users, we recommend using our program through Windows Subsystem for Linux (WSL).
 
 Please install [Ubuntu](https://apps.microsoft.com/detail/9pdxgncfsczv) from the Microsoft Store, and then follow the same instructions as for Debian-based distributions (found above).
 
-We recommend you to compile anywhere outside the `/mnt` directory, as compiling in the `/mnt` directory may lead to unexpected behavior.
+We recommend you to compile outside the `/mnt` directory, as compiling in the `/mnt` directory may lead to unexpected behavior.
 
 ### Installation
 
