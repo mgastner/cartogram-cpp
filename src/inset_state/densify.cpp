@@ -1,5 +1,7 @@
 #include "inset_state.hpp"
 #include "round_point.hpp"
+#include <algorithm>
+#include <unordered_set>
 
 // For printing a vector (debugging purposes)
 template <typename A>
@@ -212,6 +214,32 @@ std::vector<Point> densification_points(
   return intersections;
 }
 
+std::unordered_set<Point> new_points(Polygon original, Polygon densified) {
+
+  // We need an ordered set, because set difference is only defined for
+  // ordered sets.
+  std::set<Point> original_set;
+  std::set<Point> dens_set;
+  // Iterate over each point in the outer boundary of the polygon
+  for (unsigned int i = 0; i < original.size(); ++i) {
+    original_set.insert(original[i]);
+  }
+  for (unsigned int i = 0; i < densified.size(); ++i) {
+    dens_set.insert(densified[i]);
+  }
+
+  // Subtract the original set from the densified set
+  // (all points in dens_set that are not in original_set)
+  std::unordered_set<Point> new_points;
+  std::set_difference(
+    dens_set.begin(),
+    dens_set.end(),
+    original_set.begin(),
+    original_set.end(),
+    std::inserter(new_points, new_points.begin()));
+  return new_points;
+}
+
 void InsetState::densify_geo_divs()
 {
   std::cerr << "Densifying" << std::endl;
@@ -408,6 +436,10 @@ std::vector<Point> densification_points_with_delaunay_t(
 
 void InsetState::densify_geo_divs_using_delaunay_t()
 {
+  // Empty set containing densified points from previous iteration
+  points_from_densification_.clear();
+  points_before_densification_.clear();
+
   std::cerr << "Densifying using Delaunay Triangulation" << std::endl;
   std::vector<GeoDiv> geodivs_dens;
   for (const auto &gd : geo_divs_) {
@@ -436,6 +468,12 @@ void InsetState::densify_geo_divs_using_delaunay_t()
           outer_dens.push_back(outer_pts_dens[j]);
         }
       }
+
+      // Add new points to points_added_via_densification for plotting
+      std::unordered_set<Point> new_in_outer = new_points(outer, outer_dens);
+      points_from_densification_.insert(new_in_outer.begin(), new_in_outer.end());
+      points_before_densification_.insert(outer.begin(), outer.end());
+
       std::vector<Polygon> holes_v_dens;
 
       // Iterate over each hole
@@ -452,6 +490,12 @@ void InsetState::densify_geo_divs_using_delaunay_t()
             hole_dens.push_back(hole_pts_dens[i]);
           }
         }
+
+        // Add new points to points_added_via_densification for plotting
+        std::unordered_set<Point> new_in_hole = new_points(h, hole_dens);
+        points_from_densification_.insert(new_in_hole.begin(), new_in_hole.end());
+        points_before_densification_.insert(h.begin(), h.end());
+
         holes_v_dens.push_back(hole_dens);
       }
       const Polygon_with_holes pwh_dens(

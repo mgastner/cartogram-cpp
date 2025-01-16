@@ -155,6 +155,23 @@ Point InsetState::projected_point(const Point &p1, const bool project_original)
     (p1.y() == 0.0 || p1.y() == ly_) ? p1.y() : proj[proj_x][proj_y].y()};
 }
 
+// Apply projection to all points in set
+void InsetState::project_point_set(
+  std::unordered_set<Point>& unprojected)
+{
+  std::function<Point(Point)> lambda_bary =
+    [&dt = proj_qd_.dt,
+     &proj_map = proj_qd_.triangle_transformation](Point p1) {
+      return interpolate_point_with_barycentric_coordinates(p1, dt, proj_map);
+    };
+  std::unordered_set<Point> projected;
+  for (const Point &pt : unprojected) {
+    Point pp = lambda_bary(pt);
+    projected.insert(pp);
+  }
+  unprojected = std::move(projected);
+}
+
 // TODO: chosen_diag() seems to be more naturally thought of as a boolean
 //       than an integer.
 

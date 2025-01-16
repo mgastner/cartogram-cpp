@@ -254,8 +254,6 @@ int main(const int argc, const char *argv[])
     }
 
     time_tracker.start("Integration Inset " + inset_pos);
-
-    // Print initial values, and initial progress (0)
     progress_tracker.print_progress_mid_integration(inset_state);
 
     // Start map integration
@@ -265,6 +263,7 @@ int main(const int argc, const char *argv[])
         inset_state.inset_name() + "_" +
         std::to_string(inset_state.n_finished_integrations());
 
+      // 1. Fill/Rasterize Density
       if (rays) {
         // Fill density using ray-shooting method
         time_tracker.start("Fill with Density (Ray Shooting Method)");
@@ -276,27 +275,6 @@ int main(const int argc, const char *argv[])
         time_tracker.stop("Fill with Density (Clipping Method)");
       }
 
-      if (qtdt_method) {
-
-        // Create the Delaunay triangulation
-        time_tracker.start("Delaunay Triangulation");
-        inset_state.create_and_store_quadtree_cell_corners();
-        time_tracker.stop("Delaunay Triangulation");
-
-        time_tracker.start("Delaunay Triangulation");
-        inset_state.create_delaunay_t();
-        time_tracker.stop("Delaunay Triangulation");
-
-        if (plot_quadtree) {
-
-          // Draw the resultant quadtree and Delaunay triangulation
-          inset_state.write_quadtree(file_prefix + "_quadtree");
-          inset_state.write_delaunay_triangles(
-            file_prefix + "_delaunay_t",
-            false);
-        }
-      }
-
       if (plot_density) {
         std::string file_name = inset_state.inset_name() + "_unblurred_density_" +
                                 std::to_string(inset_state.n_finished_integrations()) + ".svg";
@@ -304,12 +282,27 @@ int main(const int argc, const char *argv[])
       }
 
       const double blur_width = inset_state.blur_width();
+
       if (blur_width > 0.0) {
         time_tracker.start("Blur");
         inset_state.blur_density(blur_width, plot_density);
         time_tracker.stop("Blur");
       }
+
+      // 2. Flatten Density
       if (qtdt_method) {
+
+        // Create Delaunay triangulation based on quadtree corners and plot
+        time_tracker.start("Delaunay Triangulation");
+        inset_state.create_and_store_quadtree_cell_corners();
+        inset_state.create_delaunay_t();
+        time_tracker.stop("Delaunay Triangulation");
+        if (plot_quadtree) {
+          inset_state.write_quadtree(file_prefix + "_quadtree");
+          inset_state.write_delaunay_triangles(
+            file_prefix + "a_delaunay_t",
+            false);
+        }
 
         time_tracker.start("Flatten Density (Quadtree Method)");
         if (!inset_state.flatten_density_with_node_vertices()) {
@@ -320,12 +313,11 @@ int main(const int argc, const char *argv[])
           continue;
         }
 
-        // Flatten density passed
+        // Flatten density passed.
         time_tracker.stop("Flatten Density (Quadtree Method)");
-
         if (plot_quadtree) {
           inset_state.write_delaunay_triangles(
-            file_prefix + "_delaunay_t_after_flatten",
+            file_prefix + "b_delaunay_t_after_flatten",
             true);
         }
       } else {
@@ -336,28 +328,36 @@ int main(const int argc, const char *argv[])
         time_tracker.stop("Flatten Density (Full Grid Method)");
       }
 
+      // 3. Project Polygon Points by Interpolating "Flattened" (Projected) Proxy Geometry
       if (qtdt_method) {
+
+        // Update triangulation adding shorter diagonal as constraint for better shape similarity
         time_tracker.start("Update Delanuay Triangulation");
         inset_state.update_delaunay_t();
         time_tracker.stop("Update Delanuay Triangulation");
 
-        if (plot_quadtree) {
-          inset_state.write_delaunay_triangles(
-            file_prefix + "_updated_delaunay_t_projected",
-            true);
-        }
-
         if (simplify) {
-
           time_tracker.start("Densification (using Delanuay Triangles)");
           inset_state.densify_geo_divs_using_delaunay_t();
           time_tracker.stop("Densification (using Delanuay Triangles)");
         }
 
-        // Project using the Delaunay triangulation
+        if (plot_quadtree) {
+          inset_state.write_delaunay_triangles(
+            file_prefix + "c_updated_delaunay_t_after_flatten",
+            false);
+        }
+
+        // Project using the updated Delaunay triangulation and plot
         time_tracker.start("Project (Delanuay Triangulation)");
         inset_state.project_with_delaunay_t(output_to_stdout);
         time_tracker.stop("Project (Delanuay Triangulation)");
+        if (plot_quadtree) {
+          inset_state.write_delaunay_triangles(
+            file_prefix + "d_projected_with_updated_delaunay_t",
+            true);
+        }
+
       } else if (triangulation) {
 
         // Choose diagonals that are inside grid cells, then densify.
@@ -387,7 +387,7 @@ int main(const int argc, const char *argv[])
         inset_state.write_intersections_image(intersections_resolution);
       }
 
-      // Update area errors
+      // 4. Update area errors and try again if necessary
       inset_state.set_area_errors();
       inset_state.adjust_grid();
       progress_tracker.print_progress_mid_integration(inset_state);
