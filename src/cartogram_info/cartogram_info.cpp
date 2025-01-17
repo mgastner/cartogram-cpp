@@ -249,7 +249,7 @@ InsetState CartogramInfo::convert_to_inset_state() {
     const auto &inset_state = inset_info.second;
     for (const auto &geo_div : inset_state.geo_divs()) {
       new_inset_state.push_back(geo_div);
-      new_inset_state.insert_color(geo_div.id(), inset_state.color_at(geo_div.id()));
+      // new_inset_state.insert_color(geo_div.id(), inset_state.color_at(geo_div.id()));
     }
   }
   return new_inset_state;
@@ -257,11 +257,11 @@ InsetState CartogramInfo::convert_to_inset_state() {
 
 void CartogramInfo::write_svg(const std::string &suffix) {
   InsetState insets_combined = convert_to_inset_state();
-  double scale_factor = cart_initial_total_target_area() / insets_combined.total_inset_area();
-  insets_combined.set_grid_dimensions(128, 128);
-  scale_factor = sqrt(scale_factor);
-  insets_combined.scale_points(scale_factor);
-  insets_combined.move_points(32, 32);
+  insets_combined.rescale_map(512, is_world_map_);
+
+  // TODO: Figure out how to add a grid
+  // scale_factor = sqrt(scale_factor);
+  // double scale_factor = cart_initial_total_target_area() / insets_combined.total_inset_area();
 
   // Figure out combined name
   std::string inset_names = "";

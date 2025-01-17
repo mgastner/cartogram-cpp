@@ -132,6 +132,20 @@ int main(const int argc, const char *argv[])
     time_tracker.stop("Inset " + inset_pos);
   }
 
+  if (plot_polygons) {
+    // Create copy of cart_info
+    CartogramInfo tmp_ci = cart_info;
+
+    for (auto &[inset_pos, inset_state] : cart_info.ref_to_inset_states()) {
+      inset_state.normalize_inset_area(
+        cart_info.cart_initial_total_target_area(),
+        true);
+    }
+    // Shift insets so that they do not overlap
+    tmp_ci.shift_insets_to_target_position();
+    tmp_ci.write_svg("input");
+  }
+
   // Project and exit
   if (output_equal_area || shift_insets_to_target_position) {
 
@@ -444,6 +458,8 @@ int main(const int argc, const char *argv[])
     geo_file_name,
     map_name + "_cartogram",
     output_to_stdout);
+
+  if (plot_polygons) cart_info.write_svg("cartogram");
 
   // Stop of main function time
   time_tracker.stop("Total Time");

@@ -340,6 +340,7 @@ void InsetState::write_polygons_on_surface(
   // Plot the grid
   if (plot_grid) {
 
+    // TODO: Use write_grid_on_surface instead, after fixing
     // const double scale_factor = sqrt(total_inset_area() / (initial_target_area() * 10));
     const std::vector<double> multipliers = {2, 5, 2};
     double per_grid_cell = 1;
