@@ -28,6 +28,9 @@ jobs:
 
     runs-on: ubuntu-latest
     needs: set-outputs
+    outputs:
+      config_output: ${{ steps.config_step.outputs.config_output }}
+      build_output: ${{ steps.build_step.outputs.build_output }}
     container:
       image: gocartio/cartogram-web:latest
     steps:
@@ -44,11 +47,16 @@ jobs:
           fetch-depth: 1
 
     - name: Configure CMake
-      run: cmake -B ${{github.workspace}}/build -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} -DRELEASE_TAG=${{ needs.set-outputs.outputs.short_sha }}
+      id: config_step
+      run: |
+        cmake -B ${{github.workspace}}/build -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} -DRELEASE_TAG=${{ needs.set-outputs.outputs.short_sha }} | tee config_output.txt
+        echo "config_output=$(cat config_output.txt)"
 
     - name: Build
+      id: build_step
       run: |
-        cmake --build ${{github.workspace}}/build --config ${{env.BUILD_TYPE}} --target install -j4 --
+        cmake --build ${{github.workspace}}/build --config ${{env.BUILD_TYPE}} --target install -j4 -- | tee build_output.txt
+        echo "build_output=$(cat build_output.txt)"
 
     # - name: Run CTest
     #   working-directory: ${{github.workspace}}/build
@@ -101,3 +109,12 @@ jobs:
         files: cartogram
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+    - name: Create GitHub Actions Job Summary
+      run: |
+        echo "## \`cartogram-cpp\`: ${{ needs.set-outputs.outputs.short_sha }}" >> $GITHUB_STEP_SUMMARY
+        echo "Release available at https://github.com/mgastner/cartogram-cpp/releases/tag/${{ needs.set-outputs.outputs.short_sha }}" >> $GITHUB_STEP_SUMMARY
+        echo "### Config Output" >> $GITHUB_STEP_SUMMARY
+        cat ${{ needs.build-and-upload.outputs.config_output }} >> $GITHUB_STEP_SUMMARY
+        echo "### Build Output" >> $GITHUB_STEP_SUMMARY
+        cat ${{ needs.build-and-upload.outputs.build_output }} >> $GITHUB_STEP_SUMMARY
