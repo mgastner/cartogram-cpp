@@ -79,15 +79,15 @@ argparse::ArgumentParser parsed_arguments(
     .default_value(false)
     .implicit_value(true);
   arguments.add_argument("-T", "--triangulation")
-    .help("Boolean: Disable cartogram projection via triangulation")
+    .help("Boolean: Enable cartogram projection via triangulation")
     .default_value(true)
     .implicit_value(false);
   arguments.add_argument("-Q", "--qtdt_method")
-    .help("Boolean: Disable Quadtree-Delaunay Triangulation Method")
+    .help("Boolean: Enable Quadtree-Delaunay Triangulation Method")
     .default_value(true)
     .implicit_value(false);
   arguments.add_argument("-S", "--simplify")
-    .help("Boolean: Disable simplification of polygons")
+    .help("Boolean: Enable simplification of polygons")
     .default_value(true)
     .implicit_value(false);
   arguments.add_argument("-P", "--n_points")
