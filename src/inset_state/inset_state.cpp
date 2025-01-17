@@ -804,33 +804,12 @@ void InsetState::adjust_grid()
     ly_ *= default_grid_factor;
 
      const Transformation scale(CGAL::SCALING, default_grid_factor);
-    // transform_points(scale);
-    // transform_points(scale, true);
-
-    for (auto &gd : geo_divs_original_) {
-      for (auto &pwh : gd.ref_to_polygons_with_holes()) {
-        auto &ext_ring = pwh.outer_boundary();
-        ext_ring = transform(scale, ext_ring);
-        for (auto &h : pwh.holes()) {
-          h = transform(scale, h);
-        }
-      }
-    }
+    transform_points(scale);
 
     initial_area_ *= default_grid_factor * default_grid_factor;
-
-    for (auto &gd : geo_divs_original_transformed_) {
-      for (auto &pwh : gd.ref_to_polygons_with_holes()) {
-        auto &ext_ring = pwh.outer_boundary();
-        ext_ring = transform(scale, ext_ring);
-        for (auto &h : pwh.holes()) {
-          h = transform(scale, h);
-        }
-      }
-    }
+    transform_points(scale, true);
 
     normalize_target_area();
-
     destroy_fftw_plans_for_rho();
     destroy_fftw_plans_for_flux();
     ref_to_rho_init().free();
