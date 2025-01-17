@@ -1,7 +1,7 @@
 #include "constants.hpp"
 #include "inset_state.hpp"
 
-void InsetState::fill_with_density_rays(bool plot_density)
+void InsetState::fill_with_density_rays()
 {
   // We assume that target areas that were zero or missing in the input have
   // already been replaced by

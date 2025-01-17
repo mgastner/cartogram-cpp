@@ -1,4 +1,3 @@
-#include "constants.hpp"
 #include "inset_state.hpp"
 
 Polygon clip_polygon_vertical_line(const Polygon &poly, double x, bool left)
@@ -77,7 +76,7 @@ double square_poly_overlap_area(const Polygon &square, const Polygon &poly)
   return abs(clipped.area());
 }
 
-void InsetState::fill_with_density_clip(bool plot_density)
+void InsetState::fill_with_density_clip()
 {
   // Reset the densities
 #pragma omp parallel for collapse(2)

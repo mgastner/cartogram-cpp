@@ -8,6 +8,7 @@
 #include <boost/multi_array.hpp>
 #include <cairo/cairo.h>
 #include <nlohmann/json.hpp>
+#include <algorithm>
 
 struct max_area_error_info {
   double value;
@@ -39,6 +40,10 @@ private:
   std::vector<Segment> failed_constraints_dt_projected_;
   std::vector<Segment> failed_constraints_;
   Delaunay og_dt_;
+
+  // New points
+  std::unordered_set<Point> points_from_densification_;
+  std::unordered_set<Point> points_before_densification_;
 
   // Bounding boxes of Quadtree cells
   std::vector<Bbox> quadtree_bboxes_;
@@ -137,8 +142,8 @@ public:
   void fill_grid_diagonals(bool = false);
 
   // Density functions
-  void fill_with_density_rays(bool);  // Fill map with density, using scanlines
-  void fill_with_density_clip(bool);  // Fill map with density, using clipping
+  void fill_with_density_rays();  // Fill map with density, using scanlines
+  void fill_with_density_clip();  // Fill map with density, using clipping
   void flatten_density();  // Flatten said density with integration
   void flatten_ellipse_density();
   bool flatten_density_with_node_vertices();
@@ -221,6 +226,7 @@ public:
   void project();
   Point projected_point(const Point &, bool = false) const;
   Point projected_point_with_triangulation(const Point &, bool = false) const;
+  void project_point_set(std::unordered_set<Point>& unprojected);
   void project_with_cum_proj();
   void project_with_delaunay_t(bool);
   void project_with_triangulation();
@@ -281,17 +287,19 @@ public:
     const std::string filename,
     const bool plot_equal_area_map,
     const bool crop_polygons);
-  void write_grids_on_surface(cairo_t *cr);
+  void write_cells_on_surface(cairo_t *cr);
   void write_grid_colors_on_surface(
     cairo_t *cr,
     bool plot_equal_area_map,
     bool crop_polygons);
+  void write_grid_on_surface(cairo_t *cr);
   void write_polygons_on_surface(
     cairo_t *cr,
     const bool fill_polygons,
     const bool colors,
     const bool plot_equal_area_map,
-    const double line_width = 0.0) const;
+    const double line_width = 0.0,
+    const Color clr = Color{0.0, 0.0, 0.0}) const;
   void write_labels_on_surface(cairo_t *cr);
   void write_density_image(
     const std::string filename,

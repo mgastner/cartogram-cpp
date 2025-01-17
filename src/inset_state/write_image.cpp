@@ -438,7 +438,7 @@ void write_vectors_on_surface(
 
 void InsetState::write_grid_on_surface(cairo_t *cr) {
 
-    // Find out grid sizing
+    // TODO: Find out grid sizing
 
     // const double scale_factor = sqrt(total_inset_area() / (initial_target_area() * 10));
     const std::vector<double> multipliers = {2, 5, 2};

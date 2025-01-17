@@ -267,11 +267,11 @@ int main(const int argc, const char *argv[])
       if (rays) {
         // Fill density using ray-shooting method
         time_tracker.start("Fill with Density (Ray Shooting Method)");
-        inset_state.fill_with_density_rays(plot_density);
+        inset_state.fill_with_density_rays();
         time_tracker.stop("Fill with Density (Ray Shooting Method)");
       } else {
         time_tracker.start("Fill with Density (Clipping Method)");
-        inset_state.fill_with_density_clip(plot_density);
+        inset_state.fill_with_density_clip();
         time_tracker.stop("Fill with Density (Clipping Method)");
       }
 
