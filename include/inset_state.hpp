@@ -2,6 +2,7 @@
 #define INSET_STATE_HPP_
 
 #include "colors.hpp"
+#include "argparse.hpp"
 #include "ft_real_2d.hpp"
 #include "geo_div.hpp"
 #include "intersection.hpp"
@@ -51,6 +52,8 @@ private:
   Bbox bbox_;
   fftw_plan bwd_plan_for_rho_{};
   std::unordered_map<std::string, Color> colors_;
+
+  argparse::ArgumentParser args_;
 
   // Unblurred density mean, min, max
   double dens_min_, dens_mean_, dens_max_, exterior_density_;
@@ -108,7 +111,8 @@ private:
   InsetState();
 
 public:
-  explicit InsetState(std::string);  // Constructor
+  explicit InsetState(std::string inset_pos);
+  explicit InsetState(std::string, argparse::ArgumentParser);
   void adjust_for_dual_hemisphere();
   void adjust_grid();
   void apply_albers_projection();

@@ -13,6 +13,11 @@ InsetState::InsetState(std::string pos) : pos_(std::move(pos))
   initial_target_area_ = 0.0;
 }
 
+InsetState::InsetState(std::string pos, argparse::ArgumentParser args) : InsetState(std::move(pos))
+{
+  args_ = args;
+}
+
 double InsetState::area_error_at(const std::string &id) const
 {
   return area_errors_.at(id);

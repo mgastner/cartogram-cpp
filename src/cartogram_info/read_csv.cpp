@@ -241,7 +241,7 @@ void CartogramInfo::relocate_geodivs_based_on_inset_pos(
       const std::string id = gd.id();
       const std::string inset_pos = csv_data.at(id).at("inset_pos");
       if (!new_inset_states.contains(inset_pos)) {
-        InsetState new_inset_state(inset_pos);
+        InsetState new_inset_state(inset_pos, args_);
         new_inset_states.insert(
           std::pair<std::string, InsetState>(inset_pos, new_inset_state));
       }
