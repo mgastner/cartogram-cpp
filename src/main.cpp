@@ -374,11 +374,15 @@ int main(const int argc, const char *argv[])
 
       } else if (triangulation) {
 
-        // Choose diagonals that are inside grid cells, then densify.
-        time_tracker.start("Densification (using Grid Diagonals)");
-        inset_state.fill_grid_diagonals();
-        inset_state.densify_geo_divs();
-        time_tracker.stop("Densification (using Grid Diagonals)");
+        // Only densify if we will also simplify later.
+        if (simplify) {
+
+          // Choose diagonals that are inside grid cells, then densify.
+          time_tracker.start("Densification (using Grid Diagonals)");
+          inset_state.fill_grid_diagonals();
+          inset_state.densify_geo_divs();
+          time_tracker.stop("Densification (using Grid Diagonals)");
+        }
 
         // Project with triangulation
         time_tracker.start("Project (Triangulation)");

@@ -30,6 +30,9 @@ void InsetState::holes_inside_polygons() const
 
 void InsetState::is_simple(const char *caller_func) const
 {
+  if (!args_.get<bool>("--simplify_and_densify")) return;
+
+  // Only check topology if simplification and densification is enabled.
   for (const auto &gd : geo_divs_) {
     for (const auto &pwh : gd.polygons_with_holes()) {
       if (!pwh.outer_boundary().is_simple()) {

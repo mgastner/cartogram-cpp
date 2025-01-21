@@ -86,8 +86,8 @@ argparse::ArgumentParser parsed_arguments(
     .help("Boolean: Enable Quadtree-Delaunay Triangulation Method")
     .default_value(true)
     .implicit_value(false);
-  arguments.add_argument("-S", "--simplify")
-    .help("Boolean: Enable simplification of polygons")
+  arguments.add_argument("-S", "--simplify_and_densify")
+    .help("Boolean: Enable iterative simplification and densification of polygons")
     .default_value(true)
     .implicit_value(false);
   arguments.add_argument("-P", "--n_points")
@@ -203,11 +203,16 @@ argparse::ArgumentParser parsed_arguments(
     _Exit(18);
   }
 
-  // Check whether n_points is specified but --simplify not passed
-  if (arguments.is_used("-P") && !simplify) {
-    std::cerr << "WARNING: Simplification disabled!" << std::endl;
-    std::cerr << "Polygons will not be simplified." << std::endl;
-    std::cerr << "To enable simplification, pass the -S flag." << std::endl;
+  // Check whether n_points is specified but --simplify_and_densify not passed
+  if (!simplify) {
+    std::cerr << "WARNING: Simplification and densification disabled! "
+              << "Polygons will not simplified (or densified). "
+              << "This may result and in polygon intersections. "
+              << "Thus, we are turning off topology checks. "
+              << "To enable simplification, pass the -S flag." << std::endl;
+    if (arguments.is_used("-P")) {
+      std::cerr << "--n_points ignored." << std::endl;
+    }
     std::cerr << arguments << std::endl;
   }
 
