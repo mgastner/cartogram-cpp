@@ -6,6 +6,8 @@
 
 CartogramInfo::CartogramInfo(const bool w) : is_world_map_(w) {}
 
+CartogramInfo::CartogramInfo(const argparse::ArgumentParser args) : args_(args) {}
+
 double CartogramInfo::cart_initial_total_target_area() const
 {
   double target_area = 0.0;

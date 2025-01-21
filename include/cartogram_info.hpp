@@ -7,7 +7,7 @@
 class CartogramInfo
 {
 private:
-  std::map<std::string, std::string> gd_to_inset_;
+  std::map<std::string, std::string> gd_to_inset_;argparse::ArgumentParser args_;
   std::string id_header_;
   std::set<std::string> ids_in_visual_variables_file_;
   std::vector<std::string> initial_id_order_;
@@ -26,6 +26,7 @@ private:
 
 public:
   explicit CartogramInfo(bool);
+  explicit CartogramInfo(argparse::ArgumentParser);
   [[nodiscard]] double cart_initial_total_target_area() const;
   void construct_inset_state_from_geodivs(const nlohmann::json &);
   [[nodiscard]] double area() const;
