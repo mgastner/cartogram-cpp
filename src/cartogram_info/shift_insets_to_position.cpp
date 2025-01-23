@@ -1,7 +1,7 @@
 #include "cartogram_info.hpp"
 #include "constants.hpp"
 
-void CartogramInfo::shift_insets_to_target_position(bool output_to_stdout)
+void CartogramInfo::reposition_insets(bool output_to_stdout)
 {
   // For simplicity's sake, let us formally insert bounding boxes for
   // all conceivable inset positions

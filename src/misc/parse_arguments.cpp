@@ -13,8 +13,8 @@ argparse::ArgumentParser parsed_arguments(
   bool &qtdt_method,
   bool &simplify,
   bool &make_csv,
-  bool &output_equal_area,
-  bool &output_to_stdout,
+  bool &output_equal_area_map,
+  bool &redirect_exports_to_stdout,
   bool &plot_density,
   bool &plot_grid,
   bool &plot_intersections,
@@ -23,8 +23,8 @@ argparse::ArgumentParser parsed_arguments(
   double &min_polygon_area,
   bool &plot_quadtree,
   bool &rays,
-  bool &output_preprocessed,
-  bool &shift_insets_to_target_position,
+  bool &export_preprocessed,
+  bool &output_shifted_insets,
   bool &skip_projection)
 {
   // Create parser for arguments using argparse.
@@ -66,17 +66,16 @@ argparse::ArgumentParser parsed_arguments(
     .help("Boolean: Plot images of flatten and blur density")
     .default_value(false)
     .implicit_value(true);
-  arguments.add_argument("-g", "--plot_grid")
-    .help("Boolean: Plot images of with transformed grid grid")
+  arguments.add_argument("-g", "--add_grid")
+    .help("Boolean: Add area legend and grid to relevant plots")
     .default_value(false)
     .implicit_value(true);
   arguments.add_argument("-i", "--plot_intersections")
     .help("Boolean: Plot images of intersections (if any)")
     .default_value(false)
     .implicit_value(true);
-  arguments.add_argument("-E", "--output_equal_area")
-    .help(
-      "Boolean: Output equal area GeoJSON from input GeoJSON - no cartogram")
+  arguments.add_argument("-E", "--output_equal_area_map")
+    .help("Boolean: Transform input GeoJSON into cartesian coordinates and exit")
     .default_value(false)
     .implicit_value(true);
   arguments.add_argument("-T", "--triangulation")
@@ -108,9 +107,9 @@ argparse::ArgumentParser parsed_arguments(
     .help("Boolean: Output GeoJSON to stdout")
     .default_value(false)
     .implicit_value(true);
-  arguments.add_argument("--shift_insets_to_target_position")
+  arguments.add_argument("--output_shifted_insets")
     .help(
-      "Boolean: Output GeoJSON with insets shifted into position - no projection")
+      "Boolean: Output repositioned insets in cartesian coordinates GeoJSON")
     .default_value(false)
     .implicit_value(true);
   arguments.add_argument("-R", "--remove_tiny_polygons")
@@ -127,8 +126,12 @@ argparse::ArgumentParser parsed_arguments(
     .help("Boolean: Use old ray shooting method to fill density")
     .default_value(false)
     .implicit_value(true);
-  arguments.add_argument("--output_preprocessed")
-    .help("Boolean: output input GeoJSON and CSV after preprocessing")
+  arguments.add_argument("--export_preprocessed")
+    .help("Boolean: write input GeoJSON and CSV after preprocessing")
+    .default_value(false)
+    .implicit_value(true);
+  arguments.add_argument("--export_time_analsyis")
+    .help("Boolean: write extended time analysis to CSV file")
     .default_value(false)
     .implicit_value(true);
 
@@ -189,16 +192,16 @@ argparse::ArgumentParser parsed_arguments(
   }
   skip_projection = arguments.get<bool>("--skip_projection");
   make_csv = arguments.get<bool>("-M");
-  output_equal_area = arguments.get<bool>("-E");
-  output_to_stdout = arguments.get<bool>("-O");
-  output_preprocessed = arguments.get<bool>("--output_preprocessed");
+  output_equal_area_map = arguments.get<bool>("-E");
+  redirect_exports_to_stdout = arguments.get<bool>("-O");
+  export_preprocessed = arguments.get<bool>("--output_preprocessed");
   plot_density = arguments.get<bool>("-d");
   plot_grid = arguments.get<bool>("-g");
   plot_intersections = arguments.get<bool>("-i");
   plot_polygons = arguments.get<bool>("-p");
   plot_quadtree = arguments.get<bool>("-q");
-  shift_insets_to_target_position =
-    arguments.get<bool>("--shift_insets_to_target_position");
+  output_shifted_insets =
+    arguments.get<bool>("--shift_insets_into_position");
   if (arguments.is_used("-O") && !simplify && !qtdt_method) {
     std::cerr << "ERROR: simplification disabled!\n";
     std::cerr << "--output_to_stdout flag is only supported with "
@@ -252,7 +255,7 @@ argparse::ArgumentParser parsed_arguments(
     visual_file_name = arguments.get<std::string>("visual_variable_file");
     std::cerr << "Using visual variables from file " << visual_file_name
               << std::endl;
-  } else if (!make_csv and !output_equal_area) {
+  } else if (!make_csv and !output_equal_area_map) {
 
     // CSV file not given, and user does not want to create one
     std::cerr << arguments << std::endl;

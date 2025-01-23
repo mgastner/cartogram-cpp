@@ -31,9 +31,9 @@ int main(const int argc, const char *argv[])
   bool rays;
 
   // Other boolean values that are needed to parse the command line arguments
-  bool make_csv, output_equal_area, output_to_stdout, plot_density, plot_grid,
+  bool make_csv, output_equal_area_map, redirect_exports_to_stdout, plot_density, plot_grid,
     plot_intersections, plot_polygons, plot_quadtree, remove_tiny_polygons,
-    output_preprocessed, shift_insets_to_target_position, skip_projection;
+    export_preprocessed, output_shifted_insets, skip_projection;
 
   // If the proportion of the polygon area is smaller than
   // min_polygon_area * total area, then remove polygon
@@ -53,8 +53,8 @@ int main(const int argc, const char *argv[])
     qtdt_method,
     simplify,
     make_csv,
-    output_equal_area,
-    output_to_stdout,
+    output_equal_area_map,
+    redirect_exports_to_stdout,
     plot_density,
     plot_grid,
     plot_intersections,
@@ -63,8 +63,8 @@ int main(const int argc, const char *argv[])
     min_polygon_area,
     plot_quadtree,
     rays,
-    output_preprocessed,
-    shift_insets_to_target_position,
+    export_preprocessed,
+    output_shifted_insets,
     skip_projection);
 
   // Initialize cart_info. It contains all the information about the cartogram
@@ -78,8 +78,12 @@ int main(const int argc, const char *argv[])
   // Read geometry. If the GeoJSON does not explicitly contain a "crs" field,
   // we assume that the coordinates are in longitude and latitude.
   cart_info.read_geojson(geo_file_name, make_csv, crs);
-  std::cerr << "Coordinate reference system: " << crs << std::endl;
 
+  // Project to equal area, if necessary
+  // Write Output and EXIT if --output_equal_area_map is set to true
+  cart_info.project_to_equal_area();
+
+  std::cerr << "Coordinate reference system: " << crs << std::endl;
   if (arguments.is_used("visual_variable_file")) {
 
     // Read visual variables (e.g., area and color) from CSV
@@ -88,41 +92,6 @@ int main(const int argc, const char *argv[])
 
   // Store total number of GeoDivs to monitor progress
   double total_geo_divs = cart_info.n_geo_divs();
-
-  // Project map and ensure that all holes are inside polygons
-  for (auto &[inset_pos, inset_state] : cart_info.ref_to_inset_states()) {
-
-    // Start of inset time
-    time_tracker.start("Inset " + inset_pos);
-
-    // Check for errors in the input topology
-    inset_state.check_topology();
-
-    // Can the coordinates be interpreted as longitude and latitude?
-    // TODO: The "crs" field for GeoJSON files seems to be deprecated.
-    //       However, in earlier specifications, the coordinate reference
-    //       system used to be written in the format specified here:
-    //       https://geojson.org/geojson-spec.html#coordinate-reference-system-objects.
-    //       It may be a good idea to make a list of possible entries
-    //       corresponding to longitude and lattitude projection.
-    //       "urn:ogc:def:crs:OGC:1.3:CRS84" is one such entry.
-    // const Bbox bb = inset_state.bbox();
-    if (!skip_projection || output_equal_area) {
-      // TODO: Potentially check for the CRS field we output?
-
-      // If yes, transform the coordinates with the Albers projection if the
-      // input map is not a world map. Otherwise, use the Smyth-Craster
-      // projection.
-      if (world) {
-        inset_state.apply_smyth_craster_projection();
-      } else {
-        inset_state.apply_albers_projection();
-      }
-    }
-
-    // End of inset time
-    time_tracker.stop("Inset " + inset_pos);
-  }
 
   if (plot_polygons) {
     // Create copy of cart_info
@@ -134,30 +103,30 @@ int main(const int argc, const char *argv[])
         true);
     }
     // Shift insets so that they do not overlap
-    tmp_ci.shift_insets_to_target_position();
+    tmp_ci.reposition_insets();
     tmp_ci.write_svg("input");
   }
 
   // Project and exit
-  if (output_equal_area || shift_insets_to_target_position) {
+  if (output_shifted_insets) {
 
     // Normalize areas
     for (auto &[inset_pos, inset_state] : cart_info.ref_to_inset_states()) {
-      if (!output_equal_area) inset_state.adjust_for_dual_hemisphere();
+      if (!output_equal_area_map) inset_state.adjust_for_dual_hemisphere();
       inset_state.normalize_inset_area(
         cart_info.cart_initial_total_target_area(),
         true);
     }
     // Shift insets so that they do not overlap
-    cart_info.shift_insets_to_target_position();
+    cart_info.reposition_insets();
 
-    std::string suffix = output_equal_area ? "_equal_area" : "_insets_shifted";
+    std::string suffix = "_insets_shifted";
 
     // Output to GeoJSON
     cart_info.write_geojson(
       geo_file_name,
       map_name + suffix,
-      output_to_stdout,
+      redirect_exports_to_stdout,
       true);
     return EXIT_SUCCESS;
   }
@@ -186,7 +155,7 @@ int main(const int argc, const char *argv[])
     // Rescale map to fit into a rectangular box [0, lx] * [0, ly]
     inset_state.rescale_map(max_n_grid_rows_or_cols, cart_info.is_world_map());
 
-    if (output_to_stdout) {
+    if (redirect_exports_to_stdout) {
 
       // Store original coordinates
       inset_state.store_original_geo_divs();
@@ -207,7 +176,7 @@ int main(const int argc, const char *argv[])
     }
     std::cerr << "End of initial simplification of " << inset_pos << std::endl;
 
-    if (output_preprocessed) {
+    if (export_preprocessed) {
       // Output rescaled GeoJSON
       cart_info.write_geojson(
         geo_file_name,
@@ -356,7 +325,7 @@ int main(const int argc, const char *argv[])
 
         // Project using the updated Delaunay triangulation and plot
         time_tracker.start("Project (Delanuay Triangulation)");
-        inset_state.project_with_delaunay_t(output_to_stdout);
+        inset_state.project_with_delaunay_t(redirect_exports_to_stdout);
         time_tracker.stop("Project (Delanuay Triangulation)");
         if (plot_quadtree) {
           inset_state.write_delaunay_triangles(
@@ -415,7 +384,7 @@ int main(const int argc, const char *argv[])
         plot_grid);
     }
 
-    if (output_to_stdout and !qtdt_method) {
+    if (redirect_exports_to_stdout and !qtdt_method) {
       inset_state.fill_grid_diagonals(true);
       inset_state.project_with_cum_proj();
     }
@@ -443,17 +412,17 @@ int main(const int argc, const char *argv[])
     inset_state.normalize_inset_area(
       cart_info.cart_initial_total_target_area(),
       false,
-      output_to_stdout);
+      redirect_exports_to_stdout);
   }
 
   // Shift insets so that they do not overlap
-  cart_info.shift_insets_to_target_position(output_to_stdout);
+  cart_info.reposition_insets(redirect_exports_to_stdout);
 
   // Output to GeoJSON
   cart_info.write_geojson(
     geo_file_name,
     map_name + "_cartogram",
-    output_to_stdout);
+    redirect_exports_to_stdout);
 
   if (plot_polygons) cart_info.write_svg("cartogram");
 

@@ -1,12 +1,15 @@
 #include "cartogram_info.hpp"
 #include "constants.hpp"
 #include "csv.hpp"
+#include <cstdlib>
 #include <iostream>
 #include <utility>
 
 CartogramInfo::CartogramInfo(const bool w) : is_world_map_(w) {}
 
-CartogramInfo::CartogramInfo(const argparse::ArgumentParser args) : args_(args) {}
+CartogramInfo::CartogramInfo(const argparse::ArgumentParser args) : args_(args) {
+  is_world_map_ = args_.get<bool>("-W");
+}
 
 double CartogramInfo::cart_initial_total_target_area() const
 {
@@ -54,6 +57,46 @@ unsigned int CartogramInfo::n_geo_divs() const
 unsigned int CartogramInfo::n_insets() const
 {
   return inset_states_.size();
+}
+
+void CartogramInfo::project_to_equal_area() {
+
+  // Project map and ensure that all holes are inside polygons
+  for (auto &[inset_pos, inset_state] : inset_states_) {
+
+    // Check for errors in the input topology
+    inset_state.check_topology();
+
+    // Can the coordinates be interpreted as longitude and latitude?
+    // TODO: The "crs" field for GeoJSON files seems to be deprecated.
+    //       However, in earlier specifications, the coordinate reference
+    //       system used to be written in the format specified here:
+    //       https://geojson.org/geojson-spec.html#coordinate-reference-system-objects.
+    //       It may be a good idea to make a list of possible entries
+    //       corresponding to longitude and lattitude projection.
+    //       "urn:ogc:def:crs:OGC:1.3:CRS84" is one such entry.
+    if (!args_.get<bool>("--skip_projection") || args_.get<bool>("--output_equal_area_map")) {
+      // TODO: Potentially check for the CRS field we output?
+
+      // If yes, transform the coordinates with the Albers projection if the
+      // input map is not a world map. Otherwise, use the Smyth-Craster
+      // projection.
+      if (args_.get<bool>("--world")) {
+        inset_state.apply_smyth_craster_projection();
+      } else {
+        inset_state.apply_albers_projection();
+      }
+    }
+  }
+
+  if (args_.get<bool>("--output_equal_area_map")) {
+    write_geojson(
+      args_.get<std::string>("--geo_file_name"),
+      map_name_ + "_equal_area",
+      args_.get<bool>("--redirect_exports_to_stdout"),
+      true);
+    std::exit(EXIT_SUCCESS);
+  }
 }
 
 std::map<std::string, InsetState> &CartogramInfo::ref_to_inset_states()

@@ -37,6 +37,7 @@ public:
     const nlohmann::json &);
   [[nodiscard]] unsigned int n_geo_divs() const;
   [[nodiscard]] unsigned int n_insets() const;
+  void project_to_equal_area();
   void read_csv(const argparse::ArgumentParser &);
   void read_geojson(const std::string &, bool, std::string &);
   std::map<std::string, InsetState> &ref_to_inset_states();
@@ -45,7 +46,7 @@ public:
   void replace_missing_and_zero_target_areas();
   std::string set_map_name(const std::string &);
   void set_id_header(const std::string &);
-  void shift_insets_to_target_position(bool output_to_stdout = false);
+  void reposition_insets(bool output_to_stdout = false);
   void update_id_header_info(const std::string &);
   void write_csv(const std::string &csv_file_name);
   void write_geojson(
