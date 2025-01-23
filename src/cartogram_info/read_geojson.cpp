@@ -378,7 +378,7 @@ std::vector<std::string> extract_initial_order_of_ids(
 
 void CartogramInfo::construct_inset_state_from_geodivs(const nlohmann::json &j)
 {
-  InsetState inset_state("C");
+  InsetState inset_state("C", args_);
   for (const auto &feature : j["features"]) {
     const auto geometry = feature["geometry"];
     const bool is_polygon = (geometry["type"] == "Polygon");

@@ -91,7 +91,7 @@ void CartogramInfo::project_to_equal_area() {
 
   if (args_.get<bool>("--output_equal_area_map")) {
     write_geojson(
-      args_.get<std::string>("--geo_file_name"),
+      args_.get<std::string>("geometry_file"),
       map_name_ + "_equal_area",
       args_.get<bool>("--redirect_exports_to_stdout"),
       true);
@@ -288,7 +288,7 @@ void CartogramInfo::write_csv(const std::string &csv_file_name)
 
 InsetState CartogramInfo::convert_to_inset_state() {
 
-  InsetState new_inset_state("");
+  InsetState new_inset_state("", args_);
 
   for (const auto &inset_info : inset_states_) {
     const auto &inset_state = inset_info.second;

@@ -1,7 +1,7 @@
 #include "inset_state.hpp"
 #include "constants.hpp"
 
-InsetState::InsetState(std::string pos) : pos_(std::move(pos))
+InsetState::InsetState(std::string pos, argparse::ArgumentParser args) : args_(args), pos_(pos)
 {
   initial_area_ = 0.0;
   n_finished_integrations_ = 0;
@@ -11,11 +11,6 @@ InsetState::InsetState(std::string pos) : pos_(std::move(pos))
   dens_max_ = 0.0;
   latt_const_ = 0.0;
   initial_target_area_ = 0.0;
-}
-
-InsetState::InsetState(std::string pos, argparse::ArgumentParser args) : InsetState(std::move(pos))
-{
-  args_ = args;
 }
 
 double InsetState::area_error_at(const std::string &id) const

@@ -107,11 +107,10 @@ private:
   std::vector<double> max_area_errors_;
 
   // Make default constructor private so that only
-  // InsetState(const std::string) can be called as constructor
+  // InsetState(const std::string, Arguments) can be called as constructor
   InsetState();
 
 public:
-  explicit InsetState(std::string inset_pos);
   explicit InsetState(std::string, argparse::ArgumentParser);
   void adjust_for_dual_hemisphere();
   void adjust_grid();
