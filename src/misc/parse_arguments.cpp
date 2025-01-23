@@ -103,8 +103,9 @@ argparse::ArgumentParser parsed_arguments(
     .help("Boolean: create CSV file from given GeoJSON?")
     .default_value(false)
     .implicit_value(true);
-  arguments.add_argument("-O", "--output_to_stdout")
-    .help("Boolean: Output GeoJSON to stdout")
+  arguments.add_argument("-O", "--redirect_exports_to_stdout")
+    .help("Boolean: Redirect all exports to stdout as valid JSON")
+    // Currently, this help message is not accurate.
     .default_value(false)
     .implicit_value(true);
   arguments.add_argument("--output_shifted_insets")
@@ -116,7 +117,7 @@ argparse::ArgumentParser parsed_arguments(
     .help("Boolean: Remove tiny polygons")
     .default_value(false)
     .implicit_value(true);
-  arguments.add_argument("-m", "--minimum_polygon_size")
+  arguments.add_argument("-m", "--minimum_polygon_area")
     .help(
       std::string("Double: If remove-tiny-polygons enabled, ") +
       "minimum size of polygons as proportion of total area")
@@ -165,7 +166,7 @@ argparse::ArgumentParser parsed_arguments(
 
   // If world flag is set, and long-gride side length is not explicitly set,
   // then 512 makes the output look better
-  if (arguments.get<bool>("-W") && !arguments.is_used("-n")) {
+  if (arguments.get<bool>("--world") && !arguments.is_used("-n")) {
     long_grid_side_length = 512;
   }
 
@@ -173,13 +174,13 @@ argparse::ArgumentParser parsed_arguments(
   target_points_per_inset = arguments.get<unsigned int>("-P");
 
   // Set boolean values
-  world = arguments.get<bool>("-W");
-  triangulation = arguments.get<bool>("-T");
-  qtdt_method = arguments.get<bool>("-Q");
-  simplify = arguments.get<bool>("-S");
-  remove_tiny_polygons = arguments.get<bool>("-R");
-  min_polygon_area = arguments.get<double>("-m");
-  rays = arguments.get<bool>("-r");
+  world = arguments.get<bool>("--world");
+  triangulation = arguments.get<bool>("--triangulation");
+  qtdt_method = arguments.get<bool>("--qtdt_method");
+  simplify = arguments.get<bool>("--simplify_and_densify");
+  remove_tiny_polygons = arguments.get<bool>("--remove_tiny_polygons");
+  min_polygon_area = arguments.get<double>("--minimum_polygon_area");
+  rays = arguments.get<bool>("--use_ray_shooting_method");
   if (!triangulation && simplify) {
 
     // If tracer points are on the FTReal2d, then simplification requires
@@ -191,17 +192,18 @@ argparse::ArgumentParser parsed_arguments(
     triangulation = true;
   }
   skip_projection = arguments.get<bool>("--skip_projection");
-  make_csv = arguments.get<bool>("-M");
-  output_equal_area_map = arguments.get<bool>("-E");
-  redirect_exports_to_stdout = arguments.get<bool>("-O");
-  export_preprocessed = arguments.get<bool>("--output_preprocessed");
-  plot_density = arguments.get<bool>("-d");
-  plot_grid = arguments.get<bool>("-g");
-  plot_intersections = arguments.get<bool>("-i");
-  plot_polygons = arguments.get<bool>("-p");
-  plot_quadtree = arguments.get<bool>("-q");
+  make_csv = arguments.get<bool>("--make_csv");
+  output_equal_area_map = arguments.get<bool>("--output_equal_area_map");
+  redirect_exports_to_stdout = arguments.get<bool>("--redirect_exports_to_stdout");
+  export_preprocessed = arguments.get<bool>("--export_preprocessed");
+  plot_density = arguments.get<bool>("--plot_density");
+  plot_grid = arguments.get<bool>("--add_grid");
+  plot_intersections = arguments.get<bool>("--plot_intersections");
+  plot_polygons = arguments.get<bool>("--plot_polygons");
+  plot_quadtree = arguments.get<bool>("--plot_quadtree");
   output_shifted_insets =
-    arguments.get<bool>("--shift_insets_into_position");
+    arguments.get<bool>("--output_shifted_insets");
+  // Check if user wants to redirect output to stdout
   if (arguments.is_used("-O") && !simplify && !qtdt_method) {
     std::cerr << "ERROR: simplification disabled!\n";
     std::cerr << "--output_to_stdout flag is only supported with "

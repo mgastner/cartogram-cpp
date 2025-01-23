@@ -122,6 +122,6 @@ jobs:
         echo "\`\`\`"
         echo "### Build Output" >> $GITHUB_STEP_SUMMARY
         echo "\`\`\`"
-        ehco "cmake --build ${{github.workspace}}/build --config ${{env.BUILD_TYPE}} --target install -j4 --"
+        echo "cmake --build ${{github.workspace}}/build --config ${{env.BUILD_TYPE}} --target install -j4 --"
         echo ${{ needs.build-and-upload.outputs.build_output }} >> $GITHUB_STEP_SUMMARY
         echo "\`\`\`"
