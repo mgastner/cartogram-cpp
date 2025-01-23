@@ -33,7 +33,7 @@ int main(const int argc, const char *argv[])
   // Other boolean values that are needed to parse the command line arguments
   bool make_csv, output_equal_area, output_to_stdout, plot_density, plot_grid,
     plot_intersections, plot_polygons, plot_quadtree, remove_tiny_polygons,
-    output_preprocessed, shift_insets_to_target_position;
+    output_preprocessed, shift_insets_to_target_position, skip_projection;
 
   // If the proportion of the polygon area is smaller than
   // min_polygon_area * total area, then remove polygon
@@ -64,7 +64,8 @@ int main(const int argc, const char *argv[])
     plot_quadtree,
     rays,
     output_preprocessed,
-    shift_insets_to_target_position);
+    shift_insets_to_target_position,
+    skip_projection);
 
   // Initialize cart_info. It contains all the information about the cartogram
   // that needs to be handled by functions called from main().
@@ -105,12 +106,9 @@ int main(const int argc, const char *argv[])
     //       It may be a good idea to make a list of possible entries
     //       corresponding to longitude and lattitude projection.
     //       "urn:ogc:def:crs:OGC:1.3:CRS84" is one such entry.
-    const Bbox bb = inset_state.bbox();
-    if (
-      (bb.xmin() >= -180.0 && bb.xmax() <= 180.0) &&
-      (bb.ymin() >= -90.0 && bb.ymax() <= 90.0) &&
-      (crs == "+proj=longlat" || crs == "urn:ogc:def:crs:OGC:1.3:CRS84") &&
-      !shift_insets_to_target_position) {
+    // const Bbox bb = inset_state.bbox();
+    if (!skip_projection || output_equal_area) {
+      // TODO: Potentially check for the CRS field we output?
 
       // If yes, transform the coordinates with the Albers projection if the
       // input map is not a world map. Otherwise, use the Smyth-Craster
@@ -120,12 +118,6 @@ int main(const int argc, const char *argv[])
       } else {
         inset_state.apply_albers_projection();
       }
-    } else if (output_equal_area) {
-      std::cerr
-        << "ERROR: Input GeoJSON is not a longitude-latitude map. Therefore, "
-           "it is not possible to produce an equal-area map."
-        << std::endl;
-      return EXIT_FAILURE;
     }
 
     // End of inset time

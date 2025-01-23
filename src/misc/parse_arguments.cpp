@@ -24,7 +24,8 @@ argparse::ArgumentParser parsed_arguments(
   bool &plot_quadtree,
   bool &rays,
   bool &output_preprocessed,
-  bool &shift_insets_to_target_position)
+  bool &shift_insets_to_target_position,
+  bool &skip_projection)
 {
   // Create parser for arguments using argparse.
   // From https://github.com/p-ranav/argparse
@@ -90,6 +91,10 @@ argparse::ArgumentParser parsed_arguments(
     .help("Boolean: Enable iterative simplification and densification of polygons")
     .default_value(true)
     .implicit_value(false);
+  arguments.add_argument("--skip_projection")
+    .help("Boolean: Skip projection to equal area")
+    .default_value(false)
+    .implicit_value(true);
   arguments.add_argument("-P", "--n_points")
     .help(
       "Integer: If simplification enabled, target number of points per inset")
@@ -182,6 +187,7 @@ argparse::ArgumentParser parsed_arguments(
     // non-simplified and simplified polygons.
     triangulation = true;
   }
+  skip_projection = arguments.get<bool>("--skip_projection");
   make_csv = arguments.get<bool>("-M");
   output_equal_area = arguments.get<bool>("-E");
   output_to_stdout = arguments.get<bool>("-O");

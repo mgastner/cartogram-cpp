@@ -27,6 +27,7 @@ argparse::ArgumentParser parsed_arguments(
   bool &plot_quadtree,
   bool &rays,
   bool &output_preprocessed,
-  bool &shift_insets_to_target_position);
+  bool &shift_insets_to_target_position,
+  bool &skip_projection);
 
 #endif // PARSE_ARGUMENTS_HPP_
