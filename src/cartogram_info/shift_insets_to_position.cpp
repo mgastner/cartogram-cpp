@@ -12,7 +12,8 @@ void CartogramInfo::reposition_insets(bool output_to_stdout)
   }
 
   // If the inset actually exists, we get its current bounding box
-  for (const auto &[inset_pos, inset_state] : inset_states_) {
+  for (const InsetState &inset_state : inset_states_) {
+    std::string inset_pos = inset_state.pos();
     bboxes.at(inset_pos) = inset_state.bbox(output_to_stdout);
   }
 
@@ -41,7 +42,8 @@ void CartogramInfo::reposition_insets(bool output_to_stdout)
 
   // Spacing between insets
   const double inset_spacing = std::max(width, height) * inset_spacing_factor;
-  for (auto &[inset_pos, inset_state] : inset_states_) {
+  for (InsetState &inset_state : inset_states_) {
+    std::string inset_pos = inset_state.pos();
 
     // Assuming X and Y value of translation vector to be 0 to begin with
     double x = 0;

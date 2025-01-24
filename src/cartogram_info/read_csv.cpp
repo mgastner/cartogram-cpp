@@ -184,7 +184,7 @@ void CartogramInfo::update_id_header_info(const std::string &csv_id_header)
   }
   gd_to_inset_ = new_gd_to_inset;
 
-  for (auto &[inset_pos, inset_state] : inset_states_) {
+  for (InsetState &inset_state : inset_states_) {
     inset_state.update_gd_ids(geojson_id_to_csv_id);
   }
 
@@ -235,36 +235,46 @@ void check_validity_of_csv_ids(
 void CartogramInfo::relocate_geodivs_based_on_inset_pos(
   const std::map<std::string, std::map<std::string, std::string>> &csv_data)
 {
-  std::map<std::string, InsetState> new_inset_states;
-  for (const auto &[inset_pos, inset_state] : inset_states_) {
+  // Arrange GeoDivs by inset_pos
+  std::map<std::string, std::vector<GeoDiv>> geo_divs_by_inset_pos;
+  for (const InsetState &inset_state : inset_states_) {
     for (const auto &gd : inset_state.geo_divs()) {
-      const std::string id = gd.id();
-      const std::string inset_pos = csv_data.at(id).at("inset_pos");
-      if (!new_inset_states.contains(inset_pos)) {
-        InsetState new_inset_state(inset_pos, args_);
-        new_inset_states.insert(
-          std::pair<std::string, InsetState>(inset_pos, new_inset_state));
-      }
-      InsetState *new_inset_state = &new_inset_states.at(inset_pos);
-      new_inset_state->push_back(gd);
-      new_inset_state->insert_target_area(
-        id,
-        std::stod(csv_data.at(id).at("area")));
-      if (!csv_data.at(id).at("color").empty()) {
-        std::string color = csv_data.at(id).at("color");
-        new_inset_state->insert_color(id, color);
-      }
-      if (!csv_data.at(id).at("label").empty()) {
-        std::string label = csv_data.at(id).at("label");
-        new_inset_state->insert_label(id, label);
-      }
+      const std::string& id = gd.id();
+      const std::string& inset_pos = csv_data.at(id).at("inset_pos");
+      geo_divs_by_inset_pos[inset_pos].push_back(gd);
     }
   }
-  inset_states_ = new_inset_states;
 
-  for (const auto &[id, data] : csv_data) {
-    gd_to_inset_.insert(
-      std::pair<std::string, std::string>(id, data.at("inset_pos")));
+  // Create new InsetStates for each pos
+  std::vector<InsetState> new_inset_states;
+  for (auto& [inset_pos, geo_divs] : geo_divs_by_inset_pos) {
+    InsetState new_inset_state(inset_pos, args_);
+    for (auto& gd : geo_divs) {
+      new_inset_state.push_back(std::move(gd));
+
+      // Add target area, color, and label info to InsetState
+      const std::string& id = gd.id();
+      const auto& gd_info = csv_data.at(id);
+
+      double target_area = std::stod(gd_info.at("area"));
+      new_inset_state.insert_target_area(id, target_area);
+
+      // Add color and label info, if present
+      std::string color = gd_info.at("color");
+      if (!color.empty()) {
+        new_inset_state.insert_color(id, color);
+      }
+      const std::string& label = gd_info.at("label");
+      if (!label.empty()) {
+        new_inset_state.insert_label(id, label);
+      }
+    }
+    new_inset_states.emplace_back(std::move(new_inset_state));
+  }
+  inset_states_ = std::move(new_inset_states);
+
+  for (const auto& [id, data] : csv_data) {
+    gd_to_inset_.emplace(id, data.at("inset_pos"));
   }
 }
 

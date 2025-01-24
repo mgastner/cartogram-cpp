@@ -11,7 +11,7 @@ private:
   std::string id_header_;
   std::set<std::string> ids_in_visual_variables_file_;
   std::vector<std::string> initial_id_order_;
-  std::map<std::string, InsetState> inset_states_;
+  std::vector<InsetState> inset_states_;
   bool is_world_map_;
   std::string map_name_;
   std::map<std::string, std::map<std::string, std::string>> properties_map_;
@@ -43,7 +43,7 @@ public:
   void project_to_equal_area();
   void read_csv(const argparse::ArgumentParser &);
   void read_geojson(const std::string &, bool, std::string &);
-  std::map<std::string, InsetState> &ref_to_inset_states();
+  std::vector<InsetState> &ref_to_inset_states();
   void relocate_geodivs_based_on_inset_pos(
     const std::map<std::string, std::map<std::string, std::string>> &);
   void replace_missing_and_zero_target_areas();

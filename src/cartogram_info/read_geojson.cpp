@@ -389,7 +389,7 @@ void CartogramInfo::construct_inset_state_from_geodivs(const nlohmann::json &j)
     gd_to_inset_.emplace(id, "C");
     original_ext_ring_is_clockwise_ = erico;
   }
-  inset_states_.emplace("C", inset_state);
+  inset_states_.emplace_back(std::move(inset_state));
 }
 
 std::map<std::string, std::map<std::string, std::string>>

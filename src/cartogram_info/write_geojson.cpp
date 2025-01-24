@@ -37,7 +37,8 @@ nlohmann::json CartogramInfo::cgal_to_json(
   nlohmann::json container = nlohmann::json::array();
 
   // Insert each inset into `container`
-  for (const auto &[inset_pos, inset_state] : inset_states_) {
+  for (const InsetState &inset_state : inset_states_) {
+    std::string inset_pos = inset_state.pos();
     const nlohmann::json inset_container = inset_state.inset_to_geojson(
       original_ext_ring_is_clockwise_,
       original_geo_divs_to_geojson);
@@ -66,7 +67,8 @@ nlohmann::json CartogramInfo::cgal_to_json(
 
   // Get bounding box of central inset
   Bbox inset_c_bb;
-  for (const auto &[inset_pos, inset_state] : inset_states_) {
+  for (const InsetState &inset_state : inset_states_) {
+    std::string inset_pos = inset_state.pos();
     const Bbox inset_bb = inset_state.bbox(original_geo_divs_to_geojson);
     bb_xmin = std::min(bb_xmin, inset_bb.xmin());
     bb_ymin = std::min(bb_ymin, inset_bb.ymin());
@@ -98,7 +100,8 @@ nlohmann::json CartogramInfo::cgal_to_json(
   nlohmann::json divider_container;
 
   // Insert divider lines between all insets
-  for (const auto &[inset_pos, inset_state] : inset_states_) {
+  for (const InsetState &inset_state : inset_states_) {
+    std::string inset_pos = inset_state.pos();
     const Bbox inset_bb = inset_state.bbox(original_geo_divs_to_geojson);
     if (inset_pos == "T") {
       divider_container.push_back(divider_points(

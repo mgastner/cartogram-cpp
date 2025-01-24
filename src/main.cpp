@@ -97,7 +97,7 @@ int main(const int argc, const char *argv[])
     // Create copy of cart_info
     CartogramInfo tmp_ci = cart_info;
 
-    for (auto &[inset_pos, inset_state] : cart_info.ref_to_inset_states()) {
+    for (InsetState &inset_state : cart_info.ref_to_inset_states()) {
       inset_state.normalize_inset_area(
         cart_info.cart_initial_total_target_area(),
         true);
@@ -111,7 +111,7 @@ int main(const int argc, const char *argv[])
   if (output_shifted_insets) {
 
     // Normalize areas
-    for (auto &[inset_pos, inset_state] : cart_info.ref_to_inset_states()) {
+    for (InsetState &inset_state : cart_info.ref_to_inset_states()) {
       if (!output_equal_area_map) inset_state.adjust_for_dual_hemisphere();
       inset_state.normalize_inset_area(
         cart_info.cart_initial_total_target_area(),
@@ -138,7 +138,8 @@ int main(const int argc, const char *argv[])
   ProgressTracker progress_tracker(total_geo_divs);
 
   // Iterate over insets
-  for (auto &[inset_pos, inset_state] : cart_info.ref_to_inset_states()) {
+  for (InsetState &inset_state : cart_info.ref_to_inset_states()) {
+    std::string inset_pos = inset_state.pos();
 
     // Start of inset time
     time_tracker.start("Inset " + inset_pos);
@@ -402,7 +403,8 @@ int main(const int argc, const char *argv[])
   }  // End of loop over insets
 
   // Iterate over insets and normalize areas
-  for (auto &[inset_pos, inset_state] : cart_info.ref_to_inset_states()) {
+  for (InsetState &inset_state : cart_info.ref_to_inset_states()) {
+    std::string inset_pos = inset_state.pos();
 
     // Rescale insets in correct proportion to each other
     inset_state.normalize_inset_area(
