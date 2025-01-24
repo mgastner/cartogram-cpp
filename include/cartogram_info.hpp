@@ -24,8 +24,11 @@ private:
   bool original_ext_ring_is_clockwise_{};
   nlohmann::json cgal_to_json(bool = false);
 
+  // Make default constructor private so that only
+  // CartogramInfo(const std::string, Arguments) can be called as constructor
+  CartogramInfo();
+
 public:
-  explicit CartogramInfo(bool);
   explicit CartogramInfo(argparse::ArgumentParser);
   [[nodiscard]] double cart_initial_total_target_area() const;
   void construct_inset_state_from_geodivs(const nlohmann::json &);

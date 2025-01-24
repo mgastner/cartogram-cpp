@@ -5,8 +5,6 @@
 #include <iostream>
 #include <utility>
 
-CartogramInfo::CartogramInfo(const bool w) : is_world_map_(w) {}
-
 CartogramInfo::CartogramInfo(const argparse::ArgumentParser args) : args_(args) {
   is_world_map_ = args_.get<bool>("-W");
 }
