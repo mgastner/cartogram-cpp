@@ -22,6 +22,12 @@ void TimeTracker::stop(const std::string &task_name)
   }
 }
 
+void TimeTracker::swap(const std::string &t1, const std::string &t2)
+{
+  stop(t1);
+  start(t2);
+}
+
 void TimeTracker::print_summary_report() const
 {
   std::cerr << "\n********** Time Report **********" << std::endl;

@@ -15,6 +15,7 @@ private:
 public:
   void start(const std::string &task_name);
   void stop(const std::string &task_name);
+  void swap(const std::string &t1, const std::string &t2);
   void print_summary_report() const;
 };
 
