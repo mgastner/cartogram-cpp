@@ -184,19 +184,18 @@ void CartogramInfo::json_to_geojson(
 }
 
 void CartogramInfo::write_geojson(
-  const std::string &old_geo_file_name,
-  const std::string &new_geo_file_name,
-  const bool output_to_stdout,
+  const std::string &suffix,
   const bool output_equal_area)
 {
+  std::string new_geo_file_name = map_name_ + "_" + suffix;
   std::cerr << "Writing " << new_geo_file_name << ".geojson" << std::endl;
-  std::ifstream old_file(old_geo_file_name);
+  std::ifstream old_file(args_.geo_file_name);
   nlohmann::json old_json;
   old_file >> old_json;
   const nlohmann::json container = cgal_to_json(false);
   nlohmann::ordered_json new_json;
   json_to_geojson(old_json, new_json, container);
-  if (output_to_stdout) {
+  if (args_.redirect_exports_to_stdout) {
     if (output_equal_area) {
       std::cout << new_json << std::endl;
       return;

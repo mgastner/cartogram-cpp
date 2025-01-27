@@ -72,11 +72,9 @@ void CartogramInfo::preprocess() {
 
   if (args_.export_preprocessed) {
     // Output rescaled GeoJSON
-    write_geojson(
-      args_.geo_file_name,
+    write_geojson("input_processed");
       // processed = simplified + rescaled
       // and potentially projected + small polygons removed
-      map_name_ + "_input_processed");
 
     // Output preprocessed CSV file
     write_csv(map_name_ + "_input_processed");
@@ -114,11 +112,7 @@ void CartogramInfo::project_to_equal_area() {
   }
 
   if (args_.output_equal_area_map) {
-    write_geojson(
-      args_.geo_file_name,
-      map_name_ + "_equal_area",
-      args_.redirect_exports_to_stdout,
-      true);
+    write_geojson("equal_area", true);
     std::exit(EXIT_SUCCESS);
   }
 }

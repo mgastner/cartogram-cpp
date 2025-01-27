@@ -78,11 +78,7 @@ int main(const int argc, const char *argv[])
     std::string suffix = "_insets_shifted";
 
     // Output to GeoJSON
-    cart_info.write_geojson(
-      args.geo_file_name,
-      map_name + suffix,
-      args.redirect_exports_to_stdout,
-      true);
+    cart_info.write_geojson("insets_shifted", true);
     return EXIT_SUCCESS;
   }
 
@@ -125,10 +121,7 @@ int main(const int argc, const char *argv[])
   cart_info.reposition_insets(args.redirect_exports_to_stdout);
 
   // Output to GeoJSON
-  cart_info.write_geojson(
-    args.geo_file_name,
-    map_name + "_cartogram",
-    args.redirect_exports_to_stdout);
+  cart_info.write_geojson("cartogram");
 
   if (args.plot_polygons) {
     cart_info.write_svg("cartogram");

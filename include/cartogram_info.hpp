@@ -59,11 +59,7 @@ public:
 
   void update_id_header_info(const std::string &);
   void write_csv(const std::string &csv_file_name);
-  void write_geojson(
-    const std::string &,
-    const std::string &,
-    bool = false,
-    bool = false);
+  void write_geojson(const std::string &, bool = false);
   InsetState convert_to_inset_state();
   void write_svg(const std::string &suffix = "");
 };
