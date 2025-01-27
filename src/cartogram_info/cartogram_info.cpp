@@ -4,7 +4,8 @@
 #include <cstdlib>
 #include <iostream>
 
-CartogramInfo::CartogramInfo(const Arguments args) : args_(args) {
+CartogramInfo::CartogramInfo(const Arguments args) : args_(args)
+{
   is_world_map_ = args_.world;
   // is_world_map_ = args_["---world"];
 }
@@ -29,7 +30,7 @@ double CartogramInfo::area() const
   // Iterate over inset states. Syntax from:
   // https://stackoverflow.com/questions/13087028/can-i-easily-iterate-over-
   // the-values-of-a-map-using-a-range-based-for-loop
-  for (const InsetState &inset_state: inset_states_) {
+  for (const InsetState &inset_state : inset_states_) {
     area += inset_state.total_inset_area();
   }
   return area;
@@ -54,28 +55,30 @@ unsigned int CartogramInfo::n_insets() const
   return inset_states_.size();
 }
 
-void CartogramInfo::plot_input() {
+void CartogramInfo::plot_input()
+{
 
-    // Color if colors are not provided
-    for (InsetState &inset_state : inset_states_) {
-      inset_state.auto_color();
-    }
+  // Color if colors are not provided
+  for (InsetState &inset_state : inset_states_) {
+    inset_state.auto_color();
+  }
 
-    // Create copy of cart_info
-    CartogramInfo tmp_ci = *this;
+  // Create copy of cart_info
+  CartogramInfo tmp_ci = *this;
 
-    for (InsetState &inset_state : tmp_ci.ref_to_inset_states()) {
-      inset_state.normalize_inset_area(
-        tmp_ci.cart_initial_total_target_area(),
-        true);
-    }
+  for (InsetState &inset_state : tmp_ci.ref_to_inset_states()) {
+    inset_state.normalize_inset_area(
+      tmp_ci.cart_initial_total_target_area(),
+      true);
+  }
 
-    // Shift insets so that they do not overlap
-    tmp_ci.reposition_insets();
-    tmp_ci.write_svg("input");
+  // Shift insets so that they do not overlap
+  tmp_ci.reposition_insets();
+  tmp_ci.write_svg("input");
 }
 
-void CartogramInfo::preprocess() {
+void CartogramInfo::preprocess()
+{
 
   // Replace missing and zero target areas with positive values
   replace_missing_and_zero_target_areas();
@@ -91,21 +94,21 @@ void CartogramInfo::preprocess() {
 
     // Preprocess inset
     inset_state.preprocess();
-
   }
 
   if (args_.export_preprocessed) {
     // Output rescaled GeoJSON
     write_geojson("input_processed");
-      // processed = simplified + rescaled
-      // and potentially projected + small polygons removed
+    // processed = simplified + rescaled
+    // and potentially projected + small polygons removed
 
     // Output preprocessed CSV file
     write_csv(map_name_ + "_input_processed");
   }
 }
 
-void CartogramInfo::project_to_equal_area() {
+void CartogramInfo::project_to_equal_area()
+{
 
   // Project map and ensure that all holes are inside polygons
   for (InsetState &inset_state : inset_states_) {
@@ -307,7 +310,8 @@ std::string CartogramInfo::set_map_name(const std::string &map_name)
   return map_name_;
 }
 
-void CartogramInfo::print_time_report() {
+void CartogramInfo::print_time_report()
+{
   for (const InsetState &inset_state : inset_states_) {
     inset_state.print_time_report();
   }
@@ -332,7 +336,8 @@ void CartogramInfo::write_csv(const std::string &csv_file_name)
   // Fill up the rows with the IDs and target areas
   for (const InsetState &inset_state : inset_states_) {
     for (const GeoDiv &gd : inset_state.geo_divs()) {
-      csv_rows.push_back({gd.id(), std::to_string(inset_state.target_area_at(gd.id()))});
+      csv_rows.push_back(
+        {gd.id(), std::to_string(inset_state.target_area_at(gd.id()))});
     }
   }
 
@@ -346,52 +351,58 @@ void CartogramInfo::write_csv(const std::string &csv_file_name)
   out_file_csv.close();
 }
 
-InsetState CartogramInfo::convert_to_inset_state() {
+InsetState CartogramInfo::convert_to_inset_state()
+{
 
   InsetState new_inset_state("", args_);
 
   for (const InsetState &inset_state : inset_states_) {
     for (const auto &geo_div : inset_state.geo_divs()) {
       new_inset_state.push_back(geo_div);
-      new_inset_state.insert_color(geo_div.id(), inset_state.color_at(geo_div.id()));
+      new_inset_state.insert_color(
+        geo_div.id(),
+        inset_state.color_at(geo_div.id()));
     }
   }
   return new_inset_state;
 }
 
-void CartogramInfo::write_shifted_insets() {
+void CartogramInfo::write_shifted_insets()
+{
 
-    // Normalize areas
-    for (InsetState &inset_state : inset_states_) {
+  // Normalize areas
+  for (InsetState &inset_state : inset_states_) {
 
-      // The following condition is not possible because
-      // project_to_equal_area should take care of it.
-      // if (!args_.output_equal_area_map)
-      inset_state.adjust_for_dual_hemisphere();
-      inset_state.normalize_inset_area(
-        cart_initial_total_target_area(),
-        true);
-    }
-    // Shift insets so that they do not overlap
-    reposition_insets();
+    // The following condition is not possible because
+    // project_to_equal_area should take care of it.
+    // if (!args_.output_equal_area_map)
+    inset_state.adjust_for_dual_hemisphere();
+    inset_state.normalize_inset_area(cart_initial_total_target_area(), true);
+  }
+  // Shift insets so that they do not overlap
+  reposition_insets();
 
-    // Output to GeoJSON
-    write_geojson("insets_shifted", true);
-    std::exit(EXIT_SUCCESS);
+  // Output to GeoJSON
+  write_geojson("insets_shifted", true);
+  std::exit(EXIT_SUCCESS);
 }
 
-void CartogramInfo::write_svg(const std::string &suffix) {
+void CartogramInfo::write_svg(const std::string &suffix)
+{
   InsetState insets_combined = convert_to_inset_state();
   insets_combined.rescale_map(512, is_world_map_);
 
   // TODO: Figure out how to add a grid
   // scale_factor = sqrt(scale_factor);
-  // double scale_factor = cart_initial_total_target_area() / insets_combined.total_inset_area();
+  // double scale_factor = cart_initial_total_target_area() /
+  // insets_combined.total_inset_area();
 
   // Figure out combined name
   std::string inset_names = "";
   for (const InsetState &inset_state : inset_states_) {
     inset_names += inset_state.pos();
   }
-  insets_combined.write_cairo_map(map_name_ + "_" + inset_names + "_" + suffix, true);
+  insets_combined.write_cairo_map(
+    map_name_ + "_" + inset_names + "_" + suffix,
+    true);
 }
