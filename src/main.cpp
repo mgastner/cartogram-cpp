@@ -26,6 +26,7 @@ int main(const int argc, const char *argv[])
 
   // Determine name of input map based on the geo_file_name and store it
   std::string map_name = cart_info.set_map_name(args.visual_file_name);
+  time_tracker.set_name(map_name);
 
   std::string crs = "+proj=longlat";
   // Read geometry. If the GeoJSON does not explicitly contain a "crs" field,
@@ -265,9 +266,7 @@ int main(const int argc, const char *argv[])
       }
       if (args.simplify) {
 
-        time_tracker.start("Simplification");
         inset_state.simplify(args.target_points_per_inset);
-        time_tracker.stop("Simplification");
       }
       if (args.plot_intersections) {
         inset_state.write_intersections_image(intersections_resolution);
@@ -336,6 +335,8 @@ int main(const int argc, const char *argv[])
 
   // Stop of main function time
   time_tracker.stop("Total Time");
+
+  cart_info.print_time_report();
 
   // Print summary report
   time_tracker.print_summary_report();

@@ -696,6 +696,11 @@ double InsetState::area_expansion_factor() const
   return total_inset_area() / initial_area_;
 }
 
+void InsetState::print_time_report() const
+{
+  timer.print_summary_report();
+}
+
 void InsetState::push_back(const GeoDiv &gd)
 {
   geo_divs_id_to_index_.insert({gd.id(), geo_divs_.size()});
@@ -846,6 +851,7 @@ void InsetState::set_grid_dimensions(
 void InsetState::set_inset_name(const std::string &inset_name)
 {
   inset_name_ = inset_name;
+  timer.set_name(inset_name);
 }
 
 void InsetState::store_initial_area()

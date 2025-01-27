@@ -11,8 +11,10 @@ private:
   std::unordered_map<std::string, std::chrono::steady_clock::time_point>
     start_times_;
   std::unordered_map<std::string, std::chrono::milliseconds> durations_;
+  std::string name_;
 
 public:
+  void set_name(std::string);
   void start(const std::string &task_name);
   void stop(const std::string &task_name);
   void swap(const std::string &t1, const std::string &t2);

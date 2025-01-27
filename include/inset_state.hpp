@@ -6,6 +6,7 @@
 #include "geo_div.hpp"
 #include "intersection.hpp"
 #include "parse_arguments.hpp"
+#include "time_tracker.hpp"
 #include <boost/multi_array.hpp>
 #include <cairo/cairo.h>
 #include <nlohmann/json.hpp>
@@ -53,6 +54,7 @@ private:
   std::unordered_map<std::string, Color> colors_;
 
   Arguments args_;
+  TimeTracker timer;
 
   // Unblurred density mean, min, max
   double dens_min_, dens_mean_, dens_max_, exterior_density_;
@@ -228,6 +230,8 @@ public:
 
   void preprocess();
   void prepare_for_integration();
+
+  void print_time_report() const;
 
   void project();
   Point projected_point(const Point &, bool = false) const;

@@ -2,6 +2,11 @@
 #include <iostream>
 #include <vector>
 
+void TimeTracker::set_name(std::string name)
+{
+  name_ = name;
+}
+
 void TimeTracker::start(const std::string &task_name)
 {
   start_times_[task_name] = std::chrono::steady_clock::now();
@@ -31,6 +36,7 @@ void TimeTracker::swap(const std::string &t1, const std::string &t2)
 void TimeTracker::print_summary_report() const
 {
   std::cerr << "\n********** Time Report **********" << std::endl;
+  std::cerr << "(" << name_  << ")\n" << std::endl;
   std::vector<std::pair<std::string, std::chrono::milliseconds>>
     sorted_durations;
   for (const auto &[task, time_taken] : durations_) {

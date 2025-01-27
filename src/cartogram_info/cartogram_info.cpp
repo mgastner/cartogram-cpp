@@ -243,6 +243,12 @@ std::string CartogramInfo::set_map_name(const std::string &map_name)
   return map_name_;
 }
 
+void CartogramInfo::print_time_report() {
+  for (const InsetState &inset_state : inset_states_) {
+    inset_state.print_time_report();
+  }
+}
+
 void CartogramInfo::write_csv(const std::string &csv_file_name)
 {
   // Write a csv file with the current target areas

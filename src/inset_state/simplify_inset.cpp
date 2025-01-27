@@ -6,6 +6,7 @@
 
 void InsetState::simplify(const unsigned int target_points_per_inset)
 {
+  timer.start("Simplification");
   const unsigned int n_pts_before = n_points();
   std::cerr << n_pts_before << " points in inset. ";
   if (n_pts_before <= target_points_per_inset) {
@@ -78,4 +79,5 @@ void InsetState::simplify(const unsigned int target_points_per_inset)
   }
 
   std::cerr << n_points() << " points after simplification." << std::endl;
+  timer.stop("Simplification");
 }
