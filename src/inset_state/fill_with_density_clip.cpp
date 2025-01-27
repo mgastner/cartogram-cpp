@@ -78,6 +78,7 @@ double square_poly_overlap_area(const Polygon &square, const Polygon &poly)
 
 void InsetState::fill_with_density_clip()
 {
+  timer.start("Fill with Density (Clipping Method)");
   // Reset the densities
 #pragma omp parallel for collapse(2)
   for (unsigned int i = 0; i < lx_; ++i) {
@@ -179,4 +180,5 @@ void InsetState::fill_with_density_clip()
   dens_max_ = *max_iter;
 
   execute_fftw_fwd_plan();
+  timer.stop("Fill with Density (Clipping Method)");
 }

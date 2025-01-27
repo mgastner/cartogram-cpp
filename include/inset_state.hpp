@@ -123,7 +123,7 @@ public:
   double area_error_at(const std::string &) const;
   void auto_color();  // Automatically color GeoDivs
   Bbox bbox(bool = false) const;
-  void blur_density(double, bool);
+  void blur_density();
   double blur_width() const;
   void check_topology() const;
   int chosen_diag(const Point v[4], unsigned int &, bool = false) const;
@@ -146,6 +146,7 @@ public:
   void fill_grid_diagonals(bool = false);
 
   // Density functions
+  void fill_with_density();
   void fill_with_density_rays();  // Fill map with density, using scanlines
   void fill_with_density_clip();  // Fill map with density, using clipping
   void flatten_density();  // Flatten said density with integration

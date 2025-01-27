@@ -3,6 +3,7 @@
 
 void InsetState::fill_with_density_rays()
 {
+  timer.start("Fill with Density (Ray Shooting Method)");
   // We assume that target areas that were zero or missing in the input have
   // already been replaced by
   // CartogramInfo::replace_missing_and_zero_target_areas().
@@ -245,4 +246,5 @@ void InsetState::fill_with_density_rays()
   dens_max_ = *max_iter;
 
   execute_fftw_fwd_plan();
+  timer.stop("Fill with Density (Ray Shooting Method)");
 }

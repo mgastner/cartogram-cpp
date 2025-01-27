@@ -128,30 +128,11 @@ int main(const int argc, const char *argv[])
         std::to_string(inset_state.n_finished_integrations());
 
       // 1. Fill/Rasterize Density
-      if (args.rays) {
-        // Fill density using ray-shooting method
-        time_tracker.start("Fill with Density (Ray Shooting Method)");
-        inset_state.fill_with_density_rays();
-        time_tracker.stop("Fill with Density (Ray Shooting Method)");
-      } else {
-        time_tracker.start("Fill with Density (Clipping Method)");
-        inset_state.fill_with_density_clip();
-        time_tracker.stop("Fill with Density (Clipping Method)");
-      }
+      inset_state.fill_with_density();
 
-      if (args.plot_density) {
-        std::string file_name = inset_state.inset_name() + "_unblurred_density_" +
-                                std::to_string(inset_state.n_finished_integrations()) + ".svg";
-        inset_state.write_density_image(file_name, false);
-      }
+      // -- and blur it to facillitate integration.
+      inset_state.blur_density();
 
-      const double blur_width = inset_state.blur_width();
-
-      if (blur_width > 0.0) {
-        time_tracker.start("Blur");
-        inset_state.blur_density(blur_width, args.plot_density);
-        time_tracker.stop("Blur");
-      }
 
       // 2. Flatten Density
       if (args.qtdt_method) {
