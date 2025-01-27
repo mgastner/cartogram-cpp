@@ -38,3 +38,29 @@ void InsetState::preprocess()
           args_.plot_grid);
     }
 }
+
+void InsetState::prepare_for_integration()
+{
+  // Prepare Inset for cartogram generation
+
+  // Set up Fourier transforms
+  ref_to_rho_init().allocate(lx_, ly_);
+  ref_to_rho_ft().allocate(lx_, ly_);
+  ref_to_fluxx_init().allocate(lx_, ly_);
+  ref_to_fluxy_init().allocate(lx_, ly_);
+  make_fftw_plans_for_rho();
+  make_fftw_plans_for_flux();
+  initialize_identity_proj();
+  initialize_cum_proj();
+
+  // Store initial inset area to calculate area drift,
+  // set area errors based on this initial_area
+  store_initial_area();
+  set_area_errors();
+
+  // Store initial target area to normalize inset areas
+  store_initial_target_area();
+
+  // Normalize total target area to be equal to initial area
+  normalize_target_area();
+}

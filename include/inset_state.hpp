@@ -227,6 +227,7 @@ public:
   std::string pos() const;
 
   void preprocess();
+  void prepare_for_integration();
 
   void project();
   Point projected_point(const Point &, bool = false) const;

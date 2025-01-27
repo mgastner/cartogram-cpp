@@ -128,28 +128,12 @@ int main(const int argc, const char *argv[])
       cart_info.write_csv(map_name + "_input_processed");
     }
 
-    // Set up Fourier transforms
-    const unsigned int lx = inset_state.lx();
-    const unsigned int ly = inset_state.ly();
-    inset_state.ref_to_rho_init().allocate(lx, ly);
-    inset_state.ref_to_rho_ft().allocate(lx, ly);
-    inset_state.ref_to_fluxx_init().allocate(lx, ly);
-    inset_state.ref_to_fluxy_init().allocate(lx, ly);
-    inset_state.make_fftw_plans_for_rho();
-    inset_state.make_fftw_plans_for_flux();
-    inset_state.initialize_identity_proj();
-    inset_state.initialize_cum_proj();
-
-    // Store initial inset area to calculate area drift,
-    // set area errors based on this initial_area
-    inset_state.store_initial_area();
-    inset_state.set_area_errors();
-
-    // Store initial target area to normalize inset areas
-    inset_state.store_initial_target_area();
-
-    // Normalize total target area to be equal to initial area
-    inset_state.normalize_target_area();
+    // Prepare Inset for Cartogram Generation
+    // -- Set up Fourier transforms
+    // -- Store initial parameters
+    // -- Normlize target area
+    // -- Set area errors
+    inset_state.prepare_for_integration();
 
     time_tracker.start("Integration Inset " + inset_pos);
     progress_tracker.print_progress_mid_integration(inset_state);
