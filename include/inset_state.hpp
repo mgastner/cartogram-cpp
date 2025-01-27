@@ -56,6 +56,9 @@ private:
   Arguments args_;
   TimeTracker timer;
 
+  // File prefix for writing files for that integration
+  std::string file_prefix_;
+
   // Unblurred density mean, min, max
   double dens_min_, dens_mean_, dens_max_, exterior_density_;
 
@@ -149,9 +152,10 @@ public:
   void fill_with_density();
   void fill_with_density_rays();  // Fill map with density, using scanlines
   void fill_with_density_clip();  // Fill map with density, using clipping
-  void flatten_density();  // Flatten said density with integration
+  bool flatten_density();  // Flatten said density with integration
   void flatten_ellipse_density();
-  bool flatten_density_with_node_vertices();
+  void flatten_density_on_square_grid();
+  bool flatten_density_on_node_vertices(); // Bool to check if failed
 
   const std::vector<GeoDiv> &geo_divs() const;
   std::vector<std::vector<Color>> grid_cell_colors(unsigned int cell_width);
@@ -277,6 +281,7 @@ public:
     const;
   void trim_grid_heatmap(cairo_t *cr, double padding);
   void update_delaunay_t();
+  void update_file_prefix();
   void update_gd_ids(const std::map<std::string, std::string> &);
 
   // Cairo functions

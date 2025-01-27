@@ -122,6 +122,7 @@ int main(const int argc, const char *argv[])
 
     // Start map integration
     while (inset_state.continue_integrating()) {
+      inset_state.update_file_prefix();
       // File prefix for output files for this integration
       const std::string file_prefix =
         inset_state.inset_name() + "_" +
@@ -135,42 +136,10 @@ int main(const int argc, const char *argv[])
 
 
       // 2. Flatten Density
-      if (args.qtdt_method) {
+      if (!inset_state.flatten_density()) {
 
-        // Create Delaunay triangulation based on quadtree corners and plot
-        time_tracker.start("Delaunay Triangulation");
-        inset_state.create_and_store_quadtree_cell_corners();
-        inset_state.create_delaunay_t();
-        time_tracker.stop("Delaunay Triangulation");
-        if (args.plot_quadtree) {
-          inset_state.write_quadtree(file_prefix + "_quadtree");
-          inset_state.write_delaunay_triangles(
-            file_prefix + "a_delaunay_t",
-            false);
-        }
-
-        time_tracker.start("Flatten Density (Quadtree Method)");
-        if (!inset_state.flatten_density_with_node_vertices()) {
-
-          // Flatten density has failed. Incrrease blur width and try again
-          time_tracker.stop("Flatten Density (Quadtree Method)");
-          inset_state.increment_n_fails_during_flatten_density();
-          continue;
-        }
-
-        // Flatten density passed.
-        time_tracker.stop("Flatten Density (Quadtree Method)");
-        if (args.plot_quadtree) {
-          inset_state.write_delaunay_triangles(
-            file_prefix + "b_delaunay_t_after_flatten",
-            true);
-        }
-      } else {
-
-        // Using entire grid
-        time_tracker.start("Flatten Density (Full Grid Method)");
-        inset_state.flatten_density();
-        time_tracker.stop("Flatten Density (Full Grid Method)");
+        // Flatten density has failed. Increase blur width and try again
+        continue;
       }
 
       // 3. Project Polygon Points by Interpolating "Flattened" (Projected) Proxy Geometry

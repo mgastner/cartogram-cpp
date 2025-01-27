@@ -145,11 +145,13 @@ unsigned int InsetState::colors_size() const
 
 void InsetState::create_delaunay_t()
 {
+  timer.start("Delaunay Triangulation");
   Delaunay dt;
   dt.insert(unique_quadtree_corners_.begin(), unique_quadtree_corners_.end());
   proj_qd_.dt = dt;
   std::cerr << "Number of Delaunay triangles: " << dt.number_of_faces()
             << std::endl;
+  timer.stop("Delaunay Triangulation");
 }
 
 // TODO: Choose which insert_constraint_safely to keep
@@ -366,6 +368,7 @@ const std::vector<GeoDiv> &InsetState::geo_divs() const
 
 void InsetState::create_and_store_quadtree_cell_corners()
 {
+  timer.start("Delaunay Triangulation");
   std::vector<Point> points;
 
   for (const auto &gd : geo_divs_) {
@@ -487,6 +490,7 @@ void InsetState::create_and_store_quadtree_cell_corners()
 
   std::cerr << "Number of unique corners: " << unique_quadtree_corners_.size()
             << std::endl;
+  timer.stop("Delaunay Triangulation");
 }
 
 void InsetState::increment_integration()
@@ -964,6 +968,13 @@ void InsetState::set_geo_divs(std::vector<GeoDiv> new_geo_divs)
 {
   geo_divs_ = std::move(new_geo_divs);
 }
+
+void InsetState::update_file_prefix() {
+  file_prefix_ =
+    inset_name_ + "_" +
+    std::to_string(n_finished_integrations_);
+}
+
 
 void InsetState::update_gd_ids(
   const std::map<std::string, std::string> &gd_id_map)

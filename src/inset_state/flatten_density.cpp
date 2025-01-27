@@ -2,6 +2,42 @@
 #include "inset_state.hpp"
 #include "interpolate_bilinearly.hpp"
 
+bool InsetState::flatten_density()
+{
+  timer.start("Total");
+  if (args_.qtdt_method) {
+
+    // Create Delaunay triangulation based on quadtree corners and plot
+    create_and_store_quadtree_cell_corners();
+    create_delaunay_t();
+
+    if (args_.plot_quadtree) {
+      write_quadtree(file_prefix_ + "_quadtree");
+      write_delaunay_triangles(
+        file_prefix_ + "a_delaunay_t",
+        false);
+    }
+
+    if (!flatten_density_on_node_vertices()) {
+
+      // Flatten density has failed. Increase blur width and try again
+      increment_n_fails_during_flatten_density();
+      timer.stop("Flatten Density (Quadtree Method)");
+      timer.stop("Total");
+      return false;
+    }
+
+  } else {
+
+    // Using entire grid
+    flatten_density_on_square_grid();
+  }
+
+  // Flatten density passed.
+  timer.stop("Total");
+  return true;
+}
+
 // Function to calculate the velocity at the grid points (x, y) with x =
 // 0.5, 1.5, ..., lx-0.5 and y = 0.5, 1.5, ..., ly-0.5 at time t
 void calculate_velocity(
@@ -61,8 +97,9 @@ bool all_points_are_in_domain(
 
 // Function to integrate the equations of motion with the fast flow-based
 // method
-void InsetState::flatten_density()
+void InsetState::flatten_density_on_square_grid()
 {
+  timer.start("Flatten Density (Full Grid Method)");
   // Constants for the numerical integrator
   const double inc_after_acc = 1.1;
   const double dec_after_not_acc = 0.75;
@@ -283,6 +320,7 @@ void InsetState::flatten_density()
     delta_t *= inc_after_acc;  // Try a larger step next time
   }
   is_simple(__func__);
+  timer.stop("Flatten Density (Full Grid Method)");
 }
 
 bool all_map_points_are_in_domain(
@@ -351,9 +389,10 @@ bool delaunay_triangle_flipped(proj_qd &proj_qd)
   return false;
 }
 
-bool InsetState::flatten_density_with_node_vertices()
+bool InsetState::flatten_density_on_node_vertices()
 {
-  std::cerr << "In flatten_density_with_node_vertices()" << std::endl;
+  timer.start("Flatten Density (Quadtree Method)");
+  std::cerr << "In flatten_density_on_node_vertices()" << std::endl;
 
   // Constants for the numerical integrator
   const double inc_after_acc = 1.5;
@@ -591,5 +630,6 @@ bool InsetState::flatten_density_with_node_vertices()
   }
 
   // Return true if the integration was successful
+  timer.stop("Flatten Density (Quadtree Method)");
   return true;
 }

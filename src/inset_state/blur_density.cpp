@@ -3,14 +3,14 @@
 
 void InsetState::blur_density()
 {
-  timer.start("Total")
+  timer.start("Total");
+  timer.start("Blur");
   // Figure out the blur width
   const double bw = blur_width();
 
   // No blur left to apply
   if (bw <= 0.0) return;
 
-  timer.start("Blur");
   const double prefactor = -0.5 * bw * bw * pi * pi;
 #pragma omp parallel for default(none) shared(prefactor)
   for (unsigned int i = 0; i < lx_; ++i) {
@@ -26,12 +26,11 @@ void InsetState::blur_density()
 
   execute_fftw_bwd_plan();
   timer.stop("Blur");
-  timer.stop("Total")
 
   // Do not plot if the blur width is too small
   if (args_.plot_density && bw > 0.1) {
-    std::string file_name = inset_name_ + "_blurred_density_" +
-                            std::to_string(n_finished_integrations_) + ".svg";
+    std::string file_name = file_prefix_ + "_blurred_density.svg";
     write_density_image(file_name, false);
   }
+  timer.stop("Total");
 }
