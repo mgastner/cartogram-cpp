@@ -239,6 +239,7 @@ public:
   void print_time_report() const;
 
   void project();
+  void project_with_bilinear_interpolation();
   Point projected_point(const Point &, bool = false) const;
   Point projected_point_with_triangulation(const Point &, bool = false) const;
   void project_point_set(std::unordered_set<Point>& unprojected);
@@ -320,7 +321,7 @@ public:
   void write_density_image(
     const std::string filename,
     const bool plot_pycnophylactic);
-  void write_intersections_image(unsigned int res);
+  void write_intersections_image();
   void write_legend_on_surface(cairo_t *cr, bool equal_area_map);
   void write_polygon_points_on_surface(cairo_t *, Color);
   void write_quadtree(const std::string &);

@@ -1152,8 +1152,9 @@ void InsetState::write_density_image(
   cairo_destroy(cr);
 }
 
-void InsetState::write_intersections_image(unsigned int res)
+void InsetState::write_intersections_image()
 {
+  unsigned int res = intersections_resolution;
   std::string filename = inset_name() + "_intersections_" +
                          std::to_string(n_finished_integrations()) + ".svg";
 

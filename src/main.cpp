@@ -123,10 +123,6 @@ int main(const int argc, const char *argv[])
     // Start map integration
     while (inset_state.continue_integrating()) {
       inset_state.update_file_prefix();
-      // File prefix for output files for this integration
-      const std::string file_prefix =
-        inset_state.inset_name() + "_" +
-        std::to_string(inset_state.n_finished_integrations());
 
       // 1. Fill/Rasterize Density
       inset_state.fill_with_density();
@@ -143,65 +139,7 @@ int main(const int argc, const char *argv[])
       }
 
       // 3. Project Polygon Points by Interpolating "Flattened" (Projected) Proxy Geometry
-      if (args.qtdt_method) {
-
-        // Update triangulation adding shorter diagonal as constraint for better shape similarity
-        time_tracker.start("Update Delanuay Triangulation");
-        inset_state.update_delaunay_t();
-        time_tracker.stop("Update Delanuay Triangulation");
-
-        if (args.simplify) {
-          time_tracker.start("Densification (using Delanuay Triangles)");
-          inset_state.densify_geo_divs_using_delaunay_t();
-          time_tracker.stop("Densification (using Delanuay Triangles)");
-        }
-
-        if (args.plot_quadtree) {
-          inset_state.write_delaunay_triangles(
-            file_prefix + "c_updated_delaunay_t_after_flatten",
-            false);
-        }
-
-        // Project using the updated Delaunay triangulation and plot
-        time_tracker.start("Project (Delanuay Triangulation)");
-        inset_state.project_with_delaunay_t(args.redirect_exports_to_stdout);
-        time_tracker.stop("Project (Delanuay Triangulation)");
-        if (args.plot_quadtree) {
-          inset_state.write_delaunay_triangles(
-            file_prefix + "d_projected_with_updated_delaunay_t",
-            true);
-        }
-
-      } else if (args.triangulation) {
-
-        // Only densify if we will also simplify later.
-        if (args.simplify) {
-
-          // Choose diagonals that are inside grid cells, then densify.
-          time_tracker.start("Densification (using Grid Diagonals)");
-          inset_state.fill_grid_diagonals();
-          inset_state.densify_geo_divs();
-          time_tracker.stop("Densification (using Grid Diagonals)");
-        }
-
-        // Project with triangulation
-        time_tracker.start("Project (Triangulation)");
-        inset_state.project_with_triangulation();
-        time_tracker.stop("Project (Triangulation)");
-      } else {
-
-        // Project using bilinear interpolation
-        time_tracker.start("Project (Bilinear Interpolation)");
-        inset_state.project();
-        time_tracker.stop("Project (Bilinear Interpolation)");
-      }
-      if (args.simplify) {
-
-        inset_state.simplify(args.target_points_per_inset);
-      }
-      if (args.plot_intersections) {
-        inset_state.write_intersections_image(intersections_resolution);
-      }
+      inset_state.project();
 
       // 4. Update area errors and try again if necessary
       inset_state.set_area_errors();

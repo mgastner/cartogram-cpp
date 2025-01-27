@@ -242,6 +242,7 @@ std::unordered_set<Point> new_points(Polygon original, Polygon densified) {
 
 void InsetState::densify_geo_divs()
 {
+  timer.start("Densification (using Grid Diagonals)");
   std::cerr << "Densifying" << std::endl;
   std::vector<GeoDiv> geodivs_dens;
   for (const auto &gd : geo_divs_) {
@@ -300,6 +301,7 @@ void InsetState::densify_geo_divs()
   geo_divs_ = std::move(geodivs_dens);
 
   is_simple(__func__);
+  timer.stop("Densification (using Grid Diagonals)");
 }
 
 std::vector<Point> densification_points_with_delaunay_t(
@@ -436,6 +438,7 @@ std::vector<Point> densification_points_with_delaunay_t(
 
 void InsetState::densify_geo_divs_using_delaunay_t()
 {
+  timer.start("Densification (using Delanuay Triangles)");
   // Empty set containing densified points from previous iteration
   points_from_densification_.clear();
   points_before_densification_.clear();
@@ -508,4 +511,5 @@ void InsetState::densify_geo_divs_using_delaunay_t()
   }
   geo_divs_ = std::move(geodivs_dens);
   is_simple(__func__);
+  timer.stop("Densification (using Delanuay Triangles)");
 }

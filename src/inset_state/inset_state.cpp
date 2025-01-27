@@ -192,6 +192,7 @@ bool InsetState::insert_constraint_safely(const Point &p1, const Point &p2)
 }
 void InsetState::update_delaunay_t()
 {
+  timer.start("Update Delanuay Triangulation");
   // Create the Delauany triangulation from the projected quadtree corners
   std::vector<Point> projected_unique_quadtree_corners;
   for (auto &pt : unique_quadtree_corners_) {
@@ -331,6 +332,7 @@ void InsetState::update_delaunay_t()
 
   // Inserting range is faster than inserting one by one
   proj_qd_.dt.insert_constraints(constraints.begin(), constraints.end());
+  timer.stop("Update Delanuay Triangulation");
 }
 
 void InsetState::destroy_fftw_plans_for_flux()
