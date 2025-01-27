@@ -11,73 +11,26 @@ int main(const int argc, const char *argv[])
   // Start of main function time
   time_tracker.start("Total Time");
 
-  std::string geo_file_name, visual_file_name;
-
-  // Default number of grid cells along longer Cartesian coordinate axis
-  unsigned int max_n_grid_rows_or_cols;
-
-  // Target number of points to retain after simplification
-  unsigned int target_points_per_inset;
-  bool world;  // World maps need special projections
-
-  // If `triangulation` is true, we apply a cartogram projection method based
-  // on the triangulation of grid cells. It can eliminate intersections
-  // that occur when the projected grid lines are strongly curved. Only
-  // use this method if the tracer points are an FTReal2d data structure.
-  bool triangulation;
-  bool simplify;  // Should the polygons be simplified?
-
-  // If `rays` is true, we use the ray-shooting method to fill the grid cells.
-  bool rays;
-
-  // Other boolean values that are needed to parse the command line arguments
-  bool make_csv, output_equal_area_map, redirect_exports_to_stdout, plot_density, plot_grid,
-    plot_intersections, plot_polygons, plot_quadtree, remove_tiny_polygons,
-    export_preprocessed, output_shifted_insets, skip_projection;
-
-  // If the proportion of the polygon area is smaller than
-  // min_polygon_area * total area, then remove polygon
-  double min_polygon_area;
-  bool qtdt_method;  // Use Quadtree-Delaunay triangulation
+  // Struct to store command line arguments
+  Arguments args;
 
   // Parse command-line arguments
   argparse::ArgumentParser arguments = parsed_arguments(
     argc,
     argv,
-    geo_file_name,
-    visual_file_name,
-    max_n_grid_rows_or_cols,
-    target_points_per_inset,
-    world,
-    triangulation,
-    qtdt_method,
-    simplify,
-    make_csv,
-    output_equal_area_map,
-    redirect_exports_to_stdout,
-    plot_density,
-    plot_grid,
-    plot_intersections,
-    plot_polygons,
-    remove_tiny_polygons,
-    min_polygon_area,
-    plot_quadtree,
-    rays,
-    export_preprocessed,
-    output_shifted_insets,
-    skip_projection);
+  args);
 
   // Initialize cart_info. It contains all the information about the cartogram
   // that needs to be handled by functions called from main().
-  CartogramInfo cart_info(arguments);
+  CartogramInfo cart_info(args);
 
   // Determine name of input map based on the geo_file_name and store it
-  std::string map_name = cart_info.set_map_name(visual_file_name);
+  std::string map_name = cart_info.set_map_name(args.visual_file_name);
 
   std::string crs = "+proj=longlat";
   // Read geometry. If the GeoJSON does not explicitly contain a "crs" field,
   // we assume that the coordinates are in longitude and latitude.
-  cart_info.read_geojson(geo_file_name, make_csv, crs);
+  cart_info.read_geojson(args.geo_file_name, args.make_csv, crs);
 
   // Project to equal area, if necessary
   // Write Output and EXIT if --output_equal_area_map is set to true
@@ -93,7 +46,7 @@ int main(const int argc, const char *argv[])
   // Store total number of GeoDivs to monitor progress
   double total_geo_divs = cart_info.n_geo_divs();
 
-  if (plot_polygons) {
+  if (args.plot_polygons) {
     // Create copy of cart_info
     CartogramInfo tmp_ci = cart_info;
 
@@ -108,11 +61,11 @@ int main(const int argc, const char *argv[])
   }
 
   // Project and exit
-  if (output_shifted_insets) {
+  if (args.output_shifted_insets) {
 
     // Normalize areas
     for (InsetState &inset_state : cart_info.ref_to_inset_states()) {
-      if (!output_equal_area_map) inset_state.adjust_for_dual_hemisphere();
+      if (!args.output_equal_area_map) inset_state.adjust_for_dual_hemisphere();
       inset_state.normalize_inset_area(
         cart_info.cart_initial_total_target_area(),
         true);
@@ -124,9 +77,9 @@ int main(const int argc, const char *argv[])
 
     // Output to GeoJSON
     cart_info.write_geojson(
-      geo_file_name,
+      args.geo_file_name,
       map_name + suffix,
-      redirect_exports_to_stdout,
+      args.redirect_exports_to_stdout,
       true);
     return EXIT_SUCCESS;
   }
@@ -154,15 +107,15 @@ int main(const int argc, const char *argv[])
     inset_state.set_inset_name(inset_name);
 
     // Rescale map to fit into a rectangular box [0, lx] * [0, ly]
-    inset_state.rescale_map(max_n_grid_rows_or_cols, cart_info.is_world_map());
+    inset_state.rescale_map(args.n_grid_rows_or_cols, cart_info.is_world_map());
 
-    if (redirect_exports_to_stdout) {
+    if (args.redirect_exports_to_stdout) {
 
       // Store original coordinates
       inset_state.store_original_geo_divs();
     }
 
-    if (simplify) {
+    if (args.simplify) {
       std::cerr << "Start of initial simplification of " << inset_pos
                 << std::endl;
       time_tracker.start("Simplification");
@@ -170,17 +123,17 @@ int main(const int argc, const char *argv[])
       // Simplification reduces the number of points used to represent the
       // GeoDivs in the inset, thereby reducing output file sizes and
       // run-times
-      inset_state.simplify(target_points_per_inset);
+      inset_state.simplify(args.target_points_per_inset);
 
       // Update time
       time_tracker.stop("Simplification");
     }
     std::cerr << "End of initial simplification of " << inset_pos << std::endl;
 
-    if (export_preprocessed) {
+    if (args.export_preprocessed) {
       // Output rescaled GeoJSON
       cart_info.write_geojson(
-        geo_file_name,
+        args.geo_file_name,
         // processed = simplified + rescaled
         // and potentially projected + small polygons removed
         map_name + "_input_processed");
@@ -216,17 +169,17 @@ int main(const int argc, const char *argv[])
     if (inset_state.colors_empty()) {
       inset_state.auto_color();
     }
-    if (plot_polygons) {
+    if (args.plot_polygons) {
 
       // Write input of SVG files if requested by command-line option
       inset_state.write_cairo_map(
         inset_state.inset_name() + "_input",
-        plot_grid);
+        args.plot_grid);
     }
 
     // Remove tiny polygons below threshold
-    if (remove_tiny_polygons) {
-      inset_state.remove_tiny_polygons(min_polygon_area);
+    if (args.remove_tiny_polygons) {
+      inset_state.remove_tiny_polygons(args.min_polygon_area);
     }
 
     time_tracker.start("Integration Inset " + inset_pos);
@@ -240,7 +193,7 @@ int main(const int argc, const char *argv[])
         std::to_string(inset_state.n_finished_integrations());
 
       // 1. Fill/Rasterize Density
-      if (rays) {
+      if (args.rays) {
         // Fill density using ray-shooting method
         time_tracker.start("Fill with Density (Ray Shooting Method)");
         inset_state.fill_with_density_rays();
@@ -251,7 +204,7 @@ int main(const int argc, const char *argv[])
         time_tracker.stop("Fill with Density (Clipping Method)");
       }
 
-      if (plot_density) {
+      if (args.plot_density) {
         std::string file_name = inset_state.inset_name() + "_unblurred_density_" +
                                 std::to_string(inset_state.n_finished_integrations()) + ".svg";
         inset_state.write_density_image(file_name, false);
@@ -261,19 +214,19 @@ int main(const int argc, const char *argv[])
 
       if (blur_width > 0.0) {
         time_tracker.start("Blur");
-        inset_state.blur_density(blur_width, plot_density);
+        inset_state.blur_density(blur_width, args.plot_density);
         time_tracker.stop("Blur");
       }
 
       // 2. Flatten Density
-      if (qtdt_method) {
+      if (args.qtdt_method) {
 
         // Create Delaunay triangulation based on quadtree corners and plot
         time_tracker.start("Delaunay Triangulation");
         inset_state.create_and_store_quadtree_cell_corners();
         inset_state.create_delaunay_t();
         time_tracker.stop("Delaunay Triangulation");
-        if (plot_quadtree) {
+        if (args.plot_quadtree) {
           inset_state.write_quadtree(file_prefix + "_quadtree");
           inset_state.write_delaunay_triangles(
             file_prefix + "a_delaunay_t",
@@ -291,7 +244,7 @@ int main(const int argc, const char *argv[])
 
         // Flatten density passed.
         time_tracker.stop("Flatten Density (Quadtree Method)");
-        if (plot_quadtree) {
+        if (args.plot_quadtree) {
           inset_state.write_delaunay_triangles(
             file_prefix + "b_delaunay_t_after_flatten",
             true);
@@ -305,20 +258,20 @@ int main(const int argc, const char *argv[])
       }
 
       // 3. Project Polygon Points by Interpolating "Flattened" (Projected) Proxy Geometry
-      if (qtdt_method) {
+      if (args.qtdt_method) {
 
         // Update triangulation adding shorter diagonal as constraint for better shape similarity
         time_tracker.start("Update Delanuay Triangulation");
         inset_state.update_delaunay_t();
         time_tracker.stop("Update Delanuay Triangulation");
 
-        if (simplify) {
+        if (args.simplify) {
           time_tracker.start("Densification (using Delanuay Triangles)");
           inset_state.densify_geo_divs_using_delaunay_t();
           time_tracker.stop("Densification (using Delanuay Triangles)");
         }
 
-        if (plot_quadtree) {
+        if (args.plot_quadtree) {
           inset_state.write_delaunay_triangles(
             file_prefix + "c_updated_delaunay_t_after_flatten",
             false);
@@ -326,18 +279,18 @@ int main(const int argc, const char *argv[])
 
         // Project using the updated Delaunay triangulation and plot
         time_tracker.start("Project (Delanuay Triangulation)");
-        inset_state.project_with_delaunay_t(redirect_exports_to_stdout);
+        inset_state.project_with_delaunay_t(args.redirect_exports_to_stdout);
         time_tracker.stop("Project (Delanuay Triangulation)");
-        if (plot_quadtree) {
+        if (args.plot_quadtree) {
           inset_state.write_delaunay_triangles(
             file_prefix + "d_projected_with_updated_delaunay_t",
             true);
         }
 
-      } else if (triangulation) {
+      } else if (args.triangulation) {
 
         // Only densify if we will also simplify later.
-        if (simplify) {
+        if (args.simplify) {
 
           // Choose diagonals that are inside grid cells, then densify.
           time_tracker.start("Densification (using Grid Diagonals)");
@@ -357,13 +310,13 @@ int main(const int argc, const char *argv[])
         inset_state.project();
         time_tracker.stop("Project (Bilinear Interpolation)");
       }
-      if (simplify) {
+      if (args.simplify) {
 
         time_tracker.start("Simplification");
-        inset_state.simplify(target_points_per_inset);
+        inset_state.simplify(args.target_points_per_inset);
         time_tracker.stop("Simplification");
       }
-      if (plot_intersections) {
+      if (args.plot_intersections) {
         inset_state.write_intersections_image(intersections_resolution);
       }
 
@@ -379,13 +332,13 @@ int main(const int argc, const char *argv[])
     std::cerr << "Finished inset " << inset_pos << std::endl;
     progress_tracker.update_and_print_progress_end_integration(inset_state);
 
-    if (plot_polygons) {
+    if (args.plot_polygons) {
       inset_state.write_cairo_map(
         inset_state.inset_name() + "_output",
-        plot_grid);
+        args.plot_grid);
     }
 
-    if (redirect_exports_to_stdout and !qtdt_method) {
+    if (args.redirect_exports_to_stdout and !args.qtdt_method) {
       inset_state.fill_grid_diagonals(true);
       inset_state.project_with_cum_proj();
     }
@@ -414,19 +367,19 @@ int main(const int argc, const char *argv[])
     inset_state.normalize_inset_area(
       cart_info.cart_initial_total_target_area(),
       false,
-      redirect_exports_to_stdout);
+      args.redirect_exports_to_stdout);
   }
 
   // Shift insets so that they do not overlap
-  cart_info.reposition_insets(redirect_exports_to_stdout);
+  cart_info.reposition_insets(args.redirect_exports_to_stdout);
 
   // Output to GeoJSON
   cart_info.write_geojson(
-    geo_file_name,
+    args.geo_file_name,
     map_name + "_cartogram",
-    redirect_exports_to_stdout);
+    args.redirect_exports_to_stdout);
 
-  if (plot_polygons) cart_info.write_svg("cartogram");
+  if (args.plot_polygons) cart_info.write_svg("cartogram");
 
   // Stop of main function time
   time_tracker.stop("Total Time");

@@ -3,31 +3,64 @@
 
 #include "argparse.hpp"
 
+struct Arguments {
+
+  // Name of Geometry file (GeoJSON) and Visual Variables file (CSV)
+  std::string geo_file_name;
+  std::string visual_file_name;
+
+  // Default number of grid cells along longer Cartesian coordinate axis
+  unsigned int n_grid_rows_or_cols;
+
+  // Target number of points to retain after simplification
+  unsigned int target_points_per_inset;
+
+  // World maps need special projections
+  bool world;
+
+  // If `triangulation` is true, we apply a cartogram projection method based
+  // on the triangulation of grid cells. It can eliminate intersections
+  // that occur when the projected grid lines are strongly curved. Only
+  // use this method if the tracer points are an FTReal2d data structure.
+  bool triangulation;
+
+  // Use Quadtree-Delaunay triangulation method
+  bool qtdt_method;
+
+// Should the polygons be simplified and densified?
+  bool simplify;
+
+  // If `rays` is true, we use the ray-shooting method to fill the grid cells.
+  bool rays;
+
+  // output_* writes said output and exits
+  bool output_equal_area_map;
+  bool output_shifted_insets;
+
+  // export_* writes said outputs, and continues running
+  bool redirect_exports_to_stdout;
+  bool export_preprocessed;
+
+  // Remove tiny polygons below threshold?
+  // Criteria: If the proportion of the polygon area is smaller than
+  // min_polygon_area * total area, then remove polygon
+  bool remove_tiny_polygons;
+  double min_polygon_area;
+
+  // Other boolean values that are needed to parse the command line arguments
+  bool make_csv;
+  bool plot_density;
+  bool plot_grid;
+  bool plot_intersections;
+  bool plot_polygons;
+  bool plot_quadtree;
+  bool skip_projection;
+};
+
 // Function to parse arguments and set variables in main()
 argparse::ArgumentParser parsed_arguments(
   int argc,
   const char *argv[],
-  std::string &geo_file_name,
-  std::string &visual_file_name,
-  unsigned int &max_n_grid_rows_or_cols,
-  unsigned int &target_points_per_inset,
-  bool &world,
-  bool &triangulation,
-  bool &qtdt_method,
-  bool &simplify,
-  bool &make_csv,
-  bool &output_equal_area_map,
-  bool &redirect_exports_to_stdout,
-  bool &plot_density,
-  bool &plot_grid,
-  bool &plot_intersections,
-  bool &plot_polygons,
-  bool &remove_tiny_polygons,
-  double &min_polygon_area,
-  bool &plot_quadtree,
-  bool &rays,
-  bool &export_preprocessed,
-  bool &output_shifted_insets,
-  bool &skip_projection);
+  Arguments &args);
 
 #endif // PARSE_ARGUMENTS_HPP_

@@ -4,28 +4,7 @@
 argparse::ArgumentParser parsed_arguments(
   const int argc,
   const char *argv[],
-  std::string &geo_file_name,
-  std::string &visual_file_name,
-  unsigned int &long_grid_side_length,
-  unsigned int &target_points_per_inset,
-  bool &world,
-  bool &triangulation,
-  bool &qtdt_method,
-  bool &simplify,
-  bool &make_csv,
-  bool &output_equal_area_map,
-  bool &redirect_exports_to_stdout,
-  bool &plot_density,
-  bool &plot_grid,
-  bool &plot_intersections,
-  bool &plot_polygons,
-  bool &remove_tiny_polygons,
-  double &min_polygon_area,
-  bool &plot_quadtree,
-  bool &rays,
-  bool &export_preprocessed,
-  bool &output_shifted_insets,
-  bool &skip_projection)
+  Arguments &args)
 {
   // Create parser for arguments using argparse.
   // From https://github.com/p-ranav/argparse
@@ -162,26 +141,26 @@ argparse::ArgumentParser parsed_arguments(
   }
 
   // Set long grid-side length
-  long_grid_side_length = arguments.get<unsigned int>("-n");
+  args.n_grid_rows_or_cols = arguments.get<unsigned int>("-n");
 
   // If world flag is set, and long-gride side length is not explicitly set,
   // then 512 makes the output look better
   if (arguments.get<bool>("--world") && !arguments.is_used("-n")) {
-    long_grid_side_length = 512;
+    args.n_grid_rows_or_cols = 512;
   }
 
   // Set target_points_per_inset
-  target_points_per_inset = arguments.get<unsigned int>("-P");
+  args.target_points_per_inset = arguments.get<unsigned int>("-P");
 
   // Set boolean values
-  world = arguments.get<bool>("--world");
-  triangulation = arguments.get<bool>("--triangulation");
-  qtdt_method = arguments.get<bool>("--qtdt_method");
-  simplify = arguments.get<bool>("--simplify_and_densify");
-  remove_tiny_polygons = arguments.get<bool>("--remove_tiny_polygons");
-  min_polygon_area = arguments.get<double>("--minimum_polygon_area");
-  rays = arguments.get<bool>("--use_ray_shooting_method");
-  if (!triangulation && simplify) {
+  args.world = arguments.get<bool>("--world");
+  args.triangulation = arguments.get<bool>("--triangulation");
+  args.qtdt_method = arguments.get<bool>("--qtdt_method");
+  args.simplify = arguments.get<bool>("--simplify_and_densify");
+  args.remove_tiny_polygons = arguments.get<bool>("--remove_tiny_polygons");
+  args.min_polygon_area = arguments.get<double>("--minimum_polygon_area");
+  args.rays = arguments.get<bool>("--use_ray_shooting_method");
+  if (!args.triangulation && args.simplify) {
 
     // If tracer points are on the FTReal2d, then simplification requires
     // triangulation. Otherwise, the cartogram may contain intersecting lines
@@ -189,22 +168,22 @@ argparse::ArgumentParser parsed_arguments(
     // explicit in the non-simplified polygons, but they would be added to the
     // simplified polygon, making it more difficult to uniquely match
     // non-simplified and simplified polygons.
-    triangulation = true;
+    args.triangulation = true;
   }
-  skip_projection = arguments.get<bool>("--skip_projection");
-  make_csv = arguments.get<bool>("--make_csv");
-  output_equal_area_map = arguments.get<bool>("--output_equal_area_map");
-  redirect_exports_to_stdout = arguments.get<bool>("--redirect_exports_to_stdout");
-  export_preprocessed = arguments.get<bool>("--export_preprocessed");
-  plot_density = arguments.get<bool>("--plot_density");
-  plot_grid = arguments.get<bool>("--add_grid");
-  plot_intersections = arguments.get<bool>("--plot_intersections");
-  plot_polygons = arguments.get<bool>("--plot_polygons");
-  plot_quadtree = arguments.get<bool>("--plot_quadtree");
-  output_shifted_insets =
+  args.skip_projection = arguments.get<bool>("--skip_projection");
+  args.make_csv = arguments.get<bool>("--make_csv");
+  args.output_equal_area_map = arguments.get<bool>("--output_equal_area_map");
+  args.redirect_exports_to_stdout = arguments.get<bool>("--redirect_exports_to_stdout");
+  args.export_preprocessed = arguments.get<bool>("--export_preprocessed");
+  args.plot_density = arguments.get<bool>("--plot_density");
+  args.plot_grid = arguments.get<bool>("--add_grid");
+  args.plot_intersections = arguments.get<bool>("--plot_intersections");
+  args.plot_polygons = arguments.get<bool>("--plot_polygons");
+  args.plot_quadtree = arguments.get<bool>("--plot_quadtree");
+  args.output_shifted_insets =
     arguments.get<bool>("--output_shifted_insets");
   // Check if user wants to redirect output to stdout
-  if (arguments.is_used("-O") && !simplify && !qtdt_method) {
+  if (arguments.is_used("-O") && !args.simplify && !args.qtdt_method) {
     std::cerr << "ERROR: simplification disabled!\n";
     std::cerr << "--output_to_stdout flag is only supported with "
                  "simplification or quadtree.\n";
@@ -215,20 +194,20 @@ argparse::ArgumentParser parsed_arguments(
   }
 
   // Check whether n_points is specified but --simplify_and_densify not passed
-  if (!simplify) {
+  if (!args.simplify) {
     std::cerr << "WARNING: Simplification and densification disabled! "
               << "Polygons will not simplified (or densified). "
               << "This may result and in polygon intersections. "
               << "Thus, we are turning off topology checks. "
               << "To enable simplification, pass the -S flag." << std::endl;
-    if (arguments.is_used("-P")) {
+    if (arguments.is_used("--n_points")) {
       std::cerr << "--n_points ignored." << std::endl;
     }
     std::cerr << arguments << std::endl;
   }
 
   // Check whether T flag is set, but not Q
-  if (triangulation && !qtdt_method) {
+  if (args.triangulation && !args.qtdt_method) {
     std::cerr
       << "ERROR: Can't disable qtdt_method without disabling triangulation."
       << std::endl;
@@ -240,8 +219,8 @@ argparse::ArgumentParser parsed_arguments(
 
   // Print names of geometry file
   if (arguments.is_used("geometry_file")) {
-    geo_file_name = arguments.get<std::string>("geometry_file");
-    std::cerr << "Using geometry from file " << geo_file_name << std::endl;
+    args.geo_file_name = arguments.get<std::string>("geometry_file");
+    std::cerr << "Using geometry from file " << args.geo_file_name << std::endl;
   } else {
 
     // GeoJSON file not provided
@@ -254,10 +233,10 @@ argparse::ArgumentParser parsed_arguments(
 
   // Check if a visual-variables file or -m flag is passed
   if (arguments.is_used("visual_variable_file")) {
-    visual_file_name = arguments.get<std::string>("visual_variable_file");
-    std::cerr << "Using visual variables from file " << visual_file_name
+    args.visual_file_name = arguments.get<std::string>("visual_variable_file");
+    std::cerr << "Using visual variables from file " << args.visual_file_name
               << std::endl;
-  } else if (!make_csv and !output_equal_area_map) {
+  } else if (!args.make_csv and !args.output_equal_area_map) {
 
     // CSV file not given, and user does not want to create one
     std::cerr << arguments << std::endl;

@@ -2,14 +2,13 @@
 #define INSET_STATE_HPP_
 
 #include "colors.hpp"
-#include "argparse.hpp"
 #include "ft_real_2d.hpp"
 #include "geo_div.hpp"
 #include "intersection.hpp"
+#include "parse_arguments.hpp"
 #include <boost/multi_array.hpp>
 #include <cairo/cairo.h>
 #include <nlohmann/json.hpp>
-#include <algorithm>
 
 struct max_area_error_info {
   double value;
@@ -53,7 +52,7 @@ private:
   fftw_plan bwd_plan_for_rho_{};
   std::unordered_map<std::string, Color> colors_;
 
-  argparse::ArgumentParser args_;
+  Arguments args_;
 
   // Unblurred density mean, min, max
   double dens_min_, dens_mean_, dens_max_, exterior_density_;
@@ -111,7 +110,7 @@ private:
   InsetState();
 
 public:
-  explicit InsetState(std::string, argparse::ArgumentParser);
+  explicit InsetState(std::string, Arguments);
   void adjust_for_dual_hemisphere();
   void adjust_grid();
   void apply_albers_projection();

@@ -1,7 +1,7 @@
 #include "inset_state.hpp"
 #include "constants.hpp"
 
-InsetState::InsetState(std::string pos, argparse::ArgumentParser args) : args_(args), pos_(pos)
+InsetState::InsetState(std::string pos, Arguments args) : args_(args), pos_(pos)
 {
   initial_area_ = 0.0;
   n_finished_integrations_ = 0;

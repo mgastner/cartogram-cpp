@@ -3,10 +3,10 @@
 #include "csv.hpp"
 #include <cstdlib>
 #include <iostream>
-#include <utility>
 
-CartogramInfo::CartogramInfo(const argparse::ArgumentParser args) : args_(args) {
-  is_world_map_ = args_.get<bool>("-W");
+CartogramInfo::CartogramInfo(const Arguments args) : args_(args) {
+  is_world_map_ = args_.world;
+  // is_world_map_ = args_["---world"];
 }
 
 double CartogramInfo::cart_initial_total_target_area() const
@@ -70,13 +70,13 @@ void CartogramInfo::project_to_equal_area() {
     //       It may be a good idea to make a list of possible entries
     //       corresponding to longitude and lattitude projection.
     //       "urn:ogc:def:crs:OGC:1.3:CRS84" is one such entry.
-    if (!args_.get<bool>("--skip_projection") || args_.get<bool>("--output_equal_area_map")) {
+    if (!args_.skip_projection || args_.output_equal_area_map) {
       // TODO: Potentially check for the CRS field we output?
 
       // If yes, transform the coordinates with the Albers projection if the
       // input map is not a world map. Otherwise, use the Smyth-Craster
       // projection.
-      if (args_.get<bool>("--world")) {
+      if (args_.world) {
         inset_state.apply_smyth_craster_projection();
       } else {
         inset_state.apply_albers_projection();
@@ -84,11 +84,11 @@ void CartogramInfo::project_to_equal_area() {
     }
   }
 
-  if (args_.get<bool>("--output_equal_area_map")) {
+  if (args_.output_equal_area_map) {
     write_geojson(
-      args_.get<std::string>("geometry_file"),
+      args_.geo_file_name,
       map_name_ + "_equal_area",
-      args_.get<bool>("--redirect_exports_to_stdout"),
+      args_.redirect_exports_to_stdout,
       true);
     std::exit(EXIT_SUCCESS);
   }
