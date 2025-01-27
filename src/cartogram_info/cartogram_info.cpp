@@ -54,7 +54,31 @@ unsigned int CartogramInfo::n_insets() const
   return inset_states_.size();
 }
 
+void CartogramInfo::plot_input() {
+
+    // Color if colors are not provided
+    for (InsetState &inset_state : inset_states_) {
+      inset_state.auto_color();
+    }
+
+    // Create copy of cart_info
+    CartogramInfo tmp_ci = *this;
+
+    for (InsetState &inset_state : tmp_ci.ref_to_inset_states()) {
+      inset_state.normalize_inset_area(
+        tmp_ci.cart_initial_total_target_area(),
+        true);
+    }
+
+    // Shift insets so that they do not overlap
+    tmp_ci.reposition_insets();
+    tmp_ci.write_svg("input");
+}
+
 void CartogramInfo::preprocess() {
+
+  // Replace missing and zero target areas with positive values
+  replace_missing_and_zero_target_areas();
 
   for (InsetState &inset_state : inset_states_) {
 
@@ -316,6 +340,27 @@ InsetState CartogramInfo::convert_to_inset_state() {
     }
   }
   return new_inset_state;
+}
+
+void CartogramInfo::write_shifted_insets() {
+
+    // Normalize areas
+    for (InsetState &inset_state : inset_states_) {
+
+      // The following condition is not possible because
+      // project_to_equal_area should take care of it.
+      // if (!args_.output_equal_area_map)
+      inset_state.adjust_for_dual_hemisphere();
+      inset_state.normalize_inset_area(
+        cart_initial_total_target_area(),
+        true);
+    }
+    // Shift insets so that they do not overlap
+    reposition_insets();
+
+    // Output to GeoJSON
+    write_geojson("insets_shifted", true);
+    std::exit(EXIT_SUCCESS);
 }
 
 void CartogramInfo::write_svg(const std::string &suffix) {

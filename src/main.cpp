@@ -44,46 +44,15 @@ int main(const int argc, const char *argv[])
   // Store total number of GeoDivs to monitor progress
   double total_geo_divs = cart_info.n_geo_divs();
 
+  // Write input map, with insets nicely placed
   if (args.plot_polygons) {
-    // Create copy of cart_info
-    CartogramInfo tmp_ci = cart_info;
-
-    for (InsetState &inset_state : tmp_ci.ref_to_inset_states()) {
-      inset_state.normalize_inset_area(
-        tmp_ci.cart_initial_total_target_area(),
-        true);
-      // Color if not provided
-      inset_state.auto_color();
-    }
-    // Shift insets so that they do not overlap
-    tmp_ci.reposition_insets();
-    tmp_ci.write_svg("input");
+    cart_info.plot_input();
   }
 
-  // Project and exit
+  // Move insets to desired positions and EXIT
   if (args.output_shifted_insets) {
-
-    // Normalize areas
-    for (InsetState &inset_state : cart_info.ref_to_inset_states()) {
-      if (!args.output_equal_area_map) {
-        inset_state.adjust_for_dual_hemisphere();
-      }
-      inset_state.normalize_inset_area(
-        cart_info.cart_initial_total_target_area(),
-        true);
-    }
-    // Shift insets so that they do not overlap
-    cart_info.reposition_insets();
-
-    std::string suffix = "_insets_shifted";
-
-    // Output to GeoJSON
-    cart_info.write_geojson("insets_shifted", true);
-    return EXIT_SUCCESS;
+    cart_info.write_shifted_insets();
   }
-
-  // Replace missing and zero target areas with positive values
-  cart_info.replace_missing_and_zero_target_areas();
 
   // Track progress of the cartogram generation
   ProgressTracker progress_tracker(total_geo_divs);
@@ -100,11 +69,10 @@ int main(const int argc, const char *argv[])
   // Iterate over insets and integrate each one
   for (InsetState &inset_state : cart_info.ref_to_inset_states()) {
     inset_state.integrate(progress_tracker);
-  }  // End of loop over insets
+  }
 
   // Iterate over insets and normalize areas
   for (InsetState &inset_state : cart_info.ref_to_inset_states()) {
-    std::string inset_pos = inset_state.pos();
 
     // Rescale insets in correct proportion to each other
     inset_state.normalize_inset_area(
