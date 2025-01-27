@@ -41,7 +41,6 @@ public:
     const nlohmann::json &);
   [[nodiscard]] unsigned int n_geo_divs() const;
   [[nodiscard]] unsigned int n_insets() const;
-  void project_to_equal_area();
 
 
   void read_csv(const argparse::ArgumentParser &);
@@ -50,6 +49,10 @@ public:
   void relocate_geodivs_based_on_inset_pos(
     const std::map<std::string, std::map<std::string, std::string>> &);
   void replace_missing_and_zero_target_areas();
+
+  // Rescale insets in correct proportion to each other
+  void rescale_insets();
+
   std::string set_map_name(const std::string &);
   void set_id_header(const std::string &);
   void reposition_insets(bool output_to_stdout = false);
@@ -57,6 +60,7 @@ public:
   void plot_input();
   void preprocess();
   void print_time_report();
+  void project_to_equal_area();
 
   void update_id_header_info(const std::string &);
   void write_csv(const std::string &csv_file_name);

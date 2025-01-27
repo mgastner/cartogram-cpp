@@ -71,19 +71,8 @@ int main(const int argc, const char *argv[])
     inset_state.integrate(progress_tracker);
   }
 
-  // Iterate over insets and normalize areas
-  for (InsetState &inset_state : cart_info.ref_to_inset_states()) {
-
-    // Rescale insets in correct proportion to each other
-    inset_state.normalize_inset_area(
-      cart_info.cart_initial_total_target_area(),
-      false,
-      false);
-    inset_state.normalize_inset_area(
-      cart_info.cart_initial_total_target_area(),
-      false,
-      args.redirect_exports_to_stdout);
-  }
+  // Rescale insets in correct proportion to each other
+  cart_info.rescale_insets();
 
   // Shift insets so that they do not overlap
   cart_info.reposition_insets(args.redirect_exports_to_stdout);
