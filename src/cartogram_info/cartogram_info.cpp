@@ -7,7 +7,11 @@
 CartogramInfo::CartogramInfo(const Arguments args) : args_(args)
 {
   is_world_map_ = args_.world;
-  // is_world_map_ = args_["---world"];
+  timer.start("Total time");
+
+  // Determine name of input map based on the CSV file and store it
+  set_map_name(args_.visual_file_name);
+  timer.set_name(map_name_);
 }
 
 double CartogramInfo::cart_initial_total_target_area() const
@@ -312,9 +316,16 @@ std::string CartogramInfo::set_map_name(const std::string &map_name)
 
 void CartogramInfo::print_time_report()
 {
+  // Stop main timer
+  timer.stop("Total time");
+
+  // Print time report for each inset
   for (const InsetState &inset_state : inset_states_) {
     inset_state.print_time_report();
   }
+
+  // Print Total time
+  timer.print_summary_report();
 }
 
 void CartogramInfo::write_csv(const std::string &csv_file_name)

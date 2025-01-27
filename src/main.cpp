@@ -1,16 +1,9 @@
 #include "cartogram_info.hpp"
-#include "constants.hpp"
 #include "parse_arguments.hpp"
 #include "progress_tracker.hpp"
-#include "time_tracker.hpp"
 
 int main(const int argc, const char *argv[])
 {
-  TimeTracker time_tracker;
-
-  // Start of main function time
-  time_tracker.start("Total Time");
-
   // Struct to store command line arguments
   Arguments args;
 
@@ -20,10 +13,6 @@ int main(const int argc, const char *argv[])
   // Initialize cart_info. It contains all the information about the cartogram
   // that needs to be handled by functions called from main().
   CartogramInfo cart_info(args);
-
-  // Determine name of input map based on the geo_file_name and store it
-  std::string map_name = cart_info.set_map_name(args.visual_file_name);
-  time_tracker.set_name(map_name);
 
   std::string crs = "+proj=longlat";
   // Read geometry. If the GeoJSON does not explicitly contain a "crs" field,
@@ -84,13 +73,7 @@ int main(const int argc, const char *argv[])
     cart_info.write_svg("cartogram");
   }
 
-  // Stop of main function time
-  time_tracker.stop("Total Time");
-
+  // Stop total time timer, and print time summary report
   cart_info.print_time_report();
-
-  // Print summary report
-  time_tracker.print_summary_report();
-
   return EXIT_SUCCESS;
 }

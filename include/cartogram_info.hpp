@@ -3,6 +3,7 @@
 
 #include "inset_state.hpp"
 #include "parse_arguments.hpp"
+#include "time_tracker.hpp"
 
 class CartogramInfo
 {
@@ -24,6 +25,8 @@ private:
   //       where there are external rings with opposite winding directions.
   bool original_ext_ring_is_clockwise_{};
   nlohmann::json cgal_to_json(bool = false);
+
+  TimeTracker timer;
 
   // Make default constructor private so that only
   // CartogramInfo(const std::string, Arguments) can be called as constructor
