@@ -4,7 +4,6 @@
 
 bool InsetState::flatten_density()
 {
-  timer.start("Total");
   if (args_.qtdt_method) {
 
     // Create Delaunay triangulation based on quadtree corners and plot
@@ -23,7 +22,6 @@ bool InsetState::flatten_density()
       // Flatten density has failed. Increase blur width and try again
       increment_n_fails_during_flatten_density();
       timer.stop("Flatten Density (Quadtree Method)");
-      timer.stop("Total");
       return false;
     }
 
@@ -34,7 +32,6 @@ bool InsetState::flatten_density()
   }
 
   // Flatten density passed.
-  timer.stop("Total");
   return true;
 }
 

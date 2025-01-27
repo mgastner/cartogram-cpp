@@ -1,7 +1,6 @@
 #include "inset_state.hpp"
 
 void InsetState::fill_with_density() {
-  timer.start("Total");
   if (args_.rays) {
 
       // Fill density using ray-shooting method
@@ -19,5 +18,4 @@ void InsetState::fill_with_density() {
       std::string file_name = file_prefix_ + "_unblurred_density.svg";
       write_density_image(file_name, false);
   }
-  timer.stop("Total");
 }

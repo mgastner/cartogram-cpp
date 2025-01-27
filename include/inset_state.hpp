@@ -10,6 +10,7 @@
 #include <boost/multi_array.hpp>
 #include <cairo/cairo.h>
 #include <nlohmann/json.hpp>
+#include "progress_tracker.hpp"
 
 struct max_area_error_info {
   double value;
@@ -130,6 +131,9 @@ public:
   double blur_width() const;
   void check_topology() const;
   int chosen_diag(const Point v[4], unsigned int &, bool = false) const;
+
+  void cleanup_after_integration();
+
   Color color_at(const std::string &) const;
   bool color_found(const std::string &) const;
   bool colors_empty() const;
@@ -203,6 +207,10 @@ public:
   void insert_whether_input_target_area_is_missing(const std::string &, bool);
   std::string inset_name() const;
   nlohmann::json inset_to_geojson(bool, bool = false) const;
+
+  // Function to go from equal area to cartogram
+  void integrate(ProgressTracker &);
+
   std::vector<Segment> intersecting_segments(unsigned int) const;
   std::vector<std::vector<intersection>> intersec_with_parallel_to(
     char,

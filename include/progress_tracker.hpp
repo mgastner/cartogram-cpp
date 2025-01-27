@@ -2,7 +2,6 @@
 #define PROGRESS_TRACKER_H
 
 #include "indicators.hpp"
-#include "inset_state.hpp"
 
 class ProgressTracker
 {
@@ -14,8 +13,12 @@ public:
   ~ProgressTracker();
 
   // Method to update the progress
-  void print_progress_mid_integration(const InsetState &);
-  void update_and_print_progress_end_integration(const InsetState &);
+  void print_progress_mid_integration(
+    double max_area_error,
+    unsigned int n_geo_div_in_inset,
+    unsigned int n_finished_integrations);
+  void update_and_print_progress_end_integration(
+    const unsigned int n_geo_divs_in_inset);
 
   // Method to print the current progress
   void print_progress(const double);

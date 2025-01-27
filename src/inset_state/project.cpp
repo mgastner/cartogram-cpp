@@ -4,7 +4,6 @@
 #include "round_point.hpp"
 
 void InsetState::project() {
-  timer.start("Total");
 
   if (args_.qtdt_method) {
 
@@ -56,7 +55,6 @@ void InsetState::project() {
   if (args_.plot_intersections) {
     write_intersections_image();
   }
-  timer.stop("Total");
 }
 
 Point interpolate_point_bilinearly(

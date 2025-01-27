@@ -15,10 +15,7 @@ int main(const int argc, const char *argv[])
   Arguments args;
 
   // Parse command-line arguments
-  argparse::ArgumentParser arguments = parsed_arguments(
-    argc,
-    argv,
-  args);
+  argparse::ArgumentParser arguments = parsed_arguments(argc, argv, args);
 
   // Initialize cart_info. It contains all the information about the cartogram
   // that needs to be handled by functions called from main().
@@ -68,7 +65,9 @@ int main(const int argc, const char *argv[])
 
     // Normalize areas
     for (InsetState &inset_state : cart_info.ref_to_inset_states()) {
-      if (!args.output_equal_area_map) inset_state.adjust_for_dual_hemisphere();
+      if (!args.output_equal_area_map) {
+        inset_state.adjust_for_dual_hemisphere();
+      }
       inset_state.normalize_inset_area(
         cart_info.cart_initial_total_target_area(),
         true);
@@ -93,7 +92,6 @@ int main(const int argc, const char *argv[])
   // Track progress of the cartogram generation
   ProgressTracker progress_tracker(total_geo_divs);
 
-
   // Preprocess Insets for Integration:
   // -- Set inset name: map_name + "_" + inset_pos
   // -- Rescale
@@ -103,77 +101,9 @@ int main(const int argc, const char *argv[])
   // -- Write input map if requested (and color polygons, if necessary)
   cart_info.preprocess();
 
-  // Iterate over insets
+  // Iterate over insets and integrate each one
   for (InsetState &inset_state : cart_info.ref_to_inset_states()) {
-    std::string inset_pos = inset_state.pos();
-
-    // Start of inset time
-    time_tracker.start("Inset " + inset_pos);
-
-    // Prepare Inset for Cartogram Generation
-    // -- Set up Fourier transforms
-    // -- Store initial parameters
-    // -- Normlize target area
-    // -- Set area errors
-    inset_state.prepare_for_integration();
-
-    time_tracker.start("Integration Inset " + inset_pos);
-    progress_tracker.print_progress_mid_integration(inset_state);
-
-    // Start map integration
-    while (inset_state.continue_integrating()) {
-      inset_state.update_file_prefix();
-
-      // 1. Fill/Rasterize Density
-      inset_state.fill_with_density();
-
-      // -- and blur it to facillitate integration.
-      inset_state.blur_density();
-
-
-      // 2. Flatten Density
-      if (!inset_state.flatten_density()) {
-
-        // Flatten density has failed. Increase blur width and try again
-        continue;
-      }
-
-      // 3. Project Polygon Points by Interpolating "Flattened" (Projected) Proxy Geometry
-      inset_state.project();
-
-      // 4. Update area errors and try again if necessary
-      inset_state.set_area_errors();
-      inset_state.adjust_grid();
-      progress_tracker.print_progress_mid_integration(inset_state);
-      inset_state.increment_integration();
-    }
-    time_tracker.stop("Integration Inset " + inset_pos);
-
-    // Update and display progress information
-    std::cerr << "Finished inset " << inset_pos << std::endl;
-    progress_tracker.update_and_print_progress_end_integration(inset_state);
-
-    if (args.plot_polygons) {
-      inset_state.write_cairo_map(
-        inset_state.inset_name() + "_output",
-        args.plot_grid);
-    }
-
-    if (args.redirect_exports_to_stdout and !args.qtdt_method) {
-      inset_state.fill_grid_diagonals(true);
-      inset_state.project_with_cum_proj();
-    }
-
-    // Clean up after finishing all Fourier transforms for this inset
-    inset_state.destroy_fftw_plans_for_rho();
-    inset_state.destroy_fftw_plans_for_flux();
-    inset_state.ref_to_rho_init().free();
-    inset_state.ref_to_rho_ft().free();
-    inset_state.ref_to_fluxx_init().free();
-    inset_state.ref_to_fluxy_init().free();
-
-    // End of inset time
-    time_tracker.stop("Inset " + inset_pos);
+    inset_state.integrate(progress_tracker);
   }  // End of loop over insets
 
   // Iterate over insets and normalize areas
@@ -200,7 +130,9 @@ int main(const int argc, const char *argv[])
     map_name + "_cartogram",
     args.redirect_exports_to_stdout);
 
-  if (args.plot_polygons) cart_info.write_svg("cartogram");
+  if (args.plot_polygons) {
+    cart_info.write_svg("cartogram");
+  }
 
   // Stop of main function time
   time_tracker.stop("Total Time");

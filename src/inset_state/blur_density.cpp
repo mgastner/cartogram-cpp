@@ -3,7 +3,6 @@
 
 void InsetState::blur_density()
 {
-  timer.start("Total");
   timer.start("Blur");
   // Figure out the blur width
   const double bw = blur_width();
@@ -32,5 +31,4 @@ void InsetState::blur_density()
     std::string file_name = file_prefix_ + "_blurred_density.svg";
     write_density_image(file_name, false);
   }
-  timer.stop("Total");
 }
