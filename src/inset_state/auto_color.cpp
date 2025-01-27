@@ -4,6 +4,9 @@
 // Function to automatically color topology based on contiguity graph
 void InsetState::auto_color()
 {
+  // Colors are already provided
+  if (!colors_.empty()) return;
+
   std::vector<Color> palette;
 
   // Using default palette for now

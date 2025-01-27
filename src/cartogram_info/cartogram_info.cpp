@@ -283,7 +283,7 @@ InsetState CartogramInfo::convert_to_inset_state() {
   for (const InsetState &inset_state : inset_states_) {
     for (const auto &geo_div : inset_state.geo_divs()) {
       new_inset_state.push_back(geo_div);
-      // new_inset_state.insert_color(geo_div.id(), inset_state.color_at(geo_div.id()));
+      new_inset_state.insert_color(geo_div.id(), inset_state.color_at(geo_div.id()));
     }
   }
   return new_inset_state;

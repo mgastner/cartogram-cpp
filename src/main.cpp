@@ -50,10 +50,12 @@ int main(const int argc, const char *argv[])
     // Create copy of cart_info
     CartogramInfo tmp_ci = cart_info;
 
-    for (InsetState &inset_state : cart_info.ref_to_inset_states()) {
+    for (InsetState &inset_state : tmp_ci.ref_to_inset_states()) {
       inset_state.normalize_inset_area(
-        cart_info.cart_initial_total_target_area(),
+        tmp_ci.cart_initial_total_target_area(),
         true);
+      // Color if not provided
+      inset_state.auto_color();
     }
     // Shift insets so that they do not overlap
     tmp_ci.reposition_insets();
