@@ -225,6 +225,9 @@ public:
     bool normalize_original = false);
   void normalize_target_area();
   std::string pos() const;
+
+  void preprocess();
+
   void project();
   Point projected_point(const Point &, bool = false) const;
   Point projected_point_with_triangulation(const Point &, bool = false) const;

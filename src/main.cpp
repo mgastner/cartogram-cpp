@@ -106,29 +106,13 @@ int main(const int argc, const char *argv[])
     }
     inset_state.set_inset_name(inset_name);
 
-    // Rescale map to fit into a rectangular box [0, lx] * [0, ly]
-    inset_state.rescale_map(args.n_grid_rows_or_cols, cart_info.is_world_map());
-
-    if (args.redirect_exports_to_stdout) {
-
-      // Store original coordinates
-      inset_state.store_original_geo_divs();
-    }
-
-    if (args.simplify) {
-      std::cerr << "Start of initial simplification of " << inset_pos
-                << std::endl;
-      time_tracker.start("Simplification");
-
-      // Simplification reduces the number of points used to represent the
-      // GeoDivs in the inset, thereby reducing output file sizes and
-      // run-times
-      inset_state.simplify(args.target_points_per_inset);
-
-      // Update time
-      time_tracker.stop("Simplification");
-    }
-    std::cerr << "End of initial simplification of " << inset_pos << std::endl;
+    // Preprocess Inset for Integration:
+    // -- Rescale
+    // -- Replace missing and zero target areas,
+    // -- Simplify
+    // -- Remove tiny polygons
+    // -- Write input map if requested (and color polygons, if necessary)
+    inset_state.preprocess();
 
     if (args.export_preprocessed) {
       // Output rescaled GeoJSON
@@ -164,23 +148,6 @@ int main(const int argc, const char *argv[])
 
     // Normalize total target area to be equal to initial area
     inset_state.normalize_target_area();
-
-    // Automatically color GeoDivs if no colors are provided
-    if (inset_state.colors_empty()) {
-      inset_state.auto_color();
-    }
-    if (args.plot_polygons) {
-
-      // Write input of SVG files if requested by command-line option
-      inset_state.write_cairo_map(
-        inset_state.inset_name() + "_input",
-        args.plot_grid);
-    }
-
-    // Remove tiny polygons below threshold
-    if (args.remove_tiny_polygons) {
-      inset_state.remove_tiny_polygons(args.min_polygon_area);
-    }
 
     time_tracker.start("Integration Inset " + inset_pos);
     progress_tracker.print_progress_mid_integration(inset_state);
