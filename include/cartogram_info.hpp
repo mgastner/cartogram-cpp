@@ -42,6 +42,9 @@ public:
   [[nodiscard]] unsigned int n_geo_divs() const;
   [[nodiscard]] unsigned int n_insets() const;
   void project_to_equal_area();
+
+  void preprocess();
+
   void read_csv(const argparse::ArgumentParser &);
   void read_geojson(const std::string &, bool, std::string &);
   std::vector<InsetState> &ref_to_inset_states();

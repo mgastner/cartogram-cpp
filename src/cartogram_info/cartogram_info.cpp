@@ -54,6 +54,35 @@ unsigned int CartogramInfo::n_insets() const
   return inset_states_.size();
 }
 
+void CartogramInfo::preprocess() {
+
+  for (InsetState &inset_state : inset_states_) {
+
+    // Determine the name of the inset
+    std::string inset_name = map_name_;
+    if (n_insets() > 1) {
+      inset_name += "_" + inset_state.pos();
+    }
+    inset_state.set_inset_name(inset_name);
+
+    // Preprocess inset
+    inset_state.preprocess();
+
+  }
+
+  if (args_.export_preprocessed) {
+    // Output rescaled GeoJSON
+    write_geojson(
+      args_.geo_file_name,
+      // processed = simplified + rescaled
+      // and potentially projected + small polygons removed
+      map_name_ + "_input_processed");
+
+    // Output preprocessed CSV file
+    write_csv(map_name_ + "_input_processed");
+  }
+}
+
 void CartogramInfo::project_to_equal_area() {
 
   // Project map and ensure that all holes are inside polygons

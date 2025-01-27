@@ -93,41 +93,22 @@ int main(const int argc, const char *argv[])
   // Track progress of the cartogram generation
   ProgressTracker progress_tracker(total_geo_divs);
 
+
+  // Preprocess Insets for Integration:
+  // -- Set inset name: map_name + "_" + inset_pos
+  // -- Rescale
+  // -- Replace missing and zero target areas
+  // -- Simplify
+  // -- Remove tiny polygons
+  // -- Write input map if requested (and color polygons, if necessary)
+  cart_info.preprocess();
+
   // Iterate over insets
   for (InsetState &inset_state : cart_info.ref_to_inset_states()) {
     std::string inset_pos = inset_state.pos();
 
     // Start of inset time
     time_tracker.start("Inset " + inset_pos);
-
-    // Determine the name of the inset
-    std::string inset_name = map_name;
-    if (cart_info.n_insets() > 1) {
-      inset_name += "_" + inset_pos;
-      std::cerr << "\nWorking on inset at position: " << inset_pos
-                << std::endl;
-    }
-    inset_state.set_inset_name(inset_name);
-
-    // Preprocess Inset for Integration:
-    // -- Rescale
-    // -- Replace missing and zero target areas,
-    // -- Simplify
-    // -- Remove tiny polygons
-    // -- Write input map if requested (and color polygons, if necessary)
-    inset_state.preprocess();
-
-    if (args.export_preprocessed) {
-      // Output rescaled GeoJSON
-      cart_info.write_geojson(
-        args.geo_file_name,
-        // processed = simplified + rescaled
-        // and potentially projected + small polygons removed
-        map_name + "_input_processed");
-
-      // Output preprocessed CSV file
-      cart_info.write_csv(map_name + "_input_processed");
-    }
 
     // Prepare Inset for Cartogram Generation
     // -- Set up Fourier transforms
