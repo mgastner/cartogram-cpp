@@ -9,8 +9,15 @@ CartogramInfo::CartogramInfo(const Arguments args) : args_(args)
   is_world_map_ = args_.world;
   timer.start("Total time");
 
-  // Determine name of input map based on the CSV file and store it
-  set_map_name(args_.visual_file_name);
+  if (!args.visual_file_name.empty()) {
+
+    // Determine name of input map based on the CSV file and store it
+    set_map_name(args_.visual_file_name);
+  } else {
+
+    // User wants to likely make CSV or output equal area map
+    set_map_name(args_.geo_file_name);
+  }
   timer.set_name(map_name_);
 }
 

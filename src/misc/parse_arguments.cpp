@@ -12,7 +12,7 @@ argparse::ArgumentParser parsed_arguments(
 
   // Positional argument accepting geometry file (GeoJSON, JSON) as input
   arguments.add_argument("geometry_file")
-    .default_value("none")
+    .required()
     .help("File path: GeoJSON file");
 
   // Positional argument accepting visual variables file (CSV) as input
@@ -97,9 +97,7 @@ argparse::ArgumentParser parsed_arguments(
     .default_value(false)
     .implicit_value(true);
   arguments.add_argument("-m", "--minimum_polygon_area")
-    .help(
-      std::string("Double: If remove-tiny-polygons enabled, ") +
-      "minimum size of polygons as proportion of total area")
+    .help("Double: Minimum size of tiny polygons as proportion of total area")
     .default_value(default_minimum_polygon_area)
     .scan<'g', double>();
   arguments.add_argument("-r", "--use_ray_shooting_method")
@@ -243,6 +241,8 @@ argparse::ArgumentParser parsed_arguments(
     std::cerr << "ERROR: No CSV file provided!" << std::endl;
     std::cerr << "To create a CSV, please use the -m flag." << std::endl;
     _Exit(15);
+  } else {
+    args.visual_file_name = "";
   }
   return arguments;
 }
