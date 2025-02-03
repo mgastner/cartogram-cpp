@@ -19,16 +19,16 @@ int main(const int argc, const char *argv[])
   // we assume that the coordinates are in longitude and latitude.
   cart_info.read_geojson(args.geo_file_name, args.make_csv, crs);
 
-  // Project to equal area, if necessary
-  // Write Output and EXIT if --output_equal_area_map is set to true
-  cart_info.project_to_equal_area();
-
   std::cerr << "Coordinate reference system: " << crs << std::endl;
   if (arguments.is_used("visual_variable_file")) {
 
     // Read visual variables (e.g., area and color) from CSV
     cart_info.read_csv(arguments);
   }
+
+  // Project to equal area, if necessary
+  // Write Output and EXIT if --output_equal_area_map is set to true
+  cart_info.project_to_equal_area();
 
   // Store total number of GeoDivs to monitor progress
   double total_geo_divs = cart_info.n_geo_divs();
