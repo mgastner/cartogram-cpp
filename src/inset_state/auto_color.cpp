@@ -22,7 +22,7 @@ void InsetState::auto_color()
   palette.emplace_back("#fccde5");  // pink
 
   // Find resolution
-  const unsigned int resolution = default_resolution;
+  const unsigned int resolution = intersections_resolution;
 
   // Create continuity graph based on vertical and horizontal scanlines
   create_contiguity_graph(resolution);
