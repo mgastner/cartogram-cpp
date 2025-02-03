@@ -8,6 +8,7 @@ CartogramInfo::CartogramInfo(const Arguments args) : args_(args)
 {
   is_world_map_ = args_.world;
   timer.start("Total time");
+  crs_ = "+proj=longlat";
 
   if (!args.visual_file_name.empty()) {
 
@@ -150,7 +151,20 @@ void CartogramInfo::project_to_equal_area()
   }
 
   if (args_.output_equal_area_map) {
-    write_geojson("equal_area", true);
+
+    // If a visual file has also been provided, it may have insets defined.
+    if (!args_.visual_file_name.empty()) {
+
+      // If the user does not want the projection to be changed according to
+      // defined insets, then, they should not provide an input visual file.
+      // With such a file provided, we project once per inset, with each
+      // projection having different input parameters.
+      // That is, the reference longitude and latitude for the Albers projection
+      // along with the standard parallels, will be calculated according to each
+      // inset, rather than the entire map.
+      reposition_insets();
+    }
+    write_geojson("equal_area");
     std::exit(EXIT_SUCCESS);
   }
 }
@@ -401,7 +415,7 @@ void CartogramInfo::write_shifted_insets()
   reposition_insets();
 
   // Output to GeoJSON
-  write_geojson("insets_shifted", true);
+  write_geojson("insets_shifted");
   std::exit(EXIT_SUCCESS);
 }
 

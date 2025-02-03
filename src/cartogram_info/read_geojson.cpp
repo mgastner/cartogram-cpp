@@ -204,6 +204,7 @@ void extract_crs(const nlohmann::json &j, std::string &crs)
     j["crs"]["properties"].contains("name")) {
     crs = j["crs"]["properties"]["name"];
   }
+  std::cerr << "Coordinate reference system: " << crs << std::endl;
 }
 
 void generate_csv_template(
@@ -412,22 +413,20 @@ extract_properties_map(const nlohmann::json &j, const std::string &id_header)
   return properties_map;
 }
 
-void CartogramInfo::read_geojson(
-  const std::string &geometry_file_name,
-  const bool make_csv,
-  std::string &crs)
+void CartogramInfo::read_geojson()
 {
+  std::string geometry_file_name = args_.geo_file_name;
   nlohmann::json j = load_geojson(geometry_file_name);
   check_geojson_validity(j);
 
-  if (make_csv) {
+  if (args_.make_csv) {
     // Update map_name to be based on geometry file name instead
     set_map_name(geometry_file_name);
     generate_csv_template(j, map_name_);
     _Exit(19);
   }
 
-  extract_crs(j, crs);
+  extract_crs(j, crs_);
 
   unique_properties_ = extract_unique_properties(j);
 

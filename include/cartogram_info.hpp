@@ -26,6 +26,8 @@ private:
   bool original_ext_ring_is_clockwise_{};
   nlohmann::json cgal_to_json(bool = false);
 
+  std::string crs_;
+
   TimeTracker timer;
 
   // Make default constructor private so that only
@@ -47,7 +49,7 @@ public:
 
 
   void read_csv(const argparse::ArgumentParser &);
-  void read_geojson(const std::string &, bool, std::string &);
+  void read_geojson();
   std::vector<InsetState> &ref_to_inset_states();
   void relocate_geodivs_based_on_inset_pos(
     const std::map<std::string, std::map<std::string, std::string>> &);
@@ -67,7 +69,7 @@ public:
 
   void update_id_header_info(const std::string &);
   void write_csv(const std::string &csv_file_name);
-  void write_geojson(const std::string &, bool = false);
+  void write_geojson(const std::string &);
   void write_shifted_insets();
   InsetState convert_to_inset_state();
   void write_svg(const std::string &suffix = "");

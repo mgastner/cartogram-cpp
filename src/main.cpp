@@ -14,13 +14,11 @@ int main(const int argc, const char *argv[])
   // that needs to be handled by functions called from main().
   CartogramInfo cart_info(args);
 
-  std::string crs = "+proj=longlat";
   // Read geometry. If the GeoJSON does not explicitly contain a "crs" field,
   // we assume that the coordinates are in longitude and latitude.
-  cart_info.read_geojson(args.geo_file_name, args.make_csv, crs);
+  cart_info.read_geojson();
 
-  std::cerr << "Coordinate reference system: " << crs << std::endl;
-  if (arguments.is_used("visual_variable_file")) {
+  if (!args.visual_file_name.empty()) {
 
     // Read visual variables (e.g., area and color) from CSV
     cart_info.read_csv(arguments);
