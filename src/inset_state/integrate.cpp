@@ -66,7 +66,7 @@ void InsetState::prepare_for_integration()
 
 void InsetState::cleanup_after_integration()
 {
-  // Clean up after finishing all Fourier transforms for this inset
+  // Destory FFTW plans and free memory for rho and flux initializations
   destroy_fftw_plans_for_rho();
   destroy_fftw_plans_for_flux();
   ref_to_rho_init().free();
@@ -107,6 +107,7 @@ void InsetState::integrate(ProgressTracker &progress_tracker)
     if (!flatten_density()) {
 
       // Flatten density has failed. Increase blur width and try again
+      timer.stop(file_prefix_);
       continue;
     }
 
@@ -131,13 +132,18 @@ void InsetState::integrate(ProgressTracker &progress_tracker)
   std::cerr << "Finished integrating inset " << pos_ << std::endl;
   progress_tracker.update_and_print_progress_end_integration(n_geo_divs());
 
+  // Write SVG for this inset, if requested
   if (args_.plot_polygons) {
     write_cairo_map(inset_name() + "_output", args_.plot_grid);
   }
 
+  // Project original map with cumulative projection
   if (args_.redirect_exports_to_stdout and !args_.qtdt_method) {
     fill_grid_diagonals(true);
     project_with_cum_proj();
   }
+
+  // Free reserved memory
+  cleanup_after_integration();
   timer.stop(inset_name_);
 }
