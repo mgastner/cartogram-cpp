@@ -5,7 +5,7 @@
 #include <numbers>
 
 constexpr unsigned int default_long_grid_length = 256;
-constexpr unsigned int max_allowed_autoscale_grid_length = 1024;
+constexpr unsigned int max_allowed_autoscale_grid_length = 2048;
 constexpr unsigned int default_grid_factor = 2;
 constexpr double dbl_epsilon = std::numeric_limits<double>::epsilon();
 constexpr double dbl_inf = std::numeric_limits<double>::infinity();
