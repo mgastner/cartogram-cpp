@@ -40,6 +40,7 @@ struct Arguments {
   // export_* writes said outputs, and continues running
   bool redirect_exports_to_stdout;
   bool export_preprocessed;
+  bool export_time_report;
 
   // Remove tiny polygons below threshold?
   // Criteria: If the proportion of the polygon area is smaller than

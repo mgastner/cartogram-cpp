@@ -1,6 +1,8 @@
 #include "inset_state.hpp"
 #include "constants.hpp"
 
+#include "csv.hpp"
+
 InsetState::InsetState(std::string pos, Arguments args) : args_(args), pos_(pos)
 {
   initial_area_ = 0.0;
@@ -361,6 +363,47 @@ void InsetState::execute_fftw_plans_for_flux()
 void InsetState::execute_fftw_fwd_plan() const
 {
   fftw_execute(fwd_plan_for_rho_);
+}
+
+void InsetState::export_time_report() const
+{
+  // Open CSV to write, and create empty object to write to
+  std::ofstream out_file_csv;
+  std::string csv_file_name = inset_name_ + "_time_report.csv";
+  out_file_csv.open(csv_file_name);
+  if (!out_file_csv) {
+    std::cerr << "ERROR writing CSV: failed to open " << csv_file_name
+              << ".csv" << std::endl;
+  }
+  // Each string vectors = one row, starting with column names
+  std::vector<std::vector<std::string> > csv_rows(n_finished_integrations_ + 1);
+
+  // Column names
+  csv_rows[0].push_back("Integration Number");
+  csv_rows[0].push_back("Time (s)");
+  csv_rows[0].push_back("Max Area Error");
+
+  for (size_t i = 0; i < n_finished_integrations_; i++) {
+
+    // Integration number
+    csv_rows[i + 1].push_back(std::to_string(i));
+
+    // Time taken (in seconds)
+    std::string timer_task_name = inset_name_ + "_" + std::to_string(i);
+    std::string time_in_seconds =
+      std::to_string(timer.duration(timer_task_name).count() / 1000.0);
+    csv_rows[i + 1].push_back(time_in_seconds);
+
+    // Max area error for that integration
+    csv_rows[i + 1].push_back(std::to_string(max_area_errors_[i]));
+  }
+
+  // Write to CSV object, and close file afterwards
+  auto writer = csv::make_csv_writer(out_file_csv);
+  for (const auto &row : csv_rows) {
+    writer << row;
+  }
+  out_file_csv.close();
 }
 
 const std::vector<GeoDiv> &InsetState::geo_divs() const

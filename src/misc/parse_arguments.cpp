@@ -108,8 +108,8 @@ argparse::ArgumentParser parsed_arguments(
     .help("Boolean: write input GeoJSON and CSV after preprocessing")
     .default_value(false)
     .implicit_value(true);
-  arguments.add_argument("--export_time_analsyis")
-    .help("Boolean: write extended time analysis to CSV file")
+  arguments.add_argument("--export_time_report")
+    .help("Boolean: write extended time report to CSV file")
     .default_value(false)
     .implicit_value(true);
 
@@ -173,6 +173,7 @@ argparse::ArgumentParser parsed_arguments(
   args.output_equal_area_map = arguments.get<bool>("--output_equal_area_map");
   args.redirect_exports_to_stdout = arguments.get<bool>("--redirect_exports_to_stdout");
   args.export_preprocessed = arguments.get<bool>("--export_preprocessed");
+  args.export_time_report = arguments.get<bool>("--export_time_report");
   args.plot_density = arguments.get<bool>("--plot_density");
   args.plot_grid = arguments.get<bool>("--add_grid");
   args.plot_intersections = arguments.get<bool>("--plot_intersections");

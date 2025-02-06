@@ -54,3 +54,15 @@ void TimeTracker::print_summary_report() const
   }
   std::cerr << "*********************************" << std::endl;
 }
+
+std::chrono::milliseconds TimeTracker::duration(const std::string &task_name) const
+{
+  try {
+    return durations_.at(task_name);
+  } catch (const std::out_of_range &e) {
+    std::cerr << "ERROR: Key '" << task_name << "' not found in target_areas_. "
+              << "Exception: " << e.what() << std::endl;
+    // Re-throw, or return a default value
+    throw;
+  }
+}

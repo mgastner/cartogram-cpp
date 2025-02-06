@@ -150,6 +150,10 @@ public:
   void execute_fftw_fwd_plan() const;
   void execute_fftw_plans_for_flux();
   void exit_if_not_on_grid_or_edge(Point p1) const;
+
+  // Write CSV of time and max_area_error per integration
+  void export_time_report() const;
+
   void fill_grid_diagonals(bool = false);
 
   // Density functions
