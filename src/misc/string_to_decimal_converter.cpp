@@ -1,4 +1,5 @@
 #include "string_to_decimal_converter.hpp"
+#include <algorithm>
 #include <cassert>
 #include <iostream>
 
@@ -254,8 +255,7 @@ std::string StringToDecimalConverter::parse_str(
     processed_str = remove_char(processed_str, comma_);
 
     if (count_char(processed_str, point_) > 1) {
-      size_t last_point_pos =
-        processed_str.rfind(point_);
+      size_t last_point_pos = processed_str.rfind(point_);
       std::string cleaned_str;
 
       // Only keep the last point. This should not arise in practice if data is
