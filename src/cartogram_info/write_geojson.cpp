@@ -133,6 +133,40 @@ nlohmann::json CartogramInfo::cgal_to_json(
   return container;
 }
 
+// The format of the divider lines in the GeoJSON file is as follows:
+// "dividers" : {
+//   "type": "Feature",
+//   "properties": { "Region": "Dividers" },
+//   "geometry": {
+//       "type": "MultiLineString",
+//       "coordinates": [
+//          [
+//            [100.0, 0.0], // line1.start.x, line1.start.y
+//            [101.0, 1.0] // line1.end.x, line1.end.y
+//          ],
+//          [
+//            [102.0, 2.0],
+//            [103.0, 3.0]
+//          ]
+//        ]
+// },
+nlohmann::json add_dividers_to_geojson(const nlohmann::json &json)
+{
+  nlohmann::json formatted_json;
+  formatted_json["type"] = "Feature";
+  formatted_json["properties"]["Region"] = "Dividers";
+  formatted_json["geometry"]["type"] = "MultiLineString";
+  nlohmann::json coordinates = nlohmann::json::array();
+  for (const auto &divider : json) {
+    nlohmann::json line = nlohmann::json::array();
+    line.push_back({divider[0], divider[1]});
+    line.push_back({divider[2], divider[3]});
+    coordinates.push_back(line);
+  }
+  formatted_json["geometry"]["coordinates"] = coordinates;
+  return formatted_json;
+}
+
 void CartogramInfo::json_to_geojson(
   const nlohmann::json &old_json,
   nlohmann::ordered_json &new_json,
@@ -153,7 +187,8 @@ void CartogramInfo::json_to_geojson(
     new_json["bbox"] = container[(container.size() - 1)];
   } else {
     new_json["bbox"] = container[(container.size() - 2)];
-    new_json["divider_points"] = container[(container.size() - 1)];
+    new_json["dividers"] =
+      add_dividers_to_geojson(container[(container.size() - 1)]);
   }
   // new_json.push_back({"crs", "custom"});
 
