@@ -229,7 +229,7 @@ void CartogramInfo::write_geojson(const std::string &suffix)
   nlohmann::ordered_json new_json;
   json_to_geojson(old_json, new_json, container);
   if (args_.redirect_exports_to_stdout) {
-    if (args_.output_equal_area_map or args_.output_shifted_insets) {
+    if (args_.output_equal_area_map || args_.output_shifted_insets) {
       std::cout << new_json << std::endl;
       return;
     }
