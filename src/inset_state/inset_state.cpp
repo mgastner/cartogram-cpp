@@ -1,9 +1,9 @@
 #include "inset_state.hpp"
 #include "constants.hpp"
-
 #include "csv.hpp"
 
-InsetState::InsetState(std::string pos, Arguments args) : args_(args), pos_(pos)
+InsetState::InsetState(std::string pos, Arguments args)
+    : args_(args), pos_(pos)
 {
   initial_area_ = 0.0;
   n_finished_integrations_ = 0;
@@ -29,8 +29,9 @@ Bbox InsetState::bbox(bool original_bbox) const
   double inset_ymin = dbl_inf;
   double inset_ymax = -dbl_inf;
 #pragma omp parallel for default(none) shared(geo_divs) \
-  reduction(min : inset_xmin, inset_ymin)               \
-  reduction(max : inset_xmax, inset_ymax)
+  reduction(min                                         \
+            : inset_xmin, inset_ymin) reduction(max     \
+                                                : inset_xmax, inset_ymax)
   for (const auto &gd : geo_divs) {
     for (const auto &pwh : gd.polygons_with_holes()) {
       const auto bb = pwh.bbox();
@@ -378,7 +379,7 @@ void InsetState::export_time_report() const
               << ".csv" << std::endl;
   }
   // Each string vectors = one row, starting with column names
-  std::vector<std::vector<std::string> > csv_rows(n_finished_integrations_ + 1);
+  std::vector<std::vector<std::string>> csv_rows(n_finished_integrations_ + 1);
 
   // Column names
   csv_rows[0].push_back("Integration Number");
@@ -491,7 +492,8 @@ void InsetState::create_and_store_quadtree_cell_corners()
     return (rho_max / rho_min) > (1.0 + 1.0 / n_finished_integrations_);
     // rho_max / rho_min > 2;
   };
-  // std::cerr << "Splitting threshold (difference must be greater than): " << (0.001 + pow((1.0 / n_finished_integrations_), 2)) << std::endl;
+  // std::cerr << "Splitting threshold (difference must be greater than): " <<
+  // (0.001 + pow((1.0 / n_finished_integrations_), 2)) << std::endl;
   std::cerr << "Split criteria: rho_max / rho_min > "
             << (1.0 + pow((8.0 / n_finished_integrations_), 2)) << std::endl;
   qt.refine(can_split);
@@ -859,7 +861,7 @@ void InsetState::adjust_grid()
     lx_ *= default_grid_factor;
     ly_ *= default_grid_factor;
 
-     const Transformation scale(CGAL::SCALING, default_grid_factor);
+    const Transformation scale(CGAL::SCALING, default_grid_factor);
     transform_points(scale);
 
     initial_area_ *= default_grid_factor * default_grid_factor;
@@ -1016,12 +1018,10 @@ void InsetState::set_geo_divs(std::vector<GeoDiv> new_geo_divs)
   geo_divs_ = std::move(new_geo_divs);
 }
 
-void InsetState::update_file_prefix() {
-  file_prefix_ =
-    inset_name_ + "_" +
-    std::to_string(n_finished_integrations_);
+void InsetState::update_file_prefix()
+{
+  file_prefix_ = inset_name_ + "_" + std::to_string(n_finished_integrations_);
 }
-
 
 void InsetState::update_gd_ids(
   const std::map<std::string, std::string> &gd_id_map)
