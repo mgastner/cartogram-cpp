@@ -130,7 +130,8 @@ argparse::ArgumentParser parsed_arguments(
     .help(pre + "insets");
   arguments.add_argument("--min_integrations")
     .help("Integer: minimum number of integrations regardless of area error reached")
-    .default_value(0);
+    .default_value(static_cast<unsigned int>(0))
+    .scan<'u', unsigned int>();
 
   // Parse command-line arguments
   try {
