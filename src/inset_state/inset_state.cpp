@@ -77,12 +77,6 @@ double InsetState::blur_width() const
 bool InsetState::continue_integrating() const
 {
 
-  // Ignore other conditions if we have not reached the minimum number of
-  // integrations
-  if (n_finished_integrations_ < args_.min_integrations) {
-    return true;
-  }
-
   // Calculate all the necessary information to decide whether to continue
   auto [max_area_err, worst_gd] = max_area_error();
 
@@ -103,7 +97,9 @@ bool InsetState::continue_integrating() const
   bool within_integration_limit = n_finished_integrations() < max_integrations;
 
   // We continue if we are within the integration limit and have not converged
-  bool continue_integration = within_integration_limit && !has_converged;
+  bool continue_integration =
+    (within_integration_limit && !has_converged) ||
+    (n_finished_integrations_ < args_.min_integrations);
 
   // Actually hasn't converged, just reached integration limit
   if (!within_integration_limit && !has_converged) {
