@@ -116,7 +116,7 @@ argparse::ArgumentParser parsed_arguments(
   // Arguments of column names in provided visual variables file (CSV)
   std::string pre = "String: Column name for ";
   arguments.add_argument("-D", "--id")
-    .help(pre + "IDs of geographic divisions [default: 1st CSV column]");
+    .help(pre + "IDs of geographic divisions [default: 1st CSV column header]");
   arguments.add_argument("-A", "--area")
     .help(pre + "target areas [default: 2nd CSV column]");
   arguments.add_argument("-C", "--color")
@@ -128,6 +128,9 @@ argparse::ArgumentParser parsed_arguments(
   arguments.add_argument("-I", "--inset")
     .default_value(std::string("Inset"))
     .help(pre + "insets");
+  arguments.add_argument("--min_integrations")
+    .help("Integer: minimum number of integrations regardless of area error reached")
+    .default_value(0);
 
   // Parse command-line arguments
   try {
@@ -149,6 +152,8 @@ argparse::ArgumentParser parsed_arguments(
 
   // Set target_points_per_inset
   args.target_points_per_inset = arguments.get<unsigned int>("-P");
+
+  args.min_integrations = arguments.get<unsigned int>("--min_integrations");
 
   // Set boolean values
   args.world = arguments.get<bool>("--world");

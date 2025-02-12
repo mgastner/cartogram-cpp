@@ -15,6 +15,9 @@ struct Arguments {
   // Target number of points to retain after simplification
   unsigned int target_points_per_inset;
 
+  // Minimum number of integrations regardless of area error reached
+  unsigned int min_integrations;
+
   // World maps need special projections
   bool world;
 

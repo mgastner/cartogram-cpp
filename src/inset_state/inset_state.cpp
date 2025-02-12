@@ -77,6 +77,12 @@ double InsetState::blur_width() const
 bool InsetState::continue_integrating() const
 {
 
+  // Ignore other conditions if we have not reached the minimum number of
+  // integrations
+  if (n_finished_integrations_ < args_.min_integrations) {
+    return true;
+  }
+
   // Calculate all the necessary information to decide whether to continue
   auto [max_area_err, worst_gd] = max_area_error();
 
