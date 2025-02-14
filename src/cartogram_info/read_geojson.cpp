@@ -1,4 +1,5 @@
 #include "cartogram_info.hpp"
+#include "constants.hpp"
 #include "csv.hpp"
 
 inline std::string strip_quotes(const std::string &s)
@@ -427,6 +428,12 @@ void CartogramInfo::read_geojson()
   }
 
   extract_crs(j, crs_);
+  // Skip projection, this is an output from our program
+  if (crs_ == custom_crs) {
+    std::cerr << "WARNING: " << custom_crs << " detected. "
+              << "Applying --skip_projection flag." << std::endl;
+    args_.skip_projection = true;
+  }
 
   unique_properties_ = extract_unique_properties(j);
 

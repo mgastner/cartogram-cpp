@@ -3,6 +3,20 @@
 
 void CartogramInfo::reposition_insets(bool output_to_stdout)
 {
+
+  // Warn user about repositoning insets with `--skip_projection` flag
+  if (args_.skip_projection && n_insets() > 1) {
+    std::cerr << "WARNING: Trying to repostion insets with ";
+    if (crs_ == custom_crs) {
+      std::cerr << "custom coordinate reference system " << custom_crs << ". ";
+    } else {
+      std::cerr << "`--skip_projection` flag present. ";
+    }
+    std::cerr << "This implies that map has already been projected with "
+              << "standard parallels based on original, unprojected map. "
+              << "Insets may appear skewed. " << std::endl;
+  }
+
   // For simplicity's sake, let us formally insert bounding boxes for
   // all conceivable inset positions
   std::map<std::string, Bbox> bboxes;

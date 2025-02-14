@@ -152,6 +152,11 @@ void CartogramInfo::project_to_equal_area()
 
   if (args_.output_equal_area_map) {
 
+    if (args_.skip_projection) {
+      std::cerr << "WARNING: --skip_projection flag ignored as it "
+                << "contradicts --output_equal_area_map flag. " << std::endl;
+    }
+
     // If a visual file has also been provided, it may have insets defined.
     if (!args_.visual_file_name.empty()) {
 
@@ -159,9 +164,9 @@ void CartogramInfo::project_to_equal_area()
       // defined insets, then, they should not provide an input visual file.
       // With such a file provided, we project once per inset, with each
       // projection having different input parameters.
-      // That is, the reference longitude and latitude for the Albers projection
-      // along with the standard parallels, will be calculated according to each
-      // inset, rather than the entire map.
+      // That is, the reference longitude and latitude for the Albers
+      // projection along with the standard parallels, will be calculated
+      // according to each inset, rather than the entire map.
       reposition_insets();
     }
     write_geojson("equal_area");
