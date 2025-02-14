@@ -190,7 +190,15 @@ void CartogramInfo::json_to_geojson(
     new_json["dividers"] =
       add_dividers_to_geojson(container[(container.size() - 1)]);
   }
-  // new_json.push_back({"crs", "custom"});
+
+  // Add/replace CRS to custom_crs
+  new_json["crs"] = {
+    {"type", "name"},
+    {"properties",
+     {{"name", custom_crs},
+      {"note",
+       "Created using cartogram-cpp / go-cart.io with custom projection, not "
+       "in EPSG:4326."}}}};
 
   // Iterate over GeoDivs and gd_ids in the container. The index
   // container.size()-2 is reserved for the bounding box, and the index
