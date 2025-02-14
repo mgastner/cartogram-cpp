@@ -192,13 +192,11 @@ void CartogramInfo::json_to_geojson(
   }
 
   // Add/replace CRS to custom_crs
-  new_json["crs"] = {
-    {"type", "name"},
-    {"properties",
-     {{"name", custom_crs},
-      {"note",
-       "Created using cartogram-cpp / go-cart.io with custom projection, not "
-       "in EPSG:4326."}}}};
+  new_json["crs"] = {{"type", "name"}, {"properties", {{"name", custom_crs}}}};
+
+  new_json["properties"]["note"] =
+    "Created using cartogram-cpp / go-cart.io with custom projection, not in "
+    "EPSG:4326";
 
   // Iterate over GeoDivs and gd_ids in the container. The index
   // container.size()-2 is reserved for the bounding box, and the index
