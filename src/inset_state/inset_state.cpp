@@ -308,7 +308,7 @@ void InsetState::update_delaunay_t()
     points.erase(std::unique(points.begin(), points.end()), points.end());
   }
 
-  // Add the pojected Delaunay triangles as constraints if they are valid to
+  // Add the projected Delaunay triangles as constraints if they are valid to
   // the original Delaunay triangulation
   std::vector<std::pair<Point, Point>> constraints;
   for (Delaunay::Finite_edges_iterator eit = dt_projected.finite_edges_begin();
