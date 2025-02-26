@@ -497,7 +497,7 @@ void InsetState::create_and_store_quadtree_cell_corners()
   std::cerr << "Split criteria: rho_max / rho_min > "
             << (1.0 + pow((8.0 / n_finished_integrations_), 2)) << std::endl;
   qt.refine(can_split);
-  // qt.grade();
+  qt.grade();
   std::cerr << "Quadtree root node bounding box: " << qt.bbox(qt.root())
             << std::endl;
 
