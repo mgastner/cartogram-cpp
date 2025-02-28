@@ -8,6 +8,33 @@ This program uses the fast flow-based method developed by Michael T. Gastner, Vi
 
 Gastner MT, Seguy V, More P. _Fast flow-based algorithm for creating density-equalizing map projections_. Proc Natl Acad Sci USA 115(10):E2156–E2164 (2018). <https://doi.org/10.1073/pnas.0400280101>
 
+## AsiaCarto 2024
+### 5FCarto
+
+Run the Belgium example with the following command:
+```
+cartogram ./sample_data/belgium_by_region_since_1995/belgium_by_region_since_1995.geojson ./sample_data/belgium_by_region_since_1995/belgium_population_by_region_2022.csv
+```
+
+Run the World Map by Country example with the following command:
+```
+cartogram ./sample_data/world_by_country_since_2022/world_by_country_since_2022.geojson ./sample_data/world_by_country_since_2022/world_population_by_country_2010.csv --world
+```
+
+### BFB
+
+Run the Belgium example with the following command:
+```
+cartogram ./sample_data/belgium_by_region_since_1995/belgium_by_region_since_1995.geojson ./sample_data/belgium_by_region_since_1995/belgium_population_by_region_2022.csv --simplify_and_densify
+```
+
+Run the World Map by Country example with the following command:
+```
+cartogram ./sample_data/world_by_country_since_2022/world_by_country_since_2022.geojson ./sample_data/world_by_country_since_2022/world_population_by_country_2010.csv --world --simplify_and_densify
+```
+
+-----
+
 Data produced by code in this repository are subject to the MIT license found [here](./LICENSE) and should cite the aforementioned paper by Gastner et al. (2018).
 
 While cloning this repository, please ensure you use the `--recurse-submodules` flag like so:
