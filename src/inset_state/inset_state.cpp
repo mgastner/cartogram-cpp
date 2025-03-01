@@ -402,6 +402,16 @@ const std::vector<GeoDiv> &InsetState::geo_divs() const
   return geo_divs_;
 }
 
+unsigned int count_leaf_nodes(const Quadtree &qt)
+{
+  unsigned int num_leaves = 0;
+  for ([[maybe_unused]] const auto &node :
+       qt.traverse<CGAL::Orthtrees::Leaves_traversal>()) {
+    ++num_leaves;
+  }
+  return num_leaves;
+}
+
 void InsetState::create_and_store_quadtree_cell_corners()
 {
   timer.start("Delaunay Triangulation");
@@ -444,8 +454,10 @@ void InsetState::create_and_store_quadtree_cell_corners()
     static_cast<unsigned int>(std::max(log2(lx_), log2(ly_)));
   std::cerr << "Using Quadtree depth: " << depth << std::endl;
 
+  const double threshold = (0.001 + pow((1.0 / n_finished_integrations_), 2));
   // Custom predicate to decide whether to split a node
-  auto can_split = [&depth, &qt, this](const Quadtree::Node &node) -> bool {
+  auto can_split =
+    [&depth, &qt, &threshold, this](const Quadtree::Node &node) -> bool {
     // if the node depth is greater than depth, do not split
     if (node.depth() >= depth) {
       return false;
@@ -471,19 +483,11 @@ void InsetState::create_and_store_quadtree_cell_corners()
     // Logic: as more integrations we increase, we split more aggressively
     // (the difference threshold becomes smaller)
     // TODO: Change to threshold that matches how densities are scaled
-    return rho_max - rho_min >
-           (0.001 + pow((1.0 / n_finished_integrations_), 2));
-    // return rho_max - rho_min >
-    //        (0.001 + pow((1.0 / n_finished_integrations_), 2));
-    // return (rho_max / rho_min) >
-    //        (1.0 + pow((1.0 / n_finished_integrations_), 2));
-    return (rho_max / rho_min) > (1.0 + 1.0 / n_finished_integrations_);
-    // rho_max / rho_min > 2;
+    return rho_max - rho_min > threshold;
   };
-  // std::cerr << "Splitting threshold (difference must be greater than): " <<
-  // (0.001 + pow((1.0 / n_finished_integrations_), 2)) << std::endl;
-  std::cerr << "Split criteria: rho_max / rho_min > "
-            << (1.0 + pow((8.0 / n_finished_integrations_), 2)) << std::endl;
+
+  std::cerr << "Split criteria: rho_max - rho_min > " << threshold
+            << std::endl;
   qt.refine(can_split);
   qt.grade();
   std::cerr << "Quadtree root node bounding box: " << qt.bbox(qt.root())
@@ -525,8 +529,9 @@ void InsetState::create_and_store_quadtree_cell_corners()
   unique_quadtree_corners_.insert(Point(lx_, 0));
   unique_quadtree_corners_.insert(Point(lx_, ly_));
 
-  std::cerr << "Number of unique corners: " << unique_quadtree_corners_.size()
+  std::cerr << "Number of Unique Corners: " << unique_quadtree_corners_.size()
             << std::endl;
+  std::cerr << "Number of Leaf Nodes: " << count_leaf_nodes(qt) << std::endl;
   timer.stop("Delaunay Triangulation");
 }
 
