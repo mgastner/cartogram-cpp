@@ -402,137 +402,224 @@ const std::vector<GeoDiv> &InsetState::geo_divs() const
   return geo_divs_;
 }
 
-unsigned int count_leaf_nodes(const Quadtree &qt)
+// Get unique points from GeoDivs
+static std::vector<Point> get_unique_points(InsetState &inset_state)
 {
-  unsigned int num_leaves = 0;
-  for ([[maybe_unused]] const auto &node :
-       qt.traverse<CGAL::Orthtrees::Leaves_traversal>()) {
-    ++num_leaves;
-  }
-  return num_leaves;
-}
-
-void InsetState::create_and_store_quadtree_cell_corners()
-{
-  timer.start("Delaunay Triangulation");
   std::vector<Point> points;
-
-  for (const auto &gd : geo_divs_) {
+  for (const auto &gd : inset_state.geo_divs()) {
     for (const auto &pwh : gd.polygons_with_holes()) {
       const Polygon &ext_ring = pwh.outer_boundary();
-
-      // Get exterior ring coordinates
       points.insert(
         points.end(),
         ext_ring.vertices_begin(),
         ext_ring.vertices_end());
-
-      // Get holes of polygon with holes
-      for (const auto &h : pwh.holes()) {
-        points.insert(points.end(), h.vertices_begin(), h.vertices_end());
+      for (const auto &hole : pwh.holes()) {
+        points.insert(
+          points.end(),
+          hole.vertices_begin(),
+          hole.vertices_end());
       }
     }
   }
 
-  // Add boundary points of mapping domain
+  // Add boundary points to force lx * ly size Quadtree
   points.push_back(Point(0, 0));
-  points.push_back(Point(0, ly_));
-  points.push_back(Point(lx_, 0));
-  points.push_back(Point(lx_, ly_));
+  points.push_back(Point(0, inset_state.ly()));
+  points.push_back(Point(inset_state.ly(), 0));
+  points.push_back(Point(inset_state.ly(), inset_state.ly()));
 
-  // Remove the duplicates from points
+  // Remove duplicates
   std::unordered_set<Point> unique_points(points.begin(), points.end());
+  return std::vector<Point>(unique_points.begin(), unique_points.end());
+}
 
-  std::vector<Point> unique_points_vec(
-    unique_points.begin(),
-    unique_points.end());
+// Counts the number of leaf nodes in a quadtree
+int count_leaf_nodes(const Quadtree &qt)
+{
+  int leaf_count = 0;
+  for ([[maybe_unused]] const auto &node :
+       qt.traverse<CGAL::Orthtrees::Leaves_traversal>()) {
+    ++leaf_count;
+  }
+  return leaf_count;
+}
 
-  // Create the quadtree and 'grade' it so that neighboring quadtree leaves
-  // differ by a depth that can only be 0 or 1.
-  Quadtree qt(unique_points_vec, Quadtree::PointMap(), 1);
-  const unsigned int depth =
-    static_cast<unsigned int>(std::max(log2(lx_), log2(ly_)));
-  std::cerr << "Using Quadtree depth: " << depth << std::endl;
-
-  const double threshold = (0.001 + pow((1.0 / n_finished_integrations_), 2));
-  // Custom predicate to decide whether to split a node
-  auto can_split =
-    [&depth, &qt, &threshold, this](const Quadtree::Node &node) -> bool {
-    // if the node depth is greater than depth, do not split
-    if (node.depth() >= depth) {
+// Refine the quadtree by splitting nodes that exceed the given threshold
+void refine_quadtree_with_threshold(
+  Quadtree &qt,
+  double threshold,
+  unsigned int depth,
+  InsetState &inset_state)
+{
+  auto can_split = [&qt, &threshold, &depth, &inset_state](
+                     const Quadtree::Node &node) -> bool {
+    if (node.depth() >= depth)
       return false;
-    }
 
     auto bbox = qt.bbox(node);
     double rho_min = 1e9;
     double rho_max = -1e9;
-
-    // get the minimum rho_init of the bbox of the node
     for (int i = bbox.xmin(); i < bbox.xmax(); ++i) {
       for (int j = bbox.ymin(); j < bbox.ymax(); ++j) {
-        if (i < 0 || j < 0) {
+        if (i < 0 || j < 0)
           continue;
-        }
-        if (i >= (int)this->lx() || j >= (int)this->ly()) {
+        if (
+          i >= static_cast<int>(inset_state.lx()) ||
+          j >= static_cast<int>(inset_state.ly()))
           continue;
-        }
-        rho_min = std::min(rho_min, this->ref_to_rho_init()(i, j));
-        rho_max = std::max(rho_max, this->ref_to_rho_init()(i, j));
+        rho_min = std::min(rho_min, inset_state.ref_to_rho_init()(i, j));
+        rho_max = std::max(rho_max, inset_state.ref_to_rho_init()(i, j));
       }
     }
-    // Logic: as more integrations we increase, we split more aggressively
-    // (the difference threshold becomes smaller)
-    // TODO: Change to threshold that matches how densities are scaled
-    return rho_max - rho_min > threshold;
+    return (rho_max - rho_min) > threshold;
   };
 
+  qt.refine(can_split);
+}
+
+// Use binary search to find a threshold that results in a quadtree with a
+// at least the target number of leaf nodes
+static double find_threshold(
+  Quadtree &base_qt,
+  InsetState &state,
+  const unsigned int depth,
+  const int target_leaf_count,
+  const int tolerance,
+  double low_thresh,
+  double high_thresh,
+  const int max_iterations)
+{
+  double threshold = high_thresh;
+  {
+    Quadtree qt_copy = base_qt;
+    refine_quadtree_with_threshold(qt_copy, high_thresh, depth, state);
+    const int leaves = count_leaf_nodes(qt_copy);
+    std::cerr << "Max threshold = " << high_thresh
+              << ", leaf nodes = " << leaves << std::endl;
+    if (leaves >= target_leaf_count) {
+      std::cerr << "Max threshold already sufficient. Skipping search..."
+                << std::endl;
+      return high_thresh;
+    }
+  }
+
+  for (int iter = 0; iter < max_iterations; ++iter) {
+    const double mid_thresh = (low_thresh + high_thresh) / 2.0;
+    Quadtree qt_copy = base_qt;
+    refine_quadtree_with_threshold(qt_copy, mid_thresh, depth, state);
+    const int leaves = count_leaf_nodes(qt_copy);
+
+    std::cerr << "iter " << iter << ": threshold = " << mid_thresh
+              << ", leaf nodes = " << leaves << std::endl;
+
+    if (
+      leaves >= target_leaf_count - tolerance &&
+      leaves <= target_leaf_count + tolerance) {  // Found a good threshold
+      threshold = mid_thresh;
+      break;
+    }
+    // Too few leaves: lower threshold to increase leaf count
+    if (leaves < target_leaf_count)
+      high_thresh = mid_thresh;
+    else  // Too many leaves: threshold is too low
+      low_thresh = mid_thresh;
+    threshold = mid_thresh;
+  }
+  return threshold;
+}
+
+/*
+  Create and refine the quadtree.
+  * Build a quadtree from the unique points of the GeoDivs
+  * Find a threshold that results in a quadtree with at least target_leaf_count
+    leaf nodes
+  * Refine the quadtree with the found threshold
+  * Grade the quadtree
+  * Store the bounding boxes of the leaf nodes
+*/
+void InsetState::create_and_refine_quadtree()
+{
+  timer.start("Delaunay Triangulation");
+
+  // Build a quadtree from the unique points of the GeoDivs
+  std::vector<Point> unique_points = get_unique_points(*this);
+  Quadtree qt(unique_points, Quadtree::PointMap(), 1);
+
+  // Find a threshold that results in a quadtree with at least
+  // target_leaf_count leaf nodes
+  unsigned int depth =
+    static_cast<unsigned int>(std::max(log2(lx_), log2(ly_)));
+  std::cerr << "Using quadtree depth: " << depth << std::endl;
+
+  // Determine target leaf count as 0.3% of grid area.
+  int target_leaf_count = static_cast<int>(0.003 * lx_ * ly_);
+  std::cerr << "Quadtree target leaf count (pre-grading): "
+            << target_leaf_count << std::endl;
+  const int tolerance = 1000;
+  double low_thresh = 0.0;
+  double high_thresh = 1.0;
+
+  // Set high threshold as the same as the threshold at the previous
+  // integration to speed up the search
+  if (threshold_at_integration_.count(n_finished_integrations_ - 1)) {
+    high_thresh = threshold_at_integration_.at(n_finished_integrations_ - 1);
+  }
+  const int max_iterations = 50;
+  const double threshold = find_threshold(
+    qt,
+    *this,
+    depth,
+    target_leaf_count,
+    tolerance,
+    low_thresh,
+    high_thresh,
+    max_iterations);
+  std::cerr << "Using threshold: " << threshold << std::endl;
+  threshold_at_integration_.insert({n_finished_integrations_, threshold});
   std::cerr << "Split criteria: rho_max - rho_min > " << threshold
             << std::endl;
-  qt.refine(can_split);
+
+  // Refine the quadtree with the found threshold
+  refine_quadtree_with_threshold(qt, threshold, depth, *this);
   qt.grade();
   std::cerr << "Quadtree root node bounding box: " << qt.bbox(qt.root())
             << std::endl;
 
-  // Clear corner points from last iteration
-  unique_quadtree_corners_.clear();
+  // Store the bounding boxes of the leaf nodes
+  store_quadtree_cell_corners(qt);
 
-  // Clear the vector of bounding boxes
+  timer.stop("Delaunay Triangulation");
+}
+
+void InsetState::store_quadtree_cell_corners(const Quadtree &qt)
+{
+  unique_quadtree_corners_.clear();
   quadtree_bboxes_.clear();
 
-  // Get unique quadtree corners
   for (const auto &node : qt.traverse<CGAL::Orthtrees::Leaves_traversal>()) {
-
-    // Get bounding box of the leaf node
     const Bbox bbox = qt.bbox(node);
-
-    // check if points are between lx_ and ly_
     if (
       bbox.xmin() < 0 || bbox.xmax() > lx_ || bbox.ymin() < 0 ||
-      bbox.ymax() > ly_) {
+      bbox.ymax() > ly_)
       continue;
-    }
 
-    // Store the bounding box
     quadtree_bboxes_.push_back(bbox);
-
-    // Insert the four vertices of the bbox into the corners set
     unique_quadtree_corners_.insert(Point(bbox.xmin(), bbox.ymin()));
     unique_quadtree_corners_.insert(Point(bbox.xmax(), bbox.ymax()));
     unique_quadtree_corners_.insert(Point(bbox.xmin(), bbox.ymax()));
     unique_quadtree_corners_.insert(Point(bbox.xmax(), bbox.ymin()));
   }
 
-  // Add boundary points of mapping domain in case they are omitted due to
-  // quadtree structure
+  // Ensure mapping domain boundary corners are included
   unique_quadtree_corners_.insert(Point(0, 0));
   unique_quadtree_corners_.insert(Point(0, ly_));
   unique_quadtree_corners_.insert(Point(lx_, 0));
   unique_quadtree_corners_.insert(Point(lx_, ly_));
 
-  std::cerr << "Number of Unique Corners: " << unique_quadtree_corners_.size()
+  std::cerr << "Number of unique quadtree corners: "
+            << unique_quadtree_corners_.size() << std::endl;
+  std::cerr << "Number of quadtree leaf nodes: " << count_leaf_nodes(qt)
             << std::endl;
-  std::cerr << "Number of Leaf Nodes: " << count_leaf_nodes(qt) << std::endl;
-  timer.stop("Delaunay Triangulation");
 }
 
 void InsetState::increment_integration()

@@ -33,6 +33,7 @@ struct proj_qd {  // quadtree-delaunay projection
 class InsetState
 {
 private:
+  std::map<unsigned int, double> threshold_at_integration_;
   std::unordered_map<std::string, double> area_errors_;
 
   std::unordered_set<Point> unique_quadtree_corners_;
@@ -138,7 +139,7 @@ public:
   bool color_found(const std::string &) const;
   unsigned int colors_size() const;
   bool continue_integrating() const;
-  void create_and_store_quadtree_cell_corners();
+  void create_and_refine_quadtree();
   void create_contiguity_graph(unsigned int);
   void create_delaunay_t();
   void densify_geo_divs();
@@ -266,10 +267,11 @@ public:
   void set_grid_dimensions(unsigned int, unsigned int);
   void set_geo_divs(std::vector<GeoDiv> new_geo_divs);
   void set_inset_name(const std::string &);
+  void simplify(unsigned int);
   void store_initial_area();
   void store_initial_target_area(const double override = 0.0);
-  void simplify(unsigned int);
   void store_original_geo_divs();
+  void store_quadtree_cell_corners(const Quadtree &);
   double target_area_at(const std::string &) const;
   bool target_area_is_missing(const std::string &) const;
   double total_inset_area(bool = false) const;

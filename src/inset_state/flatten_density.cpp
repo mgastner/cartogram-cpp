@@ -7,7 +7,7 @@ bool InsetState::flatten_density()
   if (args_.qtdt_method) {
 
     // Create Delaunay triangulation based on quadtree corners and plot
-    create_and_store_quadtree_cell_corners();
+    create_and_refine_quadtree();
     create_delaunay_t();
 
     if (args_.plot_quadtree) {
@@ -306,7 +306,7 @@ void InsetState::flatten_density_on_square_grid()
 
     // Control output and update for next iteration
     if (iter % 10 == 0) {
-      std::cerr << "iter = " << iter << ", t = " << t
+      std::cerr << "iter " << iter << ": t = " << t
                 << ", delta_t = " << delta_t << "\n";
     }
 
@@ -601,7 +601,7 @@ bool InsetState::flatten_density_on_node_vertices()
 
     // Control output
     if (iter % 10 == 0) {
-      std::cerr << "iter = " << iter << ", t = " << t
+      std::cerr << "iter " << iter << ": t = " << t
                 << ", delta_t = " << delta_t << "\n";
     }
 
