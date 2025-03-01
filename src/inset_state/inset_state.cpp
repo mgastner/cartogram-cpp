@@ -138,11 +138,6 @@ bool InsetState::color_found(const std::string &id) const
   return colors_.count(id);
 }
 
-bool InsetState::colors_empty() const
-{
-  return colors_.empty();
-}
-
 unsigned int InsetState::colors_size() const
 {
   return colors_.size();
@@ -159,42 +154,6 @@ void InsetState::create_delaunay_t()
   timer.stop("Delaunay Triangulation");
 }
 
-// TODO: Choose which insert_constraint_safely to keep
-bool InsetState::insert_constraint_safely_to_dt(
-  Delaunay &dt,
-  const Point &p1,
-  const Point &p2)
-{
-  // Try-catch block to avoid inserting intersecting constraints
-  try {
-    dt.insert_constraint(p1, p2);
-    return true;
-  } catch (const std::exception &e) {
-    // Print more information about the exception
-    std::cerr << "WARNING (dt projected): Could not insert constraint between "
-              << p1 << " and " << p2 << std::endl;
-    std::cerr << e.what() << std::endl;
-    // Add to the list of failed constraints
-    failed_constraints_dt_projected_.push_back(Segment(p1, p2));
-    return false;
-  }
-}
-
-bool InsetState::insert_constraint_safely(const Point &p1, const Point &p2)
-{
-  // Try-catch block to avoid inserting intersecting constraints
-  try {
-    proj_qd_.dt.insert_constraint(p1, p2);
-    return true;
-  } catch (const std::exception &e) {
-    std::cerr << "WARNING DIAGONAL: Could not insert constraint between " << p1
-              << " and " << p2 << std::endl;
-    std::cerr << e.what() << std::endl;
-    // Add to the list of failed constraints
-    failed_constraints_.push_back(Segment(p1, p2));
-    return false;
-  }
-}
 void InsetState::update_delaunay_t()
 {
   timer.start("Update Delanuay Triangulation");

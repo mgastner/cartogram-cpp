@@ -136,7 +136,6 @@ public:
 
   Color color_at(const std::string &) const;
   bool color_found(const std::string &) const;
-  bool colors_empty() const;
   unsigned int colors_size() const;
   bool continue_integrating() const;
   void create_and_store_quadtree_cell_corners();
@@ -201,11 +200,6 @@ public:
   void initialize_identity_proj();
   void insert_color(const std::string &, const Color &);
   void insert_color(const std::string &, std::string &);
-  bool insert_constraint_safely(const Point &p1, const Point &p2);
-  bool insert_constraint_safely_to_dt(
-    Delaunay &dt,
-    const Point &p1,
-    const Point &p2);
   void insert_label(const std::string &, const std::string &);
   void insert_target_area(const std::string &, double);
   void insert_whether_input_target_area_is_missing(const std::string &, bool);
