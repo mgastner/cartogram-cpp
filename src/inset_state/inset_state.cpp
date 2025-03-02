@@ -564,7 +564,7 @@ void InsetState::create_and_refine_quadtree()
   if (threshold_at_integration_.count(n_finished_integrations_ - 1)) {
     high_thresh = threshold_at_integration_.at(n_finished_integrations_ - 1);
   }
-  const int max_iterations = 50;
+  const int max_iterations = 25;
   const double threshold = find_threshold(
     qt,
     *this,
