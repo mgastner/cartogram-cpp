@@ -426,8 +426,8 @@ static std::vector<Point> get_unique_points(InsetState &inset_state)
   // Add boundary points to force lx * ly size Quadtree
   points.push_back(Point(0, 0));
   points.push_back(Point(0, inset_state.ly()));
-  points.push_back(Point(inset_state.ly(), 0));
-  points.push_back(Point(inset_state.ly(), inset_state.ly()));
+  points.push_back(Point(inset_state.lx(), 0));
+  points.push_back(Point(inset_state.lx(), inset_state.ly()));
 
   // Remove duplicates
   std::unordered_set<Point> unique_points(points.begin(), points.end());
