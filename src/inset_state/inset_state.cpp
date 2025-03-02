@@ -924,9 +924,7 @@ void InsetState::adjust_grid()
   if (
     n_finished_integrations_ > 4 &&
     curr_max_area_error >=
-      0.999 * max_area_errors_[n_finished_integrations_ - 1] &&
-    curr_max_area_error >=
-      0.999 * max_area_errors_[n_finished_integrations_ - 2]) {
+      0.999 * max_area_errors_[n_finished_integrations_ - 1]) {
 
     // Multiply grid size with factor
     std::cerr << "Adjusting grid size." << std::endl;
