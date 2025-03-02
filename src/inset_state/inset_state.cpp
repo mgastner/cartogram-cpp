@@ -490,16 +490,23 @@ static double find_threshold(
   const int max_iterations)
 {
   double threshold = high_thresh;
+  // First, check if the high threshold is too low
   {
     Quadtree qt_copy = base_qt;
     refine_quadtree_with_threshold(qt_copy, high_thresh, depth, state);
-    const int leaves = count_leaf_nodes(qt_copy);
-    std::cerr << "Max threshold = " << high_thresh
+    int leaves = count_leaf_nodes(qt_copy);
+    std::cerr << "Initial high threshold = " << high_thresh
               << ", leaf nodes = " << leaves << std::endl;
-    if (leaves >= target_leaf_count) {
-      std::cerr << "Max threshold already sufficient. Skipping search..."
-                << std::endl;
-      return high_thresh;
+
+    // If the leaf count is more than 5 * target_leaf_count,
+    // increase the high threshold to lower the leaf count
+    while (leaves > 5 * target_leaf_count) {
+      high_thresh *= 2;
+      Quadtree qt_copy = base_qt;
+      refine_quadtree_with_threshold(qt_copy, high_thresh, depth, state);
+      leaves = count_leaf_nodes(qt_copy);
+      std::cerr << "Adjusted high threshold = " << high_thresh
+                << ", leaf nodes = " << leaves << std::endl;
     }
   }
 
