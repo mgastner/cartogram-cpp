@@ -123,6 +123,7 @@ bool InsetState::continue_integrating() const
     // Print next integration information.
     std::cerr << "\nIntegration number " << n_finished_integrations()
               << std::endl;
+    std::cerr << "Dimensions : " << lx_ << " " << ly_ << std::endl;
     std::cerr << "Number of Points: " << n_points() << std::endl;
   }
   return continue_integration;
