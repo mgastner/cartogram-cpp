@@ -966,6 +966,8 @@ void InsetState::adjust_grid()
     initialize_cum_proj();
     set_area_errors();
 
+    threshold_at_integration_.clear();
+
     Bbox bb = bbox();
     std::cerr << "New grid dimensions: " << lx_ << " " << ly_
               << " with bounding box\n\t(" << bb.xmin() << ", " << bb.ymin()
