@@ -270,65 +270,44 @@ void process_geo_divisions_edge_info(
   std::vector<PolygonInfo> &all_pwh_info,
   InsetState &inset_state)
 {
-  std::vector<GridCellPolygon> global_edge_info;
-  global_edge_info.reserve(10000);
+  for (unsigned int gd_id = 0; gd_id < inset_state.geo_divs().size();
+       ++gd_id) {
+    const GeoDiv &gd = inset_state.geo_divs()[gd_id];
+    for (unsigned int pwh_id = 0; pwh_id < gd.n_polygons_with_holes();
+         ++pwh_id) {
+      const Polygon_with_holes &pwh = gd.polygons_with_holes()[pwh_id];
+      const PolygonInfo outer_info{
+        gd_id,
+        static_cast<unsigned int>(all_pwh_info.size()),
+        pwh_id,
+        false,
+        0};
+      const GridCoordinates outer_cells =
+        rasterize_polygon_edges(pwh.outer_boundary());
+      for (const auto &cell : outer_cells) {
+        const auto &[x, y] = cell;
+        is_edge[x][y] = true;
+        grid_cell_polygons[x][y].push_back(outer_info);
+      }
 
-#pragma omp parallel
-  {
-    std::vector<GridCellPolygon> local_edge_info;
-#pragma omp for nowait schedule(dynamic)
-    for (unsigned int gd_id = 0; gd_id < inset_state.geo_divs().size();
-         ++gd_id) {
-      const GeoDiv &gd = inset_state.geo_divs()[gd_id];
-      for (unsigned int pwh_id = 0; pwh_id < gd.n_polygons_with_holes();
-           ++pwh_id) {
-        const Polygon_with_holes &pwh = gd.polygons_with_holes()[pwh_id];
-        const PolygonInfo outer_info{
+      for (unsigned int hole_id = 0; hole_id < pwh.number_of_holes();
+           ++hole_id) {
+        const Polygon &hole = pwh.holes()[hole_id];
+        const GridCoordinates hole_cells = rasterize_polygon_edges(hole);
+        const PolygonInfo hole_info{
           gd_id,
           static_cast<unsigned int>(all_pwh_info.size()),
           pwh_id,
-          false,
-          0};
-        const GridCoordinates outer_cells =
-          rasterize_polygon_edges(pwh.outer_boundary());
-        for (const auto &cell : outer_cells) {
+          true,
+          hole_id};
+        for (const auto &cell : hole_cells) {
           const auto &[x, y] = cell;
-          local_edge_info.push_back({x, y, outer_info});
-        }
-        for (unsigned int hole_id = 0; hole_id < pwh.number_of_holes();
-             ++hole_id) {
-          const Polygon &hole = pwh.holes()[hole_id];
-          const GridCoordinates hole_cells = rasterize_polygon_edges(hole);
-          const PolygonInfo hole_info{
-            gd_id,
-            static_cast<unsigned int>(all_pwh_info.size()),
-            pwh_id,
-            true,
-            hole_id};
-          for (const auto &cell : hole_cells) {
-            const auto &[x, y] = cell;
-            local_edge_info.push_back({x, y, hole_info});
-          }
-        }
-#pragma omp critical
-        {
-          all_pwh_info.push_back(outer_info);
+          is_edge[x][y] = true;
+          grid_cell_polygons[x][y].push_back(hole_info);
         }
       }
+      all_pwh_info.push_back(outer_info);
     }
-#pragma omp critical
-    {
-      global_edge_info.insert(
-        global_edge_info.end(),
-        local_edge_info.begin(),
-        local_edge_info.end());
-    }
-  }
-
-  for (const auto &gcp : global_edge_info) {
-    const auto &[x, y, poly_info] = gcp;
-    is_edge[x][y] = true;
-    grid_cell_polygons[x][y].push_back(poly_info);
   }
 }
 
