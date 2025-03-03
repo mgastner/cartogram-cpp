@@ -121,47 +121,79 @@ double compute_square_polygon_with_holes_overlap_area(
 // ---------------------------------------------------------------------
 
 // Compute a supercover line (returns grid cells traversed by the
-// line) based on modified Bresenham's line algorithm. Not perfectly accurate
-// but accuracy is very high
-GridCoordinates compute_supercover_line(int x0, int y0, int x1, int y1)
+// line) based on Amanatides–Woo's line algorithm. Perfectly accurate
+GridCoordinates compute_supercover_line(
+  double x0,
+  double y0,
+  double x1,
+  double y1)
 {
   GridCoordinates cells;
-  int dx = std::abs(x1 - x0);
-  int dy = std::abs(y1 - y0);
-  int x_inc = (x1 > x0) ? 1 : (x1 < x0 ? -1 : 0);
-  int y_inc = (y1 > y0) ? 1 : (y1 < y0 ? -1 : 0);
-  int error = dx - dy;
-  int dx2 = dx * 2;
-  int dy2 = dy * 2;
 
-  int x = x0;
-  int y = y0;
-  cells.push_back({x, y});
-  while (x != x1 || y != y1) {
-    if (std::abs(error) <= 1) {
-      // Include both adjacent cells.
-      cells.push_back({x + x_inc, y});
-      cells.push_back({x, y + y_inc});
-      if (error == 0) {
-        x += x_inc;
-        y += y_inc;
-        error = error + dx2 - dy2;
-      } else if (error > 0) {
-        x += x_inc;
-        error -= dy2;
-      } else {
-        y += y_inc;
-        error += dx2;
-      }
-    } else if (error > 0) {
-      x += x_inc;
-      error -= dy2;
-    } else {
-      y += y_inc;
-      error += dx2;
-    }
-    cells.push_back({x, y});
+  // Determine the starting and ending grid cell coordinates
+  int cell_x = static_cast<int>(std::floor(x0));
+  int cell_y = static_cast<int>(std::floor(y0));
+  int end_cell_x = static_cast<int>(std::floor(x1));
+  int end_cell_y = static_cast<int>(std::floor(y1));
+
+  cells.push_back({cell_x, cell_y});
+
+  // Ray direction
+  double delta_x = x1 - x0;
+  double delta_y = y1 - y0;
+
+  // Step direction
+  int step_x = (delta_x > 0) ? 1 : (delta_x < 0 ? -1 : 0);
+  int step_y = (delta_y > 0) ? 1 : (delta_y < 0 ? -1 : 0);
+
+  // These represent how far along the ray we must move (in t, where 0 <= t <=
+  // 1) to cross a cell boundary in the respective direction
+  double t_delta_x = (delta_x != 0) ? 1.0 / std::abs(delta_x)
+                                    : std::numeric_limits<double>::infinity();
+  double t_delta_y = (delta_y != 0) ? 1.0 / std::abs(delta_y)
+                                    : std::numeric_limits<double>::infinity();
+
+  // The parametric distance along the ray until we reach the first vertical
+  // (or horizontal) grid line
+  double t_max_x, t_max_y;
+  if (delta_x != 0) {
+    if (step_x > 0)
+      t_max_x = ((cell_x + 1) - x0) / delta_x;
+    else
+      t_max_x = (x0 - cell_x) / -delta_x;
+  } else {
+    t_max_x = std::numeric_limits<double>::infinity();
   }
+
+  if (delta_y != 0) {
+    if (step_y > 0)
+      t_max_y = ((cell_y + 1) - y0) / delta_y;
+    else
+      t_max_y = (y0 - cell_y) / -delta_y;
+  } else {
+    t_max_y = std::numeric_limits<double>::infinity();
+  }
+
+  double t = 0.0;
+  // Traverse the grid until t exceeds 1 (the end of the segment) or we hit the
+  // end cell
+  while (t <= 1.0) {
+    if (t_max_x < t_max_y) {
+      cell_x += step_x;
+      t = t_max_x;
+      t_max_x += t_delta_x;
+    } else {
+      cell_y += step_y;
+      t = t_max_y;
+      t_max_y += t_delta_y;
+    }
+    if (t > 1.0)
+      break;
+    cells.push_back({cell_x, cell_y});
+    if (cell_x == end_cell_x && cell_y == end_cell_y)
+      break;
+  }
+
   return cells;
 }
 
@@ -174,11 +206,8 @@ GridCoordinates rasterize_polygon_edges(const Polygon &polygon)
   for (std::size_t i = 0; i < polygon.size(); ++i) {
     Point p0 = polygon[i];
     Point p1 = polygon[(i + 1) % polygon.size()];
-    int x0 = static_cast<int>(std::floor(p0.x()));
-    int y0 = static_cast<int>(std::floor(p0.y()));
-    int x1 = static_cast<int>(std::floor(p1.x()));
-    int y1 = static_cast<int>(std::floor(p1.y()));
-    GridCoordinates line_cells = compute_supercover_line(x0, y0, x1, y1);
+    GridCoordinates line_cells =
+      compute_supercover_line(p0.x(), p0.y(), p1.x(), p1.y());
     cells.insert(cells.end(), line_cells.begin(), line_cells.end());
   }
   return cells;
@@ -504,7 +533,8 @@ void compute_density_grid(
 // Testing and Debugging
 // ---------------------------------------------------------------------
 
-// Test function to compare the computed area with the actual area (brute force)
+// Test function to compare the computed area with the actual area (brute
+// force)
 void test_areas(
   const boost::multi_array<double, 2> &area_found,
   InsetState &inset_state)
@@ -555,7 +585,8 @@ void test_areas(
             << std::endl;
   std::cout << "Mean Absolute Error: " << mean_absolute_error << std::endl;
   std::cout << "Root Mean Square Error: " << root_mean_square_error
-            << std::endl << std::endl;
+            << std::endl
+            << std::endl;
 }
 
 void InsetState::fill_with_density_clip()
