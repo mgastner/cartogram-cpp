@@ -500,6 +500,64 @@ void compute_density_grid(
   }
 }
 
+// ---------------------------------------------------------------------
+// Testing and Debugging
+// ---------------------------------------------------------------------
+
+// Test function to compare the computed area with the actual area (brute force)
+void test_areas(
+  const boost::multi_array<double, 2> &area_found,
+  InsetState &inset_state)
+{
+  const unsigned int lx = inset_state.lx();
+  const unsigned int ly = inset_state.ly();
+  boost::multi_array<double, 2> area_actual(boost::extents[lx][ly]);
+  std::fill_n(area_actual.data(), area_actual.num_elements(), 0.0);
+  for (unsigned int gd_id = 0; gd_id < inset_state.geo_divs().size();
+       ++gd_id) {
+    const GeoDiv &gd = inset_state.geo_divs()[gd_id];
+    for (const auto &pwh : gd.polygons_with_holes()) {
+      auto bbox = pwh.outer_boundary().bbox();
+      for (unsigned int i = std::max(0, static_cast<int>(bbox.xmin()));
+           i < std::min(lx, static_cast<unsigned int>(bbox.xmax()) + 1);
+           ++i) {
+        for (unsigned int j = std::max(0, static_cast<int>(bbox.ymin()));
+             j < std::min(ly, static_cast<unsigned int>(bbox.ymax()) + 1);
+             ++j) {
+
+          // Create a 1x1 cell
+          Polygon cell;
+          cell.push_back(Point(i, j));
+          cell.push_back(Point(i + 1, j));
+          cell.push_back(Point(i + 1, j + 1));
+          cell.push_back(Point(i, j + 1));
+
+          double intersect_area_pwh =
+            compute_square_polygon_with_holes_overlap_area(cell, pwh);
+          area_actual[i][j] += intersect_area_pwh;
+        }
+      }
+    }
+  }
+  // do m, mean absolute error, etc.
+  double absolute_error = 0.0;
+  double square_error = 0.0;
+  const unsigned int num_cells = lx * ly;
+  for (unsigned int i = 0; i < lx; ++i) {
+    for (unsigned int j = 0; j < ly; ++j) {
+      absolute_error += std::abs(area_actual[i][j] - area_found[i][j]);
+      square_error += std::pow(area_actual[i][j] - area_found[i][j], 2);
+    }
+  }
+  const double mean_absolute_error = absolute_error / num_cells;
+  const double root_mean_square_error = std::sqrt(square_error / num_cells);
+  std::cout << "Num Integration: " << inset_state.n_finished_integrations()
+            << std::endl;
+  std::cout << "Mean Absolute Error: " << mean_absolute_error << std::endl;
+  std::cout << "Root Mean Square Error: " << root_mean_square_error
+            << std::endl << std::endl;
+}
+
 void InsetState::fill_with_density_clip()
 {
   timer.start("Fill with Density (Clipping Method)");
@@ -563,6 +621,8 @@ void InsetState::fill_with_density_clip()
     comp_id_to_pwh_id,
     gd_target_density,
     *this);
+
+  // test_areas(area_filled, *this);
 
   // Step 5: Compute ocean density and adjust remaining cells
   double ocean_density =
