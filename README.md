@@ -80,6 +80,40 @@ If you are using VScode, you may also install the program by running the `CMake:
 
 If you encounter any issues, please look at the troubleshooting section below, especially the last bullet point.
 
+#### Installing using Docker
+
+Alternatively, you can run the program on a Docker container using [Docker Desktop](https://www.docker.com/products/docker-desktop/) and the provided Dockerfile without the need to install it locally.
+
+* Open Command Prompt and navigate to the project folder.
+
+* Build the Docker image using the command:
+
+```
+docker build --tag "<IMAGE_NAME>" .
+```
+where <IMAGE_NAME> is the name you wish to give the cartogram-cpp image.
+
+- Once the image building process is complete, run the image in a background Docker container using the command:
+
+```
+docker run -t -d --name <CONTAINER_NAME> <IMAGE_NAME>
+```
+where <CONTAINER_NAME> is the name you wish to give the cartogram-cpp container.
+
+- Once the Docker container is running, run cartogram commands in the container using the command:
+
+```
+docker exec -it <CONTAINER_NAME> <CARTOGRAM_COMMAND>
+```
+where <CARTOGRAM_COMMAND> is the cartogram command you wish to run.
+
+- To inspect the output files of the cartogram program within the Docker container, copy them to local using the command:
+
+```
+docker cp <CONTAINER_NAME>:/cartogram/<FILE_NAME> .
+```
+where <FILE_NAME> is the name of the file you wish to copy.
+
 ### Troubleshooting
 
 - If compilation suddenly stopped working for you, you may remove the `build` directory with `rm -rf build` and run the installation commands again.
