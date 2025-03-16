@@ -3,8 +3,6 @@ services:
     build: .
     volumes:
       - .:/cartogram
-    container_name: cartogram-cpp-ctnr
+    container_name: cartogram-cpp
     stdin_open: true
     tty: true
-    # Run entrypoint.sh upon starting container and keep running container after done
-    command: sh -c "bash entrypoint.sh && tail -f /dev/null"

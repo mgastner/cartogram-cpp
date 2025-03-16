@@ -82,35 +82,31 @@ If you encounter any issues, please look at the troubleshooting section below, e
 
 #### Installing using Docker
 
-Alternatively, you can run the program on a Docker container using [Docker Desktop](https://www.docker.com/products/docker-desktop/) and the provided Dockerfile without the need to install it locally.
+Alternatively, you can run the program on a Docker container using [Docker Desktop](https://www.docker.com/products/docker-desktop/) without the need to install it locally.
 
 1. Open Command Prompt and navigate to the project folder.
 
-2. Build the Docker image using the command:
+2. Build the Docker image and container using the command:
 
 ```
-docker build --tag "cartogram-img" .
+docker compose up -d
 ```
 
-3. Once the image building process is complete, run the image in a background Docker container using the command:
+3. Once the building process is complete, access the container's shell using the command:
 
 ```
-docker run -t -d --name cartogram-ctnr cartogram-img
+docker exec -it cartogram-cpp /bin/bash
 ```
+From then on, you can run cartogram commands as per usual in the container's shell.
 
-4. Once the Docker container is running, run cartogram commands in the container using the command:
-
-```
-docker exec -it cartogram-ctnr <CARTOGRAM_COMMAND>
-```
-where <CARTOGRAM_COMMAND> is the cartogram command you wish to run.
-
-5. To inspect the output files of the cartogram program within the Docker container, copy them to local using the command:
+4. Once inside the container's shell, compile and build the cartogram-cpp program by running the build shell script using the command:
 
 ```
-docker cp cartogram-ctnr:/cartogram/<FILE_NAME> .
+bash build.sh
 ```
-where <FILE_NAME> is the name of the file you wish to copy.
+Once the process is done, you can then run cartogram commands as per usual in the container's shell. You can also compile any changes made to the project code by running the build shell script again.
+
+5. The project folder is mounted on the Docker container so any output files from the cartogram-cpp program can be found in your project folder on your local environment.
 
 ### Troubleshooting
 
