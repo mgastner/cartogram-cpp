@@ -9,3 +9,14 @@ ENV IN_DOCKER_CONTAINER=true
 
 # Create and set working directory to "cartogram"
 WORKDIR /cartogram
+
+# Copy over all project files
+COPY . .
+
+# Build and install the cartogram-cpp program
+RUN cmake -B build-docker
+RUN make -C build-docker
+RUN make install -C build-docker
+
+# Change working directory to output folder
+WORKDIR /cartogram/output

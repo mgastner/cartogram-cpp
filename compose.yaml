@@ -2,7 +2,7 @@ services:
   cartogram:
     build: .
     volumes:
-      - .:/cartogram
+      - ./output:/cartogram/output
     container_name: cartogram-cpp
     stdin_open: true
     tty: true
