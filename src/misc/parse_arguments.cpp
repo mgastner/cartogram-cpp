@@ -119,7 +119,7 @@ void parsed_arguments(
     .help(pre + "IDs of geographic divisions [default: 1st CSV column header]");
   arguments.add_argument("-A", "--area")
     .help(pre + "target areas [default: 2nd CSV column]");
-  arguments.add_argument("-C", "--color")
+  arguments.add_argument("-C", "--color", "--colour")
     .default_value(std::string("Color"))
     .help(pre + "colors");
   arguments.add_argument("-L", "--label")
