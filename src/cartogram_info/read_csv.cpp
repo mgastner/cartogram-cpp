@@ -2,11 +2,11 @@
 #include "csv.hpp"
 #include "string_to_decimal_converter.hpp"
 
-csv::CSVReader load_csv(const argparse::ArgumentParser &arguments)
+csv::CSVReader load_csv(const Arguments &args)
 {
   // Retrieve CSV Name
   const std::string csv_filename =
-    arguments.get<std::string>("visual_variable_file");
+    args.visual_file_name;
 
   // Open CSV Reader
   csv::CSVReader reader(csv_filename);
@@ -16,12 +16,12 @@ csv::CSVReader load_csv(const argparse::ArgumentParser &arguments)
 
 int extract_id_header_col_index(
   const csv::CSVReader &reader,
-  const argparse::ArgumentParser &arguments)
+  const Arguments &args)
 {
   // Find index of column with IDs. If no ID column header was passed with the
   // command-line flag --id, the ID column is assumed to have index 0
   int id_col = 0;
-  if (auto is_id_header = arguments.present<std::string>("-D")) {
+  if (auto is_id_header = args.id_col) {
     const std::string id_header = *is_id_header;
     id_col = reader.index_of(id_header);
   }
@@ -31,13 +31,13 @@ int extract_id_header_col_index(
 
 int extract_area_col_index(
   const csv::CSVReader &reader,
-  const argparse::ArgumentParser &arguments)
+  const Arguments &args)
 {
   // Find index of column with target areas. If no area column header was
   // passed with the command-line flag --area, the area column is assumed to
   // have index 1
   int area_col = 1;
-  if (auto area_header = arguments.present<std::string>("-A")) {
+  if (auto area_header = args.area_col) {
     area_col = reader.index_of(*area_header);
   }
 
@@ -46,12 +46,12 @@ int extract_area_col_index(
 
 int extract_inset_col_index(
   const csv::CSVReader &reader,
-  const argparse::ArgumentParser &arguments)
+  const Arguments &args)
 {
   // Find index of column with inset specifiers. If no inset column header was
   // passed with the command-line flag --inset, the header is assumed to be
   // "Inset". This default value is set in parse_arguments.cpp.
-  auto inset_header = arguments.get<std::string>("-I");
+  auto inset_header = args.inset_col;
   int inset_col = reader.index_of(inset_header);
 
   return inset_col;
@@ -59,12 +59,12 @@ int extract_inset_col_index(
 
 int extract_color_col_index(
   const csv::CSVReader &reader,
-  const argparse::ArgumentParser &arguments)
+  const Arguments &args)
 {
   // Find index of column with color specifiers. If no color column header was
   // passed with the command-line flag --color, the header is assumed to be
   // "Color".
-  auto color_header = arguments.get<std::string>("-C");
+  auto color_header = args.color_col;
   int color_col = reader.index_of(color_header);
 
   return color_col;
@@ -72,10 +72,10 @@ int extract_color_col_index(
 
 int extract_label_col_index(
   const csv::CSVReader &reader,
-  const argparse::ArgumentParser &arguments)
+  const Arguments &args)
 {
   // Default: "Label".
-  auto label_header = arguments.get<std::string>("-L");
+  auto label_header = args.label_col;
   int label_col = reader.index_of(label_header);
 
   return label_col;
@@ -307,15 +307,15 @@ void process_area_strs(
   }
 }
 
-void CartogramInfo::read_csv(const argparse::ArgumentParser &arguments)
+void CartogramInfo::read_csv(const Arguments &args)
 {
-  csv::CSVReader reader = load_csv(arguments);
+  csv::CSVReader reader = load_csv(args);
 
-  const int id_col = extract_id_header_col_index(reader, arguments);
-  const int area_col = extract_area_col_index(reader, arguments);
-  const int inset_col = extract_inset_col_index(reader, arguments);
-  const int color_col = extract_color_col_index(reader, arguments);
-  const int label_col = extract_label_col_index(reader, arguments);
+  const int id_col = extract_id_header_col_index(reader, args);
+  const int area_col = extract_area_col_index(reader, args);
+  const int inset_col = extract_inset_col_index(reader, args);
+  const int color_col = extract_color_col_index(reader, args);
+  const int label_col = extract_label_col_index(reader, args);
 
   std::map<std::string, std::map<std::string, std::string>> csv_data;
   for (auto &row : reader) {

@@ -59,10 +59,17 @@ struct Arguments {
   bool plot_polygons;
   bool plot_quadtree;
   bool skip_projection;
+
+  // Column names in provided visual variables file (CSV)
+  std::optional<std::string> id_col;
+  std::optional<std::string> area_col;
+  std::string inset_col;
+  std::string color_col;
+  std::string label_col;
 };
 
 // Function to parse arguments and set variables in main()
-argparse::ArgumentParser parsed_arguments(
+void parsed_arguments(
   int argc,
   const char *argv[],
   Arguments &args);
