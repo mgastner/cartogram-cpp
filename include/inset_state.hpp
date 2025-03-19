@@ -9,7 +9,7 @@
 #include "time_tracker.hpp"
 #include <boost/multi_array.hpp>
 #include <cairo/cairo.h>
-#include <nlohmann/json.hpp>
+#include "json.hpp"
 #include "progress_tracker.hpp"
 
 struct max_area_error_info {
