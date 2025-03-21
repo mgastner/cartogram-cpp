@@ -1,14 +1,5 @@
-# Check if inside Docker or non-Docker environment
-if [[ "$IN_DOCKER_CONTAINER" && "$IN_DOCKER_CONTAINER" == "true" ]]; then
-    # Build and install program using build-docker folder if set inside Docker container
-    cmake -B build-docker
-    make -C build-docker
-    make install -C build-docker
-else
-    # Build and install program using build folder if not set inside Docker container
-    cmake -B build
-    make -C build
-    sudo make install -C build
-fi
+# Set the build directory from $BUILD_DIR if set, otherwise default to "build"
+BUILD_DIR=${BUILD_DIR:-build}
 
-echo "---PROGRAM BUILD DONE---"
+cmake -B "$BUILD_DIR"
+sudo make install -j4 -C "$BUILD_DIR"

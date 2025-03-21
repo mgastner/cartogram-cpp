@@ -58,21 +58,11 @@ We recommend you to compile outside the `/mnt` directory, as compiling in the `/
 
 ### Installation
 
-Go to the `cartogram-cpp` directory in your preferred terminal and execute the following commands.
+Go to the `cartogram-cpp` directory in your preferred terminal and execute the following command.
 
-```shell script
-cmake -B build
-make -C build
-sudo make install -C build
+```bash
+bash build.sh
 ```
-
-If your computer has multiple cores, you may use the `make` command with the `-j` flag to use all your cores, or `-j` followed by a number to use the specified number of cores (for example, `-j4` to use 4 cores). You may perform the entire installation at once with:
-
-```shell script
-sudo cmake -B build && sudo make install -j -C build
-```
-
-Using lesser cores than you have is recommended so that your computer still has some headroom for other tasks. Thus, it may be a good idea for you to modify the above snippet, appending your preferred number of cores to `-j`.
 
 #### Installing using VScode
 
@@ -82,35 +72,41 @@ If you encounter any issues, please look at the troubleshooting section below, e
 
 #### Installing using Docker
 
-Alternatively, you can run the program on a Docker container using [Docker Desktop](https://www.docker.com/products/docker-desktop/) without the need to install it locally.
+If you prefer, you may run the program in an isolated environment using [Docker Desktop](https://www.docker.com/products/docker-desktop/).
 
-1. Before starting, create an empty folder called "output" inside the project folder.
+1. Start the Docker container by executing the command below. Please note, the first time you run this command may take longer as Docker will download the necessary images and build the container. Subsequent runs should get the container up and running right away.
 
-2. Open Command Prompt and navigate to the project folder.
-
-3. Build the Docker image and container using the command:
-
-```
+```bash
 docker compose up -d
 ```
 
-4. Once the building process is complete, access the container's shell using the command:
+2. Once the Docker container is up and running, you may access the container's shell by executing:
 
-```
+```bash
 docker exec -it cartogram-cpp /bin/bash
 ```
-From then on, you can run cartogram commands as per usual in the container's shell.
 
-5. The output folder is mounted on the Docker container so any output files from the cartogram-cpp program can be found in your output folder on your local environment.
+From there, you can run commands with `cartogram` as usual. By default, you should find yourself in the `/cartogram/output` directory, which is mounted to the `output` directory in the repository root on your local environment. This means that any files you generate in `/cartogram/output` should also be available in the `output` directory in the repository root, and vice-versa. You can test out how this works by running the following command:
 
-6. The cartogram-cpp program should automatically be compiled and built when you first create the container. To compile new changes made to the project code, run the build shell script using the command:
-
+```bash
+cartogram ../sample_data/world_by_country_since_2022/world_by_country_since_2022.geojson ../sample_data/world_by_country_since_2022/world_population_by_country_2010.csv --plot_polygons --world
 ```
+
+To stop the Docker container, execute:
+
+```bash
+docker compose down
+```
+
+To compile code changes within the Docker container, run the following command from the `/cartogram` directory:
+
+```bash
 bash build.sh
-``` 
+```
 
 ### Troubleshooting
 
+- If you are unable to copmile on the latest version of Ubuntu, please open an issue. In the meanwhile, follow the instructions for installation via Docker.
 - If compilation suddenly stopped working for you, you may remove the `build` directory with `rm -rf build` and run the installation commands again.
 - If running `cmake -B build` gives you an error, it is likely that a dependency was not installed correctly. Rerun the appropriate commands above to install the required dependencies and try again.
 - If you get an error which mentions permission issues, try running the command that gave you the error with `sudo` prefixed, as done with `sudo make install -C build` above.
