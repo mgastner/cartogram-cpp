@@ -200,3 +200,12 @@ void GeoDiv::sort_pwh_descending_by_area()
     polygons_with_holes_.end(),
     pwh_is_larger);
 }
+
+void GeoDiv::update_id(const std::string &new_id)
+{
+  id_ = new_id;
+
+  // TODO: Update id in adjacent_geodivs_ as well. Even though
+  // adjacent_geodivs_ will not be populated yet when this function is called,
+  // it is a good idea to update it here.
+}

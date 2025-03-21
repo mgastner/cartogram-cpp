@@ -3,9 +3,10 @@
 
 #include <limits>
 #include <numbers>
+#include <string>
 
 constexpr unsigned int default_long_grid_length = 256;
-constexpr unsigned int max_allowed_autoscale_grid_length = 1024;
+constexpr unsigned int max_allowed_autoscale_grid_length = 2048;
 constexpr unsigned int default_grid_factor = 2;
 constexpr double dbl_epsilon = std::numeric_limits<double>::epsilon();
 constexpr double dbl_inf = std::numeric_limits<double>::infinity();
@@ -62,5 +63,8 @@ constexpr double xi_sq = 4.0;
 // coordinate system in which the inset frame has a width of lx and a height of
 // ly
 constexpr unsigned int plotted_cell_length = 8;
+
+// String to identify our custom CRS
+constexpr const char* custom_crs = "EPSG:cartesian";
 
 #endif // CONST_HPP_

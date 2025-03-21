@@ -1,8 +1,22 @@
 #include "cartogram_info.hpp"
 #include "constants.hpp"
 
-void CartogramInfo::shift_insets_to_target_position()
+void CartogramInfo::reposition_insets(bool output_to_stdout)
 {
+
+  // Warn user about repositoning insets with `--skip_projection` flag
+  if (args_.skip_projection && n_insets() > 1) {
+    std::cerr << "WARNING: Trying to repostion insets with ";
+    if (crs_ == custom_crs) {
+      std::cerr << "custom coordinate reference system " << custom_crs << ". ";
+    } else {
+      std::cerr << "`--skip_projection` flag present. ";
+    }
+    std::cerr << "This implies that map has already been projected with "
+              << "standard parallels based on original, unprojected map. "
+              << "Insets may appear skewed. " << std::endl;
+  }
+
   // For simplicity's sake, let us formally insert bounding boxes for
   // all conceivable inset positions
   std::map<std::string, Bbox> bboxes;
@@ -12,8 +26,9 @@ void CartogramInfo::shift_insets_to_target_position()
   }
 
   // If the inset actually exists, we get its current bounding box
-  for (const auto &[inset_pos, inset_state] : inset_states_) {
-    bboxes.at(inset_pos) = inset_state.bbox();
+  for (const InsetState &inset_state : inset_states_) {
+    std::string inset_pos = inset_state.pos();
+    bboxes.at(inset_pos) = inset_state.bbox(output_to_stdout);
   }
 
   // Calculate the width and height of all positioned insets without spacing
@@ -41,7 +56,8 @@ void CartogramInfo::shift_insets_to_target_position()
 
   // Spacing between insets
   const double inset_spacing = std::max(width, height) * inset_spacing_factor;
-  for (auto &[inset_pos, inset_state] : inset_states_) {
+  for (InsetState &inset_state : inset_states_) {
+    std::string inset_pos = inset_state.pos();
 
     // Assuming X and Y value of translation vector to be 0 to begin with
     double x = 0;
@@ -82,6 +98,10 @@ void CartogramInfo::shift_insets_to_target_position()
       CGAL::Vector_2<Scd>(x, y));
 
     // Apply translation to all points
-    inset_state.transform_points(translate);
+    inset_state.transform_points(translate, false);
+
+    if (output_to_stdout) {
+      inset_state.transform_points(translate, true);
+    }
   }
 }

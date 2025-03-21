@@ -16,10 +16,10 @@ void InsetState::holes_inside_polygons() const
           // "do_intersect(Polygon, Polygon)" may help.
           if (ext_ring.bounded_side(p) == CGAL::ON_UNBOUNDED_SIDE) {
             CGAL::set_pretty_mode(std::cerr);
-            std::cerr << "Hole detected outside polygon!" << std::endl;
-            std::cerr << "Hole: " << h << std::endl;
-            std::cerr << "Polygon: " << ext_ring << std::endl;
-            std::cerr << "GeoDiv: " << gd.id() << std::endl;
+            std::cerr << "ERROR: Hole detected outside polygon!";
+            std::cerr << " Hole: " << h;
+            std::cerr << ". Polygon: " << ext_ring;
+            std::cerr << ". GeoDiv: " << gd.id() << std::endl;
             _Exit(20);
           }
         }
@@ -30,20 +30,26 @@ void InsetState::holes_inside_polygons() const
 
 void InsetState::is_simple(const char *caller_func) const
 {
+  if (!args_.simplify) return;
+
+  // Only check topology if simplification and densification is enabled.
   for (const auto &gd : geo_divs_) {
     for (const auto &pwh : gd.polygons_with_holes()) {
       if (!pwh.outer_boundary().is_simple()) {
         std::cerr << "ERROR: Outer boundary is not simple for GeoDiv "
-                  << gd.id() << std::endl;
-        std::cerr << "is_simple() called from " << caller_func << std::endl;
+                  << gd.id();
+        std::cerr << ". is_simple() called from " << caller_func << std::endl;
         write_cairo_map(
           inset_name_ + "_" + std::to_string(n_finished_integrations_) +
             "_not_simple_after_" + caller_func,
           false);
         exit(1);
       }
-      for (const auto &h : pwh.holes()) { if (!h.is_simple()) { std::cerr << gd.id() << std::endl; std::cerr << "ERROR: Hole is not simple for GeoDiv " << gd.id() << std::endl;
-          std::cerr << "is_simple() called from " << caller_func << std::endl;
+      for (const auto &h : pwh.holes()) {
+        if (!h.is_simple()) {
+          std::cerr << "ERROR: Hole is not simple for GeoDiv " << gd.id();
+          std::cerr << ". is_simple() called from " << caller_func
+                    << std::endl;
           write_cairo_map(
             inset_name_ + "_" + std::to_string(n_finished_integrations_) +
               "_not_simple_after_" + caller_func,

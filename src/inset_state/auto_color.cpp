@@ -4,6 +4,9 @@
 // Function to automatically color topology based on contiguity graph
 void InsetState::auto_color()
 {
+  // Colors are already provided
+  if (!colors_.empty()) return;
+
   std::vector<Color> palette;
 
   // Using default palette for now
@@ -19,7 +22,7 @@ void InsetState::auto_color()
   palette.emplace_back("#fccde5");  // pink
 
   // Find resolution
-  const unsigned int resolution = default_resolution;
+  const unsigned int resolution = intersections_resolution;
 
   // Create continuity graph based on vertical and horizontal scanlines
   create_contiguity_graph(resolution);

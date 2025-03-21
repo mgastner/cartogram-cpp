@@ -8,7 +8,10 @@ following the naming convention:
 `(geographic_region)_by_(division)_(optional_descrip)_(year[s])`
 
 Names of geographic regions and administrative divisions should be in British
-English.
+English. Please refrain from using diacritics in the names of the directories
+and files. For instance, `metropolitan_france_population_by_département_2022`
+should be titled `metropolitan_france_population_by_department_2022`.
+
 Years refer to the time when the administrative divisions existed (both with
 the boundaries and the names in the files stored in this directory), not the
 years when the data were obtained.

@@ -18,7 +18,7 @@ git clone --recurse-submodules https://github.com/mgastner/cartogram-cpp.git
 
 ## Dependencies
 
-Please note, we only support UNIX-based systems, and have only tested on macOS, Linux, and GNU.
+Please note, we only support UNIX-based systems, and have only tested on macOS, Linux, and GNU. That being said, the program should work on Windows Subsystem for Linux (WSL) as well, for which we have conducted minor testing.
 
 ### macOS
 
@@ -45,26 +45,24 @@ brew install libomp pkg-config boost fftw nlohmann-json cmake cairo
 Have a look through to apt-requirements.txt if you'd like to see what all will be installed. Then, run the following commands to install all dependencies through apt:
 
 ```shell script
-apt install -y g++-11 build-essential cmake libboost-all-dev nlohmann-json3-dev libomp-dev libfftw3-dev libcairo2-dev
+apt install -y g++-11 build-essential cmake libboost-all-dev nlohmann-json3-dev libomp-dev libfftw3-dev libcairo2-dev libmpfr-dev libgmp-dev libboost-dev
 ```
+
+### Windows (Using WSL)
+
+For Windows users, we recommend using our program through Windows Subsystem for Linux (WSL).
+
+Please install [Ubuntu](https://apps.microsoft.com/detail/9pdxgncfsczv) from the Microsoft Store, and then follow the same instructions as for Debian-based distributions (found above).
+
+We recommend you to compile outside the `/mnt` directory, as compiling in the `/mnt` directory may lead to unexpected behavior.
 
 ### Installation
 
-Go to the `cartogram-cpp` directory in your preferred terminal and execute the following commands.
+Go to the `cartogram-cpp` directory in your preferred terminal and execute the following command.
 
-```shell script
-cmake -B build
-make -C build
-sudo make install -C build
+```bash
+bash build.sh
 ```
-
-If your computer has multiple cores, you may use the `make` command with the `-j` flag to use all your cores, or `-j` followed by a number to use the specified number of cores (for example, `-j4` to use 4 cores). You may perform the entire installation at once with:
-
-```shell script
-sudo cmake -B build && sudo make install -j -C build
-```
-
-Using lesser cores than you have is recommended so that your computer still has some headroom for other tasks. Thus, it may be a good idea for you to modify the above snippet, appending your preferred number of cores to `-j`.
 
 #### Installing using VScode
 
@@ -72,8 +70,43 @@ If you are using VScode, you may also install the program by running the `CMake:
 
 If you encounter any issues, please look at the troubleshooting section below, especially the last bullet point.
 
+#### Installing using Docker
+
+If you prefer, you may run the program in an isolated environment using [Docker Desktop](https://www.docker.com/products/docker-desktop/).
+
+1. Start the Docker container by executing the command below. Please note, the first time you run this command may take longer as Docker will download the necessary images and build the container. Subsequent runs should get the container up and running right away.
+
+```bash
+docker compose up -d
+```
+
+2. Once the Docker container is up and running, you may access the container's shell by executing:
+
+```bash
+docker exec -it cartogram-cpp /bin/bash
+```
+
+From there, you can run commands with `cartogram` as usual. By default, you should find yourself in the `/cartogram/output` directory, which is mounted to the `output` directory in the repository root on your local environment. This means that any files you generate in `/cartogram/output` should also be available in the `output` directory in the repository root, and vice-versa. You can test out how this works by running the following command:
+
+```bash
+cartogram ../sample_data/world_by_country_since_2022/world_by_country_since_2022.geojson ../sample_data/world_by_country_since_2022/world_population_by_country_2010.csv --plot_polygons --world
+```
+
+To stop the Docker container, execute:
+
+```bash
+docker compose down
+```
+
+To compile code changes within the Docker container, run the following command from the `/cartogram` directory:
+
+```bash
+bash build.sh
+```
+
 ### Troubleshooting
 
+- If you are unable to copmile on the latest version of Ubuntu, please open an issue. In the meanwhile, follow the instructions for installation via Docker.
 - If compilation suddenly stopped working for you, you may remove the `build` directory with `rm -rf build` and run the installation commands again.
 - If running `cmake -B build` gives you an error, it is likely that a dependency was not installed correctly. Rerun the appropriate commands above to install the required dependencies and try again.
 - If you get an error which mentions permission issues, try running the command that gave you the error with `sudo` prefixed, as done with `sudo make install -C build` above.
@@ -120,12 +153,6 @@ cartogram sample_data/world_by_country_since_2022/world_by_country_since_2022.ge
 
 You may inspect the resultant SVG to check if everything looks as expected.
 
-### Contributing
-
-Contributions are highly encouraged! Please feel free to take a stab at any at any of the open issues and send in a pull request. If you need help getting setup or more guidance contributing, please @ any of the main contributors (@adisidev, @nihalzp, @mgastner) under any of the open issues (or after creating your own issue), and we'll be happy to guide you!
-
-Maintainers, please make sure to run the "Build and Release" workflow under GitHub Actions before approving the pull request. You may delete the newly created release before merging the pull-request. Another release should be automatically created after merging with main.
-
 ### Testing
 
 If you'd like to contribute to the project, please run our tests after you make any changes.
@@ -144,6 +171,26 @@ Additionally, you may go to the `cartogram-cpp/tests` directory and run the foll
 bash stress_test.sh
 ```
 
+### Benchmarking
+
+To benchmark the program, first install [hyperfine](https://github.com/sharkdp/hyperfine). You can install it using Homebrew on macOS:
+
+```shell script
+brew install hyperfine
+```
+
+Or using apt on Debian-based distributions:
+
+```shell script
+apt install hyperfine
+```
+
+Then, go to the `cartogram-cpp/tests` directory and run the following command:
+
+```shell script
+bash stress_test.sh
+```
+
 ### Uninstallation
 
 Go to the `cartogram-cpp` directory in your preferred terminal and execute the following command:
@@ -157,3 +204,14 @@ Upon successful uninstallation, the following will be outputted:
     > Built target uninstall
 
 Further, running `cartogram` should no longer work.
+
+### Pushing changes to [go-cart.io](https://go-cart.io)
+
+To push changes to production, please follow the the instructions on [go-cart-io/carotgram-docker](https://github.com/go-cart-io/cartogram-docker).
+
+
+### Contributing
+
+Contributions are highly encouraged! Please feel free to take a stab at any at any of the open issues and send in a pull request. If you need help getting setup or more guidance contributing, please @ any of the main contributors (@adisidev, @nihalzp, @mgastner) under any of the open issues (or after creating your own issue), and we'll be happy to guide you!
+
+Maintainers, please make sure to run the "Build and Release" workflow under GitHub Actions before approving the pull request. You may delete the newly created release before merging the pull-request. Another release should be automatically created after merging with main.

@@ -3,6 +3,60 @@
 #include "matrix.hpp"
 #include "round_point.hpp"
 
+void InsetState::project() {
+
+  if (args_.qtdt_method) {
+
+    // Update triangulation adding shorter diagonal as constraint for better shape similarity
+    update_delaunay_t();
+    if (args_.simplify) {
+      densify_geo_divs_using_delaunay_t();
+    }
+
+    // Plot if requested
+    if (args_.plot_quadtree) {
+      write_delaunay_triangles(
+        file_prefix_ + "c_updated_delaunay_t_after_flatten",
+        false);
+    }
+
+    // Project using the updated Delaunay triangulation and plot
+    project_with_delaunay_t(args_.redirect_exports_to_stdout);
+
+    if (args_.plot_quadtree) {
+      write_delaunay_triangles(
+        file_prefix_ + "d_projected_with_updated_delaunay_t",
+        true);
+    }
+
+  } else if (args_.triangulation) {
+
+    // Only densify if we will also simplify later.
+    if (args_.simplify) {
+
+      // Choose diagonals that are inside grid cells, then densify.
+      fill_grid_diagonals();
+      densify_geo_divs();
+    }
+
+    // Project with triangulation
+    project_with_triangulation();
+
+  } else {
+
+    // Project using bilinear interpolation
+    project_with_bilinear_interpolation();
+  }
+
+  if (args_.simplify) {
+
+    simplify(args_.target_points_per_inset);
+  }
+  if (args_.plot_intersections) {
+    write_intersections_image();
+  }
+}
+
 Point interpolate_point_bilinearly(
   const Point p1,
   const boost::multi_array<double, 2> &xdisp,
@@ -17,8 +71,9 @@ Point interpolate_point_bilinearly(
   return {p1.x() + intp_x, p1.y() + intp_y};
 }
 
-void InsetState::project()
+void InsetState::project_with_bilinear_interpolation()
 {
+  timer.start("Project (Bilinear Interpolation)");
   // Calculate displacement from proj array
   boost::multi_array<double, 2> xdisp(boost::extents[lx_][ly_]);
   boost::multi_array<double, 2> ydisp(boost::extents[lx_][ly_]);
@@ -70,6 +125,7 @@ void InsetState::project()
   // Apply "lambda" to all points
   transform_points(lambda);
   is_simple(__func__);
+  timer.stop("Project (Bilinear Interpolation)");
 }
 
 Point interpolate_point_with_barycentric_coordinates(
@@ -111,6 +167,7 @@ Point interpolate_point_with_barycentric_coordinates(
 
 void InsetState::project_with_delaunay_t(bool output_to_stdout)
 {
+  timer.start("Project (Delanuay Triangulation)");
   std::function<Point(Point)> lambda_bary =
     [&dt = proj_qd_.dt,
      &proj_map = proj_qd_.triangle_transformation](Point p1) {
@@ -122,6 +179,7 @@ void InsetState::project_with_delaunay_t(bool output_to_stdout)
     transform_points(lambda_bary, true);
   }
   is_simple(__func__);
+  timer.stop("Project (Delanuay Triangulation)");
 }
 
 // In chosen_diag() and transformed_triangle(), the input x-coordinates can
@@ -132,7 +190,7 @@ void InsetState::exit_if_not_on_grid_or_edge(const Point p1) const
   if (
     (p1.x() != 0.0 && p1.x() != lx_ && p1.x() - int(p1.x()) != 0.5) ||
     (p1.y() != 0.0 && p1.y() != ly_ && p1.y() - int(p1.y()) != 0.5)) {
-    std::cerr << "Error: Invalid input coordinate in triangulation\n"
+    std::cerr << "ERROR: Invalid input coordinate in triangulation. "
               << "\tpt = (" << p1.x() << ", " << p1.y() << ")" << std::endl;
     exit(1);
   }
@@ -153,6 +211,23 @@ Point InsetState::projected_point(const Point &p1, const bool project_original)
   return {
     (p1.x() == 0.0 || p1.x() == lx_) ? p1.x() : proj[proj_x][proj_y].x(),
     (p1.y() == 0.0 || p1.y() == ly_) ? p1.y() : proj[proj_x][proj_y].y()};
+}
+
+// Apply projection to all points in set
+void InsetState::project_point_set(
+  std::unordered_set<Point>& unprojected)
+{
+  std::function<Point(Point)> lambda_bary =
+    [&dt = proj_qd_.dt,
+     &proj_map = proj_qd_.triangle_transformation](Point p1) {
+      return interpolate_point_with_barycentric_coordinates(p1, dt, proj_map);
+    };
+  std::unordered_set<Point> projected;
+  for (const Point &pt : unprojected) {
+    Point pp = lambda_bary(pt);
+    projected.insert(pp);
+  }
+  unprojected = std::move(projected);
 }
 
 // TODO: chosen_diag() seems to be more naturally thought of as a boolean
@@ -226,6 +301,7 @@ int InsetState::chosen_diag(
 
 void InsetState::fill_grid_diagonals(const bool project_original)
 {
+  timer.start("Densification (using Grid Diagonals)");
   // Initialize array if running for the first time
   if (grid_diagonals_.shape()[0] != lx_ || grid_diagonals_.shape()[1] != ly_) {
     grid_diagonals_.resize(boost::extents[lx_ - 1][ly_ - 1]);
@@ -244,6 +320,7 @@ void InsetState::fill_grid_diagonals(const bool project_original)
     }
   }
   std::cerr << "Number of concave grid cells: " << n_concave << std::endl;
+  timer.stop("Densification (using Grid Diagonals)");
 }
 
 std::array<Point, 3> InsetState::transformed_triangle(
@@ -289,7 +366,7 @@ std::array<Point, 3> InsetState::untransformed_triangle(
   if (pt.x() < 0 || pt.x() > lx_ || pt.y() < 0 || pt.y() > ly_) {
     CGAL::set_pretty_mode(std::cerr);
     std::cerr << "ERROR: coordinate outside bounding box in " << __func__
-              << "().\npt = " << pt << std::endl;
+              << "(). pt = " << pt << std::endl;
     exit(1);
   }
 
@@ -441,6 +518,7 @@ Point InsetState::projected_point_with_triangulation(
 
 void InsetState::project_with_triangulation()
 {
+  timer.start("Project (Triangulation)");
   // Store reference to current object and call member function
   // projected_point_with_triangulation
   // https://www.nextptr.com/tutorial/ta1430524603/
@@ -460,6 +538,7 @@ void InsetState::project_with_triangulation()
     }
   }
   is_simple(__func__);
+  timer.stop("Project (Triangulation)");
 }
 
 void InsetState::project_with_cum_proj()

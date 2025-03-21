@@ -1,6 +1,7 @@
 #include "write_image.hpp"
 #include "constants.hpp"
 #include "inset_state.hpp"
+#include <unordered_set>
 
 // ======================== Basic Plotting ========================
 
@@ -25,12 +26,11 @@ void write_triangles_on_surface(
       p3 = proj.triangle_transformation.at(p3);
     }
 
-    // set width of line
-    cairo_set_line_width(cr, 0.05);
-
-    // set color
+    // set color and line width
     cairo_set_source_rgb(cr, clr.r, clr.g, clr.b);
+    cairo_set_line_width(cr, 1.5e-3 * ly);
 
+    // Start at one p1 and draw the triangle
     cairo_move_to(cr, p1.x(), ly - p1.y());
     cairo_line_to(cr, p2.x(), ly - p2.y());
     cairo_line_to(cr, p3.x(), ly - p3.y());
@@ -67,13 +67,25 @@ void write_point_on_surface(
   cairo_t *cr,
   const Point &pt,
   const Color &clr,
-  const unsigned int ly)
+  const unsigned int ly,
+  const double radius = 0.5)
 {
-  const double radius = 0.25;
   cairo_set_source_rgb(cr, clr.r, clr.g, clr.b);
   cairo_arc(cr, pt.x(), ly - pt.y(), radius, 0, 2 * pi);
   cairo_fill(cr);
   cairo_stroke(cr);
+}
+
+void write_point_set_on_surface(
+  cairo_t *cr,
+  std::unordered_set<Point> point_set,
+  const Color &clr,
+  const unsigned int ly,
+  const double radius = 0.5)
+{
+  for (const Point &pt : point_set) {
+    write_point_on_surface(cr, pt, clr, ly, radius);
+  }
 }
 
 void InsetState::write_polygon_points_on_surface(cairo_t *cr, Color clr)
@@ -122,16 +134,36 @@ void write_quadtree_rectangles_on_surface(
   }
 }
 
+// Paints cairo surface background to white
+void add_white_background(cairo_t *cr)
+{
+  cairo_set_source_rgb(cr, 1.0, 1.0, 1.0);
+  cairo_paint(cr);
+}
+
 void InsetState::write_delaunay_triangles(const std::string &filename, const bool draw_projected_points)
 {
+
   std::cerr << "Writing " << filename << ".svg" << std::endl;
   cairo_surface_t *surface =
     cairo_svg_surface_create((filename + ".svg").c_str(), lx_, ly_);
   cairo_t *cr = cairo_create(surface);
+  add_white_background(cr);
+
   write_segments_on_surface(cr, failed_constraints_dt_projected_, Color{1.0, 0.0, 0.0}, ly_);
   write_segments_on_surface(cr, failed_constraints_, Color{0.0, 0.0, 1.0}, ly_);
   write_triangles_on_surface(cr, proj_qd_, Color{0.6, 0.6, 0.6}, ly_, draw_projected_points);
-  write_polygon_points_on_surface(cr, Color{0.0, 0.0, 1.0});
+  write_polygons_on_surface(cr, false, false, false, 0.0, Color{1.0, 0.0, 0.0});
+
+  // Plot points added via densification
+  if (draw_projected_points) {
+    project_point_set(points_from_densification_);
+    project_point_set(points_before_densification_);
+  }
+
+  write_point_set_on_surface(cr, points_before_densification_, Color{0.0, 0.0, 0.0}, ly_, 0.95);
+  write_point_set_on_surface(cr, points_from_densification_, Color{0.149, 0.545, 0.824}, ly_, 0.8);
+
   cairo_show_page(cr);
   cairo_surface_destroy(surface);
   cairo_destroy(cr);
@@ -214,9 +246,15 @@ void InsetState::write_polygons_on_surface(
   cairo_t *cr,
   const bool fill_polygons,
   const bool colors,
-  const bool plot_grid) const
+  const bool plot_grid,
+  const double line_width,
+  const Color clr) const
 {
-  cairo_set_line_width(cr, 1e-3 * std::min(lx_, ly_));
+  if (line_width) {
+    cairo_set_line_width(cr, line_width);
+  } else {
+    cairo_set_line_width(cr, 1e-3 * std::min(lx_, ly_));
+  }
 
   // Draw the shapes
   for (const auto &gd : geo_divs_) {
@@ -242,11 +280,12 @@ void InsetState::write_polygons_on_surface(
         }
       }
       if (colors || fill_polygons) {
-        if (is_input_target_area_missing(gd.id())) {
+        // if (is_input_target_area_missing(gd.id())) {
 
-          // Fill path with dark gray
-          cairo_set_source_rgb(cr, 0.9375, 0.9375, 0.9375);
-        } else if (colors) {
+        //   // Fill path with dark gray
+        //   cairo_set_source_rgb(cr, 0.9375, 0.9375, 0.9375);
+        if (colors) {
+        // } else if (colors) {
 
           // Get color
           const auto col = color_at(gd.id());
@@ -264,7 +303,7 @@ void InsetState::write_polygons_on_surface(
         }
         cairo_fill_preserve(cr);
       }
-      cairo_set_source_rgb(cr, 0.0, 0.0, 0.0);
+      cairo_set_source_rgb(cr, clr.r, clr.g, clr.b);
       cairo_stroke(cr);
     }
   }
@@ -300,27 +339,40 @@ void InsetState::write_polygons_on_surface(
 
   // Plot the grid
   if (plot_grid) {
-    const unsigned int grid_line_spacing = 7;
+
+    // TODO: Use write_grid_on_surface instead, after fixing
+    // const double scale_factor = sqrt(total_inset_area() / (initial_target_area() * 10));
+    const std::vector<double> multipliers = {2, 5, 2};
+    double per_grid_cell = 1;
+
+    double total_area = total_inset_area();
+    // double total_area = equal_area_projection_area_to_earth_area(total_inset_area());
+    size_t multiplier_idx = 0;
+    while (per_grid_cell < 0.015 * total_area) {
+      per_grid_cell *= multipliers[multiplier_idx];
+      multiplier_idx = (multiplier_idx + 1) % multipliers.size();
+    }
+    std::cerr << "Total area: " << total_area << std::endl;
+    std::cerr << "Per grid cell: " << per_grid_cell << std::endl;
+    // per_grid_cell = earth_area_to_equal_area_projection_area(per_grid_cell);
+    const double grid_line_spacing = sqrt(per_grid_cell);
+    // const unsigned int grid_line_spacing = 7;
 
     // Set line width of grid lines
     cairo_set_line_width(cr, 5e-4 * std::min(lx_, ly_));
     cairo_set_source_rgb(cr, 0.0, 0.0, 0.0);
 
     // Vertical grid lines
-    for (unsigned int i = 0; i <= lx_; i += grid_line_spacing) {
-      cairo_move_to(cr, cum_proj_[i][0].x(), ly_ - cum_proj_[i][0].y());
-      for (unsigned int j = 1; j < ly_; ++j) {
-        cairo_line_to(cr, cum_proj_[i][j].x(), ly_ - cum_proj_[i][j].y());
-      }
+    for (double i = 0; i <= lx_; i += grid_line_spacing) {
+      cairo_move_to(cr, i, 0);
+      cairo_line_to(cr, i, ly_);
       cairo_stroke(cr);
     }
 
     // Horizontal grid lines
     for (unsigned int j = 0; j <= ly_; j += grid_line_spacing) {
-      cairo_move_to(cr, cum_proj_[0][j].x(), ly_ - cum_proj_[0][j].y());
-      for (unsigned int i = 1; i < lx_; ++i) {
-        cairo_line_to(cr, cum_proj_[i][j].x(), ly_ - cum_proj_[i][j].y());
-      }
+      cairo_move_to(cr, 0, j);
+      cairo_line_to(cr, lx_, j);
       cairo_stroke(cr);
     }
   }
@@ -385,6 +437,46 @@ void write_vectors_on_surface(
   }
 }
 
+void InsetState::write_grid_on_surface(cairo_t *cr) {
+
+    // TODO: Find out grid sizing
+
+    // const double scale_factor = sqrt(total_inset_area() / (initial_target_area() * 10));
+    const std::vector<double> multipliers = {2, 5, 2};
+    double per_grid_cell = 1;
+
+    double total_area = total_inset_area();
+    // double total_area = equal_area_projection_area_to_earth_area(total_inset_area());
+    size_t multiplier_idx = 0;
+    while (per_grid_cell < 0.015 * total_area) {
+      per_grid_cell *= multipliers[multiplier_idx];
+      multiplier_idx = (multiplier_idx + 1) % multipliers.size();
+    }
+    std::cerr << "Total area: " << total_area << std::endl;
+    std::cerr << "Per grid cell: " << per_grid_cell << std::endl;
+    // per_grid_cell = earth_area_to_equal_area_projection_area(per_grid_cell);
+    const double grid_line_spacing = sqrt(per_grid_cell);
+    // const unsigned int grid_line_spacing = 7;
+
+    // Set line width of grid lines
+    cairo_set_line_width(cr, 5e-4 * std::min(lx_, ly_));
+    cairo_set_source_rgb(cr, 0.0, 0.0, 0.0);
+
+    // Vertical grid lines
+    for (double i = 0; i <= lx_; i += grid_line_spacing) {
+      cairo_move_to(cr, i, 0);
+      cairo_line_to(cr, i, ly_);
+      cairo_stroke(cr);
+    }
+
+    // Horizontal grid lines
+    for (unsigned int j = 0; j <= ly_; j += grid_line_spacing) {
+      cairo_move_to(cr, 0, j);
+      cairo_line_to(cr, lx_, j);
+      cairo_stroke(cr);
+    }
+}
+
 // Outputs a SVG file
 void InsetState::write_cairo_polygons_to_svg(
   const std::string &fname,
@@ -406,6 +498,9 @@ void InsetState::write_cairo_polygons_to_svg(
 
 // TODO: DO WE NEED THIS FUNCTION? WOULD IT NOT MAKE MORE SENSE TO ONLY PRINT
 // FILE TYPES INDICATED BY COMMAND-LINE FLAGS?
+// TODO: Name should be something like write_svg, I don't think
+// it needs to be exposed that we are using cairo behind the
+// scenes.
 // Outputs both png and SVG files
 void InsetState::write_cairo_map(
   const std::string &file_name,
@@ -417,7 +512,7 @@ void InsetState::write_cairo_map(
   const std::unordered_map<Point, Vector> vectors) const
 {
   const auto svg_name = file_name + ".svg";
-  std::cerr << "Writing " << file_name << std::endl;
+  std::cerr << "Writing " << svg_name << std::endl;
 
   // Check whether the has all GeoDivs colored
   const bool has_colors = (colors_size() == n_geo_divs());
@@ -591,10 +686,7 @@ void InsetState::write_grid_heatmap_image(
   cairo_surface_t *surface;
   surface = cairo_svg_surface_create(filename.c_str(), lx_, ly_);
   cairo_t *cr = cairo_create(surface);
-
-  // White background
-  cairo_set_source_rgb(cr, 1.0, 1.0, 1.0);
-  cairo_paint(cr);
+  add_white_background(cr);
 
   // Get inset areas
   const double total_ta = total_target_area();
@@ -886,10 +978,9 @@ void InsetState::write_legend_on_surface(cairo_t *cr, bool equal_area_map)
 
 void InsetState::write_density_image(
   const std::string filename,
-  const double *density,
   const bool plot_pycnophylactic)
 {
-
+  double *density = rho_init_.as_1d_array();
   std::cerr << "Writing " << filename << std::endl;
   // Whether to draw bar on the cairo surface
   const bool draw_bar = false;
@@ -907,13 +998,17 @@ void InsetState::write_density_image(
   const double exterior_density = exterior_density_;
   const double each_grid_cell_area_km = grid_cell_area_km(0, 0);
 
+  // Debugging prints
+  std::cerr << "dens_min: " << dens_min << std::endl;
+  std::cerr << "dens_mean: " << dens_mean << std::endl;
+  std::cerr << "dens_max: " << dens_max << std::endl;
+  std::cerr << "exterior_density: " << exterior_density << std::endl;
+  std::cerr << "each_grid_cell_area_km: " << each_grid_cell_area_km << std::endl;
+
   // Crop it too
   if (plot_pycnophylactic) {
     unsigned int cell_width = 1;
-
-    // White background
-    cairo_set_source_rgb(cr, 1.0, 1.0, 1.0);
-    cairo_paint(cr);
+    add_white_background(cr);
 
     // Clip to shape and print in sequential scale
     for (const auto &gd : geo_divs_) {
@@ -1008,10 +1103,27 @@ void InsetState::write_density_image(
         cairo_fill(cr);
         cairo_set_source_rgb(cr, 0, 0, 0);
         cairo_stroke(cr);
+
+        // Write the density value at the center of the square
+        // cairo_set_source_rgb(cr, 0, 0, 0);
+        // cairo_select_font_face(cr, "Sans", CAIRO_FONT_SLANT_NORMAL, CAIRO_FONT_WEIGHT_NORMAL);
+        // cairo_set_font_size(cr, 10);
+        // std::string density_value = std::to_string(density[i * ly_ + j]);
+        // cairo_text_extents_t extents;
+        // cairo_text_extents(cr, density_value.c_str(), &extents);
+        // double x_center = (x_min + x_max) / 2 - extents.width / 2;
+        // double y_center = ly_ - (y_min + y_max) / 2 + extents.height / 2;
+        // cairo_move_to(cr, x_center, y_center);
+        // cairo_show_text(cr, density_value.c_str());
       }
     }
   }
-  write_polygons_on_surface(cr, false, false, false);
+  write_quadtree_rectangles_on_surface(
+  cr,
+  quadtree_bboxes_,
+  Color{0.6, 0.6, 0.6},
+  ly_);
+  write_polygons_on_surface(cr, false, false, false, 0.025);
 
   if (draw_bar && !plot_pycnophylactic) {
     std::string bar_filename = "bar_" + filename;
@@ -1040,8 +1152,9 @@ void InsetState::write_density_image(
   cairo_destroy(cr);
 }
 
-void InsetState::write_intersections_image(unsigned int res)
+void InsetState::write_intersections_image()
 {
+  unsigned int res = intersections_resolution;
   std::string filename = inset_name() + "_intersections_" +
                          std::to_string(n_finished_integrations()) + ".svg";
 
@@ -1279,20 +1392,38 @@ Color heatmap_color(
     // Color("#2166ac"),
     // Color("#053061")
 
-    // // Turqoise to brown
+    // Red to yellow to blue
+    // Color("#a50026"),
+    // Color("#d73027"),
+    // Color("#f46d43"),
+    // Color("#fdae61"),
+    // Color("#fee090"),
+    // Color("#ffffbf"),
+    // Color("#e0f3f8"),
+    // Color("#abd9e9"),
+    // Color("#74add1"),
+    // Color("#4575b4"),
+    // Color("#313695")
+
+    // Turqoise to brown
     Color("#543005"),
     Color("#8c510a"),
     Color("#bf812d"),
     Color("#dfc27d"),
     Color("#f6e8c3"),
-    Color("#ffffff"),
+
+    // Mean density
+    Color("#ffffff"), // white
+    // Color("#f5f5f5"), // off-white
+
+
     Color("#c7eae5"),
     Color("#80cdc1"),
     Color("#35978f"),
     Color("#01665e"),
     Color("#003c30")
 
-    // // Original
+    // Original
     // Color(0.33, 0.19, 0.02),
     // Color(0.55, 0.32, 0.04),
     // Color(0.75, 0.51, 0.18),
@@ -1470,7 +1601,7 @@ void InsetState::trim_grid_heatmap(cairo_t *cr, double padding)
 }
 
 // Writes grid cells and colors them if required
-void InsetState::write_grids_on_surface(cairo_t *cr)
+void InsetState::write_cells_on_surface(cairo_t *cr)
 {
 
   // Set line width of grid lines
@@ -1640,6 +1771,14 @@ double equal_area_projection_area_to_earth_area(
   const double equal_area_projection_area)
 {
   return (equal_area_projection_area * earth_surface_area) / (4 * pi);
+}
+
+// Given area in square km^2 on Earth's surface,
+// returns the corresponding area in the equal_area_projection projection coordinate system
+double earth_area_to_equal_area_projection_area(
+  const double earth_area)
+{
+  return (earth_area * 4 * pi) / earth_surface_area;
 }
 
 double InsetState::grid_cell_area_km(

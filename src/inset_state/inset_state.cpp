@@ -1,7 +1,9 @@
 #include "inset_state.hpp"
 #include "constants.hpp"
+#include "csv.hpp"
 
-InsetState::InsetState(std::string pos) : pos_(std::move(pos))
+InsetState::InsetState(std::string pos, Arguments args)
+    : args_(args), pos_(pos)
 {
   initial_area_ = 0.0;
   n_finished_integrations_ = 0;
@@ -20,7 +22,7 @@ double InsetState::area_error_at(const std::string &id) const
 
 Bbox InsetState::bbox(bool original_bbox) const
 {
-  auto &geo_divs = original_bbox ? geo_divs_original_ : geo_divs_;
+  auto &geo_divs = original_bbox ? geo_divs_original_transformed_ : geo_divs_;
   // Find joint bounding box for all "polygons with holes" in this inset
   double inset_xmin = dbl_inf;
   double inset_xmax = -dbl_inf;
@@ -80,8 +82,7 @@ bool InsetState::continue_integrating() const
   auto [max_area_err, worst_gd] = max_area_error();
 
   // A GeoDiv is still above our area error threshold
-  bool area_error_above_threshold =
-    max_area_err > max_permitted_area_error;
+  bool area_error_above_threshold = max_area_err > max_permitted_area_error;
 
   // Area expansion factor is above our threshold
   // i.e. cartogram has become too big or too small
@@ -97,7 +98,9 @@ bool InsetState::continue_integrating() const
   bool within_integration_limit = n_finished_integrations() < max_integrations;
 
   // We continue if we are within the integration limit and have not converged
-  bool continue_integration = within_integration_limit && !has_converged;
+  bool continue_integration =
+    (within_integration_limit && !has_converged) ||
+    (n_finished_integrations_ < args_.min_integrations);
 
   // Actually hasn't converged, just reached integration limit
   if (!within_integration_limit && !has_converged) {
@@ -120,6 +123,7 @@ bool InsetState::continue_integrating() const
     // Print next integration information.
     std::cerr << "\nIntegration number " << n_finished_integrations()
               << std::endl;
+    std::cerr << "Dimensions : " << lx_ << " " << ly_ << std::endl;
     std::cerr << "Number of Points: " << n_points() << std::endl;
   }
   return continue_integration;
@@ -135,11 +139,6 @@ bool InsetState::color_found(const std::string &id) const
   return colors_.count(id);
 }
 
-bool InsetState::colors_empty() const
-{
-  return colors_.empty();
-}
-
 unsigned int InsetState::colors_size() const
 {
   return colors_.size();
@@ -147,52 +146,23 @@ unsigned int InsetState::colors_size() const
 
 void InsetState::create_delaunay_t()
 {
+  timer.start("Delaunay Triangulation");
   Delaunay dt;
   dt.insert(unique_quadtree_corners_.begin(), unique_quadtree_corners_.end());
   proj_qd_.dt = dt;
   std::cerr << "Number of Delaunay triangles: " << dt.number_of_faces()
             << std::endl;
+  timer.stop("Delaunay Triangulation");
 }
 
-// TODO: Choose which insert_constraint_safely to keep
-bool InsetState::insert_constraint_safely_to_dt(
-  Delaunay &dt,
-  const Point &p1,
-  const Point &p2)
-{
-  // Try-catch block to avoid inserting intersecting constraints
-  try {
-    dt.insert_constraint(p1, p2);
-    return true;
-  } catch (const std::exception &e) {
-    // Print more information about the exception
-    std::cerr << "WARNING (dt projected): Could not insert constraint between "
-              << p1 << " and " << p2 << std::endl;
-    std::cerr << e.what() << std::endl;
-    // Add to the list of failed constraints
-    failed_constraints_dt_projected_.push_back(Segment(p1, p2));
-    return false;
-  }
-}
-
-bool InsetState::insert_constraint_safely(const Point &p1, const Point &p2)
-{
-  // Try-catch block to avoid inserting intersecting constraints
-  try {
-    proj_qd_.dt.insert_constraint(p1, p2);
-    return true;
-  } catch (const std::exception &e) {
-    std::cerr << "WARNING DIAGONAL: Could not insert constraint between " << p1
-              << " and " << p2 << std::endl;
-    std::cerr << e.what() << std::endl;
-    // Add to the list of failed constraints
-    failed_constraints_.push_back(Segment(p1, p2));
-    return false;
-  }
-}
 void InsetState::update_delaunay_t()
 {
-  // Create the Delauany triangulation from the projected quadtree corners
+  timer.start("Update Delanuay Triangulation");
+
+  // Goal is to first create the Delauany triangulation from the projected
+  // quadtree corners
+
+  // Create the projected quadtree corners
   std::vector<Point> projected_unique_quadtree_corners;
   for (auto &pt : unique_quadtree_corners_) {
     projected_unique_quadtree_corners.push_back(
@@ -228,6 +198,41 @@ void InsetState::update_delaunay_t()
     is_edge.insert(Segment(xmax_ymin, xmax_ymax));
   }
 
+  // Add the edges of the quadtree cells to the projected quadtree cell polygon
+  // We check now whether the potential edges are edges of the quadtree cells
+  // and if so, we insert them as constraints to the projected Delaunay
+  std::vector<std::pair<Point, Point>> constraints_for_projected_dt;
+
+  for (Delaunay::Finite_edges_iterator eit = proj_qd_.dt.finite_edges_begin();
+       eit != proj_qd_.dt.finite_edges_end();
+       ++eit) {
+    const Segment edge = proj_qd_.dt.segment(eit);
+    const Point p1 = edge.source();
+    const Point p2 = edge.target();
+
+    // if edge is diagonal, ignore it
+    if (p1.x() != p2.x() && p1.y() != p2.y()) {
+      continue;
+    }
+
+    // If edge is not part of the quadtree cell, ignore it
+    if (is_edge.count(Segment(p1, p2)) == 0) {
+      continue;
+    }
+
+    Point p1_proj = proj_qd_.triangle_transformation.at(p1);
+    Point p2_proj = proj_qd_.triangle_transformation.at(p2);
+
+    // To add the constraint later to the projected Delaunay triangulation
+    constraints_for_projected_dt.push_back({p1_proj, p2_proj});
+  }
+
+  // Finally, we add the projected quadtree cell edges as constraints to the
+  // projected Delaunay triangulation
+  dt_projected.insert_constraints(
+    constraints_for_projected_dt.begin(),
+    constraints_for_projected_dt.end());
+
   // Reverse map is necessary to get the original point of the projected vertex
   // Then we can project back the chosen projected diagonal to the unprojected
   // diagonal and insert it as a constraint to the original Delaunay
@@ -251,86 +256,77 @@ void InsetState::update_delaunay_t()
     same_y_coor_points[y].push_back(x);
   }
 
-  // Add the edges of the quadtree cells to the projected quadtree cell polygon
-  // We check now whether the potential edges are edges of the quadtree cells
-  // and if so, we insert them as constraints to the projected Delaunay
-  std::vector<std::pair<Point, Point>> constraints_for_projed_dt;
   for (auto &[x_coor, points] : same_x_coor_points) {
-    // Remove the duplicates and sort
+    // Sort and remove the duplicates
     std::sort(points.begin(), points.end());
     points.erase(std::unique(points.begin(), points.end()), points.end());
-
-    for (unsigned int i = 0; i < points.size() - 1; ++i) {
-      Point p1(x_coor, points[i]);
-      Point p2(x_coor, points[i + 1]);
-
-      // if not a Quadtree cell edge, then ignore
-      if (is_edge.count(Segment(p1, p2)) == 0) {
-        continue;
-      }
-      Point p1_proj = proj_qd_.triangle_transformation.at(p1);
-      Point p2_proj = proj_qd_.triangle_transformation.at(p2);
-
-      // To add the constraint later to the projected Delaunay triangulation
-      constraints_for_projed_dt.push_back({p1_proj, p2_proj});
-    }
   }
 
   for (auto &[y_coor, points] : same_y_coor_points) {
-    // Remove the duplicates and sort
+    // Sort and remove the duplicates
     std::sort(points.begin(), points.end());
     points.erase(std::unique(points.begin(), points.end()), points.end());
-
-    for (unsigned int i = 0; i < points.size() - 1; ++i) {
-      Point p1(points[i], y_coor);
-      Point p2(points[i + 1], y_coor);
-      if (is_edge.count(Segment(p1, p2)) == 0) {
-        continue;
-      }
-      Point p1_proj = proj_qd_.triangle_transformation.at(p1);
-      Point p2_proj = proj_qd_.triangle_transformation.at(p2);
-
-      // To add the constraint later to the projected Delaunay triangulation
-      constraints_for_projed_dt.push_back({p1_proj, p2_proj});
-    }
   }
 
-  // Finally, we add the projected quadtree cell edges as constraints to the
-  // projected Delaunay triangulation
-  dt_projected.insert_constraints(
-    constraints_for_projed_dt.begin(),
-    constraints_for_projed_dt.end());
-
-  // Add the chosen diagonal of the pojected Delaunay triangles as constraints
-  // to the original Delaunay triangulation
+  // Add the projected Delaunay triangles as constraints if they are valid to
+  // the original Delaunay triangulation
   std::vector<std::pair<Point, Point>> constraints;
-  for (Delaunay::Finite_faces_iterator fit = dt_projected.finite_faces_begin();
-       fit != dt_projected.finite_faces_end();
-       ++fit) {
-    Face_handle face = fit;
-    const Point p1 = face->vertex(0)->point();
-    const Point p2 = face->vertex(1)->point();
-    const Point p3 = face->vertex(2)->point();
+  for (Delaunay::Finite_edges_iterator eit = dt_projected.finite_edges_begin();
+       eit != dt_projected.finite_edges_end();
+       ++eit) {
+    const Segment edge = dt_projected.segment(eit);
+    const Point p1 = edge.source();
+    const Point p2 = edge.target();
 
-    // Project back the chosen diagonal to the unprojected diagonal
+    // Reverse the transformation back to the original coordinates
     const Point p1_orig = reverse_triangle_transformation.at(p1);
     const Point p2_orig = reverse_triangle_transformation.at(p2);
-    const Point p3_orig = reverse_triangle_transformation.at(p3);
 
-    // Only pick the edge if it is diagonal
+    // Automatically pick the edge if it is diagonal
     if (p1_orig.x() != p2_orig.x() && p1_orig.y() != p2_orig.y()) {
       constraints.push_back({p1_orig, p2_orig});
     }
-    if (p2_orig.x() != p3_orig.x() && p2_orig.y() != p3_orig.y()) {
-      constraints.push_back({p2_orig, p3_orig});
+
+    // If edge is vertical, only add it if there are no point in between
+    if (p1_orig.x() == p2_orig.x()) {
+      auto &y_coor_points = same_x_coor_points[p1_orig.x()];
+
+      const double y_min = std::min(p1_orig.y(), p2_orig.y());
+      const double y_max = std::max(p1_orig.y(), p2_orig.y());
+
+      // Binary search to find the number of points between the two y
+      // coordinates
+      int cnt =
+        std::upper_bound(y_coor_points.begin(), y_coor_points.end(), y_max) -
+        std::lower_bound(y_coor_points.begin(), y_coor_points.end(), y_min);
+
+      if (cnt == 2) {  // No points in between
+        constraints.push_back({p1_orig, p2_orig});
+      }
     }
-    if (p3_orig.x() != p1_orig.x() && p3_orig.y() != p1_orig.y()) {
-      constraints.push_back({p3_orig, p1_orig});
+
+    // If edge is horizontal, only add it if there are no point in between
+    if (p1_orig.y() == p2_orig.y()) {
+      // Check if there is a point in between
+      auto &x_coor_points = same_y_coor_points[p1_orig.y()];
+
+      const double x_min = std::min(p1_orig.x(), p2_orig.x());
+      const double x_max = std::max(p1_orig.x(), p2_orig.x());
+
+      // Binary search to find the number of points between the two y
+      // coordinates
+      int cnt =
+        std::upper_bound(x_coor_points.begin(), x_coor_points.end(), x_max) -
+        std::lower_bound(x_coor_points.begin(), x_coor_points.end(), x_min);
+      if (cnt == 2) {  // No points in between
+        constraints.push_back({p1_orig, p2_orig});
+      }
     }
   }
 
   // Inserting range is faster than inserting one by one
   proj_qd_.dt.insert_constraints(constraints.begin(), constraints.end());
+  timer.stop("Update Delanuay Triangulation");
 }
 
 void InsetState::destroy_fftw_plans_for_flux()
@@ -361,121 +357,276 @@ void InsetState::execute_fftw_fwd_plan() const
   fftw_execute(fwd_plan_for_rho_);
 }
 
+void InsetState::export_time_report() const
+{
+  // Open CSV to write, and create empty object to write to
+  std::ofstream out_file_csv;
+  std::string csv_file_name = inset_name_ + "_time_report.csv";
+  out_file_csv.open(csv_file_name);
+  if (!out_file_csv) {
+    std::cerr << "ERROR writing CSV: failed to open " << csv_file_name
+              << ".csv" << std::endl;
+  }
+  // Each string vectors = one row, starting with column names
+  std::vector<std::vector<std::string>> csv_rows(n_finished_integrations_ + 1);
+
+  // Column names
+  csv_rows[0].push_back("Integration Number");
+  csv_rows[0].push_back("Time (s)");
+  csv_rows[0].push_back("Max Area Error");
+
+  for (size_t i = 0; i < n_finished_integrations_; i++) {
+
+    // Integration number
+    csv_rows[i + 1].push_back(std::to_string(i));
+
+    // Time taken (in seconds)
+    std::string timer_task_name = inset_name_ + "_" + std::to_string(i);
+    std::string time_in_seconds =
+      std::to_string(timer.duration(timer_task_name).count() / 1000.0);
+    csv_rows[i + 1].push_back(time_in_seconds);
+
+    // Max area error for that integration
+    csv_rows[i + 1].push_back(std::to_string(max_area_errors_[i]));
+  }
+
+  // Write to CSV object, and close file afterwards
+  auto writer = csv::make_csv_writer(out_file_csv);
+  for (const auto &row : csv_rows) {
+    writer << row;
+  }
+  out_file_csv.close();
+}
+
 const std::vector<GeoDiv> &InsetState::geo_divs() const
 {
   return geo_divs_;
 }
 
-void InsetState::create_and_store_quadtree_cell_corners()
+// Get unique points from GeoDivs
+static std::vector<Point> get_unique_points(InsetState &inset_state)
 {
   std::vector<Point> points;
-
-  for (const auto &gd : geo_divs_) {
+  for (const auto &gd : inset_state.geo_divs()) {
     for (const auto &pwh : gd.polygons_with_holes()) {
       const Polygon &ext_ring = pwh.outer_boundary();
-
-      // Get exterior ring coordinates
       points.insert(
         points.end(),
         ext_ring.vertices_begin(),
         ext_ring.vertices_end());
-
-      // Get holes of polygon with holes
-      for (const auto &h : pwh.holes()) {
-        points.insert(points.end(), h.vertices_begin(), h.vertices_end());
+      for (const auto &hole : pwh.holes()) {
+        points.insert(
+          points.end(),
+          hole.vertices_begin(),
+          hole.vertices_end());
       }
     }
   }
 
-  // Add boundary points of mapping domain
+  // Add boundary points to force lx * ly size Quadtree
   points.push_back(Point(0, 0));
-  points.push_back(Point(0, ly_));
-  points.push_back(Point(lx_, 0));
-  points.push_back(Point(lx_, ly_));
+  points.push_back(Point(0, inset_state.ly()));
+  points.push_back(Point(inset_state.lx(), 0));
+  points.push_back(Point(inset_state.lx(), inset_state.ly()));
 
-  // Remove the duplicates from points
+  // Remove duplicates
   std::unordered_set<Point> unique_points(points.begin(), points.end());
+  return std::vector<Point>(unique_points.begin(), unique_points.end());
+}
 
-  std::vector<Point> unique_points_vec(
-    unique_points.begin(),
-    unique_points.end());
+// Counts the number of leaf nodes in a quadtree
+int count_leaf_nodes(const Quadtree &qt)
+{
+  int leaf_count = 0;
+  for ([[maybe_unused]] const auto &node :
+       qt.traverse<CGAL::Orthtrees::Leaves_traversal>()) {
+    ++leaf_count;
+  }
+  return leaf_count;
+}
 
-  // Create the quadtree and 'grade' it so that neighboring quadtree leaves
-  // differ by a depth that can only be 0 or 1.
-  Quadtree qt(unique_points_vec, Quadtree::PointMap(), 1);
-  const unsigned int depth =
-    static_cast<unsigned int>(std::max(log2(lx_), log2(ly_)));
-  std::cerr << "Using Quadtree depth: " << depth << std::endl;
-
-  // Custom predicate to decide whether to split a node
-  auto can_split = [&depth, &qt, this](const Quadtree::Node &node) -> bool {
-    // if the node depth is greater than depth, do not split
-    if (node.depth() >= depth) {
+// Refine the quadtree by splitting nodes that exceed the given threshold
+void refine_quadtree_with_threshold(
+  Quadtree &qt,
+  double threshold,
+  unsigned int depth,
+  InsetState &inset_state)
+{
+  auto can_split = [&qt, &threshold, &depth, &inset_state](
+                     const Quadtree::Node &node) -> bool {
+    if (node.depth() >= depth)
       return false;
-    }
 
     auto bbox = qt.bbox(node);
     double rho_min = 1e9;
     double rho_max = -1e9;
-
-    // get the minimum rho_init of the bbox of the node
     for (int i = bbox.xmin(); i < bbox.xmax(); ++i) {
       for (int j = bbox.ymin(); j < bbox.ymax(); ++j) {
-        if (i < 0 || j < 0) {
+        if (i < 0 || j < 0)
           continue;
-        }
-        if (i >= (int) this->lx() || j >= (int) this->ly()) {
+        if (
+          i >= static_cast<int>(inset_state.lx()) ||
+          j >= static_cast<int>(inset_state.ly()))
           continue;
-        }
-        rho_min = std::min(rho_min, this->ref_to_rho_init()(i, j));
-        rho_max = std::max(rho_max, this->ref_to_rho_init()(i, j));
+        rho_min = std::min(rho_min, inset_state.ref_to_rho_init()(i, j));
+        rho_max = std::max(rho_max, inset_state.ref_to_rho_init()(i, j));
       }
     }
-    return rho_max - rho_min >
-           (0.001 + pow((1.0 / n_finished_integrations_), 2));
+    return (rho_max - rho_min) > threshold;
   };
+
   qt.refine(can_split);
+}
+
+// Use binary search to find a threshold that results in a quadtree with a
+// at least the target number of leaf nodes
+static double find_threshold(
+  Quadtree &base_qt,
+  InsetState &state,
+  const unsigned int depth,
+  const int target_leaf_count,
+  const int tolerance,
+  double low_thresh,
+  double high_thresh,
+  const int max_iterations)
+{
+  double threshold = high_thresh;
+  // First, check if the high threshold is too low
+  {
+    Quadtree qt_copy = base_qt;
+    refine_quadtree_with_threshold(qt_copy, high_thresh, depth, state);
+    int leaves = count_leaf_nodes(qt_copy);
+    std::cerr << "Initial high threshold = " << high_thresh
+              << ", leaf nodes = " << leaves << std::endl;
+
+    // If the leaf count is more than 5 * target_leaf_count,
+    // increase the high threshold to lower the leaf count
+    while (leaves > 5 * target_leaf_count) {
+      high_thresh *= 2;
+      Quadtree qt_copy = base_qt;
+      refine_quadtree_with_threshold(qt_copy, high_thresh, depth, state);
+      leaves = count_leaf_nodes(qt_copy);
+      std::cerr << "Adjusted high threshold = " << high_thresh
+                << ", leaf nodes = " << leaves << std::endl;
+    }
+  }
+
+  for (int iter = 0; iter < max_iterations; ++iter) {
+    const double mid_thresh = (low_thresh + high_thresh) / 2.0;
+    Quadtree qt_copy = base_qt;
+    refine_quadtree_with_threshold(qt_copy, mid_thresh, depth, state);
+    const int leaves = count_leaf_nodes(qt_copy);
+
+    std::cerr << "iter " << iter << ": threshold = " << mid_thresh
+              << ", leaf nodes = " << leaves << std::endl;
+
+    if (
+      leaves >= target_leaf_count - tolerance &&
+      leaves <= target_leaf_count + tolerance) {  // Found a good threshold
+      threshold = mid_thresh;
+      break;
+    }
+    // Too few leaves: lower threshold to increase leaf count
+    if (leaves < target_leaf_count)
+      high_thresh = mid_thresh;
+    else  // Too many leaves: threshold is too low
+      low_thresh = mid_thresh;
+    threshold = mid_thresh;
+  }
+  return threshold;
+}
+
+/*
+  Create and refine the quadtree.
+  * Build a quadtree from the unique points of the GeoDivs
+  * Find a threshold that results in a quadtree with at least target_leaf_count
+    leaf nodes
+  * Refine the quadtree with the found threshold
+  * Grade the quadtree
+  * Store the bounding boxes of the leaf nodes
+*/
+void InsetState::create_and_refine_quadtree()
+{
+  timer.start("Delaunay Triangulation");
+
+  // Build a quadtree from the unique points of the GeoDivs
+  std::vector<Point> unique_points = get_unique_points(*this);
+  Quadtree qt(unique_points, Quadtree::PointMap(), 1);
+
+  // Find a threshold that results in a quadtree with at least
+  // target_leaf_count leaf nodes
+  unsigned int depth =
+    static_cast<unsigned int>(std::max(log2(lx_), log2(ly_)));
+  std::cerr << "Using quadtree depth: " << depth << std::endl;
+
+  // Determine target leaf count as 0.3% of grid area.
+  int target_leaf_count = static_cast<int>(0.003 * lx_ * ly_);
+  std::cerr << "Quadtree target leaf count (pre-grading): "
+            << target_leaf_count << std::endl;
+  const int tolerance = 1000;
+  double low_thresh = 0.0;
+  double high_thresh = 1.0;
+
+  // Set high threshold as the same as the threshold at the previous
+  // integration to speed up the search
+  if (threshold_at_integration_.count(n_finished_integrations_ - 1)) {
+    high_thresh = threshold_at_integration_.at(n_finished_integrations_ - 1);
+  }
+  const int max_iterations = 25;
+  const double threshold = find_threshold(
+    qt,
+    *this,
+    depth,
+    target_leaf_count,
+    tolerance,
+    low_thresh,
+    high_thresh,
+    max_iterations);
+  std::cerr << "Using threshold: " << threshold << std::endl;
+  threshold_at_integration_.insert({n_finished_integrations_, threshold});
+  std::cerr << "Split criteria: rho_max - rho_min > " << threshold
+            << std::endl;
+
+  // Refine the quadtree with the found threshold
+  refine_quadtree_with_threshold(qt, threshold, depth, *this);
   qt.grade();
   std::cerr << "Quadtree root node bounding box: " << qt.bbox(qt.root())
             << std::endl;
 
-  // Clear corner points from last iteration
-  unique_quadtree_corners_.clear();
+  // Store the bounding boxes of the leaf nodes
+  store_quadtree_cell_corners(qt);
 
-  // Clear the vector of bounding boxes
+  timer.stop("Delaunay Triangulation");
+}
+
+void InsetState::store_quadtree_cell_corners(const Quadtree &qt)
+{
+  unique_quadtree_corners_.clear();
   quadtree_bboxes_.clear();
 
-  // Get unique quadtree corners
   for (const auto &node : qt.traverse<CGAL::Orthtrees::Leaves_traversal>()) {
-
-    // Get bounding box of the leaf node
     const Bbox bbox = qt.bbox(node);
-
-    // check if points are between lx_ and ly_
     if (
       bbox.xmin() < 0 || bbox.xmax() > lx_ || bbox.ymin() < 0 ||
-      bbox.ymax() > ly_) {
+      bbox.ymax() > ly_)
       continue;
-    }
 
-    // Store the bounding box
     quadtree_bboxes_.push_back(bbox);
-
-    // Insert the four vertices of the bbox into the corners set
     unique_quadtree_corners_.insert(Point(bbox.xmin(), bbox.ymin()));
     unique_quadtree_corners_.insert(Point(bbox.xmax(), bbox.ymax()));
     unique_quadtree_corners_.insert(Point(bbox.xmin(), bbox.ymax()));
     unique_quadtree_corners_.insert(Point(bbox.xmax(), bbox.ymin()));
   }
 
-  // Add boundary points of mapping domain in case they are omitted due to
-  // quadtree structure
+  // Ensure mapping domain boundary corners are included
   unique_quadtree_corners_.insert(Point(0, 0));
   unique_quadtree_corners_.insert(Point(0, ly_));
   unique_quadtree_corners_.insert(Point(lx_, 0));
   unique_quadtree_corners_.insert(Point(lx_, ly_));
 
-  std::cerr << "Number of unique corners: " << unique_quadtree_corners_.size()
+  std::cerr << "Number of unique quadtree corners: "
+            << unique_quadtree_corners_.size() << std::endl;
+  std::cerr << "Number of quadtree leaf nodes: " << count_leaf_nodes(qt)
             << std::endl;
 }
 
@@ -686,6 +837,11 @@ double InsetState::area_expansion_factor() const
   return total_inset_area() / initial_area_;
 }
 
+void InsetState::print_time_report() const
+{
+  timer.print_summary_report();
+}
+
 void InsetState::push_back(const GeoDiv &gd)
 {
   geo_divs_id_to_index_.insert({gd.id(), geo_divs_.size()});
@@ -776,9 +932,7 @@ void InsetState::adjust_grid()
   if (
     n_finished_integrations_ > 4 &&
     curr_max_area_error >=
-      0.999 * max_area_errors_[n_finished_integrations_ - 1] &&
-    curr_max_area_error >=
-      0.999 * max_area_errors_[n_finished_integrations_ - 2]) {
+      0.999 * max_area_errors_[n_finished_integrations_ - 1]) {
 
     // Multiply grid size with factor
     std::cerr << "Adjusting grid size." << std::endl;
@@ -793,42 +947,13 @@ void InsetState::adjust_grid()
     lx_ *= default_grid_factor;
     ly_ *= default_grid_factor;
 
-    // Scale all map coordinates
     const Transformation scale(CGAL::SCALING, default_grid_factor);
-    for (auto &gd : geo_divs_) {
-      for (auto &pwh : gd.ref_to_polygons_with_holes()) {
-        auto &ext_ring = pwh.outer_boundary();
-        ext_ring = transform(scale, ext_ring);
-        for (auto &h : pwh.holes()) {
-          h = transform(scale, h);
-        }
-      }
-    }
-
-    for (auto &gd : geo_divs_original_) {
-      for (auto &pwh : gd.ref_to_polygons_with_holes()) {
-        auto &ext_ring = pwh.outer_boundary();
-        ext_ring = transform(scale, ext_ring);
-        for (auto &h : pwh.holes()) {
-          h = transform(scale, h);
-        }
-      }
-    }
+    transform_points(scale);
 
     initial_area_ *= default_grid_factor * default_grid_factor;
-
-    for (auto &gd : geo_divs_original_transformed_) {
-      for (auto &pwh : gd.ref_to_polygons_with_holes()) {
-        auto &ext_ring = pwh.outer_boundary();
-        ext_ring = transform(scale, ext_ring);
-        for (auto &h : pwh.holes()) {
-          h = transform(scale, h);
-        }
-      }
-    }
+    transform_points(scale, true);
 
     normalize_target_area();
-
     destroy_fftw_plans_for_rho();
     destroy_fftw_plans_for_flux();
     ref_to_rho_init().free();
@@ -846,6 +971,8 @@ void InsetState::adjust_grid()
     initialize_identity_proj();
     initialize_cum_proj();
     set_area_errors();
+
+    threshold_at_integration_.clear();
 
     Bbox bb = bbox();
     std::cerr << "New grid dimensions: " << lx_ << " " << ly_
@@ -865,6 +992,7 @@ void InsetState::set_grid_dimensions(
 void InsetState::set_inset_name(const std::string &inset_name)
 {
   inset_name_ = inset_name;
+  timer.set_name(inset_name);
 }
 
 void InsetState::store_initial_area()
@@ -872,9 +1000,9 @@ void InsetState::store_initial_area()
   initial_area_ = total_inset_area();
 }
 
-void InsetState::store_initial_target_area()
+void InsetState::store_initial_target_area(const double override)
 {
-  initial_target_area_ = total_target_area();
+  initial_target_area_ = override ? override : total_target_area();
 }
 
 bool InsetState::target_area_is_missing(const std::string &id) const
@@ -895,10 +1023,11 @@ double InsetState::target_area_at(const std::string &id) const
   }
 }
 
-double InsetState::total_inset_area() const
+double InsetState::total_inset_area(bool original_area) const
 {
+  auto &geo_divs = original_area ? geo_divs_original_transformed_ : geo_divs_;
   double total_inset_area = 0.0;
-  for (const auto &gd : geo_divs_) {
+  for (const auto &gd : geo_divs) {
     total_inset_area += gd.area();
   }
   return total_inset_area;
@@ -966,7 +1095,64 @@ void InsetState::transform_points(
   }
 }
 
+void InsetState::scale_points(double scale_factor, bool project_original)
+{
+  const Transformation scale(CGAL::SCALING, scale_factor);
+  transform_points(scale, project_original);
+}
+
 void InsetState::set_geo_divs(std::vector<GeoDiv> new_geo_divs)
 {
   geo_divs_ = std::move(new_geo_divs);
+}
+
+void InsetState::update_file_prefix()
+{
+  file_prefix_ = inset_name_ + "_" + std::to_string(n_finished_integrations_);
+}
+
+void InsetState::update_gd_ids(
+  const std::map<std::string, std::string> &gd_id_map)
+{
+  for (auto &gd : geo_divs_) {
+    gd.update_id(gd_id_map.at(gd.id()));
+  }
+}
+
+void InsetState::move_points(double dx, double dy, bool project_original)
+{
+  const Transformation translate(
+    CGAL::TRANSLATION,
+    CGAL::Vector_2<Scd>(dx, dy));
+  transform_points(translate, project_original);
+}
+
+void InsetState::transform_polygons(
+  const std::function<Polygon(Polygon)> &transform_polygon,
+  bool project_original)
+{
+  auto &geo_divs =
+    project_original ? geo_divs_original_transformed_ : geo_divs_;
+
+  // Iterate over GeoDivs
+#pragma omp parallel for default(none) shared(transform_polygon, geo_divs)
+  for (auto &gd : geo_divs) {
+
+    // Iterate over Polygon_with_holes
+    for (auto &pwh : gd.ref_to_polygons_with_holes()) {
+
+      // Get outer boundary
+      auto &outer_boundary = pwh.outer_boundary();
+
+      // Transform outer boundary
+      outer_boundary = transform_polygon(outer_boundary);
+
+      // Iterate over holes
+      for (auto &h : pwh.holes()) {
+
+        // Transform hole
+        h = transform_polygon(h);
+      }
+    }
+  }
 }

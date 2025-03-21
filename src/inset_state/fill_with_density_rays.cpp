@@ -1,8 +1,9 @@
 #include "constants.hpp"
 #include "inset_state.hpp"
 
-void InsetState::fill_with_density_rays(bool plot_density)
+void InsetState::fill_with_density_rays()
 {
+  timer.start("Fill with Density (Ray Shooting Method)");
   // We assume that target areas that were zero or missing in the input have
   // already been replaced by
   // CartogramInfo::replace_missing_and_zero_target_areas().
@@ -122,7 +123,7 @@ void InsetState::fill_with_density_rays(bool plot_density)
           intersections_at_y[i + 1].ray_enters) {
 
           // Highlight where intersection is present
-          std::cerr << "\nInvalid Geometry!" << std::endl;
+          std::cerr << "\n ERROR: Invalid Geometry!" << std::endl;
           std::cerr << "Intersection of Polygons/Holes/Geodivs" << std::endl;
           std::cerr << "Y-coordinate: " << y << std::endl;
           std::cerr << "Left X-coordinate: " << left_x << std::endl;
@@ -244,11 +245,6 @@ void InsetState::fill_with_density_rays(bool plot_density)
   exterior_density_ = exterior_density;
   dens_max_ = *max_iter;
 
-  if (plot_density) {
-    std::string file_name = inset_name_ + "_unblurred_density_" +
-                            std::to_string(n_finished_integrations()) + ".svg";
-    write_density_image(file_name, rho_init_.as_1d_array(), false);
-  }
-
   execute_fftw_fwd_plan();
+  timer.stop("Fill with Density (Ray Shooting Method)");
 }
