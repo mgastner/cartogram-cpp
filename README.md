@@ -45,7 +45,7 @@ brew install libomp pkg-config boost fftw nlohmann-json cmake cairo
 Have a look through to apt-requirements.txt if you'd like to see what all will be installed. Then, run the following commands to install all dependencies through apt:
 
 ```shell script
-apt install -y g++-11 build-essential cmake libboost-all-dev nlohmann-json3-dev libomp-dev libfftw3-dev libcairo2-dev
+apt install -y g++-11 build-essential cmake libboost-all-dev nlohmann-json3-dev libomp-dev libfftw3-dev libcairo2-dev libmpfr-dev libgmp-dev libboost-dev
 ```
 
 ### Windows (Using WSL)
@@ -79,6 +79,35 @@ Using lesser cores than you have is recommended so that your computer still has 
 If you are using VScode, you may also install the program by running the `CMake: Install` command from the command palette (accessible via `Ctrl/Command + Shift + P`). By default, VSCode builds the `DEBUG` version. If you would like to build the `RELEASE` version, you may change the build type in the `CMake: Select Variant` command. The `RELEASE` version will be much faster.
 
 If you encounter any issues, please look at the troubleshooting section below, especially the last bullet point.
+
+#### Installing using Docker
+
+Alternatively, you can run the program on a Docker container using [Docker Desktop](https://www.docker.com/products/docker-desktop/) without the need to install it locally.
+
+1. Before starting, create an empty folder called "output" inside the project folder.
+
+2. Open Command Prompt and navigate to the project folder.
+
+3. Build the Docker image and container using the command:
+
+```
+docker compose up -d
+```
+
+4. Once the building process is complete, access the container's shell using the command:
+
+```
+docker exec -it cartogram-cpp /bin/bash
+```
+From then on, you can run cartogram commands as per usual in the container's shell.
+
+5. The output folder is mounted on the Docker container so any output files from the cartogram-cpp program can be found in your output folder on your local environment.
+
+6. The cartogram-cpp program should automatically be compiled and built when you first create the container. To compile new changes made to the project code, run the build shell script using the command:
+
+```
+bash build.sh
+``` 
 
 ### Troubleshooting
 
