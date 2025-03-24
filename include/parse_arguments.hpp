@@ -69,9 +69,8 @@ struct Arguments {
 };
 
 // Function to parse arguments and set variables in main()
-void parsed_arguments(
+Arguments parse_arguments(
   int argc,
-  const char *argv[],
-  Arguments &args);
+  const char *argv[]);
 
 #endif // PARSE_ARGUMENTS_HPP_

@@ -1,11 +1,12 @@
 #include "parse_arguments.hpp"
 #include "constants.hpp"
 
-void parsed_arguments(
+Arguments parse_arguments(
   const int argc,
-  const char *argv[],
-  Arguments &args)
+  const char *argv[])
 {
+  Arguments args;
+
   // Create parser for arguments using argparse.
   // From https://github.com/p-ranav/argparse
   argparse::ArgumentParser arguments("./cartogram", RELEASE_TAG);
@@ -188,6 +189,7 @@ void parsed_arguments(
   args.output_shifted_insets =
     arguments.get<bool>("--output_shifted_insets");
 
+  // arguments.present returns an optional
   args.id_col = arguments.present<std::string>("--id");
   args.area_col = arguments.present<std::string>("--area");
   args.inset_col = arguments.get<std::string>("--inset");
@@ -257,4 +259,6 @@ void parsed_arguments(
   } else {
     args.visual_file_name = "";
   }
+
+  return args;
 }
