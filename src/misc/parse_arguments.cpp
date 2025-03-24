@@ -1,11 +1,12 @@
 #include "parse_arguments.hpp"
 #include "constants.hpp"
 
-argparse::ArgumentParser parsed_arguments(
+Arguments parse_arguments(
   const int argc,
-  const char *argv[],
-  Arguments &args)
+  const char *argv[])
 {
+  Arguments args;
+
   // Create parser for arguments using argparse.
   // From https://github.com/p-ranav/argparse
   argparse::ArgumentParser arguments("./cartogram", RELEASE_TAG);
@@ -119,7 +120,7 @@ argparse::ArgumentParser parsed_arguments(
     .help(pre + "IDs of geographic divisions [default: 1st CSV column header]");
   arguments.add_argument("-A", "--area")
     .help(pre + "target areas [default: 2nd CSV column]");
-  arguments.add_argument("-C", "--color")
+  arguments.add_argument("-C", "--color", "--colour")
     .default_value(std::string("Color"))
     .help(pre + "colors");
   arguments.add_argument("-L", "--label")
@@ -187,6 +188,13 @@ argparse::ArgumentParser parsed_arguments(
   args.plot_quadtree = arguments.get<bool>("--plot_quadtree");
   args.output_shifted_insets =
     arguments.get<bool>("--output_shifted_insets");
+
+  // arguments.present returns an optional
+  args.id_col = arguments.present<std::string>("--id");
+  args.area_col = arguments.present<std::string>("--area");
+  args.inset_col = arguments.get<std::string>("--inset");
+  args.color_col = arguments.get<std::string>("--color");
+  args.label_col = arguments.get<std::string>("--label");
   // Check if user wants to redirect output to stdout
   if (arguments.is_used("-O") && !args.simplify && !args.qtdt_method) {
     std::cerr << "ERROR: simplification disabled!\n";
@@ -251,5 +259,6 @@ argparse::ArgumentParser parsed_arguments(
   } else {
     args.visual_file_name = "";
   }
-  return arguments;
+
+  return args;
 }

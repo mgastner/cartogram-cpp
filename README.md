@@ -32,10 +32,10 @@ Install [homebrew](brew.sh) by running the following command:
 
 #### Installing dependencies through Homebrew
 
-Install pkg-config, boost, fftw, nlohmann-json, and cmake by running the following command:
+Install pkg-config, boost, fftw, and cmake by running the following command:
 
 ```shell script
-brew install libomp pkg-config boost fftw nlohmann-json cmake cairo
+brew install libomp pkg-config boost fftw cmake cairo
 ```
 
 ### Debian-based distributions (Ubuntu, Arch Linux etc.)
@@ -45,7 +45,7 @@ brew install libomp pkg-config boost fftw nlohmann-json cmake cairo
 Have a look through to apt-requirements.txt if you'd like to see what all will be installed. Then, run the following commands to install all dependencies through apt:
 
 ```shell script
-apt install -y g++-11 build-essential cmake libboost-all-dev nlohmann-json3-dev libomp-dev libfftw3-dev libcairo2-dev libmpfr-dev libgmp-dev libboost-dev
+apt install -y g++-11 build-essential cmake libboost-all-dev libomp-dev libfftw3-dev libcairo2-dev libmpfr-dev libgmp-dev libboost-dev
 ```
 
 ### Windows (Using WSL)

@@ -2,26 +2,14 @@
 #include "csv.hpp"
 #include "string_to_decimal_converter.hpp"
 
-csv::CSVReader load_csv(const argparse::ArgumentParser &arguments)
-{
-  // Retrieve CSV Name
-  const std::string csv_filename =
-    arguments.get<std::string>("visual_variable_file");
-
-  // Open CSV Reader
-  csv::CSVReader reader(csv_filename);
-
-  return reader;
-}
-
 int extract_id_header_col_index(
   const csv::CSVReader &reader,
-  const argparse::ArgumentParser &arguments)
+  const std::optional<std::string> id_col_name)
 {
   // Find index of column with IDs. If no ID column header was passed with the
   // command-line flag --id, the ID column is assumed to have index 0
   int id_col = 0;
-  if (auto is_id_header = arguments.present<std::string>("-D")) {
+  if (auto is_id_header = id_col_name) {
     const std::string id_header = *is_id_header;
     id_col = reader.index_of(id_header);
   }
@@ -31,13 +19,13 @@ int extract_id_header_col_index(
 
 int extract_area_col_index(
   const csv::CSVReader &reader,
-  const argparse::ArgumentParser &arguments)
+  const std::optional<std::string> area_col_name)
 {
   // Find index of column with target areas. If no area column header was
   // passed with the command-line flag --area, the area column is assumed to
   // have index 1
   int area_col = 1;
-  if (auto area_header = arguments.present<std::string>("-A")) {
+  if (auto area_header = area_col_name) {
     area_col = reader.index_of(*area_header);
   }
 
@@ -46,12 +34,12 @@ int extract_area_col_index(
 
 int extract_inset_col_index(
   const csv::CSVReader &reader,
-  const argparse::ArgumentParser &arguments)
+  const std::string inset_col_name)
 {
   // Find index of column with inset specifiers. If no inset column header was
   // passed with the command-line flag --inset, the header is assumed to be
   // "Inset". This default value is set in parse_arguments.cpp.
-  auto inset_header = arguments.get<std::string>("-I");
+  auto inset_header = inset_col_name;
   int inset_col = reader.index_of(inset_header);
 
   return inset_col;
@@ -59,23 +47,27 @@ int extract_inset_col_index(
 
 int extract_color_col_index(
   const csv::CSVReader &reader,
-  const argparse::ArgumentParser &arguments)
+  const std::string color_col_name)
 {
   // Find index of column with color specifiers. If no color column header was
   // passed with the command-line flag --color, the header is assumed to be
   // "Color".
-  auto color_header = arguments.get<std::string>("-C");
+  auto color_header = color_col_name;
   int color_col = reader.index_of(color_header);
+
+  // If the default "Color" header cannot be found, try again using the British spelling "Colour"
+  if (color_col == csv::CSV_NOT_FOUND && color_header == std::string("Color"))
+    color_col = reader.index_of(std::string("Colour"));
 
   return color_col;
 }
 
 int extract_label_col_index(
   const csv::CSVReader &reader,
-  const argparse::ArgumentParser &arguments)
+  const std::string label_col_name)
 {
   // Default: "Label".
-  auto label_header = arguments.get<std::string>("-L");
+  auto label_header = label_col_name;
   int label_col = reader.index_of(label_header);
 
   return label_col;
@@ -307,15 +299,15 @@ void process_area_strs(
   }
 }
 
-void CartogramInfo::read_csv(const argparse::ArgumentParser &arguments)
+void CartogramInfo::read_csv()
 {
-  csv::CSVReader reader = load_csv(arguments);
+  csv::CSVReader reader(args_.visual_file_name);
 
-  const int id_col = extract_id_header_col_index(reader, arguments);
-  const int area_col = extract_area_col_index(reader, arguments);
-  const int inset_col = extract_inset_col_index(reader, arguments);
-  const int color_col = extract_color_col_index(reader, arguments);
-  const int label_col = extract_label_col_index(reader, arguments);
+  const int id_col = extract_id_header_col_index(reader, args_.id_col);
+  const int area_col = extract_area_col_index(reader, args_.area_col);
+  const int inset_col = extract_inset_col_index(reader, args_.inset_col);
+  const int color_col = extract_color_col_index(reader, args_.color_col);
+  const int label_col = extract_label_col_index(reader, args_.label_col);
 
   std::map<std::string, std::map<std::string, std::string>> csv_data;
   for (auto &row : reader) {

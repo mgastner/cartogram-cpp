@@ -4,11 +4,8 @@
 
 int main(const int argc, const char *argv[])
 {
-  // Struct to store command line arguments
-  Arguments args;
-
   // Parse command-line arguments
-  argparse::ArgumentParser arguments = parsed_arguments(argc, argv, args);
+  Arguments args = parse_arguments(argc, argv);
 
   // Initialize cart_info. It contains all the information about the cartogram
   // that needs to be handled by functions called from main().
@@ -21,7 +18,7 @@ int main(const int argc, const char *argv[])
   if (!args.visual_file_name.empty()) {
 
     // Read visual variables (e.g., area and color) from CSV
-    cart_info.read_csv(arguments);
+    cart_info.read_csv();
   }
 
   // Project to equal area, if necessary

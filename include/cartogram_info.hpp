@@ -48,7 +48,7 @@ public:
   [[nodiscard]] unsigned int n_insets() const;
 
 
-  void read_csv(const argparse::ArgumentParser &);
+  void read_csv();
   void read_geojson();
   std::vector<InsetState> &ref_to_inset_states();
   void relocate_geodivs_based_on_inset_pos(
