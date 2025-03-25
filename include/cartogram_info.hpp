@@ -59,7 +59,6 @@ public:
   void rescale_insets();
 
   std::string set_map_name(const std::string &);
-  void set_id_header(const std::string &);
   void reposition_insets(bool output_to_stdout = false);
 
   void plot_input();

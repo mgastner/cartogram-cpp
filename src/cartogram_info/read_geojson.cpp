@@ -208,37 +208,46 @@ void extract_crs(const nlohmann::json &j, std::string &crs)
   std::cerr << "Coordinate reference system: " << crs << std::endl;
 }
 
-void generate_csv_template(
-  const nlohmann::json &j,
-  const std::string &map_name_)
+std::map<std::string, std::vector<std::string>>
+extract_unique_properties_map(const nlohmann::json &j)
 {
   std::map<std::string, std::vector<std::string>> properties_map;
   for (const auto &feature : j["features"]) {
     for (const auto &property_item : feature["properties"].items()) {
       const auto key = property_item.key();
+      const auto value = strip_quotes(property_item.value().dump());
 
-      // Handle strings and numbers
-      auto value = property_item.value().dump();
-      if (value.front() == '"') {
-        value = value.substr(1, value.length() - 2);
-      }
       const auto value_vec = properties_map[key];
-      const bool value_not_inside =
-        std::find(value_vec.begin(), value_vec.end(), value) ==
+      const bool value_not_inside = 
+        std::find(value_vec.begin(), value_vec.end(), value) == 
         value_vec.end();
-      if (value != "null" && !value.empty() && value_not_inside) {
+      if (value != "null" && !value.empty() && value_not_inside)
         properties_map[key].push_back(value);
-      }
     }
   }
 
   // Discard keys with repeating or missing values
-  auto viable_properties_map = properties_map;
+  auto unique_properties_map = properties_map;
   for (const auto &[key, value_vec] : properties_map) {
-    if (value_vec.size() < j["features"].size()) {
-      viable_properties_map.erase(key);
-    }
+    if (value_vec.size() < j["features"].size())
+      unique_properties_map.erase(key);
   }
+
+  if (unique_properties_map.empty()) {
+    std::cerr << "ERROR: No unique properties found in GeoJSON" << std::endl;
+    _Exit(15);
+  }
+
+  return unique_properties_map;
+}
+
+void generate_csv_template(
+  const nlohmann::json &j,
+  const std::string &map_name_)
+{
+  std::map<std::string, std::vector<std::string>> viable_properties_map = 
+    extract_unique_properties_map(j);
+  
   std::cerr << std::endl;
 
   // Have the users choose which key(s) they want to use as the
@@ -344,26 +353,6 @@ void generate_csv_template(
   out_file_csv.close();
 }
 
-std::vector<std::string> extract_unique_properties(const nlohmann::json &j)
-{
-  std::map<std::string, std::set<std::string>> properties_map;
-  for (const auto &feature : j["features"]) {
-    const auto properties = feature["properties"];
-    for (const auto &property : properties.items()) {
-      const auto key = property.key();
-      const auto value = strip_quotes(property.value().dump());
-      properties_map[key].insert(value);
-    }
-  }
-  std::vector<std::string> unique_properties;
-  for (const auto &[key, value_set] : properties_map) {
-    if (value_set.size() == j["features"].size()) {
-      unique_properties.push_back(key);
-    }
-  }
-  return unique_properties;
-}
-
 std::vector<std::string> extract_initial_order_of_ids(
   const nlohmann::json &j,
   const std::string &id_header)
@@ -395,9 +384,8 @@ void CartogramInfo::construct_inset_state_from_geodivs(const nlohmann::json &j)
 }
 
 std::map<std::string, std::map<std::string, std::string>>
-extract_properties_map(const nlohmann::json &j, const std::string &id_header)
+extract_properties_map(const nlohmann::json &j, const std::string &id_header, const std::vector<std::string> &unique_properties)
 {
-  std::vector<std::string> unique_properties = extract_unique_properties(j);
   assert(
     find(unique_properties.begin(), unique_properties.end(), id_header) !=
     unique_properties.end());
@@ -435,16 +423,15 @@ void CartogramInfo::read_geojson()
     args_.skip_projection = true;
   }
 
-  unique_properties_ = extract_unique_properties(j);
+  std::map<std::string, std::vector<std::string>> unique_properties_map = 
+    extract_unique_properties_map(j);
+  
+  for (const auto &[key, value_vec] : unique_properties_map)
+    unique_properties_.push_back(key);
 
-  if (unique_properties_.empty()) {
-    std::cerr << "ERROR: No unique properties found in GeoJSON" << std::endl;
-    _Exit(15);
-  }
+  id_header_ = unique_properties_[0];
 
-  set_id_header(unique_properties_[0]);
-
-  properties_map_ = extract_properties_map(j, id_header_);
+  properties_map_ = extract_properties_map(j, id_header_, unique_properties_);
 
   initial_id_order_ = extract_initial_order_of_ids(j, id_header_);
 

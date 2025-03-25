@@ -323,11 +323,6 @@ void CartogramInfo::rescale_insets()
   }
 }
 
-void CartogramInfo::set_id_header(const std::string &id_header)
-{
-  id_header_ = id_header;
-}
-
 std::string CartogramInfo::set_map_name(const std::string &map_name)
 {
   map_name_ = map_name;
