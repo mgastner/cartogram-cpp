@@ -214,10 +214,10 @@ extract_unique_properties_map(const nlohmann::json &j)
   std::map<std::string, std::vector<std::string>> properties_map;
   for (const auto &feature : j["features"]) {
     for (const auto &property_item : feature["properties"].items()) {
-      const auto key = property_item.key();
-      const auto value = strip_quotes(property_item.value().dump());
+      const std::string key = property_item.key();
+      const std::string value = strip_quotes(property_item.value().dump());
 
-      const auto value_vec = properties_map[key];
+      const std::vector<std::string> value_vec = properties_map[key];
       const bool value_not_inside = 
         std::find(value_vec.begin(), value_vec.end(), value) == 
         value_vec.end();
@@ -383,25 +383,6 @@ void CartogramInfo::construct_inset_state_from_geodivs(const nlohmann::json &j)
   inset_states_.emplace_back(std::move(inset_state));
 }
 
-std::map<std::string, std::map<std::string, std::string>>
-extract_properties_map(const nlohmann::json &j, const std::string &id_header, const std::vector<std::string> &unique_properties)
-{
-  assert(
-    find(unique_properties.begin(), unique_properties.end(), id_header) !=
-    unique_properties.end());
-  std::map<std::string, std::map<std::string, std::string>> properties_map;
-  for (const auto &feature : j["features"]) {
-    std::map<std::string, std::string> properties;
-    for (auto const &unique_property : unique_properties) {
-      const auto property = feature["properties"];
-      const auto key = strip_quotes(property[unique_property].dump());
-      properties[unique_property] = key;
-    }
-    properties_map[properties[id_header]] = properties;
-  }
-  return properties_map;
-}
-
 void CartogramInfo::read_geojson()
 {
   std::string geometry_file_name = args_.geo_file_name;
@@ -422,16 +403,13 @@ void CartogramInfo::read_geojson()
               << "Applying --skip_projection flag." << std::endl;
     args_.skip_projection = true;
   }
-
-  std::map<std::string, std::vector<std::string>> unique_properties_map = 
-    extract_unique_properties_map(j);
   
-  for (const auto &[key, value_vec] : unique_properties_map)
+  unique_properties_map_ = extract_unique_properties_map(j);
+  
+  for (const auto &[key, value_vec] : unique_properties_map_)
     unique_properties_.push_back(key);
 
   id_header_ = unique_properties_[0];
-
-  properties_map_ = extract_properties_map(j, id_header_, unique_properties_);
 
   initial_id_order_ = extract_initial_order_of_ids(j, id_header_);
 

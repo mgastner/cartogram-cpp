@@ -16,7 +16,7 @@ private:
   std::vector<InsetState> inset_states_;
   bool is_world_map_;
   std::string map_name_;
-  std::map<std::string, std::map<std::string, std::string>> properties_map_;
+  std::map<std::string, std::vector<std::string>> unique_properties_map_;
   std::vector<std::string> unique_properties_;
 
   // TODO: We assume that either all external rings are counterclockwise or

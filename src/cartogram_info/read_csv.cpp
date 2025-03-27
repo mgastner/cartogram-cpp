@@ -105,11 +105,11 @@ void CartogramInfo::update_id_header_info(const std::string &csv_id_header)
     return;
   }
 
+  std::vector<std::string> old_unique_properties = unique_properties_map_[id_header_];
+  std::vector<std::string> new_unique_properties = unique_properties_map_[csv_id_header];
   std::map<std::string, std::string> geojson_id_to_csv_id;
-  for (auto &[geojson_id, properties] : properties_map_) {
-    const std::string csv_id = properties.at(csv_id_header);
-    geojson_id_to_csv_id[geojson_id] = csv_id;
-  }
+  for (size_t i = 0; i < old_unique_properties.size(); i++)
+    geojson_id_to_csv_id[old_unique_properties[i]] = new_unique_properties[i];
 
   for (auto &id : initial_id_order_) {
     id = geojson_id_to_csv_id.at(id);
@@ -125,13 +125,6 @@ void CartogramInfo::update_id_header_info(const std::string &csv_id_header)
   for (InsetState &inset_state : inset_states_) {
     inset_state.update_gd_ids(geojson_id_to_csv_id);
   }
-
-  std::map<std::string, std::map<std::string, std::string>> new_properties_map;
-  for (auto &[geojson_id, properties] : properties_map_) {
-    const std::string csv_id = geojson_id_to_csv_id.at(geojson_id);
-    new_properties_map[csv_id] = properties;
-  }
-  properties_map_ = new_properties_map;
 
   id_header_ = csv_id_header;
 }
