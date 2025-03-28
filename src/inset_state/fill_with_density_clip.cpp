@@ -594,7 +594,7 @@ void InsetState::create_contiguity_graph() {
   // Create a copy of `inset_state` to avoid rescaling the original
   InsetState is_copy = *this;
 
-  is_copy.rescale_map(args_.n_grid_rows_or_cols, args_.world);
+  is_copy.rescale_map();
 
   boost::multi_array<bool, 2> is_edge(boost::extents[is_copy.lx()][is_copy.ly()]);
   std::fill_n(is_edge.data(), is_edge.num_elements(), false);

@@ -430,7 +430,7 @@ void CartogramInfo::write_shifted_insets()
 void CartogramInfo::write_svg(const std::string &suffix)
 {
   InsetState insets_combined = convert_to_inset_state();
-  insets_combined.rescale_map(args_.n_grid_rows_or_cols, args_.world);
+  insets_combined.rescale_map();
 
   // TODO: Figure out how to add a grid
   // scale_factor = sqrt(scale_factor);

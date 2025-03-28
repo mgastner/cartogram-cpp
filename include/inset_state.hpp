@@ -263,7 +263,7 @@ public:
   void remove_tiny_polygons(const double &minimum_polygon_size);
   void reset_n_finished_integrations();
   void replace_target_area(const std::string &, double);
-  void rescale_map(unsigned int, bool);
+  void rescale_map();
   void revert_smyth_craster_projection();
   void set_area_errors();
   void set_grid_dimensions(unsigned int, unsigned int);
