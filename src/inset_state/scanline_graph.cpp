@@ -124,54 +124,6 @@ std::vector<std::vector<intersection> > InsetState::intersec_with_parallel_to(
   return scanlines;
 }
 
-// Creates continuity/adjacency graph using horizontal and vertical scans
-void InsetState::create_contiguity_graph(unsigned int resolution)
-{
-  // Calculate horizontal and vertical scanlines
-  for (char axis : {'x', 'y'}) {
-    const std::vector<std::vector<intersection> > scanlines =
-      intersec_with_parallel_to(axis, resolution);
-    const unsigned int grid_length = (axis == 'x' ? ly_ : lx_);
-
-    // Iterate over rows (if axis is 'x') or columns
-    for (unsigned int k = 0; k < grid_length; ++k) {
-
-      // Iterate over rays in this row or column
-      for (double ray = k + 0.5 / resolution; ray < k + 1;
-           ray += (1.0 / resolution)) {
-
-        // Intersections for one ray
-        std::vector<intersection> intersections =
-          scanlines[static_cast<unsigned int>(
-            round((ray - (0.5 / resolution) * resolution)))];
-
-        // Sort intersections in ascending order
-        sort(intersections.begin(), intersections.end());
-        const int size = static_cast<int>(intersections.size()) - 1;
-
-        // Find adjacent GeoDivs by iterating over intersections
-        for (int l = 1; l < size; l += 2) {
-          const double coord_1 = intersections[l].x();
-          const double coord_2 = intersections[l + 1].x();
-          const std::string gd_1 = intersections[l].geo_div_id;
-          const std::string gd_2 = intersections[l + 1].geo_div_id;
-
-          // Update adjacency
-          if (gd_1 != gd_2 && coord_1 == coord_2) {
-            for (auto &gd : geo_divs_) {
-              if (gd.id() == gd_1) {
-                gd.adjacent_to(gd_2);
-              } else if (gd.id() == gd_2) {
-                gd.adjacent_to(gd_1);
-              }
-            }
-          }
-        }
-      }
-    }
-  }
-}
-
 // Returns line segments highlighting intersection points using scans above
 std::vector<Segment> InsetState::intersecting_segments(
   unsigned int resolution) const

@@ -140,7 +140,7 @@ public:
   unsigned int colors_size() const;
   bool continue_integrating() const;
   void create_and_refine_quadtree();
-  void create_contiguity_graph(unsigned int);
+  void create_contiguity_graph();
   void create_delaunay_t();
   void densify_geo_divs();
   void densify_geo_divs_using_delaunay_t();
