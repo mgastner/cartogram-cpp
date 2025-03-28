@@ -197,7 +197,7 @@ void InsetState::fill_with_density_rays()
     if (pwh_set.empty()) continue;
 
     // Get reference to GeoDiv
-    const auto& gd = geo_divs_[geo_divs_id_to_index_[gd_id]];
+    const auto& gd = geo_div_at_id(gd_id);
 
     // Calculate weight and target density for the polygon
     const double weight = area_error_at(gd_id);

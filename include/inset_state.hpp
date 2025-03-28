@@ -166,6 +166,8 @@ public:
   bool flatten_density_on_node_vertices(); // Bool to check if failed
 
   const std::vector<GeoDiv> &geo_divs() const;
+  const GeoDiv& geo_div_at_id(std::string id) const;
+  GeoDiv& geo_div_at_id(std::string id);
   std::vector<std::vector<Color>> grid_cell_colors(unsigned int cell_width);
   Polygon grid_cell_edge_points(
     unsigned int x,

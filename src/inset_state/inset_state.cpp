@@ -115,7 +115,7 @@ bool InsetState::continue_integrating() const
   std::cerr << "Max. area err: " << max_area_err << ", GeoDiv: " << worst_gd
             << std::endl;
   std::cerr << "Current Area: "
-            << geo_divs_[geo_divs_id_to_index_.at(worst_gd)].area()
+            << geo_div_at_id(worst_gd).area()
             << ", Target Area: " << target_area_at(worst_gd) << std::endl;
   std::cerr << "Area drift: " << area_drift * 100.0 << "%" << std::endl;
 
@@ -401,6 +401,14 @@ void InsetState::export_time_report() const
 const std::vector<GeoDiv> &InsetState::geo_divs() const
 {
   return geo_divs_;
+}
+
+// Const and non-const version of geo_div_at_id
+const GeoDiv &InsetState::geo_div_at_id(std::string id) const {
+  return geo_divs_[geo_divs_id_to_index_.at(id)];
+}
+GeoDiv &InsetState::geo_div_at_id(std::string id) {
+  return geo_divs_[geo_divs_id_to_index_.at(id)];
 }
 
 // Get unique points from GeoDivs
