@@ -140,7 +140,7 @@ public:
   unsigned int colors_size() const;
   bool continue_integrating() const;
   void create_and_refine_quadtree();
-  void create_contiguity_graph(unsigned int);
+  void create_contiguity_graph();
   void create_delaunay_t();
   void densify_geo_divs();
   void densify_geo_divs_using_delaunay_t();
@@ -166,6 +166,8 @@ public:
   bool flatten_density_on_node_vertices(); // Bool to check if failed
 
   const std::vector<GeoDiv> &geo_divs() const;
+  const GeoDiv& geo_div_at_id(std::string id) const;
+  GeoDiv& geo_div_at_id(std::string id);
   std::vector<std::vector<Color>> grid_cell_colors(unsigned int cell_width);
   Polygon grid_cell_edge_points(
     unsigned int x,
@@ -261,7 +263,7 @@ public:
   void remove_tiny_polygons(const double &minimum_polygon_size);
   void reset_n_finished_integrations();
   void replace_target_area(const std::string &, double);
-  void rescale_map(unsigned int, bool);
+  void rescale_map();
   void revert_smyth_craster_projection();
   void set_area_errors();
   void set_grid_dimensions(unsigned int, unsigned int);

@@ -249,6 +249,7 @@ struct PolygonInfo {
   unsigned int hole_id;
 };
 
+// Information about which Polygon lies in Cell (x, y)
 struct GridCellPolygon {
   int x;
   int y;
@@ -586,6 +587,49 @@ void test_areas(
   std::cout << "Root Mean Square Error: " << root_mean_square_error
             << std::endl
             << std::endl;
+}
+
+void InsetState::create_contiguity_graph() {
+
+  // Create a copy of `inset_state` to avoid rescaling the original
+  InsetState is_copy = *this;
+
+  is_copy.rescale_map();
+
+  boost::multi_array<bool, 2> is_edge(boost::extents[is_copy.lx()][is_copy.ly()]);
+  std::fill_n(is_edge.data(), is_edge.num_elements(), false);
+  boost::multi_array<std::vector<PolygonInfo>, 2> grid_cell_polygons(
+    boost::extents[is_copy.lx()][is_copy.ly()]);
+  std::vector<PolygonInfo> all_pwh_info;
+
+  process_geo_divisions_edge_info(
+    is_edge,
+    grid_cell_polygons,
+    all_pwh_info,
+    is_copy);
+
+  for (unsigned int x = 0; x < is_copy.lx(); ++x) {
+    for (unsigned int y = 0; y < is_copy.ly(); ++y) {
+      if (is_edge[x][y]) {
+
+        // Iterate through
+        std::vector<PolygonInfo> polygons_at_xy = grid_cell_polygons[x][y];
+
+        for (size_t i = 0; i < polygons_at_xy.size(); ++i) {
+          GeoDiv &gd_1 = geo_divs_[polygons_at_xy[i].gd_id];
+          for (size_t j = i + 1; j < polygons_at_xy.size(); ++j) {
+            GeoDiv &gd_2 = geo_divs_[polygons_at_xy[j].gd_id];
+
+            // Update adjacency for both GeoDivs
+            // GeoDiv.adjacent_to() already checks whether the GeoDivs are different
+            gd_1.adjacent_to(gd_2.id());
+            gd_2.adjacent_to(gd_1.id());
+          }
+        }
+
+      }
+    }
+  }
 }
 
 void InsetState::fill_with_density_clip()

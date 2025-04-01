@@ -10,7 +10,7 @@ void InsetState::preprocess()
   }
 
   // Rescale map to fit into a rectangular box [0, lx] * [0, ly]
-  rescale_map(args_.n_grid_rows_or_cols, args_.world);
+  rescale_map();
 
   // Store original coordinates for morphing animation
   if (args_.redirect_exports_to_stdout) {

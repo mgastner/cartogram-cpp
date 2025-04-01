@@ -13,7 +13,9 @@ const std::set<std::string> &GeoDiv::adjacent_geodivs() const
 
 void GeoDiv::adjacent_to(const std::string &id)
 {
-  adjacent_geodivs_.insert(id);
+  if (id != id_) {
+    adjacent_geodivs_.insert(id);
+  }
 }
 
 double GeoDiv::area() const
