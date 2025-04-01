@@ -82,11 +82,14 @@ void check_validity_of_inset_pos(
   }
 }
 
-void CartogramInfo::update_id_header_info(
-  const std::set<std::string> &csv_id_data)
+int CartogramInfo::update_id_header_info(
+  const std::optional<std::string> &id_col)
 {
+  csv::CSVReader reader(args_.visual_file_name);
+  std::string csv_id_header;
+
   // Copies what unique_properties_map_ does except it stores the values in a
-  // set instead Should find a more efficient way to do this
+  // set instead. Should find a more efficient way to do this.
   std::map<std::string, std::set<std::string>> geojson_properties_info;
   for (auto &[key, properties_vec] : unique_properties_map_) {
     std::set<std::string> properties_set(
@@ -94,14 +97,62 @@ void CartogramInfo::update_id_header_info(
       properties_vec.end());
     geojson_properties_info[key] = properties_set;
   }
-
-  // Check through each of the GEOJSON properties, see if any exactly match
-  // the given CSV ID column data
   std::string matching_id_header;
-  for (auto &[key, value_set] : geojson_properties_info) {
-    if (csv_id_data == value_set) {
-      matching_id_header = key;
-      break;
+
+  // If the user has specified a header as the ID column, check that one first.
+  if (id_col) {
+    std::set<std::string> csv_id_set;
+    for (auto row = reader.begin(); row != reader.end(); row++)
+      csv_id_set.insert((*row)[*id_col].get());
+
+    // Check through each of the GEOJSON properties, see if any exactly match
+    // the given CSV ID column data
+    for (auto &[key, value_set] : geojson_properties_info) {
+      if (csv_id_set == value_set) {
+        matching_id_header = key;
+        csv_id_header = *id_col;
+        break;
+      }
+    }
+    if (matching_id_header.empty())
+      std::cerr << "Given ID header " << *id_col
+                << " does not match with any GeoJSON properties. "
+                   "Finding next best matching ID column..."
+                << std::endl;
+  }
+
+  // If there is no user given ID header or the header does not match with any
+  // GEOJSON properties, iterate through each of the CSV columns to find the
+  // matching ID header.
+  if (matching_id_header.empty()) {
+    std::vector<std::string> column_headers = reader.get_col_names();
+
+    for (std::string &header : column_headers) {
+      // The begin() iterator for CSVReader seems to not be working correctly
+      // (issue here: https://github.com/vincentlaucsb/csv-parser/issues/261).
+      // As such, a new reader has to be declared in each loop in order to
+      // properly iterate through the rows.
+      csv::CSVReader reader(args_.visual_file_name);
+      std::set<std::string> data_set;
+      for (auto row = reader.begin(); row != reader.end(); row++) {
+        data_set.insert((*row)[header].get());
+      }
+
+      // If the set size is less than the number of rows then skip the column
+      // as it cannot be the ID column.
+      if (data_set.size() < reader.n_rows())
+        continue;
+
+      for (auto &[key, value_set] : geojson_properties_info) {
+        if (data_set == value_set) {
+          matching_id_header = key;
+          csv_id_header = header;
+          break;
+        }
+      }
+
+      if (!matching_id_header.empty())
+        break;
     }
   }
 
@@ -136,6 +187,7 @@ void CartogramInfo::update_id_header_info(
   }
 
   id_header_ = matching_id_header;
+  return reader.index_of(csv_id_header);
 }
 
 void check_validity_of_csv_ids(
@@ -249,7 +301,7 @@ void CartogramInfo::read_csv()
 
   // Unless named through command-line argument,
   // 1st and 2nd columns are assumed to be IDs and target areas
-  const int id_col = args_.id_col ? reader.index_of(*args_.id_col) : 0;
+  const int id_col = update_id_header_info(args_.id_col);
   const int area_col = args_.area_col ? reader.index_of(*args_.area_col) : 1;
 
   // Defaults set in parse_arguments.cpp
@@ -259,7 +311,6 @@ void CartogramInfo::read_csv()
   // default: "Color" | "Colour"
   const int color_col = extract_color_col_index(reader, args_.color_col);
 
-  std::set<std::string> csv_id_data;
   std::map<std::string, std::map<std::string, std::string>> csv_data;
   for (auto &row : reader) {
     if (row.size() < 2) {
@@ -271,7 +322,6 @@ void CartogramInfo::read_csv()
     }
 
     const std::string id = row[id_col].get();
-    csv_id_data.insert(id);
     const std::string area_as_str = row[area_col].get();
     check_validity_of_area_str(area_as_str);
 
@@ -293,8 +343,6 @@ void CartogramInfo::read_csv()
       {"label", label},
       {"inset_pos", inset_pos}};
   }
-
-  update_id_header_info(csv_id_data);
   check_validity_of_csv_ids(csv_data, initial_id_order_);
   process_area_strs(csv_data);
   relocate_geodivs_based_on_inset_pos(csv_data);

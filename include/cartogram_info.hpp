@@ -65,7 +65,7 @@ public:
   void print_time_report();
   void project_to_equal_area();
 
-  void update_id_header_info(const std::set<std::string> &);
+  int update_id_header_info(const std::optional<std::string> &);
   void write_csv(const std::string &csv_file_name);
   void write_geojson(const std::string &);
   void write_shifted_insets();
