@@ -44,4 +44,4 @@ void add_intersections(
   size_t,
   char);
 
-#endif // INTERSECTION_HPP_
+#endif  // INTERSECTION_HPP_

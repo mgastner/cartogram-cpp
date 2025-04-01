@@ -16,4 +16,4 @@ struct Ellipse {
   double sin_theta;
 };
 
-#endif // ELLIPSE_HPP_
+#endif  // ELLIPSE_HPP_

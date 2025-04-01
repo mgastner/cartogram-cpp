@@ -30,7 +30,7 @@ struct Arguments {
   // Use Quadtree-Delaunay triangulation method
   bool qtdt_method;
 
-// Should the polygons be simplified and densified?
+  // Should the polygons be simplified and densified?
   bool simplify;
 
   // If `rays` is true, we use the ray-shooting method to fill the grid cells.
@@ -69,8 +69,6 @@ struct Arguments {
 };
 
 // Function to parse arguments and set variables in main()
-Arguments parse_arguments(
-  int argc,
-  const char *argv[]);
+Arguments parse_arguments(int argc, const char *argv[]);
 
-#endif // PARSE_ARGUMENTS_HPP_
+#endif  // PARSE_ARGUMENTS_HPP_

@@ -5,12 +5,12 @@
 #include "ft_real_2d.hpp"
 #include "geo_div.hpp"
 #include "intersection.hpp"
+#include "nlohmann/json.hpp"
 #include "parse_arguments.hpp"
+#include "progress_tracker.hpp"
 #include "time_tracker.hpp"
 #include <boost/multi_array.hpp>
 #include <cairo/cairo.h>
-#include "nlohmann/json.hpp"
-#include "progress_tracker.hpp"
 
 struct max_area_error_info {
   double value;
@@ -163,11 +163,11 @@ public:
   bool flatten_density();  // Flatten said density with integration
   void flatten_ellipse_density();
   void flatten_density_on_square_grid();
-  bool flatten_density_on_node_vertices(); // Bool to check if failed
+  bool flatten_density_on_node_vertices();  // Bool to check if failed
 
   const std::vector<GeoDiv> &geo_divs() const;
-  const GeoDiv& geo_div_at_id(std::string id) const;
-  GeoDiv& geo_div_at_id(std::string id);
+  const GeoDiv &geo_div_at_id(std::string id) const;
+  GeoDiv &geo_div_at_id(std::string id);
   std::vector<std::vector<Color>> grid_cell_colors(unsigned int cell_width);
   Polygon grid_cell_edge_points(
     unsigned int x,
@@ -251,7 +251,7 @@ public:
   void project_with_bilinear_interpolation();
   Point projected_point(const Point &, bool = false) const;
   Point projected_point_with_triangulation(const Point &, bool = false) const;
-  void project_point_set(std::unordered_set<Point>& unprojected);
+  void project_point_set(std::unordered_set<Point> &unprojected);
   void project_with_cum_proj();
   void project_with_delaunay_t(bool);
   void project_with_triangulation();
@@ -285,7 +285,9 @@ public:
 
   // Apply given function to all points
   void transform_points(const std::function<Point(Point)> &, bool = false);
-  void transform_polygons(const std::function<Polygon(Polygon)> &, bool = false);
+  void transform_polygons(
+    const std::function<Polygon(Polygon)> &,
+    bool = false);
   void scale_points(double scale_factor, bool project_original = false);
   void move_points(double dx, double dy, bool project_original = false);
   std::array<Point, 3> untransformed_triangle(const Point &, bool = false)

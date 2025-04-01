@@ -47,8 +47,7 @@ void right_aligned_text(
 // returns the corresponding area in the square km^2
 double equal_area_projection_area_to_earth_area(
   double equal_area_projection_area);
-double earth_area_to_equal_area_projection_area(
-  const double earth_area);
+double earth_area_to_equal_area_projection_area(const double earth_area);
 
 std::vector<std::pair<double, double>> get_major_ticks(
   double min_target_area_per_km,
@@ -78,4 +77,4 @@ get_ticks(
 
 std::vector<int> get_nice_numbers_for_bar(double max_target_area_per_km);
 
-#endif // WRITE_IMAGE_H
+#endif  // WRITE_IMAGE_H

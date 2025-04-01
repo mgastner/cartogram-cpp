@@ -29,7 +29,7 @@ public:
 private:
   double total_geo_divs_;  // Total number of GeoDivs to monitor progress
   double progress_;  // Progress measured on a scale from 0 (start) to 1 (end)
-  double max_progress_; // Maximum progress value ever reached
+  double max_progress_;  // Maximum progress value ever reached
   indicators::ProgressBar bar_;
 };
 

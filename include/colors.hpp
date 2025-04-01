@@ -56,4 +56,4 @@ struct Color {
   }
 };
 
-#endif // COLORS_HPP_
+#endif  // COLORS_HPP_
