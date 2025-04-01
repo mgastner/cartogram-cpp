@@ -47,7 +47,6 @@ public:
   [[nodiscard]] unsigned int n_geo_divs() const;
   [[nodiscard]] unsigned int n_insets() const;
 
-
   void read_csv();
   void read_geojson();
   std::vector<InsetState> &ref_to_inset_states();
@@ -66,7 +65,7 @@ public:
   void print_time_report();
   void project_to_equal_area();
 
-  void update_id_header_info(const std::string &);
+  void update_id_header_info(const std::set<std::string> &);
   void write_csv(const std::string &csv_file_name);
   void write_geojson(const std::string &);
   void write_shifted_insets();

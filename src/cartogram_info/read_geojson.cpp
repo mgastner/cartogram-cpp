@@ -208,8 +208,8 @@ void extract_crs(const nlohmann::json &j, std::string &crs)
   std::cerr << "Coordinate reference system: " << crs << std::endl;
 }
 
-std::map<std::string, std::vector<std::string>>
-extract_unique_properties_map(const nlohmann::json &j)
+std::map<std::string, std::vector<std::string>> extract_unique_properties_map(
+  const nlohmann::json &j)
 {
   std::map<std::string, std::vector<std::string>> properties_map;
   for (const auto &feature : j["features"]) {
@@ -218,8 +218,8 @@ extract_unique_properties_map(const nlohmann::json &j)
       const std::string value = strip_quotes(property_item.value().dump());
 
       const std::vector<std::string> value_vec = properties_map[key];
-      const bool value_not_inside = 
-        std::find(value_vec.begin(), value_vec.end(), value) == 
+      const bool value_not_inside =
+        std::find(value_vec.begin(), value_vec.end(), value) ==
         value_vec.end();
       if (value != "null" && !value.empty() && value_not_inside)
         properties_map[key].push_back(value);
@@ -245,9 +245,9 @@ void generate_csv_template(
   const nlohmann::json &j,
   const std::string &map_name_)
 {
-  std::map<std::string, std::vector<std::string>> viable_properties_map = 
+  std::map<std::string, std::vector<std::string>> viable_properties_map =
     extract_unique_properties_map(j);
-  
+
   std::cerr << std::endl;
 
   // Have the users choose which key(s) they want to use as the
@@ -403,9 +403,9 @@ void CartogramInfo::read_geojson()
               << "Applying --skip_projection flag." << std::endl;
     args_.skip_projection = true;
   }
-  
+
   unique_properties_map_ = extract_unique_properties_map(j);
-  
+
   for (const auto &[key, value_vec] : unique_properties_map_)
     unique_properties_.push_back(key);
 
