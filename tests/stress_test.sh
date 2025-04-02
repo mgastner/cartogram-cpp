@@ -116,7 +116,27 @@ run_map() {
   curr_cli=$cli
   if [[ "${country}" == world* ]]; then
     printf "World map detected. Passing -W flag.\n" | tee -a "${results_file}" | color $magenta
-    curr_cli="${cli} -W"
+    curr_cli="${curr_cli} -W"
+  fi
+
+  if [[ "${csv}" == *output_equal_area_map* ]]; then
+    printf "Output equal area map trigger detected. Passing -E flag.\n" | tee -a "${results_file}" | color $magenta
+    curr_cli="${cli} -E"
+  fi
+
+  if [[ "${csv}" == *plot_polygons* ]] || [[ "${csv}" == *some_colors* ]] || [[ "${csv}" == *no_colors* ]]; then
+    printf "Plot polygons or colors trigger detected. Passing -p flag.\n" | tee -a "${results_file}" | color $magenta
+    curr_cli="${cli} -p"
+  fi
+
+  if [[ "${csv}" == *export_preprocessed* ]]; then
+    printf "Export preprocessed trigger detected. Passing --export_preprocessed flag.\n" | tee -a "${results_file}" | color $magenta
+    curr_cli="${cli} --export_preprocessed"
+  fi
+
+  if [[ "${csv}" == *export_time_report* ]]; then
+    printf "Export time report trigger detected. Passing --export_time_report flag.\n" | tee -a "${results_file}" | color $magenta
+    curr_cli="${cli} --export_time_report"
   fi
 
   printf "cartogram ${map} ${csv} ${curr_cli}\n\n"
@@ -157,6 +177,12 @@ run_map() {
       *" ms")
         printf "%s\n" "$line" | tee -a "${results_file}" | color $cyan
         ;;
+      *"Writing"*)
+        if [[ "${csv}" == *output_equal_area_map* ]]; then
+          printf "%s\n" "$line" | color $yellow
+          draw_progress_bar 100
+        fi
+        ;;
       *)
         if [ $verbose -eq 1 ]; then
           printf "%s\n" "$line"
@@ -169,7 +195,10 @@ run_map() {
   printf "== Runtime ${runtime}s == \n" | tee -a "${results_file}"
 
   # Checking for any errors, invalid geometry or unfinished integration
-  if grep -qi "invalid" ${tmp_file} || grep -qi "error" ${tmp_file} || ! grep -Fxq "Progress: 1" ${tmp_file}; then
+  if grep -qi "invalid" ${tmp_file} || \
+     grep -qi "error" ${tmp_file} || \
+     { ! grep -Fxq "Progress: 1" ${tmp_file} && [[ "${csv}" != *output_equal_area_map* ]]; } || \
+     { [[ "${csv}" == *output_equal_area_map* ]] && ! grep -qi "writing" ${tmp_file}; }; then
     printf "== FAILED ==\n" | tee -a "${results_file}" | color $red
     printf "cartogram ${map} ${csv} ${cli}" | tee -a ${failed_runs} | pbcopy
     printf "\n" >>${failed_runs}
