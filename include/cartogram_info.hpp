@@ -17,7 +17,7 @@ private:
   bool is_world_map_;
   std::string map_name_;
   std::map<std::string, std::vector<std::string>> unique_properties_map_;
-  std::vector<std::string> unique_properties_;
+  int id_col_;
 
   // TODO: We assume that either all external rings are counterclockwise or
   //       all are clockwise. This dichotomy covers most geospatial boundary
@@ -65,7 +65,8 @@ public:
   void print_time_report();
   void project_to_equal_area();
 
-  int update_id_header_info(const std::optional<std::string> &);
+  std::string match_id_columns (const std::optional<std::string> &);
+  void update_id_header_info(const std::string &);
   void write_csv(const std::string &csv_file_name);
   void write_geojson(const std::string &);
   void write_shifted_insets();

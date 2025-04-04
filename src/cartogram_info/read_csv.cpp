@@ -82,7 +82,9 @@ void check_validity_of_inset_pos(
   }
 }
 
-int CartogramInfo::update_id_header_info(
+// Find the matching ID columns in both the CSV and GeoJSON file
+// Returns the header name of the matching ID column in the GeoJSON file
+std::string CartogramInfo::match_id_columns(
   const std::optional<std::string> &id_col)
 {
   csv::CSVReader reader(args_.visual_file_name);
@@ -163,10 +165,19 @@ int CartogramInfo::update_id_header_info(
     _Exit(16);
   }
 
+  id_col_ = reader.index_of(csv_id_header);
+  return matching_id_header;
+}
+
+// Updates ID header and inset info
+void CartogramInfo::update_id_header_info(
+  const std::string &matching_id_header)
+{
   std::vector<std::string> old_unique_properties =
     unique_properties_map_[id_header_];
   std::vector<std::string> new_unique_properties =
     unique_properties_map_[matching_id_header];
+
   std::map<std::string, std::string> geojson_id_to_csv_id;
   for (size_t i = 0; i < old_unique_properties.size(); i++)
     geojson_id_to_csv_id[old_unique_properties[i]] = new_unique_properties[i];
@@ -187,7 +198,6 @@ int CartogramInfo::update_id_header_info(
   }
 
   id_header_ = matching_id_header;
-  return reader.index_of(csv_id_header);
 }
 
 void check_validity_of_csv_ids(
@@ -299,9 +309,10 @@ void CartogramInfo::read_csv()
 {
   csv::CSVReader reader(args_.visual_file_name);
 
+  const std::string new_id_header = match_id_columns(args_.id_col);
+  const int id_col = id_col_;
   // Unless named through command-line argument,
-  // 1st and 2nd columns are assumed to be IDs and target areas
-  const int id_col = update_id_header_info(args_.id_col);
+  // 2nd column is assumed to be target areas
   const int area_col = args_.area_col ? reader.index_of(*args_.area_col) : 1;
 
   // Defaults set in parse_arguments.cpp
@@ -343,6 +354,8 @@ void CartogramInfo::read_csv()
       {"label", label},
       {"inset_pos", inset_pos}};
   }
+
+  update_id_header_info(new_id_header);
   check_validity_of_csv_ids(csv_data, initial_id_order_);
   process_area_strs(csv_data);
   relocate_geodivs_based_on_inset_pos(csv_data);
