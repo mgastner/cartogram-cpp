@@ -47,6 +47,8 @@ trap handle_sigint SIGINT
 # check-command-line-arguments
 
 verbose=0 # Initialize verbose flag to 0 (off)
+flags=0 # Initialize a flag to test relevant cartogram-cpp flags to 0 (off)
+cli_arr=("" "--plot_polygons" "--export_preprocessed" "--export_time_report" "--output_equal_area_map") # Set of flags to test if flags flag is enabled
 cli=""    # Default CLI options
 
 # Parsing command line arguments
@@ -57,6 +59,9 @@ else
     if [ "$arg" == "--verbose" ]; then
       verbose=1
       printf "\VERBOSE mode turned on.\n"
+    elif [ "$arg" == "--flags" ]; then
+      flags=1
+      printf "\FLAGS mode turned on.\n"
     else
       cli="$cli $arg"
     fi
@@ -112,31 +117,11 @@ run_map() {
   integration_count=0
   max_area_err=""
   start=$SECONDS
-  # if world map then use -W flag
   curr_cli=$cli
+  # If world map then use -W flag
   if [[ "${country}" == world* ]]; then
-    printf "World map detected. Passing -W flag.\n" | tee -a "${results_file}" | color $magenta
-    curr_cli="${curr_cli} -W"
-  fi
-
-  if [[ "${csv}" == *output_equal_area_map* ]]; then
-    printf "Output equal area map trigger detected. Passing -E flag.\n" | tee -a "${results_file}" | color $magenta
-    curr_cli="${cli} -E"
-  fi
-
-  if [[ "${csv}" == *plot_polygons* ]] || [[ "${csv}" == *some_colors* ]] || [[ "${csv}" == *no_colors* ]]; then
-    printf "Plot polygons or colors trigger detected. Passing -p flag.\n" | tee -a "${results_file}" | color $magenta
-    curr_cli="${cli} -p"
-  fi
-
-  if [[ "${csv}" == *export_preprocessed* ]]; then
-    printf "Export preprocessed trigger detected. Passing --export_preprocessed flag.\n" | tee -a "${results_file}" | color $magenta
-    curr_cli="${cli} --export_preprocessed"
-  fi
-
-  if [[ "${csv}" == *export_time_report* ]]; then
-    printf "Export time report trigger detected. Passing --export_time_report flag.\n" | tee -a "${results_file}" | color $magenta
-    curr_cli="${cli} --export_time_report"
+    printf "World map detected. Passing -W flag.\n" | tee -a "${results_file_loc}" | color $magenta
+    curr_cli="${cli} -W"
   fi
 
   printf "cartogram ${map} ${csv} ${curr_cli}\n\n"
@@ -148,7 +133,7 @@ run_map() {
 
       case "$line" in
       *"error"* | *"warning"* | *"invalid"*)
-        printf "\n\n%s\n\n" "$line" | tee -a "${results_file}" | color $red
+        printf "\n\n%s\n\n" "$line" | tee -a "${results_file_loc}" | color $red
         ;;
       *"progress: 0."*)
         draw_progress_bar ${line:12:2}
@@ -171,14 +156,15 @@ run_map() {
         if [[ "$printed" -eq 0 ]]; then
           draw_progress_bar 100
           printed=1
-          printf "\n\n== Integration finished ==\nTotal integrations done: %d\n%s\n" "$integration_count" "$max_area_err" | tee -a "${results_file}" | color $yellow
+          printf "\n\n== Integration finished ==\nTotal integrations done: %d\n%s\n" "$integration_count" "$max_area_err" | tee -a "${results_file_loc}" | color $yellow
         fi
         ;;
       *" ms")
-        printf "%s\n" "$line" | tee -a "${results_file}" | color $cyan
+        printf "%s\n" "$line" | tee -a "${results_file_loc}" | color $cyan
         ;;
+      # Check the output when using output_equal_area_map by line directly
       *"Writing"*)
-        if [[ "${csv}" == *output_equal_area_map* ]]; then
+        if [[ "${curr_cli}" == *output_equal_area_map* ]]; then
           printf "%s\n" "$line" | color $yellow
           draw_progress_bar 100
         fi
@@ -192,14 +178,16 @@ run_map() {
     done
   end=$SECONDS
   runtime=$((end - start))
-  printf "== Runtime ${runtime}s == \n" | tee -a "${results_file}"
+  printf "== Runtime ${runtime}s == \n" | tee -a "${results_file_loc}"
 
   # Checking for any errors, invalid geometry or unfinished integration
+  # Since output_equal_area_map has no progress output and only has
+  # a single line as output, check if line prints out with no errors
   if grep -qi "invalid" ${tmp_file} || \
      grep -qi "error" ${tmp_file} || \
-     { ! grep -Fxq "Progress: 1" ${tmp_file} && [[ "${csv}" != *output_equal_area_map* ]]; } || \
-     { [[ "${csv}" == *output_equal_area_map* ]] && ! grep -qi "writing" ${tmp_file}; }; then
-    printf "== FAILED ==\n" | tee -a "${results_file}" | color $red
+     { ! grep -Fxq "Progress: 1" ${tmp_file} && [[ "${curr_cli}" != *output_equal_area_map* ]]; } || \
+     { [[ "${curr_cli}" == *output_equal_area_map* ]] && ! grep -qi "writing" ${tmp_file}; }; then
+    printf "== FAILED ==\n" | tee -a "${results_file_loc}" | color $red
     printf "cartogram ${map} ${csv} ${cli}" | tee -a ${failed_runs} | pbcopy
     printf "\n" >>${failed_runs}
     # Printing country to failed_tmp.txt
@@ -216,17 +204,22 @@ run_map() {
     err_file="DNF-${map_wo_ext}-with-${csv_wo_ext}.txt"
     printf " - with ${csv_name} in ${runtime}s\n" >>failed_tmp.txt
     printf "cartogram %s %s %s\n" "$map" "$csv" "$cli" >>failed_tmp.txt
-    printf "Full output saved ro ${err_file}\n" | tee -a "${results_file}"
+    printf "Full output saved to ${err_file}\n" | tee -a "${results_file_loc}"
     mv ${tmp_file} ${err_file}
 
     # If no errors, and integration finished, pass
   else
-    printf "== PASSED ==\n" | tee -a "${results_file}" | color $green
+    printf "== PASSED ==\n" | tee -a "${results_file_loc}" | color $green
     printf "cartogram ${map} ${csv} ${cli}\n" >>${successful_runs}
 
     # Store the runtime for the current map
     runtimes+=($runtime)
-    map_csv_pairs+=("${map_file_name} with ${csv_name}")
+    # Mention the flag used in the map csv pair
+    # If no flag is used, print as "no flags"
+    if [ -z "$cli" ]; then
+      curr_cli="no flags"
+    fi
+    map_csv_pairs+=("${map_file_name} with ${csv_name} and ${curr_cli}")
 
   fi
 
@@ -234,7 +227,7 @@ run_map() {
   >${tmp_file}
 
   # Printing new line
-  printf "\n" | tee -a "${results_file}"
+  printf "\n" | tee -a "${results_file_loc}"
 }
 
 # Counting number of tests
@@ -242,31 +235,67 @@ countries=0
 total_tests=0
 failed=0
 
-# Iterating through folders in ..sample_data/
-for folder in ../../sample_data/*; do
-  if [[ -d "${folder}" && "${folder}" != *"sandbox"* ]]; then
-    countries=$((countries + 1))
-    country=${folder##*/}
-    printf " -------- Testing ${country}\n\n" | tee -a "${results_file}" | color $magenta
+# If flags enabled, change the sample_data to its appropriate location
+# Store results_file as one outside of subdirectories instead of splitting it
+if [ $flags -eq 1 ]; then
+  sample_data_folder="../../../sample_data/*"
+  results_file_loc="../${results_file}"
+# If flags not enabled, use single cli specified by user
+else
+  cli_arr=("$cli")
+  sample_data_folder="../../sample_data/*"
+  results_file_loc="${results_file}"
+fi
 
-    # Iterating through maps (GeoJSON(s) or JSON(s)) in country's folder
-    for map in ${folder}/*.*json; do
-      map_file_name=${map##*/}
-      printf "Trying ${map_file_name}\n" | tee -a "${results_file}" | color $blue
-
-      # Iterating through visual variable files (CSV(s)) in country's folder
-      for csv in ${folder}/*.csv; do
-        total_tests=$((total_tests + 1))
-        csv_name=${csv##*/}
-        printf " - with ${csv_name}\n\n" | tee -a "${results_file}" | color $cyan
-
-        # Running cartogram, and timing it in seconds
-        run_map
-
-      done
-    done
-    printf " -------- Finished testing ${country}.\n\n\n\n\n\n" | tee -a "${results_file}" | color $magenta
+# Loop through cli array
+# Only loops once if flags not enabled
+for cli in "${cli_arr[@]}"; do
+  # If flags enabled, create and change to subdirectory for each flag
+  if [ $flags -eq 1 ]; then
+    if [ -n "$cli" ]; then
+      dir_name="${cli:2}"
+      mkdir -p "${dir_name}"
+      cd "${dir_name}"
+    else
+      mkdir -p "no_flags"
+      cd "no_flags"
+    fi
   fi
+
+  # Iterating through folders in sample_data folder
+  for folder in ${sample_data_folder}; do
+    if [[ -d "${folder}" && "${folder}" != *"sandbox"* ]]; then
+      countries=$((countries + 1))
+      country=${folder##*/}
+      printf " -------- Testing ${country}\n\n" | tee -a "${results_file_loc}" | color $magenta
+
+      # Iterating through maps (GeoJSON(s) or JSON(s)) in country's folder
+      for map in ${folder}/*.*json; do
+        map_file_name=${map##*/}
+        printf "Trying ${map_file_name}\n" | tee -a "${results_file_loc}" | color $blue
+
+        # Iterating through visual variable files (CSV(s)) in country's folder
+        for csv in ${folder}/*.csv; do
+          total_tests=$((total_tests + 1))
+          csv_name=${csv##*/}
+          printf " - with ${csv_name}\n\n" | tee -a "${results_file_loc}" | color $cyan
+
+          # Running cartogram, and timing it in seconds
+          run_map
+
+        done
+      done
+      printf " -------- Finished testing ${country}.\n\n\n\n\n\n" | tee -a "${results_file_loc}" | color $magenta
+    fi
+  done
+
+  # Removing temporary files
+  rm ${tmp_file}
+  # Change directory to outside flag subdirectory once done with loop
+  if [ $flags -eq 1 ]; then
+    cd ..
+  fi
+
 done
 
 # Summary report
@@ -331,34 +360,36 @@ if [[ "${failed}" -gt 0 ]]; then
   # Showing failed tests and removing temporary file
   printf "\nFailed tests:\n" | tee -a "${results_file}" | color $magenta
 
-  while IFS= read -r line; do
-    if [[ $(echo $line | wc -w) -eq 1 ]]; then
-      printf "$line\n" | tee -a "${results_file}" | color $red
-    elif [[ $line == " - "* ]]; then
-      printf "$line\n" | tee -a "${results_file}" | color $yellow
-    else
-      printf "$line\n" | tee -a "${results_file}"
-    fi
-  done <failed_tmp.txt
-  rm failed_tmp.txt
+  find . -type f -name "failed_tmp.txt" | while IFS= read -r file; do
+    while IFS= read -r line; do
+      if [[ $(echo $line | wc -w) -eq 1 ]]; then
+        printf "$line\n" | tee -a "${results_file}" | color $red
+      elif [[ $line == " - "* ]]; then
+        printf "$line\n" | tee -a "${results_file}" | color $yellow
+      else
+        printf "$line\n" | tee -a "${results_file}"
+      fi
+    done < "$file"
+    rm "$file"
+  done
   printf "\n" | tee -a "${results_file}"
 fi
-
-# Removing temporary files
-rm ${tmp_file}
 
 printf "Results saved to ${results_dir}\n\n"
 
 # Prompting for file deletion
-printf "Clear ALL *.geojson, *.png and *.ps files in directory? [y/N]: " | color $yellow
+printf "Clear ALL *.geojson, *.csv, *.svg, *.png and *.ps files in directory? [y/N]: " | color $yellow
 read -t 10 to_clear
 if [[ $? -ne 0 ]]; then
   printf "\nNo response received! " | color $red
 elif [ "$to_clear" == "y" ]; then
-  rm *.geojson
-  rm *.png
-  rm *.ps
-  printf "All *.geojson, *.png and *.ps files deleted.\n" | color $red
+  # Clear the files in subdirectories as well if flags are enabled
+  find . -name "*.geojson" -type f -delete
+  find . -name "*.csv" -type f -delete
+  find . -name "*.svg" -type f -delete
+  find . -name "*.png" -type f -delete
+  find . -name "*.ps" -type f -delete
+  printf "All *.geojson, *.csv, *.svg, *.png and *.ps files deleted.\n" | color $red
   exit ${failed}
 fi
 
