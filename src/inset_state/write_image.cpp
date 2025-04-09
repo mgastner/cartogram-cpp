@@ -153,7 +153,7 @@ void InsetState::write_delaunay_triangles(const std::string &filename, const boo
   write_segments_on_surface(cr, failed_constraints_dt_projected_, Color{1.0, 0.0, 0.0}, ly_);
   write_segments_on_surface(cr, failed_constraints_, Color{0.0, 0.0, 1.0}, ly_);
   write_triangles_on_surface(cr, proj_qd_, Color{0.6, 0.6, 0.6}, ly_, draw_projected_points);
-  write_polygons_on_surface(cr, false, false, false, 0.0, Color{1.0, 0.0, 0.0});
+  write_polygons_on_surface(cr, false, false, 0.0, Color{1.0, 0.0, 0.0});
 
   // Plot points added via densification
   if (draw_projected_points) {
@@ -177,7 +177,7 @@ void InsetState::write_quadtree(const std::string &filename)
   cairo_surface_t *surface =
     cairo_svg_surface_create((filename + ".svg").c_str(), lx_, ly_);
   cairo_t *cr = cairo_create(surface);
-  write_polygons_on_surface(cr, false, false, false);
+  write_polygons_on_surface(cr, false, false);
   write_quadtree_rectangles_on_surface(
     cr,
     quadtree_bboxes_,
@@ -246,7 +246,6 @@ void InsetState::write_polygons_on_surface(
   cairo_t *cr,
   const bool fill_polygons,
   const bool colors,
-  const bool plot_grid,
   const double line_width,
   const Color clr) const
 {
@@ -337,46 +336,6 @@ void InsetState::write_polygons_on_surface(
     }
   }
 
-  // Plot the grid
-  if (plot_grid) {
-
-    // TODO: Use write_grid_on_surface instead, after fixing
-    // const double scale_factor = sqrt(total_inset_area() / (initial_target_area() * 10));
-    const std::vector<double> multipliers = {2, 5, 2};
-    double per_grid_cell = 1;
-
-    double total_area = total_inset_area();
-    // double total_area = equal_area_projection_area_to_earth_area(total_inset_area());
-    size_t multiplier_idx = 0;
-    while (per_grid_cell < 0.015 * total_area) {
-      per_grid_cell *= multipliers[multiplier_idx];
-      multiplier_idx = (multiplier_idx + 1) % multipliers.size();
-    }
-    std::cerr << "Total area: " << total_area << std::endl;
-    std::cerr << "Per grid cell: " << per_grid_cell << std::endl;
-    // per_grid_cell = earth_area_to_equal_area_projection_area(per_grid_cell);
-    const double grid_line_spacing = sqrt(per_grid_cell);
-    // const unsigned int grid_line_spacing = 7;
-
-    // Set line width of grid lines
-    cairo_set_line_width(cr, 5e-4 * std::min(lx_, ly_));
-    cairo_set_source_rgb(cr, 0.0, 0.0, 0.0);
-
-    // Vertical grid lines
-    for (double i = 0; i <= lx_; i += grid_line_spacing) {
-      cairo_move_to(cr, i, 0);
-      cairo_line_to(cr, i, ly_);
-      cairo_stroke(cr);
-    }
-
-    // Horizontal grid lines
-    for (unsigned int j = 0; j <= ly_; j += grid_line_spacing) {
-      cairo_move_to(cr, 0, j);
-      cairo_line_to(cr, lx_, j);
-      cairo_stroke(cr);
-    }
-  }
-
   // Plot minimum ellipses
   // for (const auto &gd : geo_divs_) {
   //   for (const auto &ell : gd.min_ellipses()) {
@@ -437,25 +396,26 @@ void write_vectors_on_surface(
   }
 }
 
-void InsetState::write_grid_on_surface(cairo_t *cr) {
+// Plot the grid
+void InsetState::write_grid_on_surface(cairo_t *cr) const {
 
     // TODO: Find out grid sizing
 
     // const double scale_factor = sqrt(total_inset_area() / (initial_target_area() * 10));
     const std::vector<double> multipliers = {2, 5, 2};
-    double per_grid_cell = 1;
+    per_grid_cell_ = 1;
 
     double total_area = total_inset_area();
     // double total_area = equal_area_projection_area_to_earth_area(total_inset_area());
     size_t multiplier_idx = 0;
-    while (per_grid_cell < 0.015 * total_area) {
-      per_grid_cell *= multipliers[multiplier_idx];
+    while (per_grid_cell_ < 0.015 * total_area) {
+      per_grid_cell_ *= multipliers[multiplier_idx];
       multiplier_idx = (multiplier_idx + 1) % multipliers.size();
     }
     std::cerr << "Total area: " << total_area << std::endl;
-    std::cerr << "Per grid cell: " << per_grid_cell << std::endl;
-    // per_grid_cell = earth_area_to_equal_area_projection_area(per_grid_cell);
-    const double grid_line_spacing = sqrt(per_grid_cell);
+    std::cerr << "Per grid cell: " << per_grid_cell_ << std::endl;
+    // per_grid_cell_ = earth_area_to_equal_area_projection_area(per_grid_cell_);
+    const double grid_line_spacing = sqrt(per_grid_cell_);
     // const unsigned int grid_line_spacing = 7;
 
     // Set line width of grid lines
@@ -489,7 +449,11 @@ void InsetState::write_cairo_polygons_to_svg(
   cairo_surface_t *surface = cairo_svg_surface_create(filename, lx_, ly_);
   cairo_t *cr = cairo_create(surface);
 
-  write_polygons_on_surface(cr, fill_polygons, colors, plot_grid);
+  write_polygons_on_surface(cr, fill_polygons, colors);
+  if (plot_grid) {
+    write_grid_on_surface(cr);
+    write_legend_on_surface(cr, false);
+  }
   write_vectors_on_surface(cr, vectors, lx_, ly_);
   cairo_show_page(cr);
   cairo_surface_destroy(surface);
@@ -743,7 +707,10 @@ void InsetState::write_grid_heatmap_image(
   write_grid_colors_on_surface(cr, plot_equal_area_map, crop_polygons);
 
   // Draw polygons without color
-  write_polygons_on_surface(cr, false, false, plot_equal_area_map);
+  write_polygons_on_surface(cr, false, false);
+
+  if (plot_equal_area_map)
+    write_grid_on_surface(cr);
 
   // trim_grid_heatmap(cr, 20);
 
@@ -934,14 +901,15 @@ void write_density_bar_on_surface(
 }
 
 // Adds a square legend outside the map
-void InsetState::write_legend_on_surface(cairo_t *cr, bool equal_area_map)
+void InsetState::write_legend_on_surface(cairo_t *cr, bool equal_area_map) const
 {
   std::pair<double, unsigned int> legend_info =
     equal_area_map ? get_km_legend_length()
                    : get_visual_variable_legend_length();
 
   Bbox bb = bbox();
-  Point legend_pos(bb.xmin() * 0.5, bb.ymin() * 0.5);
+  //Point legend_pos(bb.xmin() * 0.5, bb.ymin() * 0.5);
+  Point legend_pos(0, 0);
   double legend_length = legend_info.first;
   unsigned int legend_value = legend_info.second;
   cairo_set_line_width(cr, 1);
@@ -951,25 +919,48 @@ void InsetState::write_legend_on_surface(cairo_t *cr, bool equal_area_map)
     cr,
     legend_pos.x(),
     legend_pos.y(),
-    legend_length,
-    legend_length);
+    sqrt(per_grid_cell_),
+    sqrt(per_grid_cell_));
+    //legend_length,
+    //legend_length);
   cairo_stroke(cr);
 
-  double x = legend_pos.x() + (legend_length * 1.25);
-  double y = legend_pos.y() + (legend_length * 0.5);
+  //double x = legend_pos.x() + (legend_length * 1.25);
+  //double y = legend_pos.y() + (legend_length * 0.5);
+  double x = legend_pos.x() + (sqrt(per_grid_cell_) * 1.25);
+  double y = legend_pos.y() + (sqrt(per_grid_cell_) * 0.5);
 
-  unsigned int font_size = 12;
+  // Adjust font size according to size of SVG
+  unsigned int font_size = 8 * (lx_ / 256);
   cairo_select_font_face(
     cr,
     "Sans",
     CAIRO_FONT_SLANT_NORMAL,
     CAIRO_FONT_WEIGHT_BOLD);
   cairo_set_font_size(cr, font_size);
-  std::string legend_label = std::to_string(legend_value);
+
+  std::string legend_label = "";
+  if (legend_value >= 1000000000) {
+    int billions = legend_value / 1000000000;
+    legend_label = std::to_string(billions) + "B";
+
+  } else if (legend_value >= 1000000) {
+    int millions = legend_value / 1000000;
+    legend_label = std::to_string(millions) + "M";
+
+  } else if (legend_value >= 1000) {
+    int thousands = legend_value / 1000;
+    legend_label = std::to_string(thousands) + "K";
+
+  } else {
+    legend_label = std::to_string(legend_value);
+  }
 
   // Add known units
   if (equal_area_map) {
     legend_label += " km²";
+  } else {
+    legend_label += " people";
   }
 
   cairo_move_to(cr, x, y + (font_size / 2.0));
@@ -1123,7 +1114,7 @@ void InsetState::write_density_image(
   quadtree_bboxes_,
   Color{0.6, 0.6, 0.6},
   ly_);
-  write_polygons_on_surface(cr, false, false, false, 0.025);
+  write_polygons_on_surface(cr, false, false, 0.025);
 
   if (draw_bar && !plot_pycnophylactic) {
     std::string bar_filename = "bar_" + filename;
@@ -1166,7 +1157,7 @@ void InsetState::write_intersections_image()
   surface = cairo_svg_surface_create(filename.c_str(), lx_, ly_);
   cairo_t *cr = cairo_create(surface);
 
-  write_polygons_on_surface(cr, false, false, false);
+  write_polygons_on_surface(cr, false, false);
 
   cairo_set_line_width(cr, 0.0001 * std::min(lx_, ly_));
 
@@ -1257,7 +1248,7 @@ Polygon InsetState::grid_cell_edge_points(
   unsigned int x,
   unsigned int y,
   unsigned int cell_width = plotted_cell_length,
-  bool plot_equal_area_map = false)
+  bool plot_equal_area_map = false) const
 {
   Polygon cell_edge_points;
   const boost::multi_array<Point, 2> &proj =
@@ -1756,7 +1747,7 @@ void InsetState::write_grid_colors_on_surface(
 // Given coordinates in lx by ly coordinate system, returns the corresponding
 // coordinates in the equal_area_projection projection coordinate system
 Polygon InsetState::transform_to_equal_area_projection_coor(
-  Polygon edge_points)
+  Polygon edge_points) const
 {
   Transformation scale(CGAL::SCALING, latt_const());
 
@@ -1783,7 +1774,7 @@ double earth_area_to_equal_area_projection_area(
 
 double InsetState::grid_cell_area_km(
   const unsigned int i = 0,
-  const unsigned int j = 0)
+  const unsigned int j = 0) const
 {
   Polygon cell_edge_points = grid_cell_edge_points(i, j, 1, true);
   const Polygon cell_edge_points_equal_area_projection =
@@ -1791,10 +1782,12 @@ double InsetState::grid_cell_area_km(
   const double cell_area = cell_edge_points_equal_area_projection.area();
   const double cell_area_km =
     equal_area_projection_area_to_earth_area(cell_area);
+    
+  std::cerr << "CELL_AREA_KM: " << std::to_string(cell_area_km) << std::endl;
   return cell_area_km;
 }
 
-std::pair<double, unsigned int> InsetState::get_km_legend_length()
+std::pair<double, unsigned int> InsetState::get_km_legend_length() const
 {
 
   return std::pair<double, unsigned int>(0, 0);
@@ -1835,7 +1828,7 @@ double InsetState::grid_cell_target_area(
   return cell_target_area;
 }
 
-std::pair<double, unsigned int> InsetState::get_visual_variable_legend_length()
+std::pair<double, unsigned int> InsetState::get_visual_variable_legend_length() const
 {
   unsigned int legend_area =
     pow(10.0, ceil(std::log10(total_target_area() * 0.01)));
@@ -1845,17 +1838,27 @@ std::pair<double, unsigned int> InsetState::get_visual_variable_legend_length()
   double max_length = 0.06 * ((lx() + ly()) / 2.0);
   double length = sqrt(legend_area / unit_square_area);
 
+  unsigned int pop_area = (initial_target_area_ / total_inset_area()) * per_grid_cell_;
+  pop_area = get_nearest_nice_number_for_legend(pop_area);
+
+  std::cerr << "INITIAL_AREA: " << std::to_string(initial_area_) << std::endl;
+  std::cerr << "INITIAL_TARGET_AREA: " << std::to_string(initial_target_area_) << std::endl;
+  std::cerr << "TOTAL_TARGET_AREA: " << std::to_string(total_target_area()) << std::endl;
+  std::cerr << "TOTAL_INSET_AREA: " << std::to_string(total_inset_area()) << std::endl;
+  std::cerr << "LEGEND_AREA: " << std::to_string(legend_area) << std::endl;
+  std::cerr << "UNIT_SQUARE_AREA: " << std::to_string(unit_square_area) << std::endl;
+  std::cerr << "LENGTH: " << std::to_string(length) << std::endl;
+  std::cerr << "POP_AREA: " << std::to_string(pop_area) << std::endl;
+
   while (length < min_length) {
     length *= 2;
-    legend_area *= 4;
   }
 
   while (length > max_length) {
     length /= 2;
-    legend_area /= 4;
   }
 
-  return std::pair<double, unsigned int>(length, legend_area);
+  return std::pair<double, unsigned int>(length, pop_area);
 }
 
 double InsetState::grid_cell_target_area_per_km(
@@ -1987,4 +1990,27 @@ std::vector<int> get_nice_numbers_for_bar(const double max_target_area_per_km)
     nice_numbers.push_back(NiceNumber);
   }
   return nice_numbers;
+}
+
+// Find the nearest matching nice number and value for use in legend
+int get_nearest_nice_number_for_legend(int value)
+{
+  const int NICE_NUMBERS[4] = {1, 2, 5, 10};
+
+  int new_value = 99;
+  int scale = std::floor(std::log10(value));
+  double value_first_digit = value / pow(10.0, scale); // Get first digit of value in decimals
+  double value_diff = abs(value_first_digit - new_value);
+
+  // Loop through array of nice numbers to find the closest matching one
+  for (int num: NICE_NUMBERS) {
+    if (abs(value_first_digit - num) < value_diff) {
+      value_diff = abs(value_first_digit - num);
+      new_value = num;
+    }
+  }
+
+  // Get the real nice number by multiplying the gotten value with the scale
+  new_value = new_value * pow(10.0, scale);
+  return new_value;
 }

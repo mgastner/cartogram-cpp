@@ -439,5 +439,5 @@ void CartogramInfo::write_svg(const std::string &suffix)
   }
   insets_combined.write_cairo_map(
     map_name_ + "_" + inset_names + "_" + suffix,
-    true);
+    false);
 }

@@ -94,6 +94,9 @@ private:
   // to later be able to normalize inset area by comparing among the insets
   double initial_target_area_;
 
+  // Variable to store area per grid cell
+  mutable double per_grid_cell_;
+
   // Map name. Inset position is appended to the name if n_insets > 2.
   std::string inset_name_;
   std::unordered_map<std::string, bool> is_input_target_area_missing_;
@@ -173,7 +176,7 @@ public:
     unsigned int x,
     unsigned int y,
     unsigned int cell_width,
-    bool plot_equal_area_map);
+    bool plot_equal_area_map) const;
   double grid_cell_target_area(
     const unsigned int i,
     const unsigned int j,
@@ -183,7 +186,7 @@ public:
     unsigned int x,
     unsigned int y,
     unsigned int cell_width);
-  double grid_cell_area_km(const unsigned int i, const unsigned int j);
+  double grid_cell_area_km(const unsigned int i, const unsigned int j) const;
   void holes_inside_polygons() const;
   double grid_cell_target_area_per_km(
     const unsigned int i,
@@ -192,8 +195,8 @@ public:
     const double total_inset_area);
   Bbox get_bbox_bar(const double bar_width, const double bar_height);
 
-  std::pair<double, unsigned int> get_km_legend_length();
-  std::pair<double, unsigned int> get_visual_variable_legend_length();
+  std::pair<double, unsigned int> get_km_legend_length() const;
+  std::pair<double, unsigned int> get_visual_variable_legend_length() const;
 
   void increment_n_fails_during_flatten_density();
   void increment_integration();
@@ -278,7 +281,7 @@ public:
   bool target_area_is_missing(const std::string &) const;
   double total_inset_area(bool = false) const;
   double total_target_area() const;
-  Polygon transform_to_equal_area_projection_coor(Polygon edge_points);
+  Polygon transform_to_equal_area_projection_coor(Polygon edge_points) const;
   std::array<Point, 3> transformed_triangle(
     const std::array<Point, 3> &,
     bool = false) const;
@@ -321,12 +324,11 @@ public:
     cairo_t *cr,
     bool plot_equal_area_map,
     bool crop_polygons);
-  void write_grid_on_surface(cairo_t *cr);
+  void write_grid_on_surface(cairo_t *cr) const;
   void write_polygons_on_surface(
     cairo_t *cr,
     const bool fill_polygons,
     const bool colors,
-    const bool plot_equal_area_map,
     const double line_width = 0.0,
     const Color clr = Color{0.0, 0.0, 0.0}) const;
   void write_labels_on_surface(cairo_t *cr);
@@ -334,7 +336,7 @@ public:
     const std::string filename,
     const bool plot_pycnophylactic);
   void write_intersections_image();
-  void write_legend_on_surface(cairo_t *cr, bool equal_area_map);
+  void write_legend_on_surface(cairo_t *cr, bool equal_area_map) const;
   void write_polygon_points_on_surface(cairo_t *, Color);
   void write_quadtree(const std::string &);
 };
