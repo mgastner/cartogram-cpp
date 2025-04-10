@@ -2,6 +2,7 @@
 #include "round_point.hpp"
 #include <algorithm>
 #include <unordered_set>
+#include <variant>
 
 // For printing a vector (debugging purposes)
 template <typename A>
@@ -43,12 +44,10 @@ Point calc_intersection(
   if (result) {
 
     // The result of CGAL::intersection can either be a segment, a point, or
-    // null. We only want point intersections, which we retrieve using
-    // boost::get(). Where there is no point intersection, we get a null
-    // pointer.
-    const Point *p = boost::get<Point>(&*result);
-    if (p)
-      return (*p);
+    // null. We only want point intersections. Where there is no point
+    // intersection, we get a null pointer.
+    if (auto p = std::get_if<Point>(&*result))
+      return *p;
   }
   return OUT_OF_RANGE;
 }
@@ -214,7 +213,8 @@ std::vector<Point> densification_points(
   return intersections;
 }
 
-std::unordered_set<Point> new_points(Polygon original, Polygon densified) {
+std::unordered_set<Point> new_points(Polygon original, Polygon densified)
+{
 
   // We need an ordered set, because set difference is only defined for
   // ordered sets.
@@ -416,8 +416,9 @@ std::vector<Point> densification_points_with_delaunay_t(
   // check validity of densification points: in case the first and last
   // points are not the originally given points, we consider the densificaiton
   // points invalid and return the original points
-  if (!points_almost_equal(dens_points.front(), pt1) ||
-      !points_almost_equal(dens_points.back(), pt2)) {
+  if (
+    !points_almost_equal(dens_points.front(), pt1) ||
+    !points_almost_equal(dens_points.back(), pt2)) {
     return {pt1, pt2};
   }
 
@@ -425,9 +426,10 @@ std::vector<Point> densification_points_with_delaunay_t(
   std::vector<Point> dens_points_unique;
   dens_points_unique.push_back(dens_points.front());
   for (unsigned int i = 1; i < dens_points.size() - 1; ++i) {
-    if (!points_almost_equal(dens_points[i], dens_points.front()) &&
-        !points_almost_equal(dens_points[i], dens_points.back()) &&
-        !points_almost_equal(dens_points[i], dens_points[i - 1])) {
+    if (
+      !points_almost_equal(dens_points[i], dens_points.front()) &&
+      !points_almost_equal(dens_points[i], dens_points.back()) &&
+      !points_almost_equal(dens_points[i], dens_points[i - 1])) {
       dens_points_unique.push_back(dens_points[i]);
     }
   }
@@ -474,7 +476,9 @@ void InsetState::densify_geo_divs_using_delaunay_t()
 
       // Add new points to points_added_via_densification for plotting
       std::unordered_set<Point> new_in_outer = new_points(outer, outer_dens);
-      points_from_densification_.insert(new_in_outer.begin(), new_in_outer.end());
+      points_from_densification_.insert(
+        new_in_outer.begin(),
+        new_in_outer.end());
       points_before_densification_.insert(outer.begin(), outer.end());
 
       std::vector<Polygon> holes_v_dens;
@@ -496,7 +500,9 @@ void InsetState::densify_geo_divs_using_delaunay_t()
 
         // Add new points to points_added_via_densification for plotting
         std::unordered_set<Point> new_in_hole = new_points(h, hole_dens);
-        points_from_densification_.insert(new_in_hole.begin(), new_in_hole.end());
+        points_from_densification_.insert(
+          new_in_hole.begin(),
+          new_in_hole.end());
         points_before_densification_.insert(h.begin(), h.end());
 
         holes_v_dens.push_back(hole_dens);
