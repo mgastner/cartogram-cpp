@@ -1,75 +1,76 @@
-#define BOOST_TEST_MODULE StringToDecimalConverterTest
 #include "string_to_decimal_converter.hpp"
-#include <boost/test/unit_test.hpp>
+#include <gtest/gtest.h>
 
-BOOST_AUTO_TEST_CASE(TestIsStrNA_True)
+TEST(StringToDecimalConverterTest, TestIsStrNA_True)
 {
-  BOOST_CHECK(StringToDecimalConverter::is_str_NA("NA"));
+  EXPECT_TRUE(StringToDecimalConverter::is_str_NA("NA"));
 }
 
-BOOST_AUTO_TEST_CASE(TestIsStrNA_False)
+TEST(StringToDecimalConverterTest, TestIsStrNA_False)
 {
-  BOOST_CHECK(!StringToDecimalConverter::is_str_NA("123"));
-  BOOST_CHECK(!StringToDecimalConverter::is_str_NA(""));
+  EXPECT_FALSE(StringToDecimalConverter::is_str_NA("123"));
+  EXPECT_FALSE(StringToDecimalConverter::is_str_NA(""));
 }
 
-BOOST_AUTO_TEST_CASE(TestValidCharacters_BasicNumeric)
+TEST(StringToDecimalConverterTest, TestValidCharacters_BasicNumeric)
 {
-  BOOST_CHECK(StringToDecimalConverter::is_str_valid_characters("123456789"));
+  EXPECT_TRUE(StringToDecimalConverter::is_str_valid_characters("123456789"));
 }
 
-BOOST_AUTO_TEST_CASE(TestValidCharacters_CommasAndPoints)
+TEST(StringToDecimalConverterTest, TestValidCharacters_CommasAndPoints)
 {
-  BOOST_CHECK(StringToDecimalConverter::is_str_valid_characters("123,456.789"));
+  EXPECT_TRUE(
+    StringToDecimalConverter::is_str_valid_characters("123,456.789"));
 }
 
-BOOST_AUTO_TEST_CASE(TestValidCharacters_InvalidCharacters)
+TEST(StringToDecimalConverterTest, TestValidCharacters_InvalidCharacters)
 {
-  BOOST_CHECK(!StringToDecimalConverter::is_str_valid_characters("abc"));
+  EXPECT_FALSE(StringToDecimalConverter::is_str_valid_characters("abc"));
 }
 
-BOOST_AUTO_TEST_CASE(TestValidCharacters_NegativeNumber)
+TEST(StringToDecimalConverterTest, TestValidCharacters_NegativeNumber)
 {
-  BOOST_CHECK(StringToDecimalConverter::is_str_valid_characters("-123.456"));
+  EXPECT_TRUE(StringToDecimalConverter::is_str_valid_characters("-123.456"));
 }
 
-BOOST_AUTO_TEST_CASE(TestValidCharacters_MultipleHyphens)
+TEST(StringToDecimalConverterTest, TestValidCharacters_MultipleHyphens)
 {
-  BOOST_CHECK(!StringToDecimalConverter::is_str_valid_characters("--123.456"));
+  EXPECT_FALSE(StringToDecimalConverter::is_str_valid_characters("--123.456"));
 }
 
-BOOST_AUTO_TEST_CASE(TestValidCharacters_HyphenNotAtStart)
+TEST(StringToDecimalConverterTest, TestValidCharacters_HyphenNotAtStart)
 {
-  BOOST_CHECK(!StringToDecimalConverter::is_str_valid_characters("123-456.789"));
+  EXPECT_FALSE(
+    StringToDecimalConverter::is_str_valid_characters("123-456.789"));
 }
 
-BOOST_AUTO_TEST_CASE(TestCorrectFormat_SimpleNumeric)
+TEST(StringToDecimalConverterTest, TestCorrectFormat_SimpleNumeric)
 {
-  BOOST_CHECK(StringToDecimalConverter::is_str_correct_format("123456789"));
+  EXPECT_TRUE(StringToDecimalConverter::is_str_correct_format("123456789"));
 }
 
-BOOST_AUTO_TEST_CASE(TestCorrectFormat_CommaAndPoint)
+TEST(StringToDecimalConverterTest, TestCorrectFormat_CommaAndPoint)
 {
-  BOOST_CHECK(StringToDecimalConverter::is_str_correct_format("123,456.789"));
+  EXPECT_TRUE(StringToDecimalConverter::is_str_correct_format("123,456.789"));
 }
 
-BOOST_AUTO_TEST_CASE(TestCorrectFormat_PointAndComma)
+TEST(StringToDecimalConverterTest, TestCorrectFormat_PointAndComma)
 {
-  BOOST_CHECK(StringToDecimalConverter::is_str_correct_format("123.456,789"));
+  EXPECT_TRUE(StringToDecimalConverter::is_str_correct_format("123.456,789"));
 }
 
-BOOST_AUTO_TEST_CASE(TestCorrectFormat_MultipleCommasAndPoints)
+TEST(StringToDecimalConverterTest, TestCorrectFormat_MultipleCommasAndPoints)
 {
-  BOOST_CHECK(
-    !StringToDecimalConverter::is_str_correct_format("123,456.789,123"));
+  EXPECT_FALSE(
+    StringToDecimalConverter::is_str_correct_format("123,456.789,123"));
 }
 
-BOOST_AUTO_TEST_CASE(TestCorrectFormat_CommaAtEnd)
+TEST(StringToDecimalConverterTest, TestCorrectFormat_CommaAtEnd)
 {
-  BOOST_CHECK(!StringToDecimalConverter::is_str_correct_format("123456789,"));
+  EXPECT_FALSE(StringToDecimalConverter::is_str_correct_format("123456789,"));
 }
 
-BOOST_AUTO_TEST_CASE(TestCorrectFormat_PointAtEnd)
+TEST(StringToDecimalConverterTest, TestCorrectFormat_PointAtEnd)
 {
-  BOOST_CHECK(!StringToDecimalConverter::is_str_correct_format("123456789."));
+  EXPECT_FALSE(StringToDecimalConverter::is_str_correct_format("123456789."));
 }
