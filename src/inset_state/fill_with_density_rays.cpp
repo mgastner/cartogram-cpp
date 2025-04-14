@@ -3,6 +3,8 @@
 
 void InsetState::fill_with_density_rays()
 {
+  std::cerr << "Filling density using ray-shooting method" << std::endl;
+
   timer.start("Fill with Density (Ray Shooting Method)");
   // We assume that target areas that were zero or missing in the input have
   // already been replaced by
