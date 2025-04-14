@@ -195,8 +195,8 @@ public:
     const double total_inset_area);
   Bbox get_bbox_bar(const double bar_width, const double bar_height);
 
-  std::pair<double, unsigned int> get_km_legend_length() const;
-  std::pair<double, unsigned int> get_visual_variable_legend_length() const;
+  std::pair<unsigned int, unsigned int> get_km_legend_length() const;
+  std::pair<unsigned int, unsigned int> get_visual_variable_legend_length() const;
 
   void increment_n_fails_during_flatten_density();
   void increment_integration();
@@ -304,10 +304,12 @@ public:
   void write_cairo_map(
     const std::string &,
     bool,
+    bool equal_area_map = false,
     const std::unordered_map<Point, Vector> =
       std::unordered_map<Point, Vector>()) const;
   void write_cairo_polygons_to_svg(
     const std::string &,
+    bool,
     bool,
     bool,
     bool,

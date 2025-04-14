@@ -32,7 +32,8 @@ void InsetState::preprocess()
 
     // Color if necessary
     auto_color();
-    write_cairo_map(inset_name_ + "_input", args_.plot_grid);
+    initialize_identity_proj();
+    write_cairo_map(inset_name_ + "_input", args_.plot_grid, true);
   }
 
   timer.stop("Preprocessing");
@@ -134,7 +135,7 @@ void InsetState::integrate(ProgressTracker &progress_tracker)
 
   // Write SVG for this inset, if requested
   if (args_.plot_polygons) {
-    write_cairo_map(inset_name() + "_output", args_.plot_grid);
+    write_cairo_map(inset_name() + "_output", args_.plot_grid, false);
   }
 
   // Project original map with cumulative projection

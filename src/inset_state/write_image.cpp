@@ -443,6 +443,7 @@ void InsetState::write_cairo_polygons_to_svg(
   const bool fill_polygons,
   const bool colors,
   const bool plot_grid,
+  const bool equal_area_map,
   const std::unordered_map<Point, Vector> &vectors) const
 {
   const auto filename = fname.c_str();
@@ -452,7 +453,7 @@ void InsetState::write_cairo_polygons_to_svg(
   write_polygons_on_surface(cr, fill_polygons, colors);
   if (plot_grid) {
     write_grid_on_surface(cr);
-    write_legend_on_surface(cr, false);
+    write_legend_on_surface(cr, equal_area_map);
   }
   write_vectors_on_surface(cr, vectors, lx_, ly_);
   cairo_show_page(cr);
@@ -469,6 +470,7 @@ void InsetState::write_cairo_polygons_to_svg(
 void InsetState::write_cairo_map(
   const std::string &file_name,
   const bool plot_grid,
+  const bool equal_area_map,
 
   // TODO: This was the past signature of the function.
   // Restoring this causes a bug. Investigate.
@@ -480,7 +482,7 @@ void InsetState::write_cairo_map(
 
   // Check whether the has all GeoDivs colored
   const bool has_colors = (colors_size() == n_geo_divs());
-  write_cairo_polygons_to_svg(svg_name, true, has_colors, plot_grid, vectors);
+  write_cairo_polygons_to_svg(svg_name, true, has_colors, plot_grid, equal_area_map, vectors);
 }
 
 // ======================== grid Heatmap ========================
@@ -903,15 +905,14 @@ void write_density_bar_on_surface(
 // Adds a square legend outside the map
 void InsetState::write_legend_on_surface(cairo_t *cr, bool equal_area_map) const
 {
-  std::pair<double, unsigned int> legend_info =
+  std::pair<unsigned int, unsigned int> legend_info =
     equal_area_map ? get_km_legend_length()
                    : get_visual_variable_legend_length();
 
-  Bbox bb = bbox();
-  //Point legend_pos(bb.xmin() * 0.5, bb.ymin() * 0.5);
   Point legend_pos(0, 0);
-  double legend_length = legend_info.first;
-  unsigned int legend_value = legend_info.second;
+  unsigned int grid_cell_value = legend_info.first;
+  unsigned int total_value = legend_info.second;
+  double grid_cell_length = sqrt(per_grid_cell_);
   cairo_set_line_width(cr, 1);
   Color color("black");
   cairo_set_source_rgb(cr, color.r, color.g, color.b);
@@ -919,16 +920,14 @@ void InsetState::write_legend_on_surface(cairo_t *cr, bool equal_area_map) const
     cr,
     legend_pos.x(),
     legend_pos.y(),
-    sqrt(per_grid_cell_),
-    sqrt(per_grid_cell_));
-    //legend_length,
-    //legend_length);
+    grid_cell_length,
+    grid_cell_length);
   cairo_stroke(cr);
 
-  //double x = legend_pos.x() + (legend_length * 1.25);
-  //double y = legend_pos.y() + (legend_length * 0.5);
-  double x = legend_pos.x() + (sqrt(per_grid_cell_) * 1.25);
-  double y = legend_pos.y() + (sqrt(per_grid_cell_) * 0.5);
+  // Determine position of text on map
+  double x = legend_pos.x() + (grid_cell_length * 1.25);
+  double grid_cell_y = legend_pos.y() + (grid_cell_length * 0.5);
+  double total_y = grid_cell_y + (grid_cell_length * 0.75);
 
   // Adjust font size according to size of SVG
   unsigned int font_size = 8 * (lx_ / 256);
@@ -939,32 +938,55 @@ void InsetState::write_legend_on_surface(cairo_t *cr, bool equal_area_map) const
     CAIRO_FONT_WEIGHT_BOLD);
   cairo_set_font_size(cr, font_size);
 
-  std::string legend_label = "";
-  if (legend_value >= 1000000000) {
-    int billions = legend_value / 1000000000;
-    legend_label = std::to_string(billions) + "B";
-
-  } else if (legend_value >= 1000000) {
-    int millions = legend_value / 1000000;
-    legend_label = std::to_string(millions) + "M";
-
-  } else if (legend_value >= 1000) {
-    int thousands = legend_value / 1000;
-    legend_label = std::to_string(thousands) + "K";
-
+  // Display value per grid cell in billions/millions/thousands
+  std::string grid_cell_label = "";
+  if (grid_cell_value >= 1000000000) {
+    int billions = grid_cell_value / 1000000000;
+    grid_cell_label = std::to_string(billions) + "B";
+  } else if (grid_cell_value >= 1000000) {
+    int millions = grid_cell_value / 1000000;
+    grid_cell_label = std::to_string(millions) + "M";
+  } else if (grid_cell_value >= 1000) {
+    int thousands = grid_cell_value / 1000;
+    grid_cell_label = std::to_string(thousands) + "K";
   } else {
-    legend_label = std::to_string(legend_value);
+    grid_cell_label = std::to_string(grid_cell_value);
+  }
+
+  // Display total value in billions/millions/thousands with 1 decimal place
+  std::string total_label = "Total: ";
+  std::stringstream sstream;
+  if (total_value >= 1000000000) {
+    double billions = (double)total_value / 1000000000;
+    sstream << std::fixed << std::setprecision(1) << billions;
+    total_label += sstream.str() + "B";
+  } else if (total_value >= 1000000) {
+    double millions = (double)total_value / 1000000;
+    sstream << std::fixed << std::setprecision(1) << millions;
+    total_label += sstream.str() + "M";
+  } else if (total_value >= 1000) {
+    double thousands = (double)total_value / 1000;
+    sstream << std::fixed << std::setprecision(1) << thousands;
+    total_label += sstream.str() + "K";
+  } else {
+    total_label += std::to_string(total_value);
   }
 
   // Add known units
   if (equal_area_map) {
-    legend_label += " km²";
+    grid_cell_label += " km²";
+    total_label += " km²";
   } else {
-    legend_label += " people";
+    grid_cell_label += " people";
+    total_label += " people";
   }
 
-  cairo_move_to(cr, x, y + (font_size / 2.0));
-  cairo_show_text(cr, legend_label.c_str());
+  // Write grid value and total value text onto map
+  cairo_move_to(cr, x, grid_cell_y + (font_size / 2.0));
+  cairo_show_text(cr, grid_cell_label.c_str());
+
+  cairo_move_to(cr, x, total_y + (font_size / 2.0));
+  cairo_show_text(cr, total_label.c_str());
 }
 
 void InsetState::write_density_image(
@@ -1782,35 +1804,17 @@ double InsetState::grid_cell_area_km(
   const double cell_area = cell_edge_points_equal_area_projection.area();
   const double cell_area_km =
     equal_area_projection_area_to_earth_area(cell_area);
-    
-  std::cerr << "CELL_AREA_KM: " << std::to_string(cell_area_km) << std::endl;
+  
   return cell_area_km;
 }
 
-std::pair<double, unsigned int> InsetState::get_km_legend_length() const
+std::pair<unsigned int, unsigned int> InsetState::get_km_legend_length() const
 {
+  double cell_area_km = grid_cell_area_km();
+  unsigned int grid_cell_area = get_nearest_nice_number_for_legend(cell_area_km * per_grid_cell_);
+  unsigned int total_area = cell_area_km * total_inset_area();
 
-  return std::pair<double, unsigned int>(0, 0);
-
-  // 1% of the total area, rounded up to the nearest power of 10
-  double min_length = 0.02 * ((lx() + ly()) / 2.0);
-  double max_length = 0.06 * ((lx() + ly()) / 2.0);
-  double unit_square_area = grid_cell_area_km();
-  unsigned int legend_area =
-    pow(10.0, ceil(std::log10(total_inset_area() * 0.01)));
-  double length = sqrt(legend_area / unit_square_area);
-
-  while (length < min_length) {
-    length *= 2;
-    legend_area *= 4;
-  }
-
-  while (length > max_length) {
-    length /= 2;
-    legend_area /= 4;
-  }
-
-  return std::pair<double, unsigned int>(length, legend_area);
+  return std::pair<double, unsigned int>(grid_cell_area, total_area);
 }
 
 double InsetState::grid_cell_target_area(
@@ -1828,37 +1832,13 @@ double InsetState::grid_cell_target_area(
   return cell_target_area;
 }
 
-std::pair<double, unsigned int> InsetState::get_visual_variable_legend_length() const
+std::pair<unsigned int, unsigned int> InsetState::get_visual_variable_legend_length() const
 {
-  unsigned int legend_area =
-    pow(10.0, ceil(std::log10(total_target_area() * 0.01)));
+  unsigned int per_area = initial_target_area_ / total_inset_area();
+  unsigned int grid_cell_area = get_nearest_nice_number_for_legend(per_area * per_grid_cell_);
+  unsigned int total_area = initial_target_area_;
 
-  double unit_square_area = total_target_area() / total_inset_area();
-  double min_length = 0.02 * ((lx() + ly()) / 2.0);
-  double max_length = 0.06 * ((lx() + ly()) / 2.0);
-  double length = sqrt(legend_area / unit_square_area);
-
-  unsigned int pop_area = (initial_target_area_ / total_inset_area()) * per_grid_cell_;
-  pop_area = get_nearest_nice_number_for_legend(pop_area);
-
-  std::cerr << "INITIAL_AREA: " << std::to_string(initial_area_) << std::endl;
-  std::cerr << "INITIAL_TARGET_AREA: " << std::to_string(initial_target_area_) << std::endl;
-  std::cerr << "TOTAL_TARGET_AREA: " << std::to_string(total_target_area()) << std::endl;
-  std::cerr << "TOTAL_INSET_AREA: " << std::to_string(total_inset_area()) << std::endl;
-  std::cerr << "LEGEND_AREA: " << std::to_string(legend_area) << std::endl;
-  std::cerr << "UNIT_SQUARE_AREA: " << std::to_string(unit_square_area) << std::endl;
-  std::cerr << "LENGTH: " << std::to_string(length) << std::endl;
-  std::cerr << "POP_AREA: " << std::to_string(pop_area) << std::endl;
-
-  while (length < min_length) {
-    length *= 2;
-  }
-
-  while (length > max_length) {
-    length /= 2;
-  }
-
-  return std::pair<double, unsigned int>(length, pop_area);
+  return std::pair<unsigned int, unsigned int>(grid_cell_area, total_area);
 }
 
 double InsetState::grid_cell_target_area_per_km(
