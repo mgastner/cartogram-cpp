@@ -346,7 +346,9 @@ void InsetState::flatten_ellipse_density()
 
   // Print the top 5
   std::cerr << "Top 5 Polygons with most Delta density:" << std::endl;
-  for (int i = 0; i < std::min(5, (int)ell_density_prefactors.size()); ++i) {
+  for (int i = 0;
+       i < std::min(5, static_cast<int>(ell_density_prefactors.size()));
+       ++i) {
     std::cerr << pgn_density[i].second << ": " << pgn_density[i].first
               << std::endl;
   }

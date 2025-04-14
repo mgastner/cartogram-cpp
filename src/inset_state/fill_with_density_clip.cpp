@@ -1165,7 +1165,6 @@ void InsetState::fill_with_density_clip()
   auto rho_end = rho_begin + lx_ * ly_;
   auto [min_iter, max_iter] = std::minmax_element(rho_begin, rho_end);
   dens_min_ = *min_iter;
-  dens_mean_ = ocean_density;
   dens_max_ = *max_iter;
 
   execute_fftw_fwd_plan();

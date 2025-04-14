@@ -520,9 +520,9 @@ static double find_threshold(
   double threshold = high_thresh;
   // First, check if the high threshold is too low
   {
-    Quadtree qt_copy(base_qt);
-    refine_quadtree_with_threshold(qt_copy, high_thresh, depth, state);
-    int leaves = count_leaf_nodes(qt_copy);
+    Quadtree qt_copy_init(base_qt);
+    refine_quadtree_with_threshold(qt_copy_init, high_thresh, depth, state);
+    int leaves = count_leaf_nodes(qt_copy_init);
     std::cerr << "Initial high threshold = " << high_thresh
               << ", leaf nodes = " << leaves << std::endl;
 
