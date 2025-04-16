@@ -50,6 +50,9 @@ verbose=0 # Initialize verbose flag to 0 (off)
 flags=0 # Initialize a flag to test relevant cartogram-cpp flags to 0 (off)
 cli_arr=("" "--plot_polygons" "--export_preprocessed" "--export_time_report" "--output_equal_area_map") # Set of flags to test if flags flag is enabled
 cli=""    # Default CLI options
+flags_arr=("No flags" "Plot polygons flag" "Export preprocessed flag" "Export time report flag" "Output equal area map flag")
+total_arr=(0 0 0 0 0)
+failed_arr=(0 0 0 0 0)
 
 # Parsing command line arguments
 if [ $# -eq 0 ]; then
@@ -196,7 +199,7 @@ run_map() {
     fi
 
     # Increasing failed counter
-    failed=$((failed + 1))
+    failed_arr[i]=$((failed_arr[i] + 1))
 
     # Saving data to file if FAILED
     map_wo_ext=${map_file_name%.*json}
@@ -232,8 +235,6 @@ run_map() {
 
 # Counting number of tests
 countries=0
-total_tests=0
-failed=0
 
 # If flags enabled, change the sample_data to its appropriate location
 # Store results_file as one outside of subdirectories instead of splitting it
@@ -243,13 +244,16 @@ if [ $flags -eq 1 ]; then
 # If flags not enabled, use single cli specified by user
 else
   cli_arr=("$cli")
+  passed_arr=(0)
+  failed_arr=(0)
   sample_data_folder="../../sample_data/*"
   results_file_loc="${results_file}"
 fi
 
 # Loop through cli array
 # Only loops once if flags not enabled
-for cli in "${cli_arr[@]}"; do
+for i in "${!cli_arr[@]}"; do
+  cli=${cli_arr[$i]}
   # If flags enabled, create and change to subdirectory for each flag
   if [ $flags -eq 1 ]; then
     if [ -n "$cli" ]; then
@@ -265,7 +269,9 @@ for cli in "${cli_arr[@]}"; do
   # Iterating through folders in sample_data folder
   for folder in ${sample_data_folder}; do
     if [[ -d "${folder}" && "${folder}" != *"sandbox"* ]]; then
-      countries=$((countries + 1))
+      if [ $i -eq 0 ]; then
+        countries=$((countries + 1))
+      fi
       country=${folder##*/}
       printf " -------- Testing ${country}\n\n" | tee -a "${results_file_loc}" | color $magenta
 
@@ -276,7 +282,7 @@ for cli in "${cli_arr[@]}"; do
 
         # Iterating through visual variable files (CSV(s)) in country's folder
         for csv in ${folder}/*.csv; do
-          total_tests=$((total_tests + 1))
+          total_arr[i]=$((total_arr[i] + 1))
           csv_name=${csv##*/}
           printf " - with ${csv_name}\n\n" | tee -a "${results_file_loc}" | color $cyan
 
@@ -316,6 +322,11 @@ for i in "${!runtimes[@]}"; do
   fi
 done
 
+total_tests=0
+for num in "${total_arr[@]}"; do
+  total_tests=$((total_tests + num))
+done
+
 # Calculate average runtime
 average_runtime=$((total_runtime / total_tests))
 
@@ -350,12 +361,30 @@ printf "Median runtime: ${median_runtime}s\n" | tee -a "${results_file}"
 #   printf " - ${map}\n" | tee -a "${results_file}"
 # done
 
-failed_per=$((100 * $failed / $total_tests))
-printf "Passed [$((total_tests - failed))/${total_tests}] | $((100 - failed_per))%% \n" | tee -a "${results_file}" | color $green
-printf "Failed [${failed}/${total_tests}] | ${failed_per}%% \n" | tee -a "${results_file}" | color $red
+total_failed=0
+for num in "${failed_arr[@]}"; do
+  total_failed=$((total_failed + num))
+done
+
+if [ $flags -eq 1 ]; then
+  for i in "${!total_arr[@]}"; do
+    failed=${failed_arr[$i]}
+    total=${total_arr[$i]}
+
+    printf "${flags_arr[$i]}:\n" | tee -a "${results_file}"
+    failed_per=$((100 * $failed / $total))
+    printf "Passed [$((total - total_failed))/${total}] | $((100 - failed_per))%% \n" | tee -a "${results_file}" | color $green
+    printf "Failed [${failed}/${total}] | ${failed_per}%% \n" | tee -a "${results_file}" | color $red
+  done
+  printf "Combined tests:\n" | tee -a "${results_file}"
+fi
+
+failed_per=$((100 * $total_failed / $total_tests))
+printf "Passed [$((total_tests - total_failed))/${total_tests}] | $((100 - failed_per))%% \n" | tee -a "${results_file}" | color $green
+printf "Failed [${total_failed}/${total_tests}] | ${failed_per}%% \n" | tee -a "${results_file}" | color $red
 
 # Checking if any tests failed
-if [[ "${failed}" -gt 0 ]]; then
+if [[ "${total_failed}" -gt 0 ]]; then
 
   # Showing failed tests and removing temporary file
   printf "\nFailed tests:\n" | tee -a "${results_file}" | color $magenta
@@ -390,8 +419,8 @@ elif [ "$to_clear" == "y" ]; then
   find . -name "*.png" -type f -delete
   find . -name "*.ps" -type f -delete
   printf "All *.geojson, *.csv, *.svg, *.png and *.ps files deleted.\n" | color $red
-  exit ${failed}
+  exit ${total_failed}
 fi
 
 printf "Files not cleared.\n" | color $green
-exit ${failed}
+exit ${total_failed}

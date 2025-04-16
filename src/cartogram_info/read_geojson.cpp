@@ -405,10 +405,10 @@ void CartogramInfo::read_geojson()
   }
 
   unique_properties_map_ = extract_unique_properties_map(j);
+  assert(unique_properties_map_.size() > 0);
 
   // Set the first key inside the unique_properties_map_ as the default ID header
-  auto first_element = unique_properties_map_.begin();
-  id_header_ = first_element->first;
+  id_header_ = unique_properties_map_.begin()->first;
 
   initial_id_order_ = extract_initial_order_of_ids(j, id_header_);
 

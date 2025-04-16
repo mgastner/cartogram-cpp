@@ -141,7 +141,9 @@ void add_white_background(cairo_t *cr)
   cairo_paint(cr);
 }
 
-void InsetState::write_delaunay_triangles(const std::string &filename, const bool draw_projected_points)
+void InsetState::write_delaunay_triangles(
+  const std::string &filename,
+  const bool draw_projected_points)
 {
 
   std::cerr << "Writing " << filename << ".svg" << std::endl;
@@ -150,9 +152,22 @@ void InsetState::write_delaunay_triangles(const std::string &filename, const boo
   cairo_t *cr = cairo_create(surface);
   add_white_background(cr);
 
-  write_segments_on_surface(cr, failed_constraints_dt_projected_, Color{1.0, 0.0, 0.0}, ly_);
-  write_segments_on_surface(cr, failed_constraints_, Color{0.0, 0.0, 1.0}, ly_);
-  write_triangles_on_surface(cr, proj_qd_, Color{0.6, 0.6, 0.6}, ly_, draw_projected_points);
+  write_segments_on_surface(
+    cr,
+    failed_constraints_dt_projected_,
+    Color{1.0, 0.0, 0.0},
+    ly_);
+  write_segments_on_surface(
+    cr,
+    failed_constraints_,
+    Color{0.0, 0.0, 1.0},
+    ly_);
+  write_triangles_on_surface(
+    cr,
+    proj_qd_,
+    Color{0.6, 0.6, 0.6},
+    ly_,
+    draw_projected_points);
   write_polygons_on_surface(cr, false, false, 0.0, Color{1.0, 0.0, 0.0});
 
   // Plot points added via densification
@@ -161,8 +176,18 @@ void InsetState::write_delaunay_triangles(const std::string &filename, const boo
     project_point_set(points_before_densification_);
   }
 
-  write_point_set_on_surface(cr, points_before_densification_, Color{0.0, 0.0, 0.0}, ly_, 0.95);
-  write_point_set_on_surface(cr, points_from_densification_, Color{0.149, 0.545, 0.824}, ly_, 0.8);
+  write_point_set_on_surface(
+    cr,
+    points_before_densification_,
+    Color{0.0, 0.0, 0.0},
+    ly_,
+    0.95);
+  write_point_set_on_surface(
+    cr,
+    points_from_densification_,
+    Color{0.149, 0.545, 0.824},
+    ly_,
+    0.8);
 
   cairo_show_page(cr);
   cairo_surface_destroy(surface);
@@ -284,7 +309,7 @@ void InsetState::write_polygons_on_surface(
         //   // Fill path with dark gray
         //   cairo_set_source_rgb(cr, 0.9375, 0.9375, 0.9375);
         if (colors) {
-        // } else if (colors) {
+          // } else if (colors) {
 
           // Get color
           const auto col = color_at(gd.id());
@@ -397,44 +422,32 @@ void write_vectors_on_surface(
 }
 
 // Plot the grid
-void InsetState::write_grid_on_surface(cairo_t *cr) const {
+void InsetState::write_grid_on_surface(cairo_t *cr) const
+{
+  const double per_grid_cell = compute_per_grid_cell(*this);
 
-    // TODO: Find out grid sizing
+  std::cerr << "Total area: " << total_inset_area() << std::endl;
+  std::cerr << "Per grid cell: " << per_grid_cell << std::endl;
+  const double grid_line_spacing = sqrt(per_grid_cell);
+  // const unsigned int grid_line_spacing = 7;
 
-    // const double scale_factor = sqrt(total_inset_area() / (initial_target_area() * 10));
-    const std::vector<double> multipliers = {2, 5, 2};
-    per_grid_cell_ = 1;
+  // Set line width of grid lines
+  cairo_set_line_width(cr, 5e-4 * std::min(lx_, ly_));
+  cairo_set_source_rgb(cr, 0.0, 0.0, 0.0);
 
-    double total_area = total_inset_area();
-    // double total_area = equal_area_projection_area_to_earth_area(total_inset_area());
-    size_t multiplier_idx = 0;
-    while (per_grid_cell_ < 0.015 * total_area) {
-      per_grid_cell_ *= multipliers[multiplier_idx];
-      multiplier_idx = (multiplier_idx + 1) % multipliers.size();
-    }
-    std::cerr << "Total area: " << total_area << std::endl;
-    std::cerr << "Per grid cell: " << per_grid_cell_ << std::endl;
-    // per_grid_cell_ = earth_area_to_equal_area_projection_area(per_grid_cell_);
-    const double grid_line_spacing = sqrt(per_grid_cell_);
-    // const unsigned int grid_line_spacing = 7;
+  // Vertical grid lines
+  for (double i = 0; i <= lx_; i += grid_line_spacing) {
+    cairo_move_to(cr, i, 0);
+    cairo_line_to(cr, i, ly_);
+    cairo_stroke(cr);
+  }
 
-    // Set line width of grid lines
-    cairo_set_line_width(cr, 5e-4 * std::min(lx_, ly_));
-    cairo_set_source_rgb(cr, 0.0, 0.0, 0.0);
-
-    // Vertical grid lines
-    for (double i = 0; i <= lx_; i += grid_line_spacing) {
-      cairo_move_to(cr, i, 0);
-      cairo_line_to(cr, i, ly_);
-      cairo_stroke(cr);
-    }
-
-    // Horizontal grid lines
-    for (unsigned int j = 0; j <= ly_; j += grid_line_spacing) {
-      cairo_move_to(cr, 0, j);
-      cairo_line_to(cr, lx_, j);
-      cairo_stroke(cr);
-    }
+  // Horizontal grid lines
+  for (unsigned int j = 0; j <= ly_; j += grid_line_spacing) {
+    cairo_move_to(cr, 0, j);
+    cairo_line_to(cr, lx_, j);
+    cairo_stroke(cr);
+  }
 }
 
 // Outputs a SVG file
@@ -482,7 +495,13 @@ void InsetState::write_cairo_map(
 
   // Check whether the has all GeoDivs colored
   const bool has_colors = (colors_size() == n_geo_divs());
-  write_cairo_polygons_to_svg(svg_name, true, has_colors, plot_grid, equal_area_map, vectors);
+  write_cairo_polygons_to_svg(
+    svg_name,
+    true,
+    has_colors,
+    plot_grid,
+    equal_area_map,
+    vectors);
 }
 
 // ======================== grid Heatmap ========================
@@ -903,18 +922,19 @@ void write_density_bar_on_surface(
 }
 
 // Adds a square legend outside the map
-void InsetState::write_legend_on_surface(cairo_t *cr, bool equal_area_map) const
+void InsetState::write_legend_on_surface(cairo_t *cr, bool equal_area_map)
+  const
 {
-  std::pair<unsigned int, unsigned int> legend_info =
+  const std::pair<unsigned int, unsigned int> legend_info =
     equal_area_map ? get_km_legend_length()
                    : get_visual_variable_legend_length();
 
   Point legend_pos(0, 0);
-  unsigned int grid_cell_value = legend_info.first;
-  unsigned int total_value = legend_info.second;
-  double grid_cell_length = sqrt(per_grid_cell_);
+  const unsigned int grid_cell_value = legend_info.first;
+  const unsigned int total_value = legend_info.second;
+  const double grid_cell_length = sqrt(compute_per_grid_cell(*this));
   cairo_set_line_width(cr, 1);
-  Color color("black");
+  const Color color("black");
   cairo_set_source_rgb(cr, color.r, color.g, color.b);
   cairo_rectangle(
     cr,
@@ -938,39 +958,10 @@ void InsetState::write_legend_on_surface(cairo_t *cr, bool equal_area_map) const
     CAIRO_FONT_WEIGHT_BOLD);
   cairo_set_font_size(cr, font_size);
 
-  // Display value per grid cell in billions/millions/thousands
-  std::string grid_cell_label = "";
-  if (grid_cell_value >= 1000000000) {
-    int billions = grid_cell_value / 1000000000;
-    grid_cell_label = std::to_string(billions) + "B";
-  } else if (grid_cell_value >= 1000000) {
-    int millions = grid_cell_value / 1000000;
-    grid_cell_label = std::to_string(millions) + "M";
-  } else if (grid_cell_value >= 1000) {
-    int thousands = grid_cell_value / 1000;
-    grid_cell_label = std::to_string(thousands) + "K";
-  } else {
-    grid_cell_label = std::to_string(grid_cell_value);
-  }
-
-  // Display total value in billions/millions/thousands with 1 decimal place
-  std::string total_label = "Total: ";
-  std::stringstream sstream;
-  if (total_value >= 1000000000) {
-    double billions = (double)total_value / 1000000000;
-    sstream << std::fixed << std::setprecision(1) << billions;
-    total_label += sstream.str() + "B";
-  } else if (total_value >= 1000000) {
-    double millions = (double)total_value / 1000000;
-    sstream << std::fixed << std::setprecision(1) << millions;
-    total_label += sstream.str() + "M";
-  } else if (total_value >= 1000) {
-    double thousands = (double)total_value / 1000;
-    sstream << std::fixed << std::setprecision(1) << thousands;
-    total_label += sstream.str() + "K";
-  } else {
-    total_label += std::to_string(total_value);
-  }
+  const std::pair<std::string, std::string> legend_labels =
+    get_legend_labels(grid_cell_value, total_value);
+  std::string grid_cell_label = legend_labels.first;
+  std::string total_label = legend_labels.second;
 
   // Add known units
   if (equal_area_map) {
@@ -1016,7 +1007,8 @@ void InsetState::write_density_image(
   std::cerr << "dens_mean: " << dens_mean << std::endl;
   std::cerr << "dens_max: " << dens_max << std::endl;
   std::cerr << "exterior_density: " << exterior_density << std::endl;
-  std::cerr << "each_grid_cell_area_km: " << each_grid_cell_area_km << std::endl;
+  std::cerr << "each_grid_cell_area_km: " << each_grid_cell_area_km
+            << std::endl;
 
   // Crop it too
   if (plot_pycnophylactic) {
@@ -1085,8 +1077,13 @@ void InsetState::write_density_image(
   } else {
 
     // Set background color to that of exterior_density
-    Color exterior_density_color = heatmap_color(exterior_density, dens_min, dens_mean, dens_max);
-    cairo_set_source_rgb(cr, exterior_density_color.r / 255.0, exterior_density_color.g / 255.0, exterior_density_color.b / 255.0);
+    Color exterior_density_color =
+      heatmap_color(exterior_density, dens_min, dens_mean, dens_max);
+    cairo_set_source_rgb(
+      cr,
+      exterior_density_color.r / 255.0,
+      exterior_density_color.g / 255.0,
+      exterior_density_color.b / 255.0);
     cairo_paint(cr);
     for (unsigned int i = 0; i < lx_; ++i) {
       for (unsigned int j = 0; j < ly_; ++j) {
@@ -1095,7 +1092,8 @@ void InsetState::write_density_image(
           heatmap_color(density[i * ly_ + j], dens_min, dens_mean, dens_max);
 
         // Skip plotting exterior_density color
-        if (color == exterior_density_color) continue;
+        if (color == exterior_density_color)
+          continue;
 
         // Get four points of the square
         double x_min = i - 0.5 * sq_overlap;
@@ -1119,9 +1117,9 @@ void InsetState::write_density_image(
 
         // Write the density value at the center of the square
         // cairo_set_source_rgb(cr, 0, 0, 0);
-        // cairo_select_font_face(cr, "Sans", CAIRO_FONT_SLANT_NORMAL, CAIRO_FONT_WEIGHT_NORMAL);
-        // cairo_set_font_size(cr, 10);
-        // std::string density_value = std::to_string(density[i * ly_ + j]);
+        // cairo_select_font_face(cr, "Sans", CAIRO_FONT_SLANT_NORMAL,
+        // CAIRO_FONT_WEIGHT_NORMAL); cairo_set_font_size(cr, 10); std::string
+        // density_value = std::to_string(density[i * ly_ + j]);
         // cairo_text_extents_t extents;
         // cairo_text_extents(cr, density_value.c_str(), &extents);
         // double x_center = (x_min + x_max) / 2 - extents.width / 2;
@@ -1132,10 +1130,10 @@ void InsetState::write_density_image(
     }
   }
   write_quadtree_rectangles_on_surface(
-  cr,
-  quadtree_bboxes_,
-  Color{0.6, 0.6, 0.6},
-  ly_);
+    cr,
+    quadtree_bboxes_,
+    Color{0.6, 0.6, 0.6},
+    ly_);
   write_polygons_on_surface(cr, false, false, 0.025);
 
   if (draw_bar && !plot_pycnophylactic) {
@@ -1426,9 +1424,8 @@ Color heatmap_color(
     Color("#f6e8c3"),
 
     // Mean density
-    Color("#ffffff"), // white
+    Color("#ffffff"),  // white
     // Color("#f5f5f5"), // off-white
-
 
     Color("#c7eae5"),
     Color("#80cdc1"),
@@ -1787,9 +1784,9 @@ double equal_area_projection_area_to_earth_area(
 }
 
 // Given area in square km^2 on Earth's surface,
-// returns the corresponding area in the equal_area_projection projection coordinate system
-double earth_area_to_equal_area_projection_area(
-  const double earth_area)
+// returns the corresponding area in the equal_area_projection projection
+// coordinate system
+double earth_area_to_equal_area_projection_area(const double earth_area)
 {
   return (earth_area * 4 * pi) / earth_surface_area;
 }
@@ -1798,23 +1795,24 @@ double InsetState::grid_cell_area_km(
   const unsigned int i = 0,
   const unsigned int j = 0) const
 {
-  Polygon cell_edge_points = grid_cell_edge_points(i, j, 1, true);
+  const Polygon cell_edge_points = grid_cell_edge_points(i, j, 1, true);
   const Polygon cell_edge_points_equal_area_projection =
     transform_to_equal_area_projection_coor(cell_edge_points);
   const double cell_area = cell_edge_points_equal_area_projection.area();
   const double cell_area_km =
     equal_area_projection_area_to_earth_area(cell_area);
-  
+
   return cell_area_km;
 }
 
 std::pair<unsigned int, unsigned int> InsetState::get_km_legend_length() const
 {
-  double cell_area_km = grid_cell_area_km();
-  unsigned int grid_cell_area = get_nearest_nice_number_for_legend(cell_area_km * per_grid_cell_);
-  unsigned int total_area = cell_area_km * total_inset_area();
+  const double cell_area_km = grid_cell_area_km();
+  const unsigned int grid_cell_area = get_nearest_nice_number_for_legend(
+    cell_area_km * compute_per_grid_cell(*this));
+  const unsigned int total_area = cell_area_km * total_inset_area();
 
-  return std::pair<double, unsigned int>(grid_cell_area, total_area);
+  return std::pair<unsigned int, unsigned int>(grid_cell_area, total_area);
 }
 
 double InsetState::grid_cell_target_area(
@@ -1832,11 +1830,13 @@ double InsetState::grid_cell_target_area(
   return cell_target_area;
 }
 
-std::pair<unsigned int, unsigned int> InsetState::get_visual_variable_legend_length() const
+std::pair<unsigned int, unsigned int> InsetState::
+  get_visual_variable_legend_length() const
 {
-  unsigned int per_area = initial_target_area_ / total_inset_area();
-  unsigned int grid_cell_area = get_nearest_nice_number_for_legend(per_area * per_grid_cell_);
-  unsigned int total_area = initial_target_area_;
+  const unsigned int per_area = initial_target_area_ / total_inset_area();
+  const unsigned int grid_cell_area = get_nearest_nice_number_for_legend(
+    per_area * compute_per_grid_cell(*this));
+  const unsigned int total_area = initial_target_area_;
 
   return std::pair<unsigned int, unsigned int>(grid_cell_area, total_area);
 }
@@ -1960,6 +1960,64 @@ Bbox InsetState::get_bbox_bar(const double bar_width, const double bar_height)
   return Bbox(xmin_bar, ymin_bar, xmax_bar, ymax_bar);
 }
 
+// Generate text labels for use in legend grid display
+std::pair<std::string, std::string> InsetState::get_legend_labels(
+  unsigned int grid_cell_value,
+  unsigned int total_value) const
+{
+  // Display value per grid cell in billions/millions/thousands
+  std::string grid_cell_label = "";
+  if (grid_cell_value >= 1000000000) {
+    const int billions = grid_cell_value / 1000000000;
+    grid_cell_label = std::to_string(billions) + "B";
+  } else if (grid_cell_value >= 1000000) {
+    const int millions = grid_cell_value / 1000000;
+    grid_cell_label = std::to_string(millions) + "M";
+  } else if (grid_cell_value >= 1000) {
+    const int thousands = grid_cell_value / 1000;
+    grid_cell_label = std::to_string(thousands) + "K";
+  } else {
+    grid_cell_label = std::to_string(grid_cell_value);
+  }
+
+  // Display total value in billions/millions/thousands with 1 decimal place
+  std::string total_label = "Total: ";
+  std::stringstream sstream;
+  if (total_value >= 1000000000) {
+    const double billions = (double)total_value / 1000000000;
+    sstream << std::fixed << std::setprecision(1) << billions;
+    total_label += sstream.str() + "B";
+  } else if (total_value >= 1000000) {
+    const double millions = (double)total_value / 1000000;
+    sstream << std::fixed << std::setprecision(1) << millions;
+    total_label += sstream.str() + "M";
+  } else if (total_value >= 1000) {
+    const double thousands = (double)total_value / 1000;
+    sstream << std::fixed << std::setprecision(1) << thousands;
+    total_label += sstream.str() + "K";
+  } else {
+    total_label += std::to_string(total_value);
+  }
+
+  return std::pair<std::string, std::string>(grid_cell_label, total_label);
+}
+
+// Find and return the area per grid cell
+double compute_per_grid_cell(const InsetState &inset_state)
+{
+  double per_grid_cell = 1;
+
+  const std::vector<double> multipliers = {2, 5, 2};
+  const double total_area = inset_state.total_inset_area();
+  size_t multiplier_idx = 0;
+
+  while (per_grid_cell < 0.015 * total_area) {
+    per_grid_cell *= multipliers[multiplier_idx];
+    multiplier_idx = (multiplier_idx + 1) % multipliers.size();
+  }
+  return per_grid_cell;
+}
+
 std::vector<int> get_nice_numbers_for_bar(const double max_target_area_per_km)
 {
   std::vector<int> nice_numbers;
@@ -1978,12 +2036,13 @@ int get_nearest_nice_number_for_legend(int value)
   const int NICE_NUMBERS[4] = {1, 2, 5, 10};
 
   int new_value = 99;
-  int scale = std::floor(std::log10(value));
-  double value_first_digit = value / pow(10.0, scale); // Get first digit of value in decimals
+  const int scale = std::floor(std::log10(value));
+  const double value_first_digit =
+    value / pow(10.0, scale);  // Get first digit of value in decimals
   double value_diff = abs(value_first_digit - new_value);
 
   // Loop through array of nice numbers to find the closest matching one
-  for (int num: NICE_NUMBERS) {
+  for (int num : NICE_NUMBERS) {
     if (abs(value_first_digit - num) < value_diff) {
       value_diff = abs(value_first_digit - num);
       new_value = num;

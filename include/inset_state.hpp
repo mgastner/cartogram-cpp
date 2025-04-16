@@ -94,9 +94,6 @@ private:
   // to later be able to normalize inset area by comparing among the insets
   double initial_target_area_;
 
-  // Variable to store area per grid cell
-  mutable double per_grid_cell_;
-
   // Map name. Inset position is appended to the name if n_insets > 2.
   std::string inset_name_;
   std::unordered_map<std::string, bool> is_input_target_area_missing_;
@@ -195,8 +192,12 @@ public:
     const double total_inset_area);
   Bbox get_bbox_bar(const double bar_width, const double bar_height);
 
+  std::pair<std::string, std::string> get_legend_labels(
+    unsigned int,
+    unsigned int) const;
   std::pair<unsigned int, unsigned int> get_km_legend_length() const;
-  std::pair<unsigned int, unsigned int> get_visual_variable_legend_length() const;
+  std::pair<unsigned int, unsigned int> get_visual_variable_legend_length()
+    const;
 
   void increment_n_fails_during_flatten_density();
   void increment_integration();

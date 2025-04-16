@@ -3,6 +3,7 @@
 
 #include "colors.hpp"
 #include "geo_div.hpp"
+#include "inset_state.hpp"
 #include <cairo/cairo-svg.h>
 
 // TODO: IS THERE A CGAL WAY OF DETERMINING WHETHER THE LABEL'S BOUNDING
@@ -74,6 +75,8 @@ get_ticks(
   double min_area_cell_point_area,
   double max_area_cell_point_area,
   std::vector<int> nice_numbers);
+
+double compute_per_grid_cell(const InsetState &inset_state);
 
 std::vector<int> get_nice_numbers_for_bar(double max_target_area_per_km);
 
