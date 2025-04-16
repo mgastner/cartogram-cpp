@@ -192,9 +192,6 @@ public:
     const double total_inset_area);
   Bbox get_bbox_bar(const double bar_width, const double bar_height);
 
-  std::pair<std::string, std::string> get_legend_labels(
-    unsigned int,
-    unsigned int) const;
   std::pair<unsigned int, unsigned int> get_km_legend_length() const;
   std::pair<unsigned int, unsigned int> get_visual_variable_legend_length()
     const;

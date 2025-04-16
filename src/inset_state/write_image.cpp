@@ -1961,9 +1961,9 @@ Bbox InsetState::get_bbox_bar(const double bar_width, const double bar_height)
 }
 
 // Generate text labels for use in legend grid display
-std::pair<std::string, std::string> InsetState::get_legend_labels(
+std::pair<std::string, std::string> get_legend_labels(
   unsigned int grid_cell_value,
-  unsigned int total_value) const
+  unsigned int total_value)
 {
   // Display value per grid cell in billions/millions/thousands
   std::string grid_cell_label = "";

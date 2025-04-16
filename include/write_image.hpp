@@ -78,6 +78,10 @@ get_ticks(
 
 double compute_per_grid_cell(const InsetState &inset_state);
 
+std::pair<std::string, std::string> get_legend_labels(
+  unsigned int,
+  unsigned int);
+
 std::vector<int> get_nice_numbers_for_bar(double max_target_area_per_km);
 
 int get_nearest_nice_number_for_legend(int value);
