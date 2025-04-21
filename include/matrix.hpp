@@ -17,4 +17,4 @@ struct Matrix {
   Point transformed_point(const Point &) const;
 };
 
-#endif // MATRIX_HPP_
+#endif  // MATRIX_HPP_

@@ -36,7 +36,7 @@ void TimeTracker::swap(const std::string &t1, const std::string &t2)
 void TimeTracker::print_summary_report() const
 {
   std::cerr << "\n********** Time Report **********" << std::endl;
-  std::cerr << "(" << name_  << ")\n" << std::endl;
+  std::cerr << "(" << name_ << ")\n" << std::endl;
   std::vector<std::pair<std::string, std::chrono::milliseconds>>
     sorted_durations;
   for (const auto &[task, time_taken] : durations_) {
@@ -55,12 +55,14 @@ void TimeTracker::print_summary_report() const
   std::cerr << "*********************************" << std::endl;
 }
 
-std::chrono::milliseconds TimeTracker::duration(const std::string &task_name) const
+std::chrono::milliseconds TimeTracker::duration(
+  const std::string &task_name) const
 {
   try {
     return durations_.at(task_name);
   } catch (const std::out_of_range &e) {
-    std::cerr << "ERROR: Key '" << task_name << "' not found in target_areas_. "
+    std::cerr << "ERROR: Key '" << task_name
+              << "' not found in target_areas_. "
               << "Exception: " << e.what() << std::endl;
     // Re-throw, or return a default value
     throw;

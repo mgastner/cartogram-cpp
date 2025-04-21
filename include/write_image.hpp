@@ -3,6 +3,7 @@
 
 #include "colors.hpp"
 #include "geo_div.hpp"
+#include "inset_state.hpp"
 #include <cairo/cairo-svg.h>
 
 // TODO: IS THERE A CGAL WAY OF DETERMINING WHETHER THE LABEL'S BOUNDING
@@ -47,8 +48,7 @@ void right_aligned_text(
 // returns the corresponding area in the square km^2
 double equal_area_projection_area_to_earth_area(
   double equal_area_projection_area);
-double earth_area_to_equal_area_projection_area(
-  const double earth_area);
+double earth_area_to_equal_area_projection_area(const double earth_area);
 
 std::vector<std::pair<double, double>> get_major_ticks(
   double min_target_area_per_km,
@@ -76,6 +76,14 @@ get_ticks(
   double max_area_cell_point_area,
   std::vector<int> nice_numbers);
 
+double compute_per_grid_cell(const InsetState &inset_state);
+
+std::pair<std::string, std::string> get_legend_labels(
+  unsigned int,
+  unsigned int);
+
 std::vector<int> get_nice_numbers_for_bar(double max_target_area_per_km);
 
-#endif // WRITE_IMAGE_H
+int get_nearest_nice_number_for_legend(int value);
+
+#endif  // WRITE_IMAGE_H

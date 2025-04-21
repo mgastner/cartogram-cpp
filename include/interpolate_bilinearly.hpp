@@ -19,4 +19,4 @@ double interpolate_bilinearly(
   unsigned int,
   unsigned int);
 
-#endif // INTERPOL_HPP_
+#endif  // INTERPOL_HPP_

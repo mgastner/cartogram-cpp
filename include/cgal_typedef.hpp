@@ -48,4 +48,4 @@ typedef CT::Constraint_id Constraint_id;
 typedef CGAL::Polyline_simplification_2::Stop_below_count_ratio_threshold Stop;
 typedef CGAL::Polyline_simplification_2::Squared_distance_cost Cost;
 
-#endif // CGAL_TYPEDEF_HPP_
+#endif  // CGAL_TYPEDEF_HPP_
