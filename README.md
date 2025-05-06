@@ -10,65 +10,59 @@ Gastner MT, Seguy V, More P. _Fast flow-based algorithm for creating density-equ
 
 Data produced by code in this repository are subject to the MIT license found [here](./LICENSE) and should cite the aforementioned paper by Gastner et al. (2018).
 
-While cloning this repository, please ensure you use the `--recurse-submodules` flag like so:
+Clone the repository:
 
 ```shell script
-git clone --recurse-submodules https://github.com/mgastner/cartogram-cpp.git
+git clone https://github.com/mgastner/cartogram-cpp.git
 ```
 
-## Dependencies
+## Development
 
-Please note, we only support UNIX-based systems, and have only tested on macOS, Linux, and GNU. That being said, the program should work on Windows Subsystem for Linux (WSL) as well, for which we have conducted minor testing.
+We manage dependencies with a Python virtual environment and Conan 2. The project uses Clang with C++20 support. Please ensure that Python 3.10 or later and a Clang++ compiler with C++20 support are installed before proceeding.
 
-### macOS
+### Linux and macOS
 
-#### Installing Homebrew
-
-Install [homebrew](brew.sh) by running the following command:
-
-```shell script
-/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+#### Create a virtual environment and activate it
+```
+python3 -m venv .venv
 ```
 
-#### Installing dependencies through Homebrew
-
-Install pkg-config, boost, fftw, and cmake by running the following command:
-
-```shell script
-brew install libomp pkg-config boost fftw cmake cairo
+```
+source .venv/bin/activate
 ```
 
-### Debian-based distributions (Ubuntu, Arch Linux etc.)
+#### Install dependencies while in the virtual environment
+```
+pip install --upgrade pip wheel conan==2.16.1 cmake==3.29.2
+```
 
-#### Installing relevant dependencies through apt:
+#### Setup Conan
+```
+conan remote update conancenter --url=https://center2.conan.io
+```
 
-Have a look through to apt-requirements.txt if you'd like to see what all will be installed. Then, run the following commands to install all dependencies through apt:
+```
+conan profile detect
+```
 
-```shell script
-apt install -y g++-11 build-essential cmake libboost-all-dev libomp-dev libfftw3-dev libcairo2-dev libmpfr-dev libgmp-dev libboost-dev
+#### Install dependencies via Conan
+```
+conan install . --output-folder build --build=missing -s build_type=Release -s compiler.cppstd=20 -s compiler=clang
+```
+
+#### Build the project
+```
+cmake -B build -S . -DCMAKE_TOOLCHAIN_FILE=build/conan_toolchain.cmake -DCMAKE_BUILD_TYPE=Release
+```
+
+```
+cmake --build build -j4  
 ```
 
 ### Windows (Using WSL)
 
 For Windows users, we recommend using our program through Windows Subsystem for Linux (WSL).
 
-Please install [Ubuntu](https://apps.microsoft.com/detail/9pdxgncfsczv) from the Microsoft Store, and then follow the same instructions as for Debian-based distributions (found above).
-
-We recommend you to compile outside the `/mnt` directory, as compiling in the `/mnt` directory may lead to unexpected behavior.
-
-### Installation
-
-Go to the `cartogram-cpp` directory in your preferred terminal and execute the following command.
-
-```bash
-bash build.sh
-```
-
-#### Installing using VScode
-
-If you are using VScode, you may also install the program by running the `CMake: Install` command from the command palette (accessible via `Ctrl/Command + Shift + P`). By default, VSCode builds the `DEBUG` version. If you would like to build the `RELEASE` version, you may change the build type in the `CMake: Select Variant` command. The `RELEASE` version will be much faster.
-
-If you encounter any issues, please look at the troubleshooting section below, especially the last bullet point.
 
 #### Installing using Docker
 
