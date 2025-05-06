@@ -91,3 +91,6 @@ Makefile
 .idea
 .Rproj.user
 .vscode-ctags
+
+# Ignore Python virtual environment
+venv
