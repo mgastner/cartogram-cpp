@@ -1,7 +1,79 @@
 #include "constants.hpp"
 #include "inset_state.hpp"
 #include "round_point.hpp"
+#include <filesystem>
 #include <proj.h>
+
+class AlbersProjector
+{
+public:
+  AlbersProjector(double lambda0, double phi0, double phi1, double phi2)
+      : lambda0_(lambda0), phi1_(phi1),
+        cylindrical_(std::abs(phi1 + phi2) < 1e-6), ctx_(nullptr),
+        pj_(nullptr), pj_vis_(nullptr)
+  {
+    if (cylindrical_)
+      return;
+
+    // Write up parameters to be used for Albers projection
+    // NOTE: R (radius) is set to 1 for our conversion
+    ctx_ = proj_context_create();
+    std::string aea = "+proj=aea +lat_1=" + std::to_string(phi1) +
+                      " +lat_2=" + std::to_string(phi2) +
+                      " +lat_0=" + std::to_string(phi0) +
+                      " +lon_0=" + std::to_string(lambda0) + " +R=1 +no_defs";
+
+    pj_ = proj_create_crs_to_crs(
+      ctx_,
+      "+proj=longlat +R=1 +no_defs",
+      aea.c_str(),
+      nullptr);
+    if (!pj_)
+      throw std::runtime_error("proj_create_crs_to_crs failed");
+
+    pj_vis_ = proj_normalize_for_visualization(ctx_, pj_);
+    if (!pj_vis_)
+      throw std::runtime_error("proj_normalize_for_visualization failed");
+  }
+
+  ~AlbersProjector()
+  {
+    if (pj_vis_)
+      proj_destroy(pj_vis_);
+    if (pj_)
+      proj_destroy(pj_);
+    if (ctx_)
+      proj_context_destroy(ctx_);
+  }
+
+  Point operator()(const Point &p) const
+  {
+    if (cylindrical_) {
+      // If n = 0 (i.e., phi_1 = -phi_2), the Albers projection becomes a
+      // cylindrical equal-area projection with standard parallel phi_1. The
+      // formula is at:
+      // https://en.wikipedia.org/wiki/Cylindrical_equal-area_projection
+      const double lon = p.x() * pi / 180.0;
+      const double lat = p.y() * pi / 180.0;
+      const double x = (lon - lambda0_) * std::cos(phi1_);
+      const double y = std::sin(lat) / std::cos(phi1_);
+      return rounded_point({x, y}, 15);
+    }
+
+    PJ_COORD in = proj_coord(p.x(), p.y(), 0, 0);
+    PJ_COORD out = proj_trans(pj_vis_, PJ_FWD, in);
+    return rounded_point({out.xy.x, out.xy.y}, 15);
+  }
+
+private:
+  double lambda0_;
+  double phi1_;
+  bool cylindrical_;
+
+  PJ_CONTEXT *ctx_;
+  PJ *pj_;
+  PJ *pj_vis_;
+};
 
 void InsetState::adjust_for_dual_hemisphere()
 {
@@ -55,73 +127,6 @@ void InsetState::adjust_for_dual_hemisphere()
   }
 }
 
-Point point_after_albers_projection(
-  const Point &coords,
-  double lambda_0,
-  double phi_0,
-  double phi_1,
-  double phi_2)
-{
-  const double lon_in_radians = (coords.x() * pi) / 180;
-  const double lat_in_radians = (coords.y() * pi) / 180;
-  double x, y;
-  if (abs(phi_1 + phi_2) < 1e-6) {
-
-    // If n = 0 (i.e., phi_1 = -phi_2), the Albers projection becomes a
-    // cylindrical equal-area projection with standard parallel phi_1. The
-    // formula is at:
-    // https://en.wikipedia.org/wiki/Cylindrical_equal-area_projection
-    x = (lon_in_radians - lambda_0) * cos(phi_1);
-    y = sin(lat_in_radians) / cos(phi_1);
-  } else {
-
-    // Create context object, supposedly for multi-threading safety
-    PJ_CONTEXT *C = proj_context_create();
-
-    // Write up parameters to be used for Albers projection
-    // NOTE: R (radius) is set to 1 for our conversion
-    std::string albers_str =
-      "+proj=aea +lat_1=" + std::to_string(phi_1) +
-      " +lat_2=" + std::to_string(phi_2) + " +lat_0=" + std::to_string(phi_0) +
-      " +lon_0=" + std::to_string(lambda_0) + " +R=1 +no_defs";
-    const char *albers = albers_str.c_str();
-
-    // Create projection conversion object, exit with error if unable to do so
-    PJ *P = proj_create_crs_to_crs(
-      C,
-      "+proj=longlat +R=1 +no_defs",
-      albers,
-      nullptr);
-    if (P == nullptr) {
-      std::cerr << "ERROR: Failed to create transformation object during "
-                   "projection conversion."
-                << std::endl;
-      _Exit(18);
-    }
-
-    // Normalize projection for 2D, exit with error if unable to do so
-    PJ *P_normalized = proj_normalize_for_visualization(C, P);
-    if (P_normalized == nullptr) {
-      std::cerr << "ERROR: Failed to normalize transformation during "
-                   "projection conversion."
-                << std::endl;
-      _Exit(18);
-    }
-
-    // Transform point coordinates
-    PJ_COORD geo_coord = proj_coord(coords.x(), coords.y(), 0, 0);
-    PJ_COORD proj_coord = proj_trans(P_normalized, PJ_FWD, geo_coord);
-    x = proj_coord.xy.x;
-    y = proj_coord.xy.y;
-
-    // Destroy projections and context after using
-    proj_destroy(P);
-    proj_destroy(P_normalized);
-    proj_context_destroy(C);
-  }
-  return rounded_point({x, y}, 15);
-}
-
 void InsetState::apply_albers_projection()
 {
   // Adjust the longitude coordinates if the inset spans both the eastern and
@@ -149,12 +154,12 @@ void InsetState::apply_albers_projection()
   const double phi_1 = 0.5 * (phi_0 + max_lat);
   const double phi_2 = 0.5 * (phi_0 + min_lat);
 
-  // Specialize/curry point_after_albers_projection() s0 that it only requires
-  // one argument (Point p1).
-  std::function<Point(Point)> lambda = [=](Point p1) {
-    return point_after_albers_projection(p1, lambda_0, phi_0, phi_1, phi_2);
-  };
+#pragma omp parallel
+  {
+    static thread_local AlbersProjector proj(lambda_0, phi_0, phi_1, phi_2);
 
-  // Apply `lambda` to all points
-  transform_points(lambda);
+    transform_points([&](const Point &q) {
+      return proj(q);
+    });
+  }
 }
