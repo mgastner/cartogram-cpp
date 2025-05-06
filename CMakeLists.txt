@@ -34,6 +34,9 @@ find_package(PkgConfig REQUIRED)
 pkg_search_module(fftw REQUIRED fftw3 IMPORTED_TARGET)
 pkg_search_module(cairo REQUIRED cairo IMPORTED_TARGET)
 
+# OSGeo PROJ
+find_package(PROJ REQUIRED CONFIG)
+
 # ========== Source Files ==========
 file(GLOB_RECURSE CARTOGRAM_SOURCES "src/*.cpp")
 add_executable(cartogram ${CARTOGRAM_SOURCES})
@@ -67,6 +70,7 @@ target_compile_options(cartogram PRIVATE
 target_link_libraries(cartogram
     PkgConfig::fftw
     PkgConfig::cairo
+    PROJ::proj
 )
 
 # ========== Installation ==========
