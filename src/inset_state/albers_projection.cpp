@@ -1,6 +1,7 @@
 #include "constants.hpp"
 #include "inset_state.hpp"
 #include "round_point.hpp"
+#include <proj.h>
 
 void InsetState::adjust_for_dual_hemisphere()
 {
@@ -74,15 +75,49 @@ Point point_after_albers_projection(
     y = sin(lat_in_radians) / cos(phi_1);
   } else {
 
-    // Albers projection formula:
-    // https://en.wikipedia.org/wiki/Albers_projection
-    const double n = 0.5 * (sin(phi_1) + sin(phi_2));
-    const double c = cos(phi_1) * cos(phi_1) + 2 * n * sin(phi_1);
-    const double rho_0 = sqrt(c - 2 * n * sin(phi_0)) / n;
-    const double theta = n * (lon_in_radians - lambda_0);
-    const double rho = sqrt(c - (2 * n * sin(lat_in_radians))) / n;
-    x = rho * sin(theta);
-    y = rho_0 - (rho * cos(theta));
+    // Create context object, supposedly for multi-threading safety
+    PJ_CONTEXT *C = proj_context_create();
+
+    // Write up parameters to be used for Albers projection
+    // NOTE: R (radius) is set to 1 for our conversion
+    std::string albers_str =
+      "+proj=aea +lat_1=" + std::to_string(phi_1) +
+      " +lat_2=" + std::to_string(phi_2) + " +lat_0=" + std::to_string(phi_0) +
+      " +lon_0=" + std::to_string(lambda_0) + " +R=1 +no_defs";
+    const char *albers = albers_str.c_str();
+
+    // Create projection conversion object, exit with error if unable to do so
+    PJ *P = proj_create_crs_to_crs(
+      C,
+      "+proj=longlat +R=1 +no_defs",
+      albers,
+      nullptr);
+    if (P == nullptr) {
+      std::cerr << "ERROR: Failed to create transformation object during "
+                   "projection conversion."
+                << std::endl;
+      _Exit(18);
+    }
+
+    // Normalize projection for 2D, exit with error if unable to do so
+    PJ *P_normalized = proj_normalize_for_visualization(C, P);
+    if (P_normalized == nullptr) {
+      std::cerr << "ERROR: Failed to normalize transformation during "
+                   "projection conversion."
+                << std::endl;
+      _Exit(18);
+    }
+
+    // Transform point coordinates
+    PJ_COORD geo_coord = proj_coord(coords.x(), coords.y(), 0, 0);
+    PJ_COORD proj_coord = proj_trans(P_normalized, PJ_FWD, geo_coord);
+    x = proj_coord.xy.x;
+    y = proj_coord.xy.y;
+
+    // Destroy projections and context after using
+    proj_destroy(P);
+    proj_destroy(P_normalized);
+    proj_context_destroy(C);
   }
   return rounded_point({x, y}, 15);
 }
@@ -97,10 +132,14 @@ void InsetState::apply_albers_projection()
   const auto bb = bbox();
 
   // Declarations for albers_formula()
-  const double min_lon = (bb.xmin() * pi) / 180;
-  const double min_lat = (bb.ymin() * pi) / 180;
-  const double max_lon = (bb.xmax() * pi) / 180;
-  const double max_lat = (bb.ymax() * pi) / 180;
+  // const double min_lon = (bb.xmin() * pi) / 180;
+  // const double min_lat = (bb.ymin() * pi) / 180;
+  // const double max_lon = (bb.xmax() * pi) / 180;
+  // const double max_lat = (bb.ymax() * pi) / 180;
+  const double min_lon = bb.xmin();
+  const double min_lat = bb.ymin();
+  const double max_lon = bb.xmax();
+  const double max_lat = bb.ymax();
 
   // Reference longitude and latitude
   const double lambda_0 = 0.5 * (min_lon + max_lon);
