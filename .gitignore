@@ -87,6 +87,7 @@ bin
 cmake_install.cmake
 CTestTestfile.cmake
 CMakeCache.txt
+CMakeUserPresets.json
 Makefile
 .idea
 .Rproj.user
@@ -94,3 +95,6 @@ Makefile
 
 # Ignore Python virtual environment
 venv
+
+# Do not ignore conanfile
+!conanfile.txt
