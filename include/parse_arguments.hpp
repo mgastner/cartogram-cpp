@@ -1,7 +1,7 @@
 #ifndef PARSE_ARGUMENTS_HPP_
 #define PARSE_ARGUMENTS_HPP_
 
-#include "argparse.hpp"
+#include "argparse/argparse.hpp"
 
 struct Arguments {
 
