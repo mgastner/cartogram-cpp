@@ -84,8 +84,10 @@ void InsetState::fill_with_density_rays()
   // - rho_den is the sum of the weights of a ray that is inside a GeoDiv.
   // The weight of a segment of a ray that is inside a GeoDiv is equal to
   // (length of the segment inside the geo_div) * (area error of the geodiv).
-#pragma omp parallel for default(none) \
-  shared(intersections_with_rays, rho_den, resolution, rho_num, std::cerr, total_interior_density)
+#pragma omp parallel for default(none)                         \
+  shared(intersections_with_rays, rho_den, rho_num, std::cerr) \
+  firstprivate(resolution, exterior_density, ext_weight)       \
+  reduction(+ : total_interior_density)
   for (unsigned int k = 0; k < ly_; ++k) {
 
     // Iterate over each of the rays between the grid lines y = k and
@@ -227,7 +229,8 @@ void InsetState::fill_with_density_rays()
   }
 
   // Fill rho_init with the ratio of rho_num to rho_den
-#pragma omp parallel for default(none) shared(mean_density, rho_den, rho_num)
+#pragma omp parallel for default(none) shared(rho_den, rho_num, rho_init_) \
+  firstprivate(exterior_density)
   for (unsigned int i = 0; i < lx_; ++i) {
     for (unsigned int j = 0; j < ly_; ++j) {
       if (rho_den[i][j] == 0) {

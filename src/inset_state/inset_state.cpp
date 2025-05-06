@@ -943,7 +943,8 @@ void InsetState::set_area_errors()
   // accordingly inflate its target area to account for the area drift.
   double aef = area_expansion_factor();
 
-#pragma omp parallel for default(none) shared(sum_cart_area, sum_target_area)
+#pragma omp parallel for default(none) firstprivate(aef) \
+  shared(geo_divs_, area_errors_)
   for (const auto &gd : geo_divs_) {
     const double obj_area = target_area_at(gd.id()) * aef;
     area_errors_[gd.id()] = std::abs((gd.area() / obj_area) - 1);
