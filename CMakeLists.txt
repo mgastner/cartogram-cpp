@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.22)
+cmake_minimum_required(VERSION 3.30)
 project(cartogram LANGUAGES CXX)
 
 set(CMAKE_CXX_STANDARD 20)
@@ -7,6 +7,7 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 # ----------------------------- Third–party -----------------------------
 find_package(Boost REQUIRED CONFIG)
 find_package(CGAL REQUIRED CONFIG)
+find_package(proj REQUIRED CONFIG)
 find_package(nlohmann_json REQUIRED CONFIG)
 find_package(argparse REQUIRED CONFIG)
 find_package(vincentlaucsb-csv-parser REQUIRED CONFIG)
@@ -23,6 +24,7 @@ target_link_libraries(cartogram
   PRIVATE
   CGAL::CGAL
   Boost::boost
+  PROJ::proj
   nlohmann_json::nlohmann_json
   argparse::argparse
   vincentlaucsb-csv-parser::vincentlaucsb-csv-parser

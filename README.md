@@ -18,7 +18,7 @@ git clone https://github.com/mgastner/cartogram-cpp.git
 
 ## Development
 
-We manage dependencies with a Python virtual environment and Conan 2. The project uses Clang with C++20 support. Please ensure that Python 3.10 or later and a Clang++ compiler with C++20 support are installed before proceeding.
+We manage dependencies with a Python virtual environment and Conan 2. The project uses Clang with C++20 support. Please ensure that Python 3.10 or later and a Clang++ (preferably Clang 20) compiler with C++20 support are installed before proceeding.
 
 ### Linux and macOS
 
@@ -33,7 +33,7 @@ source .venv/bin/activate
 
 #### Install dependencies while in the virtual environment
 ```
-pip install --upgrade pip wheel conan==2.16.1 cmake==3.29.2
+pip install --upgrade pip wheel conan==2.16.1 cmake==3.30.0
 ```
 
 #### Setup Conan
@@ -52,11 +52,16 @@ conan install . --output-folder build --build=missing -s build_type=Release -s c
 
 #### Build the project
 ```
-cmake -B build -S . -DCMAKE_TOOLCHAIN_FILE=build/conan_toolchain.cmake -DCMAKE_BUILD_TYPE=Release
+cmake -B build -S . -DCMAKE_TOOLCHAIN_FILE=build/build/Release/generators/conan_toolchain.cmake -DCMAKE_BUILD_TYPE=Release
 ```
 
 ```
 cmake --build build -j4  
+```
+
+#### Make the PROJ library data available
+```
+source build/build/Release/generators/conanrun.sh
 ```
 
 ### Windows (Using WSL)
