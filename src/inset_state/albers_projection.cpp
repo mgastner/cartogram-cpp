@@ -1,49 +1,35 @@
 #include "constants.hpp"
 #include "inset_state.hpp"
 #include "round_point.hpp"
-#include <filesystem>
-#include <proj.h>
+
+#include <boost/geometry.hpp>
+#include <boost/geometry/srs/projections/proj4.hpp>
+#include <boost/geometry/srs/transformation.hpp>
+
+namespace bg  = boost::geometry;
+namespace srs = bg::srs;
 
 class AlbersProjector
 {
+  using trans_t = srs::transformation<>;
+
 public:
   AlbersProjector(double lambda0, double phi0, double phi1, double phi2)
       : lambda0_(lambda0), phi1_(phi1),
-        cylindrical_(std::abs(phi1 + phi2) < 1e-6), ctx_(nullptr),
-        pj_(nullptr), pj_vis_(nullptr)
+        cylindrical_(std::abs(phi1 + phi2) < 1e-6)
   {
     if (cylindrical_)
       return;
 
     // Write up parameters to be used for Albers projection
     // NOTE: R (radius) is set to 1 for our conversion
-    ctx_ = proj_context_create();
-    std::string aea = "+proj=aea +lat_1=" + std::to_string(phi1) +
-                      " +lat_2=" + std::to_string(phi2) +
-                      " +lat_0=" + std::to_string(phi0) +
-                      " +lon_0=" + std::to_string(lambda0) + " +R=1 +no_defs";
+    const std::string src = "+proj=longlat +R=1 +no_defs";
+    const std::string dst =
+      "+proj=aea +lat_1=" + std::to_string(phi1) +
+      " +lat_2=" + std::to_string(phi2) + " +lat_0=" + std::to_string(phi0) +
+      " +lon_0=" + std::to_string(lambda0) + " +R=1 +no_defs";
 
-    pj_ = proj_create_crs_to_crs(
-      ctx_,
-      "+proj=longlat +R=1 +no_defs",
-      aea.c_str(),
-      nullptr);
-    if (!pj_)
-      throw std::runtime_error("proj_create_crs_to_crs failed");
-
-    pj_vis_ = proj_normalize_for_visualization(ctx_, pj_);
-    if (!pj_vis_)
-      throw std::runtime_error("proj_normalize_for_visualization failed");
-  }
-
-  ~AlbersProjector()
-  {
-    if (pj_vis_)
-      proj_destroy(pj_vis_);
-    if (pj_)
-      proj_destroy(pj_);
-    if (ctx_)
-      proj_context_destroy(ctx_);
+    trans_ = std::make_unique<trans_t>(srs::proj4(src), srs::proj4(dst));
   }
 
   Point operator()(const Point &p) const
@@ -60,19 +46,21 @@ public:
       return rounded_point({x, y}, 15);
     }
 
-    PJ_COORD in = proj_coord(p.x(), p.y(), 0, 0);
-    PJ_COORD out = proj_trans(pj_vis_, PJ_FWD, in);
-    return rounded_point({out.xy.x, out.xy.y}, 15);
+    bg::model::point<double, 2, bg::cs::geographic<bg::degree>> in(
+      p.x(),
+      p.y());
+    bg::model::point<double, 2, bg::cs::cartesian> out;
+
+    (*trans_).forward(in, out);
+
+    return rounded_point({bg::get<0>(out), bg::get<1>(out)}, 15);
   }
 
 private:
   double lambda0_;
   double phi1_;
   bool cylindrical_;
-
-  PJ_CONTEXT *ctx_;
-  PJ *pj_;
-  PJ *pj_vis_;
+  std::unique_ptr<trans_t> trans_;
 };
 
 void InsetState::adjust_for_dual_hemisphere()
@@ -154,12 +142,9 @@ void InsetState::apply_albers_projection()
   const double phi_1 = 0.5 * (phi_0 + max_lat);
   const double phi_2 = 0.5 * (phi_0 + min_lat);
 
-#pragma omp parallel
-  {
-    static thread_local AlbersProjector proj(lambda_0, phi_0, phi_1, phi_2);
+  static thread_local AlbersProjector proj(lambda_0, phi_0, phi_1, phi_2);
 
-    transform_points([&](const Point &q) {
-      return proj(q);
-    });
-  }
+  transform_points([&](const Point &q) {
+    return proj(q);
+  });
 }

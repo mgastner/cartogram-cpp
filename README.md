@@ -59,10 +59,6 @@ cmake -B build -S . -DCMAKE_TOOLCHAIN_FILE=build/build/Release/generators/conan_
 cmake --build build -j4  
 ```
 
-#### Make the PROJ library data available
-```
-source build/build/Release/generators/conanrun.sh
-```
 
 ### Windows (Using WSL)
 
