@@ -34,9 +34,31 @@ target_link_libraries(cartogram
 )
 
 target_compile_options(cartogram PRIVATE
+  -O3
   -ffp-contract=off
   -Wall -Wextra -Wpedantic -Wshadow -Wold-style-cast -Wunreachable-code
 )
+
+include(CheckCXXCompilerFlag)
+check_cxx_compiler_flag("-mcpu=native" HAS_MCPU_NATIVE)
+check_cxx_compiler_flag("-march=native" HAS_MARCH_NATIVE)
+
+if (HAS_MCPU_NATIVE)
+    target_compile_options(cartogram PRIVATE -mcpu=native)
+elseif (HAS_MARCH_NATIVE)
+    target_compile_options(cartogram PRIVATE -march=native)
+endif()
+
+
+include(CheckIPOSupported)
+check_ipo_supported(RESULT ipo_ok OUTPUT ipo_msg)
+
+if(ipo_ok)
+  set_property(TARGET cartogram PROPERTY INTERPROCEDURAL_OPTIMIZATION ON)
+  target_link_options(cartogram PRIVATE -flto)
+else()
+  message(STATUS "IPO/LTO not available: ${ipo_msg}")
+endif()
 
 target_include_directories(cartogram
   PUBLIC ${PROJECT_SOURCE_DIR}/include
