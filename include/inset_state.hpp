@@ -11,7 +11,6 @@
 #include "progress_tracker.hpp"
 #include "time_tracker.hpp"
 #include <boost/multi_array.hpp>
-#include <cairo/cairo.h>
 
 struct max_area_error_info {
   double value;
@@ -268,12 +267,10 @@ public:
   void move_points(double dx, double dy, bool project_original = false);
   std::array<Point, 3> untransformed_triangle(const Point &, bool = false)
     const;
-  void trim_grid_heatmap(cairo_t *cr, double padding);
   void update_delaunay_t();
   void update_file_prefix();
   void update_gd_ids(const std::map<std::string, std::string> &);
 
-  // Cairo functions
   void write_map(
     const std::string &,
     bool,
@@ -283,10 +280,6 @@ public:
 
   void write_delaunay_triangles(const std::string &, const bool);
   void write_grid_heatmap_data(const std::string filename);
-  void write_grid_colors_on_surface(
-    cairo_t *cr,
-    bool plot_equal_area_map,
-    bool crop_polygons);
   void write_density_image(
     const std::string filename);
   void write_intersections_image();
