@@ -1,0 +1,135 @@
+#pragma once
+
+#include "basic_figures.hpp"
+#include "canvas.hpp"
+#include "color.hpp"
+#include "geometry.hpp"
+#include "inset_state.hpp"
+
+// ======================== Legend Plotting ========================
+
+// Find the nearest matching nice number and value for use in legend
+int get_nearest_nice_number_for_legend(int value)
+{
+  const int NICE_NUMBERS[4] = {1, 2, 5, 10};
+
+  int new_value = 99;
+  const int scale = std::floor(std::log10(value));
+  const double value_first_digit =
+    value / pow(10.0, scale);  // Get first digit of value in decimals
+  double value_diff = abs(value_first_digit - new_value);
+
+  // Loop through array of nice numbers to find the closest matching one
+  for (int num : NICE_NUMBERS) {
+    if (abs(value_first_digit - num) < value_diff) {
+      value_diff = abs(value_first_digit - num);
+      new_value = num;
+    }
+  }
+
+  // Get the real nice number by multiplying the gotten value with the scale
+  new_value = new_value * pow(10.0, scale);
+  return new_value;
+}
+
+std::pair<unsigned int, unsigned int> get_km_legend_length(
+  const InsetState &inset_state)
+{
+  const double cell_area_km = grid_cell_area_km(inset_state);
+  const unsigned int grid_cell_area = get_nearest_nice_number_for_legend(
+    cell_area_km * compute_per_grid_cell(inset_state));
+  const unsigned int total_area =
+    cell_area_km * inset_state.total_inset_area();
+
+  return std::pair<unsigned int, unsigned int>(grid_cell_area, total_area);
+}
+
+std::pair<unsigned int, unsigned int> get_visual_variable_legend_length(
+  const InsetState &inset_state)
+{
+  const unsigned int per_area =
+    inset_state.initial_target_area() / inset_state.total_inset_area();
+  const unsigned int grid_cell_area = get_nearest_nice_number_for_legend(
+    per_area * compute_per_grid_cell(inset_state));
+  const unsigned int total_area = inset_state.initial_target_area();
+
+  return std::pair<unsigned int, unsigned int>(grid_cell_area, total_area);
+}
+
+// Generate text labels for use in legend grid display
+std::pair<std::string, std::string> get_legend_labels(
+  unsigned int grid_cell_value,
+  unsigned int total_value)
+{
+  // Display value per grid cell in billions/millions/thousands
+  std::string grid_cell_label = "";
+  if (grid_cell_value >= 1000000000) {
+    const int billions = grid_cell_value / 1000000000;
+    grid_cell_label = std::to_string(billions) + "B";
+  } else if (grid_cell_value >= 1000000) {
+    const int millions = grid_cell_value / 1000000;
+    grid_cell_label = std::to_string(millions) + "M";
+  } else if (grid_cell_value >= 1000) {
+    const int thousands = grid_cell_value / 1000;
+    grid_cell_label = std::to_string(thousands) + "K";
+  } else {
+    grid_cell_label = std::to_string(grid_cell_value);
+  }
+
+  // Display total value in billions/millions/thousands with 1 decimal place
+  std::string total_label = "Total: ";
+  std::stringstream sstream;
+  if (total_value >= 1000000000) {
+    const double billions = static_cast<double>(total_value) / 1000000000;
+    sstream << std::fixed << std::setprecision(1) << billions;
+    total_label += sstream.str() + "B";
+  } else if (total_value >= 1000000) {
+    const double millions = static_cast<double>(total_value) / 1000000;
+    sstream << std::fixed << std::setprecision(1) << millions;
+    total_label += sstream.str() + "M";
+  } else if (total_value >= 1000) {
+    const double thousands = static_cast<double>(total_value) / 1000;
+    sstream << std::fixed << std::setprecision(1) << thousands;
+    total_label += sstream.str() + "K";
+  } else {
+    total_label += std::to_string(total_value);
+  }
+
+  return std::pair<std::string, std::string>(grid_cell_label, total_label);
+}
+
+void write_legend(
+  Canvas &cvs,
+  bool equal_area_map,
+  const InsetState &inset_state)
+{
+  auto [grid_cell_val, total_val] =
+    equal_area_map ? get_km_legend_length(inset_state)
+                   : get_visual_variable_legend_length(inset_state);
+
+  const Point legend_pos{0, 0};
+  const double cell_len = std::sqrt(compute_per_grid_cell(inset_state));
+
+  cvs.set_stroke(Color{"#000000"}, 1.0);
+  cvs.rectangle(
+    legend_pos.x(),
+    legend_pos.y(),
+    cell_len,
+    cell_len);
+
+  double x_text = legend_pos.x() + cell_len * 1.25;
+  double y_grid_label = legend_pos.y() + cell_len * 0.50;
+  double y_total_label = y_grid_label + cell_len * 0.75;
+
+  unsigned font_px = 8 * (inset_state.lx() / 256);
+
+  auto labels = get_legend_labels(grid_cell_val, total_val);
+  std::string grid_lbl = labels.first;
+  std::string total_lbl = labels.second;
+
+  grid_lbl += equal_area_map ? " km²" : " people";
+  total_lbl += equal_area_map ? " km²" : " people";
+
+  cvs.text(x_text, y_grid_label + font_px * 0.5, grid_lbl, font_px);
+  cvs.text(x_text, y_total_label + font_px * 0.5, total_lbl, font_px);
+}

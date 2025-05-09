@@ -274,7 +274,7 @@ public:
   void update_gd_ids(const std::map<std::string, std::string> &);
 
   // Cairo functions
-  void write_cairo_map(
+  void write_map(
     const std::string &,
     bool,
     bool equal_area_map = false,
@@ -288,8 +288,7 @@ public:
     bool plot_equal_area_map,
     bool crop_polygons);
   void write_density_image(
-    const std::string filename,
-    const bool plot_pycnophylactic);
+    const std::string filename);
   void write_intersections_image();
   void write_quadtree(const std::string &);
 };

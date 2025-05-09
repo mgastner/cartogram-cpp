@@ -1,5 +1,25 @@
+#pragma once
+
+#include "basic_figures.hpp"
 #include "inset_state.hpp"
-#include "write_image.hpp"
+
+// TODO: IS THERE A CGAL WAY OF DETERMINING WHETHER THE LABEL'S BOUNDING
+//       BOX IS COMPLETELY CONTAINED IN THE POLYGON?
+
+// TODO: SHOULD THE CRITERION FOR PRINTING A LABEL BE THAT IT FITS INSIDE THE
+//       POLYGON WITH HOLES? THAT CRITERION WOULD BE MORE RESTRICTIVE THAN
+//       FITTING INSIDE THE EXTERIOR RING.
+bool all_points_inside_exterior_ring(
+  const std::vector<Point> &pts,
+  const Polygon_with_holes &pwh)
+{
+  for (const auto &pt : pts) {
+    if (pwh.outer_boundary().has_on_unbounded_side(pt)) {
+      return false;
+    }
+  }
+  return true;
+}
 
 // ======================== Grid Cell ========================
 
@@ -110,6 +130,28 @@ std::pair<Point, Point> max_and_min_grid_cell_area_index(
   return std::make_pair(Point(max_i, max_j), Point(min_i, min_j));
 }
 
+// CAN REMOVE
+// Given coordinates in lx by ly coordinate system, returns the corresponding
+// coordinates in the equal_area_projection projection coordinate system
+Polygon transform_to_equal_area_projection_coor(
+  Polygon edge_points,
+  const InsetState &inset_state)
+{
+  Transformation scale(CGAL::SCALING, inset_state.latt_const());
+
+  Polygon cell_edge_points_equal_area_projection =
+    transform(scale, edge_points);
+  return cell_edge_points_equal_area_projection;
+}
+
+// Given area in the equal_area_projection projection coordinate system,
+// returns the corresponding area in the square km^2
+double equal_area_projection_area_to_earth_area(
+  const double equal_area_projection_area)
+{
+  return (equal_area_projection_area * earth_surface_area) / (4 * pi);
+}
+
 double grid_cell_target_area(
   const unsigned int i,
   const unsigned int j,
@@ -125,6 +167,22 @@ double grid_cell_target_area(
     (cell_area * total_target_area) / total_inset_area;
 
   return cell_target_area;
+}
+
+double grid_cell_area_km(
+  const InsetState &inset_state,
+  const unsigned int i = 0,
+  const unsigned int j = 0)
+{
+  const Polygon cell_edge_points =
+    inset_state.grid_cell_edge_points(i, j, 1, true);
+  const Polygon cell_edge_points_equal_area_projection =
+    transform_to_equal_area_projection_coor(cell_edge_points, inset_state);
+  const double cell_area = cell_edge_points_equal_area_projection.area();
+  const double cell_area_km =
+    equal_area_projection_area_to_earth_area(cell_area);
+
+  return cell_area_km;
 }
 
 double grid_cell_target_area_per_km(
@@ -145,22 +203,6 @@ double grid_cell_target_area_per_km(
   const double cell_target_area_per_km = cell_target_area / cell_area_km;
 
   return cell_target_area_per_km;
-}
-
-double grid_cell_area_km(
-  const InsetState &inset_state,
-  const unsigned int i,
-  const unsigned int j)
-{
-  const Polygon cell_edge_points =
-    inset_state.grid_cell_edge_points(i, j, 1, true);
-  const Polygon cell_edge_points_equal_area_projection =
-    transform_to_equal_area_projection_coor(cell_edge_points, inset_state);
-  const double cell_area = cell_edge_points_equal_area_projection.area();
-  const double cell_area_km =
-    equal_area_projection_area_to_earth_area(cell_area);
-
-  return cell_area_km;
 }
 
 // Find and return the area per grid cell
