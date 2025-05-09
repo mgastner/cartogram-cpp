@@ -2,7 +2,6 @@
 #include <algorithm>
 #include <cmath>
 #include <functional>
-#include <omp.h>
 #include <queue>
 #include <set>
 #include <vector>
