@@ -47,7 +47,7 @@ conan profile detect
 
 #### Install dependencies via Conan
 ```
-conan install . --output-folder build --build=missing -s build_type=Release -s compiler.cppstd=20 -s compiler=clang
+conan install . --output-folder build --build=missing -s build_type=Release -s compiler.cppstd=20
 ```
 
 #### Build the project
