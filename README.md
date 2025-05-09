@@ -52,11 +52,11 @@ conan install . --output-folder build --build=missing -s build_type=Release -s c
 
 #### Build the project
 ```
-cmake -B build -S . -DCMAKE_TOOLCHAIN_FILE=build/build/Release/generators/conan_toolchain.cmake -DCMAKE_BUILD_TYPE=Release
+.venv/bin/cmake -B build -S . -DCMAKE_TOOLCHAIN_FILE=build/build/Release/generators/conan_toolchain.cmake -DCMAKE_BUILD_TYPE=Release
 ```
 
 ```
-cmake --build build -j4  
+.venv/bin/cmake --build build -j4  
 ```
 
 
