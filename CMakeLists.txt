@@ -13,7 +13,6 @@ find_package(vincentlaucsb-csv-parser REQUIRED CONFIG)
 find_package(indicators REQUIRED CONFIG)
 find_package(PkgConfig REQUIRED)
 pkg_search_module(FFTW REQUIRED IMPORTED_TARGET fftw3)
-pkg_search_module(CAIRO REQUIRED IMPORTED_TARGET cairo)
 
 # ----------------------------- Main exe  ------------------------------
 file(GLOB_RECURSE CARTOGRAM_SOURCES CONFIGURE_DEPENDS src/*.cpp)
@@ -28,7 +27,6 @@ target_link_libraries(cartogram
   vincentlaucsb-csv-parser::vincentlaucsb-csv-parser
   indicators::indicators
   PkgConfig::FFTW
-  PkgConfig::CAIRO
 )
 
 target_compile_options(cartogram PRIVATE

@@ -6,7 +6,6 @@ indicators/2.3
 nlohmann_json/3.11.3
 boost/1.83.0
 fftw/3.3.10
-cairo/1.18.0
 pkgconf/2.2.0
 
 [tool_requires]
@@ -20,7 +19,6 @@ PkgConfigDeps
 [options]
 boost/*:header_only=True
 cgal/*:header_only=True
-gmp/*:enable_cxx=False
 
 [layout]
 cmake_layout
