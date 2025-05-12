@@ -56,7 +56,7 @@ conan install . --output-folder build --build=missing -s build_type=Release -s c
 ```
 
 ```
-.venv/bin/cmake --build build -j4  
+sudo make install -j4 -C build
 ```
 
 
