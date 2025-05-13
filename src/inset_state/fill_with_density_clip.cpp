@@ -1096,10 +1096,10 @@ void InsetState::create_contiguity_graph()
   is_copy.rescale_map();
 
   boost::multi_array<std::vector<PolygonInfo>, 2> edge_cell_polyinfo(
-    boost::extents[lx_][ly_]);
+    boost::extents[is_copy.lx_][is_copy.ly_]);
   std::vector<PolygonInfo> all_pwh_info;
 
-  process_geo_divisions_edge_info(edge_cell_polyinfo, all_pwh_info, *this);
+  process_geo_divisions_edge_info(edge_cell_polyinfo, all_pwh_info, is_copy);
 
   for (unsigned int x = 0; x < is_copy.lx(); ++x) {
     for (unsigned int y = 0; y < is_copy.ly(); ++y) {

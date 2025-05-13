@@ -373,7 +373,7 @@ if [ $flags -eq 1 ]; then
 
     printf "${flags_arr[$i]}:\n" | tee -a "${results_file}"
     failed_per=$((100 * $failed / $total))
-    printf "Passed [$((total - total_failed))/${total}] | $((100 - failed_per))%% \n" | tee -a "${results_file}" | color $green
+    printf "Passed [$((total - failed))/${total}] | $((100 - failed_per))%% \n" | tee -a "${results_file}" | color $green
     printf "Failed [${failed}/${total}] | ${failed_per}%% \n" | tee -a "${results_file}" | color $red
   done
   printf "Combined tests:\n" | tee -a "${results_file}"
