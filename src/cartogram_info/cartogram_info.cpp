@@ -53,16 +53,16 @@ bool CartogramInfo::is_world_map() const
   return is_world_map_;
 }
 
-unsigned int CartogramInfo::n_geo_divs() const
+size_t CartogramInfo::n_geo_divs() const
 {
-  unsigned int n_geo_divs = 0;
+  size_t n_geo_divs = 0;
   for (const InsetState &inset_state : inset_states_) {
     n_geo_divs += inset_state.n_geo_divs();
   }
   return n_geo_divs;
 }
 
-unsigned int CartogramInfo::n_insets() const
+size_t CartogramInfo::n_insets() const
 {
   return inset_states_.size();
 }

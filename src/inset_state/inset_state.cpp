@@ -138,7 +138,7 @@ bool InsetState::color_found(const std::string &id) const
   return colors_.count(id);
 }
 
-unsigned int InsetState::colors_size() const
+size_t InsetState::colors_size() const
 {
   return colors_.size();
 }
@@ -210,7 +210,7 @@ void InsetState::update_delaunay_t()
     const Point p2 = edge.target();
 
     // if edge is diagonal, ignore it
-    if (p1.x() != p2.x() && p1.y() != p2.y()) {
+    if (!almost_equal(p1.x(), p2.x()) && !almost_equal(p1.y(), p2.y())) {
       continue;
     }
 
@@ -282,12 +282,14 @@ void InsetState::update_delaunay_t()
     const Point p2_orig = reverse_triangle_transformation.at(p2);
 
     // Automatically pick the edge if it is diagonal
-    if (p1_orig.x() != p2_orig.x() && p1_orig.y() != p2_orig.y()) {
+    if (
+      !almost_equal(p1_orig.x(), p2_orig.x()) &&
+      !almost_equal(p1_orig.y(), p2_orig.y())) {
       constraints.push_back({p1_orig, p2_orig});
     }
 
     // If edge is vertical, only add it if there are no point in between
-    if (p1_orig.x() == p2_orig.x()) {
+    if (almost_equal(p1_orig.x(), p2_orig.x())) {
       auto &y_coor_points = same_x_coor_points[p1_orig.x()];
 
       const double y_min = std::min(p1_orig.y(), p2_orig.y());
@@ -295,9 +297,10 @@ void InsetState::update_delaunay_t()
 
       // Binary search to find the number of points between the two y
       // coordinates
-      int cnt =
+      auto cnt =
+        static_cast<std::size_t>(
         std::upper_bound(y_coor_points.begin(), y_coor_points.end(), y_max) -
-        std::lower_bound(y_coor_points.begin(), y_coor_points.end(), y_min);
+        std::lower_bound(y_coor_points.begin(), y_coor_points.end(), y_min));
 
       if (cnt == 2) {  // No points in between
         constraints.push_back({p1_orig, p2_orig});
@@ -305,7 +308,7 @@ void InsetState::update_delaunay_t()
     }
 
     // If edge is horizontal, only add it if there are no point in between
-    if (p1_orig.y() == p2_orig.y()) {
+    if (almost_equal(p1_orig.y(), p2_orig.y())) {
       // Check if there is a point in between
       auto &x_coor_points = same_y_coor_points[p1_orig.y()];
 
@@ -314,9 +317,9 @@ void InsetState::update_delaunay_t()
 
       // Binary search to find the number of points between the two y
       // coordinates
-      int cnt =
+      auto cnt = static_cast<std::size_t>(
         std::upper_bound(x_coor_points.begin(), x_coor_points.end(), x_max) -
-        std::lower_bound(x_coor_points.begin(), x_coor_points.end(), x_min);
+        std::lower_bound(x_coor_points.begin(), x_coor_points.end(), x_min));
       if (cnt == 2) {  // No points in between
         constraints.push_back({p1_orig, p2_orig});
       }
@@ -481,13 +484,15 @@ struct Split_by_threshold {
     double rho_min = std::numeric_limits<double>::infinity();
     double rho_max = -std::numeric_limits<double>::infinity();
 
-    for (int x = bbox.xmin(); x < bbox.xmax(); ++x) {
-      for (int y = bbox.ymin(); y < bbox.ymax(); ++y) {
+    for (int x = static_cast<int>(bbox.xmin()); x < static_cast<int>(bbox.xmax()); ++x) {
+      for (int y = static_cast<int>(bbox.ymin()); y < static_cast<int>(bbox.ymax()); ++y) {
         if (
           x < 0 || y < 0 || x >= static_cast<int>(inset_state.lx()) ||
           y >= static_cast<int>(inset_state.ly()))
           continue;
-        const double rho = inset_state.ref_to_rho_init()(x, y);
+        const unsigned int ux = static_cast<unsigned int>(x);
+        const unsigned int uy = static_cast<unsigned int>(y);
+        const double rho = inset_state.ref_to_rho_init()(ux, uy);
         rho_min = std::min(rho_min, rho);
         rho_max = std::max(rho_max, rho);
       }
@@ -821,7 +826,7 @@ unsigned int InsetState::n_fails_during_flatten_density() const
 
 unsigned int InsetState::n_geo_divs() const
 {
-  return geo_divs_.size();
+  return static_cast<unsigned int>(geo_divs_.size());
 }
 
 unsigned long InsetState::n_points() const
@@ -1030,7 +1035,7 @@ void InsetState::store_initial_area()
 
 void InsetState::store_initial_target_area(const double override)
 {
-  initial_target_area_ = override ? override : total_target_area();
+  initial_target_area_ = almost_equal(override, 0.0) ? total_target_area() : override;
 }
 
 bool InsetState::target_area_is_missing(const std::string &id) const

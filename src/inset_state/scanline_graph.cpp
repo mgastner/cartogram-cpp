@@ -38,12 +38,12 @@ std::vector<std::vector<intersection> > InsetState::intersec_with_parallel_to(
       // This should not be the case, as if floor and ceil return too low or
       // too high values, the rays will not intersect the polygon.
       // Investigate why the commented lines caused problems in the past.
-      for (int k = min_lim - 1;
+      for (int k = static_cast<int>(min_lim - 1);
       // for (int k = floor(min_lim) - 1;
       // for (int k = min_lim;
       // for (int k = floor(min_lim);
       // for (unsigned int k = static_cast<unsigned int>(std::max(0, (int)floor(min_lim) - 1));
-           k <= ceil(max_lim) + 1;
+           k <= static_cast<int>(ceil(max_lim) + 1);
            // Same issue as above TODO here.
           //  k <= std::min((unsigned int)(max_lim), grid_length - 1);
            ++k) {
@@ -155,12 +155,12 @@ std::vector<Segment> InsetState::intersecting_segments(
             intersec[l].ray_enters == intersec[l + 1].ray_enters &&
             intersec[l].ray_enters && l + 2 <= intersec.size()) {
             Segment temp;
-            if (axis == 'x' && intersec[l + 1].x() != intersec[l + 2].x()) {
+            if (axis == 'x' && !almost_equal(intersec[l + 1].x(), intersec[l + 2].x())) {
               temp = Segment(
                 Point(intersec[l + 1].x(), ray),
                 Point(intersec[l + 2].x(), ray));
               int_segments.push_back(temp);
-            } else if (intersec[l + 1].y() != intersec[l + 2].y()) {
+            } else if (!almost_equal(intersec[l + 1].y(), intersec[l + 2].y())) {
               temp = Segment(
                 Point(ray, intersec[l + 1].y()),
                 Point(ray, intersec[l + 2].y()));

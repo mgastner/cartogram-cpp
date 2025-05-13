@@ -3,6 +3,7 @@
 #include <algorithm>
 #include <unordered_set>
 #include <variant>
+#include <cmath>
 
 // For printing a vector (debugging purposes)
 template <typename A>
@@ -60,8 +61,10 @@ Point calc_intersection(
 //   on the grid. This value is either 0, 0.25, or 0.5.
 // - step: what we need to add to each diagonal's intercept to obtain the
 //   next diagonal.
+using PointLess = bool (*)(const Point&, const Point&);
+
 void add_diag_inter(
-  std::set<Point, decltype(point_less_than) *> *intersections,
+  std::set<Point, PointLess> *intersections,
   const Point &a,
   const Point &b,
   double slope,
@@ -96,11 +99,12 @@ void add_diag_inter(
     Point inter = calc_intersection(a, b, slope, -1.0, d);
     bool on_left_or_right_edge = inter.x() < 0.5 || inter.x() > (lx - 0.5);
     bool on_top_or_bottom_edge = inter.y() < 0.5 || inter.y() > (ly - 0.5);
+    const double abs_slope = std::fabs(slope);
     if (
       inter != OUT_OF_RANGE &&
-      ((abs(slope) == 2 && on_left_or_right_edge) ||
-       (abs(slope) == 0.5 && on_top_or_bottom_edge) ||
-       (abs(slope) == 1 &&
+      ((almost_equal(abs_slope, 2.0) && on_left_or_right_edge) ||
+       (almost_equal(abs_slope, 0.5) && on_top_or_bottom_edge) ||
+       (almost_equal(abs_slope, 1) &&
         (on_left_or_right_edge == on_top_or_bottom_edge)))) {
       (*intersections).insert(inter);
     }
@@ -127,7 +131,7 @@ std::vector<Point> densification_points(
 {
   // If the input points are identical, return them without calculating
   // intersections
-  if ((pt1.x() == pt2.x()) && (pt1.y() == pt2.y())) {
+  if (almost_equal(pt1, pt2)) {
     std::vector<Point> points;
     points.push_back(pt1);
     points.push_back(pt2);
@@ -135,8 +139,7 @@ std::vector<Point> densification_points(
   }
 
   // Ordered set for storing intersections before removing duplicates
-  std::set<Point, decltype(point_less_than) *> temp_intersections(
-    point_less_than);
+  std::set<Point, PointLess> temp_intersections(less_than);
 
   // Store the leftmost point of p1 and pt2 as `a`. If both points have the
   // same x-coordinate, then store the lower point as `a`. The other point is
@@ -147,7 +150,9 @@ std::vector<Point> densification_points(
   // TODO: IN THE COMMENT ABOVE, DOES THE REMARK ABOUT THE FLOATING-POINT
   // ERRORS STILL APPLY AFTER SWITCHING TO SIMPLE CARTESIAN COORDINATES?
   Point a, b;
-  if ((pt1.x() > pt2.x()) || ((pt1.x() == pt2.x()) && (pt1.y() > pt2.y()))) {
+  if (
+    less_than(pt2.x(), pt1.x()) ||
+    (almost_equal(pt1.x(), pt2.x()) && less_than(pt2.y(), pt1.y()))) {
     a = pt2;
     b = pt1;
   } else {
@@ -207,7 +212,9 @@ std::vector<Point> densification_points(
     temp_intersections.end());
 
   // Reverse if needed
-  if ((pt1.x() > pt2.x()) || ((pt1.x() == pt2.x()) && (pt1.y() > pt2.y()))) {
+  if (
+    less_than(pt2.x(), pt1.x()) ||
+    (almost_equal(pt1.x(), pt2.x()) && less_than(pt2.y(), pt1.y()))) {
     std::reverse(intersections.begin(), intersections.end());
   }
   return intersections;
@@ -316,7 +323,7 @@ std::vector<Point> densification_points_with_delaunay_t(
 
   // If the input points are identical, return them without calculating
   // intersections
-  if (points_almost_equal(pt1, pt2)) {
+  if (almost_equal(pt1, pt2)) {
     return {pt1, pt2};
   }
 
@@ -409,7 +416,7 @@ std::vector<Point> densification_points_with_delaunay_t(
   }
 
   // if densification points are in reverse order, reverse them
-  if (!points_almost_equal(dens_points.front(), pt1)) {
+  if (!almost_equal(dens_points.front(), pt1)) {
     reverse(dens_points.begin(), dens_points.end());
   }
 
@@ -417,8 +424,8 @@ std::vector<Point> densification_points_with_delaunay_t(
   // points are not the originally given points, we consider the densificaiton
   // points invalid and return the original points
   if (
-    !points_almost_equal(dens_points.front(), pt1) ||
-    !points_almost_equal(dens_points.back(), pt2)) {
+    !almost_equal(dens_points.front(), pt1) ||
+    !almost_equal(dens_points.back(), pt2)) {
     return {pt1, pt2};
   }
 
@@ -427,9 +434,9 @@ std::vector<Point> densification_points_with_delaunay_t(
   dens_points_unique.push_back(dens_points.front());
   for (unsigned int i = 1; i < dens_points.size() - 1; ++i) {
     if (
-      !points_almost_equal(dens_points[i], dens_points.front()) &&
-      !points_almost_equal(dens_points[i], dens_points.back()) &&
-      !points_almost_equal(dens_points[i], dens_points[i - 1])) {
+      !almost_equal(dens_points[i], dens_points.front()) &&
+      !almost_equal(dens_points[i], dens_points.back()) &&
+      !almost_equal(dens_points[i], dens_points[i - 1])) {
       dens_points_unique.push_back(dens_points[i]);
     }
   }

@@ -332,8 +332,8 @@ void InsetState::flatten_ellipse_density()
       ell_density_prefactors.end()) -
     ell_density_prefactors.begin());
 
-  std::cerr << "Max delta rho: " << ell_density_prefactors[mx_pgn_index]
-            << ", GeoDiv: " << pgn_id_to_geo_id[mx_pgn_index] << std::endl;
+  std::cerr << "Max delta rho: " << ell_density_prefactors[static_cast<unsigned int>(mx_pgn_index)]
+            << ", GeoDiv: " << pgn_id_to_geo_id[static_cast<unsigned int>(mx_pgn_index)] << std::endl;
 
   // print top 5 polygons with most delta density
   std::vector<std::pair<double, std::string>> pgn_density;
@@ -346,8 +346,8 @@ void InsetState::flatten_ellipse_density()
 
   // Print the top 5
   std::cerr << "Top 5 Polygons with most Delta density:" << std::endl;
-  for (int i = 0;
-       i < std::min(5, static_cast<int>(ell_density_prefactors.size()));
+  for (unsigned int i = 0;
+       i < std::min(5u, static_cast<unsigned int>(ell_density_prefactors.size()));
        ++i) {
     std::cerr << pgn_density[i].second << ": " << pgn_density[i].first
               << std::endl;

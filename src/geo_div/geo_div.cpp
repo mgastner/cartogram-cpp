@@ -101,7 +101,7 @@ unsigned int GeoDiv::n_rings() const
   return n_rings;
 }
 
-unsigned int GeoDiv::n_polygons_with_holes() const
+size_t GeoDiv::n_polygons_with_holes() const
 {
   return polygons_with_holes_.size();
 }

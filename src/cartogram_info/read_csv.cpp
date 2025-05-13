@@ -134,15 +134,15 @@ std::string CartogramInfo::match_id_columns(
       // (issue here: https://github.com/vincentlaucsb/csv-parser/issues/261).
       // As such, a new reader has to be declared in each loop in order to
       // properly iterate through the rows.
-      csv::CSVReader reader(args_.visual_file_name);
+      csv::CSVReader loop_reader(args_.visual_file_name);
       std::set<std::string> data_set;
-      for (auto row = reader.begin(); row != reader.end(); row++) {
+      for (auto row = loop_reader.begin(); row != loop_reader.end(); row++) {
         data_set.insert((*row)[header].get());
       }
 
       // If the set size is less than the number of rows then skip the column
       // as it cannot be the ID column.
-      if (data_set.size() < reader.n_rows())
+      if (data_set.size() < loop_reader.n_rows())
         continue;
 
       for (auto &[key, value_set] : geojson_properties_info) {
@@ -332,18 +332,18 @@ void CartogramInfo::read_csv()
       _Exit(17);
     }
 
-    const std::string id = row[id_col].get();
-    const std::string area_as_str = row[area_col].get();
+    const std::string id = row[static_cast<size_t>(id_col)].get();
+    const std::string area_as_str = row[static_cast<size_t>(area_col)].get();
     check_validity_of_area_str(area_as_str);
 
     const std::string color =
-      (color_col != csv::CSV_NOT_FOUND) ? row[color_col].get() : "";
+      (color_col != csv::CSV_NOT_FOUND) ? row[static_cast<size_t>(color_col)].get() : "";
 
     const std::string label =
-      (label_col != csv::CSV_NOT_FOUND) ? row[label_col].get() : "";
+      (label_col != csv::CSV_NOT_FOUND) ? row[static_cast<size_t>(label_col)].get() : "";
 
     const std::string inset_pos_as_str =
-      (inset_col != csv::CSV_NOT_FOUND) ? row[inset_col].get() : "C";
+      (inset_col != csv::CSV_NOT_FOUND) ? row[static_cast<size_t>(inset_col)].get() : "C";
 
     const std::string inset_pos = process_inset_pos_str(inset_pos_as_str);
     check_validity_of_inset_pos(inset_pos, id);

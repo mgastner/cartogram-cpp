@@ -253,15 +253,17 @@ static GridCoordinates compute_supercover_line_amanatides_woo(
 
   // These represent how far along the ray we must move (in t, where 0 <= t <=
   // 1) to cross a cell boundary in the respective direction
-  double t_delta_x = (delta_x != 0) ? 1.0 / std::abs(delta_x)
-                                    : std::numeric_limits<double>::infinity();
-  double t_delta_y = (delta_y != 0) ? 1.0 / std::abs(delta_y)
-                                    : std::numeric_limits<double>::infinity();
+  double t_delta_x = almost_equal(delta_x, 0.0)
+                       ? std::numeric_limits<double>::infinity()
+                       : 1.0 / std::abs(delta_x);
+  double t_delta_y = almost_equal(delta_y, 0.0)
+                       ? std::numeric_limits<double>::infinity()
+                       : 1.0 / std::abs(delta_y);
 
   // The parametric distance along the ray until we reach the first vertical
   // (or horizontal) grid line
   double t_max_x, t_max_y;
-  if (delta_x != 0) {
+  if (!almost_equal(delta_x, 0.0)) {
     if (step_x > 0)
       t_max_x = ((cell_x + 1) - x0) / delta_x;
     else
@@ -270,7 +272,7 @@ static GridCoordinates compute_supercover_line_amanatides_woo(
     t_max_x = std::numeric_limits<double>::infinity();
   }
 
-  if (delta_y != 0) {
+  if (!almost_equal(delta_y, 0.0)) {
     if (step_y > 0)
       t_max_y = ((cell_y + 1) - y0) / delta_y;
     else
@@ -473,7 +475,7 @@ unsigned int compute_connected_components(
     for (unsigned int y = 0; y < ly; ++y) {
 
       // Flatten index: index = x * ly + y
-      is_edge[x * ly + y] = (!edge_cell_polyinfo[x][y].empty());
+      is_edge[static_cast<unsigned int>(x * ly + y)] = (!edge_cell_polyinfo[x][y].empty());
     }
   }
 
@@ -484,22 +486,26 @@ unsigned int compute_connected_components(
   // Flood fill
   for (unsigned int x = 0; x < lx; ++x) {
     for (unsigned int y = 0; y < ly; ++y) {
-      if (!is_edge[x * ly + y] && comp[x][y] == -1) {
+      if (!is_edge[static_cast<unsigned int>(x * ly + y)] && comp[x][y] == -1) {
         std::queue<Coordinate> q;
         q.push({x, y});
-        comp[x][y] = n_components;
+        comp[x][y] = static_cast<int>(n_components);
         while (!q.empty()) {
           auto [cx, cy] = q.front();
           q.pop();
           for (int d = 0; d < 4; ++d) {
-            int nx = cx + dx[d];
-            int ny = cy + dy[d];
+            const int tx = static_cast<int>(cx) + dx[d];
+            const int ty = static_cast<int>(cy) + dy[d];
+
             if (
-              nx < 0 || nx >= static_cast<int>(lx) || ny < 0 ||
-              ny >= static_cast<int>(ly))
+              tx < 0 || tx >= static_cast<int>(lx) || ty < 0 ||
+              ty >= static_cast<int>(ly))
               continue;
+
+            const unsigned int nx = static_cast<unsigned int>(tx);
+            const unsigned int ny = static_cast<unsigned int>(ty);
             if (!is_edge[nx * ly + ny] && comp[nx][ny] == -1) {
-              comp[nx][ny] = n_components;
+              comp[nx][ny] = static_cast<int>(n_components);
               q.push({nx, ny});
             }
           }
@@ -517,18 +523,18 @@ static Polygon extract_subpath(
   unsigned int end_idx)
 {
   Polygon subpath;
-  const unsigned int n = poly.size();
+  const size_t n = poly.size();
   if (n == 0) {
     return subpath;
   }
   if (end_idx > start_idx) {
-    for (unsigned int i = start_idx; i <= end_idx; ++i)
+    for (size_t i = start_idx; i <= end_idx; ++i)
       subpath.push_back(poly[i]);
   } else {
     // Wrap-around: take from start_idx to end, then from 0 to end_idx
-    for (unsigned int i = start_idx; i < n; ++i)
+    for (size_t i = start_idx; i < n; ++i)
       subpath.push_back(poly[i]);
-    for (unsigned int i = 0; i <= end_idx; ++i)
+    for (size_t i = 0; i <= end_idx; ++i)
       subpath.push_back(poly[i]);
   }
   return subpath;
@@ -706,12 +712,12 @@ void map_components_to_pwh(
     for (unsigned int y = 0; y < ly; ++y) {
 
       // Flatten index: index = x * ly + y
-      is_edge[x * ly + y] = (!edge_cell_polyinfo[x][y].empty());
+      is_edge[static_cast<unsigned int>(x * ly + y)] = (!edge_cell_polyinfo[x][y].empty());
     }
   }
 
   auto is_comp_used = [&comp_id_to_pwh_tot_id](int comp_id) {
-    return (comp_id != -1) and comp_id_to_pwh_tot_id[comp_id] != -1;
+    return (comp_id != -1) and comp_id_to_pwh_tot_id[static_cast<unsigned int>(comp_id)] != -1;
   };
 
   // Store the connected components that are outside the pwh when encountered
@@ -722,20 +728,24 @@ void map_components_to_pwh(
   const int dx[4] = {0, 0, 1, -1};
   const int dy[4] = {1, -1, 0, 0};
 
-  for (int x = 0; x < static_cast<int>(lx); ++x) {
-    for (int y = 0; y < static_cast<int>(ly); ++y) {
+  for (unsigned int x = 0; x < lx; ++x) {
+    for (unsigned int y = 0; y < ly; ++y) {
       const int comp_id = comp[x][y];
       if (is_edge[x * ly + y] || is_comp_used(comp_id)) {
         continue;
       }
       for (int d = 0; d < 4; ++d) {
-        const int nx = x + dx[d];
-        const int ny = y + dy[d];
+        const int tx = static_cast<int>(x) + dx[d];
+        const int ty = static_cast<int>(y) + dy[d];
+
         if (
-          nx < 0 || nx >= static_cast<int>(lx) || ny < 0 ||
-          ny >= static_cast<int>(ly)) {
+          tx < 0 || tx >= static_cast<int>(lx) || ty < 0 ||
+          ty >= static_cast<int>(ly))
           continue;
-        }
+
+        const unsigned int nx = static_cast<unsigned int>(tx);
+        const unsigned int ny = static_cast<unsigned int>(ty);
+
         if (is_edge[nx * ly + ny]) {
           for (const auto &poly_info : edge_cell_polyinfo[nx][ny]) {
             const unsigned int pwh_tot_id = poly_info.pwh_tot_id;
@@ -754,12 +764,12 @@ void map_components_to_pwh(
               if (is_point_inside_polygon(hole, center)) {
                 is_outside[pwh_tot_id].insert(comp_id);
               } else {
-                comp_id_to_pwh_tot_id[comp_id] = pwh_tot_id;
+                comp_id_to_pwh_tot_id[static_cast<unsigned int>(comp_id)] = static_cast<int>(pwh_tot_id);
               }
             } else {
               auto &outer_boundary = pwh.outer_boundary();
               if (is_point_inside_polygon(outer_boundary, center)) {
-                comp_id_to_pwh_tot_id[comp_id] = pwh_tot_id;
+                comp_id_to_pwh_tot_id[static_cast<unsigned int>(comp_id)] = static_cast<int>(pwh_tot_id);
               } else {
                 is_outside[pwh_tot_id].insert(comp_id);
               }
@@ -880,13 +890,13 @@ static void compute_area(
     for (unsigned int y = 0; y < ly; ++y) {
 
       // Flatten index: index = x * ly + y
-      is_edge[x * ly + y] = (!edge_cell_polyinfo[x][y].empty());
+      is_edge[static_cast<unsigned int>(x * ly + y)] = (!edge_cell_polyinfo[x][y].empty());
     }
   }
 
-  auto is_inside_polygon = [&](int x, int y) {
+  auto is_inside_polygon = [&](unsigned int x, unsigned int y) {
     auto comp_id = comp[x][y];
-    return (comp_id != -1) and comp_id_to_pwh_tot_id[comp[x][y]] != -1;
+    return (comp_id != -1) and comp_id_to_pwh_tot_id[static_cast<unsigned int>(comp[x][y])] != -1;
   };
 
   std::vector<double> gd_target_density;
@@ -909,7 +919,8 @@ static void compute_area(
       double den = 0.0;
       double area_tot = 0.0;
       if (is_inside_polygon(x, y)) {
-        const unsigned int pwh_tot_id = comp_id_to_pwh_tot_id[comp_id];
+        const unsigned int pwh_tot_id = static_cast<unsigned int>(
+          comp_id_to_pwh_tot_id[static_cast<unsigned int>(comp_id)]);
         const PolygonInfo &poly_info = all_pwh_info[pwh_tot_id];
         const unsigned int gd_id = poly_info.gd_id;
         const std::string &gd_name = inset_state.geo_divs()[gd_id].id();
@@ -917,9 +928,9 @@ static void compute_area(
         num += weight * gd_target_density[gd_id];
         den += weight;
         area_tot += 1.0;
-      } else if (is_edge[x * ly + y]) {
+      } else if (is_edge[static_cast<unsigned int>(x * ly + y)]) {
         auto &cell_poly_info = edge_cell_polyinfo[x][y];
-        const unsigned int n = cell_poly_info.size();
+        const size_t n = cell_poly_info.size();
 
         for (unsigned int i = 0; i < n;) {
           auto &poly_info = cell_poly_info[i];
@@ -1020,10 +1031,10 @@ void test_areas_densities(const FTReal2d &rho, InsetState &inset_state)
     const GeoDiv &gd = inset_state.geo_divs()[gd_id];
     for (const auto &pwh : gd.polygons_with_holes()) {
       auto bbox = pwh.outer_boundary().bbox();
-      for (unsigned int i = std::max(0, static_cast<int>(bbox.xmin()));
+      for (unsigned int i = static_cast<unsigned int>(std::max(0, static_cast<int>(bbox.xmin())));
            i < std::min(lx, static_cast<unsigned int>(bbox.xmax()) + 1);
            ++i) {
-        for (unsigned int j = std::max(0, static_cast<int>(bbox.ymin()));
+        for (unsigned int j = static_cast<unsigned int>(std::max(0, static_cast<int>(bbox.ymin())));
              j < std::min(ly, static_cast<unsigned int>(bbox.ymax()) + 1);
              ++j) {
 

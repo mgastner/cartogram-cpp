@@ -96,7 +96,7 @@ void InsetState::fill_with_density_rays()
 
       // Intersections for one ray
       auto intersections_at_y =
-        intersections_with_rays[std::lround(resolution * y - 0.5)];
+        intersections_with_rays[static_cast<std::size_t>(std::lround(resolution * y - 0.5))];
 
       // Sort intersections in ascending order
       std::sort(intersections_at_y.begin(), intersections_at_y.end());
@@ -151,12 +151,14 @@ void InsetState::fill_with_density_rays()
 
         // Fill leftmost cell with GeoDiv where part of ray inside the grid
         // rho_num[floor(left_x)][k] += left_x_empty_offset * exterior_density + gd_length_to_left * target_dens;
-        rho_num[floor(left_x)][k] += left_x_empty_offset * exterior_density * ext_weight + gd_length_to_left * target_dens * weight;
+        rho_num[static_cast<unsigned int>(floor(left_x))][k] += left_x_empty_offset * exterior_density * ext_weight + gd_length_to_left * target_dens * weight;
         // rho_den[floor(left_x)][k] += left_x_empty_offset + gd_length_to_left;
-        rho_den[floor(left_x)][k] +=  left_x_empty_offset * ext_weight + weight * gd_length_to_left;
+        rho_den[static_cast<unsigned int>(floor(left_x))][k] +=  left_x_empty_offset * ext_weight + weight * gd_length_to_left;
 
         // Fill all other cells where GeoDiv is fully covering grid cell
-        for (unsigned int m = ceil(left_x); m < floor(right_x); ++m) {
+        for (unsigned int m = static_cast<unsigned int>(std::ceil(left_x));
+             m < static_cast<unsigned int>(std::floor(right_x));
+             ++m) {
           rho_num[m][k] += weight * target_dens;
           rho_den[m][k] += weight;
         }
@@ -183,9 +185,9 @@ void InsetState::fill_with_density_rays()
           right_x - floor(right_x);
 
         // rho_num[floor(right_x)][k] += right_x_empty_offset * exterior_density + gd_length_to_right * target_dens;
-        rho_num[floor(right_x)][k] += right_x_empty_offset * exterior_density * ext_weight + gd_length_to_right * target_dens * weight;
+        rho_num[static_cast<unsigned int>(floor(right_x))][k] += right_x_empty_offset * exterior_density * ext_weight + gd_length_to_right * target_dens * weight;
         // rho_den[floor(right_x)][k] += right_x_empty_offset * exterior_density + gd_length_to_right;
-        rho_den[floor(right_x)][k] += right_x_empty_offset * exterior_density * ext_weight + gd_length_to_right * weight;
+        rho_den[static_cast<unsigned int>(floor(right_x))][k] += right_x_empty_offset * exterior_density * ext_weight + gd_length_to_right * weight;
       }
     }
   }
@@ -217,8 +219,8 @@ void InsetState::fill_with_density_rays()
 
       // Get bounding box of the polygon to get the grid cell that contains it
       Bbox pwh_bbox = pwh.bbox();
-      size_t grid_i = std::floor((pwh_bbox.xmin() + pwh_bbox.xmax()) / 2.0);
-      size_t grid_j = std::floor((pwh_bbox.ymin() + pwh_bbox.ymax()) / 2.0);
+      unsigned int grid_i = static_cast<unsigned int>(std::floor((pwh_bbox.xmin() + pwh_bbox.xmax()) / 2.0));
+      unsigned int grid_j = static_cast<unsigned int>(std::floor((pwh_bbox.ymin() + pwh_bbox.ymax()) / 2.0));
 
       // TODO: This may attribute a very high weight, which would've been otherwise
       // reduced by the length of the segment inside the GeoDiv. Investigate the best
@@ -233,7 +235,7 @@ void InsetState::fill_with_density_rays()
   firstprivate(exterior_density)
   for (unsigned int i = 0; i < lx_; ++i) {
     for (unsigned int j = 0; j < ly_; ++j) {
-      if (rho_den[i][j] == 0) {
+      if (almost_equal(rho_den[i][j], 0.0)) {
         rho_init_(i, j) = exterior_density;
       } else {
         rho_init_(i, j) = rho_num[i][j] / rho_den[i][j];

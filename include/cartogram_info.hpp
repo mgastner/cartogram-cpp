@@ -44,8 +44,8 @@ public:
     const nlohmann::json &,
     nlohmann::ordered_json &,
     const nlohmann::json &);
-  [[nodiscard]] unsigned int n_geo_divs() const;
-  [[nodiscard]] unsigned int n_insets() const;
+  [[nodiscard]] size_t n_geo_divs() const;
+  [[nodiscard]] size_t n_insets() const;
 
   void read_csv();
   void read_geojson();

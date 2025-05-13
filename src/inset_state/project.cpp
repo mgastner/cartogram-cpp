@@ -3,11 +3,13 @@
 #include "matrix.hpp"
 #include "round_point.hpp"
 
-void InsetState::project() {
+void InsetState::project()
+{
 
   if (args_.qtdt_method) {
 
-    // Update triangulation adding shorter diagonal as constraint for better shape similarity
+    // Update triangulation adding shorter diagonal as constraint for better
+    // shape similarity
     update_delaunay_t();
     if (args_.simplify) {
       densify_geo_divs_using_delaunay_t();
@@ -187,12 +189,19 @@ void InsetState::project_with_delaunay_t(bool output_to_stdout)
 // y-coordinates.
 void InsetState::exit_if_not_on_grid_or_edge(const Point p1) const
 {
-  if (
-    (p1.x() != 0.0 && p1.x() != lx_ && p1.x() - int(p1.x()) != 0.5) ||
-    (p1.y() != 0.0 && p1.y() != ly_ && p1.y() - int(p1.y()) != 0.5)) {
+  const double frac_x = p1.x() - std::floor(p1.x());
+  const double frac_y = p1.y() - std::floor(p1.y());
+
+  const bool bad_x = !almost_equal(p1.x(), 0.0) &&
+                     !almost_equal(p1.x(), lx_) && !almost_equal(frac_x, 0.5);
+
+  const bool bad_y = !almost_equal(p1.y(), 0.0) &&
+                     !almost_equal(p1.y(), ly_) && !almost_equal(frac_y, 0.5);
+
+  if (bad_x || bad_y) {
     std::cerr << "ERROR: Invalid input coordinate in triangulation. "
               << "\tpt = (" << p1.x() << ", " << p1.y() << ")" << std::endl;
-    exit(1);
+    std::exit(1);
   }
 }
 
@@ -209,13 +218,16 @@ Point InsetState::projected_point(const Point &p1, const bool project_original)
     static_cast<unsigned int>(ly_) - 1,
     static_cast<unsigned int>(p1.y()));
   return {
-    (p1.x() == 0.0 || p1.x() == lx_) ? p1.x() : proj[proj_x][proj_y].x(),
-    (p1.y() == 0.0 || p1.y() == ly_) ? p1.y() : proj[proj_x][proj_y].y()};
+    (almost_equal(p1.x(), 0.0) || almost_equal(p1.x(), lx_))
+      ? p1.x()
+      : proj[proj_x][proj_y].x(),
+    (almost_equal(p1.y(), 0.0) || almost_equal(p1.y(), ly_))
+      ? p1.y()
+      : proj[proj_x][proj_y].y()};
 }
 
 // Apply projection to all points in set
-void InsetState::project_point_set(
-  std::unordered_set<Point>& unprojected)
+void InsetState::project_point_set(std::unordered_set<Point> &unprojected)
 {
   std::function<Point(Point)> lambda_bary =
     [&dt = proj_qd_.dt,
@@ -389,7 +401,8 @@ std::array<Point, 3> InsetState::untransformed_triangle(
   // We use that diagonal to split the grid into two triangles.
   int diag;
   if (
-    v[0].x() == 0.0 || v[0].y() == 0.0 || v[2].x() == lx_ || v[2].y() == ly_) {
+    almost_equal(v[0].x(), 0.0) || almost_equal(v[0].y(), 0.0) ||
+    almost_equal(v[2].x(), lx_) || almost_equal(v[2].y(), ly_)) {
 
     // Case when the grid is on the edge of the grid.
     // We calculate the chosen diagonal because grid_diagonals_ does not

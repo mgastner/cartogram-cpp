@@ -2,13 +2,12 @@
 #define COLORS_HPP_
 
 #include <string>
+#include <round_point.hpp>
 
 struct Color {
 
   // red, green, blue values between 0 and 1
-  double r;
-  double g;
-  double b;
+  double r{}, g{}, b{};
 
   // Defaults to white
   Color();
@@ -18,7 +17,9 @@ struct Color {
 
   bool operator==(const Color &rhs) const
   {
-    return (r == rhs.r && g == rhs.g && b == rhs.b);
+    return almost_equal(r, rhs.r) &&
+           almost_equal(g, rhs.g) &&
+           almost_equal(b, rhs.b);
   }
 
   // Getter

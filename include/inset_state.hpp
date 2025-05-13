@@ -137,7 +137,7 @@ public:
 
   Color color_at(const std::string &) const;
   bool color_found(const std::string &) const;
-  unsigned int colors_size() const;
+  size_t colors_size() const;
   bool continue_integrating() const;
   void create_and_refine_quadtree();
   void create_contiguity_graph();

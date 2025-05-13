@@ -79,7 +79,7 @@ std::pair<GeoDiv, bool> json_to_geodiv(
     // Store exterior ring in CGAL format
     Polygon ext_ring;
     const auto jphc_ext = json_pgn_holes_container[0];
-    for (unsigned int j = 0; j < jphc_ext.size() - 1; ++j) {
+    for (size_t j = 0; j < jphc_ext.size() - 1; ++j) {
       ext_ring.push_back(Point(
         static_cast<double>(jphc_ext[j][0]),
         static_cast<double>(jphc_ext[j][1])));
@@ -116,15 +116,15 @@ std::pair<GeoDiv, bool> json_to_geodiv(
 
     // Store interior ring
     std::vector<Polygon> int_ring_v;
-    for (unsigned int i = 1; i < json_pgn_holes_container.size(); ++i) {
+    for (size_t i = 1; i < json_pgn_holes_container.size(); ++i) {
       Polygon int_ring;
       const auto jphc_int = json_pgn_holes_container[i];
-      for (unsigned int j = 0; j < jphc_int.size() - 1; ++j) {
+      for (size_t j = 0; j < jphc_int.size() - 1; ++j) {
         int_ring.push_back(Point(
           static_cast<double>(jphc_int[j][0]),
           static_cast<double>(jphc_int[j][1])));
       }
-      const unsigned int last_int_index = jphc_int.size() - 1;
+      const size_t last_int_index = jphc_int.size() - 1;
       if (
         jphc_int[0][0] != jphc_int[last_int_index][0] ||
         jphc_int[0][1] != jphc_int[last_int_index][1]) {
@@ -154,12 +154,12 @@ void print_properties_map(
   const std::map<std::string, std::vector<std::string>> &properties_map,
   const unsigned long chosen_number)
 {
-  const unsigned int max_n_printed_values = 5;
+  const size_t max_n_printed_values = 5;
   const auto value_vec = properties_map.begin()->second;
-  const unsigned int n_printed_values = std::min(
+  const size_t n_printed_values = std::min(
     value_vec.size(),
     static_cast<unsigned long>(max_n_printed_values));
-  unsigned int i = 0;
+  size_t i = 0;
   for (const auto &[key, val] : properties_map) {
     ++i;
     if (chosen_number == i || chosen_number == properties_map.size() + 1) {
@@ -293,7 +293,7 @@ void generate_csv_template(
 
   // Declare chosen identifier(s)
   std::map<std::string, std::vector<std::string>> chosen_identifiers;
-  unsigned int i = 0;
+  size_t i = 0;
   for (const auto &[key, value_vec] : viable_properties_map) {
     ++i;
     if (
@@ -323,7 +323,7 @@ void generate_csv_template(
     chosen_identifiers.begin()->second.size() + 1);
 
   // Converting map into a vector
-  unsigned int column = 0;
+  size_t column = 0;
   for (const auto &[column_name, ids] : chosen_identifiers) {
     csv_rows[0].push_back(column_name);
     if (column == 0) {

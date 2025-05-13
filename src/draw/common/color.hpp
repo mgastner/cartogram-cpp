@@ -89,9 +89,10 @@ Color heatmap_color(
     // Color(0.00, 0.40, 0.37),
     // Color(0.00, 0.24, 0.19)
   };
-  int n_categories = colors.size();
+  const size_t n_categories = colors.size();
+  assert(n_categories > 0 && "Color categories must be defined");
   double xmin, xmax;
-  int color_category;
+  size_t color_category;
 
   // If no discernible difference between dens and miniimum density, set
   // lowest
@@ -103,14 +104,13 @@ Color heatmap_color(
   if (dens >= dens_max) {
     return colors[0];
   } else if (dens > dens_mean) {
-    color_category = 5 * (dens_max - dens) / (dens_max - dens_mean);
+    color_category = static_cast<size_t>(
+      std::max(0.0, 5 * (dens_max - dens) / (dens_max - dens_mean)));
     xmax = dens_max - 0.2 * color_category * (dens_max - dens_mean);
     xmin = xmax - 0.2 * (dens_max - dens_mean);
-
-    // Assign color category 0 if dens_max and dens are very close
-    color_category = std::max(color_category, 0);
   } else if (dens > dens_min) {
-    color_category = 5 * (dens_mean - dens) / (dens_mean - dens_min) + 5;
+    color_category = static_cast<size_t>(
+      std::max(0.0, 5 * (dens_mean - dens) / (dens_mean - dens_min) + 5));
     xmax = dens_mean - 0.2 * (color_category - 5) * (dens_mean - dens_min);
     xmin = xmax - 0.2 * (dens_mean - dens_min);
 

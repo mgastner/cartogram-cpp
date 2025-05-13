@@ -2,6 +2,7 @@
 #define INTERSECTION_HPP_
 
 #include "cgal_typedef.hpp"
+#include "round_point.hpp"
 
 // Struct to store intersection between line segment and grid line
 class intersection
@@ -20,9 +21,8 @@ public:
   // Overloading "<" operator, similar to above
   bool operator<(const intersection &rhs) const
   {
-    return (
-      coord < rhs.coord ||
-      (coord == rhs.coord && ray_enters < rhs.ray_enters));
+    return less_than(coord, rhs.coord) ||
+           (almost_equal(coord, rhs.coord) && (ray_enters && !rhs.ray_enters));
   }
 
   // Constructors
