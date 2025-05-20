@@ -104,6 +104,7 @@ bool InsetState::continue_integrating() const
 
   // Actually hasn't converged, just reached integration limit
   if (!within_integration_limit && !has_converged) {
+    converge_ = false;
     std::cerr << "ERROR: Could not converge!" << std::endl;
     if (area_error_above_threshold)
       std::cerr << "Max area error above threshold!" << std::endl;
@@ -141,6 +142,11 @@ bool InsetState::color_found(const std::string &id) const
 size_t InsetState::colors_size() const
 {
   return colors_.size();
+}
+
+bool InsetState::converged() const
+{
+  return converge_;
 }
 
 void InsetState::create_delaunay_t()

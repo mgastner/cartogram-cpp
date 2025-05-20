@@ -35,6 +35,16 @@ double CartogramInfo::cart_initial_total_target_area() const
   return target_area;
 }
 
+bool CartogramInfo::converged() const
+{
+  for (const InsetState &inset_state : inset_states_) {
+    if (!inset_state.converged()) {
+      return false;
+    }
+  }
+  return true;
+}
+
 double CartogramInfo::area() const
 {
   double area = 0.0;
