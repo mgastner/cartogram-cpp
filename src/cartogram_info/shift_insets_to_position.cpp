@@ -28,29 +28,88 @@ void CartogramInfo::reposition_insets(bool output_to_stdout)
   // If the inset actually exists, we get its current bounding box
   for (const InsetState &inset_state : inset_states_) {
     std::string inset_pos = inset_state.pos();
-    bboxes.at(inset_pos) = inset_state.bbox(output_to_stdout);
+
+    try {
+      bboxes.at(inset_pos) = inset_state.bbox(output_to_stdout);
+    } catch (const std::out_of_range &e) {
+      std::cerr << "ERROR: Key '" << inset_pos << "' not found in bboxes. "
+                << "Exception: " << e.what() << std::endl;
+      // Re-throw, or return a default value
+      throw;
+    }
+  }
+
+  Bbox bboxC;
+  Bbox bboxB;
+  Bbox bboxL;
+  Bbox bboxT;
+  Bbox bboxR;
+
+  try {
+    bboxC = bboxes.at("C");
+  } catch (const std::out_of_range &e) {
+    std::cerr << "ERROR: Key '" << "C" << "' not found in bboxes. "
+              << "Exception: " << e.what() << std::endl;
+    // Re-throw, or return a default value
+    throw;
+  }
+
+  try {
+    bboxB = bboxes.at("B");
+  } catch (const std::out_of_range &e) {
+    std::cerr << "ERROR: Key '" << "B" << "' not found in bboxes. "
+              << "Exception: " << e.what() << std::endl;
+    // Re-throw, or return a default value
+    throw;
+  }
+
+  try {
+    bboxL = bboxes.at("L");
+  } catch (const std::out_of_range &e) {
+    std::cerr << "ERROR: Key '" << "L" << "' not found in bboxes. "
+              << "Exception: " << e.what() << std::endl;
+    // Re-throw, or return a default value
+    throw;
+  }
+
+  try {
+    bboxT = bboxes.at("T");
+  } catch (const std::out_of_range &e) {
+    std::cerr << "ERROR: Key '" << "T" << "' not found in bboxes. "
+              << "Exception: " << e.what() << std::endl;
+    // Re-throw, or return a default value
+    throw;
+  }
+
+  try {
+    bboxR = bboxes.at("R");
+  } catch (const std::out_of_range &e) {
+    std::cerr << "ERROR: Key '" << "R" << "' not found in bboxes. "
+              << "Exception: " << e.what() << std::endl;
+    // Re-throw, or return a default value
+    throw;
   }
 
   // Calculate the width and height of all positioned insets without spacing
-  double width = bboxes.at("C").xmax() - bboxes.at("C").xmin() +
-                 bboxes.at("L").xmax() - bboxes.at("L").xmin() +
-                 bboxes.at("R").xmax() - bboxes.at("R").xmin();
+  double width = bboxC.xmax() - bboxC.xmin() +
+                 bboxL.xmax() - bboxL.xmin() +
+                 bboxR.xmax() - bboxR.xmin();
 
   // Considering edge cases where the width of the insets named "T" or "B"
   // might be greater than the width of "C", "L", "R" insets combined
   width = std::max({
-    bboxes.at("T").xmax() - bboxes.at("T").xmin(),  // width of inset T
-    bboxes.at("B").xmax() - bboxes.at("B").xmin(),  // width of inset B
+    bboxT.xmax() - bboxT.xmin(),  // width of inset T
+    bboxB.xmax() - bboxB.xmin(),  // width of inset B
     width  // width of inset C + L + R
   });
 
   // Similarly for height instead of width
-  double height = bboxes.at("C").ymax() - bboxes.at("C").ymin() +
-                  bboxes.at("T").ymax() - bboxes.at("T").ymin() +
-                  bboxes.at("B").ymax() - bboxes.at("B").ymin();
+  double height = bboxC.ymax() - bboxC.ymin() +
+                  bboxT.ymax() - bboxT.ymin() +
+                  bboxB.ymax() - bboxB.ymin();
   height = std::max({
-    bboxes.at("R").ymax() - bboxes.at("R").ymin(),  // height of inset R
-    bboxes.at("L").ymax() - bboxes.at("L").ymin(),  // height of inset L
+    bboxR.ymax() - bboxR.ymin(),  // height of inset R
+    bboxL.ymax() - bboxL.ymin(),  // height of inset L
     height  // height of inset C + T + B
   });
 
@@ -68,27 +127,27 @@ void CartogramInfo::reposition_insets(bool output_to_stdout)
     // on the inset position
     if (pos == "R") {
       x = std::max(
-        {bboxes.at("C").xmax(), bboxes.at("B").xmax(), bboxes.at("T").xmax()});
-      x += bboxes.at("R").xmax();
+        {bboxC.xmax(), bboxB.xmax(), bboxT.xmax()});
+      x += bboxR.xmax();
       x += inset_spacing;
     } else if (pos == "L") {
       x = std::min(
-        {bboxes.at("C").xmin(), bboxes.at("B").xmin(), bboxes.at("T").xmin()});
+        {bboxC.xmin(), bboxB.xmin(), bboxT.xmin()});
 
       // At "L", xmin is negative and lies in the 2nd and 3rd quadrant
-      x += bboxes.at("L").xmin();
+      x += bboxL.xmin();
       x -= inset_spacing;
     } else if (pos == "T") {
       y = std::max(
-        {bboxes.at("C").ymax(), bboxes.at("R").ymax(), bboxes.at("L").ymax()});
-      y += bboxes.at("T").ymax();
+        {bboxC.ymax(), bboxR.ymax(), bboxL.ymax()});
+      y += bboxT.ymax();
       y += inset_spacing;
     } else if (pos == "B") {
       y = std::min(
-        {bboxes.at("C").ymin(), bboxes.at("R").ymin(), bboxes.at("L").ymin()});
+        {bboxC.ymin(), bboxR.ymin(), bboxL.ymin()});
 
       // At "B", ymin is negative and lies in the 3rd and 4th quadrant
-      y += bboxes.at("B").ymin();
+      y += bboxB.ymin();
       y -= inset_spacing;
     }
 

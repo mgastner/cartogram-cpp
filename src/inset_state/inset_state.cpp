@@ -17,7 +17,14 @@ InsetState::InsetState(std::string pos, Arguments args)
 
 double InsetState::area_error_at(const std::string &id) const
 {
-  return area_errors_.at(id);
+  try {
+    return area_errors_.at(id);
+  } catch (const std::out_of_range &e) {
+    std::cerr << "ERROR: Key '" << id << "' not found in area_errors_. "
+              << "Exception: " << e.what() << std::endl;
+    // Re-throw, or return a default value
+    throw;
+  }
 }
 
 Bbox InsetState::bbox(bool original_bbox) const
@@ -29,9 +36,8 @@ Bbox InsetState::bbox(bool original_bbox) const
   double inset_ymin = dbl_inf;
   double inset_ymax = -dbl_inf;
 #pragma omp parallel for default(none) shared(geo_divs) \
-  reduction(min                                         \
-            : inset_xmin, inset_ymin) reduction(max     \
-                                                : inset_xmax, inset_ymax)
+  reduction(min : inset_xmin, inset_ymin)               \
+  reduction(max : inset_xmax, inset_ymax)
   for (const auto &gd : geo_divs) {
     for (const auto &pwh : gd.polygons_with_holes()) {
       const auto bb = pwh.bbox();
@@ -130,7 +136,14 @@ bool InsetState::continue_integrating() const
 
 Color InsetState::color_at(const std::string &id) const
 {
-  return colors_.at(id);
+  try {
+    return colors_.at(id);
+  } catch (const std::out_of_range &e) {
+    std::cerr << "ERROR: Key '" << id << "' not found in colors_. "
+              << "Exception: " << e.what() << std::endl;
+    // Re-throw, or return a default value
+    throw;
+  }
 }
 
 bool InsetState::color_found(const std::string &id) const
@@ -164,8 +177,16 @@ void InsetState::update_delaunay_t()
   // Create the projected quadtree corners
   std::vector<Point> projected_unique_quadtree_corners;
   for (auto &pt : unique_quadtree_corners_) {
-    projected_unique_quadtree_corners.push_back(
-      proj_qd_.triangle_transformation.at(pt));
+    try {
+      projected_unique_quadtree_corners.push_back(
+        proj_qd_.triangle_transformation.at(pt));
+    } catch (const std::out_of_range &e) {
+      std::cerr << "ERROR: Key '" << pt
+                << "' not found in proj_qd_.triangle_transformation. "
+                << "Exception: " << e.what() << std::endl;
+      // Re-throw, or return a default value
+      throw;
+    }
   }
 
   // Create the projected Delaunay triangulation to get the shorter diagonal of
@@ -219,8 +240,28 @@ void InsetState::update_delaunay_t()
       continue;
     }
 
-    Point p1_proj = proj_qd_.triangle_transformation.at(p1);
-    Point p2_proj = proj_qd_.triangle_transformation.at(p2);
+    Point p1_proj;
+    Point p2_proj;
+
+    try {
+      p1_proj = proj_qd_.triangle_transformation.at(p1);
+    } catch (const std::out_of_range &e) {
+      std::cerr << "ERROR: Key '" << p1
+                << "' not found in proj_qd_.triangle_transformation. "
+                << "Exception: " << e.what() << std::endl;
+      // Re-throw, or return a default value
+      throw;
+    }
+
+    try {
+      p2_proj = proj_qd_.triangle_transformation.at(p2);
+    } catch (const std::out_of_range &e) {
+      std::cerr << "ERROR: Key '" << p2
+                << "' not found in proj_qd_.triangle_transformation. "
+                << "Exception: " << e.what() << std::endl;
+      // Re-throw, or return a default value
+      throw;
+    }
 
     // To add the constraint later to the projected Delaunay triangulation
     constraints_for_projected_dt.push_back({p1_proj, p2_proj});
@@ -278,8 +319,28 @@ void InsetState::update_delaunay_t()
     const Point p2 = edge.target();
 
     // Reverse the transformation back to the original coordinates
-    const Point p1_orig = reverse_triangle_transformation.at(p1);
-    const Point p2_orig = reverse_triangle_transformation.at(p2);
+    Point p1_orig;
+    Point p2_orig;
+
+    try {
+      p1_orig = reverse_triangle_transformation.at(p1);
+    } catch (const std::out_of_range &e) {
+      std::cerr << "ERROR: Key '" << p1
+                << "' not found in reverse_triangle_transformation. "
+                << "Exception: " << e.what() << std::endl;
+      // Re-throw, or return a default value
+      throw;
+    }
+
+    try {
+      p2_orig = reverse_triangle_transformation.at(p2);
+    } catch (const std::out_of_range &e) {
+      std::cerr << "ERROR: Key '" << p2
+                << "' not found in reverse_triangle_transformation. "
+                << "Exception: " << e.what() << std::endl;
+      // Re-throw, or return a default value
+      throw;
+    }
 
     // Automatically pick the edge if it is diagonal
     if (
@@ -297,8 +358,7 @@ void InsetState::update_delaunay_t()
 
       // Binary search to find the number of points between the two y
       // coordinates
-      auto cnt =
-        static_cast<std::size_t>(
+      auto cnt = static_cast<std::size_t>(
         std::upper_bound(y_coor_points.begin(), y_coor_points.end(), y_max) -
         std::lower_bound(y_coor_points.begin(), y_coor_points.end(), y_min));
 
@@ -408,11 +468,27 @@ const std::vector<GeoDiv> &InsetState::geo_divs() const
 // Const and non-const version of geo_div_at_id
 const GeoDiv &InsetState::geo_div_at_id(std::string id) const
 {
-  return geo_divs_[geo_divs_id_to_index_.at(id)];
+  try {
+    return geo_divs_[geo_divs_id_to_index_.at(id)];
+  } catch (const std::out_of_range &e) {
+    std::cerr << "ERROR: Key '" << id
+              << "' not found in geo_divs_id_to_index_. "
+              << "Exception: " << e.what() << std::endl;
+    // Re-throw, or return a default value
+    throw;
+  }
 }
 GeoDiv &InsetState::geo_div_at_id(std::string id)
 {
-  return geo_divs_[geo_divs_id_to_index_.at(id)];
+  try {
+    return geo_divs_[geo_divs_id_to_index_.at(id)];
+  } catch (const std::out_of_range &e) {
+    std::cerr << "ERROR: Key '" << id
+              << "' not found in geo_divs_id_to_index_. "
+              << "Exception: " << e.what() << std::endl;
+    // Re-throw, or return a default value
+    throw;
+  }
 }
 
 // Get unique points from GeoDivs
@@ -484,8 +560,12 @@ struct Split_by_threshold {
     double rho_min = std::numeric_limits<double>::infinity();
     double rho_max = -std::numeric_limits<double>::infinity();
 
-    for (int x = static_cast<int>(bbox.xmin()); x < static_cast<int>(bbox.xmax()); ++x) {
-      for (int y = static_cast<int>(bbox.ymin()); y < static_cast<int>(bbox.ymax()); ++y) {
+    for (int x = static_cast<int>(bbox.xmin());
+         x < static_cast<int>(bbox.xmax());
+         ++x) {
+      for (int y = static_cast<int>(bbox.ymin());
+           y < static_cast<int>(bbox.ymax());
+           ++y) {
         if (
           x < 0 || y < 0 || x >= static_cast<int>(inset_state.lx()) ||
           y >= static_cast<int>(inset_state.ly()))
@@ -602,7 +682,15 @@ void InsetState::create_and_refine_quadtree()
   // Set high threshold as the same as the threshold at the previous
   // integration to speed up the search
   if (threshold_at_integration_.count(n_finished_integrations_ - 1)) {
-    high_thresh = threshold_at_integration_.at(n_finished_integrations_ - 1);
+    try {
+      high_thresh = threshold_at_integration_.at(n_finished_integrations_ - 1);
+    } catch (const std::out_of_range &e) {
+      std::cerr << "ERROR: Key '" << n_finished_integrations_ - 1
+                << "' not found in threshold_at_integration_. "
+                << "Exception: " << e.what() << std::endl;
+      // Re-throw, or return a default value
+      throw;
+    }
   }
   const int max_iterations = 10;
   const double threshold = find_threshold(
@@ -749,7 +837,15 @@ double InsetState::initial_target_area() const
 
 bool InsetState::is_input_target_area_missing(const std::string &id) const
 {
-  return is_input_target_area_missing_.at(id);
+  try {
+    return is_input_target_area_missing_.at(id);
+  } catch (const std::out_of_range &e) {
+    std::cerr << "ERROR: Key '" << id
+              << "' not found in is_input_target_area_missing_. "
+              << "Exception: " << e.what() << std::endl;
+    // Re-throw, or return a default value
+    throw;
+  }
 }
 
 double InsetState::latt_const() const
@@ -1035,13 +1131,21 @@ void InsetState::store_initial_area()
 
 void InsetState::store_initial_target_area(const double override)
 {
-  initial_target_area_ = almost_equal(override, 0.0) ? total_target_area() : override;
+  initial_target_area_ =
+    almost_equal(override, 0.0) ? total_target_area() : override;
 }
 
 bool InsetState::target_area_is_missing(const std::string &id) const
 {
   // We use negative area as indication that GeoDiv has no target area
-  return target_areas_.at(id) < 0.0;
+  try {
+    return target_areas_.at(id) < 0.0;
+  } catch (const std::out_of_range &e) {
+    std::cerr << "ERROR: Key '" << id << "' not found in target_areas_. "
+              << "Exception: " << e.what() << std::endl;
+    // Re-throw, or return a default value
+    throw;
+  }
 }
 
 double InsetState::target_area_at(const std::string &id) const
@@ -1080,7 +1184,15 @@ std::string InsetState::label_at(const std::string &id) const
   if (labels_.find(id) == labels_.end()) {
     return "";
   }
-  return labels_.at(id);
+
+  try {
+    return labels_.at(id);
+  } catch (const std::out_of_range &e) {
+    std::cerr << "ERROR: Key '" << id << "' not found in labels_. "
+              << "Exception: " << e.what() << std::endl;
+    // Re-throw, or return a default value
+    throw;
+  }
 }
 
 void InsetState::store_original_geo_divs()
@@ -1148,7 +1260,14 @@ void InsetState::update_gd_ids(
   const std::map<std::string, std::string> &gd_id_map)
 {
   for (auto &gd : geo_divs_) {
-    gd.update_id(gd_id_map.at(gd.id()));
+    try {
+      gd.update_id(gd_id_map.at(gd.id()));
+    } catch (const std::out_of_range &e) {
+      std::cerr << "ERROR: Key '" << gd.id() << "' not found in gd_id_map. "
+                << "Exception: " << e.what() << std::endl;
+      // Re-throw, or return a default value
+      throw;
+    }
   }
 }
 

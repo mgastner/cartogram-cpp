@@ -12,9 +12,7 @@ bool InsetState::flatten_density()
 
     if (args_.plot_quadtree) {
       write_quadtree(file_prefix_ + "_quadtree");
-      write_delaunay_triangles(
-        file_prefix_ + "a_delaunay_t",
-        false);
+      write_delaunay_triangles(file_prefix_ + "a_delaunay_t", false);
     }
 
     if (!flatten_density_on_node_vertices()) {
@@ -330,8 +328,26 @@ bool all_map_points_are_in_domain(
   // Return false if and only if there exists a point that would be outside
   // [0, lx] x [0, ly]
   for (const auto &[key, val] : proj_map) {
-    double x = val.x() + 0.5 * delta_t * v_intp.at(key).x();
-    double y = val.y() + 0.5 * delta_t * v_intp.at(key).y();
+    double x;
+    double y;
+
+    try {
+      x = val.x() + 0.5 * delta_t * v_intp.at(key).x();
+    } catch (const std::out_of_range &e) {
+      std::cerr << "ERROR: Key '" << key << "' not found in v_intp. "
+                << "Exception: " << e.what() << std::endl;
+      // Re-throw, or return a default value
+      throw;
+    }
+
+    try {
+      y = val.y() + 0.5 * delta_t * v_intp.at(key).y();
+    } catch (const std::out_of_range &e) {
+      std::cerr << "ERROR: Key '" << key << "' not found in v_intp. "
+                << "Exception: " << e.what() << std::endl;
+      // Re-throw, or return a default value
+      throw;
+    }
 
     // if close to 0 using EPS, make 0, or greater than lx or ly, make lx or ly
     if (abs(x) < dbl_epsilon || abs(x - lx) < dbl_epsilon)

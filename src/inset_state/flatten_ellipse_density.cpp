@@ -143,8 +143,26 @@ bool all_map_points_are_in_domain(
   // Return false if and only if there exists a point that would be outside
   // [0, lx] x [0, ly]
   for (const auto &[key, val] : proj_map) {
-    double x = val.x() + 0.5 * delta_t * v_intp.at(key).x();
-    double y = val.y() + 0.5 * delta_t * v_intp.at(key).y();
+    double x;
+    double y;
+
+    try {
+      x = val.x() + 0.5 * delta_t * v_intp.at(key).x();
+    } catch (const std::out_of_range &e) {
+      std::cerr << "ERROR: Key '" << key << "' not found in v_intp. "
+                << "Exception: " << e.what() << std::endl;
+      // Re-throw, or return a default value
+      throw;
+    }
+
+    try {
+      y = val.y() + 0.5 * delta_t * v_intp.at(key).y();
+    } catch (const std::out_of_range &e) {
+      std::cerr << "ERROR: Key '" << key << "' not found in v_intp. "
+                << "Exception: " << e.what() << std::endl;
+      // Re-throw, or return a default value
+      throw;
+    }
 
     // if close to 0 using EPS, make 0, or greater than lx or ly, make lx or ly
     if (abs(x) < dbl_epsilon || abs(x - lx) < dbl_epsilon)
@@ -166,9 +184,17 @@ void calculate_velocity(
   std::unordered_map<Point, Vector> &velocity)
 {
   for (const auto &[key, val] : triangle_transformation) {
-    velocity[key] = Vector(
-      flux_mp.at(key).x() / rho_mp.at(key),
-      flux_mp.at(key).y() / rho_mp.at(key));
+    try {
+      velocity[key] = Vector(
+        flux_mp.at(key).x() / rho_mp.at(key),
+        flux_mp.at(key).y() / rho_mp.at(key));
+    } catch (const std::out_of_range &e) {
+      std::cerr << "ERROR: Key '" << key
+                << "' not found in flux_mp or rho_mp. "
+                << "Exception: " << e.what() << std::endl;
+      // Re-throw, or return a default value
+      throw;
+    }
   }
 }
 
@@ -200,9 +226,36 @@ Vector interpolate(
   const double bary_z = std::get<2>(bary_coor);
 
   // Get projected vertex velocities
-  const Vector v1_velo_proj = velocity.at(v1);
-  const Vector v2_velo_proj = velocity.at(v2);
-  const Vector v3_velo_proj = velocity.at(v3);
+  Vector v1_velo_proj;
+  Vector v2_velo_proj;
+  Vector v3_velo_proj;
+
+  try {
+    v1_velo_proj = velocity.at(v1);
+  } catch (const std::out_of_range &e) {
+    std::cerr << "ERROR: Key '" << v1 << "' not found in velocity. "
+              << "Exception: " << e.what() << std::endl;
+    // Re-throw, or return a default value
+    throw;
+  }
+
+  try {
+    v2_velo_proj = velocity.at(v2);
+  } catch (const std::out_of_range &e) {
+    std::cerr << "ERROR: Key '" << v2 << "' not found in velocity. "
+              << "Exception: " << e.what() << std::endl;
+    // Re-throw, or return a default value
+    throw;
+  }
+
+  try {
+    v3_velo_proj = velocity.at(v3);
+  } catch (const std::out_of_range &e) {
+    std::cerr << "ERROR: Key '" << v3 << "' not found in velocity. "
+              << "Exception: " << e.what() << std::endl;
+    // Re-throw, or return a default value
+    throw;
+  }
 
   // Calculate projected velocity of p
   const Vector p_velo_proj = Vector(
@@ -332,8 +385,11 @@ void InsetState::flatten_ellipse_density()
       ell_density_prefactors.end()) -
     ell_density_prefactors.begin());
 
-  std::cerr << "Max delta rho: " << ell_density_prefactors[static_cast<unsigned int>(mx_pgn_index)]
-            << ", GeoDiv: " << pgn_id_to_geo_id[static_cast<unsigned int>(mx_pgn_index)] << std::endl;
+  std::cerr << "Max delta rho: "
+            << ell_density_prefactors[static_cast<unsigned int>(mx_pgn_index)]
+            << ", GeoDiv: "
+            << pgn_id_to_geo_id[static_cast<unsigned int>(mx_pgn_index)]
+            << std::endl;
 
   // print top 5 polygons with most delta density
   std::vector<std::pair<double, std::string>> pgn_density;
@@ -347,7 +403,8 @@ void InsetState::flatten_ellipse_density()
   // Print the top 5
   std::cerr << "Top 5 Polygons with most Delta density:" << std::endl;
   for (unsigned int i = 0;
-       i < std::min(5u, static_cast<unsigned int>(ell_density_prefactors.size()));
+       i <
+       std::min(5u, static_cast<unsigned int>(ell_density_prefactors.size()));
        ++i) {
     std::cerr << pgn_density[i].second << ": " << pgn_density[i].first
               << std::endl;

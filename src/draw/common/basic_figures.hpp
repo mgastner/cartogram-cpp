@@ -17,16 +17,41 @@ inline void write_triangles(
 
   for (Delaunay::Finite_faces_iterator fit = proj.dt.finite_faces_begin();
        fit != proj.dt.finite_faces_end();
-       ++fit)
-  {
+       ++fit) {
     Point p1 = fit->vertex(0)->point();
     Point p2 = fit->vertex(1)->point();
     Point p3 = fit->vertex(2)->point();
 
     if (draw_projected_points) {
-      p1 = proj.triangle_transformation.at(p1);
-      p2 = proj.triangle_transformation.at(p2);
-      p3 = proj.triangle_transformation.at(p3);
+      try {
+        p1 = proj.triangle_transformation.at(p1);
+      } catch (const std::out_of_range &e) {
+        std::cerr << "ERROR: Key '" << p1
+                  << "' not found in proj.triangle_transformation. "
+                  << "Exception: " << e.what() << std::endl;
+        // Re-throw, or return a default value
+        throw;
+      }
+
+      try {
+        p2 = proj.triangle_transformation.at(p2);
+      } catch (const std::out_of_range &e) {
+        std::cerr << "ERROR: Key '" << p2
+                  << "' not found in proj.triangle_transformation. "
+                  << "Exception: " << e.what() << std::endl;
+        // Re-throw, or return a default value
+        throw;
+      }
+
+      try {
+        p3 = proj.triangle_transformation.at(p3);
+      } catch (const std::out_of_range &e) {
+        std::cerr << "ERROR: Key '" << p3
+                  << "' not found in proj.triangle_transformation. "
+                  << "Exception: " << e.what() << std::endl;
+        // Re-throw, or return a default value
+        throw;
+      }
     }
 
     cvs.move_to(p1.x(), p1.y());

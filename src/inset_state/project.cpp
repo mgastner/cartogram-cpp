@@ -157,9 +157,36 @@ Point interpolate_point_with_barycentric_coordinates(
   const double bary_z = std::get<2>(bary_coor);
 
   // Get projected vertices
-  const Point v1_proj = proj_map.at(v1);
-  const Point v2_proj = proj_map.at(v2);
-  const Point v3_proj = proj_map.at(v3);
+  Point v1_proj;
+  Point v2_proj;
+  Point v3_proj;
+
+  try {
+    v1_proj = proj_map.at(v1);
+  } catch (const std::out_of_range &e) {
+    std::cerr << "ERROR: Key '" << v1 << "' not found in proj_map. "
+              << "Exception: " << e.what() << std::endl;
+    // Re-throw, or return a default value
+    throw;
+  }
+
+  try {
+    v2_proj = proj_map.at(v2);
+  } catch (const std::out_of_range &e) {
+    std::cerr << "ERROR: Key '" << v2 << "' not found in proj_map. "
+              << "Exception: " << e.what() << std::endl;
+    // Re-throw, or return a default value
+    throw;
+  }
+
+  try {
+    v3_proj = proj_map.at(v3);
+  } catch (const std::out_of_range &e) {
+    std::cerr << "ERROR: Key '" << v3 << "' not found in proj_map. "
+              << "Exception: " << e.what() << std::endl;
+    // Re-throw, or return a default value
+    throw;
+  }
 
   // Calculate projected point of p
   return {

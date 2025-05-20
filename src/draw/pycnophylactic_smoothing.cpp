@@ -942,7 +942,16 @@ void InsetState::write_grid_colors_on_surface(
       cairo_close_path(cr);
       cairo_clip(cr);
 
-      Bbox gd_bbox = original_bboxes.at(gd.id());
+      Bbox gd_bbox;
+      try {
+        gd_bbox = original_bboxes.at(gd.id());
+      } catch (const std::out_of_range &e) {
+        std::cerr << "ERROR: Key '" << gd.id()
+                  << "' not found in original_bboxes. "
+                  << "Exception: " << e.what() << std::endl;
+        // Re-throw, or return a default value
+        throw;
+      }
 
       // Iterate over grid cells
       for (unsigned int i = gd_bbox.xmin() - 1; i < gd_bbox.xmax() + 1;

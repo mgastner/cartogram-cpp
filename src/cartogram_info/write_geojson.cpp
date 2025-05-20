@@ -177,10 +177,19 @@ void CartogramInfo::json_to_geojson(
   // in an std::map.
   std::map<std::string, unsigned int> index_of_id_in_old_json;
   for (unsigned int index = 0; index < old_json["features"].size(); ++index) {
-    const std::string id = strip_quotes(
-      old_json["features"][index]["properties"].at(id_header_).dump());
-    const std::pair<std::string, unsigned int> pair(id, index);
-    index_of_id_in_old_json.insert(pair);
+    try {
+      const std::string id = strip_quotes(
+        old_json["features"][index]["properties"].at(id_header_).dump());
+      const std::pair<std::string, unsigned int> pair(id, index);
+      index_of_id_in_old_json.insert(pair);
+    } catch (const std::out_of_range &e) {
+      std::cerr << "ERROR: Key '" << id_header_
+                << "' not found in old_json[\"features\"][" << index
+                << "][\"properties\"]. "
+                << "Exception: " << e.what() << std::endl;
+      // Re-throw, or return a default value
+      throw;
+    }
   }
   new_json["type"] = old_json["type"];
   if (n_insets() == 1) {
@@ -204,8 +213,28 @@ void CartogramInfo::json_to_geojson(
   // exclude these two indices in the next loop. Hence, we only iterate over
   // n_geo_divs() elements
   for (unsigned int i = 0; i < n_geo_divs(); ++i) {
-    const unsigned int index = index_of_id_in_old_json.at(
-      strip_quotes(container[i].at("gd_id").dump()));
+    std::string container_str;
+    unsigned int index;
+    try {
+      container_str = strip_quotes(container[i].at("gd_id").dump());
+    } catch (const std::out_of_range &e) {
+      std::cerr << "ERROR: Key '" << "gd_id" << "' not found in container["
+                << i << "]. "
+                << "Exception: " << e.what() << std::endl;
+      // Re-throw, or return a default value
+      throw;
+    }
+
+    try {
+      index = index_of_id_in_old_json.at(container_str);
+    } catch (const std::out_of_range &e) {
+      std::cerr << "ERROR: Key '" << container_str
+                << "' not found in index_of_id_in_old_json. "
+                << "Exception: " << e.what() << std::endl;
+      // Re-throw, or return a default value
+      throw;
+    }
+
     new_json["features"][i]["type"] = "Feature";
     new_json["features"][i]["properties"] =
       old_json["features"][index]["properties"];
