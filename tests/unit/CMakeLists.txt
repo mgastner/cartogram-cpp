@@ -15,5 +15,5 @@ foreach(src IN LISTS UNIT_SRCS)
     cartogram_lib
   )
   add_test(NAME ${test_name} COMMAND ${test_name})
-  set_tests_properties(${test_name} PROPERTIES TIMEOUT 1)
+  set_tests_properties(${test_name} PROPERTIES LABELS "unit" TIMEOUT 1)
 endforeach()
