@@ -62,7 +62,21 @@ conan install . --output-folder build --build=missing -s build_type=Release -s c
 ```
 sudo .venv/bin/cmake --install build
 ```
+### Tests
 
+To run the tests, execute the following command from the root directory of the repository:
+
+```
+ctest --test-dir build --output-on-failure
+```
+
+To run a specific test, use the following command:
+
+```
+ctest --test-dir build --output-on-failure test_string_to_decimal_converter.cpp
+```
+
+Add `--verbose` to the command to see more details about the test results.
 
 ### Windows (Using WSL)
 
