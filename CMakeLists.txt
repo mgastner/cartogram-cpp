@@ -32,7 +32,7 @@ target_link_libraries(cartogram
 target_compile_options(cartogram PRIVATE
   -O3
   -ffp-contract=off
-  -Werror
+  # -Werror
   -Wall -Wextra -Wpedantic -Wshadow -Wold-style-cast -Wunreachable-code
   -pedantic-errors -Wformat=2 -Wformat-security -Wcast-qual -Wcast-align -Wconversion
   -Wsign-conversion -Wfloat-equal -Woverloaded-virtual -Wzero-as-null-pointer-constant

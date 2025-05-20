@@ -1,4 +1,5 @@
 #include "time_tracker.hpp"
+#include <algorithm>
 #include <iostream>
 #include <vector>
 
