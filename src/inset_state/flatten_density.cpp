@@ -35,7 +35,7 @@ bool InsetState::flatten_density()
 
 // Function to calculate the velocity at the grid points (x, y) with x =
 // 0.5, 1.5, ..., lx-0.5 and y = 0.5, 1.5, ..., ly-0.5 at time t
-void calculate_velocity(
+static void calculate_velocity(
   double t,
   const FTReal2d &grid_fluxx_init,
   const FTReal2d &grid_fluxy_init,
@@ -65,7 +65,7 @@ void calculate_velocity(
   }
 }
 
-bool all_points_are_in_domain(
+static bool all_points_are_in_domain(
   double delta_t,
   const boost::multi_array<Point, 2> &proj,
   const boost::multi_array<Vector, 2> &v_intp,
@@ -318,7 +318,7 @@ void InsetState::flatten_density_on_square_grid()
   timer.stop("Flatten Density (Full Grid Method)");
 }
 
-bool all_map_points_are_in_domain(
+static bool all_map_points_are_in_domain(
   const double delta_t,
   const std::unordered_map<Point, Point> &proj_map,
   const std::unordered_map<Point, Vector> &v_intp,
@@ -362,7 +362,7 @@ bool all_map_points_are_in_domain(
   return true;
 }
 
-double calculate_velocity_for_point(
+static double calculate_velocity_for_point(
   unsigned int i,
   unsigned int j,
   char direction,
@@ -377,7 +377,7 @@ double calculate_velocity_for_point(
                             : (-grid_fluxy_init(i, j) / rho);
 }
 
-bool delaunay_triangle_flipped(proj_qd &proj_qd)
+static bool delaunay_triangle_flipped(proj_qd &proj_qd)
 {
   for (Delaunay::Finite_faces_iterator fit = proj_qd.dt.finite_faces_begin();
        fit != proj_qd.dt.finite_faces_end();

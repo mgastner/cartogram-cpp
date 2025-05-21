@@ -3,7 +3,7 @@
 
 // Function that returns coordinates of the end points of a "divider" line
 // segment used to separate between different insets
-std::vector<double> divider_points(
+static std::vector<double> divider_points(
   const double x1,
   const double y1,
   const double x2,
@@ -150,7 +150,7 @@ nlohmann::json CartogramInfo::cgal_to_json(
 //          ]
 //        ]
 // },
-nlohmann::json add_dividers_to_geojson(const nlohmann::json &json)
+static nlohmann::json add_dividers_to_geojson(const nlohmann::json &json)
 {
   nlohmann::json formatted_json;
   formatted_json["type"] = "Feature";

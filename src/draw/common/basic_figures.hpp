@@ -5,6 +5,7 @@
 #include "font.hpp"
 #include "geo_div.hpp"
 #include "inset_state.hpp"
+#include "round_point.hpp"
 
 inline void write_triangles(
   Canvas &cvs,
@@ -237,7 +238,7 @@ inline void write_polygons(
   double line_w = 0.0,
   Color outline = Color{0, 0, 0})
 {
-  if (line_w == 0.0)
+  if (almost_equal(line_w, 0.0))
     line_w = 1e-3 * std::min(inset_state.lx(), inset_state.ly());
 
   cvs.set_stroke(outline, line_w);

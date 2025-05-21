@@ -37,7 +37,8 @@ void InsetState::simplify(const unsigned int target_points_per_inset)
   // Simplify polygons
   const unsigned long target_pts =
     std::max(target_points_per_inset, min_points_per_ring * n_rings());
-  const double ratio = static_cast<double>(target_pts) / n_pts_before;
+  const double ratio =
+    static_cast<double>(target_pts) / static_cast<double>(n_pts_before);
   CGAL::Polyline_simplification_2::simplify(ct, Cost(), Stop(ratio));
 
   // Store simplified polygons

@@ -313,7 +313,7 @@ static GridCoordinatesWithEdgeEndpoints rasterize_polygon_edges(
   }
 
   auto next_pt_ind = [&polygon](unsigned int i) -> unsigned int {
-    return (i + 1) % polygon.size();
+    return (i + 1) % static_cast<unsigned int>(polygon.size());
   };
   for (unsigned int i = 0; i < polygon.size(); ++i) {
     const unsigned int j = next_pt_ind(i);
@@ -359,7 +359,7 @@ static GridCoordinatesWithEdgeEndpoints rasterize_polygon_edges(
 // Point-in-Polygon Check for Polygon_with_holes
 // ---------------------------------------------------------------------
 
-bool is_point_inside_polygon(const Polygon &polygon, const Point &pt)
+static bool is_point_inside_polygon(const Polygon &polygon, const Point &pt)
 {
   return polygon.bounded_side(pt) == CGAL::ON_BOUNDED_SIDE;
 }
@@ -396,7 +396,7 @@ struct Interval {
 // * For each cell, stores which pwhs' edges are present in the cell
 // * Whether the cell is an edge cell
 // * Stores metadata for each pwh
-void process_geo_divisions_edge_info(
+static void process_geo_divisions_edge_info(
   boost::multi_array<std::vector<PolygonInfo>, 2> &edge_cell_polyinfo,
   std::vector<PolygonInfo> &all_pwh_info,
   InsetState &inset_state)
@@ -461,7 +461,7 @@ void process_geo_divisions_edge_info(
 // and assign a unique ID to each connected component
 // This is useful later to classify all cells of a connected
 // component to a single pwh or to ocean
-unsigned int compute_connected_components(
+static unsigned int compute_connected_components(
   boost::multi_array<int, 2> &comp,
   const boost::multi_array<std::vector<PolygonInfo>, 2> &edge_cell_polyinfo,
   InsetState &inset_state)
@@ -623,7 +623,7 @@ inline bool on_same_edge_in_order_cw(
 // Both are assumed to lie exactly on the boundary of a 1x1 cell with
 // bottom-left at (cx,cy). We want to “wrap” p2 around the cell boundary in a
 // clockwise manner until we reach p1.
-Polygon get_connecting_path_cw(
+static Polygon get_connecting_path_cw(
   const Point &p1,
   const Point &p2,
   double cx,
@@ -697,7 +697,7 @@ inline bool is_path_contained_within_cell(
 // For an unmapped cell of a cc, if the neighboring cell is a edge cell,
 // then we find the pwh of that edge, and run point-in-polygon check
 // to see if the cc is inside the pwh. If so, we map the cc to that pwh
-void map_components_to_pwh(
+static void map_components_to_pwh(
   std::vector<int> &comp_id_to_pwh_tot_id,
   const boost::multi_array<std::vector<PolygonInfo>, 2> &edge_cell_polyinfo,
   const boost::multi_array<int, 2> &comp,
@@ -747,7 +747,8 @@ void map_components_to_pwh(
         const unsigned int ny = static_cast<unsigned int>(ty);
 
         if (is_edge[nx * ly + ny]) {
-          for (const auto &poly_info : edge_cell_polyinfo[nx][ny]) {
+          auto cell_polyinfos = edge_cell_polyinfo[nx][ny];
+          for (const auto &poly_info : cell_polyinfos) {
             const unsigned int pwh_tot_id = poly_info.pwh_tot_id;
             if (is_outside[pwh_tot_id].contains(comp_id)) {
               continue;
@@ -785,7 +786,7 @@ void map_components_to_pwh(
 // path. The closed polygon will start at p1 (first vertex of clipped_path),
 // then follow the clipped path, then follow the connecting path (which wraps
 // clockwise from the last vertex back to p1).
-Polygon build_closed_polygon(
+static Polygon build_closed_polygon(
   const Polygon &clipped_path,
   const std::pair<int, int> &cell_bottom_left)
 {
@@ -929,7 +930,7 @@ static void compute_area(
         den += weight;
         area_tot += 1.0;
       } else if (is_edge[static_cast<unsigned int>(x * ly + y)]) {
-        auto &cell_poly_info = edge_cell_polyinfo[x][y];
+        auto cell_poly_info = edge_cell_polyinfo[x][y];
         const size_t n = cell_poly_info.size();
 
         for (unsigned int i = 0; i < n;) {
@@ -1006,7 +1007,7 @@ static void compute_area(
 
 // Test function to compare the computed area with the actual area (brute
 // force)
-void test_areas_densities(const FTReal2d &rho, InsetState &inset_state)
+[[maybe_unused]] static void test_areas_densities(const FTReal2d &rho, InsetState &inset_state)
 {
   const unsigned int lx = inset_state.lx();
   const unsigned int ly = inset_state.ly();

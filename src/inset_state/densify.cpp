@@ -33,7 +33,7 @@ std::ostream &operator<<(std::ostream &cout, std::vector<A> const &v)
 // The function returns the unique intersection point between them. If this
 // intersection point does not exist, the function returns the point called
 // OUT_OF_RANGE, which is always outside any grid cell.
-Point calc_intersection(
+static Point calc_intersection(
   const Point &a,
   const Point &b,
   const double coef_x,
@@ -63,7 +63,7 @@ Point calc_intersection(
 //   next diagonal.
 using PointLess = bool (*)(const Point&, const Point&);
 
-void add_diag_inter(
+static void add_diag_inter(
   std::set<Point, PointLess> *intersections,
   const Point &a,
   const Point &b,
@@ -123,7 +123,7 @@ void add_diag_inter(
 // function also returns all intersections with the diagonals of these
 // grid cells. The function assumes that grid cells start at
 // (0.5, 0.5).
-std::vector<Point> densification_points(
+static std::vector<Point> densification_points(
   const Point &pt1,
   const Point &pt2,
   const unsigned int lx,
@@ -165,7 +165,7 @@ std::vector<Point> densification_points(
   // Get vertical intersections
   double x_start = floor(a.x() + 0.5) + 0.5;
   double x_end = b.x();
-  for (double x = x_start; x <= x_end; x += (x == 0.0) ? 0.5 : 1.0) {
+  for (double x = x_start; x <= x_end; x += almost_equal(x, 0.0) ? 0.5 : 1.0) {
     Point inter = calc_intersection(a, b, 1.0, 0.0, -x);
     if (inter != OUT_OF_RANGE) {
       temp_intersections.insert(inter);
@@ -175,7 +175,7 @@ std::vector<Point> densification_points(
   // Get horizontal intersections
   double y_start = floor(std::min(a.y(), b.y()) + 0.5) + 0.5;
   double y_end = std::max(a.y(), b.y());
-  for (double y = y_start; y <= y_end; y += (y == 0.0) ? 0.5 : 1.0) {
+  for (double y = y_start; y <= y_end; y += almost_equal(y, 0.0) ? 0.5 : 1.0) {
     Point inter = calc_intersection(a, b, 0.0, 1.0, -y);
     if (inter != OUT_OF_RANGE) {
       temp_intersections.insert(inter);
@@ -220,7 +220,7 @@ std::vector<Point> densification_points(
   return intersections;
 }
 
-std::unordered_set<Point> new_points(Polygon original, Polygon densified)
+static std::unordered_set<Point> new_points(Polygon original, Polygon densified)
 {
 
   // We need an ordered set, because set difference is only defined for
@@ -311,7 +311,7 @@ void InsetState::densify_geo_divs()
   timer.stop("Densification (using Grid Diagonals)");
 }
 
-std::vector<Point> densification_points_with_delaunay_t(
+static std::vector<Point> densification_points_with_delaunay_t(
   const Point &pt1,
   const Point &pt2,
   const Delaunay &dt)

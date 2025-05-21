@@ -112,6 +112,9 @@ private:
   // Area errors
   std::vector<double> max_area_errors_;
 
+  // Whether convergence has been reached
+  mutable bool converge_{true};
+
   // Make default constructor private so that only
   // InsetState(const std::string, Arguments) can be called as constructor
   InsetState();
@@ -142,6 +145,7 @@ public:
   void create_and_refine_quadtree();
   void create_contiguity_graph();
   void create_delaunay_t();
+  bool converged() const;
   void densify_geo_divs();
   void densify_geo_divs_using_delaunay_t();
   void destroy_fftw_plans_for_flux();

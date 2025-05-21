@@ -1,6 +1,8 @@
 cmake_minimum_required(VERSION 3.30)
 project(cartogram LANGUAGES CXX)
 
+enable_testing()
+
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
@@ -14,12 +16,19 @@ find_package(indicators REQUIRED CONFIG)
 find_package(PkgConfig REQUIRED)
 pkg_search_module(FFTW REQUIRED IMPORTED_TARGET fftw3)
 
-# ----------------------------- Main exe  ------------------------------
+# ----------------------------- Cartogram Library  ---------------------------
 file(GLOB_RECURSE CARTOGRAM_SOURCES CONFIGURE_DEPENDS src/*.cpp)
-add_executable(cartogram ${CARTOGRAM_SOURCES})
 
-target_link_libraries(cartogram
-  PRIVATE
+# Exclude main.cpp from the list of sources
+list(FILTER CARTOGRAM_SOURCES EXCLUDE REGEX ".*/main\\.cpp$")
+
+add_library(cartogram_lib STATIC ${CARTOGRAM_SOURCES})
+target_include_directories(cartogram_lib
+  PUBLIC ${PROJECT_SOURCE_DIR}/include
+)
+
+target_link_libraries(cartogram_lib
+  PUBLIC
   CGAL::CGAL
   boost::boost
   nlohmann_json::nlohmann_json
@@ -29,39 +38,46 @@ target_link_libraries(cartogram
   PkgConfig::FFTW
 )
 
-target_compile_options(cartogram PRIVATE
+target_compile_options(cartogram_lib PRIVATE
   -O3
   -ffp-contract=off
-  # -Werror
+  -Werror
   -Wall -Wextra -Wpedantic -Wshadow -Wold-style-cast -Wunreachable-code
   -pedantic-errors -Wformat=2 -Wformat-security -Wcast-qual -Wcast-align -Wconversion
-  -Wsign-conversion -Wfloat-equal -Woverloaded-virtual -Wzero-as-null-pointer-constant
+  -Wsign-conversion -Wfloat-equal -Woverloaded-virtual -Wno-unknown-pragmas
   -Wmissing-declarations -Werror=return-type -Wnon-virtual-dtor
 )
 
 include(CheckCXXCompilerFlag)
-check_cxx_compiler_flag("-mcpu=native" HAS_MCPU_NATIVE)
 check_cxx_compiler_flag("-march=native" HAS_MARCH_NATIVE)
+check_cxx_compiler_flag("-mtune=native" HAS_MTUNE_NATIVE)
 
-if (HAS_MCPU_NATIVE)
-    target_compile_options(cartogram PRIVATE -mcpu=native)
-elseif (HAS_MARCH_NATIVE)
-    target_compile_options(cartogram PRIVATE -march=native)
+if(HAS_MARCH_NATIVE)
+  target_compile_options(cartogram_lib PRIVATE -march=native)
+elseif(HAS_MTUNE_NATIVE)
+  target_compile_options(cartogram_lib PRIVATE -mtune=native)
 endif()
-
 
 include(CheckIPOSupported)
 check_ipo_supported(RESULT ipo_ok OUTPUT ipo_msg)
 
 if(ipo_ok)
-  set_property(TARGET cartogram PROPERTY INTERPROCEDURAL_OPTIMIZATION ON)
-  target_link_options(cartogram PRIVATE -flto)
+  set_property(TARGET cartogram_lib PROPERTY INTERPROCEDURAL_OPTIMIZATION ON)
+  target_link_options(cartogram_lib PRIVATE -flto)
 else()
   message(STATUS "IPO/LTO not available: ${ipo_msg}")
 endif()
 
-target_include_directories(cartogram
+target_include_directories(cartogram_lib
   PUBLIC ${PROJECT_SOURCE_DIR}/include
 )
 
+# ----------------------------- Main executable  -----------------------------
+add_executable(cartogram src/main.cpp)
+target_link_libraries(cartogram
+  PRIVATE cartogram_lib
+)
 install(TARGETS cartogram RUNTIME DESTINATION bin)
+
+# ----------------------------- Tests  -----------------------------
+add_subdirectory(tests)

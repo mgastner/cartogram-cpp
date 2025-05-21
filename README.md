@@ -62,7 +62,46 @@ conan install . --output-folder build --build=missing -s build_type=Release -s c
 ```
 sudo .venv/bin/cmake --install build
 ```
+### Tests
 
+To run all the tests, execute the following command from the root directory of the repository:
+
+```
+ctest --test-dir build --output-on-failure
+```
+
+#### Unit Tests
+
+To run only the unit tests:
+
+```
+ctest --test-dir build --output-on-failure -L unit
+```
+
+```
+ctest --test-dir build --output-on-failure test_string_to_decimal_converter.cpp
+```
+
+#### Stress Tests
+This test will run all the maps in the `cartogram-cpp/sample_data` folder.
+
+To run only the stress tests:
+
+```
+ctest --test-dir build --output-on-failure -L stress
+```
+
+#### Fuzzer Tests
+Fuzzer tests run maps in the `cartogram-cpp/sample_data` folder with random data. 
+
+To run only the fuzzer tests:
+
+```
+ctest --test-dir build -L fuzzer --verbose
+```
+This test will take a while to finish.
+
+Add `--verbose` to the command to see more details about the test results.
 
 ### Windows (Using WSL)
 

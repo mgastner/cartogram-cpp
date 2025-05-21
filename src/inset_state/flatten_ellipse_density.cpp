@@ -88,7 +88,7 @@ void InsetState::min_ellipses()
           Point(ell.center.x() + x_median, ell.center.y() + y_median);
 
         double theta = (a < c) ? 0.0 : pi / 2;
-        if (b != 0.0) {
+        if (!almost_equal(b, 0.0)) {
           theta = atan((c - a - inner_sqrt) / b);
         }
         ell.theta = theta;
@@ -100,7 +100,7 @@ void InsetState::min_ellipses()
   }
 }
 
-double ellipse_density_prefactor(
+static double ellipse_density_prefactor(
   const double &rho_p,
   const double &rho_mean,
   const double &pwh_area,
@@ -109,7 +109,7 @@ double ellipse_density_prefactor(
   return nu * pwh_area * (rho_p - rho_mean) / pi;
 }
 
-double ellipse_density_polynomial(const double &r_tilde_sq)
+static double ellipse_density_polynomial(const double &r_tilde_sq)
 {
   if (r_tilde_sq >= 4 * xi_sq)
     return 0.0;
@@ -118,7 +118,7 @@ double ellipse_density_polynomial(const double &r_tilde_sq)
     (r_tilde_sq - 4 * xi_sq) / (16 * xi_sq * xi_sq * xi_sq));
 }
 
-double ellipse_flux_prefactor(
+static double ellipse_flux_prefactor(
   const double &r_tilde_sq,
   const double &rho_p,
   const double &rho_mean,
@@ -133,7 +133,7 @@ double ellipse_flux_prefactor(
          (128 * pi * xi_to_6);
 }
 
-bool all_map_points_are_in_domain(
+static bool all_map_points_are_in_domain(
   const double &delta_t,
   const std::unordered_map<Point, Point> &proj_map,
   const std::unordered_map<Point, Vector> &v_intp,
@@ -177,7 +177,7 @@ bool all_map_points_are_in_domain(
   return true;
 }
 
-void calculate_velocity(
+static void calculate_velocity(
   const std::unordered_map<Point, double> &rho_mp,
   const std::unordered_map<Point, Vector> &flux_mp,
   const std::unordered_map<Point, Point> &triangle_transformation,
@@ -198,7 +198,7 @@ void calculate_velocity(
   }
 }
 
-Vector interpolate(
+static Vector interpolate(
   const Point &p,
   const Delaunay &dt,
   const std::unordered_map<Point, Vector> &velocity)

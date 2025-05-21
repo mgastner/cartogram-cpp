@@ -6,7 +6,7 @@
 // ======================== Image Coloring ========================
 
 // Functions deal with colors
-Color interpolate_color(
+static Color interpolate_color(
   const double x,
   const double xmin,
   const double xmax,
@@ -23,7 +23,7 @@ Color interpolate_color(
 }
 
 // Diverging colour palette, mean accounted for
-Color heatmap_color(
+static Color heatmap_color(
   const double dens,
   const double dens_min,
   const double dens_mean,
@@ -106,12 +106,12 @@ Color heatmap_color(
   } else if (dens > dens_mean) {
     color_category = static_cast<size_t>(
       std::max(0.0, 5 * (dens_max - dens) / (dens_max - dens_mean)));
-    xmax = dens_max - 0.2 * color_category * (dens_max - dens_mean);
+    xmax = dens_max - 0.2 * static_cast<double>(color_category) * (dens_max - dens_mean);
     xmin = xmax - 0.2 * (dens_max - dens_mean);
   } else if (dens > dens_min) {
     color_category = static_cast<size_t>(
       std::max(0.0, 5 * (dens_mean - dens) / (dens_mean - dens_min) + 5));
-    xmax = dens_mean - 0.2 * (color_category - 5) * (dens_mean - dens_min);
+    xmax = dens_mean - 0.2 * static_cast<double>((color_category - 5)) * (dens_mean - dens_min);
     xmin = xmax - 0.2 * (dens_mean - dens_min);
 
     // Assign color category 9 if dens_min and dens are very close

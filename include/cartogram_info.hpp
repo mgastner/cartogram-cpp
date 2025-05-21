@@ -38,6 +38,7 @@ public:
   explicit CartogramInfo(Arguments);
   [[nodiscard]] double cart_initial_total_target_area() const;
   void construct_inset_state_from_geodivs(const nlohmann::json &);
+  bool converged() const;
   [[nodiscard]] double area() const;
   [[nodiscard]] bool is_world_map() const;
   void json_to_geojson(

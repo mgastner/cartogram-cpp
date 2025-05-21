@@ -25,7 +25,15 @@ Arguments parse_arguments(const int argc, const char *argv[])
     .default_value(default_long_grid_length)
     .scan<'u', unsigned int>()
     .help(
-      "Integer: Number of grid cells along longer Cartesian coordinate axis");
+      "Integer: Number of starting grid cells along longer Cartesian "
+      "coordinate axis");
+
+  arguments.add_argument("-N", "--max_allowed_autoscale_grid_length")
+    .default_value(max_allowed_autoscale_grid_length)
+    .scan<'u', unsigned int>()
+    .help(
+      "Integer: Maximum allowed number of grid cells along longer Cartesian "
+      "coordinate axis");
 
   // Optional boolean arguments
   arguments.add_argument("-W", "--world")
@@ -148,6 +156,10 @@ Arguments parse_arguments(const int argc, const char *argv[])
 
   // Set long grid-side length
   args.n_grid_rows_or_cols = arguments.get<unsigned int>("-n");
+
+  // Set maximum allowed grid length
+  args.max_allowed_autoscale_grid_length =
+    arguments.get<unsigned int>("--max_allowed_autoscale_grid_length");
 
   // If world flag is set, and long-gride side length is not explicitly set,
   // then 512 makes the output look better

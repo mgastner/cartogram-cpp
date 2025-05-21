@@ -10,27 +10,29 @@ WORKDIR /cartogram
 COPY . .
 
 # Remove Windows-style line endings in shell scripts
-RUN sed -i 's/\r$//' build.sh
-RUN sed -i 's/\r$//' tests/stress_test.sh
+RUN sed -i 's/\r$//' build.sh tests/stress_test.sh
 
 # Install Clang
-RUN apt update
-RUN apt install -y build-essential clang
+RUN apt update && apt install -y build-essential clang
 
 # Install dependencies
 RUN pip install --upgrade pip wheel conan==2.16.1 cmake==3.30.0
 
-# Setup Conan
-RUN conan remote update conancenter --url=https://center2.conan.io
-RUN conan profile detect
-
 # Install dependencies via Conan
-RUN conan install . --output-folder build-docker --build=missing -s build_type=Release -s compiler.cppstd=20
+RUN conan remote update conancenter --url=https://center2.conan.io && \
+  conan profile detect && \
+  conan install . --output-folder "${BUILD_DIR}" --build=missing \
+    -s build_type=Release -s compiler.cppstd=20
 
 # Build the project
-RUN cmake -B build-docker  -S . -DCMAKE_TOOLCHAIN_FILE=build-docker/build/Release/generators/conan_toolchain.cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_EXPORT_COMPILE_COMMANDS=ON
-RUN cmake --build build-docker -j4
-RUN cmake --install build-docker
+RUN cmake -B "${BUILD_DIR}" -S . \
+  -DCMAKE_TOOLCHAIN_FILE="${BUILD_DIR}/build/Release/generators/conan_toolchain.cmake" \
+  -DCMAKE_BUILD_TYPE=Release \
+  -DCMAKE_EXPORT_COMPILE_COMMANDS=ON && \
+  cmake --build "${BUILD_DIR}" -j4 && \
+  cmake --install "${BUILD_DIR}"
 
 # Change working directory to output folder
-WORKDIR /cartogram/output
+WORKDIR /cartogram
+
+CMD [ "bash" ]

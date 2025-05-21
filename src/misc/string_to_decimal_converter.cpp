@@ -16,7 +16,7 @@ std::string StringToDecimalConverter::remove_char(std::string str, char ch)
   return str;
 }
 
-unsigned int count_char(const std::string &str, char ch)
+static unsigned int count_char(const std::string &str, char ch)
 {
   return static_cast<unsigned int>(std::count(str.begin(), str.end(), ch));
 }
@@ -131,7 +131,7 @@ bool StringToDecimalConverter::is_str_correct_format(const std::string &str)
   return true;
 }
 
-bool is_comma_as_decimal_separator(const std::string &str)
+static bool is_comma_as_decimal_separator(const std::string &str)
 {
   unsigned int comma_count = count_char(str, ',');
   unsigned int point_count = count_char(str, '.');
@@ -165,7 +165,7 @@ bool is_comma_as_decimal_separator(const std::string &str)
   return false;
 }
 
-bool is_point_as_decimal_separator(const std::string &str)
+static bool is_point_as_decimal_separator(const std::string &str)
 {
   unsigned int comma_count = count_char(str, ',');
   unsigned int point_count = count_char(str, '.');

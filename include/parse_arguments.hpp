@@ -12,6 +12,10 @@ struct Arguments {
   // Default number of grid cells along longer Cartesian coordinate axis
   unsigned int n_grid_rows_or_cols;
 
+  // Maximum allowed number of grid cells along longer Cartesian coordinate
+  // axis
+  unsigned int max_allowed_autoscale_grid_length;
+
   // Target number of points to retain after simplification
   unsigned int target_points_per_inset;
 

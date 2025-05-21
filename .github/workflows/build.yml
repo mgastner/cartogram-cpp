@@ -1,127 +1,84 @@
-name: Build and Release (on GitHub only)
+name: Ubuntu (Release)
 
 on:
-  # when a push is made to the main branch (like when a pull request is merged, or something is pushed directly)
-  workflow_dispatch:
   push:
-    branches: [ "main" ]
-
-env:
-  BUILD_TYPE: Release
+    branches: [dev]
+  pull_request:
+    branches: [dev]
 
 jobs:
-
-  set-outputs:
+  build:
     runs-on: ubuntu-latest
-    outputs:
-      short_sha: ${{ steps.vars.outputs.short_sha }}
     steps:
+      - uses: actions/checkout@v3
 
-    - name: Checkout Repository
-      uses: actions/checkout@v4
+      - name: Build Docker image
+        run: |
+          docker build -t cartogram-ci .
 
-    - name: Calculate short_sha
-      id: vars
-      run: echo "short_sha=$(git rev-parse --short HEAD)" >> $GITHUB_OUTPUT
+      - name: Save image to tar
+        run: |
+          docker save cartogram-ci | gzip > cartogram-ci.tar.gz
 
-  build-and-upload:
+      - name: Upload image artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: cartogram-image
+          path: cartogram-ci.tar.gz
 
+  unit-tests:
+    needs: build
     runs-on: ubuntu-latest
-    needs: set-outputs
-    outputs:
-      config_output: ${{ steps.config_step.outputs.config_output }}
-      build_output: ${{ steps.build_step.outputs.build_output }}
-    container:
-      image: gocartio/cartogram-web:latest
     steps:
+      - name: Download image artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: cartogram-image
 
-    - name: Install Dependencies
-      run: |
-        apt update -y
-        apt install -y git g++-11 build-essential cmake libboost-all-dev
+      - name: Load image into Docker
+        run: |
+          gzip -d cartogram-ci.tar.gz
+          docker load < cartogram-ci.tar
 
-    - name: Checkout Repository
-      uses: actions/checkout@v4
-      with:
-          submodules: 'recursive'
-          fetch-depth: 1
+      - name: Unit tests
+        run: |
+          docker run --rm cartogram-ci \
+            bash -lc "ctest --test-dir build-docker -L unit --output-on-failure"
 
-    - name: Configure CMake
-      id: config_step
-      run: |
-        cmake -B ${{github.workspace}}/build -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} -DRELEASE_TAG=${{ needs.set-outputs.outputs.short_sha }} | tee config_output.txt
-        echo "config_output=$(cat config_output.txt)"
-
-    - name: Build
-      id: build_step
-      run: |
-        cmake --build ${{github.workspace}}/build --config ${{env.BUILD_TYPE}} --target install -j4 -- | tee build_output.txt
-        echo "build_output=$(cat build_output.txt)"
-
-    # - name: Run CTest
-    #   working-directory: ${{github.workspace}}/build
-    #   # Execute tests defined by the CMake configuration.
-    #   # See https://cmake.org/cmake/help/latest/manual/ctest.1.html for more detail
-    #   run: ctest -C ${{env.BUILD_TYPE}}
-
-    # - name: Run Stress Test
-    #   run: |
-    #     sudo make install -C build
-    #     cd tests/
-    #     chmod +x stress_test.sh
-    #     bash stress_test.sh
-
-    - name: Upload Artifact
-      uses: actions/upload-artifact@v4
-      with:
-        name: cartogram
-        path: /usr/local/bin/cartogram
-
-  release:
-
+  stress-tests:
+    needs: build
     runs-on: ubuntu-latest
-    needs: [build-and-upload, set-outputs]
-    env:
-      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
     steps:
-    - name: Checkout Repository
-      uses: actions/checkout@v4
-      with:
-        fetch-depth: 0
+      - name: Download image artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: cartogram-image
 
-    - name: Download Artifact
-      uses: actions/download-artifact@v4
-      with:
-        name: cartogram
+      - name: Load image into Docker
+        run: |
+          gzip -d cartogram-ci.tar.gz
+          docker load < cartogram-ci.tar
 
-    - name: Push tag
-      run: |
-        git config --global user.name "github-actions[bot]"
-        git config --global user.email "github-actions[bot]@users.noreply.github.com"
-        git tag ${{ needs.set-outputs.outputs.short_sha }}
-        git push origin ${{ needs.set-outputs.outputs.short_sha }}
+      - name: Stress tests
+        run: |
+          docker run --rm cartogram-ci \
+            bash -lc "ctest --test-dir build-docker -L stress --output-on-failure"
 
-    - name: Release
-      uses: softprops/action-gh-release@v2
-      with:
-        tag_name: ${{ needs.set-outputs.outputs.short_sha }}
-        files: cartogram
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+  fuzzer-tests:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download image artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: cartogram-image
 
-    - name: Create GitHub Actions Job Summary
-      run: |
-        echo "## \`cartogram-cpp\`: ${{ needs.set-outputs.outputs.short_sha }}" >> $GITHUB_STEP_SUMMARY
-        echo "Release available at https://github.com/mgastner/cartogram-cpp/releases/tag/${{ needs.set-outputs.outputs.short_sha }}" >> $GITHUB_STEP_SUMMARY
-        echo "### Config Output" >> $GITHUB_STEP_SUMMARY
-        echo "\`\`\`"
-        echo "cmake -B ${{github.workspace}}/build -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} -DRELEASE_TAG=${{ needs.set-outputs.outputs.short_sha }}"
-        echo ""
-        echo ${{ needs.build-and-upload.outputs.config_output }} >> $GITHUB_STEP_SUMMARY
-        echo "\`\`\`"
-        echo "### Build Output" >> $GITHUB_STEP_SUMMARY
-        echo "\`\`\`"
-        echo "cmake --build ${{github.workspace}}/build --config ${{env.BUILD_TYPE}} --target install -j4 --"
-        echo ${{ needs.build-and-upload.outputs.build_output }} >> $GITHUB_STEP_SUMMARY
-        echo "\`\`\`"
+      - name: Load image into Docker
+        run: |
+          gzip -d cartogram-ci.tar.gz
+          docker load < cartogram-ci.tar
+
+      - name: Fuzzer tests
+        run: |
+          docker run --rm cartogram-ci \
+            bash -lc "ctest --test-dir build-docker -L fuzzer --verbose"

@@ -3,7 +3,7 @@
 #include "constants.hpp"
 #include "geometry.hpp"
 
-double choose_font_size(
+static double choose_font_size(
   std::string_view label,
   const Point &label_pt,
   const GeoDiv &gd,
@@ -15,7 +15,7 @@ double choose_font_size(
   const auto &outer = gd.largest_polygon_with_holes();
 
   for (double fsz = max_font_size; fsz >= min_font_size; fsz -= 0.5) {
-    const double w = char_factor * fsz * label.size();
+    const double w = char_factor * fsz * static_cast<double>(label.size());
     const double h = line_factor * fsz;
 
     CGAL::Bbox_2 bb(

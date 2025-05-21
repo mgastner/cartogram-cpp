@@ -110,6 +110,7 @@ bool InsetState::continue_integrating() const
 
   // Actually hasn't converged, just reached integration limit
   if (!within_integration_limit && !has_converged) {
+    converge_ = false;
     std::cerr << "ERROR: Could not converge!" << std::endl;
     if (area_error_above_threshold)
       std::cerr << "Max area error above threshold!" << std::endl;
@@ -154,6 +155,11 @@ bool InsetState::color_found(const std::string &id) const
 size_t InsetState::colors_size() const
 {
   return colors_.size();
+}
+
+bool InsetState::converged() const
+{
+  return converge_;
 }
 
 void InsetState::create_delaunay_t()
@@ -445,7 +451,7 @@ void InsetState::export_time_report() const
     // Time taken (in seconds)
     std::string timer_task_name = inset_name_ + "_" + std::to_string(i);
     std::string time_in_seconds =
-      std::to_string(timer.duration(timer_task_name).count() / 1000.0);
+      std::to_string(static_cast<double>(timer.duration(timer_task_name).count()) / 1000.0);
     csv_rows[i + 1].push_back(time_in_seconds);
 
     // Max area error for that integration
@@ -523,7 +529,7 @@ static std::vector<Point> get_unique_points(InsetState &inset_state)
 }
 
 // Counts the number of leaf nodes in a quadtree
-int count_leaf_nodes(const Quadtree &qt)
+static int count_leaf_nodes(const Quadtree &qt)
 {
   int leaf_count = 0;
   for ([[maybe_unused]] const auto &node :
@@ -541,12 +547,12 @@ struct Split_by_threshold {
   InsetState &inset_state;
 
   Split_by_threshold(
-    const Quadtree &qt,
-    double threshold,
-    unsigned int max_depth,
-    InsetState &inset_state)
-      : qt(qt), threshold(threshold), max_depth(max_depth),
-        inset_state(inset_state)
+    const Quadtree &qt_,
+    double threshold_,
+    unsigned int max_depth_,
+    InsetState &inset_state_)
+      : qt(qt_), threshold(threshold_), max_depth(max_depth_),
+        inset_state(inset_state_)
   {
   }
 
@@ -581,7 +587,7 @@ struct Split_by_threshold {
   }
 };
 
-void refine_quadtree_with_threshold(
+static void refine_quadtree_with_threshold(
   Quadtree &qt,
   double threshold,
   unsigned int depth,
@@ -1066,8 +1072,8 @@ void InsetState::adjust_grid()
     // Multiply grid size with factor
     std::cerr << "Adjusting grid size." << std::endl;
     if (
-      lx_ * default_grid_factor > max_allowed_autoscale_grid_length or
-      ly_ * default_grid_factor > max_allowed_autoscale_grid_length) {
+      lx_ * default_grid_factor > args_.max_allowed_autoscale_grid_length or
+      ly_ * default_grid_factor > args_.max_allowed_autoscale_grid_length) {
       std::cerr << "Cannot increase grid size further. ";
       std::cerr << "Grid size exceeds maximum allowed grid length."
                 << std::endl;

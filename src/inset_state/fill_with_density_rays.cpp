@@ -170,7 +170,7 @@ void InsetState::fill_with_density_rays()
           // next_x could be within the same grid cell
           std::min(ceil(right_x), intersections_at_y[i + 2].x());
 
-        double right_x_empty_offset = (next_x != ceil(right_x)) ?
+        double right_x_empty_offset = !almost_equal(next_x, right_x) ?
           // There is space between two GeoDivs, within the same cell,
           // which will be handled in the next iteration upon ray entering next GeoDiv
           0 :

@@ -1,6 +1,7 @@
 #include "cartogram_info.hpp"
 #include "constants.hpp"
 #include "csv.hpp"
+#include "round_point.hpp"
 #include <cstdlib>
 #include <iostream>
 
@@ -33,6 +34,16 @@ double CartogramInfo::cart_initial_total_target_area() const
     target_area += inset_state.initial_target_area();
   }
   return target_area;
+}
+
+bool CartogramInfo::converged() const
+{
+  for (const InsetState &inset_state : inset_states_) {
+    if (!inset_state.converged()) {
+      return false;
+    }
+  }
+  return true;
 }
 
 double CartogramInfo::area() const
@@ -290,7 +301,7 @@ void CartogramInfo::replace_missing_and_zero_target_areas()
 
           // If all target areas are missing, make all GeoDivs equal to their
           // geographic area
-          if (total_target_area_with_data == 0.0) {
+          if (almost_equal(total_target_area_with_data, 0.0)) {
             new_target_area = gd.area();
           } else {
 

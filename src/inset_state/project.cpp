@@ -59,7 +59,7 @@ void InsetState::project()
   }
 }
 
-Point interpolate_point_bilinearly(
+static Point interpolate_point_bilinearly(
   const Point p1,
   const boost::multi_array<double, 2> &xdisp,
   const boost::multi_array<double, 2> &ydisp,
@@ -130,7 +130,7 @@ void InsetState::project_with_bilinear_interpolation()
   timer.stop("Project (Bilinear Interpolation)");
 }
 
-Point interpolate_point_with_barycentric_coordinates(
+static Point interpolate_point_with_barycentric_coordinates(
   const Point &p,
   const Delaunay &dt,
   const std::unordered_map<Point, Point> &proj_map)
@@ -381,7 +381,7 @@ std::array<Point, 3> InsetState::transformed_triangle(
 // This function is needed because, sometimes,
 // `triangle.bounded_side(Point(x, y)) == CGAL::ON_BOUNDARY` does not return
 // `true` even if the point is on the boundary.
-bool is_on_triangle_boundary(const Point &pt, const Polygon &triangle)
+static bool is_on_triangle_boundary(const Point &pt, const Polygon &triangle)
 {
   for (unsigned int i = 0; i < triangle.size(); ++i) {
     const auto t1 = triangle[i];
@@ -494,7 +494,7 @@ std::array<Point, 3> InsetState::untransformed_triangle(
   return triangle_coordinates;
 }
 
-Point affine_trans(
+static Point affine_trans(
   const std::array<Point, 3> &tri,
   const std::array<Point, 3> &org_tri,
   const Point &pt)
