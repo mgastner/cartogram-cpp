@@ -79,9 +79,9 @@ const std::vector<Ellipse> &GeoDiv::min_ellipses() const
   return min_ellipses_;
 }
 
-unsigned int GeoDiv::n_points() const
+size_t GeoDiv::n_points() const
 {
-  unsigned int n_points = 0;
+  size_t n_points = 0;
   for (const auto &pwh : polygons_with_holes_) {
     const auto &outer = pwh.outer_boundary();
     n_points += outer.size();

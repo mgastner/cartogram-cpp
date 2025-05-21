@@ -23,7 +23,7 @@ public:
   [[nodiscard]] const std::string &id() const;
   [[nodiscard]] Polygon_with_holes largest_polygon_with_holes() const;
   const std::vector<Ellipse> &min_ellipses() const;
-  [[nodiscard]] unsigned int n_points() const;
+  [[nodiscard]] size_t n_points() const;
   [[nodiscard]] size_t n_polygons_with_holes() const;
   [[nodiscard]] unsigned int n_rings() const;
   [[nodiscard]] Point point_on_surface_of_geodiv() const;

@@ -2,7 +2,7 @@
 #include "csv.hpp"
 #include "string_to_decimal_converter.hpp"
 
-int extract_color_col_index(
+static int extract_color_col_index(
   const csv::CSVReader &reader,
   const std::string color_col_name)
 {
@@ -20,7 +20,7 @@ int extract_color_col_index(
   return color_col;
 }
 
-void check_validity_of_area_str(const std::string &area_as_str)
+static void check_validity_of_area_str(const std::string &area_as_str)
 {
   std::string area_process_str = area_as_str;
 
@@ -50,7 +50,7 @@ void check_validity_of_area_str(const std::string &area_as_str)
   }
 }
 
-std::string process_inset_pos_str(const std::string &inset_pos_as_str)
+static std::string process_inset_pos_str(const std::string &inset_pos_as_str)
 {
   std::string inset_pos = inset_pos_as_str;
 
@@ -69,7 +69,7 @@ std::string process_inset_pos_str(const std::string &inset_pos_as_str)
   return inset_pos;
 }
 
-void check_validity_of_inset_pos(
+static void check_validity_of_inset_pos(
   const std::string &inset_pos,
   const std::string &id)
 {
@@ -200,7 +200,7 @@ void CartogramInfo::update_id_header_info(
   id_header_ = matching_id_header;
 }
 
-void check_validity_of_csv_ids(
+static void check_validity_of_csv_ids(
   std::map<std::string, std::map<std::string, std::string>> &csv_data,
   const std::vector<std::string> &initial_id_order)
 {
@@ -276,7 +276,7 @@ void CartogramInfo::relocate_geodivs_based_on_inset_pos(
   }
 }
 
-bool is_point_as_separator(
+static bool is_point_as_separator(
   const std::map<std::string, std::map<std::string, std::string>> &csv_data)
 {
   std::vector<std::string> area_strs;
@@ -291,7 +291,7 @@ bool is_point_as_separator(
   return true;
 }
 
-void process_area_strs(
+static void process_area_strs(
   std::map<std::string, std::map<std::string, std::string>> &csv_data)
 {
   const bool uses_point_separator = is_point_as_separator(csv_data);

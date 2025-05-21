@@ -10,7 +10,7 @@ inline std::string strip_quotes(const std::string &s)
   return s;
 }
 
-void check_geojson_validity(const nlohmann::json &j)
+static void check_geojson_validity(const nlohmann::json &j)
 {
   if (!j.contains(std::string{"type"})) {
     std::cerr << "ERROR: JSON does not contain a key 'type'" << std::endl;
@@ -61,7 +61,7 @@ void check_geojson_validity(const nlohmann::json &j)
   }
 }
 
-std::pair<GeoDiv, bool> json_to_geodiv(
+static std::pair<GeoDiv, bool> json_to_geodiv(
   const std::string &id,
   const nlohmann::json &json_coords_raw,
   const bool is_polygon)
@@ -150,7 +150,7 @@ std::pair<GeoDiv, bool> json_to_geodiv(
   return {gd, erico};
 }
 
-void print_properties_map(
+static void print_properties_map(
   const std::map<std::string, std::vector<std::string>> &properties_map,
   const unsigned long chosen_number)
 {
@@ -176,7 +176,7 @@ void print_properties_map(
   }
 }
 
-nlohmann::json load_geojson(const std::string &geometry_file_name)
+static nlohmann::json load_geojson(const std::string &geometry_file_name)
 {
   std::ifstream in_file(geometry_file_name);
   if (!in_file) {
@@ -198,7 +198,7 @@ nlohmann::json load_geojson(const std::string &geometry_file_name)
 }
 
 // Read coordinate reference system if it is included in the GeoJSON
-void extract_crs(const nlohmann::json &j, std::string &crs)
+static void extract_crs(const nlohmann::json &j, std::string &crs)
 {
   if (
     j.contains("crs") && j["crs"].contains("properties") &&
@@ -208,7 +208,7 @@ void extract_crs(const nlohmann::json &j, std::string &crs)
   std::cerr << "Coordinate reference system: " << crs << std::endl;
 }
 
-std::map<std::string, std::vector<std::string>> extract_unique_properties_map(
+static std::map<std::string, std::vector<std::string>> extract_unique_properties_map(
   const nlohmann::json &j)
 {
   std::map<std::string, std::vector<std::string>> properties_map;
@@ -241,7 +241,7 @@ std::map<std::string, std::vector<std::string>> extract_unique_properties_map(
   return unique_properties_map;
 }
 
-void generate_csv_template(
+static void generate_csv_template(
   const nlohmann::json &j,
   const std::string &map_name_)
 {
@@ -353,7 +353,7 @@ void generate_csv_template(
   out_file_csv.close();
 }
 
-std::vector<std::string> extract_initial_order_of_ids(
+static std::vector<std::string> extract_initial_order_of_ids(
   const nlohmann::json &j,
   const std::string &id_header)
 {

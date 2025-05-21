@@ -9,7 +9,7 @@
 // ======================== Legend Plotting ========================
 
 // Find the nearest matching nice number and value for use in legend
-unsigned long get_nearest_nice_number_for_legend(double value)
+static unsigned long get_nearest_nice_number_for_legend(double value)
 {
   const unsigned long NICE_NUMBERS[4] = {1, 2, 5, 10};
 
@@ -17,12 +17,12 @@ unsigned long get_nearest_nice_number_for_legend(double value)
   const int scale = static_cast<int>(std::floor(std::log10(value)));
   const double value_first_digit =
     value / pow(10.0, scale);  // Get first digit of value in decimals
-  double value_diff = abs(value_first_digit - new_value);
+  double value_diff = abs(value_first_digit - static_cast<double>(new_value));
 
   // Loop through array of nice numbers to find the closest matching one
   for (auto num : NICE_NUMBERS) {
-    if (abs(value_first_digit - num) < value_diff) {
-      value_diff = abs(value_first_digit - num);
+    if (abs(value_first_digit - static_cast<double>(num)) < value_diff) {
+      value_diff = abs(value_first_digit - static_cast<double>(num));
       new_value = num;
     }
   }
@@ -32,7 +32,7 @@ unsigned long get_nearest_nice_number_for_legend(double value)
   return new_value;
 }
 
-std::pair<unsigned long, unsigned long> get_km_legend_length(
+static std::pair<unsigned long, unsigned long> get_km_legend_length(
   const InsetState &inset_state)
 {
   const double cell_area_km = grid_cell_area_km(inset_state);
@@ -44,7 +44,7 @@ std::pair<unsigned long, unsigned long> get_km_legend_length(
   return std::pair<unsigned long, unsigned long>(grid_cell_area, total_area);
 }
 
-std::pair<unsigned long, unsigned long> get_visual_variable_legend_length(
+static std::pair<unsigned long, unsigned long> get_visual_variable_legend_length(
   const InsetState &inset_state)
 {
   const double per_area =
@@ -57,20 +57,20 @@ std::pair<unsigned long, unsigned long> get_visual_variable_legend_length(
 }
 
 // Generate text labels for use in legend grid display
-std::pair<std::string, std::string> get_legend_labels(
+static std::pair<std::string, std::string> get_legend_labels(
   unsigned long grid_cell_value,
   unsigned long total_value)
 {
   // Display value per grid cell in billions/millions/thousands
   std::string grid_cell_label = "";
-  if (grid_cell_value >= 1000000000) {
-    const long billions = grid_cell_value / 1000000000;
+  if (grid_cell_value >= 1000000000UL) {
+    const unsigned long billions = grid_cell_value / 1000000000UL;
     grid_cell_label = std::to_string(billions) + "B";
-  } else if (grid_cell_value >= 1000000) {
-    const long millions = grid_cell_value / 1000000;
+  } else if (grid_cell_value >= 1000000UL) {
+    const unsigned long millions = grid_cell_value / 1000000UL;
     grid_cell_label = std::to_string(millions) + "M";
-  } else if (grid_cell_value >= 1000) {
-    const long thousands = grid_cell_value / 1000;
+  } else if (grid_cell_value >= 1000UL) {
+    const unsigned long thousands = grid_cell_value / 1000UL;
     grid_cell_label = std::to_string(thousands) + "K";
   } else {
     grid_cell_label = std::to_string(grid_cell_value);
@@ -98,7 +98,7 @@ std::pair<std::string, std::string> get_legend_labels(
   return std::pair<std::string, std::string>(grid_cell_label, total_label);
 }
 
-void write_legend(
+static void write_legend(
   Canvas &cvs,
   bool equal_area_map,
   const InsetState &inset_state)

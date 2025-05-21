@@ -19,6 +19,17 @@ void right_aligned_text(
   cairo_show_text(cr, text.c_str());
 }
 
+// Returns grid cell area based on edge points
+static double grid_cell_area(
+  unsigned int x,
+  unsigned int y,
+  unsigned int cell_width,
+  InsetState &inset_state)
+{
+  // Taking absolule to ensure we get the area irrespective of direction
+  return abs(inset_state.grid_cell_edge_points(x, y, cell_width).area());
+}
+
 void InsetState::write_grid_heatmap_data(const std::string filename)
 {
   unsigned int cell_width = 1;
@@ -169,6 +180,61 @@ void write_grid_heatmap_bar_on_surface(
       cairo_stroke(cr);
     }
   }
+}
+
+double grid_cell_target_area_per_km(
+  const unsigned int i,
+  const unsigned int j,
+  const double total_target_area,
+  const double total_inset_area,
+  InsetState &inset_state)
+{
+  const double cell_target_area = grid_cell_target_area(
+    i,
+    j,
+    total_target_area,
+    total_inset_area,
+    inset_state);
+  const double cell_area_km = grid_cell_area_km(inset_state, i, j);
+
+  const double cell_target_area_per_km = cell_target_area / cell_area_km;
+
+  return cell_target_area_per_km;
+}
+
+// Returns the index of largest and smallest grid cell area to be used for
+// grid heatmap generation
+static std::pair<Point, Point> max_and_min_grid_cell_area_index(
+  unsigned int cell_width,
+  InsetState &inset_state)
+{
+  // Initialize max and min area
+  double max_area = -dbl_inf;
+  double min_area = dbl_inf;
+  unsigned int max_i = 0;
+  unsigned int max_j = 0;
+  unsigned int min_i = 0;
+  unsigned int min_j = 0;
+
+  // Iterate over grid cells
+  for (unsigned int i = 0; i < inset_state.lx() - cell_width;
+       i += cell_width) {
+    for (unsigned int j = 0; j < inset_state.ly() - cell_width;
+         j += cell_width) {
+      const double area = grid_cell_area(i, j, cell_width, inset_state);
+      if (area > max_area) {
+        max_area = area;
+        max_i = i;
+        max_j = j;
+      }
+      if (area < min_area) {
+        min_area = area;
+        min_i = i;
+        min_j = j;
+      }
+    }
+  }
+  return std::make_pair(Point(max_i, max_j), Point(min_i, min_j));
 }
 
 // Outputs a SVG/PS file of grid heatmap
