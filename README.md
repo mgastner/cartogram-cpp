@@ -91,6 +91,16 @@ To run only the stress tests:
 ctest --test-dir build --output-on-failure -L stress
 ```
 
+#### Fuzzer Tests
+Fuzzer tests run maps in the `cartogram-cpp/sample_data` folder with random data. 
+
+To run only the fuzzer tests:
+
+```
+ctest --test-dir build -L fuzzer --verbose
+```
+This test will take a while to finish.
+
 Add `--verbose` to the command to see more details about the test results.
 
 ### Windows (Using WSL)

@@ -29,6 +29,8 @@ cartogram
 !/tests/*.cpp
 !/tests/*.md
 !/tests/unit
+!/tests/stress
+!/tests/fuzzer
 
 # Ignore the Testing logs
 /Testing
