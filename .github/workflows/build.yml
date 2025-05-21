@@ -1,14 +1,14 @@
 name: Ubuntu (Release)
 
 on:
-  push:    { branches: [dev] }
-  pull_request: { branches: [dev] }
+  push:
+    branches: [dev]
+  pull_request:
+    branches: [dev]
 
 jobs:
-  build-image:
+  build:
     runs-on: ubuntu-latest
-    outputs:
-      image: cartogram-ci
     steps:
       - uses: actions/checkout@v3
 
@@ -17,10 +17,11 @@ jobs:
           docker build -t cartogram-ci .
 
       - name: Save image to tar
-        run: docker save cartogram-ci | gzip > cartogram-ci.tar.gz
+        run: |
+          docker save cartogram-ci | gzip > cartogram-ci.tar.gz
 
       - name: Upload image artifact
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: cartogram-image
           path: cartogram-ci.tar.gz
@@ -30,12 +31,14 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Download image artifact
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           name: cartogram-image
 
       - name: Load image into Docker
-        run: gzip -d cartogram-ci.tar.gz && docker load < cartogram-ci.tar
+        run: |
+          gzip -d cartogram-ci.tar.gz
+          docker load < cartogram-ci.tar
 
       - name: Unit tests
         run: |
@@ -46,16 +49,36 @@ jobs:
     needs: build-image
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/download-artifact@v3
-        with: { name: cartogram-image }
-      - run: gzip -d cartogram-ci.tar.gz && docker load < cartogram-ci.tar
-      - run: docker run --rm cartogram-ci bash -lc "ctest --test-dir build-docker -L stress --output-on-failure"
+      - name: Download image artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: cartogram-image
+
+      - name: Load image into Docker
+        run: |
+          gzip -d cartogram-ci.tar.gz
+          docker load < cartogram-ci.tar
+
+      - name: Stress tests
+        run: |
+          docker run --rm cartogram-ci \
+            bash -lc "ctest --test-dir build-docker -L stress --output-on-failure"
 
   fuzzer-tests:
     needs: build-image
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/download-artifact@v3
-        with: { name: cartogram-image }
-      - run: gzip -d cartogram-ci.tar.gz && docker load < cartogram-ci.tar
-      - run: docker run --rm cartogram-ci bash -lc "ctest --test-dir build-docker -L fuzzer --verbose"
+      - name: Download image artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: cartogram-image
+
+      - name: Load image into Docker
+        run: |
+          gzip -d cartogram-ci.tar.gz
+          docker load < cartogram-ci.tar
+
+      - name: Fuzzer tests
+        run: |
+          docker run --rm cartogram-ci \
+            bash -lc "ctest --test-dir build-docker -L fuzzer --verbose"
