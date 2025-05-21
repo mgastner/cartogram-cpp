@@ -976,8 +976,8 @@ void InsetState::adjust_grid()
     // Multiply grid size with factor
     std::cerr << "Adjusting grid size." << std::endl;
     if (
-      lx_ * default_grid_factor > max_allowed_autoscale_grid_length or
-      ly_ * default_grid_factor > max_allowed_autoscale_grid_length) {
+      lx_ * default_grid_factor > args_.max_allowed_autoscale_grid_length or
+      ly_ * default_grid_factor > args_.max_allowed_autoscale_grid_length) {
       std::cerr << "Cannot increase grid size further. ";
       std::cerr << "Grid size exceeds maximum allowed grid length."
                 << std::endl;
