@@ -72,6 +72,5 @@ int main(const int argc, const char *argv[])
   // Export report with area errors to CSV if requested
   cart_info.print_time_report();
   
-  if (!cart_info.converged()) return EXIT_FAILURE;
   return EXIT_SUCCESS;
 }
