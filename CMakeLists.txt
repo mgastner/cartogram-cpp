@@ -45,18 +45,18 @@ target_compile_options(cartogram_lib PRIVATE
   # -Werror
   -Wall -Wextra -Wpedantic -Wshadow -Wold-style-cast -Wunreachable-code
   -pedantic-errors -Wformat=2 -Wformat-security -Wcast-qual -Wcast-align -Wconversion
-  -Wsign-conversion -Wfloat-equal -Woverloaded-virtual -Wzero-as-null-pointer-constant
+  -Wsign-conversion -Wfloat-equal -Woverloaded-virtual -Wno-unknown-pragmas
   -Wmissing-declarations -Werror=return-type -Wnon-virtual-dtor
 )
 
 include(CheckCXXCompilerFlag)
-check_cxx_compiler_flag("-mcpu=native" HAS_MCPU_NATIVE)
 check_cxx_compiler_flag("-march=native" HAS_MARCH_NATIVE)
+check_cxx_compiler_flag("-mtune=native" HAS_MTUNE_NATIVE)
 
-if(HAS_MCPU_NATIVE)
-  target_compile_options(cartogram_lib PRIVATE -mcpu=native)
-elseif(HAS_MARCH_NATIVE)
+if(HAS_MARCH_NATIVE)
   target_compile_options(cartogram_lib PRIVATE -march=native)
+elseif(HAS_MTUNE_NATIVE)
+  target_compile_options(cartogram_lib PRIVATE -mtune=native)
 endif()
 
 include(CheckIPOSupported)
