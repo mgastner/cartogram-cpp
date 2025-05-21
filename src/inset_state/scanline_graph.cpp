@@ -105,7 +105,7 @@ std::vector<std::vector<intersection> > InsetState::intersec_with_parallel_to(
                         << " ";
             }
             std::cerr << std::endl << std::endl;
-            _Exit(932875);
+            std::exit(932875);
           }
           std::sort(intersections.begin(), intersections.end());
 

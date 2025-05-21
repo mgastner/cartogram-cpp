@@ -20,7 +20,7 @@ void InsetState::holes_inside_polygons() const
             std::cerr << " Hole: " << h;
             std::cerr << ". Polygon: " << ext_ring;
             std::cerr << ". GeoDiv: " << gd.id() << std::endl;
-            _Exit(20);
+            std::exit(20);
           }
         }
       }

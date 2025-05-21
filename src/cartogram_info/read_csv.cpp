@@ -33,7 +33,7 @@ static void check_validity_of_area_str(const std::string &area_as_str)
       << "ERROR: Invalid area string: " << area_process_str
       << ". Area string must only contain 0-9, '.', '-' and ',' or 'NA'."
       << std::endl;
-    _Exit(18);
+    std::exit(18);
   }
 
   if (
@@ -41,12 +41,12 @@ static void check_validity_of_area_str(const std::string &area_as_str)
     !StringToDecimalConverter::is_str_correct_format(area_process_str)) {
     std::cerr << "ERROR: Invalid area string format: " << area_process_str
               << std::endl;
-    _Exit(19);
+    std::exit(19);
   }
 
   if (area_process_str.front() == '-') {
     std::cerr << "ERROR: Negative area in CSV" << std::endl;
-    _Exit(101);
+    std::exit(101);
   }
 }
 
@@ -78,7 +78,7 @@ static void check_validity_of_inset_pos(
     std::cerr << "Unrecognized inset position : " << inset_pos
               << " for Region: " << id << "\nSetting " << id
               << "\'s inset position to Center (C)." << std::endl;
-    _Exit(20);
+    std::exit(20);
   }
 }
 
@@ -162,7 +162,7 @@ std::string CartogramInfo::match_id_columns(
     std::cerr << "ERROR: No valid matching ID header between GeoJSON "
                  "properties and CSV columns could be found."
               << std::endl;
-    _Exit(16);
+    std::exit(16);
   }
 
   id_col_ = reader.index_of(csv_id_header);
@@ -183,13 +183,29 @@ void CartogramInfo::update_id_header_info(
     geojson_id_to_csv_id[old_unique_properties[i]] = new_unique_properties[i];
 
   for (auto &id : initial_id_order_) {
-    id = geojson_id_to_csv_id.at(id);
+    try {
+      id = geojson_id_to_csv_id.at(id);
+    } catch (const std::out_of_range &e) {
+      std::cerr << "ERROR: Key '" << id
+                << "' not found in geojson_id_to_csv_id. "
+                << "Exception: " << e.what() << std::endl;
+      // Re-throw, or return a default value
+      throw;
+    }
   }
 
   std::map<std::string, std::string> new_gd_to_inset;
   for (auto &[geojson_id, inset_pos] : gd_to_inset_) {
-    const std::string csv_id = geojson_id_to_csv_id.at(geojson_id);
-    new_gd_to_inset[csv_id] = inset_pos;
+    try {
+      const std::string csv_id = geojson_id_to_csv_id.at(geojson_id);
+      new_gd_to_inset[csv_id] = inset_pos;
+    } catch (const std::out_of_range &e) {
+      std::cerr << "ERROR: Key '" << geojson_id
+                << "' not found in geojson_id_to_csv_id. "
+                << "Exception: " << e.what() << std::endl;
+      // Re-throw, or return a default value
+      throw;
+    }
   }
   gd_to_inset_ = new_gd_to_inset;
 
@@ -215,7 +231,7 @@ static void check_validity_of_csv_ids(
       initial_id_order.end()) {
       std::cerr << "ERROR: ID " << id << " in CSV is not in GeoJSON"
                 << std::endl;
-      _Exit(21);
+      std::exit(21);
     }
   }
 
@@ -225,7 +241,7 @@ static void check_validity_of_csv_ids(
                 << std::endl;
       csv_data[id] =
         {{"area", "NA"}, {"color", ""}, {"label", ""}, {"inset_pos", "C"}};
-      // _Exit(22);
+      // std::exit(22);
     }
   }
 }
@@ -238,7 +254,26 @@ void CartogramInfo::relocate_geodivs_based_on_inset_pos(
   for (const InsetState &inset_state : inset_states_) {
     for (const auto &gd : inset_state.geo_divs()) {
       const std::string &id = gd.id();
-      const std::string &inset_pos = csv_data.at(id).at("inset_pos");
+      std::map<std::string, std::string> gd_info;
+      std::string inset_pos;
+      try {
+        gd_info = csv_data.at(id);
+      } catch (const std::out_of_range &e) {
+        std::cerr << "ERROR: Key '" << id << "' not found in csv_data. "
+                  << "Exception: " << e.what() << std::endl;
+        // Re-throw, or return a default value
+        throw;
+      }
+
+      try {
+        inset_pos = gd_info.at("inset_pos");
+      } catch (const std::out_of_range &e) {
+        std::cerr << "ERROR: Key '" << "inset_pos"
+                  << "' not found in gd_info. "
+                  << "Exception: " << e.what() << std::endl;
+        // Re-throw, or return a default value
+        throw;
+      }
       geo_divs_by_inset_pos[inset_pos].push_back(gd);
     }
   }
@@ -252,17 +287,51 @@ void CartogramInfo::relocate_geodivs_based_on_inset_pos(
 
       // Add target area, color, and label info to InsetState
       const std::string &id = gd.id();
-      const auto &gd_info = csv_data.at(id);
+      std::map<std::string, std::string> gd_info;
+      double target_area;
+      std::string color;
+      std::string label;
 
-      double target_area = std::stod(gd_info.at("area"));
+      try {
+        gd_info = csv_data.at(id);
+      } catch (const std::out_of_range &e) {
+        std::cerr << "ERROR: Key '" << id << "' not found in csv_data. "
+                  << "Exception: " << e.what() << std::endl;
+        // Re-throw, or return a default value
+        throw;
+      }
+
+      try {
+        target_area = std::stod(gd_info.at("area"));
+      } catch (const std::out_of_range &e) {
+        std::cerr << "ERROR: Key '" << "area" << "' not found in gd_info. "
+                  << "Exception: " << e.what() << std::endl;
+        // Re-throw, or return a default value
+        throw;
+      }
       new_inset_state.insert_target_area(id, target_area);
 
       // Add color and label info, if present
-      std::string color = gd_info.at("color");
+      try {
+        color = gd_info.at("color");
+      } catch (const std::out_of_range &e) {
+        std::cerr << "ERROR: Key '" << "color" << "' not found in gd_info. "
+                  << "Exception: " << e.what() << std::endl;
+        // Re-throw, or return a default value
+        throw;
+      }
       if (!color.empty()) {
         new_inset_state.insert_color(id, color);
       }
-      const std::string &label = gd_info.at("label");
+
+      try {
+        label = gd_info.at("label");
+      } catch (const std::out_of_range &e) {
+        std::cerr << "ERROR: Key '" << "label" << "' not found in gd_info. "
+                  << "Exception: " << e.what() << std::endl;
+        // Re-throw, or return a default value
+        throw;
+      }
       if (!label.empty()) {
         new_inset_state.insert_label(id, label);
       }
@@ -272,7 +341,14 @@ void CartogramInfo::relocate_geodivs_based_on_inset_pos(
   inset_states_ = std::move(new_inset_states);
 
   for (const auto &[id, data] : csv_data) {
-    gd_to_inset_.emplace(id, data.at("inset_pos"));
+    try {
+      gd_to_inset_.emplace(id, data.at("inset_pos"));
+    } catch (const std::out_of_range &e) {
+      std::cerr << "ERROR: Key '" << "inset_pos" << "' not found in data. "
+                << "Exception: " << e.what() << std::endl;
+      // Re-throw, or return a default value
+      throw;
+    }
   }
 }
 
@@ -281,7 +357,14 @@ static bool is_point_as_separator(
 {
   std::vector<std::string> area_strs;
   for (const auto &[id, data] : csv_data) {
-    area_strs.push_back(data.at("area"));
+    try {
+      area_strs.push_back(data.at("area"));
+    } catch (const std::out_of_range &e) {
+      std::cerr << "ERROR: Key '" << "area" << "' not found in data. "
+                << "Exception: " << e.what() << std::endl;
+      // Re-throw, or return a default value
+      throw;
+    }
   }
 
   if (StringToDecimalConverter::is_comma_as_separator(area_strs)) {
@@ -296,12 +379,19 @@ static void process_area_strs(
 {
   const bool uses_point_separator = is_point_as_separator(csv_data);
   for (auto &[id, data] : csv_data) {
-    std::string &area_as_str = data.at("area");
-    if (area_as_str.empty()) {
-      area_as_str = "NA";
+    try {
+      std::string &area_as_str = data.at("area");
+      if (area_as_str.empty()) {
+        area_as_str = "NA";
+      }
+      area_as_str =
+        StringToDecimalConverter::parse_str(area_as_str, uses_point_separator);
+    } catch (const std::out_of_range &e) {
+      std::cerr << "ERROR: Key '" << "area" << "' not found in data. "
+                << "Exception: " << e.what() << std::endl;
+      // Re-throw, or return a default value
+      throw;
     }
-    area_as_str =
-      StringToDecimalConverter::parse_str(area_as_str, uses_point_separator);
   }
 }
 
@@ -329,21 +419,25 @@ void CartogramInfo::read_csv()
         << "ERROR: CSV with >= 2 columns (IDs, target areas) required. Some "
            "rows in your CSV may not have values for all columns"
         << std::endl;
-      _Exit(17);
+      std::exit(17);
     }
 
     const std::string id = row[static_cast<size_t>(id_col)].get();
     const std::string area_as_str = row[static_cast<size_t>(area_col)].get();
     check_validity_of_area_str(area_as_str);
 
-    const std::string color =
-      (color_col != csv::CSV_NOT_FOUND) ? row[static_cast<size_t>(color_col)].get() : "";
+    const std::string color = (color_col != csv::CSV_NOT_FOUND)
+                                ? row[static_cast<size_t>(color_col)].get()
+                                : "";
 
-    const std::string label =
-      (label_col != csv::CSV_NOT_FOUND) ? row[static_cast<size_t>(label_col)].get() : "";
+    const std::string label = (label_col != csv::CSV_NOT_FOUND)
+                                ? row[static_cast<size_t>(label_col)].get()
+                                : "";
 
     const std::string inset_pos_as_str =
-      (inset_col != csv::CSV_NOT_FOUND) ? row[static_cast<size_t>(inset_col)].get() : "C";
+      (inset_col != csv::CSV_NOT_FOUND)
+        ? row[static_cast<size_t>(inset_col)].get()
+        : "C";
 
     const std::string inset_pos = process_inset_pos_str(inset_pos_as_str);
     check_validity_of_inset_pos(inset_pos, id);

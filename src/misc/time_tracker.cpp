@@ -62,8 +62,7 @@ std::chrono::milliseconds TimeTracker::duration(
   try {
     return durations_.at(task_name);
   } catch (const std::out_of_range &e) {
-    std::cerr << "ERROR: Key '" << task_name
-              << "' not found in target_areas_. "
+    std::cerr << "ERROR: Key '" << task_name << "' not found in durations_. "
               << "Exception: " << e.what() << std::endl;
     // Re-throw, or return a default value
     throw;

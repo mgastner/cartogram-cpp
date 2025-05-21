@@ -38,7 +38,7 @@ void InsetState::rescale_map()
     std::cerr
       << "ERROR: args_.n_grid_rows_or_cols must be an integer power of 2."
       << std::endl;
-    _Exit(15);
+    std::exit(15);
   }
   double latt_const;
   if (bb.xmax() - bb.xmin() > bb.ymax() - bb.ymin()) {
