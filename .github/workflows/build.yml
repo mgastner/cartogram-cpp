@@ -27,7 +27,7 @@ jobs:
           path: cartogram-ci.tar.gz
 
   unit-tests:
-    needs: build-image
+    needs: build
     runs-on: ubuntu-latest
     steps:
       - name: Download image artifact
@@ -46,7 +46,7 @@ jobs:
             bash -lc "ctest --test-dir build-docker -L unit --output-on-failure"
 
   stress-tests:
-    needs: build-image
+    needs: build
     runs-on: ubuntu-latest
     steps:
       - name: Download image artifact
@@ -65,7 +65,7 @@ jobs:
             bash -lc "ctest --test-dir build-docker -L stress --output-on-failure"
 
   fuzzer-tests:
-    needs: build-image
+    needs: build
     runs-on: ubuntu-latest
     steps:
       - name: Download image artifact
