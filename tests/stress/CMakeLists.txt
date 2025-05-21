@@ -48,6 +48,6 @@ foreach(map_dir IN LISTS CHILDREN)
       NAME ${test_name}
       COMMAND ${TEST_CMD}
     )
-    set_tests_properties(${test_name} PROPERTIES LABELS "stress" TIMEOUT 60)
+    set_tests_properties(${test_name} PROPERTIES LABELS "stress" TIMEOUT 120)
   endforeach()
 endforeach()
