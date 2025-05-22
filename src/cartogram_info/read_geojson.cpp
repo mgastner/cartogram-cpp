@@ -96,7 +96,7 @@ static std::pair<GeoDiv, bool> json_to_geodiv(
         static_cast<double>(jphc_ext[last_ext_index][1])));
     }
     if (!ext_ring.is_simple()) {
-      std::cerr << "ERROR: exterior ring not a simple polygon" << std::endl;
+      std::cerr << "ERROR: (GeoJSON Parsing) exterior ring not a simple polygon" << std::endl;
       _Exit(13);
     }
 
@@ -133,7 +133,7 @@ static std::pair<GeoDiv, bool> json_to_geodiv(
           static_cast<double>(jphc_int[last_int_index][1])));
       }
       if (!int_ring.is_simple()) {
-        std::cerr << "ERROR: interior ring not a simple polygon" << std::endl;
+        std::cerr << "ERROR: (GeoJSON Parsing) interior ring not a simple polygon" << std::endl;
         _Exit(14);
       }
       if (int_ring.is_counterclockwise_oriented()) {
