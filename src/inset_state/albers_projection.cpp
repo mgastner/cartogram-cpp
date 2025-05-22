@@ -1,6 +1,5 @@
 #include "constants.hpp"
 #include "inset_state.hpp"
-#include "round_point.hpp"
 
 #include <boost/geometry.hpp>
 #include <boost/geometry/srs/projections/proj4.hpp>
@@ -43,7 +42,7 @@ public:
       const double lat = p.y() * pi / 180.0;
       const double x = (lon - lambda0_) * std::cos(phi1_);
       const double y = std::sin(lat) / std::cos(phi1_);
-      return rounded_point({x, y}, 15);
+      return {x, y};
     }
 
     bg::model::point<double, 2, bg::cs::geographic<bg::degree>> in(
@@ -53,7 +52,7 @@ public:
 
     (*trans_).forward(in, out);
 
-    return rounded_point({bg::get<0>(out), bg::get<1>(out)}, 15);
+    return {bg::get<0>(out), bg::get<1>(out)};
   }
 
 private:
