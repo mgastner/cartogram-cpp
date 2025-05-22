@@ -2,6 +2,7 @@
 #include "interpolate_bilinearly.hpp"
 #include "matrix.hpp"
 #include "round_point.hpp"
+#include <cmath>
 
 void InsetState::project()
 {
@@ -140,27 +141,40 @@ static Point interpolate_point_with_barycentric_coordinates(
   const Point v3 = fh->vertex(2)->point();
 
   // Calculate barycentric coordinates
-  const std::tuple<Scd::FT, Scd::FT, Scd::FT> bary_coor =
-    CGAL::Barycentric_coordinates::triangle_coordinates_in_tuple_2<Point>(
+  double bx, by, bz;
+  std::tie(bx, by, bz) =
+    CGAL::Barycentric_coordinates ::triangle_coordinates_in_tuple_2<Point>(
       v1,
       v2,
       v3,
       p);
 
-  // Get the barycentric coordinates
-  const double bary_x = std::get<0>(bary_coor);
-  const double bary_y = std::get<1>(bary_coor);
-  const double bary_z = std::get<2>(bary_coor);
+  long double lbx = bx, lby = by, lbz = bz;
+  long double sum = lbx + lby + lbz;
+  lbx /= sum;
+  lby /= sum;
+  lbz /= sum;
 
-  // Get projected vertices
-  const Point v1_proj = proj_map.at(v1);
-  const Point v2_proj = proj_map.at(v2);
-  const Point v3_proj = proj_map.at(v3);
+  Point v1_proj = proj_map.at(v1);
+  Point v2_proj = proj_map.at(v2);
+  Point v3_proj = proj_map.at(v3);
 
-  // Calculate projected point of p
-  return {
-    bary_x * v1_proj.x() + bary_y * v2_proj.x() + bary_z * v3_proj.x(),
-    bary_x * v1_proj.y() + bary_y * v2_proj.y() + bary_z * v3_proj.y()};
+  long double x = std::fma(
+    lbz,
+    static_cast<long double>(v3_proj.x()),
+    std::fma(
+      lby,
+      static_cast<long double>(v2_proj.x()),
+      lbx * static_cast<long double>(v1_proj.x())));
+  long double y = std::fma(
+    lbz,
+    static_cast<long double>(v3_proj.y()),
+    std::fma(
+      lby,
+      static_cast<long double>(v2_proj.y()),
+      lbx * static_cast<long double>(v1_proj.y())));
+
+  return Point(static_cast<double>(x), static_cast<double>(y));
 }
 
 void InsetState::project_with_delaunay_t(bool output_to_stdout)
