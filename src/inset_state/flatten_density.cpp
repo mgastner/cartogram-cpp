@@ -15,12 +15,11 @@ static bool delaunay_triangle_flipped(proj_qd &proj_qd)
     const Point p2_proj = proj_qd.triangle_transformation[p2_ori];
     const Point p3_proj = proj_qd.triangle_transformation[p3_ori];
 
-    const double area_ori_triangle = CGAL::area(p1_ori, p2_ori, p3_ori);
-    const double area_proj_triangle = CGAL::area(p1_proj, p2_proj, p3_proj);
+    CGAL::Orientation ori_ori = CGAL::orientation(p1_ori, p2_ori, p3_ori);
+    CGAL::Orientation ori_proj = CGAL::orientation(p1_proj, p2_proj, p3_proj);
 
-    // If the area of the original triangle and the area of the projected
-    // triangle have different signs, then the triangle has flipped.
-    if (area_ori_triangle * area_proj_triangle < 0) {
+    // Check if triangles flips or either of them is collinear
+    if (ori_proj == CGAL::COLLINEAR || ori_ori != ori_proj) {
       return true;
     }
   }
