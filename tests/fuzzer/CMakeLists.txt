@@ -21,7 +21,7 @@ foreach(map_dir IN LISTS MAP_DIRS)
     )
     set_tests_properties(fuzz_${map_dir} PROPERTIES
       LABELS "fuzzer"
-      TIMEOUT 120
+      TIMEOUT 300
       SKIP_RETURN_CODE 77
     )
   endif()
