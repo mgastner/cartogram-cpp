@@ -7,10 +7,6 @@ void InsetState::project()
 {
 
   if (args_.qtdt_method) {
-
-    // Update triangulation adding shorter diagonal as constraint for better
-    // shape similarity
-    update_delaunay_t();
     if (args_.simplify) {
       densify_geo_divs_using_delaunay_t();
     }
