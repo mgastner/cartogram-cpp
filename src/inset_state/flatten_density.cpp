@@ -2,6 +2,30 @@
 #include "inset_state.hpp"
 #include "interpolate_bilinearly.hpp"
 
+static bool delaunay_triangle_flipped(proj_qd &proj_qd)
+{
+  for (Delaunay::Finite_faces_iterator fit = proj_qd.dt.finite_faces_begin();
+       fit != proj_qd.dt.finite_faces_end();
+       ++fit) {
+    const Point p1_ori = fit->vertex(0)->point();
+    const Point p2_ori = fit->vertex(1)->point();
+    const Point p3_ori = fit->vertex(2)->point();
+
+    const Point p1_proj = proj_qd.triangle_transformation[p1_ori];
+    const Point p2_proj = proj_qd.triangle_transformation[p2_ori];
+    const Point p3_proj = proj_qd.triangle_transformation[p3_ori];
+
+    CGAL::Orientation ori_ori = CGAL::orientation(p1_ori, p2_ori, p3_ori);
+    CGAL::Orientation ori_proj = CGAL::orientation(p1_proj, p2_proj, p3_proj);
+
+    // Check if triangles flips or either of them is collinear
+    if (ori_proj == CGAL::COLLINEAR || ori_ori != ori_proj) {
+      return true;
+    }
+  }
+  return false;
+}
+
 bool InsetState::flatten_density()
 {
   if (args_.qtdt_method) {
@@ -12,9 +36,7 @@ bool InsetState::flatten_density()
 
     if (args_.plot_quadtree) {
       write_quadtree(file_prefix_ + "_quadtree");
-      write_delaunay_triangles(
-        file_prefix_ + "a_delaunay_t",
-        false);
+      write_delaunay_triangles(file_prefix_ + "a_delaunay_t", false);
     }
 
     if (!flatten_density_on_node_vertices()) {
@@ -24,6 +46,14 @@ bool InsetState::flatten_density()
       timer.stop("Flatten Density (Quadtree Method)");
       return false;
     }
+
+    // Update triangulation adding shorter diagonal as constraint for better
+    // shape similarity
+    update_delaunay_t();
+
+    // If triangles flipped after update, we need to try again
+    if (delaunay_triangle_flipped(proj_qd_))
+      return false;
 
   } else {
 
@@ -37,7 +67,7 @@ bool InsetState::flatten_density()
 
 // Function to calculate the velocity at the grid points (x, y) with x =
 // 0.5, 1.5, ..., lx-0.5 and y = 0.5, 1.5, ..., ly-0.5 at time t
-void calculate_velocity(
+static void calculate_velocity(
   double t,
   const FTReal2d &grid_fluxx_init,
   const FTReal2d &grid_fluxy_init,
@@ -67,7 +97,7 @@ void calculate_velocity(
   }
 }
 
-bool all_points_are_in_domain(
+static bool all_points_are_in_domain(
   double delta_t,
   const boost::multi_array<Point, 2> &proj,
   const boost::multi_array<Vector, 2> &v_intp,
@@ -320,7 +350,7 @@ void InsetState::flatten_density_on_square_grid()
   timer.stop("Flatten Density (Full Grid Method)");
 }
 
-bool all_map_points_are_in_domain(
+static bool all_map_points_are_in_domain(
   const double delta_t,
   const std::unordered_map<Point, Point> &proj_map,
   const std::unordered_map<Point, Vector> &v_intp,
@@ -346,7 +376,7 @@ bool all_map_points_are_in_domain(
   return true;
 }
 
-double calculate_velocity_for_point(
+static double calculate_velocity_for_point(
   unsigned int i,
   unsigned int j,
   char direction,
@@ -359,31 +389,6 @@ double calculate_velocity_for_point(
   double rho = rho_ft(0, 0) + (1.0 - t) * (rho_init(i, j) - rho_ft(0, 0));
   return (direction == 'x') ? (-grid_fluxx_init(i, j) / rho)
                             : (-grid_fluxy_init(i, j) / rho);
-}
-
-bool delaunay_triangle_flipped(proj_qd &proj_qd)
-{
-  for (Delaunay::Finite_faces_iterator fit = proj_qd.dt.finite_faces_begin();
-       fit != proj_qd.dt.finite_faces_end();
-       ++fit) {
-    const Point p1_ori = fit->vertex(0)->point();
-    const Point p2_ori = fit->vertex(1)->point();
-    const Point p3_ori = fit->vertex(2)->point();
-
-    const Point p1_proj = proj_qd.triangle_transformation[p1_ori];
-    const Point p2_proj = proj_qd.triangle_transformation[p2_ori];
-    const Point p3_proj = proj_qd.triangle_transformation[p3_ori];
-
-    const double area_ori_triangle = CGAL::area(p1_ori, p2_ori, p3_ori);
-    const double area_proj_triangle = CGAL::area(p1_proj, p2_proj, p3_proj);
-
-    // If the area of the original triangle and the area of the projected
-    // triangle have different signs, then the triangle has flipped.
-    if (area_ori_triangle * area_proj_triangle < 0) {
-      return true;
-    }
-  }
-  return false;
 }
 
 bool InsetState::flatten_density_on_node_vertices()

@@ -2,13 +2,12 @@
 #include "interpolate_bilinearly.hpp"
 #include "matrix.hpp"
 #include "round_point.hpp"
+#include <cmath>
 
-void InsetState::project() {
+void InsetState::project()
+{
 
   if (args_.qtdt_method) {
-
-    // Update triangulation adding shorter diagonal as constraint for better shape similarity
-    update_delaunay_t();
     if (args_.simplify) {
       densify_geo_divs_using_delaunay_t();
     }
@@ -57,7 +56,7 @@ void InsetState::project() {
   }
 }
 
-Point interpolate_point_bilinearly(
+static Point interpolate_point_bilinearly(
   const Point p1,
   const boost::multi_array<double, 2> &xdisp,
   const boost::multi_array<double, 2> &ydisp,
@@ -128,7 +127,7 @@ void InsetState::project_with_bilinear_interpolation()
   timer.stop("Project (Bilinear Interpolation)");
 }
 
-Point interpolate_point_with_barycentric_coordinates(
+static Point interpolate_point_with_barycentric_coordinates(
   const Point &p,
   const Delaunay &dt,
   const std::unordered_map<Point, Point> &proj_map)
@@ -142,27 +141,40 @@ Point interpolate_point_with_barycentric_coordinates(
   const Point v3 = fh->vertex(2)->point();
 
   // Calculate barycentric coordinates
-  const std::tuple<Scd::FT, Scd::FT, Scd::FT> bary_coor =
-    CGAL::Barycentric_coordinates::triangle_coordinates_in_tuple_2<Point>(
+  double bx, by, bz;
+  std::tie(bx, by, bz) =
+    CGAL::Barycentric_coordinates ::triangle_coordinates_in_tuple_2<Point>(
       v1,
       v2,
       v3,
       p);
 
-  // Get the barycentric coordinates
-  const double bary_x = std::get<0>(bary_coor);
-  const double bary_y = std::get<1>(bary_coor);
-  const double bary_z = std::get<2>(bary_coor);
+  long double lbx = bx, lby = by, lbz = bz;
+  long double sum = lbx + lby + lbz;
+  lbx /= sum;
+  lby /= sum;
+  lbz /= sum;
 
-  // Get projected vertices
-  const Point v1_proj = proj_map.at(v1);
-  const Point v2_proj = proj_map.at(v2);
-  const Point v3_proj = proj_map.at(v3);
+  Point v1_proj = proj_map.at(v1);
+  Point v2_proj = proj_map.at(v2);
+  Point v3_proj = proj_map.at(v3);
 
-  // Calculate projected point of p
-  return {
-    bary_x * v1_proj.x() + bary_y * v2_proj.x() + bary_z * v3_proj.x(),
-    bary_x * v1_proj.y() + bary_y * v2_proj.y() + bary_z * v3_proj.y()};
+  long double x = std::fma(
+    lbz,
+    static_cast<long double>(v3_proj.x()),
+    std::fma(
+      lby,
+      static_cast<long double>(v2_proj.x()),
+      lbx * static_cast<long double>(v1_proj.x())));
+  long double y = std::fma(
+    lbz,
+    static_cast<long double>(v3_proj.y()),
+    std::fma(
+      lby,
+      static_cast<long double>(v2_proj.y()),
+      lbx * static_cast<long double>(v1_proj.y())));
+
+  return Point(static_cast<double>(x), static_cast<double>(y));
 }
 
 void InsetState::project_with_delaunay_t(bool output_to_stdout)
@@ -187,12 +199,19 @@ void InsetState::project_with_delaunay_t(bool output_to_stdout)
 // y-coordinates.
 void InsetState::exit_if_not_on_grid_or_edge(const Point p1) const
 {
-  if (
-    (p1.x() != 0.0 && p1.x() != lx_ && p1.x() - int(p1.x()) != 0.5) ||
-    (p1.y() != 0.0 && p1.y() != ly_ && p1.y() - int(p1.y()) != 0.5)) {
+  const double frac_x = p1.x() - std::floor(p1.x());
+  const double frac_y = p1.y() - std::floor(p1.y());
+
+  const bool bad_x = !almost_equal(p1.x(), 0.0) &&
+                     !almost_equal(p1.x(), lx_) && !almost_equal(frac_x, 0.5);
+
+  const bool bad_y = !almost_equal(p1.y(), 0.0) &&
+                     !almost_equal(p1.y(), ly_) && !almost_equal(frac_y, 0.5);
+
+  if (bad_x || bad_y) {
     std::cerr << "ERROR: Invalid input coordinate in triangulation. "
               << "\tpt = (" << p1.x() << ", " << p1.y() << ")" << std::endl;
-    exit(1);
+    std::exit(1);
   }
 }
 
@@ -209,13 +228,16 @@ Point InsetState::projected_point(const Point &p1, const bool project_original)
     static_cast<unsigned int>(ly_) - 1,
     static_cast<unsigned int>(p1.y()));
   return {
-    (p1.x() == 0.0 || p1.x() == lx_) ? p1.x() : proj[proj_x][proj_y].x(),
-    (p1.y() == 0.0 || p1.y() == ly_) ? p1.y() : proj[proj_x][proj_y].y()};
+    (almost_equal(p1.x(), 0.0) || almost_equal(p1.x(), lx_))
+      ? p1.x()
+      : proj[proj_x][proj_y].x(),
+    (almost_equal(p1.y(), 0.0) || almost_equal(p1.y(), ly_))
+      ? p1.y()
+      : proj[proj_x][proj_y].y()};
 }
 
 // Apply projection to all points in set
-void InsetState::project_point_set(
-  std::unordered_set<Point>& unprojected)
+void InsetState::project_point_set(std::unordered_set<Point> &unprojected)
 {
   std::function<Point(Point)> lambda_bary =
     [&dt = proj_qd_.dt,
@@ -342,7 +364,7 @@ std::array<Point, 3> InsetState::transformed_triangle(
 // This function is needed because, sometimes,
 // `triangle.bounded_side(Point(x, y)) == CGAL::ON_BOUNDARY` does not return
 // `true` even if the point is on the boundary.
-bool is_on_triangle_boundary(const Point &pt, const Polygon &triangle)
+static bool is_on_triangle_boundary(const Point &pt, const Polygon &triangle)
 {
   for (unsigned int i = 0; i < triangle.size(); ++i) {
     const auto t1 = triangle[i];
@@ -389,7 +411,8 @@ std::array<Point, 3> InsetState::untransformed_triangle(
   // We use that diagonal to split the grid into two triangles.
   int diag;
   if (
-    v[0].x() == 0.0 || v[0].y() == 0.0 || v[2].x() == lx_ || v[2].y() == ly_) {
+    almost_equal(v[0].x(), 0.0) || almost_equal(v[0].y(), 0.0) ||
+    almost_equal(v[2].x(), lx_) || almost_equal(v[2].y(), ly_)) {
 
     // Case when the grid is on the edge of the grid.
     // We calculate the chosen diagonal because grid_diagonals_ does not
@@ -454,7 +477,7 @@ std::array<Point, 3> InsetState::untransformed_triangle(
   return triangle_coordinates;
 }
 
-Point affine_trans(
+static Point affine_trans(
   const std::array<Point, 3> &tri,
   const std::array<Point, 3> &org_tri,
   const Point &pt)

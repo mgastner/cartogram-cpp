@@ -2,6 +2,8 @@
 #include "round_point.hpp"
 #include <algorithm>
 #include <unordered_set>
+#include <variant>
+#include <cmath>
 
 // For printing a vector (debugging purposes)
 template <typename A>
@@ -31,7 +33,7 @@ std::ostream &operator<<(std::ostream &cout, std::vector<A> const &v)
 // The function returns the unique intersection point between them. If this
 // intersection point does not exist, the function returns the point called
 // OUT_OF_RANGE, which is always outside any grid cell.
-Point calc_intersection(
+static Point calc_intersection(
   const Point &a,
   const Point &b,
   const double coef_x,
@@ -43,12 +45,10 @@ Point calc_intersection(
   if (result) {
 
     // The result of CGAL::intersection can either be a segment, a point, or
-    // null. We only want point intersections, which we retrieve using
-    // boost::get(). Where there is no point intersection, we get a null
-    // pointer.
-    const Point *p = boost::get<Point>(&*result);
-    if (p)
-      return (*p);
+    // null. We only want point intersections. Where there is no point
+    // intersection, we get a null pointer.
+    if (auto p = std::get_if<Point>(&*result))
+      return *p;
   }
   return OUT_OF_RANGE;
 }
@@ -61,8 +61,10 @@ Point calc_intersection(
 //   on the grid. This value is either 0, 0.25, or 0.5.
 // - step: what we need to add to each diagonal's intercept to obtain the
 //   next diagonal.
-void add_diag_inter(
-  std::set<Point, decltype(point_less_than) *> *intersections,
+using PointLess = bool (*)(const Point&, const Point&);
+
+static void add_diag_inter(
+  std::set<Point, PointLess> *intersections,
   const Point &a,
   const Point &b,
   double slope,
@@ -97,11 +99,12 @@ void add_diag_inter(
     Point inter = calc_intersection(a, b, slope, -1.0, d);
     bool on_left_or_right_edge = inter.x() < 0.5 || inter.x() > (lx - 0.5);
     bool on_top_or_bottom_edge = inter.y() < 0.5 || inter.y() > (ly - 0.5);
+    const double abs_slope = std::fabs(slope);
     if (
       inter != OUT_OF_RANGE &&
-      ((abs(slope) == 2 && on_left_or_right_edge) ||
-       (abs(slope) == 0.5 && on_top_or_bottom_edge) ||
-       (abs(slope) == 1 &&
+      ((almost_equal(abs_slope, 2.0) && on_left_or_right_edge) ||
+       (almost_equal(abs_slope, 0.5) && on_top_or_bottom_edge) ||
+       (almost_equal(abs_slope, 1) &&
         (on_left_or_right_edge == on_top_or_bottom_edge)))) {
       (*intersections).insert(inter);
     }
@@ -120,7 +123,7 @@ void add_diag_inter(
 // function also returns all intersections with the diagonals of these
 // grid cells. The function assumes that grid cells start at
 // (0.5, 0.5).
-std::vector<Point> densification_points(
+static std::vector<Point> densification_points(
   const Point &pt1,
   const Point &pt2,
   const unsigned int lx,
@@ -128,7 +131,7 @@ std::vector<Point> densification_points(
 {
   // If the input points are identical, return them without calculating
   // intersections
-  if ((pt1.x() == pt2.x()) && (pt1.y() == pt2.y())) {
+  if (almost_equal(pt1, pt2)) {
     std::vector<Point> points;
     points.push_back(pt1);
     points.push_back(pt2);
@@ -136,8 +139,7 @@ std::vector<Point> densification_points(
   }
 
   // Ordered set for storing intersections before removing duplicates
-  std::set<Point, decltype(point_less_than) *> temp_intersections(
-    point_less_than);
+  std::set<Point, PointLess> temp_intersections(less_than);
 
   // Store the leftmost point of p1 and pt2 as `a`. If both points have the
   // same x-coordinate, then store the lower point as `a`. The other point is
@@ -148,7 +150,9 @@ std::vector<Point> densification_points(
   // TODO: IN THE COMMENT ABOVE, DOES THE REMARK ABOUT THE FLOATING-POINT
   // ERRORS STILL APPLY AFTER SWITCHING TO SIMPLE CARTESIAN COORDINATES?
   Point a, b;
-  if ((pt1.x() > pt2.x()) || ((pt1.x() == pt2.x()) && (pt1.y() > pt2.y()))) {
+  if (
+    less_than(pt2.x(), pt1.x()) ||
+    (almost_equal(pt1.x(), pt2.x()) && less_than(pt2.y(), pt1.y()))) {
     a = pt2;
     b = pt1;
   } else {
@@ -161,7 +165,7 @@ std::vector<Point> densification_points(
   // Get vertical intersections
   double x_start = floor(a.x() + 0.5) + 0.5;
   double x_end = b.x();
-  for (double x = x_start; x <= x_end; x += (x == 0.0) ? 0.5 : 1.0) {
+  for (double x = x_start; x <= x_end; x += almost_equal(x, 0.0) ? 0.5 : 1.0) {
     Point inter = calc_intersection(a, b, 1.0, 0.0, -x);
     if (inter != OUT_OF_RANGE) {
       temp_intersections.insert(inter);
@@ -171,7 +175,7 @@ std::vector<Point> densification_points(
   // Get horizontal intersections
   double y_start = floor(std::min(a.y(), b.y()) + 0.5) + 0.5;
   double y_end = std::max(a.y(), b.y());
-  for (double y = y_start; y <= y_end; y += (y == 0.0) ? 0.5 : 1.0) {
+  for (double y = y_start; y <= y_end; y += almost_equal(y, 0.0) ? 0.5 : 1.0) {
     Point inter = calc_intersection(a, b, 0.0, 1.0, -y);
     if (inter != OUT_OF_RANGE) {
       temp_intersections.insert(inter);
@@ -208,13 +212,16 @@ std::vector<Point> densification_points(
     temp_intersections.end());
 
   // Reverse if needed
-  if ((pt1.x() > pt2.x()) || ((pt1.x() == pt2.x()) && (pt1.y() > pt2.y()))) {
+  if (
+    less_than(pt2.x(), pt1.x()) ||
+    (almost_equal(pt1.x(), pt2.x()) && less_than(pt2.y(), pt1.y()))) {
     std::reverse(intersections.begin(), intersections.end());
   }
   return intersections;
 }
 
-std::unordered_set<Point> new_points(Polygon original, Polygon densified) {
+static std::unordered_set<Point> new_points(Polygon original, Polygon densified)
+{
 
   // We need an ordered set, because set difference is only defined for
   // ordered sets.
@@ -304,7 +311,7 @@ void InsetState::densify_geo_divs()
   timer.stop("Densification (using Grid Diagonals)");
 }
 
-std::vector<Point> densification_points_with_delaunay_t(
+static std::vector<Point> densification_points_with_delaunay_t(
   const Point &pt1,
   const Point &pt2,
   const Delaunay &dt)
@@ -316,7 +323,7 @@ std::vector<Point> densification_points_with_delaunay_t(
 
   // If the input points are identical, return them without calculating
   // intersections
-  if (points_almost_equal(pt1, pt2)) {
+  if (almost_equal(pt1, pt2)) {
     return {pt1, pt2};
   }
 
@@ -409,15 +416,16 @@ std::vector<Point> densification_points_with_delaunay_t(
   }
 
   // if densification points are in reverse order, reverse them
-  if (!points_almost_equal(dens_points.front(), pt1)) {
+  if (!almost_equal(dens_points.front(), pt1)) {
     reverse(dens_points.begin(), dens_points.end());
   }
 
   // check validity of densification points: in case the first and last
   // points are not the originally given points, we consider the densificaiton
   // points invalid and return the original points
-  if (!points_almost_equal(dens_points.front(), pt1) ||
-      !points_almost_equal(dens_points.back(), pt2)) {
+  if (
+    !almost_equal(dens_points.front(), pt1) ||
+    !almost_equal(dens_points.back(), pt2)) {
     return {pt1, pt2};
   }
 
@@ -425,9 +433,10 @@ std::vector<Point> densification_points_with_delaunay_t(
   std::vector<Point> dens_points_unique;
   dens_points_unique.push_back(dens_points.front());
   for (unsigned int i = 1; i < dens_points.size() - 1; ++i) {
-    if (!points_almost_equal(dens_points[i], dens_points.front()) &&
-        !points_almost_equal(dens_points[i], dens_points.back()) &&
-        !points_almost_equal(dens_points[i], dens_points[i - 1])) {
+    if (
+      !almost_equal(dens_points[i], dens_points.front()) &&
+      !almost_equal(dens_points[i], dens_points.back()) &&
+      !almost_equal(dens_points[i], dens_points[i - 1])) {
       dens_points_unique.push_back(dens_points[i]);
     }
   }
@@ -474,7 +483,9 @@ void InsetState::densify_geo_divs_using_delaunay_t()
 
       // Add new points to points_added_via_densification for plotting
       std::unordered_set<Point> new_in_outer = new_points(outer, outer_dens);
-      points_from_densification_.insert(new_in_outer.begin(), new_in_outer.end());
+      points_from_densification_.insert(
+        new_in_outer.begin(),
+        new_in_outer.end());
       points_before_densification_.insert(outer.begin(), outer.end());
 
       std::vector<Polygon> holes_v_dens;
@@ -496,7 +507,9 @@ void InsetState::densify_geo_divs_using_delaunay_t()
 
         // Add new points to points_added_via_densification for plotting
         std::unordered_set<Point> new_in_hole = new_points(h, hole_dens);
-        points_from_densification_.insert(new_in_hole.begin(), new_in_hole.end());
+        points_from_densification_.insert(
+          new_in_hole.begin(),
+          new_in_hole.end());
         points_before_densification_.insert(h.begin(), h.end());
 
         holes_v_dens.push_back(hole_dens);

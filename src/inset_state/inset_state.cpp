@@ -104,6 +104,7 @@ bool InsetState::continue_integrating() const
 
   // Actually hasn't converged, just reached integration limit
   if (!within_integration_limit && !has_converged) {
+    converge_ = false;
     std::cerr << "ERROR: Could not converge!" << std::endl;
     if (area_error_above_threshold)
       std::cerr << "Max area error above threshold!" << std::endl;
@@ -114,8 +115,7 @@ bool InsetState::continue_integrating() const
   // Print control output (at end of previous integration)
   std::cerr << "Max. area err: " << max_area_err << ", GeoDiv: " << worst_gd
             << std::endl;
-  std::cerr << "Current Area: "
-            << geo_divs_[geo_divs_id_to_index_.at(worst_gd)].area()
+  std::cerr << "Current Area: " << geo_div_at_id(worst_gd).area()
             << ", Target Area: " << target_area_at(worst_gd) << std::endl;
   std::cerr << "Area drift: " << area_drift * 100.0 << "%" << std::endl;
 
@@ -139,9 +139,14 @@ bool InsetState::color_found(const std::string &id) const
   return colors_.count(id);
 }
 
-unsigned int InsetState::colors_size() const
+size_t InsetState::colors_size() const
 {
   return colors_.size();
+}
+
+bool InsetState::converged() const
+{
+  return converge_;
 }
 
 void InsetState::create_delaunay_t()
@@ -211,7 +216,7 @@ void InsetState::update_delaunay_t()
     const Point p2 = edge.target();
 
     // if edge is diagonal, ignore it
-    if (p1.x() != p2.x() && p1.y() != p2.y()) {
+    if (!almost_equal(p1.x(), p2.x()) && !almost_equal(p1.y(), p2.y())) {
       continue;
     }
 
@@ -283,12 +288,14 @@ void InsetState::update_delaunay_t()
     const Point p2_orig = reverse_triangle_transformation.at(p2);
 
     // Automatically pick the edge if it is diagonal
-    if (p1_orig.x() != p2_orig.x() && p1_orig.y() != p2_orig.y()) {
+    if (
+      !almost_equal(p1_orig.x(), p2_orig.x()) &&
+      !almost_equal(p1_orig.y(), p2_orig.y())) {
       constraints.push_back({p1_orig, p2_orig});
     }
 
     // If edge is vertical, only add it if there are no point in between
-    if (p1_orig.x() == p2_orig.x()) {
+    if (almost_equal(p1_orig.x(), p2_orig.x())) {
       auto &y_coor_points = same_x_coor_points[p1_orig.x()];
 
       const double y_min = std::min(p1_orig.y(), p2_orig.y());
@@ -296,9 +303,10 @@ void InsetState::update_delaunay_t()
 
       // Binary search to find the number of points between the two y
       // coordinates
-      int cnt =
+      auto cnt =
+        static_cast<std::size_t>(
         std::upper_bound(y_coor_points.begin(), y_coor_points.end(), y_max) -
-        std::lower_bound(y_coor_points.begin(), y_coor_points.end(), y_min);
+        std::lower_bound(y_coor_points.begin(), y_coor_points.end(), y_min));
 
       if (cnt == 2) {  // No points in between
         constraints.push_back({p1_orig, p2_orig});
@@ -306,7 +314,7 @@ void InsetState::update_delaunay_t()
     }
 
     // If edge is horizontal, only add it if there are no point in between
-    if (p1_orig.y() == p2_orig.y()) {
+    if (almost_equal(p1_orig.y(), p2_orig.y())) {
       // Check if there is a point in between
       auto &x_coor_points = same_y_coor_points[p1_orig.y()];
 
@@ -315,9 +323,9 @@ void InsetState::update_delaunay_t()
 
       // Binary search to find the number of points between the two y
       // coordinates
-      int cnt =
+      auto cnt = static_cast<std::size_t>(
         std::upper_bound(x_coor_points.begin(), x_coor_points.end(), x_max) -
-        std::lower_bound(x_coor_points.begin(), x_coor_points.end(), x_min);
+        std::lower_bound(x_coor_points.begin(), x_coor_points.end(), x_min));
       if (cnt == 2) {  // No points in between
         constraints.push_back({p1_orig, p2_orig});
       }
@@ -383,7 +391,7 @@ void InsetState::export_time_report() const
     // Time taken (in seconds)
     std::string timer_task_name = inset_name_ + "_" + std::to_string(i);
     std::string time_in_seconds =
-      std::to_string(timer.duration(timer_task_name).count() / 1000.0);
+      std::to_string(static_cast<double>(timer.duration(timer_task_name).count()) / 1000.0);
     csv_rows[i + 1].push_back(time_in_seconds);
 
     // Max area error for that integration
@@ -401,6 +409,16 @@ void InsetState::export_time_report() const
 const std::vector<GeoDiv> &InsetState::geo_divs() const
 {
   return geo_divs_;
+}
+
+// Const and non-const version of geo_div_at_id
+const GeoDiv &InsetState::geo_div_at_id(std::string id) const
+{
+  return geo_divs_[geo_divs_id_to_index_.at(id)];
+}
+GeoDiv &InsetState::geo_div_at_id(std::string id)
+{
+  return geo_divs_[geo_divs_id_to_index_.at(id)];
 }
 
 // Get unique points from GeoDivs
@@ -435,47 +453,67 @@ static std::vector<Point> get_unique_points(InsetState &inset_state)
 }
 
 // Counts the number of leaf nodes in a quadtree
-int count_leaf_nodes(const Quadtree &qt)
+static int count_leaf_nodes(const Quadtree &qt)
 {
   int leaf_count = 0;
   for ([[maybe_unused]] const auto &node :
-       qt.traverse<CGAL::Orthtrees::Leaves_traversal>()) {
+       qt.traverse(CGAL::Orthtrees::Leaves_traversal<Quadtree>(qt))) {
     ++leaf_count;
   }
   return leaf_count;
 }
 
 // Refine the quadtree by splitting nodes that exceed the given threshold
-void refine_quadtree_with_threshold(
+struct Split_by_threshold {
+  const Quadtree &qt;
+  double threshold;
+  unsigned int max_depth;
+  InsetState &inset_state;
+
+  Split_by_threshold(
+    const Quadtree &qt_,
+    double threshold_,
+    unsigned int max_depth_,
+    InsetState &inset_state_)
+      : qt(qt_), threshold(threshold_), max_depth(max_depth_),
+        inset_state(inset_state_)
+  {
+  }
+
+  template <typename Node_index, typename Tree>
+  bool operator()(Node_index idx, const Tree &tree) const
+  {
+    if (tree.depth(idx) >= max_depth)
+      return false;
+
+    auto bbox = tree.bbox(idx);
+    double rho_min = std::numeric_limits<double>::infinity();
+    double rho_max = -std::numeric_limits<double>::infinity();
+
+    for (int x = static_cast<int>(bbox.xmin()); x < static_cast<int>(bbox.xmax()); ++x) {
+      for (int y = static_cast<int>(bbox.ymin()); y < static_cast<int>(bbox.ymax()); ++y) {
+        if (
+          x < 0 || y < 0 || x >= static_cast<int>(inset_state.lx()) ||
+          y >= static_cast<int>(inset_state.ly()))
+          continue;
+        const unsigned int ux = static_cast<unsigned int>(x);
+        const unsigned int uy = static_cast<unsigned int>(y);
+        const double rho = inset_state.ref_to_rho_init()(ux, uy);
+        rho_min = std::min(rho_min, rho);
+        rho_max = std::max(rho_max, rho);
+      }
+    }
+    return (rho_max - rho_min) > threshold;
+  }
+};
+
+static void refine_quadtree_with_threshold(
   Quadtree &qt,
   double threshold,
   unsigned int depth,
   InsetState &inset_state)
 {
-  auto can_split = [&qt, &threshold, &depth, &inset_state](
-                     const Quadtree::Node &node) -> bool {
-    if (node.depth() >= depth)
-      return false;
-
-    auto bbox = qt.bbox(node);
-    double rho_min = 1e9;
-    double rho_max = -1e9;
-    for (int i = bbox.xmin(); i < bbox.xmax(); ++i) {
-      for (int j = bbox.ymin(); j < bbox.ymax(); ++j) {
-        if (i < 0 || j < 0)
-          continue;
-        if (
-          i >= static_cast<int>(inset_state.lx()) ||
-          j >= static_cast<int>(inset_state.ly()))
-          continue;
-        rho_min = std::min(rho_min, inset_state.ref_to_rho_init()(i, j));
-        rho_max = std::max(rho_max, inset_state.ref_to_rho_init()(i, j));
-      }
-    }
-    return (rho_max - rho_min) > threshold;
-  };
-
-  qt.refine(can_split);
+  qt.refine(Split_by_threshold(qt, threshold, depth, inset_state));
 }
 
 // Use binary search to find a threshold that results in a quadtree with a
@@ -493,9 +531,9 @@ static double find_threshold(
   double threshold = high_thresh;
   // First, check if the high threshold is too low
   {
-    Quadtree qt_copy = base_qt;
-    refine_quadtree_with_threshold(qt_copy, high_thresh, depth, state);
-    int leaves = count_leaf_nodes(qt_copy);
+    Quadtree qt_copy_init(base_qt);
+    refine_quadtree_with_threshold(qt_copy_init, high_thresh, depth, state);
+    int leaves = count_leaf_nodes(qt_copy_init);
     std::cerr << "Initial high threshold = " << high_thresh
               << ", leaf nodes = " << leaves << std::endl;
 
@@ -503,7 +541,7 @@ static double find_threshold(
     // increase the high threshold to lower the leaf count
     while (leaves > 5 * target_leaf_count) {
       high_thresh *= 2;
-      Quadtree qt_copy = base_qt;
+      Quadtree qt_copy(base_qt);
       refine_quadtree_with_threshold(qt_copy, high_thresh, depth, state);
       leaves = count_leaf_nodes(qt_copy);
       std::cerr << "Adjusted high threshold = " << high_thresh
@@ -513,7 +551,7 @@ static double find_threshold(
 
   for (int iter = 0; iter < max_iterations; ++iter) {
     const double mid_thresh = (low_thresh + high_thresh) / 2.0;
-    Quadtree qt_copy = base_qt;
+    Quadtree qt_copy(base_qt);
     refine_quadtree_with_threshold(qt_copy, mid_thresh, depth, state);
     const int leaves = count_leaf_nodes(qt_copy);
 
@@ -551,7 +589,7 @@ void InsetState::create_and_refine_quadtree()
 
   // Build a quadtree from the unique points of the GeoDivs
   std::vector<Point> unique_points = get_unique_points(*this);
-  Quadtree qt(unique_points, Quadtree::PointMap(), 1);
+  Quadtree qt(unique_points);
 
   // Find a threshold that results in a quadtree with at least
   // target_leaf_count leaf nodes
@@ -572,7 +610,7 @@ void InsetState::create_and_refine_quadtree()
   if (threshold_at_integration_.count(n_finished_integrations_ - 1)) {
     high_thresh = threshold_at_integration_.at(n_finished_integrations_ - 1);
   }
-  const int max_iterations = 25;
+  const int max_iterations = 10;
   const double threshold = find_threshold(
     qt,
     *this,
@@ -603,9 +641,9 @@ void InsetState::store_quadtree_cell_corners(const Quadtree &qt)
 {
   unique_quadtree_corners_.clear();
   quadtree_bboxes_.clear();
-
-  for (const auto &node : qt.traverse<CGAL::Orthtrees::Leaves_traversal>()) {
-    const Bbox bbox = qt.bbox(node);
+  for (const auto &node_idx :
+       qt.traverse(CGAL::Orthtrees::Leaves_traversal<Quadtree>(qt))) {
+    const auto bbox = qt.bbox(node_idx);
     if (
       bbox.xmin() < 0 || bbox.xmax() > lx_ || bbox.ymin() < 0 ||
       bbox.ymax() > ly_)
@@ -794,7 +832,7 @@ unsigned int InsetState::n_fails_during_flatten_density() const
 
 unsigned int InsetState::n_geo_divs() const
 {
-  return geo_divs_.size();
+  return static_cast<unsigned int>(geo_divs_.size());
 }
 
 unsigned long InsetState::n_points() const
@@ -916,7 +954,8 @@ void InsetState::set_area_errors()
   // accordingly inflate its target area to account for the area drift.
   double aef = area_expansion_factor();
 
-#pragma omp parallel for default(none) shared(sum_cart_area, sum_target_area)
+#pragma omp parallel for default(none) firstprivate(aef) \
+  shared(geo_divs_, area_errors_)
   for (const auto &gd : geo_divs_) {
     const double obj_area = target_area_at(gd.id()) * aef;
     area_errors_[gd.id()] = std::abs((gd.area() / obj_area) - 1);
@@ -937,8 +976,8 @@ void InsetState::adjust_grid()
     // Multiply grid size with factor
     std::cerr << "Adjusting grid size." << std::endl;
     if (
-      lx_ * default_grid_factor > max_allowed_autoscale_grid_length or
-      ly_ * default_grid_factor > max_allowed_autoscale_grid_length) {
+      lx_ * default_grid_factor > args_.max_allowed_autoscale_grid_length or
+      ly_ * default_grid_factor > args_.max_allowed_autoscale_grid_length) {
       std::cerr << "Cannot increase grid size further. ";
       std::cerr << "Grid size exceeds maximum allowed grid length."
                 << std::endl;
@@ -1002,7 +1041,7 @@ void InsetState::store_initial_area()
 
 void InsetState::store_initial_target_area(const double override)
 {
-  initial_target_area_ = override ? override : total_target_area();
+  initial_target_area_ = almost_equal(override, 0.0) ? total_target_area() : override;
 }
 
 bool InsetState::target_area_is_missing(const std::string &id) const

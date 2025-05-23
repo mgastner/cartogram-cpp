@@ -1,14 +1,13 @@
 #include "parse_arguments.hpp"
 #include "constants.hpp"
 
-argparse::ArgumentParser parsed_arguments(
-  const int argc,
-  const char *argv[],
-  Arguments &args)
+Arguments parse_arguments(const int argc, const char *argv[])
 {
+  Arguments args;
+
   // Create parser for arguments using argparse.
   // From https://github.com/p-ranav/argparse
-  argparse::ArgumentParser arguments("./cartogram", RELEASE_TAG);
+  argparse::ArgumentParser arguments("./cartogram");
 
   // Positional argument accepting geometry file (GeoJSON, JSON) as input
   arguments.add_argument("geometry_file")
@@ -26,7 +25,15 @@ argparse::ArgumentParser parsed_arguments(
     .default_value(default_long_grid_length)
     .scan<'u', unsigned int>()
     .help(
-      "Integer: Number of grid cells along longer Cartesian coordinate axis");
+      "Integer: Number of starting grid cells along longer Cartesian "
+      "coordinate axis");
+
+  arguments.add_argument("-N", "--max_allowed_autoscale_grid_length")
+    .default_value(max_allowed_autoscale_grid_length)
+    .scan<'u', unsigned int>()
+    .help(
+      "Integer: Maximum allowed number of grid cells along longer Cartesian "
+      "coordinate axis");
 
   // Optional boolean arguments
   arguments.add_argument("-W", "--world")
@@ -54,7 +61,8 @@ argparse::ArgumentParser parsed_arguments(
     .default_value(false)
     .implicit_value(true);
   arguments.add_argument("-E", "--output_equal_area_map")
-    .help("Boolean: Transform input GeoJSON into cartesian coordinates and exit")
+    .help(
+      "Boolean: Transform input GeoJSON into cartesian coordinates and exit")
     .default_value(false)
     .implicit_value(true);
   arguments.add_argument("-T", "--triangulation")
@@ -66,7 +74,8 @@ argparse::ArgumentParser parsed_arguments(
     .default_value(true)
     .implicit_value(false);
   arguments.add_argument("-S", "--simplify_and_densify")
-    .help("Boolean: Enable iterative simplification and densification of polygons")
+    .help(
+      "Boolean: Enable iterative simplification and densification of polygons")
     .default_value(true)
     .implicit_value(false);
   arguments.add_argument("--skip_projection")
@@ -116,10 +125,11 @@ argparse::ArgumentParser parsed_arguments(
   // Arguments of column names in provided visual variables file (CSV)
   std::string pre = "String: Column name for ";
   arguments.add_argument("-D", "--id")
-    .help(pre + "IDs of geographic divisions [default: 1st CSV column header]");
+    .help(
+      pre + "IDs of geographic divisions [default: 1st CSV column header]");
   arguments.add_argument("-A", "--area")
     .help(pre + "target areas [default: 2nd CSV column]");
-  arguments.add_argument("-C", "--color")
+  arguments.add_argument("-C", "--color", "--colour")
     .default_value(std::string("Color"))
     .help(pre + "colors");
   arguments.add_argument("-L", "--label")
@@ -129,7 +139,9 @@ argparse::ArgumentParser parsed_arguments(
     .default_value(std::string("Inset"))
     .help(pre + "insets");
   arguments.add_argument("--min_integrations")
-    .help("Integer: minimum number of integrations regardless of area error reached")
+    .help(
+      "Integer: minimum number of integrations regardless of area error "
+      "reached")
     .default_value(static_cast<unsigned int>(0))
     .scan<'u', unsigned int>();
 
@@ -144,6 +156,10 @@ argparse::ArgumentParser parsed_arguments(
 
   // Set long grid-side length
   args.n_grid_rows_or_cols = arguments.get<unsigned int>("-n");
+
+  // Set maximum allowed grid length
+  args.max_allowed_autoscale_grid_length =
+    arguments.get<unsigned int>("--max_allowed_autoscale_grid_length");
 
   // If world flag is set, and long-gride side length is not explicitly set,
   // then 512 makes the output look better
@@ -177,7 +193,8 @@ argparse::ArgumentParser parsed_arguments(
   args.skip_projection = arguments.get<bool>("--skip_projection");
   args.make_csv = arguments.get<bool>("--make_csv");
   args.output_equal_area_map = arguments.get<bool>("--output_equal_area_map");
-  args.redirect_exports_to_stdout = arguments.get<bool>("--redirect_exports_to_stdout");
+  args.redirect_exports_to_stdout =
+    arguments.get<bool>("--redirect_exports_to_stdout");
   args.export_preprocessed = arguments.get<bool>("--export_preprocessed");
   args.export_time_report = arguments.get<bool>("--export_time_report");
   args.plot_density = arguments.get<bool>("--plot_density");
@@ -185,8 +202,14 @@ argparse::ArgumentParser parsed_arguments(
   args.plot_intersections = arguments.get<bool>("--plot_intersections");
   args.plot_polygons = arguments.get<bool>("--plot_polygons");
   args.plot_quadtree = arguments.get<bool>("--plot_quadtree");
-  args.output_shifted_insets =
-    arguments.get<bool>("--output_shifted_insets");
+  args.output_shifted_insets = arguments.get<bool>("--output_shifted_insets");
+
+  // arguments.present returns an optional
+  args.id_col = arguments.present<std::string>("--id");
+  args.area_col = arguments.present<std::string>("--area");
+  args.inset_col = arguments.get<std::string>("--inset");
+  args.color_col = arguments.get<std::string>("--color");
+  args.label_col = arguments.get<std::string>("--label");
   // Check if user wants to redirect output to stdout
   if (arguments.is_used("-O") && !args.simplify && !args.qtdt_method) {
     std::cerr << "ERROR: simplification disabled!\n";
@@ -225,7 +248,8 @@ argparse::ArgumentParser parsed_arguments(
   // Print names of geometry file
   if (arguments.is_used("geometry_file")) {
     args.geo_file_name = arguments.get<std::string>("geometry_file");
-    std::cerr << "Using geometry from file " << args.geo_file_name << std::endl;
+    std::cerr << "Using geometry from file " << args.geo_file_name
+              << std::endl;
   } else {
 
     // GeoJSON file not provided
@@ -251,5 +275,6 @@ argparse::ArgumentParser parsed_arguments(
   } else {
     args.visual_file_name = "";
   }
-  return arguments;
+
+  return args;
 }

@@ -10,7 +10,7 @@ void InsetState::preprocess()
   }
 
   // Rescale map to fit into a rectangular box [0, lx] * [0, ly]
-  rescale_map(args_.n_grid_rows_or_cols, args_.world);
+  rescale_map();
 
   // Store original coordinates for morphing animation
   if (args_.redirect_exports_to_stdout) {
@@ -32,7 +32,8 @@ void InsetState::preprocess()
 
     // Color if necessary
     auto_color();
-    write_cairo_map(inset_name_ + "_input", args_.plot_grid);
+    initialize_identity_proj();
+    write_map(inset_name_ + "_input", args_.plot_grid, true);
   }
 
   timer.stop("Preprocessing");
@@ -134,7 +135,7 @@ void InsetState::integrate(ProgressTracker &progress_tracker)
 
   // Write SVG for this inset, if requested
   if (args_.plot_polygons) {
-    write_cairo_map(inset_name() + "_output", args_.plot_grid);
+    write_map(inset_name() + "_output", args_.plot_grid, false);
   }
 
   // Project original map with cumulative projection

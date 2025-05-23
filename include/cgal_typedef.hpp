@@ -18,7 +18,7 @@ typedef CGAL::Aff_transformation_2<Scd> Transformation;
 typedef CGAL::Point_2<Scd> Point;
 typedef CGAL::Vector_2<Scd> Vector;
 typedef CGAL::Line_2<Scd> Line;
-typedef CGAL::Bbox_2 Bbox;
+typedef CGAL::Iso_rectangle_2<Scd> Bbox;
 typedef CGAL::Segment_2<Scd> Segment;
 
 // Minimum enclosing ellipses and circles
@@ -28,8 +28,7 @@ typedef CGAL::Min_circle_2_traits_2<Scd> Circle_traits;
 typedef CGAL::Min_circle_2<Circle_traits> Min_circle;
 
 // Quadtree
-typedef CGAL::Orthtree<CGAL::Orthtree_traits_2<Scd>, std::vector<Point>>
-  Quadtree;
+typedef CGAL::Quadtree<Scd, std::vector<Point>> Quadtree;
 
 // Delaunay triangulation
 typedef CGAL::Constrained_Delaunay_triangulation_2<Scd> Delaunay;
@@ -48,4 +47,4 @@ typedef CT::Constraint_id Constraint_id;
 typedef CGAL::Polyline_simplification_2::Stop_below_count_ratio_threshold Stop;
 typedef CGAL::Polyline_simplification_2::Squared_distance_cost Cost;
 
-#endif // CGAL_TYPEDEF_HPP_
+#endif  // CGAL_TYPEDEF_HPP_

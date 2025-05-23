@@ -16,8 +16,8 @@ private:
   std::vector<InsetState> inset_states_;
   bool is_world_map_;
   std::string map_name_;
-  std::map<std::string, std::map<std::string, std::string>> properties_map_;
-  std::vector<std::string> unique_properties_;
+  std::map<std::string, std::vector<std::string>> unique_properties_map_;
+  int id_col_;
 
   // TODO: We assume that either all external rings are counterclockwise or
   //       all are clockwise. This dichotomy covers most geospatial boundary
@@ -38,17 +38,17 @@ public:
   explicit CartogramInfo(Arguments);
   [[nodiscard]] double cart_initial_total_target_area() const;
   void construct_inset_state_from_geodivs(const nlohmann::json &);
+  bool converged() const;
   [[nodiscard]] double area() const;
   [[nodiscard]] bool is_world_map() const;
   void json_to_geojson(
     const nlohmann::json &,
     nlohmann::ordered_json &,
     const nlohmann::json &);
-  [[nodiscard]] unsigned int n_geo_divs() const;
-  [[nodiscard]] unsigned int n_insets() const;
+  [[nodiscard]] size_t n_geo_divs() const;
+  [[nodiscard]] size_t n_insets() const;
 
-
-  void read_csv(const argparse::ArgumentParser &);
+  void read_csv();
   void read_geojson();
   std::vector<InsetState> &ref_to_inset_states();
   void relocate_geodivs_based_on_inset_pos(
@@ -59,7 +59,6 @@ public:
   void rescale_insets();
 
   std::string set_map_name(const std::string &);
-  void set_id_header(const std::string &);
   void reposition_insets(bool output_to_stdout = false);
 
   void plot_input();
@@ -67,6 +66,7 @@ public:
   void print_time_report();
   void project_to_equal_area();
 
+  std::string match_id_columns (const std::optional<std::string> &);
   void update_id_header_info(const std::string &);
   void write_csv(const std::string &csv_file_name);
   void write_geojson(const std::string &);

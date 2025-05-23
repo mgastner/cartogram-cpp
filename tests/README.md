@@ -34,6 +34,11 @@
     ctest --verbose
     ```
 
+* To run extensive tests with program flags, run:
+    ```bash
+    ctest --flags
+    ```
+
 * To see available tests, run:
     ```bash
     ctest --show-only

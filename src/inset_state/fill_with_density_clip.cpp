@@ -7,25 +7,128 @@
 #include <vector>
 
 using Coordinate = std::pair<int, int>;
+using EdgeEndpointIndices = std::pair<unsigned int, unsigned int>;
 using GridCoordinates = std::vector<Coordinate>;
+using GridCoordinatesWithEdgeEndpoints =
+  std::vector<std::pair<Coordinate, EdgeEndpointIndices>>;
 
 // ---------------------------------------------------------------------
-// Polygon Clipping (Sutherland–Hodgman)
+// Clipping Functions
 // ---------------------------------------------------------------------
 
-// Clips a polygon using a generic Sutherland–Hodgman routine
+// Open-path clipping using a Sutherland–Hodgman–like algorithm
+// Here, 'path' is a polyline (open, not closed)
+static Polygon clip_path_sutherland_hodgman(
+  const Polygon &path,
+  const std::function<bool(const Point &)> &is_inside,
+  const std::function<Point(const Point &, const Point &)>
+    &compute_intersection)
+{
+  if (path.is_empty()) {
+    return path;
+  }
+
+  Polygon clipped;
+
+  // Determine if the first point is inside
+  bool prev_inside = is_inside(path[0]);
+  Point prev_point = path[0];
+  if (prev_inside) {
+    clipped.push_back(prev_point);
+  }
+
+  // Process each consecutive pair
+  for (unsigned int i = 1; i < path.size(); ++i) {
+    Point curr_point = path[i];
+    bool curr_inside = is_inside(curr_point);
+
+    // If the segment crosses the clipping boundary:
+    if (prev_inside != curr_inside) {
+
+      Point inter_pt = compute_intersection(prev_point, curr_point);
+
+      // If we're leaving the clipping region, add the intersection
+      if (prev_inside && !curr_inside) {
+        clipped.push_back(inter_pt);
+      }
+
+      // If we're entering the clipping region, add the intersection then the
+      // point
+      else if (!prev_inside && curr_inside) {
+        clipped.push_back(inter_pt);
+        clipped.push_back(curr_point);
+      }
+    }
+
+    // If both endpoints are inside, simply add the current point
+    else if (curr_inside) {
+      clipped.push_back(curr_point);
+    }
+
+    prev_point = curr_point;
+    prev_inside = curr_inside;
+  }
+  return clipped;
+}
+
+// Clip a path by a vertical line x = value
+// If left_side is true, keep points with x >= value; otherwise, x <= value.
+static Polygon clip_path_by_vertical_line(
+  const Polygon &path,
+  const double x,
+  const bool left_side)
+{
+  auto is_inside = [x, left_side](const Point &p) -> bool {
+    return left_side ? (p.x() >= x) : (p.x() <= x);
+  };
+  auto compute_intersection = [x](const Point &p, const Point &q) -> Point {
+    double y = p.y() + (q.y() - p.y()) * (x - p.x()) / (q.x() - p.x());
+    return Point(x, y);
+  };
+  return clip_path_sutherland_hodgman(path, is_inside, compute_intersection);
+}
+
+// Clip a path by a horizontal line y = value.
+// If bottom_side is true, keep points with y >= value; otherwise, y <= value.
+static Polygon clip_path_by_horizontal_line(
+  const Polygon &path,
+  const double y,
+  const bool bottom_side)
+{
+  auto is_inside = [y, bottom_side](const Point &p) -> bool {
+    return bottom_side ? (p.y() >= y) : (p.y() <= y);
+  };
+  auto compute_intersection = [y](const Point &p, const Point &q) -> Point {
+    double x = p.x() + (q.x() - p.x()) * (y - p.y()) / (q.y() - p.y());
+    return Point(x, y);
+  };
+  return clip_path_sutherland_hodgman(path, is_inside, compute_intersection);
+}
+
+static Polygon clip_path_by_rectangle(
+  const Polygon &path,
+  const Bbox &rect_bbox)
+{
+  Polygon clipped = path;
+  clipped = clip_path_by_vertical_line(clipped, rect_bbox.xmin(), true);
+  clipped = clip_path_by_vertical_line(clipped, rect_bbox.xmax(), false);
+  clipped = clip_path_by_horizontal_line(clipped, rect_bbox.ymin(), true);
+  clipped = clip_path_by_horizontal_line(clipped, rect_bbox.ymax(), false);
+  return clipped;
+}
+
+// Similar to the idea used in `clip_path_sutherland_hodgman`, but for polygons
 static Polygon clip_polygon_sutherland_hodgman(
   const Polygon &polygon,
   const std::function<bool(const Point &)> &is_inside,
   const std::function<Point(const Point &, const Point &)>
     &compute_intersection)
 {
-  if (polygon.size() == 0)
+  if (polygon.is_empty())
     return polygon;
 
   Polygon clipped;
 
-  // Start with the last vertex to close the polygon
   Point prev_point = polygon[polygon.size() - 1];
   bool prev_inside = is_inside(prev_point);
 
@@ -47,12 +150,10 @@ static Polygon clip_polygon_sutherland_hodgman(
   return clipped;
 }
 
-// Clip polygon by a vertical line x = value
-// If left_side is true, keeps points with x >= value; otherwise, x <= value
-Polygon clip_polygon_by_vertical_line(
+static Polygon clip_polygon_by_vertical_line(
   const Polygon &polygon,
-  double x,
-  bool left_side)
+  const double x,
+  const bool left_side)
 {
   auto is_inside = [x, left_side](const Point &p) -> bool {
     return left_side ? (p.x() >= x) : (p.x() <= x);
@@ -67,9 +168,7 @@ Polygon clip_polygon_by_vertical_line(
     compute_intersection);
 }
 
-// Clip polygon by a horizontal line y = value
-// If bottom_side is true, keeps points with y >= value; otherwise, y <= value
-Polygon clip_polygon_by_horizontal_line(
+static Polygon clip_polygon_by_horizontal_line(
   const Polygon &polygon,
   double y,
   bool bottom_side)
@@ -87,30 +186,37 @@ Polygon clip_polygon_by_horizontal_line(
     compute_intersection);
 }
 
-// Compute the overlapping area between a square and a polygon
-double compute_square_polygon_overlap_area(
-  const Polygon &square,
-  const Polygon &polygon)
+static Polygon clip_polygon_by_rectangle(
+  const Polygon &polygon,
+  const Bbox &rect_bbox)
 {
-  const Bbox bbox = square.bbox();
   Polygon clipped = polygon;
-  clipped = clip_polygon_by_vertical_line(clipped, bbox.xmin(), true);
-  clipped = clip_polygon_by_vertical_line(clipped, bbox.xmax(), false);
-  clipped = clip_polygon_by_horizontal_line(clipped, bbox.ymin(), true);
-  clipped = clip_polygon_by_horizontal_line(clipped, bbox.ymax(), false);
+  clipped = clip_polygon_by_vertical_line(clipped, rect_bbox.xmin(), true);
+  clipped = clip_polygon_by_vertical_line(clipped, rect_bbox.xmax(), false);
+  clipped = clip_polygon_by_horizontal_line(clipped, rect_bbox.ymin(), true);
+  clipped = clip_polygon_by_horizontal_line(clipped, rect_bbox.ymax(), false);
+  return clipped;
+}
+
+static double compute_polygon_rectangle_overlap_area(
+  const Polygon &polygon,
+  const Bbox &rect_bbox)
+{
+  Polygon clipped = clip_polygon_by_rectangle(polygon, rect_bbox);
   return std::abs(clipped.area());
 }
 
 // Compute the overlapping area between a square and a polygon with holes
-double compute_square_polygon_with_holes_overlap_area(
-  const Polygon &square,
-  const Polygon_with_holes &pwh)
+static double compute_pwh_rectangle_overlap_area(
+  const Polygon_with_holes &pwh,
+  const Bbox &rect_bbox)
 {
   double area = 0.0;
-  area += compute_square_polygon_overlap_area(square, pwh.outer_boundary());
+  area +=
+    compute_polygon_rectangle_overlap_area(pwh.outer_boundary(), rect_bbox);
   for (auto hole_it = pwh.holes_begin(); hole_it != pwh.holes_end();
        ++hole_it) {
-    area -= compute_square_polygon_overlap_area(square, *hole_it);
+    area -= compute_polygon_rectangle_overlap_area(*hole_it, rect_bbox);
   }
   return area;
 }
@@ -121,7 +227,7 @@ double compute_square_polygon_with_holes_overlap_area(
 
 // Compute a supercover line (returns grid cells traversed by the
 // line) based on Amanatides–Woo's line algorithm. Perfectly accurate
-GridCoordinates compute_supercover_line(
+static GridCoordinates compute_supercover_line_amanatides_woo(
   double x0,
   double y0,
   double x1,
@@ -147,15 +253,17 @@ GridCoordinates compute_supercover_line(
 
   // These represent how far along the ray we must move (in t, where 0 <= t <=
   // 1) to cross a cell boundary in the respective direction
-  double t_delta_x = (delta_x != 0) ? 1.0 / std::abs(delta_x)
-                                    : std::numeric_limits<double>::infinity();
-  double t_delta_y = (delta_y != 0) ? 1.0 / std::abs(delta_y)
-                                    : std::numeric_limits<double>::infinity();
+  double t_delta_x = almost_equal(delta_x, 0.0)
+                       ? std::numeric_limits<double>::infinity()
+                       : 1.0 / std::abs(delta_x);
+  double t_delta_y = almost_equal(delta_y, 0.0)
+                       ? std::numeric_limits<double>::infinity()
+                       : 1.0 / std::abs(delta_y);
 
   // The parametric distance along the ray until we reach the first vertical
   // (or horizontal) grid line
   double t_max_x, t_max_y;
-  if (delta_x != 0) {
+  if (!almost_equal(delta_x, 0.0)) {
     if (step_x > 0)
       t_max_x = ((cell_x + 1) - x0) / delta_x;
     else
@@ -164,7 +272,7 @@ GridCoordinates compute_supercover_line(
     t_max_x = std::numeric_limits<double>::infinity();
   }
 
-  if (delta_y != 0) {
+  if (!almost_equal(delta_y, 0.0)) {
     if (step_y > 0)
       t_max_y = ((cell_y + 1) - y0) / delta_y;
     else
@@ -196,45 +304,64 @@ GridCoordinates compute_supercover_line(
   return cells;
 }
 
-// Runs the supercover line algorithm on the edges of a polygon
-GridCoordinates rasterize_polygon_edges(const Polygon &polygon)
+static GridCoordinatesWithEdgeEndpoints rasterize_polygon_edges(
+  const Polygon &polygon)
 {
-  GridCoordinates cells;
-  if (polygon.size() < 2)
-    return cells;
-  for (std::size_t i = 0; i < polygon.size(); ++i) {
-    Point p0 = polygon[i];
-    Point p1 = polygon[(i + 1) % polygon.size()];
-    GridCoordinates line_cells =
-      compute_supercover_line(p0.x(), p0.y(), p1.x(), p1.y());
-    cells.insert(cells.end(), line_cells.begin(), line_cells.end());
+  GridCoordinatesWithEdgeEndpoints cells_with_edges;
+  if (polygon.size() < 2) {
+    return cells_with_edges;
   }
-  return cells;
+
+  auto next_pt_ind = [&polygon](unsigned int i) -> unsigned int {
+    return (i + 1) % static_cast<unsigned int>(polygon.size());
+  };
+  for (unsigned int i = 0; i < polygon.size(); ++i) {
+    const unsigned int j = next_pt_ind(i);
+    const Point p0 = polygon[i];
+    const Point p1 = polygon[j];
+    GridCoordinates line_cells =
+      compute_supercover_line_amanatides_woo(p0.x(), p0.y(), p1.x(), p1.y());
+    for (const auto &cell : line_cells) {
+      if (cells_with_edges.empty()) {
+        cells_with_edges.push_back({cell, {i, i}});
+      } else {
+        auto &[prev_cell, edge] = cells_with_edges.back();
+        if (prev_cell != cell) {
+          cells_with_edges.push_back({cell, {i, i}});
+        } else {
+          edge.second = i;
+        }
+      }
+    }
+  }
+  // Make last point outside of the cell
+  for (auto &[cell, edge] : cells_with_edges) {
+    edge.second = next_pt_ind(edge.second);
+  }
+  // Make sure circular property of the polygon is preserved
+  if (
+    cells_with_edges.size() > 1 and
+    cells_with_edges.front().first == cells_with_edges.back().first) {
+    auto &[first_cell, first_edge] = cells_with_edges.front();
+    auto &[last_cell, last_edge] = cells_with_edges.back();
+    if (first_edge.first == last_edge.second) {
+      // Connect the last edge to the first edge and update the first edge
+      first_edge.first = last_edge.first;
+
+      // Remove the last edge
+      cells_with_edges.pop_back();
+    }
+  }
+  return cells_with_edges;
 }
 
 // ---------------------------------------------------------------------
 // Point-in-Polygon Check for Polygon_with_holes
 // ---------------------------------------------------------------------
 
-bool point_inside_polygon(const Polygon &polygon, const Point &pt)
+static bool is_point_inside_polygon(const Polygon &polygon, const Point &pt)
 {
   return polygon.bounded_side(pt) == CGAL::ON_BOUNDED_SIDE;
-}
-
-bool point_inside_polygon_with_holes(
-  const Polygon_with_holes &pwh,
-  const Point &pt)
-{
-  if (!point_inside_polygon(pwh.outer_boundary(), pt)) {
-    return false;
-  }
-  for (auto hole_it = pwh.holes_begin(); hole_it != pwh.holes_end();
-       ++hole_it) {
-    if (point_inside_polygon(*hole_it, pt)) {
-      return false;
-    }
-  }
-  return true;
 }
 
 // ---------------------------------------------------------------------
@@ -247,12 +374,18 @@ struct PolygonInfo {
   unsigned int pwh_id;
   bool is_hole;
   unsigned int hole_id;
+  unsigned int entering_first_edge_idx;
+  unsigned int exited_last_edge_idx;
 };
 
-struct GridCellPolygon {
-  int x;
-  int y;
-  PolygonInfo poly_info;
+struct GeoDivAreaInfo {
+  unsigned int gd_id;
+  double area;
+};
+
+struct Interval {
+  unsigned int enter;
+  unsigned int exit;
 };
 
 // ---------------------------------------------------------------------
@@ -263,71 +396,64 @@ struct GridCellPolygon {
 // * For each cell, stores which pwhs' edges are present in the cell
 // * Whether the cell is an edge cell
 // * Stores metadata for each pwh
-void process_geo_divisions_edge_info(
-  boost::multi_array<bool, 2> &is_edge,
-  boost::multi_array<std::vector<PolygonInfo>, 2> &grid_cell_polygons,
+static void process_geo_divisions_edge_info(
+  boost::multi_array<std::vector<PolygonInfo>, 2> &edge_cell_polyinfo,
   std::vector<PolygonInfo> &all_pwh_info,
   InsetState &inset_state)
 {
-  std::vector<GridCellPolygon> global_edge_info;
-  global_edge_info.reserve(10000);
-
-#pragma omp parallel
-  {
-    std::vector<GridCellPolygon> local_edge_info;
-#pragma omp for nowait schedule(dynamic)
-    for (unsigned int gd_id = 0; gd_id < inset_state.geo_divs().size();
-         ++gd_id) {
-      const GeoDiv &gd = inset_state.geo_divs()[gd_id];
-      for (unsigned int pwh_id = 0; pwh_id < gd.n_polygons_with_holes();
-           ++pwh_id) {
-        const Polygon_with_holes &pwh = gd.polygons_with_holes()[pwh_id];
+#pragma omp parallel for collapse(2) schedule(dynamic)
+  for (unsigned int gd_id = 0; gd_id < inset_state.geo_divs().size();
+       ++gd_id) {
+    const GeoDiv &gd = inset_state.geo_divs()[gd_id];
+    for (unsigned int pwh_id = 0; pwh_id < gd.n_polygons_with_holes();
+         ++pwh_id) {
+      const Polygon_with_holes &pwh = gd.polygons_with_holes()[pwh_id];
+      const GridCoordinatesWithEdgeEndpoints outer_cells =
+        rasterize_polygon_edges(pwh.outer_boundary());
+      for (const auto &[cell, poly_idx_pair] : outer_cells) {
+        const auto &[x, y] = cell;
+        auto &[entering_first_edge_idx, exited_last_edge_idx] = poly_idx_pair;
         const PolygonInfo outer_info{
           gd_id,
           static_cast<unsigned int>(all_pwh_info.size()),
           pwh_id,
           false,
-          0};
-        const GridCoordinates outer_cells =
-          rasterize_polygon_edges(pwh.outer_boundary());
-        for (const auto &cell : outer_cells) {
+          0,
+          entering_first_edge_idx,
+          exited_last_edge_idx};
+        edge_cell_polyinfo[x][y].push_back(outer_info);
+      }
+
+      for (unsigned int hole_id = 0; hole_id < pwh.number_of_holes();
+           ++hole_id) {
+        const Polygon &hole = pwh.holes()[hole_id];
+        const GridCoordinatesWithEdgeEndpoints hole_cells =
+          rasterize_polygon_edges(hole);
+        for (const auto &[cell, poly_idx_pair] : hole_cells) {
           const auto &[x, y] = cell;
-          local_edge_info.push_back({x, y, outer_info});
-        }
-        for (unsigned int hole_id = 0; hole_id < pwh.number_of_holes();
-             ++hole_id) {
-          const Polygon &hole = pwh.holes()[hole_id];
-          const GridCoordinates hole_cells = rasterize_polygon_edges(hole);
+          auto &[entering_first_edge_idx, exited_last_edge_idx] =
+            poly_idx_pair;
           const PolygonInfo hole_info{
             gd_id,
             static_cast<unsigned int>(all_pwh_info.size()),
             pwh_id,
             true,
-            hole_id};
-          for (const auto &cell : hole_cells) {
-            const auto &[x, y] = cell;
-            local_edge_info.push_back({x, y, hole_info});
-          }
-        }
-#pragma omp critical
-        {
-          all_pwh_info.push_back(outer_info);
+            hole_id,
+            entering_first_edge_idx,
+            exited_last_edge_idx};
+          edge_cell_polyinfo[x][y].push_back(hole_info);
         }
       }
+      const PolygonInfo pwh_info{
+        gd_id,
+        static_cast<unsigned int>(all_pwh_info.size()),
+        pwh_id,
+        false,
+        0,
+        0,
+        0};
+      all_pwh_info.push_back(pwh_info);
     }
-#pragma omp critical
-    {
-      global_edge_info.insert(
-        global_edge_info.end(),
-        local_edge_info.begin(),
-        local_edge_info.end());
-    }
-  }
-
-  for (const auto &gcp : global_edge_info) {
-    const auto &[x, y, poly_info] = gcp;
-    is_edge[x][y] = true;
-    grid_cell_polygons[x][y].push_back(poly_info);
   }
 }
 
@@ -335,80 +461,294 @@ void process_geo_divisions_edge_info(
 // and assign a unique ID to each connected component
 // This is useful later to classify all cells of a connected
 // component to a single pwh or to ocean
-void compute_connected_components(
+static unsigned int compute_connected_components(
   boost::multi_array<int, 2> &comp,
-  int &current_comp_id,
-  const boost::multi_array<bool, 2> &is_edge,
+  const boost::multi_array<std::vector<PolygonInfo>, 2> &edge_cell_polyinfo,
   InsetState &inset_state)
 {
-  current_comp_id = 0;
-  int dx[4] = {0, 0, 1, -1};
-  int dy[4] = {1, -1, 0, 0};
-  for (int x = 0; x < static_cast<int>(inset_state.lx()); ++x) {
-    for (int y = 0; y < static_cast<int>(inset_state.ly()); ++y) {
-      if (!is_edge[x][y] && comp[x][y] == -1) {
+  const unsigned int lx = inset_state.lx();
+  const unsigned int ly = inset_state.ly();
+
+  // Precompute a boolean mask: true if cell (x,y) is an edge cell
+  std::vector<bool> is_edge(lx * ly, false);
+  for (unsigned int x = 0; x < lx; ++x) {
+    for (unsigned int y = 0; y < ly; ++y) {
+
+      // Flatten index: index = x * ly + y
+      is_edge[static_cast<unsigned int>(x * ly + y)] = (!edge_cell_polyinfo[x][y].empty());
+    }
+  }
+
+  unsigned int n_components = 0;
+  const int dx[4] = {0, 0, 1, -1};
+  const int dy[4] = {1, -1, 0, 0};
+
+  // Flood fill
+  for (unsigned int x = 0; x < lx; ++x) {
+    for (unsigned int y = 0; y < ly; ++y) {
+      if (!is_edge[static_cast<unsigned int>(x * ly + y)] && comp[x][y] == -1) {
         std::queue<Coordinate> q;
         q.push({x, y});
-        comp[x][y] = current_comp_id;
+        comp[x][y] = static_cast<int>(n_components);
         while (!q.empty()) {
           auto [cx, cy] = q.front();
           q.pop();
           for (int d = 0; d < 4; ++d) {
-            int nx = cx + dx[d];
-            int ny = cy + dy[d];
+            const int tx = static_cast<int>(cx) + dx[d];
+            const int ty = static_cast<int>(cy) + dy[d];
+
             if (
-              nx < 0 || nx >= static_cast<int>(inset_state.lx()) || ny < 0 ||
-              ny >= static_cast<int>(inset_state.ly()))
+              tx < 0 || tx >= static_cast<int>(lx) || ty < 0 ||
+              ty >= static_cast<int>(ly))
               continue;
-            if (!is_edge[nx][ny] && comp[nx][ny] == -1) {
-              comp[nx][ny] = current_comp_id;
+
+            const unsigned int nx = static_cast<unsigned int>(tx);
+            const unsigned int ny = static_cast<unsigned int>(ty);
+            if (!is_edge[nx * ly + ny] && comp[nx][ny] == -1) {
+              comp[nx][ny] = static_cast<int>(n_components);
               q.push({nx, ny});
             }
           }
         }
-        ++current_comp_id;
+        ++n_components;
       }
     }
   }
+  return n_components;
+}
+
+static Polygon extract_subpath(
+  const Polygon &poly,
+  unsigned int start_idx,
+  unsigned int end_idx)
+{
+  Polygon subpath;
+  const size_t n = poly.size();
+  if (n == 0) {
+    return subpath;
+  }
+  if (end_idx > start_idx) {
+    for (size_t i = start_idx; i <= end_idx; ++i)
+      subpath.push_back(poly[i]);
+  } else {
+    // Wrap-around: take from start_idx to end, then from 0 to end_idx
+    for (size_t i = start_idx; i < n; ++i)
+      subpath.push_back(poly[i]);
+    for (size_t i = 0; i <= end_idx; ++i)
+      subpath.push_back(poly[i]);
+  }
+  return subpath;
+}
+
+// --- Clockwise ordering helpers ---
+//
+// We define a clockwise ordering of the cell boundary for a 1x1 cell with
+// bottom-left (cx,cy): Edge 0 (right): x == cx+1, order from bottom to top.
+// Edge 1 (bottom): y == cy, order from right to left.
+// Edge 2 (left): x == cx, order from top to bottom.
+// Edge 3 (top): y == cy+1, order from left to right.
+inline int get_edge_index_cw(
+  const Point &p,
+  double cx,
+  double cy,
+  double eps = 1e-9)
+{
+  if (std::fabs(p.x() - (cx + 1)) < eps)
+    return 0;  // right edge
+  else if (std::fabs(p.y() - cy) < eps)
+    return 1;  // bottom edge
+  else if (std::fabs(p.x() - cx) < eps)
+    return 2;  // left edge
+  else if (std::fabs(p.y() - (cy + 1)) < eps)
+    return 3;  // top edge
+  else
+    throw std::runtime_error("Point is not on the cell boundary.");
+}
+
+// Returns the corner for each edge (the extreme point along that edge in the
+// direction of traversal). In our clockwise order:
+// - On the right edge (0), we traverse upward; the final point is the
+// top–right corner.
+// - On the bottom edge (1), we traverse from right to left; the first point is
+// the right–bottom corner.
+// - On the left edge (2), we traverse downward; the final point is the
+// bottom–left corner.
+// - On the top edge (3), we traverse from left to right; the first point is
+// the left–top corner.
+inline Point get_corner_cw(int edge, double cx, double cy)
+{
+  switch (edge) {
+  case 0:
+    return Point(cx + 1, cy);  // right edge: top–right corner
+  case 1:
+    return Point(cx, cy);  // bottom edge: right–bottom corner
+  case 2:
+    return Point(cx, cy + 1);  // left edge: bottom–left corner
+  case 3:
+    return Point(cx + 1, cy + 1);  // top edge: left–top corner
+  default:
+    throw std::runtime_error("Invalid edge index.");
+  }
+}
+
+// Checks the order of two points on the same edge in clockwise order.
+// For each edge, the order is defined as follows:
+// - Right edge (0): increasing y (from bottom to top).
+// - Bottom edge (1): decreasing x (from right to left).
+// - Left edge (2): decreasing y (from top to bottom).
+// - Top edge (3): increasing x (from left to right).
+inline bool on_same_edge_in_order_cw(
+  const Point &a,
+  const Point &b,
+  int edge,
+  double eps = 1e-9)
+{
+  switch (edge) {
+  case 0:
+    return a.y() > b.y() - eps;  // right edge: from lower to higher y
+  case 1:
+    return a.x() > b.x() + eps;  // bottom edge: from higher to lower x
+  case 2:
+    return a.y() < b.y() + eps;  // left edge: from higher to lower y
+  case 3:
+    return a.x() < b.x() - eps;  // top edge: from lower to higher x
+  default:
+    throw std::runtime_error("Invalid edge index.");
+  }
+}
+
+// --- Building the connecting path in clockwise order ---
+//
+// p1 is the first vertex of the clipped path, p2 is the last vertex.
+// Both are assumed to lie exactly on the boundary of a 1x1 cell with
+// bottom-left at (cx,cy). We want to “wrap” p2 around the cell boundary in a
+// clockwise manner until we reach p1.
+static Polygon get_connecting_path_cw(
+  const Point &p1,
+  const Point &p2,
+  double cx,
+  double cy)
+{
+  Polygon connecting_path;
+  connecting_path.push_back(p2);
+
+  int edge_p1 = get_edge_index_cw(p1, cx, cy);
+  int edge_p2 = get_edge_index_cw(p2, cx, cy);
+
+  // If both endpoints lie on the same edge:
+  if (edge_p1 == edge_p2) {
+    // On that edge, check if p1 comes after p2 (in our clockwise order)
+    if (on_same_edge_in_order_cw(p2, p1, edge_p1)) {
+      return connecting_path;
+    }
+  }
+
+  // If endpoints are on different edges, traverse edges in clockwise order.
+  // Our clockwise order is cyclic: 0 -> 1 -> 2 -> 3 -> 0.
+  int current_edge = edge_p2;
+
+  // First, complete p2's edge by adding its extreme corner
+  Point corner = get_corner_cw(current_edge, cx, cy);
+  if (!(corner == p2))
+    connecting_path.push_back(corner);
+
+  // Move to the next edge in clockwise order
+  current_edge = (current_edge + 1) % 4;
+
+  // Traverse until we reach the edge of p1
+  while (current_edge != edge_p1) {
+    connecting_path.push_back(get_corner_cw(current_edge, cx, cy));
+    current_edge = (current_edge + 1) % 4;
+  }
+  return connecting_path;
+}
+
+// Returns true if point p lies on any edge of the bounding box bbox.
+// That is, if p lies on either the top, bottom, left, or right edge.
+inline bool is_point_on_rect_edge(
+  const Point &p,
+  const Bbox &bbox,
+  double eps = 1e-9)
+{
+  bool onBottom = (std::fabs(p.y() - bbox.ymin()) < eps) &&
+                  (p.x() >= bbox.xmin() - eps && p.x() <= bbox.xmax() + eps);
+  bool onTop = (std::fabs(p.y() - bbox.ymax()) < eps) &&
+               (p.x() >= bbox.xmin() - eps && p.x() <= bbox.xmax() + eps);
+  bool onLeft = (std::fabs(p.x() - bbox.xmin()) < eps) &&
+                (p.y() >= bbox.ymin() - eps && p.y() <= bbox.ymax() + eps);
+  bool onRight = (std::fabs(p.x() - bbox.xmax()) < eps) &&
+                 (p.y() >= bbox.ymin() - eps && p.y() <= bbox.ymax() + eps);
+  return onBottom || onTop || onLeft || onRight;
+}
+
+// Checks if the clipped_path is fully contained within the bounding box
+inline bool is_path_contained_within_cell(
+  const Polygon &clipped_path,
+  const Bbox &bbox)
+{
+  const Point &first = clipped_path[0];
+  const Point &last = clipped_path[clipped_path.size() - 1];
+
+  return is_point_on_rect_edge(first, bbox) &&
+         is_point_on_rect_edge(last, bbox);
 }
 
 // If inside, for each connected component (cc), maps it to corresponding pwh
 // For an unmapped cell of a cc, if the neighboring cell is a edge cell,
 // then we find the pwh of that edge, and run point-in-polygon check
 // to see if the cc is inside the pwh. If so, we map the cc to that pwh
-void map_components_to_polygon_ids(
-  std::vector<bool> &is_comp_used,
-  std::vector<int> &comp_id_to_pwh_id,
-  const boost::multi_array<bool, 2> &is_edge,
-  const boost::multi_array<std::vector<PolygonInfo>, 2> &grid_cell_polygons,
+static void map_components_to_pwh(
+  std::vector<int> &comp_id_to_pwh_tot_id,
+  const boost::multi_array<std::vector<PolygonInfo>, 2> &edge_cell_polyinfo,
   const boost::multi_array<int, 2> &comp,
   const std::vector<PolygonInfo> &all_pwh_info,
   InsetState &inset_state)
 {
+  const unsigned int lx = inset_state.lx();
+  const unsigned int ly = inset_state.ly();
+
+  std::vector<bool> is_edge(lx * ly, false);
+  for (unsigned int x = 0; x < lx; ++x) {
+    for (unsigned int y = 0; y < ly; ++y) {
+
+      // Flatten index: index = x * ly + y
+      is_edge[static_cast<unsigned int>(x * ly + y)] = (!edge_cell_polyinfo[x][y].empty());
+    }
+  }
+
+  auto is_comp_used = [&comp_id_to_pwh_tot_id](int comp_id) {
+    return (comp_id != -1) and comp_id_to_pwh_tot_id[static_cast<unsigned int>(comp_id)] != -1;
+  };
+
   // Store the connected components that are outside the pwh when encountered
   // for the first time. Avoids running the expensive point-in-polygon check
   // multiple times
   std::vector<std::set<int>> is_outside(all_pwh_info.size());
 
-  int dx[4] = {0, 0, 1, -1};
-  int dy[4] = {1, -1, 0, 0};
+  const int dx[4] = {0, 0, 1, -1};
+  const int dy[4] = {1, -1, 0, 0};
 
-  for (int x = 0; x < static_cast<int>(inset_state.lx()); ++x) {
-    for (int y = 0; y < static_cast<int>(inset_state.ly()); ++y) {
+  for (unsigned int x = 0; x < lx; ++x) {
+    for (unsigned int y = 0; y < ly; ++y) {
       const int comp_id = comp[x][y];
-      if (is_edge[x][y] || is_comp_used[comp_id]) {
+      if (is_edge[x * ly + y] || is_comp_used(comp_id)) {
         continue;
       }
       for (int d = 0; d < 4; ++d) {
-        const int nx = x + dx[d];
-        const int ny = y + dy[d];
+        const int tx = static_cast<int>(x) + dx[d];
+        const int ty = static_cast<int>(y) + dy[d];
+
         if (
-          nx < 0 || nx >= static_cast<int>(inset_state.lx()) || ny < 0 ||
-          ny >= static_cast<int>(inset_state.ly())) {
+          tx < 0 || tx >= static_cast<int>(lx) || ty < 0 ||
+          ty >= static_cast<int>(ly))
           continue;
-        }
-        if (is_edge[nx][ny]) {
-          for (const auto &poly_info : grid_cell_polygons[nx][ny]) {
+
+        const unsigned int nx = static_cast<unsigned int>(tx);
+        const unsigned int ny = static_cast<unsigned int>(ty);
+
+        if (is_edge[nx * ly + ny]) {
+          auto cell_polyinfos = edge_cell_polyinfo[nx][ny];
+          for (const auto &poly_info : cell_polyinfos) {
             const unsigned int pwh_tot_id = poly_info.pwh_tot_id;
             if (is_outside[pwh_tot_id].contains(comp_id)) {
               continue;
@@ -422,17 +762,15 @@ void map_components_to_polygon_ids(
             if (is_hole) {
               const unsigned int &hole_id = poly_info.hole_id;
               auto &hole = pwh.holes()[hole_id];
-              if (point_inside_polygon(hole, center)) {
+              if (is_point_inside_polygon(hole, center)) {
                 is_outside[pwh_tot_id].insert(comp_id);
               } else {
-                is_comp_used[comp_id] = true;
-                comp_id_to_pwh_id[comp_id] = pwh_tot_id;
+                comp_id_to_pwh_tot_id[static_cast<unsigned int>(comp_id)] = static_cast<int>(pwh_tot_id);
               }
             } else {
               auto &outer_boundary = pwh.outer_boundary();
-              if (point_inside_polygon(outer_boundary, center)) {
-                is_comp_used[comp_id] = true;
-                comp_id_to_pwh_id[comp_id] = pwh_tot_id;
+              if (is_point_inside_polygon(outer_boundary, center)) {
+                comp_id_to_pwh_tot_id[static_cast<unsigned int>(comp_id)] = static_cast<int>(pwh_tot_id);
               } else {
                 is_outside[pwh_tot_id].insert(comp_id);
               }
@@ -444,102 +782,249 @@ void map_components_to_polygon_ids(
   }
 }
 
-// Computes area, using area computes the density metrics for each cell
-// If a cell is fully inside a pwh, then we know the area in O(1)
-// If a cell is an edge cell, then we need to run expensive clipping
-// algorithm to compute the area (this is the bottleneck)
-void compute_density_grid(
-  boost::multi_array<double, 2> &area_filled,
-  boost::multi_array<double, 2> &numer,
-  boost::multi_array<double, 2> &denom,
-  const boost::multi_array<bool, 2> &is_edge,
-  const boost::multi_array<int, 2> &comp,
-  const std::vector<bool> &is_comp_used,
-  const std::vector<PolygonInfo> &all_pwh_info,
-  const boost::multi_array<std::vector<PolygonInfo>, 2> &grid_cell_polygons,
-  const std::vector<int> &comp_id_to_pwh_to_id,
-  const std::vector<double> &gd_target_density,
-  InsetState &inset_state)
+// Build the closed polygon by appending the connecting path to the clipped
+// path. The closed polygon will start at p1 (first vertex of clipped_path),
+// then follow the clipped path, then follow the connecting path (which wraps
+// clockwise from the last vertex back to p1).
+static Polygon build_closed_polygon(
+  const Polygon &clipped_path,
+  const std::pair<int, int> &cell_bottom_left)
 {
-  std::fill_n(area_filled.data(), area_filled.num_elements(), 0.0);
-  std::fill_n(numer.data(), numer.num_elements(), 0.0);
-  std::fill_n(denom.data(), denom.num_elements(), 0.0);
+  double cx = static_cast<double>(cell_bottom_left.first);
+  double cy = static_cast<double>(cell_bottom_left.second);
 
-#pragma omp parallel for collapse(2) schedule(dynamic)
-  for (int x = 0; x < static_cast<int>(inset_state.lx()); ++x) {
-    for (int y = 0; y < static_cast<int>(inset_state.ly()); ++y) {
-      const int comp_id = comp[x][y];
-      // Skip ocean cells
-      if (not is_edge[x][y] and not is_comp_used[comp_id]) {
-        continue;
+  // Use indexing to obtain endpoints
+  const Point p1 = clipped_path[0];
+  const Point p2 = clipped_path[clipped_path.size() - 1];
+
+  // Compute the connecting path along the cell boundary from p1 to p2
+  // (clockwise)
+  Polygon connecting_path = get_connecting_path_cw(p1, p2, cx, cy);
+
+  Polygon closed_poly = clipped_path;
+
+  // Insert the connecting path, skipping the first point (duplicate of p2)
+  closed_poly.insert(
+    closed_poly.end(),
+    connecting_path.begin() + 1,
+    connecting_path.end());
+
+  // Close the polygon by appending p1
+  closed_poly.push_back(p1);
+  return closed_poly;
+}
+
+static double compute_path_union_area(
+  const Polygon &polygon,
+  bool is_outer,
+  const std::vector<Interval> &intervals,
+  const Coordinate &cell_coor)
+{
+  const double cx = cell_coor.first;
+  const double cy = cell_coor.second;
+  const Bbox cell_bbox(cx, cy, cx + 1, cy + 1);
+
+  Polygon unified_path;
+
+  for (size_t i = 0; i < intervals.size(); ++i) {
+    const auto &iv = intervals[i];
+    Polygon subpath = extract_subpath(polygon, iv.enter, iv.exit);
+    Polygon clipped_path = clip_path_by_rectangle(subpath, cell_bbox);
+
+    // If the first interval's clipped path is not fully contained,
+    // fall back to computing the overlap area
+    if (i == 0 && !is_path_contained_within_cell(clipped_path, cell_bbox)) {
+      return compute_polygon_rectangle_overlap_area(polygon, cell_bbox);
+    }
+
+    if (is_outer) {
+      // Outer boundaries are oriented in counter-clockwise. We make sure
+      // all boundaries are oriented in clockwise order to simplify
+      // implementation
+      std::reverse(clipped_path.begin(), clipped_path.end());
+    }
+
+    if (i == 0) {
+      unified_path = clipped_path;
+    } else {
+      // Connector from the last point of unified_path to the first point of
+      // clipped_path
+      const Point last_pt = unified_path[unified_path.size() - 1];
+      const Point first_pt = clipped_path[0];
+      Polygon connecting_path =
+        get_connecting_path_cw(first_pt, last_pt, cx, cy);
+
+      // Insert the connecting path, skipping the first point (which duplicates
+      // last_pt)
+      if (connecting_path.size() > 1) {
+        unified_path.insert(
+          unified_path.end(),
+          connecting_path.begin() + 1,
+          connecting_path.end());
       }
 
-      // Build cell polygon (square cell).
-      Polygon cell;
-      cell.push_back(Point(x, y));
-      cell.push_back(Point(x + 1, y));
-      cell.push_back(Point(x + 1, y + 1));
-      cell.push_back(Point(x, y + 1));
+      unified_path.insert(
+        unified_path.end(),
+        clipped_path.begin(),
+        clipped_path.end());
+    }
+  }
 
-      if (!is_edge[x][y] and is_comp_used[comp_id]) {
-        // Fully inside a Polygon with holes
-        const unsigned int pwh_tot_id = comp_id_to_pwh_to_id[comp_id];
+  // Close the polygon using the unified path
+  Polygon closed_poly = build_closed_polygon(unified_path, cell_coor);
+  double area = std::abs(closed_poly.area());
+  return area - std::floor(area);
+}
+
+static void compute_area(
+  const boost::multi_array<std::vector<PolygonInfo>, 2> &edge_cell_polyinfo,
+  const boost::multi_array<int, 2> &comp,
+  const std::vector<int> &comp_id_to_pwh_tot_id,
+  const std::vector<PolygonInfo> &all_pwh_info,
+  FTReal2d &rho,
+  InsetState &inset_state)
+{
+  const unsigned int lx = inset_state.lx();
+  const unsigned int ly = inset_state.ly();
+  std::vector<bool> is_edge(lx * ly, false);
+  for (unsigned int x = 0; x < lx; ++x) {
+    for (unsigned int y = 0; y < ly; ++y) {
+
+      // Flatten index: index = x * ly + y
+      is_edge[static_cast<unsigned int>(x * ly + y)] = (!edge_cell_polyinfo[x][y].empty());
+    }
+  }
+
+  auto is_inside_polygon = [&](unsigned int x, unsigned int y) {
+    auto comp_id = comp[x][y];
+    return (comp_id != -1) and comp_id_to_pwh_tot_id[static_cast<unsigned int>(comp[x][y])] != -1;
+  };
+
+  std::vector<double> gd_target_density;
+  for (const auto &gd : inset_state.geo_divs()) {
+    gd_target_density.push_back(
+      inset_state.target_area_at(gd.id()) / gd.area());
+  }
+  const double ocean_density = (lx * ly - inset_state.total_target_area()) /
+                               (lx * ly - inset_state.total_inset_area());
+  const double ocean_area_error = std::abs(
+    (lx * ly - inset_state.total_inset_area()) /
+      (lx * ly - inset_state.total_target_area()) -
+    1.0);
+
+#pragma omp parallel for collapse(2) schedule(dynamic)
+  for (unsigned int x = 0; x < lx; ++x) {
+    for (unsigned int y = 0; y < ly; ++y) {
+      const int comp_id = comp[x][y];
+      double num = 0.0;
+      double den = 0.0;
+      double area_tot = 0.0;
+      if (is_inside_polygon(x, y)) {
+        const unsigned int pwh_tot_id = static_cast<unsigned int>(
+          comp_id_to_pwh_tot_id[static_cast<unsigned int>(comp_id)]);
         const PolygonInfo &poly_info = all_pwh_info[pwh_tot_id];
         const unsigned int gd_id = poly_info.gd_id;
         const std::string &gd_name = inset_state.geo_divs()[gd_id].id();
         const double weight = 1.0 * inset_state.area_error_at(gd_name);
-#pragma omp atomic
-        numer[x][y] += weight * gd_target_density[gd_id];
-#pragma omp atomic
-        denom[x][y] += weight;
-        area_filled[x][y] = 1.0;
-        continue;
+        num += weight * gd_target_density[gd_id];
+        den += weight;
+        area_tot += 1.0;
+      } else if (is_edge[static_cast<unsigned int>(x * ly + y)]) {
+        auto cell_poly_info = edge_cell_polyinfo[x][y];
+        const size_t n = cell_poly_info.size();
+
+        for (unsigned int i = 0; i < n;) {
+          auto &poly_info = cell_poly_info[i];
+          const unsigned int pwh_tot_id = poly_info.pwh_tot_id;
+          double outer_area = 1.0;
+          double hole_taken_area = 0.0;
+          if (not poly_info.is_hole) {
+            unsigned int j = i;
+            while (j + 1 < n and
+                   cell_poly_info[j + 1].pwh_tot_id == pwh_tot_id and
+                   not cell_poly_info[j + 1].is_hole) {
+              ++j;
+            }
+            const auto &polygon = inset_state.geo_divs()[poly_info.gd_id]
+                                    .polygons_with_holes()[poly_info.pwh_id]
+                                    .outer_boundary();
+            std::vector<Interval> intervals;
+            for (unsigned int k = i; k <= j; ++k) {
+              const unsigned int enter =
+                cell_poly_info[k].entering_first_edge_idx;
+              const unsigned int exit = cell_poly_info[k].exited_last_edge_idx;
+              intervals.push_back({enter, exit});
+            }
+            outer_area =
+              compute_path_union_area(polygon, true, intervals, {x, y});
+            i = j + 1;
+          }
+          while (i < n and cell_poly_info[i].pwh_tot_id == pwh_tot_id) {
+            const unsigned int hole_id = cell_poly_info[i].hole_id;
+            const auto &polygon = inset_state.geo_divs()[poly_info.gd_id]
+                                    .polygons_with_holes()[poly_info.pwh_id]
+                                    .holes()[hole_id];
+            unsigned int j = i;
+            while (j + 1 < n and
+                   cell_poly_info[j + 1].pwh_tot_id == pwh_tot_id and
+                   cell_poly_info[j + 1].hole_id == hole_id) {
+              ++j;
+            }
+            std::vector<Interval> intervals;
+            for (unsigned int k = i; k <= j; ++k) {
+              const unsigned int enter =
+                cell_poly_info[k].entering_first_edge_idx;
+              const unsigned int exit = cell_poly_info[k].exited_last_edge_idx;
+              intervals.push_back({enter, exit});
+            }
+            hole_taken_area +=
+              compute_path_union_area(polygon, false, intervals, {x, y});
+            i = j + 1;
+          }
+          const double area = outer_area - hole_taken_area;
+          const unsigned int gd_id = poly_info.gd_id;
+          const std::string &gd_name = inset_state.geo_divs()[gd_id].id();
+          const double weight = area * inset_state.area_error_at(gd_name);
+          num += weight * gd_target_density[gd_id];
+          den += weight;
+          area_tot += area;
+        }
       }
 
-      const std::vector<PolygonInfo> &cell_poly_info =
-        grid_cell_polygons[x][y];
+      const double ocean_area = 1.0 - area_tot;
+      const double ocean_weight = ocean_area * ocean_area_error;
+      num += ocean_weight * ocean_density;
+      den += ocean_weight;
 
-      // Avoid double counting the same pwh
-      std::set<int> visited_pwh_ids;
-      for (const auto &poly_info : cell_poly_info) {
-        const unsigned int pwh_tot_id = poly_info.pwh_tot_id;
-        if (visited_pwh_ids.contains(pwh_tot_id)) {
-          continue;
-        }
-        visited_pwh_ids.insert(pwh_tot_id);  // Mark as visited
-        const unsigned int gd_id = poly_info.gd_id;
-        const unsigned int pwh_id = poly_info.pwh_id;
-        const std::string &gd_name = inset_state.geo_divs()[gd_id].id();
-        const Polygon_with_holes &pwh =
-          inset_state.geo_divs()[gd_id].polygons_with_holes()[pwh_id];
-
-        // Bottleneck: Clip cell with polygon with holes
-        const double intersect_area =
-          compute_square_polygon_with_holes_overlap_area(cell, pwh);
-#pragma omp atomic
-        area_filled[x][y] += intersect_area;
-        double weight = intersect_area * inset_state.area_error_at(gd_name);
-#pragma omp atomic
-        numer[x][y] += weight * gd_target_density[gd_id];
-#pragma omp atomic
-        denom[x][y] += weight;
+      if (den > 0.0) {
+        rho(x, y) = num / den;
+      } else {
+        rho(x, y) = ocean_density;
       }
     }
   }
 }
 
-// ---------------------------------------------------------------------
-// Testing and Debugging
-// ---------------------------------------------------------------------
-
 // Test function to compare the computed area with the actual area (brute
 // force)
-void test_areas(
-  const boost::multi_array<double, 2> &area_found,
-  InsetState &inset_state)
+[[maybe_unused]] static void test_areas_densities(const FTReal2d &rho, InsetState &inset_state)
 {
   const unsigned int lx = inset_state.lx();
   const unsigned int ly = inset_state.ly();
+  boost::multi_array<double, 2> numer(boost::extents[lx][ly]);
+  boost::multi_array<double, 2> denom(boost::extents[lx][ly]);
+  boost::multi_array<double, 2> area_found(boost::extents[lx][ly]);
+
+  std::fill_n(numer.data(), numer.num_elements(), 0.0);
+  std::fill_n(denom.data(), denom.num_elements(), 0.0);
+  std::fill_n(area_found.data(), area_found.num_elements(), 0.0);
+
+  std::vector<double> gd_target_density;
+  for (const auto &gd : inset_state.geo_divs()) {
+    gd_target_density.push_back(
+      inset_state.target_area_at(gd.id()) / gd.area());
+  }
+
   boost::multi_array<double, 2> area_actual(boost::extents[lx][ly]);
   std::fill_n(area_actual.data(), area_actual.num_elements(), 0.0);
   for (unsigned int gd_id = 0; gd_id < inset_state.geo_divs().size();
@@ -547,10 +1032,10 @@ void test_areas(
     const GeoDiv &gd = inset_state.geo_divs()[gd_id];
     for (const auto &pwh : gd.polygons_with_holes()) {
       auto bbox = pwh.outer_boundary().bbox();
-      for (unsigned int i = std::max(0, static_cast<int>(bbox.xmin()));
+      for (unsigned int i = static_cast<unsigned int>(std::max(0, static_cast<int>(bbox.xmin())));
            i < std::min(lx, static_cast<unsigned int>(bbox.xmax()) + 1);
            ++i) {
-        for (unsigned int j = std::max(0, static_cast<int>(bbox.ymin()));
+        for (unsigned int j = static_cast<unsigned int>(std::max(0, static_cast<int>(bbox.ymin())));
              j < std::min(ly, static_cast<unsigned int>(bbox.ymax()) + 1);
              ++j) {
 
@@ -561,132 +1046,136 @@ void test_areas(
           cell.push_back(Point(i + 1, j + 1));
           cell.push_back(Point(i, j + 1));
 
-          double intersect_area_pwh =
-            compute_square_polygon_with_holes_overlap_area(cell, pwh);
+          const double intersect_area_pwh =
+            compute_pwh_rectangle_overlap_area(pwh, cell.bbox());
           area_actual[i][j] += intersect_area_pwh;
+          const double weight =
+            intersect_area_pwh * inset_state.area_error_at(gd.id());
+          numer[i][j] += weight * gd_target_density[gd_id];
+          denom[i][j] += weight;
         }
       }
     }
   }
-  // do m, mean absolute error, etc.
-  double absolute_error = 0.0;
-  double square_error = 0.0;
-  const unsigned int num_cells = lx * ly;
+
+  const double ocean_density = (lx * ly - inset_state.total_target_area()) /
+                               (lx * ly - inset_state.total_inset_area());
+  const double ocean_area_error = std::abs(
+    (lx * ly - inset_state.total_inset_area()) /
+      (lx * ly - inset_state.total_target_area()) -
+    1.0);
+
   for (unsigned int i = 0; i < lx; ++i) {
     for (unsigned int j = 0; j < ly; ++j) {
-      absolute_error += std::abs(area_actual[i][j] - area_found[i][j]);
-      square_error += std::pow(area_actual[i][j] - area_found[i][j], 2);
-    }
-  }
-  const double mean_absolute_error = absolute_error / num_cells;
-  const double root_mean_square_error = std::sqrt(square_error / num_cells);
-  std::cout << "Num Integration: " << inset_state.n_finished_integrations()
-            << std::endl;
-  std::cout << "Mean Absolute Error: " << mean_absolute_error << std::endl;
-  std::cout << "Root Mean Square Error: " << root_mean_square_error
-            << std::endl
-            << std::endl;
-}
-
-void InsetState::fill_with_density_clip()
-{
-  timer.start("Fill with Density (Clipping Method)");
-
-  // Step 1: Detect edges and store edge information
-  boost::multi_array<bool, 2> is_edge(boost::extents[lx_][ly_]);
-  std::fill_n(is_edge.data(), is_edge.num_elements(), false);
-  boost::multi_array<std::vector<PolygonInfo>, 2> grid_cell_polygons(
-    boost::extents[lx_][ly_]);
-  std::vector<PolygonInfo> all_pwh_info;
-
-  process_geo_divisions_edge_info(
-    is_edge,
-    grid_cell_polygons,
-    all_pwh_info,
-    *this);
-
-  // Step 2: Compute connected components
-  boost::multi_array<int, 2> comp(boost::extents[lx_][ly_]);
-  std::fill_n(comp.data(), comp.num_elements(), -1);
-  int current_comp_id = 0;
-  compute_connected_components(comp, current_comp_id, is_edge, *this);
-
-  // Step 3: Map components to polygon with holes IDs
-  std::vector<bool> is_comp_used(current_comp_id, false);
-  std::vector<int> comp_id_to_pwh_id(current_comp_id, -1);
-  map_components_to_polygon_ids(
-    is_comp_used,
-    comp_id_to_pwh_id,
-    is_edge,
-    grid_cell_polygons,
-    comp,
-    all_pwh_info,
-    *this);
-
-  // Step 4: Compute density grid
-  boost::multi_array<double, 2> area_filled(boost::extents[lx_][ly_]);
-  boost::multi_array<double, 2> numer(boost::extents[lx_][ly_]);
-  boost::multi_array<double, 2> denom(boost::extents[lx_][ly_]);
-
-  std::vector<double> gd_target_density;
-  gd_target_density.reserve(geo_divs_.size());
-  for (const auto &gd : geo_divs_) {
-    gd_target_density.push_back(target_area_at(gd.id()) / gd.area());
-  }
-
-#pragma omp parallel for collapse(2)
-  for (unsigned int i = 0; i < lx_; ++i)
-    for (unsigned int j = 0; j < ly_; ++j)
-      rho_init_(i, j) = 0.0;
-
-  compute_density_grid(
-    area_filled,
-    numer,
-    denom,
-    is_edge,
-    comp,
-    is_comp_used,
-    all_pwh_info,
-    grid_cell_polygons,
-    comp_id_to_pwh_id,
-    gd_target_density,
-    *this);
-
-  // test_areas(area_filled, *this);
-
-  // Step 5: Compute ocean density and adjust remaining cells
-  double ocean_density =
-    (lx_ * ly_ - total_target_area()) / (lx_ * ly_ - total_inset_area());
-  double ocean_area_error = std::abs(
-    (lx_ * ly_ - total_inset_area()) / (lx_ * ly_ - total_target_area()) -
-    1.0);
-#pragma omp parallel for collapse(2)
-  for (unsigned int i = 0; i < lx_; ++i) {
-    for (unsigned int j = 0; j < ly_; ++j) {
-      double weight = (1.0 - area_filled[i][j]) * ocean_area_error;
-#pragma omp atomic
+      double weight = (1.0 - area_actual[i][j]) * ocean_area_error;
       numer[i][j] += weight * ocean_density;
-#pragma omp atomic
       denom[i][j] += weight;
     }
   }
 
-#pragma omp parallel for collapse(2)
-  for (unsigned int i = 0; i < lx_; ++i) {
-    for (unsigned int j = 0; j < ly_; ++j) {
+  FTReal2d rho_actual;
+  rho_actual.allocate(lx, ly);
+
+  for (unsigned int i = 0; i < lx; ++i) {
+    for (unsigned int j = 0; j < ly; ++j) {
       if (denom[i][j] > 0)
-        rho_init_(i, j) = numer[i][j] / denom[i][j];
+        rho_actual(i, j) = numer[i][j] / denom[i][j];
       else
-        rho_init_(i, j) = ocean_density;
+        rho_actual(i, j) = ocean_density;
     }
   }
+
+  double absolute_error_density = 0.0;
+  for (unsigned int i = 0; i < lx; ++i) {
+    for (unsigned int j = 0; j < ly; ++j) {
+      absolute_error_density += std::abs(rho_actual(i, j) - rho(i, j));
+    }
+  }
+  const unsigned int num_cells = lx * ly;
+  const double mean_absolute_error_density =
+    absolute_error_density / num_cells;
+  std::cout << "Num Integration: " << inset_state.n_finished_integrations()
+            << std::endl;
+  std::cout << "Mean Absolute Error Density: " << mean_absolute_error_density
+            << std::endl;
+}
+
+void InsetState::create_contiguity_graph()
+{
+  // Create a copy of `inset_state` to avoid rescaling the original
+  InsetState is_copy = *this;
+
+  is_copy.rescale_map();
+
+  boost::multi_array<std::vector<PolygonInfo>, 2> edge_cell_polyinfo(
+    boost::extents[is_copy.lx_][is_copy.ly_]);
+  std::vector<PolygonInfo> all_pwh_info;
+
+  process_geo_divisions_edge_info(edge_cell_polyinfo, all_pwh_info, is_copy);
+
+  for (unsigned int x = 0; x < is_copy.lx(); ++x) {
+    for (unsigned int y = 0; y < is_copy.ly(); ++y) {
+      std::vector<PolygonInfo> polygons_at_xy = edge_cell_polyinfo[x][y];
+
+      for (size_t i = 0; i < polygons_at_xy.size(); ++i) {
+        GeoDiv &gd_1 = geo_divs_[polygons_at_xy[i].gd_id];
+        for (size_t j = i + 1; j < polygons_at_xy.size(); ++j) {
+          GeoDiv &gd_2 = geo_divs_[polygons_at_xy[j].gd_id];
+
+          // Update adjacency for both GeoDivs
+          // GeoDiv.adjacent_to() already checks whether the GeoDivs are
+          // different
+          gd_1.adjacent_to(gd_2.id());
+          gd_2.adjacent_to(gd_1.id());
+        }
+      }
+    }
+  }
+}
+
+void InsetState::fill_with_density_clip()
+{
+  std::cerr << "Filling density using clipping method" << std::endl;
+
+  timer.start("Fill with Density (Clipping Method)");
+
+  // Step 1: Detect edges and store edge information
+  boost::multi_array<std::vector<PolygonInfo>, 2> edge_cell_polyinfo(
+    boost::extents[lx_][ly_]);
+  std::vector<PolygonInfo> all_pwh_info;
+
+  process_geo_divisions_edge_info(edge_cell_polyinfo, all_pwh_info, *this);
+
+  // Step 2: Compute connected components
+  boost::multi_array<int, 2> comp(boost::extents[lx_][ly_]);
+  std::fill_n(comp.data(), comp.num_elements(), -1);
+  const unsigned int n_components =
+    compute_connected_components(comp, edge_cell_polyinfo, *this);
+
+  // Step 3: Map components to polygon with holes IDs
+  std::vector<int> comp_id_to_pwh_tot_id(n_components, -1);
+  map_components_to_pwh(
+    comp_id_to_pwh_tot_id,
+    edge_cell_polyinfo,
+    comp,
+    all_pwh_info,
+    *this);
+
+  compute_area(
+    edge_cell_polyinfo,
+    comp,
+    comp_id_to_pwh_tot_id,
+    all_pwh_info,
+    rho_init_,
+    *this);
+
+  // test_areas_densities(rho_init_, *this);
 
   // Step 6: Run FFTW to compute rho_ft_
   auto rho_begin = rho_init_.as_1d_array();
   auto rho_end = rho_begin + lx_ * ly_;
   auto [min_iter, max_iter] = std::minmax_element(rho_begin, rho_end);
   dens_min_ = *min_iter;
-  dens_mean_ = ocean_density;
   dens_max_ = *max_iter;
 
   execute_fftw_fwd_plan();

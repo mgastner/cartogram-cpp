@@ -16,9 +16,9 @@ std::string StringToDecimalConverter::remove_char(std::string str, char ch)
   return str;
 }
 
-int count_char(const std::string &str, char ch)
+static unsigned int count_char(const std::string &str, char ch)
 {
-  return std::count(str.begin(), str.end(), ch);
+  return static_cast<unsigned int>(std::count(str.begin(), str.end(), ch));
 }
 
 bool StringToDecimalConverter::has_multiple_commas_and_points(
@@ -38,8 +38,8 @@ bool StringToDecimalConverter::has_invalid_comma_point_sequence(
 {
   assert(!has_multiple_commas_and_points(str));
 
-  const int comma_count = count_char(str, comma_);
-  const int point_count = count_char(str, point_);
+  const unsigned int comma_count = count_char(str, comma_);
+  const unsigned int point_count = count_char(str, point_);
 
   // If both comma and point are not found, the sequence is valid
   if (comma_count == 0 || point_count == 0) {
@@ -131,10 +131,10 @@ bool StringToDecimalConverter::is_str_correct_format(const std::string &str)
   return true;
 }
 
-bool is_comma_as_decimal_separator(const std::string &str)
+static bool is_comma_as_decimal_separator(const std::string &str)
 {
-  int comma_count = count_char(str, ',');
-  int point_count = count_char(str, '.');
+  unsigned int comma_count = count_char(str, ',');
+  unsigned int point_count = count_char(str, '.');
 
   // Case 1: One comma, and if points exist, the last point appears before the
   // comma
@@ -165,10 +165,10 @@ bool is_comma_as_decimal_separator(const std::string &str)
   return false;
 }
 
-bool is_point_as_decimal_separator(const std::string &str)
+static bool is_point_as_decimal_separator(const std::string &str)
 {
-  int comma_count = count_char(str, ',');
-  int point_count = count_char(str, '.');
+  unsigned int comma_count = count_char(str, ',');
+  unsigned int point_count = count_char(str, '.');
 
   // Case 1: One point, and if commas exist, the last comma appears before the
   // point

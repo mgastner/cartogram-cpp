@@ -43,7 +43,7 @@ constexpr double inset_spacing_factor = 0.1;
 // Percent of height/width of tallest/widest inset that divider should be
 constexpr double divider_length = 0.8;
 
-// Font size range for cairo labelling
+// Font size range for labelling
 constexpr double min_font_size = 6.0;
 constexpr double max_font_size = 10.0;
 
@@ -65,6 +65,6 @@ constexpr double xi_sq = 4.0;
 constexpr unsigned int plotted_cell_length = 8;
 
 // String to identify our custom CRS
-constexpr const char* custom_crs = "EPSG:cartesian";
+constexpr const char *custom_crs = "EPSG:cartesian";
 
-#endif // CONST_HPP_
+#endif  // CONST_HPP_

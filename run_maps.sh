@@ -38,7 +38,12 @@ for map_dir in */; do
     echo "Map: $map_name"
     echo "Data: $data_file"
 
-    command="../bin/cartogram \"../sample_data/${geojson_file}\" \"../sample_data/${csv_file}\""
+    extra=""
+    if [[ $map_name == *world* ]]; then
+      extra="--world"
+    fi
+
+    command="../build/cartogram \"../sample_data/${geojson_file}\" \"../sample_data/${csv_file}\" $extra"
     echo "Command: $command"
 
     # Show the full path from the script location for the current map folder

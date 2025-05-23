@@ -40,10 +40,10 @@ bool intersection::ray_intersects(
 
     // Pre-condition to ignore grazing incidence (i.e., a line segment along
     // the polygon is exactly on the test ray)
-    (a.y() != b.y())) {
-    if (a.y() == ray) {
+    !almost_equal(a.y(), b.y())) {
+    if (almost_equal(a.y(), ray)) {
       a = Point(a.x(), a.y() + epsilon);
-    } else if (b.y() == ray) {
+    } else if (almost_equal(b.y(), ray)) {
       b = Point(b.x(), b.y() + epsilon);
     }
 

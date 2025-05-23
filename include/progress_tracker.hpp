@@ -1,7 +1,23 @@
 #ifndef PROGRESS_TRACKER_H
 #define PROGRESS_TRACKER_H
 
-#include "indicators.hpp"
+#include <cstdint>
+#include "indicators/block_progress_bar.hpp"
+#include "indicators/color.hpp"
+#include "indicators/cursor_control.hpp"
+#include "indicators/cursor_movement.hpp"
+#include "indicators/details/stream_helper.hpp"
+#include "indicators/display_width.hpp"
+#include "indicators/dynamic_progress.hpp"
+#include "indicators/font_style.hpp"
+#include "indicators/indeterminate_progress_bar.hpp"
+#include "indicators/multi_progress.hpp"
+#include "indicators/progress_bar.hpp"
+#include "indicators/progress_spinner.hpp"
+#include "indicators/progress_type.hpp"
+#include "indicators/setting.hpp"
+#include "indicators/termcolor.hpp"
+#include "indicators/terminal_size.hpp"
 
 class ProgressTracker
 {
@@ -29,7 +45,7 @@ public:
 private:
   double total_geo_divs_;  // Total number of GeoDivs to monitor progress
   double progress_;  // Progress measured on a scale from 0 (start) to 1 (end)
-  double max_progress_; // Maximum progress value ever reached
+  double max_progress_;  // Maximum progress value ever reached
   indicators::ProgressBar bar_;
 };
 

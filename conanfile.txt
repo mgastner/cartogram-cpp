@@ -1,0 +1,27 @@
+[requires]
+argparse/3.2
+cgal/6.0.1
+vincentlaucsb-csv-parser/2.3.0
+indicators/2.3
+nlohmann_json/3.11.3
+boost/1.83.0
+fftw/3.3.10
+pkgconf/2.2.0
+
+[tool_requires]
+pkgconf/2.2.0
+
+[generators]
+CMakeDeps
+CMakeToolchain
+PkgConfigDeps
+
+[options]
+boost/*:header_only=True
+cgal/*:header_only=True
+
+[layout]
+cmake_layout
+
+[imports]
+lib, *.so* -> ../bin

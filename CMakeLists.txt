@@ -1,130 +1,83 @@
-cmake_minimum_required(VERSION 3.22)
-
-if(UNIX AND NOT APPLE)
-  set(CMAKE_CXX_COMPILER "g++-11")
-endif()
-
+cmake_minimum_required(VERSION 3.30)
 project(cartogram LANGUAGES CXX)
 
-# ========== Project Setup ==========
-set(CMAKE_CXX_STANDARD 20)
-set(THREADS_PREFER_PTHREAD_FLAG ON)
-set(CMAKE_COLOR_DIAGNOSTICS ON)
-set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
-
-# Assume development build by default
-set(RELEASE_TAG "development" CACHE STRING "Release tag for the build")
-
-# Default build type
-if(NOT CMAKE_BUILD_TYPE)
-  set(CMAKE_BUILD_TYPE "Release" CACHE STRING "" FORCE)
-endif()
-
-# ========== Dependencies Setup ==========
-
-# Direct CMake to local CGAL installation
-set(CGAL_DIR ${PROJECT_SOURCE_DIR}/external/cgal)
-find_package(CGAL REQUIRED)
-
-# Boost
-find_package(Boost REQUIRED CONFIG COMPONENTS unit_test_framework)
-
-# PkgConfig, fftw, and cairo
-find_package(PkgConfig REQUIRED)
-pkg_search_module(fftw REQUIRED fftw3 IMPORTED_TARGET)
-pkg_search_module(cairo REQUIRED cairo IMPORTED_TARGET)
-
-# ========== Source Files ==========
-file(GLOB_RECURSE CARTOGRAM_SOURCES "src/*.cpp")
-add_executable(cartogram ${CARTOGRAM_SOURCES})
-
-target_compile_definitions(cartogram PRIVATE RELEASE_TAG="${RELEASE_TAG}")
-
-# ========== Include Directories ==========
-target_include_directories(cartogram
-  PUBLIC
-    ${PROJECT_SOURCE_DIR}/include
-)
-
-target_include_directories(cartogram
-  SYSTEM PUBLIC
-    ${CGAL_INCLUDE_DIRS}
-    ${Boost_INCLUDE_DIRS}
-    ${PROJECT_SOURCE_DIR}/external
-)
-
-# ========== Compile Options ==========
-target_compile_options(cartogram PRIVATE -ffp-contract=off)
-
-# Compiler warnings
-target_compile_options(cartogram PRIVATE
-  -Wall  # Enable all warnings
-  -Wextra  # Enable extra warnings
-  -Wpedantic  # Enable pedantic warnings
-)
-
-# ========== Linking Libraries ==========
-target_link_libraries(cartogram
-    PkgConfig::fftw
-    PkgConfig::cairo
-)
-
-# ========== Installation ==========
-install(TARGETS cartogram  DESTINATION /usr/local/bin)
-
-# Enable CTest testing
 enable_testing()
 
-# Add test executable
-file(GLOB_RECURSE TEST_FILES "tests/*.cpp")
+set(CMAKE_CXX_STANDARD 20)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-# Include the source files from the src directory that are needed for testing
-set(CARTOGRAM_TEST_SOURCES_FROM_SRC
-  "src/misc/string_to_decimal_converter.cpp"
+# ----------------------------- Third–party -----------------------------
+find_package(Boost REQUIRED CONFIG)
+find_package(cgal REQUIRED CONFIG)
+find_package(nlohmann_json REQUIRED CONFIG)
+find_package(argparse REQUIRED CONFIG)
+find_package(vincentlaucsb-csv-parser REQUIRED CONFIG)
+find_package(indicators REQUIRED CONFIG)
+find_package(PkgConfig REQUIRED)
+pkg_search_module(FFTW REQUIRED IMPORTED_TARGET fftw3)
 
-  # Add additional test sources from src here if necessary
+# ----------------------------- Cartogram Library  ---------------------------
+file(GLOB_RECURSE CARTOGRAM_SOURCES CONFIGURE_DEPENDS src/*.cpp)
+
+# Exclude main.cpp from the list of sources
+list(FILTER CARTOGRAM_SOURCES EXCLUDE REGEX ".*/main\\.cpp$")
+
+add_library(cartogram_lib STATIC ${CARTOGRAM_SOURCES})
+target_include_directories(cartogram_lib
+  PUBLIC ${PROJECT_SOURCE_DIR}/include
 )
 
-# For each test file, create an executable and a test
-foreach(TEST_FILE ${TEST_FILES})
-  # Extract the filename without an extension to use as a test name
-  get_filename_component(TEST_NAME ${TEST_FILE} NAME_WE)
-
-  # Create an executable for each test file
-  add_executable(${TEST_NAME} ${TEST_FILE} ${CARTOGRAM_TEST_SOURCES_FROM_SRC})
-
-  # Include directories for the test executable
-  target_include_directories(${TEST_NAME}
-    PUBLIC
-      ${PROJECT_SOURCE_DIR}/include
-  )
-  target_include_directories(${TEST_NAME}
-    SYSTEM PUBLIC
-      ${CGAL_INCLUDE_DIRS}
-      ${Boost_INCLUDE_DIRS}
-      ${PROJECT_SOURCE_DIR}/external
-  )
-
-  target_compile_options(${TEST_NAME} PRIVATE -ffp-contract=off)
-
-  # Compiler warnings for the test executable
-  target_compile_options(${TEST_NAME} PRIVATE -Wall -Wextra -pedantic -Wno-deprecated-declarations)
-
-  # Linking Libraries for Test Executable
-  target_link_libraries(${TEST_NAME}
-    ${Boost_UNIT_TEST_FRAMEWORK_LIBRARY}
-    PkgConfig::fftw
-  )
-
-  # Register the executable as a test
-  add_test(NAME ${TEST_NAME} COMMAND ${TEST_NAME})
-endforeach()
-
-# Uninstall target
-add_custom_target("uninstall")
-add_custom_command(
-  TARGET "uninstall"
-  POST_BUILD
-  COMMENT "Uninstalling cartogram..."
-  COMMAND xargs rm -vf < install_manifest.txt || echo "Nothing in install_manifest.txt to be uninstalled!"
+target_link_libraries(cartogram_lib
+  PUBLIC
+  CGAL::CGAL
+  boost::boost
+  nlohmann_json::nlohmann_json
+  argparse::argparse
+  vincentlaucsb-csv-parser::vincentlaucsb-csv-parser
+  indicators::indicators
+  PkgConfig::FFTW
 )
+
+target_compile_options(cartogram_lib PRIVATE
+  -O3
+  -ffp-contract=off
+  -Werror
+  -Wall -Wextra -Wpedantic -Wshadow -Wold-style-cast -Wunreachable-code
+  -pedantic-errors -Wformat=2 -Wformat-security -Wcast-qual -Wcast-align -Wconversion
+  -Wsign-conversion -Wfloat-equal -Woverloaded-virtual -Wno-unknown-pragmas
+  -Wmissing-declarations -Werror=return-type -Wnon-virtual-dtor
+)
+
+include(CheckCXXCompilerFlag)
+check_cxx_compiler_flag("-march=native" HAS_MARCH_NATIVE)
+check_cxx_compiler_flag("-mtune=native" HAS_MTUNE_NATIVE)
+
+if(HAS_MARCH_NATIVE)
+  target_compile_options(cartogram_lib PRIVATE -march=native)
+elseif(HAS_MTUNE_NATIVE)
+  target_compile_options(cartogram_lib PRIVATE -mtune=native)
+endif()
+
+include(CheckIPOSupported)
+check_ipo_supported(RESULT ipo_ok OUTPUT ipo_msg)
+
+if(ipo_ok)
+  set_property(TARGET cartogram_lib PROPERTY INTERPROCEDURAL_OPTIMIZATION ON)
+  target_link_options(cartogram_lib PRIVATE -flto)
+else()
+  message(STATUS "IPO/LTO not available: ${ipo_msg}")
+endif()
+
+target_include_directories(cartogram_lib
+  PUBLIC ${PROJECT_SOURCE_DIR}/include
+)
+
+# ----------------------------- Main executable  -----------------------------
+add_executable(cartogram src/main.cpp)
+target_link_libraries(cartogram
+  PRIVATE cartogram_lib
+)
+install(TARGETS cartogram RUNTIME DESTINATION bin)
+
+# ----------------------------- Tests  -----------------------------
+add_subdirectory(tests)
