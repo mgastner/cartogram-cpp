@@ -16,33 +16,33 @@ We manage dependencies with a Conan 2. The project uses Clang with C++20 support
 
 ### Linux and macOS
 
-Please ensure you execute all the following commands in the same terminal. This is to ensure that the virtual environment is activated and the `BUILD_TYPE` variable is set correctly.
+<!-- Please ensure you execute all the following commands in the same terminal. This is to ensure that the virtual environment is activated and the `BUILD_TYPE` variable is set correctly. -->
 
-1. Install dependencies
+Before running the installation commands, install `pipx` using your favourite package manager.
 
 For macOS:
 ``` shell
-brew install cmake conan@2
+brew install pipx
 ```
 
 For Linux (Debian-based distributions):
 ``` shell
-sudo apt install cmake conan
+sudo apt install pipx
 ```
 
-2. Setup Conan
+1. Setup Conan
 
 ``` shell
-conan remote update conancenter --url=https://center2.conan.io
+pipx run conan==2.16.1 remote update conancenter --url=https://center2.conan.io
 ```
 
 The following command will detect your system's profile and set it up for you. If you already have a profile set up, this may yeild an error, in which case you may skip this step.
 
 ``` shell
-conan profile detect
+pipx run conan==2.16.1 profile detect
 ```
 
-3. Choose build type and export that type to your command line
+2. Choose build type and export that type to your command line
 
 For release builds, run:
 ``` shell
@@ -54,7 +54,7 @@ For debug builds, run:
 export BUILD_TYPE=Debug
 ```
 
-Run the following commands in the same terminal where you set the `BUILD_TYPE` variable.
+Run the following commands in the same terminal where you set the `BUILD_TYPE` variable. You may also manually replace `Release` with `Release` or `Debug` in the commands below, depending on your choice of build type.
 
 Please also ensure you delete the `build` directory if it exists, as leftover cache may cause issues with the build process.
 
@@ -62,18 +62,30 @@ Please also ensure you delete the `build` directory if it exists, as leftover ca
 rm -rf build
 ```
 
-4. Install dependencies via Conan
+From here, you may either run the commands below to build the project, or you may run the `build.sh` script in the root directory of the repository, which will execute all the commands below for you.
 
 ``` shell
-conan install . --output-folder build --build=missing -s build_type=$BUILD_TYPE -s compiler.cppstd=20
+bash build.sh
 ```
 
-5. Configure and Build with CMake
+3. Install dependencies via Conan
 
 ``` shell
-cmake -B build -S . -DCMAKE_TOOLCHAIN_FILE=build/build/$BUILD_TYPE/generators/conan_toolchain.cmake -DCMAKE_BUILD_TYPE=$BUILD_TYPE -DCMAKE_EXPORT_COMPILE_COMMANDS=ON
-cmake --build build -j4
-sudo cmake --install build # optional, to install the program globally
+pipx run conan==2.16.1 install . --output-folder build --build=missing -s build_type=Release -s compiler.cppstd=20
+```
+
+4. Configure and Build with CMake
+
+``` shell
+pipx run cmake==3.30.0 -B build -S . -DCMAKE_TOOLCHAIN_FILE=build/build/Release/generators/conan_toolchain.cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_EXPORT_COMPILE_COMMANDS=ON
+pipx run cmake==3.30.0 --build build -j4
+pipx run cmake==3.30.0 --install build # optional, to install the program globally
+```
+
+For debug builds, replace `Release` with `Debug` in the commands above. You may do so more simply by running the following two commands:
+``` shell
+export BUILD_TYPE=Debug
+bash build.sh
 ```
 
 ### Tests
