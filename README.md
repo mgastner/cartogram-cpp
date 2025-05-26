@@ -51,54 +51,47 @@ You may inspect the resultant SVG to check if everything looks as expected.
 
 ## Development
 
-We manage dependencies with a Conan 2. The project uses Clang with C++20 support. Please ensure that a Clang++ (preferably Clang 20) compiler with C++20 support is installed before proceeding.
+We manage dependencies with a Python virtual environment and Conan 2. The project uses Clang with C++20 support. Please ensure that Python 3.10 or later and a Clang++ (preferably Clang 20) compiler with C++20 support are installed before proceeding.
 
 ### Linux and macOS
 
-<!-- Please ensure you execute all the following commands in the same terminal. This is to ensure that the virtual environment is activated and the `BUILD_TYPE` variable is set correctly. -->
+#### Create a virtual environment and activate it
 
-Before running the installation commands, install `pipx` using your favourite package manager.
-
-For macOS:
-``` shell
-brew install pipx
+```
+python3 -m venv .venv
+source .venv/bin/activate
 ```
 
-For Linux (Debian-based distributions):
-``` shell
-sudo apt install pipx
+#### Install dependencies while in the virtual environment
+
+```
+pip install --upgrade pip wheel conan==2.16.1 cmake==3.30.0
 ```
 
-1. Setup Conan
+#### Setup Conan
 
-``` shell
-pipx run conan==2.16.1 remote update conancenter --url=https://center2.conan.io
+```
+conan remote update conancenter --url=https://center2.conan.io
+conan profile detect
 ```
 
-The following command will detect your system's profile and set it up for you. If you already have a profile set up, this may yeild an error, in which case you may skip this step.
+#### Install dependencies via Conan
 
-``` shell
-pipx run conan==2.16.1 profile detect
+##### Release
+```
+conan install . --output-folder build --build=missing -s build_type=Release -s compiler.cppstd=20
 ```
 
-2. Choose build type and export that type to your command line
-
-For release builds, run:
-``` shell
-export BUILD_TYPE=Release
+##### Debug
 ```
-
-For debug builds, run:
-``` shell
-export BUILD_TYPE=Debug
+conan install . --output-folder build --build=missing -s build_type=Debug -s compiler.cppstd=20
 ```
 
 Run the following commands in the same terminal where you set the `BUILD_TYPE` variable. You may also manually replace `Release` with `Release` or `Debug` in the commands below, depending on your choice of build type.
 
-Please also ensure you delete the `build` directory if it exists, as leftover cache may cause issues with the build process.
-
-``` shell
-rm -rf build
+##### Release
+```
+.venv/bin/cmake -B build -S . -DCMAKE_TOOLCHAIN_FILE=build/build/Release/generators/conan_toolchain.cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_EXPORT_COMPILE_COMMANDS=ON
 ```
 
 From here, you may either run the commands below to build the project, or you may run the `build.sh` script in the root directory of the repository, which will execute all the commands below for you.
@@ -125,13 +118,26 @@ For debug builds, replace `Release` with `Debug` in the commands above. You may 
 ``` shell
 export BUILD_TYPE=Debug
 bash build.sh
+##### Debug
+```
+.venv/bin/cmake -B build -S . -DCMAKE_TOOLCHAIN_FILE=build/build/Debug/generators/conan_toolchain.cmake -DCMAKE_BUILD_TYPE=Debug -DCMAKE_EXPORT_COMPILE_COMMANDS=ON
 ```
 
+#### Build the project
+```
+.venv/bin/cmake --build build -j4
+```
+
+#### Install the project (optional)
+```
+sudo .venv/bin/cmake --install build
+
+```
 ### Tests
 
 To run all the tests, execute the following command from the root directory of the repository:
 
-``` shell
+```
 ctest --test-dir build --output-on-failure
 ```
 
@@ -139,39 +145,41 @@ ctest --test-dir build --output-on-failure
 
 To run only the unit tests:
 
-``` shell
+```
 ctest --test-dir build --output-on-failure -L unit
+```
+
+```
 ctest --test-dir build --output-on-failure test_string_to_decimal_converter.cpp
 ```
 
 #### Stress Tests
-
 This test will run all the maps in the `cartogram-cpp/sample_data` folder.
 
 To run only the stress tests:
 
-``` shell
+```
 ctest --test-dir build --output-on-failure -L stress
 ```
 
 #### Fuzzer Tests
-
 Fuzzer tests run maps in the `cartogram-cpp/sample_data` folder with random data.
 
 To run only the fuzzer tests:
 
-``` shell
+```
 ctest --test-dir build -L fuzzer --verbose
 ```
 This test will take a while to finish.
 
-Use `--verbose` to the command to see more details about the test results.
+Add `--verbose` to the command to see more details about the test results.
 
 ### Windows (Using WSL)
 
 For Windows users, we recommend using our program through Windows Subsystem for Linux (WSL).
 
-### Docker
+
+#### Installing using Docker
 
 If you prefer, you may run the program in an isolated environment using [Docker Desktop](https://www.docker.com/products/docker-desktop/).
 
@@ -221,7 +229,7 @@ If you'd like to contribute to the project, please run our tests after you make 
 
 To run the unit tests, execute the following command:
 
-``` shell
+```shell script
 ctest --verbose
 ```
 
@@ -229,7 +237,7 @@ To learn more about the tests, you may go to the `cartogram-cpp/tests` directory
 
 Additionally, you may go to the `cartogram-cpp/tests` directory and run the following command:
 
-``` shell
+```shell script
 bash stress_test.sh
 ```
 
@@ -237,19 +245,19 @@ bash stress_test.sh
 
 To benchmark the program, first install [hyperfine](https://github.com/sharkdp/hyperfine). You can install it using Homebrew on macOS:
 
-``` shell
+```shell script
 brew install hyperfine
 ```
 
 Or using apt on Debian-based distributions:
 
-``` shell
+```shell script
 apt install hyperfine
 ```
 
 Then, go to the `cartogram-cpp/tests` directory and run the following command:
 
-``` shell
+```shell script
 bash stress_test.sh
 ```
 
@@ -257,7 +265,7 @@ bash stress_test.sh
 
 Go to the `cartogram-cpp` directory in your preferred terminal and execute the following command:
 
-``` shell
+```shell script
 sudo make uninstall -C build
 ```
 
