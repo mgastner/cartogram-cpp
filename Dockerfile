@@ -20,6 +20,7 @@ RUN pipx install conan==2.16.1
 RUN pipx install cmake==3.30.0
 
 # Ensure pipx binaries are in PATH
+RUN pipx ensurepath
 ENV PATH="/root/.local/bin:${PATH}"
 
 
