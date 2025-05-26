@@ -46,21 +46,38 @@ conan profile detect
 ```
 
 #### Install dependencies via Conan
+
+##### Release
 ```
 conan install . --output-folder build --build=missing -s build_type=Release -s compiler.cppstd=20
 ```
 
-#### Build the project
+##### Debug
+```
+conan install . --output-folder build --build=missing -s build_type=Debug -s compiler.cppstd=20
+```
+
+#### Configure the project
+
+##### Release
 ```
 .venv/bin/cmake -B build -S . -DCMAKE_TOOLCHAIN_FILE=build/build/Release/generators/conan_toolchain.cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_EXPORT_COMPILE_COMMANDS=ON
 ```
 
+##### Debug
+```
+.venv/bin/cmake -B build -S . -DCMAKE_TOOLCHAIN_FILE=build/build/Debug/generators/conan_toolchain.cmake -DCMAKE_BUILD_TYPE=Debug -DCMAKE_EXPORT_COMPILE_COMMANDS=ON
+```
+
+#### Build the project
 ```
 .venv/bin/cmake --build build -j4
 ```
 
+#### Install the project (optional)
 ```
 sudo .venv/bin/cmake --install build
+
 ```
 ### Tests
 
