@@ -78,6 +78,9 @@ conan profile detect
 #### Install dependencies via Conan
 
 ##### Release
+
+<!-- Alternatively, we can run `export CMAKE_MINIMUM_POLICY_VERSION=3.5` before running the `conan` command to still have everything working and remove the python dependency -->
+
 ```
 conan install . --output-folder build --build=missing -s build_type=Release -s compiler.cppstd=20
 ```
@@ -102,22 +105,14 @@ bash build.sh
 
 3. Install dependencies via Conan
 
-``` shell
-pipx run conan==2.16.1 install . --output-folder build --build=missing -s build_type=Release -s compiler.cppstd=20
-```
-
-4. Configure and Build with CMake
-
-``` shell
-pipx run cmake==3.30.0 -B build -S . -DCMAKE_TOOLCHAIN_FILE=build/build/Release/generators/conan_toolchain.cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_EXPORT_COMPILE_COMMANDS=ON
-pipx run cmake==3.30.0 --build build -j4
-pipx run cmake==3.30.0 --install build # optional, to install the program globally
-```
 
 For debug builds, replace `Release` with `Debug` in the commands above. You may do so more simply by running the following two commands:
+
 ``` shell
 export BUILD_TYPE=Debug
 bash build.sh
+```
+
 ##### Debug
 ```
 .venv/bin/cmake -B build -S . -DCMAKE_TOOLCHAIN_FILE=build/build/Debug/generators/conan_toolchain.cmake -DCMAKE_BUILD_TYPE=Debug -DCMAKE_EXPORT_COMPILE_COMMANDS=ON
