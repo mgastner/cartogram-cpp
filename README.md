@@ -10,80 +10,77 @@ Gastner MT, Seguy V, More P. _Fast flow-based algorithm for creating density-equ
 
 Data produced by code in this repository are subject to the MIT license found [here](./LICENSE) and should cite the aforementioned paper by Gastner et al. (2018).
 
-Clone the repository:
-
-```shell script
-git clone https://github.com/mgastner/cartogram-cpp.git
-```
-
 ## Development
 
-We manage dependencies with a Python virtual environment and Conan 2. The project uses Clang with C++20 support. Please ensure that Python 3.10 or later and a Clang++ (preferably Clang 20) compiler with C++20 support are installed before proceeding.
+We manage dependencies with a Conan 2. The project uses Clang with C++20 support. Please ensure that a Clang++ (preferably Clang 20) compiler with C++20 support is installed before proceeding.
 
 ### Linux and macOS
 
-#### Create a virtual environment and activate it
-```
-python3 -m venv .venv
+Please ensure you execute all the following commands in the same terminal. This is to ensure that the virtual environment is activated and the `BUILD_TYPE` variable is set correctly.
+
+1. Install dependencies
+
+For macOS:
+``` shell
+brew install cmake conan@2
 ```
 
-```
-source .venv/bin/activate
-```
-
-#### Install dependencies while in the virtual environment
-```
-pip install --upgrade pip wheel conan==2.16.1 cmake==3.30.0
+For Linux (Debian-based distributions):
+``` shell
+sudo apt install cmake conan
 ```
 
-#### Setup Conan
-```
+2. Setup Conan
+
+``` shell
 conan remote update conancenter --url=https://center2.conan.io
 ```
 
-```
+The following command will detect your system's profile and set it up for you. If you already have a profile set up, this may yeild an error, in which case you may skip this step.
+
+``` shell
 conan profile detect
 ```
 
-#### Install dependencies via Conan
+3. Choose build type and export that type to your command line
 
-##### Release
-```
-conan install . --output-folder build --build=missing -s build_type=Release -s compiler.cppstd=20
-```
-
-##### Debug
-```
-conan install . --output-folder build --build=missing -s build_type=Debug -s compiler.cppstd=20
+For release builds, run:
+``` shell
+export BUILD_TYPE=Release
 ```
 
-#### Configure the project
-
-##### Release
-```
-.venv/bin/cmake -B build -S . -DCMAKE_TOOLCHAIN_FILE=build/build/Release/generators/conan_toolchain.cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_EXPORT_COMPILE_COMMANDS=ON
+For debug builds, run:
+``` shell
+export BUILD_TYPE=Debug
 ```
 
-##### Debug
-```
-.venv/bin/cmake -B build -S . -DCMAKE_TOOLCHAIN_FILE=build/build/Debug/generators/conan_toolchain.cmake -DCMAKE_BUILD_TYPE=Debug -DCMAKE_EXPORT_COMPILE_COMMANDS=ON
+Run the following commands in the same terminal where you set the `BUILD_TYPE` variable.
+
+Please also ensure you delete the `build` directory if it exists, as leftover cache may cause issues with the build process.
+
+``` shell
+rm -rf build
 ```
 
-#### Build the project
-```
-.venv/bin/cmake --build build -j4
+4. Install dependencies via Conan
+
+``` shell
+conan install . --output-folder build --build=missing -s build_type=$BUILD_TYPE -s compiler.cppstd=20
 ```
 
-#### Install the project (optional)
-```
-sudo .venv/bin/cmake --install build
+5. Configure and Build with CMake
 
+``` shell
+cmake -B build -S . -DCMAKE_TOOLCHAIN_FILE=build/build/$BUILD_TYPE/generators/conan_toolchain.cmake -DCMAKE_BUILD_TYPE=$BUILD_TYPE -DCMAKE_EXPORT_COMPILE_COMMANDS=ON
+cmake --build build -j4
+sudo cmake --install build # optional, to install the program globally
 ```
+
 ### Tests
 
 To run all the tests, execute the following command from the root directory of the repository:
 
-```
+``` shell
 ctest --test-dir build --output-on-failure
 ```
 
@@ -91,41 +88,39 @@ ctest --test-dir build --output-on-failure
 
 To run only the unit tests:
 
-```
+``` shell
 ctest --test-dir build --output-on-failure -L unit
-```
-
-```
 ctest --test-dir build --output-on-failure test_string_to_decimal_converter.cpp
 ```
 
 #### Stress Tests
+
 This test will run all the maps in the `cartogram-cpp/sample_data` folder.
 
 To run only the stress tests:
 
-```
+``` shell
 ctest --test-dir build --output-on-failure -L stress
 ```
 
 #### Fuzzer Tests
-Fuzzer tests run maps in the `cartogram-cpp/sample_data` folder with random data. 
+
+Fuzzer tests run maps in the `cartogram-cpp/sample_data` folder with random data.
 
 To run only the fuzzer tests:
 
-```
+``` shell
 ctest --test-dir build -L fuzzer --verbose
 ```
 This test will take a while to finish.
 
-Add `--verbose` to the command to see more details about the test results.
+Use `--verbose` to the command to see more details about the test results.
 
 ### Windows (Using WSL)
 
 For Windows users, we recommend using our program through Windows Subsystem for Linux (WSL).
 
-
-#### Installing using Docker
+### Docker
 
 If you prefer, you may run the program in an isolated environment using [Docker Desktop](https://www.docker.com/products/docker-desktop/).
 
@@ -173,7 +168,7 @@ bash build.sh
 
 Run the following command (replace `your-geojson-file.geojson` file with your geographic data and `your-csv-file.csv` with your visual variables file, containing target areas for each geographic region):
 
-```shell script
+``` shell
 cartogram your-geojson-file.geojson your-csv-file.csv
 ```
 
@@ -202,7 +197,7 @@ You may find sample GeoJSON (containing geographic data) and CSV (containing inf
 
 To test whether whether the program was installed successfully and is working fine, you may run the following command from the repository root:
 
-```shell script
+``` shell
 cartogram sample_data/world_by_country_since_2022/world_by_country_since_2022.geojson sample_data/world_by_country_since_2022/world_population_by_country_2010.csv --plot_polygons --world
 ```
 
@@ -214,7 +209,7 @@ If you'd like to contribute to the project, please run our tests after you make 
 
 To run the unit tests, execute the following command:
 
-```shell script
+``` shell
 ctest --verbose
 ```
 
@@ -222,7 +217,7 @@ To learn more about the tests, you may go to the `cartogram-cpp/tests` directory
 
 Additionally, you may go to the `cartogram-cpp/tests` directory and run the following command:
 
-```shell script
+``` shell
 bash stress_test.sh
 ```
 
@@ -230,19 +225,19 @@ bash stress_test.sh
 
 To benchmark the program, first install [hyperfine](https://github.com/sharkdp/hyperfine). You can install it using Homebrew on macOS:
 
-```shell script
+``` shell
 brew install hyperfine
 ```
 
 Or using apt on Debian-based distributions:
 
-```shell script
+``` shell
 apt install hyperfine
 ```
 
 Then, go to the `cartogram-cpp/tests` directory and run the following command:
 
-```shell script
+``` shell
 bash stress_test.sh
 ```
 
@@ -250,7 +245,7 @@ bash stress_test.sh
 
 Go to the `cartogram-cpp` directory in your preferred terminal and execute the following command:
 
-```shell script
+``` shell
 sudo make uninstall -C build
 ```
 
