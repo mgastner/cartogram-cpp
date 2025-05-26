@@ -9,20 +9,11 @@ WORKDIR /cartogram
 # Copy over all project files
 COPY . .
 
-# Remove Windows-style line endings in shell scripts
-# RUN sed -i 's/\r$//' build.sh tests/stress_test.sh
-
 # Install Clang
-RUN apt update && apt install -y build-essential clang pipx
+RUN apt update && apt install -y build-essential clang
 
 # Install dependencies
-RUN pipx install conan==2.16.1
-RUN pipx install cmake==3.30.0
-
-# Ensure pipx binaries are in PATH
-RUN pipx ensurepath
-ENV PATH="/root/.local/bin:${PATH}"
-
+RUN pip install --upgrade pip wheel conan==2.16.1 cmake==3.30.0
 
 # Install dependencies via Conan
 RUN conan remote update conancenter --url=https://center2.conan.io && \
