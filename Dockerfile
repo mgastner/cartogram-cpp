@@ -13,7 +13,7 @@ COPY . .
 # RUN sed -i 's/\r$//' build.sh tests/stress_test.sh
 
 # Install Clang
-RUN apt update && apt install -y build-essential clang
+RUN apt update && apt install -y build-essential clang pipx
 
 # Install dependencies
 RUN pipx install conan==2.16.1 cmake==3.30.0
