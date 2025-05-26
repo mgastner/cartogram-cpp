@@ -132,7 +132,7 @@ void InsetState::fill_with_density_rays()
           std::cerr << "Y-coordinate: " << y << std::endl;
           std::cerr << "Left X-coordinate: " << left_x << std::endl;
           std::cerr << "Right X-coordinate: " << right_x << std::endl;
-          _Exit(8026519);
+          std::exit(8026519);
         }
 
         // Ray is entering a GeoDiv from empty space

@@ -18,7 +18,7 @@ void FTReal2d::allocate(const unsigned int lx, const unsigned int ly)
     std::cerr
       << "ERROR: Invalid array dimensions in FTReal2dArray::allocate_ft()"
       << std::endl;
-    _Exit(98915);
+    std::exit(98915);
   }
   lx_ = lx;
   ly_ = ly;
