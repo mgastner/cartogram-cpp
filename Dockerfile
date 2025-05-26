@@ -18,6 +18,7 @@ RUN apt update && apt install -y build-essential clang pipx
 # Install dependencies
 RUN pipx install conan==2.16.1
 RUN pipx install cmake==3.30.0
+RUN pipx ensurepath
 
 
 # Install dependencies via Conan
