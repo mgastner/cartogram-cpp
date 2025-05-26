@@ -38,8 +38,18 @@ target_link_libraries(cartogram_lib
   PkgConfig::FFTW
 )
 
+if(CMAKE_BUILD_TYPE STREQUAL Release)
+  target_compile_options(cartogram_lib PRIVATE -O3)
+else()
+  target_compile_options(cartogram_lib PRIVATE -O1)
+
+  # Ignore CGAL preconditions in Debug builds (false positives)
+  target_compile_definitions(cartogram_lib
+    PRIVATE CGAL_NO_PRECONDITIONS
+  )
+endif()
+
 target_compile_options(cartogram_lib PRIVATE
-  -O3
   -ffp-contract=off
   -Werror
   -Wall -Wextra -Wpedantic -Wshadow -Wold-style-cast -Wunreachable-code
@@ -48,24 +58,26 @@ target_compile_options(cartogram_lib PRIVATE
   -Wmissing-declarations -Werror=return-type -Wnon-virtual-dtor
 )
 
-include(CheckCXXCompilerFlag)
-check_cxx_compiler_flag("-march=native" HAS_MARCH_NATIVE)
-check_cxx_compiler_flag("-mtune=native" HAS_MTUNE_NATIVE)
+if(CMAKE_BUILD_TYPE STREQUAL Release)
+  include(CheckCXXCompilerFlag)
+  check_cxx_compiler_flag("-march=native" HAS_MARCH_NATIVE)
+  check_cxx_compiler_flag("-mtune=native" HAS_MTUNE_NATIVE)
 
-if(HAS_MARCH_NATIVE)
-  target_compile_options(cartogram_lib PRIVATE -march=native)
-elseif(HAS_MTUNE_NATIVE)
-  target_compile_options(cartogram_lib PRIVATE -mtune=native)
-endif()
+  if(HAS_MARCH_NATIVE)
+    target_compile_options(cartogram_lib PRIVATE -march=native)
+  elseif(HAS_MTUNE_NATIVE)
+    target_compile_options(cartogram_lib PRIVATE -mtune=native)
+  endif()
 
-include(CheckIPOSupported)
-check_ipo_supported(RESULT ipo_ok OUTPUT ipo_msg)
+  include(CheckIPOSupported)
+  check_ipo_supported(RESULT ipo_ok OUTPUT ipo_msg)
 
-if(ipo_ok)
-  set_property(TARGET cartogram_lib PROPERTY INTERPROCEDURAL_OPTIMIZATION ON)
-  target_link_options(cartogram_lib PRIVATE -flto)
-else()
-  message(STATUS "IPO/LTO not available: ${ipo_msg}")
+  if(ipo_ok)
+    set_property(TARGET cartogram_lib PROPERTY INTERPROCEDURAL_OPTIMIZATION ON)
+    target_link_options(cartogram_lib PRIVATE -flto)
+  else()
+    message(STATUS "IPO/LTO not available: ${ipo_msg}")
+  endif()
 endif()
 
 target_include_directories(cartogram_lib
