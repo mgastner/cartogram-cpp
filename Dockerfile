@@ -16,7 +16,9 @@ COPY . .
 RUN apt update && apt install -y build-essential clang pipx
 
 # Install dependencies
-RUN pipx install conan==2.16.1 cmake==3.30.0
+RUN pipx install conan==2.16.1
+RUN pipx install cmake==3.30.0
+
 
 # Install dependencies via Conan
 RUN conan remote update conancenter --url=https://center2.conan.io && \
