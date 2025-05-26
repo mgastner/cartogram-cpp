@@ -10,6 +10,45 @@ Gastner MT, Seguy V, More P. _Fast flow-based algorithm for creating density-equ
 
 Data produced by code in this repository are subject to the MIT license found [here](./LICENSE) and should cite the aforementioned paper by Gastner et al. (2018).
 
+## Usage
+
+Run the following command (replace `your-geojson-file.geojson` file with your geographic data and `your-csv-file.csv` with your visual variables file, containing target areas for each geographic region):
+
+``` shell
+cartogram your-geojson-file.geojson your-csv-file.csv
+```
+
+-   The first argument's input is a GeoJSON or JSON file, in the standard GeoJSON format.
+-   The second argument's input is a `.csv` file with data about target areas.
+
+_Note: use the `-h` flag to display more options._
+
+The CSV file should be in the following format:
+
+| NAME_1     | Data (e.g., Population) | Color   |
+| :--------- | :---------------------- | :------ |
+| Bruxelles  | 1208542                 | #e74c3c |
+| Vlaanderen | 6589069                 | #f1c40f |
+| Wallonie   | 3633795                 | #34495e |
+
+-   `NAME_1` should be the same as the identifying property's name in the GeoJSON. The rows should also have the same data as is present in the identifying property.
+-   `Data` contains the data you would like your cartogram to based on.
+-   `Color` is the color you would like the geographic region to be. Colors may be represented in the following manner:
+
+    1.  `cornflowerblue`: html color codes supported by `CSS3` (case-insensitive), full list of supported colors may be found in the "Extended colors" section of [web colors](https://en.wikipedia.org/wiki/Web_colors).
+    2.  `"rgb(255, 0, 120)"` or `rgb(255 0 120)` or `"255, 0, 120"` or `255 0 120`: red, green and blue values out of 255.
+    3.  `#e74c3c`: hex code of color, must start with `#`.
+
+You may find sample GeoJSON (containing geographic data) and CSV (containing information about target areas, colors and other visual variables) files in the `cartogram-cpp/sample_data` directory.
+
+To test whether whether the program was installed successfully and is working fine, you may run the following command from the repository root:
+
+``` shell
+cartogram sample_data/world_by_country_since_2022/world_by_country_since_2022.geojson sample_data/world_by_country_since_2022/world_population_by_country_2010.csv --plot_polygons --world
+```
+
+You may inspect the resultant SVG to check if everything looks as expected.
+
 ## Development
 
 We manage dependencies with a Conan 2. The project uses Clang with C++20 support. Please ensure that a Clang++ (preferably Clang 20) compiler with C++20 support is installed before proceeding.
@@ -175,45 +214,6 @@ bash build.sh
 - If `cmake` complains that it could not find a particular library, please try uninstalling it and installing it again. After reinstalling it, please also unlink it and link it with the `--force` flag.
 - If you get errors related to CGAL, it's likely you have another version of CGAL installed on your computer that is getting chosen instead of the one contained as a submodule within this repository. It's also possible that when cloning this repository, the `--recurse-submodule` flag was missing. Try running `git submodule init` and `git submodule update` in the root directory of the repository.
 - If VScode's `CMake: Install` does not work, make sure you own `/usr/local/bin` and the working directory. You may assign ownership to your account with `sudo chown -R $(whoami) .`, replacing `.` with the directory of choice.
-
-### Usage
-
-Run the following command (replace `your-geojson-file.geojson` file with your geographic data and `your-csv-file.csv` with your visual variables file, containing target areas for each geographic region):
-
-``` shell
-cartogram your-geojson-file.geojson your-csv-file.csv
-```
-
--   The first argument's input is a GeoJSON or JSON file, in the standard GeoJSON format.
--   The second argument's input is a `.csv` file with data about target areas.
-
-_Note: use the `-h` flag to display more options._
-
-The CSV file should be in the following format:
-
-| NAME_1     | Data (e.g., Population) | Color   |
-| :--------- | :---------------------- | :------ |
-| Bruxelles  | 1208542                 | #e74c3c |
-| Vlaanderen | 6589069                 | #f1c40f |
-| Wallonie   | 3633795                 | #34495e |
-
--   `NAME_1` should be the same as the identifying property's name in the GeoJSON. The rows should also have the same data as is present in the identifying property.
--   `Data` contains the data you would like your cartogram to based on.
--   `Color` is the color you would like the geographic region to be. Colors may be represented in the following manner:
-
-    1.  `cornflowerblue`: html color codes supported by `CSS3` (case-insensitive), full list of supported colors may be found in the "Extended colors" section of [web colors](https://en.wikipedia.org/wiki/Web_colors).
-    2.  `"rgb(255, 0, 120)"` or `rgb(255 0 120)` or `"255, 0, 120"` or `255 0 120`: red, green and blue values out of 255.
-    3.  `#e74c3c`: hex code of color, must start with `#`.
-
-You may find sample GeoJSON (containing geographic data) and CSV (containing information about target areas, colors and other visual variables) files in the `cartogram-cpp/sample_data` directory.
-
-To test whether whether the program was installed successfully and is working fine, you may run the following command from the repository root:
-
-``` shell
-cartogram sample_data/world_by_country_since_2022/world_by_country_since_2022.geojson sample_data/world_by_country_since_2022/world_population_by_country_2010.csv --plot_polygons --world
-```
-
-You may inspect the resultant SVG to check if everything looks as expected.
 
 ### Testing
 
