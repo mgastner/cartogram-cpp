@@ -11,18 +11,12 @@ void InsetState::auto_color()
   std::vector<Color> palette;
 
   if (colors_.size() > 0) {
-    // If some colors are already provided, use a different palette
-    // From https://colorbrewer2.org/#type=qualitative&scheme=Dark2&n=8
-    std::cerr << "Some but not all colors provided, using Dark color palette."
+    // If some but not all of the GeoDivs are colored, use only #f2f2f2 (light
+    // gray) to color the rest
+    std::cerr << "Some but not all colors provided, assigning #f2f2f2 (light "
+                 "grey) to uncolored GeoDivs."
               << std::endl;
-    palette.emplace_back("#1b9e77");  // aqua green
-    palette.emplace_back("#d95f02");  // dark orange
-    palette.emplace_back("#7570b3");  // purple
-    palette.emplace_back("#e7298a");  // dark pink
-    palette.emplace_back("#66a61e");  // olive green
-    palette.emplace_back("#e6ab02");  // dark yellow
-    palette.emplace_back("#a6761d");  // brown
-    palette.emplace_back("#666666");  // dark grey
+    palette.emplace_back("#f2f2f2");  // light gray
   } else {
     // Using default palette for now
     // TODO: Accept palette from user
@@ -47,6 +41,13 @@ void InsetState::auto_color()
     // If div already has a provided color, move to the next div
     if (color_found(gd.id()))
       continue;
+
+    // If there's only one color in palette, color the div with it without
+    // checking for color adjacency
+    if (palette.size() == 1) {
+      insert_color(gd.id(), palette[0]);
+      continue;
+    }
 
     for (unsigned int i = 0; i < palette.size(); ++i) {
       const Color c = palette[i];
