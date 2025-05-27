@@ -18,8 +18,7 @@ inline void write_triangles(
 
   for (Delaunay::Finite_faces_iterator fit = proj.dt.finite_faces_begin();
        fit != proj.dt.finite_faces_end();
-       ++fit)
-  {
+       ++fit) {
     Point p1 = fit->vertex(0)->point();
     Point p2 = fit->vertex(1)->point();
     Point p3 = fit->vertex(2)->point();
