@@ -53,6 +53,8 @@ You may inspect the resultant SVG to check if everything looks as expected.
 
 We manage dependencies with a Python virtual environment and Conan 2. The project uses Clang with C++20 support. Please ensure that Python 3.10 or later and a Clang++ (preferably Clang 20) compiler with C++20 support are installed before proceeding.
 
+Only `Debug` build commands are shown below, but the same commands can be run with `Release` build by replacing `Debug` with `Release`.
+
 ### Linux and macOS
 
 #### Create a virtual environment and activate it
@@ -77,63 +79,38 @@ conan profile detect
 
 #### Install dependencies via Conan
 
-##### Release
 
 <!-- Alternatively, we can run `export CMAKE_MINIMUM_POLICY_VERSION=3.5` before running the `conan` command to still have everything working and remove the python dependency -->
 
 ```
-conan install . --output-folder build --build=missing -s build_type=Release -s compiler.cppstd=20
+conan install . --build=missing -s build_type=Debug -s compiler.cppstd=20
 ```
 
-##### Debug
+#### Configure the project
+
 ```
-conan install . --output-folder build --build=missing -s build_type=Debug -s compiler.cppstd=20
-```
-
-Run the following commands in the same terminal where you set the `BUILD_TYPE` variable. You may also manually replace `Release` with `Release` or `Debug` in the commands below, depending on your choice of build type.
-
-##### Release
-```
-.venv/bin/cmake -B build -S . -DCMAKE_TOOLCHAIN_FILE=build/build/Release/generators/conan_toolchain.cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_EXPORT_COMPILE_COMMANDS=ON
-```
-
-From here, you may either run the commands below to build the project, or you may run the `build.sh` script in the root directory of the repository, which will execute all the commands below for you.
-
-``` shell
-bash build.sh
-```
-
-3. Install dependencies via Conan
-
-
-For debug builds, replace `Release` with `Debug` in the commands above. You may do so more simply by running the following two commands:
-
-``` shell
-export BUILD_TYPE=Debug
-bash build.sh
-```
-
-##### Debug
-```
-.venv/bin/cmake -B build -S . -DCMAKE_TOOLCHAIN_FILE=build/build/Debug/generators/conan_toolchain.cmake -DCMAKE_BUILD_TYPE=Debug -DCMAKE_EXPORT_COMPILE_COMMANDS=ON
+.venv/bin/cmake -B build/Debug -S . -DCMAKE_TOOLCHAIN_FILE=build/Debug/generators/conan_toolchain.cmake -DCMAKE_BUILD_TYPE=Debug -DCMAKE_EXPORT_COMPILE_COMMANDS=ON
 ```
 
 #### Build the project
+
 ```
-.venv/bin/cmake --build build -j4
+.venv/bin/cmake --build build/Debug -j4
 ```
 
 #### Install the project (optional)
-```
-sudo .venv/bin/cmake --install build
 
 ```
+sudo .venv/bin/cmake --install build/Debug
+
+```
+
 ### Tests
 
 To run all the tests, execute the following command from the root directory of the repository:
 
 ```
-ctest --test-dir build --output-on-failure
+ctest --test-dir build/Debug --output-on-failure
 ```
 
 #### Unit Tests
@@ -141,11 +118,11 @@ ctest --test-dir build --output-on-failure
 To run only the unit tests:
 
 ```
-ctest --test-dir build --output-on-failure -L unit
+ctest --test-dir build/Debug --output-on-failure -L unit
 ```
 
 ```
-ctest --test-dir build --output-on-failure test_string_to_decimal_converter.cpp
+ctest --test-dir build/Debug --output-on-failure test_string_to_decimal_converter.cpp
 ```
 
 #### Stress Tests
@@ -154,7 +131,7 @@ This test will run all the maps in the `cartogram-cpp/sample_data` folder.
 To run only the stress tests:
 
 ```
-ctest --test-dir build --output-on-failure -L stress
+ctest --test-dir build/Debug --output-on-failure -L stress
 ```
 
 #### Fuzzer Tests
@@ -163,7 +140,7 @@ Fuzzer tests run maps in the `cartogram-cpp/sample_data` folder with random data
 To run only the fuzzer tests:
 
 ```
-ctest --test-dir build -L fuzzer --verbose
+ctest --test-dir build/Debug -L fuzzer --verbose
 ```
 This test will take a while to finish.
 
