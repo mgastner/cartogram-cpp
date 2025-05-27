@@ -1201,13 +1201,15 @@ void InsetState::update_file_prefix()
 void InsetState::update_gd_ids(
   const std::map<std::string, std::string> &gd_id_map)
 {
-  try {
-    gd.update_id(gd_id_map.at(gd.id()));
-  } catch (const std::out_of_range &e) {
-    std::cerr << "ERROR: Key '" << gd.id() << "' not found in gd_id_map. "
-              << "Exception: " << e.what() << std::endl;
-    // Re-throw, or return a default value
-    throw;
+  for (auto &gd : geo_divs_) {
+    try {
+      gd.update_id(gd_id_map.at(gd.id()));
+    } catch (const std::out_of_range &e) {
+      std::cerr << "ERROR: Key '" << gd.id() << "' not found in gd_id_map. "
+                << "Exception: " << e.what() << std::endl;
+      // Re-throw, or return a default value
+      throw;
+    }
   }
 }
 
