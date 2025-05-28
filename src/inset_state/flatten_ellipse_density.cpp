@@ -1,3 +1,9 @@
+#ifndef USE_POLYGON_PREPROCESSING
+#define USE_POLYGON_PREPROCESSING 0
+#endif
+
+#if USE_POLYGON_PREPROCESSING
+
 #include "constants.hpp"
 #include "inset_state.hpp"
 
@@ -508,3 +514,5 @@ void InsetState::flatten_ellipse_density()
     delta_t *= inc_after_acc;  // Try a larger step next time
   }
 }
+
+#endif
