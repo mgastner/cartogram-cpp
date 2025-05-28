@@ -55,74 +55,59 @@ We manage dependencies with a Python virtual environment and Conan 2. The projec
 
 Only `Debug` build commands are shown below, but the same commands can be run with `Release` build by replacing `Debug` with `Release`.
 
-### Linux and macOS
+1. Create a virtual environment with the required dependencies:
 
-#### Create a virtual environment and activate it
-
-```
-python3 -m venv .venv
-source .venv/bin/activate
+``` shell
+virtualenv .venv && .venv/bin/pip install -r requirements.txt
 ```
 
-#### Install dependencies while in the virtual environment
+2. Setup Conan
 
-```
-pip install --upgrade pip wheel conan==2.16.1 cmake==3.30.0
-```
-
-#### Setup Conan
-
-```
-conan remote update conancenter --url=https://center2.conan.io
-conan profile detect
+``` shell
+.venv/bin/conan remote update conancenter --url=https://center2.conan.io
 ```
 
-#### Install dependencies via Conan
+The following command will detect your system's profile and set it up for you. If you already have a profile set up, this may yeild an error, in which case you may skip this step.
+
+``` shell
+.venv/bin/conan profile detect
+```
+
+3. Install dependencies via Conan
 
 
 <!-- Alternatively, we can run `export CMAKE_MINIMUM_POLICY_VERSION=3.5` before running the `conan` command to still have everything working and remove the python dependency -->
 
-```
-conan install . --build=missing -s build_type=Debug -s compiler.cppstd=20
+``` shell
+.venv/bin/conan install . --build=missing -s build_type=Debug -s compiler.cppstd=20
 ```
 
-#### Configure the project
+4. Configure and Build with CMake
 
-```
+``` shell
 .venv/bin/cmake -B build/Debug -S . -DCMAKE_TOOLCHAIN_FILE=build/Debug/generators/conan_toolchain.cmake -DCMAKE_BUILD_TYPE=Debug -DCMAKE_EXPORT_COMPILE_COMMANDS=ON
-```
-
-#### Build the project
-
-```
 .venv/bin/cmake --build build/Debug -j4
-```
-
-#### Install the project (optional)
-
-```
-sudo .venv/bin/cmake --install build/Debug
-
+sudo .venv/bin/cmake --install build # optional, to install the program globally
 ```
 
 ### Tests
 
 To run all the tests, execute the following command from the root directory of the repository:
 
-```
-ctest --test-dir build/Debug --output-on-failure
+``` shell
+.venv/bin/ctest --test-dir build/Debug --output-on-failure
 ```
 
 #### Unit Tests
 
 To run only the unit tests:
 
-```
-ctest --test-dir build/Debug --output-on-failure -L unit
+``` shell
+.venv/bin/ctest --test-dir build/Debug --output-on-failure -L unit
 ```
 
-```
-ctest --test-dir build/Debug --output-on-failure test_string_to_decimal_converter.cpp
+``` shell
+.venv/bin/ctest --test-dir build/Debug --output-on-failure test_string_to_decimal_converter.cpp
 ```
 
 #### Stress Tests
@@ -130,8 +115,8 @@ This test will run all the maps in the `cartogram-cpp/sample_data` folder.
 
 To run only the stress tests:
 
-```
-ctest --test-dir build/Debug --output-on-failure -L stress
+``` shell
+.venv/bin/ctest --test-dir build/Debug --output-on-failure -L stress
 ```
 
 #### Fuzzer Tests
@@ -139,8 +124,8 @@ Fuzzer tests run maps in the `cartogram-cpp/sample_data` folder with random data
 
 To run only the fuzzer tests:
 
-```
-ctest --test-dir build/Debug -L fuzzer --verbose
+``` shell
+.venv/bin/ctest --test-dir build/Debug -L fuzzer --verbose
 ```
 This test will take a while to finish.
 
@@ -201,8 +186,8 @@ If you'd like to contribute to the project, please run our tests after you make 
 
 To run the unit tests, execute the following command:
 
-```shell script
-ctest --verbose
+```shell
+.venv/bin/ctest --verbose
 ```
 
 To learn more about the tests, you may go to the `cartogram-cpp/tests` directory and read the `README.md` file.
