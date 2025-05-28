@@ -9,9 +9,49 @@ on:
       - main
 
 jobs:
+  style-check:
+    name: Style check (clang-format)
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install clang-format
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y clang-format-16
+          echo "CLANG_FORMAT=clang-format-16" >> $GITHUB_ENV
+
+      - name: Check formatting
+        run: |
+          mapfile -t FILES < <(git ls-files '*.[ch]pp' '*.c' '*.h')
+          if [ ${#FILES[@]} -eq 0 ]; then
+            echo "No source files to check"; exit 0
+          fi
+
+          echo "Running clang-format diff..."
+          bad_files=()
+
+          for f in "${FILES[@]}"; do
+            if ! diff -u "$f" <("$CLANG_FORMAT" "$f"); then
+              echo "::group::❌ $f"
+              diff -u "$f" <("$CLANG_FORMAT" "$f") || true
+              echo "::endgroup::"
+              bad_files+=("$f")
+            fi
+          done
+
+          if [ ${#bad_files[@]} -ne 0 ]; then
+            file_list=$(printf '%s\n' "${bad_files[@]}")
+            file_list_escaped=${file_list//$'\n'/%0A}
+            echo "::error::clang-format issues detected in the following files:%0A${file_list_escaped}%0ARun 'clang-format -i' to fix."
+            exit 1
+          fi
+
   build:
-    name: Build ${{ matrix.name }}
+    name: Build (${{ matrix.name }})
     runs-on: ${{ matrix.os }}
+    needs: style-check
     strategy:
       fail-fast: false
       matrix:
@@ -105,7 +145,7 @@ jobs:
 
   # ─────────────────────────── Unit Tests ───────────────────────────
   unit-tests:
-    needs: build
+    needs: [style-check, build]
     strategy:
       fail-fast: false
       matrix:
@@ -132,7 +172,7 @@ jobs:
 
   # ────────────────────────── Stress Tests ──────────────────────────
   stress-tests:
-    needs: build
+    needs: [style-check, build]
     strategy:
       fail-fast: false
       matrix:
@@ -161,7 +201,7 @@ jobs:
 
   # ─────────────────────────── Fuzzer Tests ─────────────────────────
   fuzzer-tests:
-    needs: build
+    needs: [style-check, build]
     strategy:
       fail-fast: false
       matrix:
