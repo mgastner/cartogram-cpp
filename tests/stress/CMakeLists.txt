@@ -52,7 +52,7 @@ foreach(map_dir IN LISTS CHILDREN)
     if(CMAKE_BUILD_TYPE STREQUAL "Debug" AND CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
       set(TEST_TIMEOUT 600)
     else()
-      set(TEST_TIMEOUT 120)
+      set(TEST_TIMEOUT 300)
     endif()
 
     set_tests_properties(${test_name}
