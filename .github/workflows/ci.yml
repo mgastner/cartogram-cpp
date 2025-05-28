@@ -13,6 +13,7 @@ jobs:
     name: Build ${{ matrix.name }}
     runs-on: ${{ matrix.os }}
     strategy:
+      fail-fast: false
       matrix:
         include:
           # Linux
@@ -46,7 +47,7 @@ jobs:
             tool: apple-clang
             version: ""
             build_type: Debug
-            name: mac-Deb
+            name: Debug-mac
 
     steps:
       - uses: actions/checkout@v4
@@ -87,7 +88,7 @@ jobs:
         run: |
           source .venv/bin/activate
           cmake -S . -B build \
-            -DCMAKE_TOOLCHAIN_FILE=buid/build/${{ matrix.build_type }}/generators/conan_toolchain.cmake \
+            -DCMAKE_TOOLCHAIN_FILE=build/build/${{ matrix.build_type }}/generators/conan_toolchain.cmake \
             -DCMAKE_BUILD_TYPE=${{ matrix.build_type }} \
             -DBUILD_SHARED_LIBS=OFF \
             -DCMAKE_EXPORT_COMPILE_COMMANDS=ON
@@ -103,6 +104,7 @@ jobs:
   unit-tests:
     needs: build
     strategy:
+      fail-fast: false
       matrix:
         target:
           - Release-gcc
@@ -110,7 +112,7 @@ jobs:
           - Debug-gcc
           - Debug-clang
           - Release-mac
-          - mac-Deb
+          - Debug-mac
     runs-on: "${{ contains(matrix.target, 'mac') && 'macos-14' || 'ubuntu-latest' }}"
 
     steps:
@@ -127,6 +129,7 @@ jobs:
   stress-tests:
     needs: build
     strategy:
+      fail-fast: false
       matrix:
         target:
           - Release-gcc
@@ -134,7 +137,7 @@ jobs:
           - Debug-gcc
           - Debug-clang
           - Release-mac
-          - mac-Deb
+          - Debug-mac
     runs-on: "${{ contains(matrix.target, 'mac') && 'macos-14' || 'ubuntu-latest' }}"
 
     steps:
@@ -151,6 +154,7 @@ jobs:
   fuzzer-tests:
     needs: build
     strategy:
+      fail-fast: false
       matrix:
         target:
           - Release-gcc
