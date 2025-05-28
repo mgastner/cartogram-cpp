@@ -48,6 +48,17 @@ foreach(map_dir IN LISTS CHILDREN)
       NAME ${test_name}
       COMMAND ${TEST_CMD}
     )
-    set_tests_properties(${test_name} PROPERTIES LABELS "stress" TIMEOUT 300)
+
+    if(CMAKE_BUILD_TYPE STREQUAL "Debug" AND CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
+      set(TEST_TIMEOUT 1500)
+    else()
+      set(TEST_TIMEOUT 120)
+    endif()
+
+    set_tests_properties(${test_name}
+      PROPERTIES
+      LABELS "stress"
+      TIMEOUT ${TEST_TIMEOUT}
+    )
   endforeach()
 endforeach()
