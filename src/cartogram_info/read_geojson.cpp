@@ -73,7 +73,7 @@ static std::pair<GeoDiv, bool> json_to_geodiv(
   } else {
     json_coords = json_coords_raw;
   }
-  bool erico;  // Exterior ring is clockwise oriented?
+  bool erico = false;  // Exterior ring is clockwise oriented?
   for (const auto &json_pgn_holes_container : json_coords) {
 
     // Store exterior ring in CGAL format
