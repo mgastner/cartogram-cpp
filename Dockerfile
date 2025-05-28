@@ -9,9 +9,6 @@ WORKDIR /cartogram
 # Copy over all project files
 COPY . .
 
-# Remove Windows-style line endings in shell scripts
-RUN sed -i 's/\r$//' build.sh tests/stress_test.sh
-
 # Install Clang
 RUN apt update && apt install -y build-essential clang
 

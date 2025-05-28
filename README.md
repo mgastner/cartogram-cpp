@@ -10,76 +10,104 @@ Gastner MT, Seguy V, More P. _Fast flow-based algorithm for creating density-equ
 
 Data produced by code in this repository are subject to the MIT license found [here](./LICENSE) and should cite the aforementioned paper by Gastner et al. (2018).
 
-Clone the repository:
+## Usage
 
-```shell script
-git clone https://github.com/mgastner/cartogram-cpp.git
+Run the following command (replace `your-geojson-file.geojson` file with your geographic data and `your-csv-file.csv` with your visual variables file, containing target areas for each geographic region):
+
+``` shell
+cartogram your-geojson-file.geojson your-csv-file.csv
 ```
+
+-   The first argument's input is a GeoJSON or JSON file, in the standard GeoJSON format.
+-   The second argument's input is a `.csv` file with data about target areas.
+
+_Note: use the `-h` flag to display more options._
+
+The CSV file should be in the following format:
+
+| NAME_1     | Data (e.g., Population) | Color   |
+| :--------- | :---------------------- | :------ |
+| Bruxelles  | 1208542                 | #e74c3c |
+| Vlaanderen | 6589069                 | #f1c40f |
+| Wallonie   | 3633795                 | #34495e |
+
+-   `NAME_1` should be the same as the identifying property's name in the GeoJSON. The rows should also have the same data as is present in the identifying property.
+-   `Data` contains the data you would like your cartogram to based on.
+-   `Color` is the color you would like the geographic region to be. Colors may be represented in the following manner:
+
+    1.  `cornflowerblue`: html color codes supported by `CSS3` (case-insensitive), full list of supported colors may be found in the "Extended colors" section of [web colors](https://en.wikipedia.org/wiki/Web_colors).
+    2.  `"rgb(255, 0, 120)"` or `rgb(255 0 120)` or `"255, 0, 120"` or `255 0 120`: red, green and blue values out of 255.
+    3.  `#e74c3c`: hex code of color, must start with `#`.
+
+You may find sample GeoJSON (containing geographic data) and CSV (containing information about target areas, colors and other visual variables) files in the `cartogram-cpp/sample_data` directory.
+
+To test whether whether the program was installed successfully and is working fine, you may run the following command from the repository root:
+
+``` shell
+cartogram sample_data/world_by_country_since_2022/world_by_country_since_2022.geojson sample_data/world_by_country_since_2022/world_population_by_country_2010.csv --plot_polygons --world
+```
+
+You may inspect the resultant SVG to check if everything looks as expected.
 
 ## Development
 
 We manage dependencies with a Python virtual environment and Conan 2. The project uses Clang with C++20 support. Please ensure that Python 3.10 or later and a Clang++ (preferably Clang 20) compiler with C++20 support are installed before proceeding.
 
-### Linux and macOS
+Only `Debug` build commands are shown below, but the same commands can be run with `Release` build by replacing `Debug` with `Release`.
 
-#### Create a virtual environment and activate it
-```
-python3 -m venv .venv
-```
+1. Create a virtual environment with the required dependencies:
 
-```
-source .venv/bin/activate
+``` shell
+virtualenv .venv && .venv/bin/pip install -r requirements.txt
 ```
 
-#### Install dependencies while in the virtual environment
-```
-pip install --upgrade pip wheel conan==2.16.1 cmake==3.30.0
+2. Setup Conan
+
+``` shell
+.venv/bin/conan remote update conancenter --url=https://center2.conan.io
 ```
 
-#### Setup Conan
-```
-conan remote update conancenter --url=https://center2.conan.io
+The following command will detect your system's profile and set it up for you. If you already have a profile set up, this may yeild an error, in which case you may skip this step.
+
+``` shell
+.venv/bin/conan profile detect
 ```
 
-```
-conan profile detect
+3. Install dependencies via Conan
+
+
+<!-- Alternatively, we can run `export CMAKE_MINIMUM_POLICY_VERSION=3.5` before running the `conan` command to still have everything working and remove the python dependency -->
+
+``` shell
+.venv/bin/conan install . --build=missing -s build_type=Debug -s compiler.cppstd=20
 ```
 
-#### Install dependencies via Conan
-```
-conan install . --output-folder build --build=missing -s build_type=Release -s compiler.cppstd=20
+4. Configure and Build with CMake
+
+``` shell
+.venv/bin/cmake -B build/Debug -S . -DCMAKE_TOOLCHAIN_FILE=build/Debug/generators/conan_toolchain.cmake -DCMAKE_BUILD_TYPE=Debug -DCMAKE_EXPORT_COMPILE_COMMANDS=ON
+.venv/bin/cmake --build build/Debug -j4
+sudo .venv/bin/cmake --install build # optional, to install the program globally
 ```
 
-#### Build the project
-```
-.venv/bin/cmake -B build -S . -DCMAKE_TOOLCHAIN_FILE=build/build/Release/generators/conan_toolchain.cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_EXPORT_COMPILE_COMMANDS=ON
-```
-
-```
-.venv/bin/cmake --build build -j4
-```
-
-```
-sudo .venv/bin/cmake --install build
-```
 ### Tests
 
 To run all the tests, execute the following command from the root directory of the repository:
 
-```
-ctest --test-dir build --output-on-failure
+``` shell
+.venv/bin/ctest --test-dir build/Debug --output-on-failure
 ```
 
 #### Unit Tests
 
 To run only the unit tests:
 
-```
-ctest --test-dir build --output-on-failure -L unit
+``` shell
+.venv/bin/ctest --test-dir build/Debug --output-on-failure -L unit
 ```
 
-```
-ctest --test-dir build --output-on-failure test_string_to_decimal_converter.cpp
+``` shell
+.venv/bin/ctest --test-dir build/Debug --output-on-failure test_string_to_decimal_converter.cpp
 ```
 
 #### Stress Tests
@@ -87,17 +115,17 @@ This test will run all the maps in the `cartogram-cpp/sample_data` folder.
 
 To run only the stress tests:
 
-```
-ctest --test-dir build --output-on-failure -L stress
+``` shell
+.venv/bin/ctest --test-dir build/Debug --output-on-failure -L stress
 ```
 
 #### Fuzzer Tests
-Fuzzer tests run maps in the `cartogram-cpp/sample_data` folder with random data. 
+Fuzzer tests run maps in the `cartogram-cpp/sample_data` folder with random data.
 
 To run only the fuzzer tests:
 
-```
-ctest --test-dir build -L fuzzer --verbose
+``` shell
+.venv/bin/ctest --test-dir build/Debug -L fuzzer --verbose
 ```
 This test will take a while to finish.
 
@@ -152,53 +180,14 @@ bash build.sh
 - If you get errors related to CGAL, it's likely you have another version of CGAL installed on your computer that is getting chosen instead of the one contained as a submodule within this repository. It's also possible that when cloning this repository, the `--recurse-submodule` flag was missing. Try running `git submodule init` and `git submodule update` in the root directory of the repository.
 - If VScode's `CMake: Install` does not work, make sure you own `/usr/local/bin` and the working directory. You may assign ownership to your account with `sudo chown -R $(whoami) .`, replacing `.` with the directory of choice.
 
-### Usage
-
-Run the following command (replace `your-geojson-file.geojson` file with your geographic data and `your-csv-file.csv` with your visual variables file, containing target areas for each geographic region):
-
-```shell script
-cartogram your-geojson-file.geojson your-csv-file.csv
-```
-
--   The first argument's input is a GeoJSON or JSON file, in the standard GeoJSON format.
--   The second argument's input is a `.csv` file with data about target areas.
-
-_Note: use the `-h` flag to display more options._
-
-The CSV file should be in the following format:
-
-| NAME_1     | Data (e.g., Population) | Color   |
-| :--------- | :---------------------- | :------ |
-| Bruxelles  | 1208542                 | #e74c3c |
-| Vlaanderen | 6589069                 | #f1c40f |
-| Wallonie   | 3633795                 | #34495e |
-
--   `NAME_1` should be the same as the identifying property's name in the GeoJSON. The rows should also have the same data as is present in the identifying property.
--   `Data` contains the data you would like your cartogram to based on.
--   `Color` is the color you would like the geographic region to be. Colors may be represented in the following manner:
-
-    1.  `cornflowerblue`: html color codes supported by `CSS3` (case-insensitive), full list of supported colors may be found in the "Extended colors" section of [web colors](https://en.wikipedia.org/wiki/Web_colors).
-    2.  `"rgb(255, 0, 120)"` or `rgb(255 0 120)` or `"255, 0, 120"` or `255 0 120`: red, green and blue values out of 255.
-    3.  `#e74c3c`: hex code of color, must start with `#`.
-
-You may find sample GeoJSON (containing geographic data) and CSV (containing information about target areas, colors and other visual variables) files in the `cartogram-cpp/sample_data` directory.
-
-To test whether whether the program was installed successfully and is working fine, you may run the following command from the repository root:
-
-```shell script
-cartogram sample_data/world_by_country_since_2022/world_by_country_since_2022.geojson sample_data/world_by_country_since_2022/world_population_by_country_2010.csv --plot_polygons --world
-```
-
-You may inspect the resultant SVG to check if everything looks as expected.
-
 ### Testing
 
 If you'd like to contribute to the project, please run our tests after you make any changes.
 
 To run the unit tests, execute the following command:
 
-```shell script
-ctest --verbose
+```shell
+.venv/bin/ctest --verbose
 ```
 
 To learn more about the tests, you may go to the `cartogram-cpp/tests` directory and read the `README.md` file.
