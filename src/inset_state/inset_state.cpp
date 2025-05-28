@@ -17,7 +17,14 @@ InsetState::InsetState(std::string pos, Arguments args)
 
 double InsetState::area_error_at(const std::string &id) const
 {
-  return area_errors_.at(id);
+  try {
+    return area_errors_.at(id);
+  } catch (const std::out_of_range &e) {
+    std::cerr << "ERROR: Key '" << id << "' not found in area_errors_. "
+              << "Exception: " << e.what() << std::endl;
+    // Re-throw, or return a default value
+    throw;
+  }
 }
 
 Bbox InsetState::bbox(bool original_bbox) const
@@ -130,7 +137,14 @@ bool InsetState::continue_integrating() const
 
 Color InsetState::color_at(const std::string &id) const
 {
-  return colors_.at(id);
+  try {
+    return colors_.at(id);
+  } catch (const std::out_of_range &e) {
+    std::cerr << "ERROR: Key '" << id << "' not found in colors_. "
+              << "Exception: " << e.what() << std::endl;
+    // Re-throw, or return a default value
+    throw;
+  }
 }
 
 bool InsetState::color_found(const std::string &id) const
@@ -412,11 +426,27 @@ const std::vector<GeoDiv> &InsetState::geo_divs() const
 // Const and non-const version of geo_div_at_id
 const GeoDiv &InsetState::geo_div_at_id(std::string id) const
 {
-  return geo_divs_[geo_divs_id_to_index_.at(id)];
+  try {
+    return geo_divs_[geo_divs_id_to_index_.at(id)];
+  } catch (const std::out_of_range &e) {
+    std::cerr << "ERROR: Key '" << id
+              << "' not found in geo_divs_id_to_index_. "
+              << "Exception: " << e.what() << std::endl;
+    // Re-throw, or return a default value
+    throw;
+  }
 }
 GeoDiv &InsetState::geo_div_at_id(std::string id)
 {
-  return geo_divs_[geo_divs_id_to_index_.at(id)];
+  try {
+    return geo_divs_[geo_divs_id_to_index_.at(id)];
+  } catch (const std::out_of_range &e) {
+    std::cerr << "ERROR: Key '" << id
+              << "' not found in geo_divs_id_to_index_. "
+              << "Exception: " << e.what() << std::endl;
+    // Re-throw, or return a default value
+    throw;
+  }
 }
 
 // Get unique points from GeoDivs
@@ -757,7 +787,15 @@ double InsetState::initial_target_area() const
 
 bool InsetState::is_input_target_area_missing(const std::string &id) const
 {
-  return is_input_target_area_missing_.at(id);
+  try {
+    return is_input_target_area_missing_.at(id);
+  } catch (const std::out_of_range &e) {
+    std::cerr << "ERROR: Key '" << id
+              << "' not found in is_input_target_area_missing_. "
+              << "Exception: " << e.what() << std::endl;
+    // Re-throw, or return a default value
+    throw;
+  }
 }
 
 double InsetState::latt_const() const
@@ -1050,7 +1088,14 @@ void InsetState::store_initial_target_area(const double override)
 bool InsetState::target_area_is_missing(const std::string &id) const
 {
   // We use negative area as indication that GeoDiv has no target area
-  return target_areas_.at(id) < 0.0;
+  try {
+    return target_areas_.at(id) < 0.0;
+  } catch (const std::out_of_range &e) {
+    std::cerr << "ERROR: Key '" << id << "' not found in target_areas_. "
+              << "Exception: " << e.what() << std::endl;
+    // Re-throw, or return a default value
+    throw;
+  }
 }
 
 double InsetState::target_area_at(const std::string &id) const
@@ -1157,7 +1202,14 @@ void InsetState::update_gd_ids(
   const std::map<std::string, std::string> &gd_id_map)
 {
   for (auto &gd : geo_divs_) {
-    gd.update_id(gd_id_map.at(gd.id()));
+    try {
+      gd.update_id(gd_id_map.at(gd.id()));
+    } catch (const std::out_of_range &e) {
+      std::cerr << "ERROR: Key '" << gd.id() << "' not found in gd_id_map. "
+                << "Exception: " << e.what() << std::endl;
+      // Re-throw, or return a default value
+      throw;
+    }
   }
 }
 

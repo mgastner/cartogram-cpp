@@ -14,49 +14,49 @@ static void check_geojson_validity(const nlohmann::json &j)
 {
   if (!j.contains(std::string{"type"})) {
     std::cerr << "ERROR: JSON does not contain a key 'type'" << std::endl;
-    _Exit(4);
+    std::exit(4);
   }
   if (j["type"] != "FeatureCollection") {
     std::cerr << "ERROR: JSON is not a valid GeoJSON FeatureCollection"
               << std::endl;
-    _Exit(5);
+    std::exit(5);
   }
   if (!j.contains(std::string{"features"})) {
     std::cerr << "ERROR: JSON does not contain a key 'features'" << std::endl;
-    _Exit(6);
+    std::exit(6);
   }
   const auto &features = j["features"];
   for (const auto &feature : features) {
     if (!feature.contains(std::string{"type"})) {
       std::cerr << "ERROR: JSON contains a 'Features' element without key "
                 << "'type'" << std::endl;
-      _Exit(7);
+      std::exit(7);
     }
     if (feature["type"] != "Feature") {
       std::cerr << "ERROR: JSON contains a 'Features' element whose type "
                 << "is not 'Feature'" << std::endl;
-      _Exit(8);
+      std::exit(8);
     }
     if (!feature.contains(std::string("geometry"))) {
       std::cerr << "ERROR: JSON contains a feature without key 'geometry'"
                 << std::endl;
-      _Exit(9);
+      std::exit(9);
     }
     const auto &geometry = feature["geometry"];
     if (!geometry.contains(std::string("type"))) {
       std::cerr << "ERROR: JSON contains geometry without key 'type'"
                 << std::endl;
-      _Exit(10);
+      std::exit(10);
     }
     if (!geometry.contains(std::string("coordinates"))) {
       std::cerr << "ERROR: JSON contains geometry without key 'coordinates'"
                 << std::endl;
-      _Exit(11);
+      std::exit(11);
     }
     if (geometry["type"] != "MultiPolygon" && geometry["type"] != "Polygon") {
       std::cerr << "ERROR: JSON contains unsupported geometry "
                 << geometry["type"] << std::endl;
-      _Exit(12);
+      std::exit(12);
     }
   }
 }
@@ -99,7 +99,7 @@ static std::pair<GeoDiv, bool> json_to_geodiv(
       std::cerr
         << "ERROR: (GeoJSON Parsing) exterior ring not a simple polygon"
         << std::endl;
-      _Exit(13);
+      std::exit(13);
     }
 
     // We adopt the convention that exterior rings are counterclockwise
@@ -138,7 +138,7 @@ static std::pair<GeoDiv, bool> json_to_geodiv(
         std::cerr
           << "ERROR: (GeoJSON Parsing) interior ring not a simple polygon"
           << std::endl;
-        _Exit(14);
+        std::exit(14);
       }
       if (int_ring.is_counterclockwise_oriented()) {
         int_ring.reverse_orientation();
@@ -186,7 +186,7 @@ static nlohmann::json load_geojson(const std::string &geometry_file_name)
   if (!in_file) {
     std::cerr << "ERROR reading GeoJSON: failed to open " << geometry_file_name
               << std::endl;
-    _Exit(3);
+    std::exit(3);
   }
 
   nlohmann::json j;
@@ -195,7 +195,7 @@ static nlohmann::json load_geojson(const std::string &geometry_file_name)
   } catch (nlohmann::json::parse_error &e) {
     std::cerr << "ERROR: " << e.what() << ". Exception id: " << e.id
               << ". Byte position of error: " << e.byte << std::endl;
-    _Exit(3);
+    std::exit(3);
   }
 
   return j;
@@ -239,7 +239,7 @@ extract_unique_properties_map(const nlohmann::json &j)
 
   if (unique_properties_map.empty()) {
     std::cerr << "ERROR: No unique properties found in GeoJSON" << std::endl;
-    _Exit(15);
+    std::exit(15);
   }
 
   return unique_properties_map;
@@ -397,7 +397,7 @@ void CartogramInfo::read_geojson()
     // Update map_name to be based on geometry file name instead
     set_map_name(geometry_file_name);
     generate_csv_template(j, map_name_);
-    _Exit(19);
+    std::exit(19);
   }
 
   extract_crs(j, crs_);

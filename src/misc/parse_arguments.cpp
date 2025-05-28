@@ -218,7 +218,7 @@ Arguments parse_arguments(const int argc, const char *argv[])
     std::cerr << "To enable simplification, do not pass the -S flag.\n";
     std::cerr << "To enable quadtree, do not pass the -Q flag.\n";
     std::cerr << arguments << std::endl;
-    _Exit(18);
+    std::exit(18);
   }
 
   // Check whether n_points is specified but --simplify_and_densify not passed
@@ -242,7 +242,7 @@ Arguments parse_arguments(const int argc, const char *argv[])
     std::cerr << "QTDT method is necessary for Quadtree images." << std::endl;
     std::cerr << "To disable Triangulation, pass the -T flag." << std::endl;
     std::cerr << arguments << std::endl;
-    _Exit(17);
+    std::exit(17);
   }
 
   // Print names of geometry file
@@ -257,7 +257,7 @@ Arguments parse_arguments(const int argc, const char *argv[])
     std::cerr << "ERROR: No Geometry file provided!" << std::endl;
     std::cerr << "Please provide a geometry file in standard GeoJSON format."
               << std::endl;
-    _Exit(16);
+    std::exit(16);
   }
 
   // Check if a visual-variables file or -m flag is passed
@@ -271,7 +271,7 @@ Arguments parse_arguments(const int argc, const char *argv[])
     std::cerr << arguments << std::endl;
     std::cerr << "ERROR: No CSV file provided!" << std::endl;
     std::cerr << "To create a CSV, please use the -m flag." << std::endl;
-    _Exit(15);
+    std::exit(15);
   } else {
     args.visual_file_name = "";
   }
