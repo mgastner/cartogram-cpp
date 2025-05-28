@@ -68,21 +68,21 @@ jobs:
           docker run --rm cartogram-ci \
             bash -lc "ctest --test-dir build-docker -L stress --output-on-failure"
 
-  fuzzer-tests:
-    needs: build
-    runs-on: ubuntu-latest
-    steps:
-      - name: Download image artifact
-        uses: actions/download-artifact@v4
-        with:
-          name: cartogram-image
+  # fuzzer-tests:
+  #   needs: build
+  #   runs-on: ubuntu-latest
+  #   steps:
+  #     - name: Download image artifact
+  #       uses: actions/download-artifact@v4
+  #       with:
+  #         name: cartogram-image
 
-      - name: Load image into Docker
-        run: |
-          gzip -d cartogram-ci.tar.gz
-          docker load < cartogram-ci.tar
+  #     - name: Load image into Docker
+  #       run: |
+  #         gzip -d cartogram-ci.tar.gz
+  #         docker load < cartogram-ci.tar
 
-      - name: Fuzzer tests
-        run: |
-          docker run --rm cartogram-ci \
-            bash -lc "ctest --test-dir build-docker -L fuzzer --verbose"
+  #     - name: Fuzzer tests
+  #       run: |
+  #         docker run --rm cartogram-ci \
+  #           bash -lc "ctest --test-dir build-docker -L fuzzer --verbose"

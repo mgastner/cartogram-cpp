@@ -10,8 +10,20 @@ else
     python3 -m venv .venv
     source .venv/bin/activate
 
-    # Build the project
-    sudo .venv/bin/cmake -B "build" -S . -DCMAKE_TOOLCHAIN_FILE=build/build/Release/generators/conan_toolchain.cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_EXPORT_COMPILE_COMMANDS=ON
-    sudo .venv/bin/cmake --build "build" -j4
-    sudo .venv/bin/cmake --install "build"
+if [[ -z ${BUILD_TYPE} ]]; then
+    BUILD_TYPE=Release
 fi
+
+# Output BUILD_DIR and BUILD_TYPE
+echo "Building in directory: $BUILD_DIR, with build type: $BUILD_TYPE"
+
+# Warn user if BUILD_DIR already exists
+if [[ -d $BUILD_DIR ]]; then
+    echo "Warning: $BUILD_DIR already exists. Pre-existing cache may interfere with the build process and cause installation to fail. Consider deleting it before proceeding."
+fi
+
+conan install . --output-folder $BUILD_DIR --build=missing -s build_type=$BUILD_TYPE -s compiler.cppstd=20
+
+cmake -B "$BUILD_DIR"  -S . -DCMAKE_TOOLCHAIN_FILE=$BUILD_DIR/build/$BUILD_TYPE/generators/conan_toolchain.cmake -DCMAKE_BUILD_TYPE=$BUILD_TYPE -DCMAKE_EXPORT_COMPILE_COMMANDS=ON
+cmake --build "$BUILD_DIR" -j4
+cmake --install "$BUILD_DIR"
