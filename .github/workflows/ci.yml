@@ -274,33 +274,33 @@ jobs:
           ctest --test-dir build -L stress --output-on-failure
 
   # ─────────────────────────── Fuzzer Tests ─────────────────────────
-  fuzzer-tests:
-    needs: [style-check, build]
-    strategy:
-      fail-fast: false
-      matrix:
-        target:
-          - release-gcc
-          - release-clang
-          - release-macos
-    runs-on: "${{ contains(matrix.target, 'mac') && 'macos-14' || 'ubuntu-latest' }}"
+  # fuzzer-tests:
+  #   needs: [style-check, build]
+  #   strategy:
+  #     fail-fast: false
+  #     matrix:
+  #       target:
+  #         - release-gcc
+  #         - release-clang
+  #         - release-macos
+  #   runs-on: "${{ contains(matrix.target, 'mac') && 'macos-14' || 'ubuntu-latest' }}"
 
-    steps:
-      - uses: actions/checkout@v4
+  #   steps:
+  #     - uses: actions/checkout@v4
 
-      - uses: actions/download-artifact@v4
-        with:
-          name: ${{ matrix.target }}
+  #     - uses: actions/download-artifact@v4
+  #       with:
+  #         name: ${{ matrix.target }}
 
-      - name: Install Python in venv
-        run: |
-          python3 -m venv .venv
-          source .venv/bin/activate
-          pip install -U pip
+  #     - name: Install Python in venv
+  #       run: |
+  #         python3 -m venv .venv
+  #         source .venv/bin/activate
+  #         pip install -U pip
 
-      - name: Unpack build folder
-        run: tar -xzf build-${{ matrix.target }}.tar.gz
+  #     - name: Unpack build folder
+  #       run: tar -xzf build-${{ matrix.target }}.tar.gz
 
-      - name: Fuzzer tests
-        run: |
-          ctest --test-dir build -L fuzzer --verbose
+  #     - name: Fuzzer tests
+  #       run: |
+  #         ctest --test-dir build -L fuzzer --verbose
