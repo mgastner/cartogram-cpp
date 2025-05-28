@@ -96,7 +96,9 @@ static std::pair<GeoDiv, bool> json_to_geodiv(
         static_cast<double>(jphc_ext[last_ext_index][1])));
     }
     if (!ext_ring.is_simple()) {
-      std::cerr << "ERROR: (GeoJSON Parsing) exterior ring not a simple polygon" << std::endl;
+      std::cerr
+        << "ERROR: (GeoJSON Parsing) exterior ring not a simple polygon"
+        << std::endl;
       _Exit(13);
     }
 
@@ -133,7 +135,9 @@ static std::pair<GeoDiv, bool> json_to_geodiv(
           static_cast<double>(jphc_int[last_int_index][1])));
       }
       if (!int_ring.is_simple()) {
-        std::cerr << "ERROR: (GeoJSON Parsing) interior ring not a simple polygon" << std::endl;
+        std::cerr
+          << "ERROR: (GeoJSON Parsing) interior ring not a simple polygon"
+          << std::endl;
         _Exit(14);
       }
       if (int_ring.is_counterclockwise_oriented()) {
@@ -208,8 +212,8 @@ static void extract_crs(const nlohmann::json &j, std::string &crs)
   std::cerr << "Coordinate reference system: " << crs << std::endl;
 }
 
-static std::map<std::string, std::vector<std::string>> extract_unique_properties_map(
-  const nlohmann::json &j)
+static std::map<std::string, std::vector<std::string>>
+extract_unique_properties_map(const nlohmann::json &j)
 {
   std::map<std::string, std::vector<std::string>> properties_map;
   for (const auto &feature : j["features"]) {
@@ -407,7 +411,8 @@ void CartogramInfo::read_geojson()
   unique_properties_map_ = extract_unique_properties_map(j);
   assert(unique_properties_map_.size() > 0);
 
-  // Set the first key inside the unique_properties_map_ as the default ID header
+  // Set the first key inside the unique_properties_map_ as the default ID
+  // header
   id_header_ = unique_properties_map_.begin()->first;
 
   initial_id_order_ = extract_initial_order_of_ids(j, id_header_);

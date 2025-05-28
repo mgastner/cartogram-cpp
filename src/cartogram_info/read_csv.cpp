@@ -336,14 +336,18 @@ void CartogramInfo::read_csv()
     const std::string area_as_str = row[static_cast<size_t>(area_col)].get();
     check_validity_of_area_str(area_as_str);
 
-    const std::string color =
-      (color_col != csv::CSV_NOT_FOUND) ? row[static_cast<size_t>(color_col)].get() : "";
+    const std::string color = (color_col != csv::CSV_NOT_FOUND)
+                                ? row[static_cast<size_t>(color_col)].get()
+                                : "";
 
-    const std::string label =
-      (label_col != csv::CSV_NOT_FOUND) ? row[static_cast<size_t>(label_col)].get() : "";
+    const std::string label = (label_col != csv::CSV_NOT_FOUND)
+                                ? row[static_cast<size_t>(label_col)].get()
+                                : "";
 
     const std::string inset_pos_as_str =
-      (inset_col != csv::CSV_NOT_FOUND) ? row[static_cast<size_t>(inset_col)].get() : "C";
+      (inset_col != csv::CSV_NOT_FOUND)
+        ? row[static_cast<size_t>(inset_col)].get()
+        : "C";
 
     const std::string inset_pos = process_inset_pos_str(inset_pos_as_str);
     check_validity_of_inset_pos(inset_pos, id);

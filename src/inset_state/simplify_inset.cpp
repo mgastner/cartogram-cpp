@@ -24,8 +24,10 @@ void InsetState::simplify(const unsigned int target_points_per_inset)
     for (const auto &pwh : gd.polygons_with_holes()) {
       pgn_id_to_constraint_id[pgn_id++] =
         // NOTE: This line causes a segmentation fault in
-        // cartogram ../../sample_data/world_by_country_since_2022/world_by_country_since_2022.geojson ../../sample_data/world_by_country_since_2022/world_population_2010.csv -QST
-        // in DEBUG mode
+        // cartogram
+        // ../../sample_data/world_by_country_since_2022/world_by_country_since_2022.geojson
+        // ../../sample_data/world_by_country_since_2022/world_population_2010.csv
+        // -QST in DEBUG mode
         // TODO: Investigate why
         ct.insert_constraint(pwh.outer_boundary());
       for (const auto &h : pwh.holes()) {

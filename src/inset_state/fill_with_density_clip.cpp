@@ -475,7 +475,8 @@ static unsigned int compute_connected_components(
     for (unsigned int y = 0; y < ly; ++y) {
 
       // Flatten index: index = x * ly + y
-      is_edge[static_cast<unsigned int>(x * ly + y)] = (!edge_cell_polyinfo[x][y].empty());
+      is_edge[static_cast<unsigned int>(x * ly + y)] =
+        (!edge_cell_polyinfo[x][y].empty());
     }
   }
 
@@ -486,7 +487,8 @@ static unsigned int compute_connected_components(
   // Flood fill
   for (unsigned int x = 0; x < lx; ++x) {
     for (unsigned int y = 0; y < ly; ++y) {
-      if (!is_edge[static_cast<unsigned int>(x * ly + y)] && comp[x][y] == -1) {
+      if (
+        !is_edge[static_cast<unsigned int>(x * ly + y)] && comp[x][y] == -1) {
         std::queue<Coordinate> q;
         q.push({x, y});
         comp[x][y] = static_cast<int>(n_components);
@@ -712,12 +714,14 @@ static void map_components_to_pwh(
     for (unsigned int y = 0; y < ly; ++y) {
 
       // Flatten index: index = x * ly + y
-      is_edge[static_cast<unsigned int>(x * ly + y)] = (!edge_cell_polyinfo[x][y].empty());
+      is_edge[static_cast<unsigned int>(x * ly + y)] =
+        (!edge_cell_polyinfo[x][y].empty());
     }
   }
 
   auto is_comp_used = [&comp_id_to_pwh_tot_id](int comp_id) {
-    return (comp_id != -1) and comp_id_to_pwh_tot_id[static_cast<unsigned int>(comp_id)] != -1;
+    return (comp_id != -1) and
+           comp_id_to_pwh_tot_id[static_cast<unsigned int>(comp_id)] != -1;
   };
 
   // Store the connected components that are outside the pwh when encountered
@@ -765,12 +769,14 @@ static void map_components_to_pwh(
               if (is_point_inside_polygon(hole, center)) {
                 is_outside[pwh_tot_id].insert(comp_id);
               } else {
-                comp_id_to_pwh_tot_id[static_cast<unsigned int>(comp_id)] = static_cast<int>(pwh_tot_id);
+                comp_id_to_pwh_tot_id[static_cast<unsigned int>(comp_id)] =
+                  static_cast<int>(pwh_tot_id);
               }
             } else {
               auto &outer_boundary = pwh.outer_boundary();
               if (is_point_inside_polygon(outer_boundary, center)) {
-                comp_id_to_pwh_tot_id[static_cast<unsigned int>(comp_id)] = static_cast<int>(pwh_tot_id);
+                comp_id_to_pwh_tot_id[static_cast<unsigned int>(comp_id)] =
+                  static_cast<int>(pwh_tot_id);
               } else {
                 is_outside[pwh_tot_id].insert(comp_id);
               }
@@ -891,13 +897,15 @@ static void compute_area(
     for (unsigned int y = 0; y < ly; ++y) {
 
       // Flatten index: index = x * ly + y
-      is_edge[static_cast<unsigned int>(x * ly + y)] = (!edge_cell_polyinfo[x][y].empty());
+      is_edge[static_cast<unsigned int>(x * ly + y)] =
+        (!edge_cell_polyinfo[x][y].empty());
     }
   }
 
   auto is_inside_polygon = [&](unsigned int x, unsigned int y) {
     auto comp_id = comp[x][y];
-    return (comp_id != -1) and comp_id_to_pwh_tot_id[static_cast<unsigned int>(comp[x][y])] != -1;
+    return (comp_id != -1) and
+           comp_id_to_pwh_tot_id[static_cast<unsigned int>(comp[x][y])] != -1;
   };
 
   std::vector<double> gd_target_density;
@@ -1007,7 +1015,9 @@ static void compute_area(
 
 // Test function to compare the computed area with the actual area (brute
 // force)
-[[maybe_unused]] static void test_areas_densities(const FTReal2d &rho, InsetState &inset_state)
+[[maybe_unused]] static void test_areas_densities(
+  const FTReal2d &rho,
+  InsetState &inset_state)
 {
   const unsigned int lx = inset_state.lx();
   const unsigned int ly = inset_state.ly();
@@ -1032,10 +1042,12 @@ static void compute_area(
     const GeoDiv &gd = inset_state.geo_divs()[gd_id];
     for (const auto &pwh : gd.polygons_with_holes()) {
       auto bbox = pwh.outer_boundary().bbox();
-      for (unsigned int i = static_cast<unsigned int>(std::max(0, static_cast<int>(bbox.xmin())));
+      for (unsigned int i = static_cast<unsigned int>(
+             std::max(0, static_cast<int>(bbox.xmin())));
            i < std::min(lx, static_cast<unsigned int>(bbox.xmax()) + 1);
            ++i) {
-        for (unsigned int j = static_cast<unsigned int>(std::max(0, static_cast<int>(bbox.ymin())));
+        for (unsigned int j = static_cast<unsigned int>(
+               std::max(0, static_cast<int>(bbox.ymin())));
              j < std::min(ly, static_cast<unsigned int>(bbox.ymax()) + 1);
              ++j) {
 

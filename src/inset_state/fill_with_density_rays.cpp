@@ -19,15 +19,15 @@ void InsetState::fill_with_density_rays()
   // target areas in the desired proportion to the other polygons. That is,
   // we must call cart_info.replace_missing_and_zero_target_areas() before
   // calling this function.
-  double exterior_density = (lx_ * ly_ - initial_area_) /
-                            (lx_ * ly_ - total_inset_area());
+  double exterior_density =
+    (lx_ * ly_ - initial_area_) / (lx_ * ly_ - total_inset_area());
   // We weight GeoDivs according to area errors, including the exterior.
   // area error is defined as | ((area / target_area) - 1) |
   // lx * ly - initial_area is thus, the target area, and
   // lx * ly - total_inset_area is thus, the current area
   // Thus, area / target_area of the exterior is the inverse
   // of the exterior_density.
-  double ext_weight =  std::abs((1.0 / exterior_density) - 1);
+  double ext_weight = std::abs((1.0 / exterior_density) - 1);
 
 #pragma omp parallel for default(none)
 
@@ -75,7 +75,8 @@ void InsetState::fill_with_density_rays()
 
   auto intersections_with_rays = intersec_with_parallel_to('x', resolution);
 
-  // Determine total_interior_density to get the average density of the interior later
+  // Determine total_interior_density to get the average density of the
+  // interior later
   double total_interior_density = 0;
 
   // Determine rho's numerator and denominator:
@@ -96,7 +97,8 @@ void InsetState::fill_with_density_rays()
 
       // Intersections for one ray
       auto intersections_at_y =
-        intersections_with_rays[static_cast<std::size_t>(std::lround(resolution * y - 0.5))];
+        intersections_with_rays[static_cast<std::size_t>(
+          std::lround(resolution * y - 0.5))];
 
       // Sort intersections in ascending order
       std::sort(intersections_at_y.begin(), intersections_at_y.end());
@@ -136,11 +138,13 @@ void InsetState::fill_with_density_rays()
         }
 
         // Ray is entering a GeoDiv from empty space
-        double prev_x = (i == 0) ?
-          // It is the first intersection
-          floor(left_x) :
-          // prev_x could be within the same grid cell
-          std::max(floor(left_x), intersections_at_y[i - 1].x());
+        double prev_x =
+          (i == 0) ?
+                   // It is the first intersection
+            floor(left_x)
+                   :
+                   // prev_x could be within the same grid cell
+            std::max(floor(left_x), intersections_at_y[i - 1].x());
 
         double left_x_empty_offset = left_x - prev_x;
 
@@ -150,10 +154,15 @@ void InsetState::fill_with_density_rays()
         // weight = 1;
 
         // Fill leftmost cell with GeoDiv where part of ray inside the grid
-        // rho_num[floor(left_x)][k] += left_x_empty_offset * exterior_density + gd_length_to_left * target_dens;
-        rho_num[static_cast<unsigned int>(floor(left_x))][k] += left_x_empty_offset * exterior_density * ext_weight + gd_length_to_left * target_dens * weight;
-        // rho_den[floor(left_x)][k] += left_x_empty_offset + gd_length_to_left;
-        rho_den[static_cast<unsigned int>(floor(left_x))][k] +=  left_x_empty_offset * ext_weight + weight * gd_length_to_left;
+        // rho_num[floor(left_x)][k] += left_x_empty_offset * exterior_density
+        // + gd_length_to_left * target_dens;
+        rho_num[static_cast<unsigned int>(floor(left_x))][k] +=
+          left_x_empty_offset * exterior_density * ext_weight +
+          gd_length_to_left * target_dens * weight;
+        // rho_den[floor(left_x)][k] += left_x_empty_offset +
+        // gd_length_to_left;
+        rho_den[static_cast<unsigned int>(floor(left_x))][k] +=
+          left_x_empty_offset * ext_weight + weight * gd_length_to_left;
 
         // Fill all other cells where GeoDiv is fully covering grid cell
         for (unsigned int m = static_cast<unsigned int>(std::ceil(left_x));
@@ -164,67 +173,89 @@ void InsetState::fill_with_density_rays()
         }
 
         // Ray is exiting a GeoDiv to empty space
-        double next_x = (i + 2 == intersections_at_y.size()) ?
-          // It is the last intersection
-          ceil(right_x) :
-          // next_x could be within the same grid cell
-          std::min(ceil(right_x), intersections_at_y[i + 2].x());
+        double next_x =
+          (i + 2 == intersections_at_y.size())
+            ?
+            // It is the last intersection
+            ceil(right_x)
+            :
+            // next_x could be within the same grid cell
+            std::min(ceil(right_x), intersections_at_y[i + 2].x());
 
-        double right_x_empty_offset = !almost_equal(next_x, right_x) ?
-          // There is space between two GeoDivs, within the same cell,
-          // which will be handled in the next iteration upon ray entering next GeoDiv
-          0 :
-          // The ray is exiting the GeoDiv and is "empty" until the end of the grid cell
-          next_x - right_x;
+        double right_x_empty_offset =
+          !almost_equal(next_x, right_x)
+            ?
+            // There is space between two GeoDivs, within the same cell,
+            // which will be handled in the next iteration upon ray entering
+            // next GeoDiv
+            0
+            :
+            // The ray is exiting the GeoDiv and is "empty" until the end of
+            // the grid cell
+            next_x - right_x;
 
-        double gd_length_to_right = floor(right_x) <= left_x ?
-          // This entire segment of GeoDiv is inside one cell
-          // The earlier part of the code has already accounted for the density
-          // of this segment.
-          0 :
-          right_x - floor(right_x);
+        double gd_length_to_right =
+          floor(right_x) <= left_x
+            ?
+            // This entire segment of GeoDiv is inside one cell
+            // The earlier part of the code has already accounted for the
+            // density of this segment.
+            0
+            : right_x - floor(right_x);
 
-        // rho_num[floor(right_x)][k] += right_x_empty_offset * exterior_density + gd_length_to_right * target_dens;
-        rho_num[static_cast<unsigned int>(floor(right_x))][k] += right_x_empty_offset * exterior_density * ext_weight + gd_length_to_right * target_dens * weight;
-        // rho_den[floor(right_x)][k] += right_x_empty_offset * exterior_density + gd_length_to_right;
-        rho_den[static_cast<unsigned int>(floor(right_x))][k] += right_x_empty_offset * exterior_density * ext_weight + gd_length_to_right * weight;
+        // rho_num[floor(right_x)][k] += right_x_empty_offset *
+        // exterior_density + gd_length_to_right * target_dens;
+        rho_num[static_cast<unsigned int>(floor(right_x))][k] +=
+          right_x_empty_offset * exterior_density * ext_weight +
+          gd_length_to_right * target_dens * weight;
+        // rho_den[floor(right_x)][k] += right_x_empty_offset *
+        // exterior_density + gd_length_to_right;
+        rho_den[static_cast<unsigned int>(floor(right_x))][k] +=
+          right_x_empty_offset * exterior_density * ext_weight +
+          gd_length_to_right * weight;
       }
     }
   }
 
-  // The total_interior_density has been added resolution number of times per grid cell
+  // The total_interior_density has been added resolution number of times per
+  // grid cell
   total_interior_density /= resolution;
   dens_mean_ = total_interior_density / total_inset_area();
 
   // If any Polygons remain unseen, process them individually
-  for (const auto& [gd_id, pwh_set] : unseen_pwhs) {
+  for (const auto &[gd_id, pwh_set] : unseen_pwhs) {
 
-    // Skip iteration in case no Polygons with Holes of this GeoDiv remain unseen
-    if (pwh_set.empty()) continue;
+    // Skip iteration in case no Polygons with Holes of this GeoDiv remain
+    // unseen
+    if (pwh_set.empty())
+      continue;
 
     // Get reference to GeoDiv
-    const auto& gd = geo_div_at_id(gd_id);
+    const auto &gd = geo_div_at_id(gd_id);
 
     // Calculate weight and target density for the polygon
     const double weight = area_error_at(gd_id);
     const double target_dens = target_area_at(gd_id) / gd.area();
 
     // Skip iteration in case GeoDiv has already converged
-    if (weight < 0.01) continue;
+    if (weight < 0.01)
+      continue;
 
     // Iterate over all unseen Polygons with Holes of this GeoDiv to find
-    for (const auto& pwh_idx : pwh_set) {
+    for (const auto &pwh_idx : pwh_set) {
 
-      const auto& pwh = gd.polygons_with_holes()[pwh_idx];
+      const auto &pwh = gd.polygons_with_holes()[pwh_idx];
 
       // Get bounding box of the polygon to get the grid cell that contains it
       Bbox pwh_bbox = pwh.bbox();
-      unsigned int grid_i = static_cast<unsigned int>(std::floor((pwh_bbox.xmin() + pwh_bbox.xmax()) / 2.0));
-      unsigned int grid_j = static_cast<unsigned int>(std::floor((pwh_bbox.ymin() + pwh_bbox.ymax()) / 2.0));
+      unsigned int grid_i = static_cast<unsigned int>(
+        std::floor((pwh_bbox.xmin() + pwh_bbox.xmax()) / 2.0));
+      unsigned int grid_j = static_cast<unsigned int>(
+        std::floor((pwh_bbox.ymin() + pwh_bbox.ymax()) / 2.0));
 
-      // TODO: This may attribute a very high weight, which would've been otherwise
-      // reduced by the length of the segment inside the GeoDiv. Investigate the best
-      // settings for this
+      // TODO: This may attribute a very high weight, which would've been
+      // otherwise reduced by the length of the segment inside the GeoDiv.
+      // Investigate the best settings for this
       rho_num[grid_i][grid_j] += weight * target_dens;
       rho_den[grid_i][grid_j] += weight;
     }
