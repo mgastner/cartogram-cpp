@@ -146,6 +146,8 @@ jobs:
     runs-on: "${{ contains(matrix.target, 'mac') && 'macos-14' || 'ubuntu-latest' }}"
 
     steps:
+      - uses: actions/checkout@v4
+
       - uses: actions/download-artifact@v4
         with:
           name: ${{ matrix.target }}
@@ -170,6 +172,8 @@ jobs:
     runs-on: "${{ contains(matrix.target, 'mac') && 'macos-14' || 'ubuntu-latest' }}"
 
     steps:
+      - uses: actions/checkout@v4
+
       - uses: actions/download-artifact@v4
         with:
           name: ${{ matrix.target }}
@@ -179,5 +183,4 @@ jobs:
 
       - name: Fuzzer tests
         run: |
-          chmod +x cartogram
           ctest --test-dir . -L fuzzer --verbose
