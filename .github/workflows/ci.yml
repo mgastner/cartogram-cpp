@@ -18,33 +18,33 @@ jobs:
           # Linux
           - os: ubuntu-latest
             tool: gcc
-            ver: 13
+            version: 13
             build_type: Release
-            name: gcc-Rel
+            name: Release-gcc
           - os: ubuntu-latest
             tool: clang
-            ver: 16
+            version: 16
             build_type: Release
-            name: clang-Rel
+            name: Release-clang
           - os: ubuntu-latest
             tool: gcc
-            ver: 13
+            version: 13
             build_type: Debug
-            name: gcc-Deb
+            name: Debug-gcc
           - os: ubuntu-latest
             tool: clang
-            ver: 16
+            version: 16
             build_type: Debug
-            name: clang-Deb
+            name: Debug-clang
           # macOS
           - os: macos-14
             tool: apple-clang
-            ver: ""
+            version: ""
             build_type: Release
-            name: mac-Rel
+            name: Release-mac
           - os: macos-14
             tool: apple-clang
-            ver: ""
+            version: ""
             build_type: Debug
             name: mac-Deb
 
@@ -57,19 +57,20 @@ jobs:
           source .venv/bin/activate
           pip install -U pip wheel conan==2.16.1 cmake==3.30.0
           conan remote update conancenter --url=https://center2.conan.io
+          conan profile detect 
 
       - name: Install compiler (Linux only)
         if: runner.os == 'Linux'
         run: |
           sudo apt-get update
           if [[ "${{ matrix.tool }}" == "gcc" ]]; then
-            sudo apt-get install -y gcc-${{ matrix.ver }} g++-${{ matrix.ver }}
-            echo "CC=gcc-${{ matrix.ver }}"  >> $GITHUB_ENV
-            echo "CXX=g++-${{ matrix.ver }}" >> $GITHUB_ENV
+            sudo apt-get install -y gcc-${{ matrix.version }} g++-${{ matrix.version }}
+            echo "CC=gcc-${{ matrix.version }}"  >> $GITHUB_ENV
+            echo "CXX=g++-${{ matrix.version }}" >> $GITHUB_ENV
           else
-            sudo apt-get install -y clang-${{ matrix.ver }} lld-${{ matrix.ver }}
-            echo "CC=clang-${{ matrix.ver }}"   >> $GITHUB_ENV
-            echo "CXX=clang++-${{ matrix.ver }}" >> $GITHUB_ENV
+            sudo apt-get install -y clang-${{ matrix.version }} lld-${{ matrix.version }}
+            echo "CC=clang-${{ matrix.version }}"   >> $GITHUB_ENV
+            echo "CXX=clang++-${{ matrix.version }}" >> $GITHUB_ENV
           fi
 
       - name: Download Dependencies
@@ -77,8 +78,6 @@ jobs:
           source .venv/bin/activate
           conan install . \
             --output-folder build \
-            --profile:build default \
-            --profile:host  default \
             --build=missing \
             -s build_type=${{ matrix.build_type }} \
             -s compiler.cppstd=20 \
@@ -106,11 +105,11 @@ jobs:
     strategy:
       matrix:
         target:
-          - gcc-Rel
-          - clang-Rel
-          - gcc-Deb
-          - clang-Deb
-          - mac-Rel
+          - Release-gcc
+          - Release-clang
+          - Debug-gcc
+          - Debug-clang
+          - Release-mac
           - mac-Deb
     runs-on: "${{ contains(matrix.target, 'mac') && 'macos-14' || 'ubuntu-latest' }}"
 
@@ -130,11 +129,11 @@ jobs:
     strategy:
       matrix:
         target:
-          - gcc-Rel
-          - clang-Rel
-          - gcc-Deb
-          - clang-Deb
-          - mac-Rel
+          - Release-gcc
+          - Release-clang
+          - Debug-gcc
+          - Debug-clang
+          - Release-mac
           - mac-Deb
     runs-on: "${{ contains(matrix.target, 'mac') && 'macos-14' || 'ubuntu-latest' }}"
 
@@ -154,9 +153,9 @@ jobs:
     strategy:
       matrix:
         target:
-          - gcc-Rel
-          - clang-Release
-          - mac-Rel
+          - Release-gcc
+          - Release-clangease
+          - Release-mac
     runs-on: "${{ contains(matrix.target, 'mac') && 'macos-14' || 'ubuntu-latest' }}"
 
     steps:
