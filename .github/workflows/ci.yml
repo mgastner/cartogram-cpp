@@ -10,7 +10,7 @@ on:
 
 jobs:
   style-check:
-    name: Style check (clang-format)
+    name: Style check (clang-format 18)
     runs-on: ubuntu-latest
 
     steps:
@@ -19,8 +19,8 @@ jobs:
       - name: Install clang-format
         run: |
           sudo apt-get update
-          sudo apt-get install -y clang-format-16
-          echo "CLANG_FORMAT=clang-format-16" >> $GITHUB_ENV
+          sudo apt-get install -y clang-format-18
+          echo "CLANG_FORMAT=clang-format-18" >> $GITHUB_ENV
 
       - name: Check formatting
         run: |
@@ -44,12 +44,12 @@ jobs:
           if [ ${#bad_files[@]} -ne 0 ]; then
             file_list=$(printf '%s\n' "${bad_files[@]}")
             file_list_escaped=${file_list//$'\n'/%0A}
-            echo "::error::clang-format issues detected in the following files:%0A${file_list_escaped}%0ARun 'clang-format -i' to fix."
+            echo "::error::clang-format issues detected in the following files:%0A${file_list_escaped}%0ARun 'clang-format-18 -i' to fix."
             exit 1
           fi
 
   build:
-    name: Build (${{ matrix.name }})
+    name: "Build (${{ matrix.name }})"
     runs-on: ${{ matrix.os }}
     needs: style-check
     strategy:
