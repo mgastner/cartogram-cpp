@@ -58,7 +58,7 @@ jobs:
           source .venv/bin/activate
           pip install -U pip wheel conan==2.16.1 cmake==3.30.0
           conan remote update conancenter --url=https://center2.conan.io
-          conan profile detect 
+          conan profile detect
 
       - name: Install compiler (Linux only)
         if: runner.os == 'Linux'
@@ -94,11 +94,14 @@ jobs:
             -DCMAKE_EXPORT_COMPILE_COMMANDS=ON
           cmake --build build -j$(nproc || sysctl -n hw.ncpu)
 
+      - name: Package build folder
+        run: tar -czf build-${{ matrix.name }}.tar.gz build
+
       - name: Upload artefact
         uses: actions/upload-artifact@v4
         with:
           name: ${{ matrix.name }}
-          path: build/cartogram # Should be statically built so nothing else should be needed
+          path: build-${{ matrix.name }}.tar.gz
 
   # ─────────────────────────── Unit Tests ───────────────────────────
   unit-tests:
@@ -120,10 +123,12 @@ jobs:
         with:
           name: ${{ matrix.target }}
 
+      - name: Unpack build folder
+        run: tar -xzf build-${{ matrix.target }}.tar.gz
+
       - name: Unit tests
         run: |
-          chmod +x cartogram
-          ctest --test-dir . -L unit --output-on-failure
+          ctest --test-dir build -L unit --output-on-failure
 
   # ────────────────────────── Stress Tests ──────────────────────────
   stress-tests:
@@ -145,9 +150,11 @@ jobs:
         with:
           name: ${{ matrix.target }}
 
+      - name: Unpack build folder
+        run: tar -xzf build-${{ matrix.target }}.tar.gz
+
       - name: Stress tests
         run: |
-          chmod +x cartogram
           ctest --test-dir . -L stress --output-on-failure
 
   # ─────────────────────────── Fuzzer Tests ─────────────────────────
@@ -166,6 +173,9 @@ jobs:
       - uses: actions/download-artifact@v4
         with:
           name: ${{ matrix.target }}
+
+      - name: Unpack build folder
+        run: tar -xzf build-${{ matrix.target }}.tar.gz
 
       - name: Fuzzer tests
         run: |
