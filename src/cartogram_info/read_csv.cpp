@@ -33,7 +33,7 @@ static void check_validity_of_area_str(const std::string &area_as_str)
       << "ERROR: Invalid area string: " << area_process_str
       << ". Area string must only contain 0-9, '.', '-' and ',' or 'NA'."
       << std::endl;
-    _Exit(18);
+    std::exit(18);
   }
 
   if (
@@ -41,12 +41,12 @@ static void check_validity_of_area_str(const std::string &area_as_str)
     !StringToDecimalConverter::is_str_correct_format(area_process_str)) {
     std::cerr << "ERROR: Invalid area string format: " << area_process_str
               << std::endl;
-    _Exit(19);
+    std::exit(19);
   }
 
   if (area_process_str.front() == '-') {
     std::cerr << "ERROR: Negative area in CSV" << std::endl;
-    _Exit(101);
+    std::exit(101);
   }
 }
 
@@ -78,7 +78,7 @@ static void check_validity_of_inset_pos(
     std::cerr << "Unrecognized inset position : " << inset_pos
               << " for Region: " << id << "\nSetting " << id
               << "\'s inset position to Center (C)." << std::endl;
-    _Exit(20);
+    std::exit(20);
   }
 }
 
@@ -162,7 +162,7 @@ std::string CartogramInfo::match_id_columns(
     std::cerr << "ERROR: No valid matching ID header between GeoJSON "
                  "properties and CSV columns could be found."
               << std::endl;
-    _Exit(16);
+    std::exit(16);
   }
 
   id_col_ = reader.index_of(csv_id_header);
@@ -215,7 +215,7 @@ static void check_validity_of_csv_ids(
       initial_id_order.end()) {
       std::cerr << "ERROR: ID " << id << " in CSV is not in GeoJSON"
                 << std::endl;
-      _Exit(21);
+      std::exit(21);
     }
   }
 
@@ -225,7 +225,7 @@ static void check_validity_of_csv_ids(
                 << std::endl;
       csv_data[id] =
         {{"area", "NA"}, {"color", ""}, {"label", ""}, {"inset_pos", "C"}};
-      // _Exit(22);
+      // std::exit(22);
     }
   }
 }
@@ -329,21 +329,25 @@ void CartogramInfo::read_csv()
         << "ERROR: CSV with >= 2 columns (IDs, target areas) required. Some "
            "rows in your CSV may not have values for all columns"
         << std::endl;
-      _Exit(17);
+      std::exit(17);
     }
 
     const std::string id = row[static_cast<size_t>(id_col)].get();
     const std::string area_as_str = row[static_cast<size_t>(area_col)].get();
     check_validity_of_area_str(area_as_str);
 
-    const std::string color =
-      (color_col != csv::CSV_NOT_FOUND) ? row[static_cast<size_t>(color_col)].get() : "";
+    const std::string color = (color_col != csv::CSV_NOT_FOUND)
+                                ? row[static_cast<size_t>(color_col)].get()
+                                : "";
 
-    const std::string label =
-      (label_col != csv::CSV_NOT_FOUND) ? row[static_cast<size_t>(label_col)].get() : "";
+    const std::string label = (label_col != csv::CSV_NOT_FOUND)
+                                ? row[static_cast<size_t>(label_col)].get()
+                                : "";
 
     const std::string inset_pos_as_str =
-      (inset_col != csv::CSV_NOT_FOUND) ? row[static_cast<size_t>(inset_col)].get() : "C";
+      (inset_col != csv::CSV_NOT_FOUND)
+        ? row[static_cast<size_t>(inset_col)].get()
+        : "C";
 
     const std::string inset_pos = process_inset_pos_str(inset_pos_as_str);
     check_validity_of_inset_pos(inset_pos, id);

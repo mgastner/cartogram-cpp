@@ -17,7 +17,14 @@ InsetState::InsetState(std::string pos, Arguments args)
 
 double InsetState::area_error_at(const std::string &id) const
 {
-  return area_errors_.at(id);
+  try {
+    return area_errors_.at(id);
+  } catch (const std::out_of_range &e) {
+    std::cerr << "ERROR: Key '" << id << "' not found in area_errors_. "
+              << "Exception: " << e.what() << std::endl;
+    // Re-throw, or return a default value
+    throw;
+  }
 }
 
 Bbox InsetState::bbox(bool original_bbox) const
@@ -29,9 +36,8 @@ Bbox InsetState::bbox(bool original_bbox) const
   double inset_ymin = dbl_inf;
   double inset_ymax = -dbl_inf;
 #pragma omp parallel for default(none) shared(geo_divs) \
-  reduction(min                                         \
-            : inset_xmin, inset_ymin) reduction(max     \
-                                                : inset_xmax, inset_ymax)
+  reduction(min : inset_xmin, inset_ymin)               \
+  reduction(max : inset_xmax, inset_ymax)
   for (const auto &gd : geo_divs) {
     for (const auto &pwh : gd.polygons_with_holes()) {
       const auto bb = pwh.bbox();
@@ -131,7 +137,14 @@ bool InsetState::continue_integrating() const
 
 Color InsetState::color_at(const std::string &id) const
 {
-  return colors_.at(id);
+  try {
+    return colors_.at(id);
+  } catch (const std::out_of_range &e) {
+    std::cerr << "ERROR: Key '" << id << "' not found in colors_. "
+              << "Exception: " << e.what() << std::endl;
+    // Re-throw, or return a default value
+    throw;
+  }
 }
 
 bool InsetState::color_found(const std::string &id) const
@@ -303,8 +316,7 @@ void InsetState::update_delaunay_t()
 
       // Binary search to find the number of points between the two y
       // coordinates
-      auto cnt =
-        static_cast<std::size_t>(
+      auto cnt = static_cast<std::size_t>(
         std::upper_bound(y_coor_points.begin(), y_coor_points.end(), y_max) -
         std::lower_bound(y_coor_points.begin(), y_coor_points.end(), y_min));
 
@@ -390,8 +402,8 @@ void InsetState::export_time_report() const
 
     // Time taken (in seconds)
     std::string timer_task_name = inset_name_ + "_" + std::to_string(i);
-    std::string time_in_seconds =
-      std::to_string(static_cast<double>(timer.duration(timer_task_name).count()) / 1000.0);
+    std::string time_in_seconds = std::to_string(
+      static_cast<double>(timer.duration(timer_task_name).count()) / 1000.0);
     csv_rows[i + 1].push_back(time_in_seconds);
 
     // Max area error for that integration
@@ -414,11 +426,27 @@ const std::vector<GeoDiv> &InsetState::geo_divs() const
 // Const and non-const version of geo_div_at_id
 const GeoDiv &InsetState::geo_div_at_id(std::string id) const
 {
-  return geo_divs_[geo_divs_id_to_index_.at(id)];
+  try {
+    return geo_divs_[geo_divs_id_to_index_.at(id)];
+  } catch (const std::out_of_range &e) {
+    std::cerr << "ERROR: Key '" << id
+              << "' not found in geo_divs_id_to_index_. "
+              << "Exception: " << e.what() << std::endl;
+    // Re-throw, or return a default value
+    throw;
+  }
 }
 GeoDiv &InsetState::geo_div_at_id(std::string id)
 {
-  return geo_divs_[geo_divs_id_to_index_.at(id)];
+  try {
+    return geo_divs_[geo_divs_id_to_index_.at(id)];
+  } catch (const std::out_of_range &e) {
+    std::cerr << "ERROR: Key '" << id
+              << "' not found in geo_divs_id_to_index_. "
+              << "Exception: " << e.what() << std::endl;
+    // Re-throw, or return a default value
+    throw;
+  }
 }
 
 // Get unique points from GeoDivs
@@ -490,8 +518,12 @@ struct Split_by_threshold {
     double rho_min = std::numeric_limits<double>::infinity();
     double rho_max = -std::numeric_limits<double>::infinity();
 
-    for (int x = static_cast<int>(bbox.xmin()); x < static_cast<int>(bbox.xmax()); ++x) {
-      for (int y = static_cast<int>(bbox.ymin()); y < static_cast<int>(bbox.ymax()); ++y) {
+    for (int x = static_cast<int>(bbox.xmin());
+         x < static_cast<int>(bbox.xmax());
+         ++x) {
+      for (int y = static_cast<int>(bbox.ymin());
+           y < static_cast<int>(bbox.ymax());
+           ++y) {
         if (
           x < 0 || y < 0 || x >= static_cast<int>(inset_state.lx()) ||
           y >= static_cast<int>(inset_state.ly()))
@@ -755,7 +787,15 @@ double InsetState::initial_target_area() const
 
 bool InsetState::is_input_target_area_missing(const std::string &id) const
 {
-  return is_input_target_area_missing_.at(id);
+  try {
+    return is_input_target_area_missing_.at(id);
+  } catch (const std::out_of_range &e) {
+    std::cerr << "ERROR: Key '" << id
+              << "' not found in is_input_target_area_missing_. "
+              << "Exception: " << e.what() << std::endl;
+    // Re-throw, or return a default value
+    throw;
+  }
 }
 
 double InsetState::latt_const() const
@@ -1041,13 +1081,21 @@ void InsetState::store_initial_area()
 
 void InsetState::store_initial_target_area(const double override)
 {
-  initial_target_area_ = almost_equal(override, 0.0) ? total_target_area() : override;
+  initial_target_area_ =
+    almost_equal(override, 0.0) ? total_target_area() : override;
 }
 
 bool InsetState::target_area_is_missing(const std::string &id) const
 {
   // We use negative area as indication that GeoDiv has no target area
-  return target_areas_.at(id) < 0.0;
+  try {
+    return target_areas_.at(id) < 0.0;
+  } catch (const std::out_of_range &e) {
+    std::cerr << "ERROR: Key '" << id << "' not found in target_areas_. "
+              << "Exception: " << e.what() << std::endl;
+    // Re-throw, or return a default value
+    throw;
+  }
 }
 
 double InsetState::target_area_at(const std::string &id) const
@@ -1154,7 +1202,14 @@ void InsetState::update_gd_ids(
   const std::map<std::string, std::string> &gd_id_map)
 {
   for (auto &gd : geo_divs_) {
-    gd.update_id(gd_id_map.at(gd.id()));
+    try {
+      gd.update_id(gd_id_map.at(gd.id()));
+    } catch (const std::out_of_range &e) {
+      std::cerr << "ERROR: Key '" << gd.id() << "' not found in gd_id_map. "
+                << "Exception: " << e.what() << std::endl;
+      // Re-throw, or return a default value
+      throw;
+    }
   }
 }
 
