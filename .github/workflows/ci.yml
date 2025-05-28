@@ -178,6 +178,12 @@ jobs:
         with:
           name: ${{ matrix.target }}
 
+      - name: Install Python in venv
+        run: |
+          python3 -m venv .venv
+          source .venv/bin/activate
+          pip install -U pip
+
       - name: Unpack build folder
         run: tar -xzf build-${{ matrix.target }}.tar.gz
 
