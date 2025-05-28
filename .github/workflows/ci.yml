@@ -64,33 +64,33 @@ jobs:
             compiler: gcc
             version: 13
             build_type: Release
-            name: Release-gcc
+            name: release-gcc
           - os: ubuntu-latest
             compiler: clang
             version: 16
             build_type: Release
-            name: Release-clang
+            name: release-clang
           - os: ubuntu-latest
             compiler: gcc
             version: 13
             build_type: Debug
-            name: Debug-gcc
+            name: debug-gcc
           - os: ubuntu-latest
             compiler: clang
             version: 16
             build_type: Debug
-            name: Debug-clang
+            name: debug-clang
           # macOS
           - os: macos-14
             compiler: apple-clang
             version: ""
             build_type: Release
-            name: Release-mac
+            name: release-macos
           - os: macos-14
             compiler: apple-clang
             version: ""
             build_type: Debug
-            name: Debug-mac
+            name: debug-macos
 
     steps:
       - uses: actions/checkout@v4
@@ -127,7 +127,7 @@ jobs:
             -s compiler.cppstd=20 \
             -o "*:shared=False"
 
-      - name: CMake configure & build
+      - name: Configure & build
         run: |
           source .venv/bin/activate
           cmake -S . -B build \
@@ -146,19 +146,90 @@ jobs:
           name: ${{ matrix.name }}
           path: build-${{ matrix.name }}.tar.gz
 
+  build-sanitize:
+    name: "Build (${{ matrix.san }})"
+    runs-on: ubuntu-latest
+    needs: style-check
+
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - san: asan # AddressSanitizer
+            flag: address
+          - san: ubsan # UndefinedBehaviorSanitizer
+            flag: undefined
+          - san: tsan # ThreadSanitizer
+            flag: thread
+          - san: msan # MemorySanitizer
+            flag: memory
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Python & Conan
+        run: |
+          python3 -m venv .venv
+          source .venv/bin/activate
+          pip install -U pip wheel conan==2.16.1 cmake==3.30.0
+          conan remote update conancenter --url=https://center2.conan.io
+          conan profile detect
+
+      - name: Install clang-16
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y clang-16 lld-16
+          echo "CC=clang-16"    >> $GITHUB_ENV
+          echo "CXX=clang++-16" >> $GITHUB_ENV
+
+      - name: Download dependencies
+        run: |
+          source .venv/bin/activate
+          conan install . \
+            --output-folder build \
+            --build=missing \
+            -s build_type=Debug \
+            -s compiler.cppstd=20 \
+            -o "*:shared=False"
+
+      - name: Configure & build
+        run: |
+          source .venv/bin/activate
+          cmake -S . -B build \
+            -DCMAKE_TOOLCHAIN_FILE=build/build/Debug/generators/conan_toolchain.cmake \
+            -DCMAKE_BUILD_TYPE=Debug \
+            -DBUILD_SHARED_LIBS=OFF \
+            -DCMAKE_EXPORT_COMPILE_COMMANDS=ON \
+            -DCMAKE_CXX_FLAGS="-fsanitize=${{ matrix.flag }} -fno-omit-frame-pointer" \
+            -DCMAKE_EXE_LINKER_FLAGS="-fsanitize=${{ matrix.flag }}"
+          cmake --build build -j$(nproc)
+
+      - name: Package build folder
+        run: tar -czf build-${{ matrix.san }}.tar.gz build
+
+      - name: Upload artefact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.san }}
+          path: build-${{ matrix.san }}.tar.gz
+
   # ─────────────────────────── Unit Tests ───────────────────────────
   unit-tests:
-    needs: [style-check, build]
+    needs: [style-check, build, build-sanitize]
     strategy:
       fail-fast: false
       matrix:
         target:
-          - Release-gcc
-          - Release-clang
-          - Debug-gcc
-          - Debug-clang
-          - Release-mac
-          - Debug-mac
+          - release-gcc
+          - release-clang
+          - debug-gcc
+          - debug-clang
+          - release-macos
+          - debug-macos
+          - asan
+          - ubsan
+          - tsan
+          - msan
     runs-on: "${{ contains(matrix.target, 'mac') && 'macos-14' || 'ubuntu-latest' }}"
 
     steps:
@@ -175,17 +246,21 @@ jobs:
 
   # ────────────────────────── Stress Tests ──────────────────────────
   stress-tests:
-    needs: [style-check, build]
+    needs: [style-check, build, build-sanitize]
     strategy:
       fail-fast: false
       matrix:
         target:
-          - Release-gcc
-          - Release-clang
-          - Debug-gcc
-          - Debug-clang
-          - Release-mac
-          - Debug-mac
+          - release-gcc
+          - release-clang
+          - debug-gcc
+          - debug-clang
+          - release-macos
+          - debug-macos
+          - asan
+          - ubsan
+          - tsan
+          - msan
     runs-on: "${{ contains(matrix.target, 'mac') && 'macos-14' || 'ubuntu-latest' }}"
 
     steps:
@@ -209,9 +284,9 @@ jobs:
       fail-fast: false
       matrix:
         target:
-          - Release-gcc
-          - Release-clang
-          - Release-mac
+          - release-gcc
+          - release-clang
+          - release-macos
     runs-on: "${{ contains(matrix.target, 'mac') && 'macos-14' || 'ubuntu-latest' }}"
 
     steps:
