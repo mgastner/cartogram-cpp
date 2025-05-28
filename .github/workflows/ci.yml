@@ -158,7 +158,7 @@ jobs:
       matrix:
         target:
           - Release-gcc
-          - Release-clangease
+          - Release-clang
           - Release-mac
     runs-on: "${{ contains(matrix.target, 'mac') && 'macos-14' || 'ubuntu-latest' }}"
 
