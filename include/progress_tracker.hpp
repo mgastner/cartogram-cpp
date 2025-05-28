@@ -1,6 +1,8 @@
 #ifndef PROGRESS_TRACKER_H
 #define PROGRESS_TRACKER_H
 
+// clang-format off
+#include <cstdint> 
 #include "indicators/block_progress_bar.hpp"
 #include "indicators/color.hpp"
 #include "indicators/cursor_control.hpp"
@@ -17,7 +19,7 @@
 #include "indicators/setting.hpp"
 #include "indicators/termcolor.hpp"
 #include "indicators/terminal_size.hpp"
-#include <cstdint>
+// clang-format on
 
 class ProgressTracker
 {
