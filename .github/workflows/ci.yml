@@ -47,7 +47,7 @@ jobs:
           if [ ${#bad_files[@]} -ne 0 ]; then
             file_list=$(printf '%s\n' "${bad_files[@]}")
             file_list_escaped=${file_list//$'\n'/%0A}
-            echo "::error::clang-format issues detected in the following files:%0A${file_list_escaped}%0ARun 'clang-format-18 -i' to fix."
+            echo "::error::clang-format issues detected in the following files:%0A${file_list_escaped}%0ARun 'clang-format -i' to fix."
             exit 1
           fi
 
