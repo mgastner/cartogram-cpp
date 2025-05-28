@@ -157,7 +157,7 @@ jobs:
 
       - name: Stress tests
         run: |
-          ctest --test-dir . -L stress --output-on-failure
+          ctest --test-dir build -L stress --output-on-failure
 
   # ─────────────────────────── Fuzzer Tests ─────────────────────────
   fuzzer-tests:
@@ -183,4 +183,4 @@ jobs:
 
       - name: Fuzzer tests
         run: |
-          ctest --test-dir . -L fuzzer --verbose
+          ctest --test-dir build -L fuzzer --verbose
