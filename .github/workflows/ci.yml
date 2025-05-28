@@ -10,7 +10,7 @@ on:
 
 jobs:
   style-check:
-    name: Style check (clang-format 18)
+    name: Style check (clang-format)
     runs-on: ubuntu-latest
 
     steps:
@@ -19,8 +19,8 @@ jobs:
       - name: Install clang-format
         run: |
           sudo apt-get update
-          sudo apt-get install -y clang-format-18
-          echo "CLANG_FORMAT=clang-format-18" >> $GITHUB_ENV
+          sudo apt-get install -y clang-format
+          echo "CLANG_FORMAT=clang-format" >> $GITHUB_ENV
 
       - name: Check formatting
         run: |
