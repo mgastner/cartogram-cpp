@@ -50,7 +50,7 @@ foreach(map_dir IN LISTS CHILDREN)
     )
 
     if(CMAKE_BUILD_TYPE STREQUAL "Debug" AND CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
-      set(TEST_TIMEOUT 1500)
+      set(TEST_TIMEOUT 600)
     else()
       set(TEST_TIMEOUT 120)
     endif()
