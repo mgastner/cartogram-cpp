@@ -1,0 +1,170 @@
+name: CI
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  build:
+    name: Build ${{ matrix.name }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        include:
+          # Linux
+          - os: ubuntu-latest
+            tool: gcc
+            ver: 13
+            build_type: Release
+            name: gcc-Rel
+          - os: ubuntu-latest
+            tool: clang
+            ver: 16
+            build_type: Release
+            name: clang-Rel
+          - os: ubuntu-latest
+            tool: gcc
+            ver: 13
+            build_type: Debug
+            name: gcc-Deb
+          - os: ubuntu-latest
+            tool: clang
+            ver: 16
+            build_type: Debug
+            name: clang-Deb
+          # macOS
+          - os: macos-14
+            tool: apple-clang
+            ver: ""
+            build_type: Release
+            name: mac-Rel
+          - os: macos-14
+            tool: apple-clang
+            ver: ""
+            build_type: Debug
+            name: mac-Deb
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Python & Conan
+        run: |
+          python3 -m venv .venv
+          source .venv/bin/activate
+          pip install -U pip wheel conan==2.16.1 cmake==3.30.0
+          conan remote update conancenter --url=https://center2.conan.io
+
+      - name: Install compiler (Linux only)
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          if [[ "${{ matrix.tool }}" == "gcc" ]]; then
+            sudo apt-get install -y gcc-${{ matrix.ver }} g++-${{ matrix.ver }}
+            echo "CC=gcc-${{ matrix.ver }}"  >> $GITHUB_ENV
+            echo "CXX=g++-${{ matrix.ver }}" >> $GITHUB_ENV
+          else
+            sudo apt-get install -y clang-${{ matrix.ver }} lld-${{ matrix.ver }}
+            echo "CC=clang-${{ matrix.ver }}"   >> $GITHUB_ENV
+            echo "CXX=clang++-${{ matrix.ver }}" >> $GITHUB_ENV
+          fi
+
+      - name: Download Dependencies
+        run: |
+          source .venv/bin/activate
+          conan install . \
+            --output-folder build \
+            --profile:build default \
+            --profile:host  default \
+            --build=missing \
+            -s build_type=${{ matrix.build_type }} \
+            -s compiler.cppstd=20 \
+            -o "*:shared=False"
+
+      - name: CMake configure & build
+        run: |
+          source .venv/bin/activate
+          cmake -S . -B build \
+            -DCMAKE_TOOLCHAIN_FILE=buid/build/${{ matrix.build_type }}/generators/conan_toolchain.cmake \
+            -DCMAKE_BUILD_TYPE=${{ matrix.build_type }} \
+            -DBUILD_SHARED_LIBS=OFF \
+            -DCMAKE_EXPORT_COMPILE_COMMANDS=ON
+          cmake --build build -j$(nproc || sysctl -n hw.ncpu)
+
+      - name: Upload artefact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.name }}
+          path: build/cartogram # Should be statically built so nothing else should be needed
+
+  # ─────────────────────────── Unit Tests ───────────────────────────
+  unit-tests:
+    needs: build
+    strategy:
+      matrix:
+        target:
+          - gcc-Rel
+          - clang-Rel
+          - gcc-Deb
+          - clang-Deb
+          - mac-Rel
+          - mac-Deb
+    runs-on: "${{ contains(matrix.target, 'mac') && 'macos-14' || 'ubuntu-latest' }}"
+
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: ${{ matrix.target }}
+
+      - name: Unit tests
+        run: |
+          chmod +x cartogram
+          ctest --test-dir . -L unit --output-on-failure
+
+  # ────────────────────────── Stress Tests ──────────────────────────
+  stress-tests:
+    needs: build
+    strategy:
+      matrix:
+        target:
+          - gcc-Rel
+          - clang-Rel
+          - gcc-Deb
+          - clang-Deb
+          - mac-Rel
+          - mac-Deb
+    runs-on: "${{ contains(matrix.target, 'mac') && 'macos-14' || 'ubuntu-latest' }}"
+
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: ${{ matrix.target }}
+
+      - name: Stress tests
+        run: |
+          chmod +x cartogram
+          ctest --test-dir . -L stress --output-on-failure
+
+  # ─────────────────────────── Fuzzer Tests ─────────────────────────
+  fuzzer-tests:
+    needs: build
+    strategy:
+      matrix:
+        target:
+          - gcc-Rel
+          - clang-Release
+          - mac-Rel
+    runs-on: "${{ contains(matrix.target, 'mac') && 'macos-14' || 'ubuntu-latest' }}"
+
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: ${{ matrix.target }}
+
+      - name: Fuzzer tests
+        run: |
+          chmod +x cartogram
+          ctest --test-dir . -L fuzzer --verbose
