@@ -28,14 +28,17 @@ jobs:
           if [ ${#FILES[@]} -eq 0 ]; then
             echo "No source files to check"; exit 0
           fi
-
+          echo "clang-format version: $($CLANG_FORMAT --version)"
           echo "Running clang-format diff..."
           bad_files=()
 
           for f in "${FILES[@]}"; do
-            if ! diff -u "$f" <("$CLANG_FORMAT" "$f"); then
+            CF_CMD="$CLANG_FORMAT -style=file $f"
+
+            if ! diff -u "$f" <($CF_CMD); then
               echo "::group::❌ $f"
-              diff -u "$f" <("$CLANG_FORMAT" "$f") || true
+              echo "Command: $CF_CMD"
+              diff -u "$f" <($CF_CMD) || true
               echo "::endgroup::"
               bad_files+=("$f")
             fi
