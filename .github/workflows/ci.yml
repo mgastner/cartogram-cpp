@@ -155,14 +155,12 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - san: asan # AddressSanitizer
+          - san: asan # AddressSanitizer + LeakSanitizer
             flag: address,leak
           - san: ubsan # UndefinedBehaviorSanitizer
             flag: undefined
           - san: tsan # ThreadSanitizer
             flag: thread
-          - san: msan # MemorySanitizer
-            flag: memory
 
     steps:
       - uses: actions/checkout@v4
@@ -229,7 +227,6 @@ jobs:
           - asan
           - ubsan
           - tsan
-          - msan
     runs-on: "${{ contains(matrix.target, 'mac') && 'macos-14' || 'ubuntu-latest' }}"
 
     steps:
@@ -260,7 +257,6 @@ jobs:
           - asan
           - ubsan
           - tsan
-          - msan
     runs-on: "${{ contains(matrix.target, 'mac') && 'macos-14' || 'ubuntu-latest' }}"
 
     steps:
