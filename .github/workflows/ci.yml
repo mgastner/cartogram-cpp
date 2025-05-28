@@ -156,7 +156,7 @@ jobs:
       matrix:
         include:
           - san: asan # AddressSanitizer
-            flag: address
+            flag: address,leak
           - san: ubsan # UndefinedBehaviorSanitizer
             flag: undefined
           - san: tsan # ThreadSanitizer
