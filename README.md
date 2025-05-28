@@ -136,40 +136,6 @@ Add `--verbose` to the command to see more details about the test results.
 For Windows users, we recommend using our program through Windows Subsystem for Linux (WSL).
 
 
-#### Installing using Docker
-
-If you prefer, you may run the program in an isolated environment using [Docker Desktop](https://www.docker.com/products/docker-desktop/).
-
-1. Start the Docker container by executing the command below. Please note, the first time you run this command may take longer as Docker will download the necessary images and build the container. Subsequent runs should get the container up and running right away.
-
-```bash
-docker compose up -d
-```
-
-2. Once the Docker container is up and running, you may access the container's shell by executing:
-
-```bash
-docker exec -it cartogram-cpp /bin/bash
-```
-
-From there, you can run commands with `cartogram` as usual. By default, you should find yourself in the `/cartogram/output` directory, which is mounted to the `output` directory in the repository root on your local environment. This means that any files you generate in `/cartogram/output` should also be available in the `output` directory in the repository root, and vice-versa. You can test out how this works by running the following command:
-
-```bash
-cartogram ../sample_data/world_by_country_since_2022/world_by_country_since_2022.geojson ../sample_data/world_by_country_since_2022/world_population_by_country_2010.csv --plot_polygons --world
-```
-
-To stop the Docker container, execute:
-
-```bash
-docker compose down
-```
-
-To compile code changes within the Docker container, run the following command from the `/cartogram` directory:
-
-```bash
-bash build.sh
-```
-
 ### Troubleshooting
 
 - If you are unable to copmile on the latest version of Ubuntu, please open an issue. In the meanwhile, follow the instructions for installation via Docker.
@@ -179,24 +145,6 @@ bash build.sh
 - If `cmake` complains that it could not find a particular library, please try uninstalling it and installing it again. After reinstalling it, please also unlink it and link it with the `--force` flag.
 - If you get errors related to CGAL, it's likely you have another version of CGAL installed on your computer that is getting chosen instead of the one contained as a submodule within this repository. It's also possible that when cloning this repository, the `--recurse-submodule` flag was missing. Try running `git submodule init` and `git submodule update` in the root directory of the repository.
 - If VScode's `CMake: Install` does not work, make sure you own `/usr/local/bin` and the working directory. You may assign ownership to your account with `sudo chown -R $(whoami) .`, replacing `.` with the directory of choice.
-
-### Testing
-
-If you'd like to contribute to the project, please run our tests after you make any changes.
-
-To run the unit tests, execute the following command:
-
-```shell
-.venv/bin/ctest --verbose
-```
-
-To learn more about the tests, you may go to the `cartogram-cpp/tests` directory and read the `README.md` file.
-
-Additionally, you may go to the `cartogram-cpp/tests` directory and run the following command:
-
-```shell script
-bash stress_test.sh
-```
 
 ### Benchmarking
 
