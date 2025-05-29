@@ -135,15 +135,13 @@ Add `--verbose` to the command to see more details about the test results.
 
 For Windows users, we recommend using our program through Windows Subsystem for Linux (WSL).
 
-
 ### Troubleshooting
 
-- If you are unable to copmile on the latest version of Ubuntu, please open an issue. In the meanwhile, follow the instructions for installation via Docker.
+- If you are unable to copmile on the latest version of Ubuntu/MacOS, please open an issue. In the meanwhile, follow the instructions for installation via Docker.
 - If compilation suddenly stopped working for you, you may remove the `build` directory with `rm -rf build` and run the installation commands again.
-- If running `cmake -B build` gives you an error, it is likely that a dependency was not installed correctly. Rerun the appropriate commands above to install the required dependencies and try again.
+- If switching between `Debug` and `Release` builds, you may need to remove the `build` directory with `rm -rf build` and run the installation commands again.
+- If running `.venv/bin/cmake -B build ...` gives you an error, it is likely that a dependency was not installed correctly. Rerun the appropriate commands above to install the required dependencies and try again. If it still fails, make sure you have the virtual environment activated by running `. .venv/bin/activate` in your terminal, and then try again.
 - If you get an error which mentions permission issues, try running the command that gave you the error with `sudo` prefixed, as done with `sudo make install -C build` above.
-- If `cmake` complains that it could not find a particular library, please try uninstalling it and installing it again. After reinstalling it, please also unlink it and link it with the `--force` flag.
-- If you get errors related to CGAL, it's likely you have another version of CGAL installed on your computer that is getting chosen instead of the one contained as a submodule within this repository. It's also possible that when cloning this repository, the `--recurse-submodule` flag was missing. Try running `git submodule init` and `git submodule update` in the root directory of the repository.
 - If VScode's `CMake: Install` does not work, make sure you own `/usr/local/bin` and the working directory. You may assign ownership to your account with `sudo chown -R $(whoami) .`, replacing `.` with the directory of choice.
 
 ### Benchmarking
