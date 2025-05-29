@@ -66,7 +66,7 @@ public:
   void print_time_report();
   void project_to_equal_area();
 
-  std::string match_id_columns (const std::optional<std::string> &);
+  std::string match_id_columns(const std::optional<std::string> &);
   void update_id_header_info(const std::string &);
   void write_csv(const std::string &csv_file_name);
   void write_geojson(const std::string &);

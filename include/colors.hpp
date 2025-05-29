@@ -1,8 +1,8 @@
 #ifndef COLORS_HPP_
 #define COLORS_HPP_
 
-#include <string>
 #include <round_point.hpp>
+#include <string>
 
 struct Color {
 
@@ -17,8 +17,7 @@ struct Color {
 
   bool operator==(const Color &rhs) const
   {
-    return almost_equal(r, rhs.r) &&
-           almost_equal(g, rhs.g) &&
+    return almost_equal(r, rhs.r) && almost_equal(g, rhs.g) &&
            almost_equal(b, rhs.b);
   }
 

@@ -284,8 +284,7 @@ public:
 
   void write_delaunay_triangles(const std::string &, const bool);
   void write_grid_heatmap_data(const std::string filename);
-  void write_density_image(
-    const std::string filename);
+  void write_density_image(const std::string filename);
   void write_intersections_image();
   void write_quadtree(const std::string &);
 };

@@ -1,0 +1,314 @@
+name: CI
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  # TODO: We might want to later fix the version of clang-format so that future checks
+  # don't mysteriously fail when a new version is released.
+  style-check:
+    name: Style check (clang-format)
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install clang-format
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y clang-format
+          echo "CLANG_FORMAT=clang-format" >> $GITHUB_ENV
+
+      - name: Check formatting
+        run: |
+          mapfile -t FILES < <(git ls-files '*.[ch]pp' '*.c' '*.h')
+          if [ ${#FILES[@]} -eq 0 ]; then
+            echo "No source files to check"; exit 0
+          fi
+          echo "clang-format version: $($CLANG_FORMAT --version)"
+          echo "Running clang-format diff..."
+          bad_files=()
+
+          for f in "${FILES[@]}"; do
+            CF_CMD="$CLANG_FORMAT -style=file $f"
+
+            if ! diff -u "$f" <($CF_CMD); then
+              echo "::group::❌ $f"
+              echo "Command: $CF_CMD"
+              diff -u "$f" <($CF_CMD) || true
+              echo "::endgroup::"
+              bad_files+=("$f")
+            fi
+          done
+
+          if [ ${#bad_files[@]} -ne 0 ]; then
+            file_list=$(printf '%s\n' "${bad_files[@]}")
+            file_list_escaped=${file_list//$'\n'/%0A}
+            echo "::error::clang-format issues detected in the following files:%0A${file_list_escaped}%0ARun 'clang-format -i' to fix."
+            exit 1
+          fi
+
+  build:
+    name: "Build (${{ matrix.name }})"
+    runs-on: ${{ matrix.os }}
+    needs: style-check
+    strategy:
+      fail-fast: false # Make sure if one build fails, others can still run
+      matrix:
+        include:
+          # Linux
+          - os: ubuntu-latest
+            compiler: gcc
+            version: 13
+            build_type: Release
+            name: release-gcc
+          - os: ubuntu-latest
+            compiler: clang
+            version: 16
+            build_type: Release
+            name: release-clang
+          - os: ubuntu-latest
+            compiler: gcc
+            version: 13
+            build_type: Debug
+            name: debug-gcc
+          - os: ubuntu-latest
+            compiler: clang
+            version: 16
+            build_type: Debug
+            name: debug-clang
+          # macOS
+          - os: macos-14
+            compiler: apple-clang
+            version: ""
+            build_type: Release
+            name: release-macos
+          - os: macos-14
+            compiler: apple-clang
+            version: ""
+            build_type: Debug
+            name: debug-macos
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Python & Conan
+        run: |
+          python3 -m venv .venv
+          source .venv/bin/activate
+          pip install -U pip wheel conan==2.16.1 cmake==3.30.0
+          conan remote update conancenter --url=https://center2.conan.io
+          conan profile detect
+
+      - name: Install compiler (Linux only)
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          if [[ "${{ matrix.compiler }}" == "gcc" ]]; then
+            sudo apt-get install -y gcc-${{ matrix.version }} g++-${{ matrix.version }}
+            echo "CC=gcc-${{ matrix.version }}"  >> $GITHUB_ENV
+            echo "CXX=g++-${{ matrix.version }}" >> $GITHUB_ENV
+          else
+            sudo apt-get install -y clang-${{ matrix.version }} lld-${{ matrix.version }}
+            echo "CC=clang-${{ matrix.version }}"   >> $GITHUB_ENV
+            echo "CXX=clang++-${{ matrix.version }}" >> $GITHUB_ENV
+          fi
+      # We only perform static builds so the output can be exported as an artifact
+      # for testing on a clean system without installing dependencies.
+      - name: Download Dependencies
+        run: |
+          source .venv/bin/activate
+          conan install . \
+            --output-folder build \
+            --build=missing \
+            -s build_type=${{ matrix.build_type }} \
+            -s compiler.cppstd=20 \
+            -o "*:shared=False"
+
+      - name: Configure & build
+        run: |
+          source .venv/bin/activate
+          cmake -S . -B build \
+            -DCMAKE_TOOLCHAIN_FILE=build/build/${{ matrix.build_type }}/generators/conan_toolchain.cmake \
+            -DCMAKE_BUILD_TYPE=${{ matrix.build_type }} \
+            -DBUILD_SHARED_LIBS=OFF \
+            -DCMAKE_EXPORT_COMPILE_COMMANDS=ON
+          cmake --build build -j$(nproc || sysctl -n hw.ncpu)
+
+      - name: Package build folder
+        run: tar -czf build-${{ matrix.name }}.tar.gz build
+
+      - name: Upload artefact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.name }}
+          path: build-${{ matrix.name }}.tar.gz
+
+  build-sanitize:
+    name: "Build (${{ matrix.san }})"
+    runs-on: ubuntu-latest
+    needs: style-check
+
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          # ASan and UBSan can be used together, but TSan is incompatible with ASan.
+          # But we keep ASan and UBSan builds separate separate because it isolates
+          # memory- and UB-errors for clearer diagnostics.
+          - san: asan # AddressSanitizer + LeakSanitizer (ASan + LSAn)
+            flag: address,leak
+          - san: ubsan # UndefinedBehaviorSanitizer
+            flag: undefined
+          - san: tsan # ThreadSanitizer
+            flag: thread
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Python & Conan
+        run: |
+          python3 -m venv .venv
+          source .venv/bin/activate
+          pip install -U pip wheel conan==2.16.1 cmake==3.30.0
+          conan remote update conancenter --url=https://center2.conan.io
+          conan profile detect
+
+      # We only run sanitizers on Linux with Clang, since GCC's support is less mature
+      # and sanitizer support on macOS is incomplete.
+      - name: Install clang-16
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y clang-16 lld-16
+          echo "CC=clang-16"    >> $GITHUB_ENV
+          echo "CXX=clang++-16" >> $GITHUB_ENV
+
+      - name: Download dependencies
+        run: |
+          source .venv/bin/activate
+          conan install . \
+            --output-folder build \
+            --build=missing \
+            -s build_type=Debug \
+            -s compiler.cppstd=20 \
+            -o "*:shared=False"
+
+      - name: Configure & build
+        run: |
+          source .venv/bin/activate
+          cmake -S . -B build \
+            -DCMAKE_TOOLCHAIN_FILE=build/build/Debug/generators/conan_toolchain.cmake \
+            -DCMAKE_BUILD_TYPE=Debug \
+            -DBUILD_SHARED_LIBS=OFF \
+            -DCMAKE_EXPORT_COMPILE_COMMANDS=ON \
+            -DCMAKE_CXX_FLAGS="-fsanitize=${{ matrix.flag }} -fno-omit-frame-pointer" \
+            -DCMAKE_EXE_LINKER_FLAGS="-fsanitize=${{ matrix.flag }}"
+          cmake --build build -j$(nproc)
+
+      - name: Package build folder
+        run: tar -czf build-${{ matrix.san }}.tar.gz build
+
+      - name: Upload artefact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.san }}
+          path: build-${{ matrix.san }}.tar.gz
+
+  # ─────────────────────────── Unit Tests ───────────────────────────
+  unit-tests:
+    needs: [style-check, build, build-sanitize]
+    strategy:
+      fail-fast: false
+      matrix:
+        target:
+          - release-gcc
+          - release-clang
+          - debug-gcc
+          - debug-clang
+          - release-macos
+          - debug-macos
+          - asan
+          - ubsan
+          - tsan
+    runs-on: "${{ contains(matrix.target, 'mac') && 'macos-14' || 'ubuntu-latest' }}"
+
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: ${{ matrix.target }}
+
+      - name: Unpack build folder
+        run: tar -xzf build-${{ matrix.target }}.tar.gz
+
+      - name: Unit tests
+        run: |
+          ctest --test-dir build -L unit --output-on-failure
+
+  # ────────────────────────── Stress Tests ──────────────────────────
+  stress-tests:
+    needs: [style-check, build, build-sanitize]
+    strategy:
+      fail-fast: false
+      matrix:
+        target:
+          - release-gcc
+          - release-clang
+          - debug-gcc
+          - debug-clang
+          - release-macos
+          - debug-macos
+          - asan
+          - ubsan
+          - tsan
+    runs-on: "${{ contains(matrix.target, 'mac') && 'macos-14' || 'ubuntu-latest' }}"
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: ${{ matrix.target }}
+
+      - name: Unpack build folder
+        run: tar -xzf build-${{ matrix.target }}.tar.gz
+
+      - name: Stress tests
+        run: |
+          ctest --test-dir build -L stress --output-on-failure
+
+  # ─────────────────────────── Fuzzer Tests ─────────────────────────
+  # fuzzer-tests:
+  #   needs: [style-check, build]
+  #   strategy:
+  #     fail-fast: false
+  #     matrix:
+  #       target:
+  #         - release-gcc
+  #         - release-clang
+  #         - release-macos
+  #   runs-on: "${{ contains(matrix.target, 'mac') && 'macos-14' || 'ubuntu-latest' }}"
+
+  #   steps:
+  #     - uses: actions/checkout@v4
+
+  #     - uses: actions/download-artifact@v4
+  #       with:
+  #         name: ${{ matrix.target }}
+
+  #     - name: Install Python in venv
+  #       run: |
+  #         python3 -m venv .venv
+  #         source .venv/bin/activate
+  #         pip install -U pip
+
+  #     - name: Unpack build folder
+  #       run: tar -xzf build-${{ matrix.target }}.tar.gz
+
+  #     - name: Fuzzer tests
+  #       run: |
+  #         ctest --test-dir build -L fuzzer --verbose

@@ -24,8 +24,7 @@ double interpolate_bilinearly(
 {
   if (x < 0 || x > lx || y < 0 || y > ly) {
     std::cerr << "ERROR: coordinate outside bounding box in " << __func__
-              << "(). "
-              << "x=" << x << ", y=" << y << std::endl;
+              << "(). " << "x=" << x << ", y=" << y << std::endl;
     exit(1);
   }
   if (zero != 'x' && zero != 'y') {
@@ -114,8 +113,7 @@ double interpolate_bilinearly(
 {
   if (x < 0 || x > lx || y < 0 || y > ly) {
     std::cerr << "ERROR: coordinate outside bounding box in " << __func__
-              << "(). "
-              << "x=" << x << ", y=" << y << std::endl;
+              << "(). " << "x=" << x << ", y=" << y << std::endl;
     exit(1);
   }
   if (zero != 'x' && zero != 'y') {
@@ -148,7 +146,10 @@ double interpolate_bilinearly(
     (y < 0.5 && zero == 'y')) {
     fx0y0 = 0.0;
   } else {
-    fx0y0 = cal_velocity(static_cast<unsigned int>(x0), static_cast<unsigned int>(y0), zero);
+    fx0y0 = cal_velocity(
+      static_cast<unsigned int>(x0),
+      static_cast<unsigned int>(y0),
+      zero);
   }
 
   // Function value at (x0, y1).
@@ -160,7 +161,10 @@ double interpolate_bilinearly(
   } else if (x >= 0.5 && y >= ly - 0.5 && zero == 'x') {
     fx0y1 = cal_velocity(static_cast<unsigned int>(x0), ly - 1, zero);
   } else {
-    fx0y1 = cal_velocity(static_cast<unsigned int>(x0), static_cast<unsigned int>(y1), zero);
+    fx0y1 = cal_velocity(
+      static_cast<unsigned int>(x0),
+      static_cast<unsigned int>(y1),
+      zero);
   }
 
   // Function value at (x1, y0).
@@ -170,9 +174,15 @@ double interpolate_bilinearly(
     (y < 0.5 && zero == 'y')) {
     fx1y0 = 0.0;
   } else if (x >= lx - 0.5 && y >= 0.5 && zero == 'y') {
-    fx1y0 = cal_velocity(static_cast<unsigned int>(lx - 1), static_cast<unsigned int>(y0), zero);
+    fx1y0 = cal_velocity(
+      static_cast<unsigned int>(lx - 1),
+      static_cast<unsigned int>(y0),
+      zero);
   } else {
-    fx1y0 = cal_velocity(static_cast<unsigned int>(x1), static_cast<unsigned int>(y0), zero);
+    fx1y0 = cal_velocity(
+      static_cast<unsigned int>(x1),
+      static_cast<unsigned int>(y0),
+      zero);
   }
 
   // Function value at (x1, y1).
@@ -182,11 +192,20 @@ double interpolate_bilinearly(
     (y >= ly - 0.5 && zero == 'y')) {
     fx1y1 = 0.0;
   } else if (x >= lx - 0.5 && y < ly - 0.5 && zero == 'y') {
-    fx1y1 = cal_velocity(static_cast<unsigned int>(lx - 1), static_cast<unsigned int>(y1), zero);
+    fx1y1 = cal_velocity(
+      static_cast<unsigned int>(lx - 1),
+      static_cast<unsigned int>(y1),
+      zero);
   } else if (x < lx - 0.5 && y >= ly - 0.5 && zero == 'x') {
-    fx1y1 = cal_velocity(static_cast<unsigned int>(x1), static_cast<unsigned int>(ly - 1), zero);
+    fx1y1 = cal_velocity(
+      static_cast<unsigned int>(x1),
+      static_cast<unsigned int>(ly - 1),
+      zero);
   } else {
-    fx1y1 = cal_velocity(static_cast<unsigned int>(x1), static_cast<unsigned int>(y1), zero);
+    fx1y1 = cal_velocity(
+      static_cast<unsigned int>(x1),
+      static_cast<unsigned int>(y1),
+      zero);
   }
 
   return (1.0 - delta_x) * (1.0 - delta_y) * fx0y0 +

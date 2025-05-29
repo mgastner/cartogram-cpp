@@ -8,7 +8,8 @@ void InsetState::blur_density()
   const double bw = blur_width();
 
   // No blur left to apply
-  if (bw <= 0.0) return;
+  if (bw <= 0.0)
+    return;
 
   const double prefactor = -0.5 * bw * bw * pi * pi;
 #pragma omp parallel for default(none) shared(prefactor)

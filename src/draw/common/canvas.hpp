@@ -94,8 +94,7 @@ public:
     std::ostringstream css;
     css << "fill:" << rgb_hex(stroke_) << ";font-family:" << family
         << ";font-style:" << style << ";font-weight:" << weight
-        << ";font-size:" << px << "px;"
-        << "text-anchor:start";
+        << ";font-size:" << px << "px;" << "text-anchor:start";
     mapper_.text(CanvasPoint{x, y}, std::string(t), css.str());
   }
 
