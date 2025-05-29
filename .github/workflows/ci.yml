@@ -9,6 +9,8 @@ on:
       - main
 
 jobs:
+  # TODO: We might want to later fix the version of clang-format so that future checks
+  # don't mysteriously fail when a new version is released.
   style-check:
     name: Style check (clang-format)
     runs-on: ubuntu-latest
@@ -56,7 +58,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     needs: style-check
     strategy:
-      fail-fast: false
+      fail-fast: false # Make sure if one build fails, others can still run
       matrix:
         include:
           # Linux
@@ -116,7 +118,8 @@ jobs:
             echo "CC=clang-${{ matrix.version }}"   >> $GITHUB_ENV
             echo "CXX=clang++-${{ matrix.version }}" >> $GITHUB_ENV
           fi
-
+      # We only perform static builds so the output can be exported as an artifact
+      # for testing on a clean system without installing dependencies.
       - name: Download Dependencies
         run: |
           source .venv/bin/activate
@@ -155,7 +158,10 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - san: asan # AddressSanitizer + LeakSanitizer
+          # ASan and UBSan can be used together, but TSan is incompatible with ASan.
+          # But we keep ASan and UBSan builds separate separate because it isolates
+          # memory- and UB-errors for clearer diagnostics.
+          - san: asan # AddressSanitizer + LeakSanitizer (ASan + LSAn)
             flag: address,leak
           - san: ubsan # UndefinedBehaviorSanitizer
             flag: undefined
@@ -173,6 +179,8 @@ jobs:
           conan remote update conancenter --url=https://center2.conan.io
           conan profile detect
 
+      # We only run sanitizers on Linux with Clang, since GCC's support is less mature
+      # and sanitizer support on macOS is incomplete.
       - name: Install clang-16
         run: |
           sudo apt-get update
