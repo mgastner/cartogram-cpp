@@ -1,9 +1,9 @@
 #include "inset_state.hpp"
 #include "round_point.hpp"
 #include <algorithm>
+#include <cmath>
 #include <unordered_set>
 #include <variant>
-#include <cmath>
 
 // For printing a vector (debugging purposes)
 template <typename A>
@@ -61,7 +61,7 @@ static Point calc_intersection(
 //   on the grid. This value is either 0, 0.25, or 0.5.
 // - step: what we need to add to each diagonal's intercept to obtain the
 //   next diagonal.
-using PointLess = bool (*)(const Point&, const Point&);
+using PointLess = bool (*)(const Point &, const Point &);
 
 static void add_diag_inter(
   std::set<Point, PointLess> *intersections,
@@ -220,7 +220,9 @@ static std::vector<Point> densification_points(
   return intersections;
 }
 
-static std::unordered_set<Point> new_points(Polygon original, Polygon densified)
+static std::unordered_set<Point> new_points(
+  Polygon original,
+  Polygon densified)
 {
 
   // We need an ordered set, because set difference is only defined for

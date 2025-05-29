@@ -1,11 +1,10 @@
 #include "constants.hpp"
 #include "inset_state.hpp"
-
 #include <boost/geometry.hpp>
 #include <boost/geometry/srs/projections/proj4.hpp>
 #include <boost/geometry/srs/transformation.hpp>
 
-namespace bg  = boost::geometry;
+namespace bg = boost::geometry;
 namespace srs = bg::srs;
 
 class AlbersProjector

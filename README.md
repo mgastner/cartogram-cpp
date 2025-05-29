@@ -51,7 +51,7 @@ You may inspect the resultant SVG to check if everything looks as expected.
 
 ## Development
 
-We manage dependencies with a Python virtual environment and Conan 2. The project uses Clang with C++20 support. Please ensure that Python 3.10 or later and a Clang++ (preferably Clang 20) compiler with C++20 support are installed before proceeding.
+We manage dependencies with a Python virtual environment and Conan 2. The project supports GCC, Clang, and Apple Clang, all with C++20 support. Please ensure that Python 3.10 or later and a C++20-supported compiler are installed before proceeding.
 
 Only `Debug` build commands are shown below, but the same commands can be run with `Release` build by replacing `Debug` with `Release`.
 
@@ -135,68 +135,14 @@ Add `--verbose` to the command to see more details about the test results.
 
 For Windows users, we recommend using our program through Windows Subsystem for Linux (WSL).
 
-
-#### Installing using Docker
-
-If you prefer, you may run the program in an isolated environment using [Docker Desktop](https://www.docker.com/products/docker-desktop/).
-
-1. Start the Docker container by executing the command below. Please note, the first time you run this command may take longer as Docker will download the necessary images and build the container. Subsequent runs should get the container up and running right away.
-
-```bash
-docker compose up -d
-```
-
-2. Once the Docker container is up and running, you may access the container's shell by executing:
-
-```bash
-docker exec -it cartogram-cpp /bin/bash
-```
-
-From there, you can run commands with `cartogram` as usual. By default, you should find yourself in the `/cartogram/output` directory, which is mounted to the `output` directory in the repository root on your local environment. This means that any files you generate in `/cartogram/output` should also be available in the `output` directory in the repository root, and vice-versa. You can test out how this works by running the following command:
-
-```bash
-cartogram ../sample_data/world_by_country_since_2022/world_by_country_since_2022.geojson ../sample_data/world_by_country_since_2022/world_population_by_country_2010.csv --plot_polygons --world
-```
-
-To stop the Docker container, execute:
-
-```bash
-docker compose down
-```
-
-To compile code changes within the Docker container, run the following command from the `/cartogram` directory:
-
-```bash
-bash build.sh
-```
-
 ### Troubleshooting
 
-- If you are unable to copmile on the latest version of Ubuntu, please open an issue. In the meanwhile, follow the instructions for installation via Docker.
+- If you are unable to copmile on the latest version of Ubuntu/MacOS, please open an issue. In the meanwhile, follow the instructions for installation via Docker.
 - If compilation suddenly stopped working for you, you may remove the `build` directory with `rm -rf build` and run the installation commands again.
-- If running `cmake -B build` gives you an error, it is likely that a dependency was not installed correctly. Rerun the appropriate commands above to install the required dependencies and try again.
+- If switching between `Debug` and `Release` builds, you may need to remove the `build` directory with `rm -rf build` and run the installation commands again.
+- If running `.venv/bin/cmake -B build ...` gives you an error, it is likely that a dependency was not installed correctly. Rerun the appropriate commands above to install the required dependencies and try again. If it still fails, make sure you have the virtual environment activated by running `. .venv/bin/activate` in your terminal, and then try again.
 - If you get an error which mentions permission issues, try running the command that gave you the error with `sudo` prefixed, as done with `sudo make install -C build` above.
-- If `cmake` complains that it could not find a particular library, please try uninstalling it and installing it again. After reinstalling it, please also unlink it and link it with the `--force` flag.
-- If you get errors related to CGAL, it's likely you have another version of CGAL installed on your computer that is getting chosen instead of the one contained as a submodule within this repository. It's also possible that when cloning this repository, the `--recurse-submodule` flag was missing. Try running `git submodule init` and `git submodule update` in the root directory of the repository.
 - If VScode's `CMake: Install` does not work, make sure you own `/usr/local/bin` and the working directory. You may assign ownership to your account with `sudo chown -R $(whoami) .`, replacing `.` with the directory of choice.
-
-### Testing
-
-If you'd like to contribute to the project, please run our tests after you make any changes.
-
-To run the unit tests, execute the following command:
-
-```shell
-.venv/bin/ctest --verbose
-```
-
-To learn more about the tests, you may go to the `cartogram-cpp/tests` directory and read the `README.md` file.
-
-Additionally, you may go to the `cartogram-cpp/tests` directory and run the following command:
-
-```shell script
-bash stress_test.sh
-```
 
 ### Benchmarking
 
@@ -241,4 +187,6 @@ To push changes to production, please follow the the instructions on [go-cart-io
 
 Contributions are highly encouraged! Please feel free to take a stab at any at any of the open issues and send in a pull request. If you need help getting setup or more guidance contributing, please @ any of the main contributors (@adisidev, @nihalzp, @mgastner) under any of the open issues (or after creating your own issue), and we'll be happy to guide you!
 
-Maintainers, please make sure to run the "Build and Release" workflow under GitHub Actions before approving the pull request. You may delete the newly created release before merging the pull-request. Another release should be automatically created after merging with main.
+If you'd like to contribute to the project, please run our tests after you make any changes.
+
+Maintainers, please make sure all the CI checks pass before approving the pull request.
