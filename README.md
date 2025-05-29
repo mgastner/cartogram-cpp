@@ -51,7 +51,7 @@ You may inspect the resultant SVG to check if everything looks as expected.
 
 ## Development
 
-We manage dependencies with a Python virtual environment and Conan 2. The project uses Clang with C++20 support. Please ensure that Python 3.10 or later and a Clang++ (preferably Clang 20) compiler with C++20 support are installed before proceeding.
+We manage dependencies with a Python virtual environment and Conan 2. The project supports GCC, Clang, and Apple Clang, all with C++20 support. Please ensure that Python 3.10 or later and a C++20-supported compiler are installed before proceeding.
 
 Only `Debug` build commands are shown below, but the same commands can be run with `Release` build by replacing `Debug` with `Release`.
 
