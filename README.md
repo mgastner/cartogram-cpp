@@ -191,4 +191,4 @@ Contributions are highly encouraged! Please feel free to take a stab at any at a
 
 If you'd like to contribute to the project, please run our tests after you make any changes.
 
-Maintainers, please make sure to run the "Build and Release" workflow under GitHub Actions before approving the pull request. You may delete the newly created release before merging the pull-request. Another release should be automatically created after merging with main.
+Maintainers, please make sure all the CI checks pass before approving the pull request.
