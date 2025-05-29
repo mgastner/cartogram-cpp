@@ -14,7 +14,7 @@ void InsetState::auto_color()
     // If some but not all of the GeoDivs are colored, use only #f2f2f2 (light
     // gray) to color the rest
     std::cerr << "Some but not all colors provided, assigning #f2f2f2 (light "
-                 "grey) to uncolored GeoDivs."
+                 "gray) to uncolored GeoDivs."
               << std::endl;
     palette.emplace_back("#f2f2f2");  // light gray
   } else {

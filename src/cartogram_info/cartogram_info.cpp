@@ -448,7 +448,7 @@ void CartogramInfo::write_svg(const std::string &suffix)
   for (const InsetState &inset_state : inset_states_) {
     inset_names += inset_state.pos();
   }
-  // Only attach inset names to filename if there's more than inset
+  // Only attach inset names to filename if there's more than one inset
   if (n_insets() > 1) {
     insets_combined.write_map(
       map_name_ + "_" + inset_names + "_" + suffix,
