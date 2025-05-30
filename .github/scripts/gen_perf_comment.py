@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 import json, sys, math
 from scipy.stats import t
+import html, re
 
 THRESH = 0.05
 ALPHA = 0.05
@@ -35,28 +36,37 @@ def fmt(val):
     return f"{val['mean']:.3f}±{val['stddev']:.3f}" if val else "❌"
 
 
+def wrap(name: str) -> str:
+    return re.sub(r"([/_])", r"\1<wbr>", html.escape(name))
+
+
+def fmt_row(m, b, p, show_p):
+    if b and p:
+        delta = (p["mean"] - b["mean"]) / b["mean"] * 100
+        delta_str = f"{delta:+.1f}"
+        p_val = f"{welch(b, p):.3f}"
+    else:
+        delta_str, p_val = "—", ""
+    wrapped = wrap(m)
+    cell = f'<code title="{html.escape(m)}">{wrapped}</code>'
+    row = f"| {cell} | {fmt(b)} | {fmt(p)} | {delta_str} |"
+    if show_p:
+        row += f" {p_val} |"
+    return row
+
+
 def table(rows, show_p=False):
     if not rows:
         return "_none_\n"
+
     header = (
         "| map | main | pr | Δ % |"
         + (" p |" if show_p else "")
         + "\n|---|---|---|---|"
         + ("---|\n" if show_p else "\n")
     )
-    body = []
-    for m, b, p in rows:
-        if b and p:
-            delta = (p["mean"] - b["mean"]) / b["mean"] * 100
-            delta_str = f"{delta:+.1f}"
-            p_val = f"{welch(b, p):.3f}"
-        else:
-            delta_str = "—"
-            p_val = ""
-        line = f"| `{m}` | {fmt(b)} | {fmt(p)} | {delta_str} |"
-        if show_p:
-            line += f" {p_val} |"
-        body.append(line)
+
+    body = [fmt_row(m, b, p, show_p) for m, b, p in rows]
     return header + "\n".join(body) + "\n"
 
 
