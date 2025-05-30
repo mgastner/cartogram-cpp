@@ -37,7 +37,9 @@ def fmt(val):
 
 
 def wrap(name: str) -> str:
-    return re.sub(r"([/_])", r"\1<wbr>", html.escape(name))
+    ZWSP = "\u200b"
+    escaped = html.escape(name)
+    return escaped.replace("/", "/" + ZWSP).replace("_", "_" + ZWSP)
 
 
 def fmt_row(m, b, p, show_p):
