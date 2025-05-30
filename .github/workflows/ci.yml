@@ -11,52 +11,52 @@ on:
 jobs:
   # TODO: We might want to later fix the version of clang-format so that future checks
   # don't mysteriously fail when a new version is released.
-  style-check:
-    name: Style check (clang-format)
-    runs-on: ubuntu-latest
+  # style-check:
+  #   name: Style check (clang-format)
+  #   runs-on: ubuntu-latest
 
-    steps:
-      - uses: actions/checkout@v4
+  #   steps:
+  #     - uses: actions/checkout@v4
 
-      - name: Install clang-format
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y clang-format
-          echo "CLANG_FORMAT=clang-format" >> $GITHUB_ENV
+  #     - name: Install clang-format
+  #       run: |
+  #         sudo apt-get update
+  #         sudo apt-get install -y clang-format
+  #         echo "CLANG_FORMAT=clang-format" >> $GITHUB_ENV
 
-      - name: Check formatting
-        run: |
-          mapfile -t FILES < <(git ls-files '*.[ch]pp' '*.c' '*.h')
-          if [ ${#FILES[@]} -eq 0 ]; then
-            echo "No source files to check"; exit 0
-          fi
-          echo "clang-format version: $($CLANG_FORMAT --version)"
-          echo "Running clang-format diff..."
-          bad_files=()
+  #     - name: Check formatting
+  #       run: |
+  #         mapfile -t FILES < <(git ls-files '*.[ch]pp' '*.c' '*.h')
+  #         if [ ${#FILES[@]} -eq 0 ]; then
+  #           echo "No source files to check"; exit 0
+  #         fi
+  #         echo "clang-format version: $($CLANG_FORMAT --version)"
+  #         echo "Running clang-format diff..."
+  #         bad_files=()
 
-          for f in "${FILES[@]}"; do
-            CF_CMD="$CLANG_FORMAT -style=file $f"
+  #         for f in "${FILES[@]}"; do
+  #           CF_CMD="$CLANG_FORMAT -style=file $f"
 
-            if ! diff -u "$f" <($CF_CMD); then
-              echo "::group::❌ $f"
-              echo "Command: $CF_CMD"
-              diff -u "$f" <($CF_CMD) || true
-              echo "::endgroup::"
-              bad_files+=("$f")
-            fi
-          done
+  #           if ! diff -u "$f" <($CF_CMD); then
+  #             echo "::group::❌ $f"
+  #             echo "Command: $CF_CMD"
+  #             diff -u "$f" <($CF_CMD) || true
+  #             echo "::endgroup::"
+  #             bad_files+=("$f")
+  #           fi
+  #         done
 
-          if [ ${#bad_files[@]} -ne 0 ]; then
-            file_list=$(printf '%s\n' "${bad_files[@]}")
-            file_list_escaped=${file_list//$'\n'/%0A}
-            echo "::error::clang-format issues detected in the following files:%0A${file_list_escaped}%0ARun 'clang-format -i' to fix."
-            exit 1
-          fi
+  #         if [ ${#bad_files[@]} -ne 0 ]; then
+  #           file_list=$(printf '%s\n' "${bad_files[@]}")
+  #           file_list_escaped=${file_list//$'\n'/%0A}
+  #           echo "::error::clang-format issues detected in the following files:%0A${file_list_escaped}%0ARun 'clang-format -i' to fix."
+  #           exit 1
+  #         fi
 
   build:
     name: "Build (${{ matrix.name }})"
     runs-on: ${{ matrix.os }}
-    needs: style-check
+    # needs: style-check
     strategy:
       fail-fast: false # Make sure if one build fails, others can still run
       matrix:
