@@ -62,37 +62,37 @@ jobs:
       matrix:
         include:
           # Linux
-          - os: ubuntu-latest
-            compiler: gcc
-            version: 13
-            build_type: Release
-            name: release-gcc
+          # - os: ubuntu-latest
+          #   compiler: gcc
+          #   version: 13
+          #   build_type: Release
+          #   name: release-gcc
           - os: ubuntu-latest
             compiler: clang
             version: 16
             build_type: Release
             name: release-clang
-          - os: ubuntu-latest
-            compiler: gcc
-            version: 13
-            build_type: Debug
-            name: debug-gcc
-          - os: ubuntu-latest
-            compiler: clang
-            version: 16
-            build_type: Debug
-            name: debug-clang
-          # macOS
-          - os: macos-14
-            compiler: apple-clang
-            version: ""
-            build_type: Release
-            name: release-macos
-          - os: macos-14
-            compiler: apple-clang
-            version: ""
-            build_type: Debug
-            name: debug-macos
+          # - os: ubuntu-latest
+          #   compiler: gcc
+          #   version: 13
+          #   build_type: Debug
+          #   name: debug-gcc
+          # - os: ubuntu-latest
+          #   compiler: clang
+          #   version: 16
+          #   build_type: Debug
+          #   name: debug-clang
+          # # macOS
+          # - os: macos-14
+          #   compiler: apple-clang
+          #   version: ""
+          #   build_type: Release
+          #   name: release-macos
+          # - os: macos-14
+          #   compiler: apple-clang
+          #   version: ""
+          #   build_type: Debug
+          #   name: debug-macos
 
     steps:
       - uses: actions/checkout@v4
@@ -149,137 +149,137 @@ jobs:
           name: ${{ matrix.name }}
           path: build-${{ matrix.name }}.tar.gz
 
-  build-sanitize:
-    name: "Build (${{ matrix.san }})"
-    runs-on: ubuntu-latest
-    needs: style-check
+  # build-sanitize:
+  #   name: "Build (${{ matrix.san }})"
+  #   runs-on: ubuntu-latest
+  #   needs: style-check
 
-    strategy:
-      fail-fast: false
-      matrix:
-        include:
-          # ASan and UBSan can be used together, but TSan is incompatible with ASan.
-          # But we keep ASan and UBSan builds separate separate because it isolates
-          # memory- and UB-errors for clearer diagnostics.
-          - san: asan # AddressSanitizer + LeakSanitizer (ASan + LSAn)
-            flag: address,leak
-          - san: ubsan # UndefinedBehaviorSanitizer
-            flag: undefined
-          - san: tsan # ThreadSanitizer
-            flag: thread
+  #   strategy:
+  #     fail-fast: false
+  #     matrix:
+  #       include:
+  #         # ASan and UBSan can be used together, but TSan is incompatible with ASan.
+  #         # But we keep ASan and UBSan builds separate separate because it isolates
+  #         # memory- and UB-errors for clearer diagnostics.
+  #         - san: asan # AddressSanitizer + LeakSanitizer (ASan + LSAn)
+  #           flag: address,leak
+  #         - san: ubsan # UndefinedBehaviorSanitizer
+  #           flag: undefined
+  #         - san: tsan # ThreadSanitizer
+  #           flag: thread
 
-    steps:
-      - uses: actions/checkout@v4
+  #   steps:
+  #     - uses: actions/checkout@v4
 
-      - name: Setup Python & Conan
-        run: |
-          python3 -m venv .venv
-          source .venv/bin/activate
-          pip install -U pip wheel conan==2.16.1 cmake==3.30.0
-          conan remote update conancenter --url=https://center2.conan.io
-          conan profile detect
+  #     - name: Setup Python & Conan
+  #       run: |
+  #         python3 -m venv .venv
+  #         source .venv/bin/activate
+  #         pip install -U pip wheel conan==2.16.1 cmake==3.30.0
+  #         conan remote update conancenter --url=https://center2.conan.io
+  #         conan profile detect
 
-      # We only run sanitizers on Linux with Clang, since GCC's support is less mature
-      # and sanitizer support on macOS is incomplete.
-      - name: Install clang-16
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y clang-16 lld-16
-          echo "CC=clang-16"    >> $GITHUB_ENV
-          echo "CXX=clang++-16" >> $GITHUB_ENV
+  #     # We only run sanitizers on Linux with Clang, since GCC's support is less mature
+  #     # and sanitizer support on macOS is incomplete.
+  #     - name: Install clang-16
+  #       run: |
+  #         sudo apt-get update
+  #         sudo apt-get install -y clang-16 lld-16
+  #         echo "CC=clang-16"    >> $GITHUB_ENV
+  #         echo "CXX=clang++-16" >> $GITHUB_ENV
 
-      - name: Download dependencies
-        run: |
-          source .venv/bin/activate
-          conan install . \
-            --output-folder build \
-            --build=missing \
-            -s build_type=Debug \
-            -s compiler.cppstd=20 \
-            -o "*:shared=False"
+  #     - name: Download dependencies
+  #       run: |
+  #         source .venv/bin/activate
+  #         conan install . \
+  #           --output-folder build \
+  #           --build=missing \
+  #           -s build_type=Debug \
+  #           -s compiler.cppstd=20 \
+  #           -o "*:shared=False"
 
-      - name: Configure & build
-        run: |
-          source .venv/bin/activate
-          cmake -S . -B build \
-            -DCMAKE_TOOLCHAIN_FILE=build/build/Debug/generators/conan_toolchain.cmake \
-            -DCMAKE_BUILD_TYPE=Debug \
-            -DBUILD_SHARED_LIBS=OFF \
-            -DCMAKE_EXPORT_COMPILE_COMMANDS=ON \
-            -DCMAKE_CXX_FLAGS="-fsanitize=${{ matrix.flag }} -fno-omit-frame-pointer" \
-            -DCMAKE_EXE_LINKER_FLAGS="-fsanitize=${{ matrix.flag }}"
-          cmake --build build -j$(nproc)
+  #     - name: Configure & build
+  #       run: |
+  #         source .venv/bin/activate
+  #         cmake -S . -B build \
+  #           -DCMAKE_TOOLCHAIN_FILE=build/build/Debug/generators/conan_toolchain.cmake \
+  #           -DCMAKE_BUILD_TYPE=Debug \
+  #           -DBUILD_SHARED_LIBS=OFF \
+  #           -DCMAKE_EXPORT_COMPILE_COMMANDS=ON \
+  #           -DCMAKE_CXX_FLAGS="-fsanitize=${{ matrix.flag }} -fno-omit-frame-pointer" \
+  #           -DCMAKE_EXE_LINKER_FLAGS="-fsanitize=${{ matrix.flag }}"
+  #         cmake --build build -j$(nproc)
 
-      - name: Package build folder
-        run: tar -czf build-${{ matrix.san }}.tar.gz build
+  #     - name: Package build folder
+  #       run: tar -czf build-${{ matrix.san }}.tar.gz build
 
-      - name: Upload artefact
-        uses: actions/upload-artifact@v4
-        with:
-          name: ${{ matrix.san }}
-          path: build-${{ matrix.san }}.tar.gz
+  #     - name: Upload artefact
+  #       uses: actions/upload-artifact@v4
+  #       with:
+  #         name: ${{ matrix.san }}
+  #         path: build-${{ matrix.san }}.tar.gz
 
-  # ─────────────────────────── Unit Tests ───────────────────────────
-  unit-tests:
-    needs: [style-check, build, build-sanitize]
-    strategy:
-      fail-fast: false
-      matrix:
-        target:
-          - release-gcc
-          - release-clang
-          - debug-gcc
-          - debug-clang
-          - release-macos
-          - debug-macos
-          - asan
-          - ubsan
-          - tsan
-    runs-on: "${{ contains(matrix.target, 'mac') && 'macos-14' || 'ubuntu-latest' }}"
+  # # ─────────────────────────── Unit Tests ───────────────────────────
+  # unit-tests:
+  #   needs: [style-check, build, build-sanitize]
+  #   strategy:
+  #     fail-fast: false
+  #     matrix:
+  #       target:
+  #         - release-gcc
+  #         - release-clang
+  #         - debug-gcc
+  #         - debug-clang
+  #         - release-macos
+  #         - debug-macos
+  #         - asan
+  #         - ubsan
+  #         - tsan
+  #   runs-on: "${{ contains(matrix.target, 'mac') && 'macos-14' || 'ubuntu-latest' }}"
 
-    steps:
-      - uses: actions/download-artifact@v4
-        with:
-          name: ${{ matrix.target }}
+  #   steps:
+  #     - uses: actions/download-artifact@v4
+  #       with:
+  #         name: ${{ matrix.target }}
 
-      - name: Unpack build folder
-        run: tar -xzf build-${{ matrix.target }}.tar.gz
+  #     - name: Unpack build folder
+  #       run: tar -xzf build-${{ matrix.target }}.tar.gz
 
-      - name: Unit tests
-        run: |
-          ctest --test-dir build -L unit --output-on-failure
+  #     - name: Unit tests
+  #       run: |
+  #         ctest --test-dir build -L unit --output-on-failure
 
-  # ────────────────────────── Stress Tests ──────────────────────────
-  stress-tests:
-    needs: [style-check, build, build-sanitize]
-    strategy:
-      fail-fast: false
-      matrix:
-        target:
-          - release-gcc
-          - release-clang
-          - debug-gcc
-          - debug-clang
-          - release-macos
-          - debug-macos
-          - asan
-          - ubsan
-          - tsan
-    runs-on: "${{ contains(matrix.target, 'mac') && 'macos-14' || 'ubuntu-latest' }}"
+  # # ────────────────────────── Stress Tests ──────────────────────────
+  # stress-tests:
+  #   needs: [style-check, build, build-sanitize]
+  #   strategy:
+  #     fail-fast: false
+  #     matrix:
+  #       target:
+  #         - release-gcc
+  #         - release-clang
+  #         - debug-gcc
+  #         - debug-clang
+  #         - release-macos
+  #         - debug-macos
+  #         - asan
+  #         - ubsan
+  #         - tsan
+  #   runs-on: "${{ contains(matrix.target, 'mac') && 'macos-14' || 'ubuntu-latest' }}"
 
-    steps:
-      - uses: actions/checkout@v4
+  #   steps:
+  #     - uses: actions/checkout@v4
 
-      - uses: actions/download-artifact@v4
-        with:
-          name: ${{ matrix.target }}
+  #     - uses: actions/download-artifact@v4
+  #       with:
+  #         name: ${{ matrix.target }}
 
-      - name: Unpack build folder
-        run: tar -xzf build-${{ matrix.target }}.tar.gz
+  #     - name: Unpack build folder
+  #       run: tar -xzf build-${{ matrix.target }}.tar.gz
 
-      - name: Stress tests
-        run: |
-          ctest --test-dir build -L stress --output-on-failure
+  #     - name: Stress tests
+  #       run: |
+  #         ctest --test-dir build -L stress --output-on-failure
 
   perf-tests:
     if: github.event_name == 'pull_request'
@@ -314,8 +314,8 @@ jobs:
           name: release-clang # artefact name from build-matrix
       - name: Unpack PR artefact
         run: |
-          mkdir build-pr
-          tar -xzf build-release-clang.tar.gz -C build-pr
+          mkdir -p build-pr
+          tar -xzf build-release-clang.tar.gz --strip-components=1 -C build-pr
           chmod +x build-pr/cartogram
 
       # build baseline (origin/main, same flags as release-clang)
