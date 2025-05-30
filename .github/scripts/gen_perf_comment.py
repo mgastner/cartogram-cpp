@@ -3,7 +3,7 @@ import json, sys, math
 from scipy.stats import t
 import html, re
 
-THRESH = 0.05
+THRESH = 0.03
 ALPHA = 0.05
 
 
