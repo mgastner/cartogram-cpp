@@ -10,8 +10,8 @@ OUT_JSON=$3
 
 MAP_ROOT="sample_data"
 WARMUP=1
-MIN_RUNS=2
-MAX_RUNS=4
+MIN_RUNS=4
+MAX_RUNS=10
 
 tmp=$(mktemp -d)
 trap 'rm -rf "$tmp"' EXIT
