@@ -20,11 +20,18 @@ results="$tmp/results.jsonl"
 : >"$results"
 
 run_cmd() {
-  # $1 exe  $2 geo  $3 csv  $4 dir
-  local exe=$1 geo=$2 csv=$3 dir=$4
+  # $1 = exe, $2 = geo, $3 = csv, $4 = dir
+  local exe="$1" geo="$2" csv="$3" dir="$4"
   local extra=()
   [[ $dir =~ world ]] && extra+=(--world)
-  "$exe" "$geo" "$csv" "${extra[@]}"
+
+  local cmd=("$exe" "$geo" "$csv" "${extra[@]}")
+
+  # log pwd and command
+  echo >&2 "PWD: $(pwd)"
+  echo >&2 "CMD: ${cmd[*]}"
+
+  "${cmd[@]}"
 }
 export -f run_cmd
 
@@ -38,6 +45,9 @@ for dir in "$MAP_ROOT"/*; do
   }
 
   for csv in "$dir"/*.csv; do
+    # echo the geo and csv
+    echo "Geo: $geo"
+    echo "CSV: $csv"
     [[ -f $csv ]] || continue
     map_name="$(basename "$dir")/$(basename "$csv")"
     echo "Benchmarking:  $map_name"
