@@ -283,7 +283,7 @@ jobs:
 
   perf-tests:
     if: github.event_name == 'pull_request'
-    name: Performance (release-clang)
+    name: Performance comparison (main, release-clang)
     needs: build
     runs-on: ubuntu-latest
     permissions:
@@ -343,6 +343,7 @@ jobs:
       # run adaptive micro-benchmarks on every map
       - name: Benchmark sample_data maps
         run: |
+          source .venv/bin/activate
           bash .github/scripts/benchmark_maps.sh \
                 build-pr/build/cartogram \
                 ../baseline/build/cartogram \
