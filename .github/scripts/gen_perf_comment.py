@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-import json, sys, math, textwrap
+import json, sys, math
 from scipy.stats import t
 
 THRESH = 0.03
@@ -21,11 +21,11 @@ def welch(a, b):
     return 2 * (1 - t.cdf(abs(t_stat), df))
 
 
-def classify(b, p):
-    if b is None or p is None:
+def classify(base, pr):
+    if base is None or pr is None:
         return "fail"
-    delta = (p["mean"] - b["mean"]) / b["mean"]
-    sig = welch(b, p) < ALPHA and abs(delta) >= THRESH
+    delta = (pr["mean"] - base["mean"]) / base["mean"]
+    sig = welch(base, pr) < ALPHA and abs(delta) >= THRESH
     if not sig:
         return "same"
     return "faster" if delta < 0 else "slower"
@@ -35,56 +35,58 @@ def fmt(val):
     return f"{val['mean']:.3f}±{val['stddev']:.3f}" if val else "❌"
 
 
-def table(rows, extra_p=False):
+def table(rows, show_p=False):
     if not rows:
         return "_none_\n"
-    hd = (
+    header = (
         "| map | main | pr | Δ % |"
-        + (" p |" if extra_p else "")
+        + (" p |" if show_p else "")
         + "\n|---|---|---|---|"
-        + ("---|\n" if extra_p else "\n")
+        + ("---|\n" if show_p else "\n")
     )
     body = []
     for m, b, p in rows:
-        delta = (p["mean"] - b["mean"]) / b["mean"] * 100 if b and p else float("nan")
-        ln = f"| `{m}` | {fmt(b)} | {fmt(p)} | {delta:+.1f} |"
-        if extra_p:
-            ln += f" {welch(b,p):.3f} |"
-        body.append(ln)
-    return hd + "\n".join(body) + "\n"
+        if b and p:
+            delta = (p["mean"] - b["mean"]) / b["mean"] * 100
+            delta_str = f"{delta:+.1f}"
+            p_val = f"{welch(b, p):.3f}"
+        else:
+            delta_str = "—"
+            p_val = ""
+        line = f"| `{m}` | {fmt(b)} | {fmt(p)} | {delta_str} |"
+        if show_p:
+            line += f" {p_val} |"
+        body.append(line)
+    return header + "\n".join(body) + "\n"
 
 
 data = json.load(open(sys.argv[1]))
 groups = {k: [] for k in ("faster", "slower", "same", "fail")}
 
-for e in data:
-    cat = classify(e.get("base"), e.get("pr"))
-    groups[cat].append((e["map"], e.get("base"), e.get("pr")))
+for entry in data:
+    cat = classify(entry.get("base"), entry.get("pr"))
+    groups[cat].append((entry["map"], entry.get("base"), entry.get("pr")))
+
+report = f"""## 🚦 Performance check (α={ALPHA:.2f}, ±{THRESH*100:.0f}%)
+
+### ❗ Failed maps ({len(groups['fail'])})
+{table(groups['fail'])}
+
+<details><summary>Speed-ups ({len(groups['faster'])})</summary>
+
+{table(groups['faster'], show_p=True)}
+</details>
+
+<details><summary>Slow-downs ({len(groups['slower'])})</summary>
+
+{table(groups['slower'], show_p=True)}
+</details>
+
+<details><summary>No significant change ({len(groups['same'])})</summary>
+
+{table(groups['same'])}
+</details>
+"""
 
 with open(sys.argv[2], "w") as f:
-    f.write(
-        textwrap.dedent(
-            f"""
-    ## Performance check (&alpha;={ALPHA:.2f}, ±{THRESH*100:.0f}%)
-
-    ### ❗ Failed maps ({len(groups['fail'])})
-    {table(groups['fail'])}
-
-    <details><summary>Speed-ups ({len(groups['faster'])})</summary>
-
-    {table(groups['faster'], extra_p=True)}
-    </details>
-
-    <details><summary>Slow-downs ({len(groups['slower'])})</summary>
-
-    {table(groups['slower'], extra_p=True)}
-    </details>
-
-    <details><summary>No change ({len(groups['same'])})</summary>
-
-    {table(groups['same'])}
-    </details>
-    """
-        ).strip()
-        + "\n"
-    )
+    f.write(report.strip() + "\n")
