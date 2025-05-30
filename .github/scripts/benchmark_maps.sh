@@ -19,22 +19,6 @@ trap 'rm -rf "$tmp"' EXIT
 results="$tmp/results.jsonl"
 : >"$results"
 
-run_cmd() {
-  # $1 = exe, $2 = geo, $3 = csv, $4 = dir
-  local exe="$1" geo="$2" csv="$3" dir="$4"
-  local extra=()
-  [[ $dir =~ world ]] && extra+=(--world)
-
-  local cmd=("$exe" "$geo" "$csv" "${extra[@]}")
-
-  # log pwd and command
-  echo >&2 "PWD: $(pwd)"
-  echo >&2 "CMD: ${cmd[*]}"
-
-  "${cmd[@]}"
-}
-export -f run_cmd
-
 for dir in "$MAP_ROOT"/*; do
   [[ -d $dir ]] || continue
 
@@ -60,9 +44,23 @@ for dir in "$MAP_ROOT"/*; do
       --max-runs $MAX_RUNS \
       --export-json "$tmp/hf.json" \
       --command-name main \
-      "bash -c 'run_cmd $BASE_BIN \"$geo\" \"$csv\" \"$dir\"'" \
+      bash -c '
+      exe=$1; geo=$2; csv=$3; dir=$4
+      extra=()
+      [[ $dir =~ world ]] && extra=(--world)
+      echo "PWD: $(pwd)" >&2
+      echo "CMD: $exe $geo $csv ${extra[*]}" >&2
+      exec "$exe" "$geo" "$csv" "${extra[@]}"
+    ' _ "$BASE_BIN" "$geo" "$csv" "$dir" \
       --command-name pr \
-      "bash -c 'run_cmd $PR_BIN   \"$geo\" \"$csv\" \"$dir\"'"
+      bash -c '
+      exe=$1; geo=$2; csv=$3; dir=$4
+      extra=()
+      [[ $dir =~ world ]] && extra=(--world)
+      echo "PWD: $(pwd)" >&2
+      echo "CMD: $exe $geo $csv ${extra[*]}" >&2
+      exec "$exe" "$geo" "$csv" "${extra[@]}"
+    ' _ "$PR_BIN" "$geo" "$csv" "$dir"
 
     jq -n \
       --slurpfile r "$tmp/hf.json" \
