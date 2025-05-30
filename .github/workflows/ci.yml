@@ -281,6 +281,83 @@ jobs:
         run: |
           ctest --test-dir build -L stress --output-on-failure
 
+  perf-tests:
+    if: github.event_name == 'pull_request'
+    name: Performance (release-clang)
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write # required for sticky comment
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+
+      - name: Setup Python & Conan
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y clang-16 lld-16 hyperfine jq python3-venv
+          echo "CC=clang-16"    >> $GITHUB_ENV
+          echo "CXX=clang++-16" >> $GITHUB_ENV
+
+          python3 -m venv .venv
+          source .venv/bin/activate
+          pip install --upgrade pip wheel conan==2.16.1 cmake==3.30.0 scipy
+          conan remote update conancenter --url=https://center2.conan.io
+          conan profile detect
+
+      # download PR artefact that build-matrix already produced
+      - uses: actions/download-artifact@v4
+        with:
+          name: release-clang # artefact name from build-matrix
+      - name: Unpack PR artefact
+        run: |
+          mkdir build-pr
+          tar -xzf build-release-clang.tar.gz -C build-pr
+          chmod +x build-pr/cartogram
+
+      # build baseline (origin/main, same flags as release-clang)
+      - name: Build baseline (origin/main, clang-16, Release-static)
+        run: |
+          git fetch --depth 1 --no-tags origin main
+          git worktree add --no-checkout ../baseline origin/main
+          pushd ../baseline
+
+          source $GITHUB_WORKSPACE/.venv/bin/activate
+          conan install . --output-folder build \
+                          --build missing \
+                         -s build_type=Release \
+                         -s compiler.cppstd=20 \
+                         -o "*:shared=False"
+                         
+
+          cmake -S . -B build \
+                -DCMAKE_TOOLCHAIN_FILE=build/build/Release/generators/conan_toolchain.cmake \
+                -DCMAKE_BUILD_TYPE=Release \
+                -DBUILD_SHARED_LIBS=OFF
+          cmake --build build -j$(nproc)
+          popd
+          ln -sf ../baseline/build/cartogram build-main
+
+      # run adaptive micro-benchmarks on every map
+      - name: Benchmark sample_data maps
+        run: |
+          bash .github/scripts/benchmark_maps.sh \
+               build-pr/cartogram build-main results.json
+
+      # generate PR comment
+      - name: Create performance report
+        run: |
+          python .github/scripts/gen_perf_comment.py results.json comment.md
+
+      # sticky (update-in-place) PR comment
+      - uses: marocchino/sticky-pull-request-comment@v2
+        with:
+          recreate: true # overwrite previous run
+          path: comment.md
+
   # ─────────────────────────── Fuzzer Tests ─────────────────────────
   # fuzzer-tests:
   #   needs: [style-check, build]
