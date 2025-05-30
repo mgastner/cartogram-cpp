@@ -315,11 +315,11 @@ jobs:
       - name: Unpack PR artefact
         run: |
           mkdir -p build-pr
-          tar -xzf build-release-clang.tar.gz --strip-components=1 -C build-pr
-          chmod +x build-pr/cartogram
+          tar -xzf build-release-clang.tar.gz -C build-pr
+          chmod +x build-pr/build/cartogram
 
       # build baseline (origin/main, same flags as release-clang)
-      - name: Build baseline (origin/main, clang-16, Release-static)
+      - name: Build baseline (origin/main)
         run: |
           git fetch --depth 1 --no-tags origin main
           git worktree add ../baseline origin/main
@@ -339,17 +339,19 @@ jobs:
                 -DBUILD_SHARED_LIBS=OFF
           cmake --build build -j$(nproc)
           popd
-          ln -sf ../baseline/build/cartogram build-main
 
       # run adaptive micro-benchmarks on every map
       - name: Benchmark sample_data maps
         run: |
           bash .github/scripts/benchmark_maps.sh \
-               build-pr/cartogram build-main results.json
+                build-pr/build/cartogram \
+                ../baseline/build/cartogram \
+                results.json
 
       # generate PR comment
       - name: Create performance report
         run: |
+          source .venv/bin/activate
           python .github/scripts/gen_perf_comment.py results.json comment.md
 
       # sticky (update-in-place) PR comment
