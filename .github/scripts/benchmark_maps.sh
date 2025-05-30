@@ -66,15 +66,8 @@ if __name__ == '__main__':
 EOF
 )
 
-count=0
 for dir in "$MAP_ROOT"/*; do
   [[ -d $dir ]] || continue
-
-  count=$((count + 1))
-  if ((count > 3)); then
-    echo "Skipping further maps after first 3."
-    break
-  fi
 
   geo=$(ls "$dir"/*.geojson 2>/dev/null | head -n1) || true
   [[ -f $geo ]] || {
