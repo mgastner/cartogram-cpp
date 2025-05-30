@@ -225,7 +225,8 @@ jobs:
 
   # ─────────────────────────── Unit Tests ───────────────────────────
   unit-tests:
-    needs: [style-check, build, build-sanitize]
+    name: "Unit tests (${{ matrix.target }})"
+    needs: [build, build-sanitize]
     strategy:
       fail-fast: false
       matrix:
@@ -255,7 +256,8 @@ jobs:
 
   # ────────────────────────── Stress Tests ──────────────────────────
   stress-tests:
-    needs: [style-check, build, build-sanitize]
+    name: "Stress tests (${{ matrix.target }})"
+    needs: [build, build-sanitize]
     strategy:
       fail-fast: false
       matrix:
@@ -374,7 +376,7 @@ jobs:
 
   # ─────────────────────────── Fuzzer Tests ─────────────────────────
   # fuzzer-tests:
-  #   needs: [style-check, build]
+  #   needs: [build]
   #   strategy:
   #     fail-fast: false
   #     matrix:
