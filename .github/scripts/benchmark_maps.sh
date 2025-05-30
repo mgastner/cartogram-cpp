@@ -11,7 +11,7 @@ OUT_JSON=$3 # file to write results to
 MAP_ROOT="sample_data"
 WARMUP=1   # warm-up runs
 MIN_RUNS=2 # at least this many
-MAX_RUNS=5 # stop early when CI width < 5% or after MAX_RUNS
+MAX_RUNS=4 # stop early when CI width < 5% or after MAX_RUNS
 
 tmp=$(mktemp -d)
 trap 'rm -rf "$tmp"' EXIT
@@ -39,28 +39,24 @@ for dir in "$MAP_ROOT"/*; do
     # hyperfine runs both binaries; --ignore-failure means the overall command
     # returns 0 even if one side fails
     hyperfine --ignore-failure --show-output \
-      --warmup $WARMUP \
-      --min-runs $MIN_RUNS \
-      --max-runs $MAX_RUNS \
+      --warmup "$WARMUP" \
+      --min-runs "$MIN_RUNS" \
+      --max-runs "$MAX_RUNS" \
       --export-json "$tmp/hf.json" \
       --command-name main \
-      bash -c '
-      exe=$1; geo=$2; csv=$3; dir=$4
-      extra=()
-      [[ $dir =~ world ]] && extra=(--world)
-      echo "PWD: $(pwd)" >&2
-      echo "CMD: $exe $geo $csv ${extra[*]}" >&2
-      exec "$exe" "$geo" "$csv" "${extra[@]}"
-    ' _ "$BASE_BIN" "$geo" "$csv" "$dir" \
+      "bash -c 'exe=\$1; geo=\$2; csv=\$3; dir=\$4;
+            extra=(); [[ \$dir =~ world ]] && extra=(--world);
+            echo \"PWD: \$(pwd)\" >&2;
+            echo \"CMD: \$exe \$geo \$csv \${extra[*]}\" >&2;
+            exec \"\$exe\" \"\$geo\" \"\$csv\" \"\${extra[@]}\"' _ \
+            \"$BASE_BIN\" \"$geo\" \"$csv\" \"$dir\"" \
       --command-name pr \
-      bash -c '
-      exe=$1; geo=$2; csv=$3; dir=$4
-      extra=()
-      [[ $dir =~ world ]] && extra=(--world)
-      echo "PWD: $(pwd)" >&2
-      echo "CMD: $exe $geo $csv ${extra[*]}" >&2
-      exec "$exe" "$geo" "$csv" "${extra[@]}"
-    ' _ "$PR_BIN" "$geo" "$csv" "$dir"
+      "bash -c 'exe=\$1; geo=\$2; csv=\$3; dir=\$4;
+            extra=(); [[ \$dir =~ world ]] && extra=(--world);
+            echo \"PWD: \$(pwd)\" >&2;
+            echo \"CMD: \$exe \$geo \$csv \${extra[*]}\" >&2;
+            exec \"\$exe\" \"\$geo\" \"\$csv\" \"\${extra[@]}\"' _ \
+            \"$PR_BIN\" \"$geo\" \"$csv\" \"$dir\""
 
     jq -n \
       --slurpfile r "$tmp/hf.json" \
