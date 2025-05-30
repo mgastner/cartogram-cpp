@@ -357,7 +357,6 @@ jobs:
       # sticky (update-in-place) PR comment
       - uses: marocchino/sticky-pull-request-comment@v2
         with:
-          recreate: true # overwrite previous run
           path: comment.md
 
   # ─────────────────────────── Fuzzer Tests ─────────────────────────
