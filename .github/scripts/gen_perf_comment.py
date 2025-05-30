@@ -2,7 +2,7 @@
 import json, sys, math
 from scipy.stats import t
 
-THRESH = 0.03
+THRESH = 0.05
 ALPHA = 0.05
 
 
@@ -67,24 +67,40 @@ for entry in data:
     cat = classify(entry.get("base"), entry.get("pr"))
     groups[cat].append((entry["map"], entry.get("base"), entry.get("pr")))
 
-report = f"""## 🚦 Performance check (α={ALPHA:.2f}, ±{THRESH*100:.0f}%)
+report = f"""\
+<h2>🚦 Performance Comparison <sup>(α={ALPHA:.2f}, ±{THRESH*100:.0f}%)</sup></h2>
 
-### ❗ Failed maps ({len(groups['fail'])})
-{table(groups['fail'])}
+<table>
+  <tr>
+    <td><strong>🗺️ Total maps</strong></td><td align="right">{len(data)}</td>
+    <td><strong>❌ Failed</strong></td><td align="right">{len(groups['fail'])}</td>
+    <td><strong>🚀 Speed-ups</strong></td><td align="right">{len(groups['faster'])}</td>
+    <td><strong>🐢 Slow-downs</strong></td><td align="right">{len(groups['slower'])}</td>
+    <td><strong>⚖️ No change</strong></td><td align="right">{len(groups['same'])}</td>
+  </tr>
+</table>
 
-<details><summary>Speed-ups ({len(groups['faster'])})</summary>
+---
+
+### ❌ Failures
+{table(groups['fail']) if groups['fail'] else '_None 😎_'}  
+
+<details>
+  <summary>🚀 Speed-ups ({len(groups['faster'])})</summary>
 
 {table(groups['faster'], show_p=True)}
 </details>
 
-<details><summary>Slow-downs ({len(groups['slower'])})</summary>
+<details>
+  <summary>🐢 Slow-downs ({len(groups['slower'])})</summary>
 
 {table(groups['slower'], show_p=True)}
 </details>
 
-<details><summary>No significant change ({len(groups['same'])})</summary>
+<details>
+  <summary>⚖️ No significant change ({len(groups['same'])})</summary>
 
-{table(groups['same'])}
+{table(groups['same'], show_p=True)}
 </details>
 """
 
