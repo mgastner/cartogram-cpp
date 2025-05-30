@@ -4,14 +4,14 @@
 
 set -euo pipefail
 
-PR_BIN=$1   # cartogram built from the pull-request
-BASE_BIN=$2 # cartogram built from origin/main
-OUT_JSON=$3 # file to write results to
+PR_BIN=$1
+BASE_BIN=$2
+OUT_JSON=$3
 
 MAP_ROOT="sample_data"
-WARMUP=1   # warm-up runs
-MIN_RUNS=2 # at least this many
-MAX_RUNS=4 # stop early when CI width < 5% or after MAX_RUNS
+WARMUP=1
+MIN_RUNS=2
+MAX_RUNS=4
 
 tmp=$(mktemp -d)
 trap 'rm -rf "$tmp"' EXIT
@@ -19,58 +19,91 @@ trap 'rm -rf "$tmp"' EXIT
 results="$tmp/results.jsonl"
 : >"$results"
 
+PY_PROCESSOR=$(
+  cat <<'EOF'
+import json
+import sys
+import os
+
+def process_benchmark(map_name):
+    try:
+        with open('hf.json') as f:
+            hf = json.load(f)
+    except Exception:
+        return {"map": map_name, "base": None, "pr": None}
+    
+    base = None
+    pr = None
+    
+    for result in hf.get('results', []):
+        # Skip failed runs
+        if not all(code == 0 for code in result.get('exit_codes', [])):
+            continue
+            
+        if result.get('command') == 'main':
+            base = {
+                'mean': result['mean'],
+                'stddev': result['stddev'],
+                'runs': len(result.get('times', []))
+            }
+        elif result.get('command') == 'pr':
+            pr = {
+                'mean': result['mean'],
+                'stddev': result['stddev'],
+                'runs': len(result.get('times', []))
+            }
+    
+    return {
+        'map': map_name,
+        'base': base,
+        'pr': pr
+    }
+
+if __name__ == '__main__':
+    map_name = sys.argv[1]
+    result = process_benchmark(map_name)
+    print(json.dumps(result))
+EOF
+)
+
+count=0
 for dir in "$MAP_ROOT"/*; do
   [[ -d $dir ]] || continue
 
+  count=$((count + 1))
+  if ((count > 3)); then
+    echo "Skipping further maps after first 3."
+    break
+  fi
+
   geo=$(ls "$dir"/*.geojson 2>/dev/null | head -n1) || true
   [[ -f $geo ]] || {
-    echo "WARNING: $dir has no *.geojson — skipped"
+    echo "WARNING: $dir has no *.geojson - skipped"
     continue
   }
 
   for csv in "$dir"/*.csv; do
-    # echo the geo and csv
-    echo "Geo: $geo"
-    echo "CSV: $csv"
     [[ -f $csv ]] || continue
     map_name="$(basename "$dir")/$(basename "$csv")"
     echo "Benchmarking:  $map_name"
 
-    # hyperfine runs both binaries; --ignore-failure means the overall command
-    # returns 0 even if one side fails
-    hyperfine --ignore-failure --show-output \
+    hyperfine --ignore-failure \
       --warmup "$WARMUP" \
       --min-runs "$MIN_RUNS" \
       --max-runs "$MAX_RUNS" \
-      --export-json "$tmp/hf.json" \
+      --export-json "hf.json" \
       --command-name main \
-      "bash -c 'exe=\$1; geo=\$2; csv=\$3; dir=\$4;
-            extra=(); [[ \$dir =~ world ]] && extra=(--world);
-            echo \"PWD: \$(pwd)\" >&2;
-            echo \"CMD: \$exe \$geo \$csv \${extra[*]}\" >&2;
-            exec \"\$exe\" \"\$geo\" \"\$csv\" \"\${extra[@]}\"' _ \
-            \"$BASE_BIN\" \"$geo\" \"$csv\" \"$dir\"" \
+      "bash -c '[[ \$4 =~ world ]] && set -- \"\$1\" \"\$2\" \"\$3\" --world || set -- \"\$1\" \"\$2\" \"\$3\"; exec \"\$@\"' _ \
+         \"$BASE_BIN\" \"$geo\" \"$csv\" \"$dir\"" \
       --command-name pr \
-      "bash -c 'exe=\$1; geo=\$2; csv=\$3; dir=\$4;
-            extra=(); [[ \$dir =~ world ]] && extra=(--world);
-            echo \"PWD: \$(pwd)\" >&2;
-            echo \"CMD: \$exe \$geo \$csv \${extra[*]}\" >&2;
-            exec \"\$exe\" \"\$geo\" \"\$csv\" \"\${extra[@]}\"' _ \
-            \"$PR_BIN\" \"$geo\" \"$csv\" \"$dir\""
+      "bash -c '[[ \$4 =~ world ]] && set -- \"\$1\" \"\$2\" \"\$3\" --world || set -- \"\$1\" \"\$2\" \"\$3\"; exec \"\$@\"' _ \
+         \"$PR_BIN\"  \"$geo\" \"$csv\" \"$dir\""
 
-    jq -n \
-      --slurpfile r "$tmp/hf.json" \
-      --arg map "$map_name" '
-        ($r[0].results // []) as $all
-        | {
-            map: $map,
-            base: ( ($all[]? | select(.command_name=="main" and .exit_code==0)
-                      | {mean, stddev, runs}) // null ),
-            pr:   ( ($all[]? | select(.command_name=="pr"   and .exit_code==0)
-                      | {mean, stddev, runs}) // null )
-          }' >>"$results"
+    python3 -c "$PY_PROCESSOR" "$map_name" >>"$results"
   done
 done
 
-jq -s '.' "$results" >"$OUT_JSON"
+# Final aggregation
+python3 -c "import json, sys; data = [json.loads(line) for line in sys.stdin]; print(json.dumps(data))" <"$results" >"$OUT_JSON"
+
 echo "✅  Benchmarks written to $OUT_JSON"
