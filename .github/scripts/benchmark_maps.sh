@@ -60,10 +60,10 @@ for dir in "$MAP_ROOT"/*; do
         ($r[0].results // []) as $all
         | {
             map: $map,
-            base: ($all[]? | select(.command_name=="main" and .exit_code==0)
-                   | {mean, stddev, runs}) // null,
-            pr:   ($all[]? | select(.command_name=="pr"   and .exit_code==0)
-                   | {mean, stddev, runs}) // null
+            base: ( ($all[]? | select(.command_name=="main" and .exit_code==0)
+                      | {mean, stddev, runs}) // null ),
+            pr:   ( ($all[]? | select(.command_name=="pr"   and .exit_code==0)
+                      | {mean, stddev, runs}) // null )
           }' >>"$results"
   done
 done
