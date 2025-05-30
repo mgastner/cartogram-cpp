@@ -60,9 +60,9 @@ for dir in "$MAP_ROOT"/*; do
       --max-runs $MAX_RUNS \
       --export-json "$tmp/hf.json" \
       --command-name main \
-      "bash -lc 'run_cmd $BASE_BIN \"$geo\" \"$csv\" \"$dir\"'" \
+      "bash -c 'run_cmd $BASE_BIN \"$geo\" \"$csv\" \"$dir\"'" \
       --command-name pr \
-      "bash -lc 'run_cmd $PR_BIN   \"$geo\" \"$csv\" \"$dir\"'"
+      "bash -c 'run_cmd $PR_BIN   \"$geo\" \"$csv\" \"$dir\"'"
 
     jq -n \
       --slurpfile r "$tmp/hf.json" \
