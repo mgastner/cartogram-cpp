@@ -54,7 +54,7 @@ for dir in "$MAP_ROOT"/*; do
 
     # hyperfine runs both binaries; --ignore-failure means the overall command
     # returns 0 even if one side fails
-    hyperfine --ignore-failure \
+    hyperfine --ignore-failure --show-output \
       --warmup $WARMUP \
       --min-runs $MIN_RUNS \
       --max-runs $MAX_RUNS \
