@@ -322,7 +322,7 @@ jobs:
       - name: Build baseline (origin/main, clang-16, Release-static)
         run: |
           git fetch --depth 1 --no-tags origin main
-          git worktree add --no-checkout ../baseline origin/main
+          git worktree add ../baseline origin/main
           pushd ../baseline
 
           source $GITHUB_WORKSPACE/.venv/bin/activate
