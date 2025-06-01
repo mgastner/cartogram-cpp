@@ -153,9 +153,8 @@ For Windows users, we recommend using our program through Windows Subsystem for 
 
 - If you are unable to copmile on the latest version of Ubuntu/MacOS, please open an issue. In the meanwhile, follow the instructions for installation via Docker.
 - If compilation suddenly stopped working for you, you may remove the `build` directory with `rm -rf build` and run the installation commands again.
-- If switching between `Debug` and `Release` builds, you may need to remove the `build` directory with `rm -rf build` and run the installation commands again.
-- If running `.venv/bin/cmake -B build ...` gives you an error, it is likely that a dependency was not installed correctly. Rerun the appropriate commands above to install the required dependencies and try again. If it still fails, make sure you have the virtual environment activated by running `. .venv/bin/activate` in your terminal, and then try again.
-- If you get an error which mentions permission issues, try running the command that gave you the error with `sudo` prefixed, as done with `sudo make install -C build` above.
+- If running `.venv/bin/cmake -B build/... ...` gives you an error, it is likely that a dependency was not installed correctly. Rerun the appropriate commands above to install the required dependencies and try again. If it still fails, make sure you have the virtual environment activated by running `. .venv/bin/activate` in your terminal, and then try again.
+- If you get an error which mentions permission issues, try running the command that gave you the error with `sudo` prefixed, as done with `sudo make install -C build/...` above.
 - If VScode's `CMake: Install` does not work, make sure you own `/usr/local/bin` and the working directory. You may assign ownership to your account with `sudo chown -R $(whoami) .`, replacing `.` with the directory of choice.
 
 ### Benchmarking
@@ -203,4 +202,4 @@ Contributions are highly encouraged! Please feel free to take a stab at any at a
 
 If you'd like to contribute to the project, please run our tests after you make any changes.
 
-Maintainers, please make sure all the CI checks pass before approving the pull request.
+Maintainers, please make sure all the CI build and test checks pass and the performance comparison CI check results are expected before approving the pull request.
