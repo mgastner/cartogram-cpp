@@ -89,10 +89,17 @@ The following command will detect your system's profile and set it up for you. I
 
 4. Configure and Build with CMake
 
+Configure:
 ``` shell
 .venv/bin/cmake -B build/Debug -S . -DCMAKE_TOOLCHAIN_FILE=build/Debug/generators/conan_toolchain.cmake -DCMAKE_BUILD_TYPE=Debug -DCMAKE_EXPORT_COMPILE_COMMANDS=ON
+```
+Build:
+``` shell
 .venv/bin/cmake --build build/Debug -j4
-sudo .venv/bin/cmake --install build # optional, to install the program globally
+```
+Optional, to install the program globally:
+``` shell
+sudo .venv/bin/cmake --install build/Debug
 ```
 
 ### Tests
@@ -110,6 +117,8 @@ To run only the unit tests:
 ``` shell
 .venv/bin/ctest --test-dir build/Debug --output-on-failure -L unit
 ```
+
+To run a specific unit test, you can specify the test name. For example, to run the `test_string_to_decimal_converter.cpp` unit test:
 
 ``` shell
 .venv/bin/ctest --test-dir build/Debug --output-on-failure test_string_to_decimal_converter.cpp
