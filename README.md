@@ -55,10 +55,11 @@ We manage dependencies with a Python virtual environment and Conan 2. The projec
 
 Only `Debug` build commands are shown below, but the same commands can be run with `Release` build by replacing `Debug` with `Release`.
 
-1. Create a virtual environment with the required dependencies:
+1. Create a virtual environment with the required dependencies and activate it:
 
 ``` shell
 virtualenv .venv && .venv/bin/pip install -r requirements.txt
+source .venv/bin/activate
 ```
 
 2. Setup Conan
