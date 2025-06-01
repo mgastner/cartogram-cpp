@@ -70,33 +70,33 @@ jobs:
             compiler: gcc
             version: 13
             build_type: Release
-            name: release-gcc
+            name: ubuntu-release-gcc
           - os: ubuntu-latest
             compiler: clang
             version: 16
             build_type: Release
-            name: release-clang
+            name: ubuntu-release-clang
           - os: ubuntu-latest
             compiler: gcc
             version: 13
             build_type: Debug
-            name: debug-gcc
+            name: ubuntu-debug-gcc
           - os: ubuntu-latest
             compiler: clang
             version: 16
             build_type: Debug
-            name: debug-clang
+            name: ubuntu-debug-clang
           # macOS
           - os: macos-14
             compiler: apple-clang
             version: ""
             build_type: Release
-            name: release-macos
+            name: macos-release-appleclang
           - os: macos-14
             compiler: apple-clang
             version: ""
             build_type: Debug
-            name: debug-macos
+            name: macos-debug-appleclang
 
     steps:
       - uses: actions/checkout@v4
@@ -231,12 +231,12 @@ jobs:
       fail-fast: false
       matrix:
         target:
-          - release-gcc
-          - release-clang
-          - debug-gcc
-          - debug-clang
-          - release-macos
-          - debug-macos
+          - ubuntu-release-gcc
+          - ubuntu-release-clang
+          - ubuntu-debug-gcc
+          - ubuntu-debug-clang
+          - macos-release-appleclang
+          - macos-debug-appleclang
           - asan
           - ubsan
           - tsan
@@ -262,12 +262,12 @@ jobs:
       fail-fast: false
       matrix:
         target:
-          - release-gcc
-          - release-clang
-          - debug-gcc
-          - debug-clang
-          - release-macos
-          - debug-macos
+          - ubuntu-release-gcc
+          - ubuntu-release-clang
+          - ubuntu-debug-gcc
+          - ubuntu-debug-clang
+          - macos-release-appleclang
+          - macos-debug-appleclang
           - asan
           - ubsan
           - tsan
@@ -301,7 +301,7 @@ jobs:
             compiler: clang
             version: 16
             build_type: Release
-            name: release-clang
+            name: ubuntu-release-clang
 
     permissions:
       contents: read
@@ -383,9 +383,9 @@ jobs:
   #     fail-fast: false
   #     matrix:
   #       target:
-  #         - release-gcc
-  #         - release-clang
-  #         - release-macos
+  #         - ubuntu-release-gcc
+  #         - ubuntu-release-clang
+  #         - macos-release-appleclang
   #   runs-on: "${{ contains(matrix.target, 'mac') && 'macos-14' || 'ubuntu-latest' }}"
 
   #   steps:
