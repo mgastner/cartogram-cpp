@@ -55,10 +55,15 @@ We manage dependencies with a Python virtual environment and Conan 2. The projec
 
 Only `Debug` build commands are shown below, but the same commands can be run with `Release` build by replacing `Debug` with `Release`.
 
-1. Create a virtual environment with the required dependencies:
+1. Create a virtual environment with the required dependencies
 
 ``` shell
-virtualenv .venv && .venv/bin/pip install -r requirements.txt
+virtualenv .venv && .venv/bin/pip install -U -r requirements.txt
+```
+and activate it:
+
+``` shell
+source .venv/bin/activate
 ```
 
 2. Setup Conan
@@ -82,12 +87,21 @@ The following command will detect your system's profile and set it up for you. I
 .venv/bin/conan install . --build=missing -s build_type=Debug -s compiler.cppstd=20
 ```
 
-4. Configure and Build with CMake
+4. Compile the project via CMake
 
+Configure,
 ``` shell
 .venv/bin/cmake -B build/Debug -S . -DCMAKE_TOOLCHAIN_FILE=build/Debug/generators/conan_toolchain.cmake -DCMAKE_BUILD_TYPE=Debug -DCMAKE_EXPORT_COMPILE_COMMANDS=ON
+```
+
+Build,
+``` shell
 .venv/bin/cmake --build build/Debug -j4
-sudo .venv/bin/cmake --install build # optional, to install the program globally
+```
+
+And, optionally, install the program globally:
+``` shell
+sudo .venv/bin/cmake --install build/Debug
 ```
 
 ### Tests
@@ -105,6 +119,8 @@ To run only the unit tests:
 ``` shell
 .venv/bin/ctest --test-dir build/Debug --output-on-failure -L unit
 ```
+
+To run a specific unit test, specify the test's name. For example, to run the `test_string_to_decimal_converter.cpp` unit test, use:
 
 ``` shell
 .venv/bin/ctest --test-dir build/Debug --output-on-failure test_string_to_decimal_converter.cpp
@@ -137,12 +153,11 @@ For Windows users, we recommend using our program through Windows Subsystem for 
 
 ### Troubleshooting
 
-- If you are unable to copmile on the latest version of Ubuntu/MacOS, please open an issue. In the meanwhile, follow the instructions for installation via Docker.
+- If you are unable to compile on the latest version of Ubuntu/macOS, please open an issue.
 - If compilation suddenly stopped working for you, you may remove the `build` directory with `rm -rf build` and run the installation commands again.
-- If switching between `Debug` and `Release` builds, you may need to remove the `build` directory with `rm -rf build` and run the installation commands again.
-- If running `.venv/bin/cmake -B build ...` gives you an error, it is likely that a dependency was not installed correctly. Rerun the appropriate commands above to install the required dependencies and try again. If it still fails, make sure you have the virtual environment activated by running `. .venv/bin/activate` in your terminal, and then try again.
-- If you get an error which mentions permission issues, try running the command that gave you the error with `sudo` prefixed, as done with `sudo make install -C build` above.
-- If VScode's `CMake: Install` does not work, make sure you own `/usr/local/bin` and the working directory. You may assign ownership to your account with `sudo chown -R $(whoami) .`, replacing `.` with the directory of choice.
+- If running one of the commands starting with `.venv/bin/cmake` gives you an error, it is likely that a dependency was not installed correctly. Rerun the appropriate commands above to install the required dependencies and try again. If it still fails, make sure you have the virtual environment activated by running `source .venv/bin/activate` in your terminal, and then try again.
+- If you get an error which mentions permission issues, try running the command that gave you the error with `sudo` prefixed. Alternatively, you may follow the next instruction.
+- If you still get permission issues or VScode's `CMake: Install` does not work, make sure you own the relevant directories (i.e. `/usr/local/bin` and the working directory). You may assign ownership to your account with `sudo chown -R $(whoami) .`, replacing `.` with the directory of choice.
 
 ### Benchmarking
 
@@ -189,4 +204,4 @@ Contributions are highly encouraged! Please feel free to take a stab at any at a
 
 If you'd like to contribute to the project, please run our tests after you make any changes.
 
-Maintainers, please make sure all the CI checks pass before approving the pull request.
+Maintainers, please make sure all the CI build and test checks pass and the performance comparison CI check results are expected before approving the pull request.
