@@ -16,7 +16,12 @@ void InsetState::auto_color()
     std::cerr << "Some but not all colors provided, assigning #f2f2f2 (light "
                  "gray) to uncolored GeoDivs."
               << std::endl;
-    palette.emplace_back("#f2f2f2");  // light gray
+    for (GeoDiv &gd : geo_divs_) {
+      if (!color_found(gd.id())) {
+        insert_color(gd.id(), Color("#f2f2f2"));
+      }
+    }
+    return;
   } else {
     // Using default palette for now
     // TODO: Accept palette from user
@@ -37,24 +42,17 @@ void InsetState::auto_color()
   create_contiguity_graph();
 
   // Iterate until we are able to color the entire map
-  for (const auto &gd : geo_divs_) {
+  for (const GeoDiv &gd : geo_divs_) {
     // If div already has a provided color, move to the next div
     if (color_found(gd.id()))
       continue;
-
-    // If there's only one color in palette, color the div with it without
-    // checking for color adjacency
-    if (palette.size() == 1) {
-      insert_color(gd.id(), palette[0]);
-      continue;
-    }
 
     for (unsigned int i = 0; i < palette.size(); ++i) {
       const Color c = palette[i];
       bool shared_color = false;
 
       // Check whether adjacent GeoDivs have the same color
-      for (const auto &gd_id : gd.adjacent_geodivs()) {
+      for (const std::string &gd_id : gd.adjacent_geodivs()) {
         if (color_found(gd_id)) {
           if (color_at(gd_id) == c) {
             shared_color = true;
