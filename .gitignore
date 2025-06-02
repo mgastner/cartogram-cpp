@@ -38,8 +38,14 @@ cartogram
 # Ignore test logs
 *.txt
 
-# But, don't ignore CMakeLists.txt
+# Don't ignore CMakeLists.txt
 !CMakeLists.txt
+
+# Don't ignore conanfile
+!conanfile.txt
+
+# Don't ignore requirements.txt
+!requirements.txt
 
 # Boilerplate code for .gitignore
 
@@ -96,6 +102,3 @@ Makefile
 # Ignore Python virtual environment
 venv
 .venv
-
-# Do not ignore conanfile
-!conanfile.txt

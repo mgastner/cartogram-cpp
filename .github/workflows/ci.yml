@@ -8,6 +8,10 @@ on:
     branches:
       - main
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   # TODO: We might want to later fix the version of clang-format so that future checks
   # don't mysteriously fail when a new version is released.
@@ -66,33 +70,33 @@ jobs:
             compiler: gcc
             version: 13
             build_type: Release
-            name: release-gcc
+            name: ubuntu-release-gcc
           - os: ubuntu-latest
             compiler: clang
             version: 16
             build_type: Release
-            name: release-clang
+            name: ubuntu-release-clang
           - os: ubuntu-latest
             compiler: gcc
             version: 13
             build_type: Debug
-            name: debug-gcc
+            name: ubuntu-debug-gcc
           - os: ubuntu-latest
             compiler: clang
             version: 16
             build_type: Debug
-            name: debug-clang
+            name: ubuntu-debug-clang
           # macOS
           - os: macos-14
             compiler: apple-clang
             version: ""
             build_type: Release
-            name: release-macos
+            name: macos-release-appleclang
           - os: macos-14
             compiler: apple-clang
             version: ""
             build_type: Debug
-            name: debug-macos
+            name: macos-debug-appleclang
 
     steps:
       - uses: actions/checkout@v4
@@ -221,17 +225,18 @@ jobs:
 
   # ─────────────────────────── Unit Tests ───────────────────────────
   unit-tests:
-    needs: [style-check, build, build-sanitize]
+    name: "Unit tests (${{ matrix.target }})"
+    needs: [build, build-sanitize]
     strategy:
       fail-fast: false
       matrix:
         target:
-          - release-gcc
-          - release-clang
-          - debug-gcc
-          - debug-clang
-          - release-macos
-          - debug-macos
+          - ubuntu-release-gcc
+          - ubuntu-release-clang
+          - ubuntu-debug-gcc
+          - ubuntu-debug-clang
+          - macos-release-appleclang
+          - macos-debug-appleclang
           - asan
           - ubsan
           - tsan
@@ -251,17 +256,18 @@ jobs:
 
   # ────────────────────────── Stress Tests ──────────────────────────
   stress-tests:
-    needs: [style-check, build, build-sanitize]
+    name: "Stress tests (${{ matrix.target }})"
+    needs: [build, build-sanitize]
     strategy:
       fail-fast: false
       matrix:
         target:
-          - release-gcc
-          - release-clang
-          - debug-gcc
-          - debug-clang
-          - release-macos
-          - debug-macos
+          - ubuntu-release-gcc
+          - ubuntu-release-clang
+          - ubuntu-debug-gcc
+          - ubuntu-debug-clang
+          - macos-release-appleclang
+          - macos-debug-appleclang
           - asan
           - ubsan
           - tsan
@@ -281,16 +287,105 @@ jobs:
         run: |
           ctest --test-dir build -L stress --output-on-failure
 
+  # ──────────────────── Performance comparison ────────────────────
+  perf-tests:
+    if: github.event_name == 'pull_request'
+    name: Performance comparison (main, ${{ matrix.name }})
+    needs: build
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-latest
+            compiler: clang
+            version: 16
+            build_type: Release
+            name: ubuntu-release-clang
+
+    permissions:
+      contents: read
+      pull-requests: write # required for sticky comment
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+
+      # PR artefact from the build job
+      - uses: actions/download-artifact@v4
+        with:
+          name: ${{ matrix.name }}
+
+      - name: Unpack PR artefact
+        run: |
+          mkdir -p build-pr
+          tar -xzf build-${{ matrix.name }}.tar.gz -C build-pr
+          chmod +x build-pr/build/cartogram
+
+      # Only designed to work on Linux
+      - name: Setup Python & Conan
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            ${{ matrix.compiler }}-${{ matrix.version }} \
+            lld-16 hyperfine python3-venv
+          echo "CC=${{ matrix.compiler }}-${{ matrix.version }}"   >> $GITHUB_ENV
+          echo "CXX=${{ matrix.compiler }}++-${{ matrix.version }}" >> $GITHUB_ENV
+
+      - name: Build baseline (origin/main)
+        run: |
+          git fetch --depth 1 --no-tags origin main
+          git worktree add ../baseline origin/main
+          pushd ../baseline
+          python3 -m venv .venv
+          source .venv/bin/activate
+          pip install --upgrade pip wheel conan==2.16.1 cmake==3.30.0
+          conan remote update conancenter --url=https://center2.conan.io
+          conan profile detect
+          conan install . --output-folder build \
+                          --build missing \
+                          -s build_type=${{ matrix.build_type }} \
+                          -s compiler.cppstd=20 \
+                          -o "*:shared=False"
+          cmake -S . -B build \
+                -DCMAKE_TOOLCHAIN_FILE=build/build/${{ matrix.build_type }}/generators/conan_toolchain.cmake \
+                -DCMAKE_BUILD_TYPE=${{ matrix.build_type }} \
+                -DBUILD_SHARED_LIBS=OFF
+          cmake --build build -j"$(nproc)"
+          popd
+
+      # Benchmarks
+      - name: Benchmark sample_data maps
+        run: |
+          python3 -m venv .venv
+          source .venv/bin/activate
+          bash .github/scripts/benchmark_maps.sh \
+            build-pr/build/cartogram \
+            ../baseline/build/cartogram \
+            results.json
+
+      # Generate sticky PR comment
+      - name: Create performance report
+        run: |
+          source .venv/bin/activate
+          pip install --upgrade scipy
+          python .github/scripts/gen_perf_comment.py results.json comment.md
+
+      - uses: marocchino/sticky-pull-request-comment@v2
+        with:
+          path: comment.md
+
   # ─────────────────────────── Fuzzer Tests ─────────────────────────
   # fuzzer-tests:
-  #   needs: [style-check, build]
+  #   needs: [build]
   #   strategy:
   #     fail-fast: false
   #     matrix:
   #       target:
-  #         - release-gcc
-  #         - release-clang
-  #         - release-macos
+  #         - ubuntu-release-gcc
+  #         - ubuntu-release-clang
+  #         - macos-release-appleclang
   #   runs-on: "${{ contains(matrix.target, 'mac') && 'macos-14' || 'ubuntu-latest' }}"
 
   #   steps:
