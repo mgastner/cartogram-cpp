@@ -305,7 +305,6 @@ jobs:
 
     permissions:
       contents: read
-      pull-requests: write # required for sticky comment
 
     steps:
       - uses: actions/checkout@v4
@@ -365,15 +364,18 @@ jobs:
             ../baseline/build/cartogram \
             results.json
 
-      # Generate sticky PR comment
+      # Generate performance report
       - name: Create performance report
         run: |
           source .venv/bin/activate
           pip install --upgrade scipy
           python .github/scripts/gen_perf_comment.py results.json comment.md
 
-      - uses: marocchino/sticky-pull-request-comment@v2
+      # Upload report for the pr-comment.yml workflow
+      - name: Upload performance report
+        uses: actions/upload-artifact@v4
         with:
+          name: perf-comment # If this name changes, update the pr-comment.yml workflow too
           path: comment.md
 
   # ─────────────────────────── Fuzzer Tests ─────────────────────────
