@@ -9,9 +9,13 @@ BASE_BIN=$2
 OUT_JSON=$3
 
 MAP_ROOT="sample_data"
-WARMUP=1
-MIN_RUNS=6
-MAX_RUNS=15
+# WARMUP=1
+# MIN_RUNS=6
+# MAX_RUNS=15
+
+WARMUP=0
+MIN_RUNS=1
+MAX_RUNS=1
 
 tmp=$(mktemp -d)
 trap 'rm -rf "$tmp"' EXIT
