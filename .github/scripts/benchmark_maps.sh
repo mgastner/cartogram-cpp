@@ -13,9 +13,9 @@ MAP_ROOT="sample_data"
 # MIN_RUNS=6
 # MAX_RUNS=15
 
-WARMUP=0
-MIN_RUNS=1
-MAX_RUNS=1
+WARMUP=1
+MIN_RUNS=2
+MAX_RUNS=3
 
 
 tmp=$(mktemp -d)
