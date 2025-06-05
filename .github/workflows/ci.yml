@@ -371,12 +371,19 @@ jobs:
           pip install --upgrade scipy
           python .github/scripts/gen_perf_comment.py results.json comment.md
 
+      # When PR is made from fork, the pull_request will be empty during workflow_run in
+      # pr-comment.yml. So, we also pass the PR number as artifact
+      - name: Save PR number
+        run: echo "${{ github.event.number }}" > pr_number.txt
+
       # Upload report for the pr-comment.yml workflow
-      - name: Upload performance report
+      - name: Upload performance report & PR number
         uses: actions/upload-artifact@v4
         with:
           name: perf-comment # If this name changes, update the pr-comment.yml workflow too
-          path: comment.md
+          path: |
+            comment.md
+            pr_number.txt
 
   # ─────────────────────────── Fuzzer Tests ─────────────────────────
   # fuzzer-tests:
