@@ -17,6 +17,7 @@ WARMUP=0
 MIN_RUNS=1
 MAX_RUNS=1
 
+
 tmp=$(mktemp -d)
 trap 'rm -rf "$tmp"' EXIT
 
