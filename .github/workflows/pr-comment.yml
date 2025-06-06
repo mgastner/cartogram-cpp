@@ -26,7 +26,13 @@ jobs:
           run-id: ${{ github.event.workflow_run.id }}
           github-token: ${{ secrets.GITHUB_TOKEN }}
           name: perf-comment
-          path: .
+          path: perf-comment
+
+      - name: Debug - show workspace tree
+        run: |
+          echo '------------- workspace tree -------------'
+          find . -print | sed -e 's;[^/]*/;|   ;g;s;|   \([^|]\);|--- \1;'
+          echo '------------------------------------------'
 
       - name: Extract PR number
         id: vars
