@@ -120,7 +120,6 @@ void CartogramInfo::preprocess()
   }
 
   if (args_.export_preprocessed) {
-
     // Output rescaled GeoJSON
     write_geojson("input_processed");
     // processed = simplified + rescaled
