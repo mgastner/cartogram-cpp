@@ -1,4 +1,4 @@
-# cartogram-cpp: Cartogram generator in C++ [![DOI](https://zenodo.org/badge/281575635.svg)](https://zenodo.org/badge/latestdoi/281575635) [![license: GPLv3](https://img.shields.io/badge/license-GPLv3-blue)](./LICENSE)
+# cartogram-cpp: Cartogram generator in C++ [![DOI](https://zenodo.org/badge/281575635.svg)](https://zenodo.org/badge/latestdoi/281575635) [![License: AGPL v3](https://img.shields.io/badge/License-AGPL%20v3-blue.svg)](https://www.gnu.org/licenses/agpl-3.0)
 
 <p align="center">
     <a href="https://go-cart.io"><img src ="img/gocart_logo.svg" width="65%"></a>
