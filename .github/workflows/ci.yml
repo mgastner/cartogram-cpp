@@ -75,12 +75,11 @@ jobs:
 
       - name: Check typos
         run: |
-          npx cspell "README.md" --no-progress --no-summary
-          status=$?
-
-          if [ $status -ne 0 ]; then
-            echo "::error::cspell found unknown words. \
+          if ! npx cspell "README.md" --no-progress --no-summary; then
+                echo "::error::cspell found unknown words. \
           If a word is correct, add it to .cspell.json under \"words\"."
+                exit 1
+              fi
 
       - name: Check formatting
         run: |
