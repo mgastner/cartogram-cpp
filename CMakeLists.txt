@@ -77,10 +77,10 @@ if(CMAKE_BUILD_TYPE STREQUAL Release)
       find_program(LLD_PATH NAMES lld ld.lld)
 
       if(LLD_PATH)
-        add_compile_options(-flto=thin)
-        add_link_options(-fuse-ld=lld -flto=thin)
+        add_compile_options(-flto=full)
+        add_link_options(-fuse-ld=lld -flto=full)
 
-        message(STATUS "Using LLD linker for ThinLTO support: ${LLD_PATH}")
+        message(STATUS "Using LLD linker for LTO support: ${LLD_PATH}")
       else()
         message(WARNING "lld not found; disabling IPO. Install with: sudo apt install lld")
         set(ipo_ok FALSE)
