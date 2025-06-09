@@ -28,12 +28,6 @@ jobs:
           name: perf-comment
           path: perf-comment
 
-      - name: Debug - show workspace tree
-        run: |
-          echo '------------- workspace tree -------------'
-          find . -print | sed -e 's;[^/]*/;|   ;g;s;|   \([^|]\);|--- \1;'
-          echo '------------------------------------------'
-
       - name: Extract PR number
         id: vars
         run: echo "pr_num=$(cat perf-comment/pr_number.txt)" >>"$GITHUB_OUTPUT"

@@ -71,10 +71,21 @@ if(CMAKE_BUILD_TYPE STREQUAL Release)
 
   include(CheckIPOSupported)
   check_ipo_supported(RESULT ipo_ok OUTPUT ipo_msg)
-  
+
   if(CMAKE_CXX_COMPILER_ID STREQUAL "Clang" AND CMAKE_SYSTEM_NAME STREQUAL "Linux")
-    set(ipo_ok FALSE)
-    set(ipo_msg "IPO is not supported with Clang on Linux")
+    if(ipo_ok)
+      find_program(LLD_PATH NAMES lld ld.lld)
+
+      if(LLD_PATH)
+        add_compile_options(-flto=thin)
+        add_link_options(-fuse-ld=lld -flto=thin)
+
+        message(STATUS "Using LLD linker for ThinLTO support: ${LLD_PATH}")
+      else()
+        message(WARNING "lld not found; disabling IPO. Install with: sudo apt install lld")
+        set(ipo_ok FALSE)
+      endif()
+    endif()
   endif()
 
   if(ipo_ok)
