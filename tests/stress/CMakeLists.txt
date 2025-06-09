@@ -11,6 +11,11 @@ foreach(map_dir IN LISTS CHILDREN)
     continue()
   endif()
 
+  # Skip sandbox directory
+  if(map_dir STREQUAL "sandbox")
+    continue()
+  endif()
+
   file(GLOB GEO
     RELATIVE "${MAP_ROOT}/${map_dir}"
     "${MAP_ROOT}/${map_dir}/*.geojson")
