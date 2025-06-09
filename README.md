@@ -25,11 +25,11 @@ _Note: use the `-h` flag to display more options._
 
 The CSV file should be in the following format:
 
-| NAME_1     | Data (e.g., Population) | Color   |
-| :--------- | :---------------------- | :------ |
-| Bruxelles  | 1208542                 | #e74c3c |
-| Vlaanderen | 6589069                 | #f1c40f |
-| Wallonie   | 3633795                 | #34495e |
+| NAME_1           | Data (e.g., Population) | Color   |
+| :--------------- | :---------------------- | :------ |
+| Brussels-Capital | 1208542                 | #e74c3c |
+| Flanders         | 6589069                 | #f1c40f |
+| Wallonia         | 3633795                 | #34495e |
 
 -   `NAME_1` should be the same as the identifying property's name in the GeoJSON. The rows should also have the same data as is present in the identifying property.
 -   `Data` contains the data you would like your cartogram to based on.
@@ -72,7 +72,7 @@ source .venv/bin/activate
 .venv/bin/conan remote update conancenter --url=https://center2.conan.io
 ```
 
-The following command will detect your system's profile and set it up for you. If you already have a profile set up, this may yeild an error, in which case you may skip this step.
+The following command will detect your system's profile and set it up for you. If you already have a profile set up, this may yield an error, in which case you may skip this step.
 
 ``` shell
 .venv/bin/conan profile detect
@@ -195,7 +195,7 @@ Further, running `cartogram` should no longer work.
 
 ### Pushing changes to [go-cart.io](https://go-cart.io)
 
-To push changes to production, please follow the the instructions on [go-cart-io/carotgram-docker](https://github.com/go-cart-io/cartogram-docker).
+To push changes to production, please follow the the instructions on [go-cart-io/cartogram-docker](https://github.com/go-cart-io/cartogram-docker).
 
 
 ### Contributing
