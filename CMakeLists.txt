@@ -10,6 +10,7 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 find_package(Boost REQUIRED CONFIG)
 find_package(cgal REQUIRED CONFIG)
 find_package(nlohmann_json REQUIRED CONFIG)
+find_package(simdjson REQUIRED CONFIG)
 find_package(argparse REQUIRED CONFIG)
 find_package(vincentlaucsb-csv-parser REQUIRED CONFIG)
 find_package(indicators REQUIRED CONFIG)
@@ -32,6 +33,7 @@ target_link_libraries(cartogram_lib
   CGAL::CGAL
   boost::boost
   nlohmann_json::nlohmann_json
+  simdjson::simdjson
   argparse::argparse
   vincentlaucsb-csv-parser::vincentlaucsb-csv-parser
   indicators::indicators
