@@ -26,7 +26,7 @@ int main(const int argc, const char *argv[])
   cart_info.project_to_equal_area();
 
   // Store total number of GeoDivs to monitor progress
-  double total_geo_divs = cart_info.n_geo_divs();
+  size_t total_geo_divs = cart_info.n_geo_divs();
 
   // Write input map, with insets nicely placed
   if (args.plot_polygons) {
@@ -39,7 +39,7 @@ int main(const int argc, const char *argv[])
   }
 
   // Track progress of the cartogram generation
-  ProgressTracker progress_tracker(total_geo_divs);
+  ProgressTracker progress_tracker(static_cast<double>(total_geo_divs));
 
   // Preprocess Insets for Integration:
   // -- Set inset name: map_name + "_" + inset_pos
