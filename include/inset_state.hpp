@@ -9,6 +9,7 @@
 #include "nlohmann/json.hpp"
 #include "parse_arguments.hpp"
 #include "progress_tracker.hpp"
+#include "simdjson.h"
 #include "time_tracker.hpp"
 #include <boost/multi_array.hpp>
 
