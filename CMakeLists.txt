@@ -52,6 +52,18 @@ install(TARGETS cartogram RUNTIME DESTINATION bin)
 # ----------------------------- Compile Options  -----------------------------
 if(CMAKE_BUILD_TYPE STREQUAL Release)
   add_compile_options(-O3)
+  add_compile_options(
+    -fno-math-errno # drop errno bookkeeping
+    -fno-trapping-math # assume FP exceptions never trap
+    -fno-signed-zeros # treat +0 and –0 as identical
+    -fassociative-math # allow (a + b) + c -> a + (b + c)
+    -freciprocal-math # use x * (1/y) instead of x/y
+    -ffinite-math-only # assume no NaNs or Infs
+  )
+
+  if(CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
+    add_compile_options(-fdenormal-fp-math=positive-zero) # flush sub-normals to +0
+  endif()
 else()
   add_compile_options(-O1)
 
