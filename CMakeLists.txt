@@ -44,8 +44,6 @@ if(CMAKE_BUILD_TYPE STREQUAL Release)
     -fno-math-errno # drop errno bookkeeping
     -fno-trapping-math # assume FP exceptions never trap
     -fno-signed-zeros # treat +0 and –0 as identical
-    -fassociative-math # allow (a + b) + c -> a + (b + c)
-    -freciprocal-math # use x * (1/y) instead of x/y
   )
 
   if(CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
