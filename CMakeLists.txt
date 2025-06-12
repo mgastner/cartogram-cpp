@@ -39,17 +39,17 @@ target_link_libraries(cartogram_lib
 )
 
 if(CMAKE_BUILD_TYPE STREQUAL Release)
-  target_compile_options(cartogram_lib PRIVATE -O3)
+  target_compile_options(cartogram_lib PUBLIC -O3)
 else()
-  target_compile_options(cartogram_lib PRIVATE -O1)
+  target_compile_options(cartogram_lib PUBLIC -O1)
 
   # Ignore CGAL preconditions in Debug builds (false positives)
   target_compile_definitions(cartogram_lib
-    PRIVATE CGAL_NO_PRECONDITIONS
+    PUBLIC CGAL_NO_PRECONDITIONS
   )
 endif()
 
-target_compile_options(cartogram_lib PRIVATE
+target_compile_options(cartogram_lib PUBLIC
   -ffp-contract=off
   -Werror
   -Wall -Wextra -Wpedantic -Wshadow -Wold-style-cast -Wunreachable-code
@@ -64,9 +64,9 @@ if(CMAKE_BUILD_TYPE STREQUAL Release)
   check_cxx_compiler_flag("-mtune=native" HAS_MTUNE_NATIVE)
 
   if(HAS_MARCH_NATIVE)
-    target_compile_options(cartogram_lib PRIVATE -march=native)
+    target_compile_options(cartogram_lib PUBLIC -march=native)
   elseif(HAS_MTUNE_NATIVE)
-    target_compile_options(cartogram_lib PRIVATE -mtune=native)
+    target_compile_options(cartogram_lib PUBLIC -mtune=native)
   endif()
 
   include(CheckIPOSupported)
@@ -76,12 +76,7 @@ if(CMAKE_BUILD_TYPE STREQUAL Release)
     if(ipo_ok)
       find_program(LLD_PATH NAMES lld ld.lld)
 
-      if(LLD_PATH)
-        add_compile_options(-flto=thin)
-        add_link_options(-fuse-ld=lld -flto=thin)
-
-        message(STATUS "Using LLD linker for ThinLTO support: ${LLD_PATH}")
-      else()
+      if(NOT LLD_PATH)
         message(WARNING "lld not found; disabling IPO. Install with: sudo apt install lld")
         set(ipo_ok FALSE)
       endif()
@@ -90,7 +85,17 @@ if(CMAKE_BUILD_TYPE STREQUAL Release)
 
   if(ipo_ok)
     set_property(TARGET cartogram_lib PROPERTY INTERPROCEDURAL_OPTIMIZATION ON)
-    target_link_options(cartogram_lib PRIVATE -flto)
+    target_link_options(cartogram_lib PUBLIC -flto=full)
+
+    if(CMAKE_CXX_COMPILER_ID STREQUAL "Clang" AND CMAKE_SYSTEM_NAME STREQUAL "Linux")
+      message(STATUS "Using LLD with full LTO + whole-program vtables: ${LLD_PATH}")
+      target_link_options(cartogram_lib PUBLIC -fuse-ld=lld)
+      target_compile_options(cartogram_lib
+        PUBLIC
+        -flto=full
+        -fwhole-program-vtables
+        -fvirtual-function-elimination)
+    endif()
   else()
     message(STATUS "IPO/LTO not available: ${ipo_msg}")
   endif()
