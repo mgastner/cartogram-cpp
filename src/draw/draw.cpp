@@ -72,6 +72,13 @@ void InsetState::write_delaunay_triangles(
   const std::string &filename,
   const bool draw_projected_points)
 {
+  
+  
+  
+   // Skip if redirecting to stdout
+  if (args_.redirect_exports_to_stdout) {
+    return;
+  }
   std::cerr << "Writing " << filename << ".svg" << std::endl;
 
   Canvas cvs(filename + ".svg", lx_, ly_);
@@ -118,6 +125,10 @@ void InsetState::write_delaunay_triangles(
 
 void InsetState::write_quadtree(const std::string &filename)
 {
+   // Skip if redirecting to stdout
+  if (args_.redirect_exports_to_stdout) {
+    return;
+  }
   std::cerr << "Writing " << filename << ".svg" << std::endl;
 
   Canvas cvs(filename + ".svg", lx_, ly_);
@@ -135,6 +146,10 @@ void InsetState::write_quadtree(const std::string &filename)
 
 void InsetState::write_intersections_image()
 {
+  // Skip if redirecting to stdout
+  if (args_.redirect_exports_to_stdout) {
+    return;
+  }
   unsigned int res = intersections_resolution;
   std::string svg_name = inset_name() + "_intersections_" +
                          std::to_string(n_finished_integrations()) + ".svg";
@@ -165,6 +180,12 @@ void InsetState::write_map(
   const bool equal_area_map,
   const std::unordered_map<Point, Vector> vectors) const
 {
+  std::cerr << "Redirect value: " << args_.redirect_exports_to_stdout << std::endl;
+
+  // Skip if redirecting to stdout
+  if (args_.redirect_exports_to_stdout) {
+    return;
+  }
   const auto svg_name = file_name + ".svg";
   std::cerr << "Writing " << svg_name << std::endl;
 
