@@ -2,12 +2,8 @@
 #include "parse_arguments.hpp"
 #include "progress_tracker.hpp"
 
-
 int main(const int argc, const char *argv[])
 {
-
-  std::cerr << "Cartogram C++ version 0.1.0" << std::endl;
-  
   // Parse command-line arguments
   Arguments args = parse_arguments(argc, argv);
 
