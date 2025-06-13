@@ -1,0 +1,6 @@
+config:
+  MD013: false      # ignore line-length
+  MD033: false      # allow inline HTML
+  MD059: false      # allow non-descriptive link-text
+  MD029:
+  style: ordered    # sequential prefixes required
