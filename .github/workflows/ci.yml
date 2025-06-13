@@ -132,16 +132,28 @@ jobs:
             --build=missing \
             -s build_type=${{ matrix.build_type }} \
             -s compiler.cppstd=20 \
-            -o "*:shared=False"
+            -o "*:shared=False" \
+            -o "*:fPIC=False"
 
       - name: Configure & build
         run: |
           source .venv/bin/activate
+
+          if [[ "${{ runner.os }}" == "Linux" ]]; then
+              FIND_SUFFIX='-DCMAKE_FIND_LIBRARY_SUFFIXES=.a'
+              EXE_FLAGS='-static -static-libstdc++ -static-libgcc -pthread'
+          else
+              FIND_SUFFIX=''
+              EXE_FLAGS=''
+          fi
+
           cmake -S . -B build \
             -DCMAKE_TOOLCHAIN_FILE=build/build/${{ matrix.build_type }}/generators/conan_toolchain.cmake \
             -DCMAKE_BUILD_TYPE=${{ matrix.build_type }} \
             -DBUILD_SHARED_LIBS=OFF \
-            -DCMAKE_EXPORT_COMPILE_COMMANDS=ON
+            -DCMAKE_EXPORT_COMPILE_COMMANDS=ON \
+            ${FIND_SUFFIX} \
+            -DCMAKE_EXE_LINKER_FLAGS="${EXE_FLAGS}"
           cmake --build build -j$(nproc || sysctl -n hw.ncpu)
 
       - name: Package build folder
