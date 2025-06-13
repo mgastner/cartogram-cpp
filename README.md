@@ -3,6 +3,7 @@
 <p align="center">
     <a href="https://go-cart.io"><img src ="img/gocart_logo.svg" width="65%"></a>
 </p>
+The website can be accessed using this <a href = "https://go-cart.io">link.</a>
 
 This program uses the fast flow-based method developed by Michael T. Gastner, Vivien Seguy, and Pratyush More. For more information, you may refer to the following [paper](https://www.pnas.org/content/115/10/E2156):
 
