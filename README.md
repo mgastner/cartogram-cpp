@@ -1,7 +1,7 @@
 # cartogram-cpp: Cartogram generator in C++ [![DOI](https://zenodo.org/badge/281575635.svg)](https://zenodo.org/badge/latestdoi/281575635) [![License: AGPL v3](https://img.shields.io/badge/License-AGPL%20v3-blue.svg)](https://www.gnu.org/licenses/agpl-3.0)
 
 <p align="center">
-    <a href="https://go-cart.io"><img src ="img/gocart_logo.svg" width="65%"></a>
+    <a href="https://go-cart.io"><img src ="img/gocart_logo.svg" alt="gocart.io logo" width="65%"></a>
 </p>
 
 This repository contains the underlying C++ program that powers [go-cart.io](https://go-cart.io). If you'd only like to create a cartogram, you may find it easier to visit the website directly. Otherwise, if you'd like to make code contributions, feature suggestions and/or play with the inner workings of our cartogram generator, you're at the right place!
@@ -20,26 +20,26 @@ Run the following command (replace `your-geojson-file.geojson` file with your ge
 cartogram your-geojson-file.geojson your-csv-file.csv
 ```
 
--   The first argument's input is a GeoJSON or JSON file, in the standard GeoJSON format.
--   The second argument's input is a `.csv` file with data about target areas.
+- The first argument's input is a GeoJSON or JSON file, in the standard GeoJSON format.
+- The second argument's input is a `.csv` file with data about target areas.
 
 _Note: use the `-h` flag to display more options._
 
 The CSV file should be in the following format:
 
-| NAME_1     | Data (e.g., Population) | Color   |
-| :--------- | :---------------------- | :------ |
-| Bruxelles  | 1208542                 | #e74c3c |
-| Vlaanderen | 6589069                 | #f1c40f |
-| Wallonie   | 3633795                 | #34495e |
+| NAME_1           | Data (e.g., Population) | Color   |
+| :--------------- | :---------------------- | :------ |
+| Brussels-Capital | 1208542                 | #e74c3c |
+| Flanders         | 6589069                 | #f1c40f |
+| Wallonia         | 3633795                 | #34495e |
 
--   `NAME_1` should be the same as the identifying property's name in the GeoJSON. The rows should also have the same data as is present in the identifying property.
--   `Data` contains the data you would like your cartogram to based on.
--   `Color` is the color you would like the geographic region to be. Colors may be represented in the following manner:
+- `NAME_1` should be the same as the identifying property's name in the GeoJSON. The rows should also have the same data as is present in the identifying property.
+- `Data` contains the data you would like your cartogram to based on.
+- `Color` is the color you would like the geographic region to be. Colors may be represented in the following manner:
 
-    1.  `cornflowerblue`: html color codes supported by `CSS3` (case-insensitive), full list of supported colors may be found in the "Extended colors" section of [web colors](https://en.wikipedia.org/wiki/Web_colors).
-    2.  `"rgb(255, 0, 120)"` or `rgb(255 0 120)` or `"255, 0, 120"` or `255 0 120`: red, green and blue values out of 255.
-    3.  `#e74c3c`: hex code of color, must start with `#`.
+    1. `cornflowerblue`: html color codes supported by `CSS3` (case-insensitive), full list of supported colors may be found in the "Extended colors" section of [web colors](https://en.wikipedia.org/wiki/Web_colors).
+    2. `"rgb(255, 0, 120)"` or `rgb(255 0 120)` or `"255, 0, 120"` or `255 0 120`: red, green and blue values out of 255.
+    3. `#e74c3c`: hex code of color, must start with `#`.
 
 You may find sample GeoJSON (containing geographic data) and CSV (containing information about target areas, colors and other visual variables) files in the `cartogram-cpp/sample_data` directory.
 
@@ -62,6 +62,7 @@ Only `Debug` build commands are shown below, but the same commands can be run wi
 ``` shell
 virtualenv .venv && .venv/bin/pip install -U -r requirements.txt
 ```
+
 and activate it:
 
 ``` shell
@@ -74,14 +75,13 @@ source .venv/bin/activate
 .venv/bin/conan remote update conancenter --url=https://center2.conan.io
 ```
 
-The following command will detect your system's profile and set it up for you. If you already have a profile set up, this may yeild an error, in which case you may skip this step.
+The following command will detect your system's profile and set it up for you. If you already have a profile set up, this may yield an error, in which case you may skip this step.
 
 ``` shell
 .venv/bin/conan profile detect
 ```
 
 3. Install dependencies via Conan
-
 
 <!-- Alternatively, we can run `export CMAKE_MINIMUM_POLICY_VERSION=3.5` before running the `conan` command to still have everything working and remove the python dependency -->
 
@@ -92,16 +92,19 @@ The following command will detect your system's profile and set it up for you. I
 4. Compile the project via CMake
 
 Configure,
+
 ``` shell
 .venv/bin/cmake -B build/Debug -S . -DCMAKE_TOOLCHAIN_FILE=build/Debug/generators/conan_toolchain.cmake -DCMAKE_BUILD_TYPE=Debug -DCMAKE_EXPORT_COMPILE_COMMANDS=ON
 ```
 
 Build,
+
 ``` shell
 .venv/bin/cmake --build build/Debug -j4
 ```
 
 And, optionally, install the program globally:
+
 ``` shell
 sudo .venv/bin/cmake --install build/Debug
 ```
@@ -129,6 +132,7 @@ To run a specific unit test, specify the test's name. For example, to run the `t
 ```
 
 #### Stress Tests
+
 This test will run all the maps in the `cartogram-cpp/sample_data` folder.
 
 To run only the stress tests:
@@ -138,6 +142,7 @@ To run only the stress tests:
 ```
 
 #### Fuzzer Tests
+
 Fuzzer tests run maps in the `cartogram-cpp/sample_data` folder with random data.
 
 To run only the fuzzer tests:
@@ -145,6 +150,7 @@ To run only the fuzzer tests:
 ``` shell
 .venv/bin/ctest --test-dir build/Debug -L fuzzer --verbose
 ```
+
 This test will take a while to finish.
 
 Add `--verbose` to the command to see more details about the test results.
@@ -191,14 +197,13 @@ sudo make uninstall -C build
 
 Upon successful uninstallation, the following will be outputted:
 
-    > Built target uninstall
+  > Built target uninstall
 
 Further, running `cartogram` should no longer work.
 
 ### Pushing changes to [go-cart.io](https://go-cart.io)
 
-To push changes to production, please follow the the instructions on [go-cart-io/carotgram-docker](https://github.com/go-cart-io/cartogram-docker).
-
+To push changes to production, please follow the the instructions on [go-cart-io/cartogram-docker](https://github.com/go-cart-io/cartogram-docker).
 
 ### Contributing
 
