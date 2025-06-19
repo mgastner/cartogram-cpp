@@ -4,6 +4,8 @@
     <a href="https://go-cart.io"><img src ="img/gocart_logo.svg" alt="gocart.io logo" width="65%"></a>
 </p>
 
+This repository contains the underlying C++ program that powers [go-cart.io](https://go-cart.io). If you'd only like to create a cartogram, you may find it easier to visit the website directly. Otherwise, if you'd like to make code contributions, feature suggestions and/or play with the inner workings of our cartogram generator, you're at the right place!
+
 This program uses the fast flow-based method developed by Michael T. Gastner, Vivien Seguy, and Pratyush More. For more information, you may refer to the following [paper](https://www.pnas.org/content/115/10/E2156):
 
 Gastner MT, Seguy V, More P. _Fast flow-based algorithm for creating density-equalizing map projections_. Proc Natl Acad Sci USA 115(10):E2156–E2164 (2018). <https://doi.org/10.1073/pnas.0400280101>
