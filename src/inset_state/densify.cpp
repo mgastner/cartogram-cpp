@@ -220,35 +220,6 @@ static std::vector<Point> densification_points(
   return intersections;
 }
 
-static std::unordered_set<Point> new_points(
-  Polygon original,
-  Polygon densified)
-{
-
-  // We need an ordered set, because set difference is only defined for
-  // ordered sets.
-  std::set<Point> original_set;
-  std::set<Point> dens_set;
-  // Iterate over each point in the outer boundary of the polygon
-  for (unsigned int i = 0; i < original.size(); ++i) {
-    original_set.insert(original[i]);
-  }
-  for (unsigned int i = 0; i < densified.size(); ++i) {
-    dens_set.insert(densified[i]);
-  }
-
-  // Subtract the original set from the densified set
-  // (all points in dens_set that are not in original_set)
-  std::unordered_set<Point> new_points;
-  std::set_difference(
-    dens_set.begin(),
-    dens_set.end(),
-    original_set.begin(),
-    original_set.end(),
-    std::inserter(new_points, new_points.begin()));
-  return new_points;
-}
-
 void InsetState::densify_geo_divs()
 {
   timer.start("Densification (using Grid Diagonals)");

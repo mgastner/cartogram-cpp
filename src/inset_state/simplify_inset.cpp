@@ -48,7 +48,9 @@ void InsetState::simplify(const unsigned int target_points_per_inset)
       auto end = ct.vertices_in_constraint_end(cit);
 
       Polygon ext_ring;
-      ext_ring.reserve(std::distance(beg, end) - 1);
+      const std::ptrdiff_t len = std::distance(beg, end);
+      if (len > 1)
+        ext_ring.reserve(static_cast<std::size_t>(len - 1));
       for (auto it = beg; std::next(it) != end; ++it)
         ext_ring.push_back((*it)->point());
 
@@ -60,7 +62,9 @@ void InsetState::simplify(const unsigned int target_points_per_inset)
         end = ct.vertices_in_constraint_end(cit);
 
         Polygon int_ring;
-        int_ring.reserve(std::distance(beg, end) - 1);
+        const std::ptrdiff_t ring_len = std::distance(beg, end);
+        if (ring_len > 1)
+          ext_ring.reserve(static_cast<std::size_t>(ring_len - 1));
         for (auto it = beg; std::next(it) != end; ++it)
           int_ring.push_back((*it)->point());
 
