@@ -27,8 +27,8 @@ constexpr unsigned int default_resolution = 16;
 constexpr unsigned int intersections_resolution = 1;
 
 // Points after simplification
-constexpr unsigned int default_target_points_per_inset = 10000;
-constexpr unsigned int min_points_per_ring = 10;
+constexpr unsigned int default_target_points_per_inset = 30000;
+constexpr unsigned int min_points_per_ring = 20;
 
 // Minimum size of polygons as proportion of total area
 constexpr double default_minimum_polygon_area = 0.0001;
