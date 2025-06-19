@@ -144,6 +144,10 @@ Arguments parse_arguments(const int argc, const char *argv[])
       "reached")
     .default_value(static_cast<unsigned int>(0))
     .scan<'u', unsigned int>();
+  arguments.add_argument("--verbose")
+    .help("Boolean: Print verbose output")
+    .default_value(false)
+    .implicit_value(true);
 
   // Parse command-line arguments
   try {
@@ -210,6 +214,10 @@ Arguments parse_arguments(const int argc, const char *argv[])
   args.inset_col = arguments.get<std::string>("--inset");
   args.color_col = arguments.get<std::string>("--color");
   args.label_col = arguments.get<std::string>("--label");
+
+  // Check if user wants verbose output
+  args.verbose = arguments.get<bool>("--verbose");
+
   // Check if user wants to redirect output to stdout
   if (arguments.is_used("-O") && !args.simplify && !args.qtdt_method) {
     std::cerr << "ERROR: simplification disabled!\n";

@@ -64,6 +64,8 @@ struct Arguments {
   bool plot_quadtree;
   bool skip_projection;
 
+  bool verbose;
+
   // Column names in provided visual variables file (CSV)
   std::optional<std::string> id_col;
   std::optional<std::string> area_col;

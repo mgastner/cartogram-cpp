@@ -96,7 +96,9 @@ void InsetState::integrate(ProgressTracker &progress_tracker)
   while (continue_integrating()) {
 
     update_file_prefix();
-    timer.start(file_prefix_);
+
+    if (args_.verbose)
+      timer.start(file_prefix_);
 
     // 1. Fill/Rasterize Density
     fill_with_density();
@@ -108,7 +110,8 @@ void InsetState::integrate(ProgressTracker &progress_tracker)
     if (!flatten_density()) {
 
       // Flatten density has failed. Increase blur width and try again
-      timer.stop(file_prefix_);
+      if (args_.verbose)
+        timer.stop(file_prefix_);
       continue;
     }
 
@@ -125,7 +128,8 @@ void InsetState::integrate(ProgressTracker &progress_tracker)
       n_finished_integrations_);
     increment_integration();
 
-    timer.stop(file_prefix_);
+    if (args_.verbose)
+      timer.stop(file_prefix_);
   }
   timer.stop("Integration");
 
