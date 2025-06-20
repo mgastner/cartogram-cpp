@@ -146,9 +146,10 @@ jobs:
             echo "CC=gcc-${{ matrix.version }}"  >> $GITHUB_ENV
             echo "CXX=g++-${{ matrix.version }}" >> $GITHUB_ENV
           else
-            sudo apt-get install -y clang-${{ matrix.version }} lld
+            sudo apt-get install -y clang-${{ matrix.version }} lld-${{ matrix.version }}
             echo "CC=clang-${{ matrix.version }}"   >> $GITHUB_ENV
             echo "CXX=clang++-${{ matrix.version }}" >> $GITHUB_ENV
+            echo "LD=ld.lld-${{ matrix.version }}" >> $GITHUB_ENV
           fi
       # We only perform static builds so the output can be exported as an artifact
       # for testing on a clean system without installing dependencies.
