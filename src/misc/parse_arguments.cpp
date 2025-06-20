@@ -124,11 +124,10 @@ Arguments parse_arguments(const int argc, const char *argv[])
 
   // Arguments of column names in provided visual variables file (CSV)
   std::string pre = "String: Column name for ";
-  arguments.add_argument("--id")
-    .help(
-      pre + "IDs of geographic divisions [default: 1st CSV column header]");
-  arguments.add_argument("--area")
-    .help(pre + "target areas [default: 2nd CSV column]");
+  arguments.add_argument("--id").help(
+    pre + "IDs of geographic divisions [default: 1st CSV column header]");
+  arguments.add_argument("--area").help(
+    pre + "target areas [default: 2nd CSV column]");
   arguments.add_argument("--color", "--colour")
     .default_value(std::string("Color"))
     .help(pre + "colors");
