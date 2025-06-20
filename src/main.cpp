@@ -52,7 +52,7 @@ int main(const int argc, const char *argv[])
 
   // Iterate over insets and integrate each one
   for (InsetState &inset_state : cart_info.ref_to_inset_states()) {
-    inset_state.integrate(progress_tracker);
+    inset_state.integrate(progress_tracker, cart_info.n_insets());
   }
 
   // Rescale insets in correct proportion to each other

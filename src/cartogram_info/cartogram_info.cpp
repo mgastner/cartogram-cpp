@@ -120,8 +120,10 @@ void CartogramInfo::preprocess()
   }
 
   if (args_.export_preprocessed) {
+
     // Output rescaled GeoJSON
     write_geojson("input_processed");
+
     // processed = simplified + rescaled
     // and potentially projected + small polygons removed
 
@@ -196,7 +198,7 @@ void CartogramInfo::replace_missing_and_zero_target_areas()
   double total_start_area_with_data = 0.0;
   double total_target_area_with_data = 0.0;
   for (const InsetState &inset_state : inset_states_) {
-    for (const auto &gd : inset_state.geo_divs()) {
+    for (const GeoDiv &gd : inset_state.geo_divs()) {
       if (!inset_state.target_area_is_missing(gd.id())) {
         total_start_area_with_data += gd.area();
         total_target_area_with_data += inset_state.target_area_at(gd.id());
@@ -221,7 +223,7 @@ void CartogramInfo::replace_missing_and_zero_target_areas()
   bool small_target_area_exists = false;
   bool missing_target_area_exists = false;
   for (InsetState &inset_state : inset_states_) {
-    for (const auto &gd : inset_state.geo_divs()) {
+    for (const GeoDiv &gd : inset_state.geo_divs()) {
       const double target_area = inset_state.target_area_at(gd.id());
       inset_state.insert_whether_input_target_area_is_missing(
         gd.id(),
@@ -253,7 +255,7 @@ void CartogramInfo::replace_missing_and_zero_target_areas()
                 << std::endl;
       double min_positive_area = dbl_inf;
       for (const InsetState &inset_state : inset_states_) {
-        for (const auto &gd : inset_state.geo_divs()) {
+        for (const GeoDiv &gd : inset_state.geo_divs()) {
           min_positive_area = std::min(min_positive_area, gd.area());
         }
       }
@@ -262,7 +264,7 @@ void CartogramInfo::replace_missing_and_zero_target_areas()
 
     // Replace the small target areas
     for (InsetState &inset_state : inset_states_) {
-      for (const auto &gd : inset_state.geo_divs()) {
+      for (const GeoDiv &gd : inset_state.geo_divs()) {
 
         // Current target area
         const double target_area = inset_state.target_area_at(gd.id());
@@ -295,7 +297,7 @@ void CartogramInfo::replace_missing_and_zero_target_areas()
 
     // Assign new target areas to GeoDivs
     for (InsetState &inset_state : inset_states_) {
-      for (const auto &gd : inset_state.geo_divs()) {
+      for (const GeoDiv &gd : inset_state.geo_divs()) {
         if (inset_state.target_area_is_missing(gd.id())) {
           double new_target_area;
 
@@ -403,7 +405,7 @@ InsetState CartogramInfo::convert_to_inset_state()
   InsetState new_inset_state("", args_);
 
   for (const InsetState &inset_state : inset_states_) {
-    for (const auto &geo_div : inset_state.geo_divs()) {
+    for (const GeoDiv &geo_div : inset_state.geo_divs()) {
       new_inset_state.push_back(geo_div);
       new_inset_state.insert_color(
         geo_div.id(),
@@ -448,7 +450,10 @@ void CartogramInfo::write_svg(const std::string &suffix)
   for (const InsetState &inset_state : inset_states_) {
     inset_names += inset_state.pos();
   }
-  insets_combined.write_map(
-    map_name_ + "_" + inset_names + "_" + suffix,
-    false);
+  // Only generate inset-named map if there's more than one inset
+  if (n_insets() > 1) {
+    insets_combined.write_map(
+      map_name_ + "_" + inset_names + "_" + suffix,
+      false);
+  }
 }
