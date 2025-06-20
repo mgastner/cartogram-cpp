@@ -18,6 +18,7 @@ void InsetState::simplify(const unsigned int target_points_per_inset)
     std::max(target_points_per_inset, min_points_per_ring * n_rings);
   const double ratio =
     static_cast<double>(target_pts) / static_cast<double>(n_pts_before);
+  std::cerr << "Target points: " << target_pts << std::endl;
   std::cerr << "Simplifying the inset. " << std::endl;
 
   // Store Polygons as a CT (Constrained Triangulation) object. Code inspired
