@@ -212,6 +212,8 @@ static void extract_crs(const nlohmann::json &j, std::string &crs)
   std::cerr << "Coordinate reference system: " << crs << std::endl;
 }
 
+// Extract unique properties from GeoJSON and return them as a map
+// The keys are the property names, and the values are vectors of
 static std::map<std::string, std::vector<std::string>>
 extract_unique_properties_map(const nlohmann::json &j)
 {
@@ -408,7 +410,23 @@ void CartogramInfo::read_geojson()
     args_.skip_projection = true;
   }
 
-  unique_properties_map_ = extract_unique_properties_map(j);
+  // If args_.id_col is specified, use that as the sole unique property
+  if (args_.id_col) {
+
+    // Create a map with the id_col as the single key and
+    // its value as a vector of Ids
+    for (const auto &feature : j["features"]) {
+      const auto properties = feature["properties"];
+
+      // Double check that id_col actually exists
+      assert(properties.contains(*args_.id_col));
+      const std::string id = strip_quotes(properties[*args_.id_col].dump());
+      unique_properties_map_[*args_.id_col].push_back(id);
+    }
+  } else {
+    unique_properties_map_ = extract_unique_properties_map(j);
+  }
+
   assert(unique_properties_map_.size() > 0);
 
   // Set the first key inside the unique_properties_map_ as the default ID
