@@ -101,7 +101,7 @@ jobs:
             name: ubuntu-release-gcc
           - os: ubuntu-latest
             compiler: clang
-            version: 16
+            version: 19
             build_type: Release
             name: ubuntu-release-clang
           - os: ubuntu-latest
