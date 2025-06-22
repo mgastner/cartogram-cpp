@@ -4,6 +4,20 @@
 #include <string>
 #include <vector>
 
+/**
+ * @brief A utility class for converting string representations of numbers to decimal format.
+ * 
+ * This class handles various number formats including:
+ * - Regular decimal numbers (e.g. "123.456", "123,456")
+ * - Scientific notation (e.g. "1.23e-4", "1.23E4")
+ * - Special value "NA"
+ * 
+ * For scientific notation:
+ * - Both 'e' and 'E' are supported as exponent markers
+ * - The mantissa can use either '.' or ',' as decimal separator
+ * - The exponent must be an integer and can be negative
+ * - The mantissa must be a valid decimal number
+ */
 class StringToDecimalConverter
 {
 private:
