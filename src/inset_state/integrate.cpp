@@ -27,13 +27,13 @@ void InsetState::preprocess()
     std::cerr << "End of initial simplification of " << pos_ << std::endl;
   }
 
-  // Plot if requested
-  if (args_.plot_polygons) {
+  // Plot if requested (but not when redirecting to stdout)
+  if (args_.plot_polygons && !args_.redirect_exports_to_stdout) {
 
     // Color if necessary
     auto_color();
     initialize_identity_proj();
-    write_map(inset_name_ + "_input", args_.plot_grid, true);
+    write_map(inset_name_ + "_input", true);
   }
 
   timer.stop("Preprocessing");
@@ -137,9 +137,9 @@ void InsetState::integrate(ProgressTracker &progress_tracker)
   std::cerr << "Finished integrating inset " << pos_ << std::endl;
   progress_tracker.update_and_print_progress_end_integration(n_geo_divs());
 
-  // Write SVG for this inset, if requested
-  if (args_.plot_polygons) {
-    write_map(inset_name() + "_output", args_.plot_grid, false);
+  // Write SVG for this inset, if requested (but not when redirecting to stdout)
+  if (args_.plot_polygons && !args_.redirect_exports_to_stdout) {
+    write_map(inset_name() + "_output", false);
   }
 
   // Project original map with cumulative projection

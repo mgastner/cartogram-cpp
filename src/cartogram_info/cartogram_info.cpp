@@ -435,6 +435,11 @@ void CartogramInfo::write_shifted_insets()
 
 void CartogramInfo::write_svg(const std::string &suffix)
 {
+  // Skip SVG output if redirect_exports_to_stdout is enabled
+  if (args_.redirect_exports_to_stdout) {
+    return;
+  }
+
   InsetState insets_combined = convert_to_inset_state();
   insets_combined.rescale_map();
 
