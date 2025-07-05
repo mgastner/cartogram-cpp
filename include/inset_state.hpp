@@ -277,7 +277,6 @@ public:
 
   void write_map(
     const std::string &,
-    bool,
     bool equal_area_map = false,
     const std::unordered_map<Point, Vector> =
       std::unordered_map<Point, Vector>()) const;

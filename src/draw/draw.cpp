@@ -161,7 +161,6 @@ void InsetState::write_intersections_image()
 
 void InsetState::write_map(
   const std::string &file_name,
-  const bool plot_grid,
   const bool equal_area_map,
   const std::unordered_map<Point, Vector> vectors) const
 {
@@ -177,7 +176,7 @@ void InsetState::write_map(
     /*colours       =*/has_colors,
     *this);
 
-  if (plot_grid) {
+  if (args_.plot_grid) {
     write_grid(cvs, *this);
     write_legend(cvs, equal_area_map, *this);
   }

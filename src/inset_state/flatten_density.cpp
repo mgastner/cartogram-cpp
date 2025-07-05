@@ -34,7 +34,7 @@ bool InsetState::flatten_density()
     create_and_refine_quadtree();
     create_delaunay_t();
 
-    if (args_.plot_quadtree) {
+    if (args_.plot_quadtree && !args_.redirect_exports_to_stdout) {
       write_quadtree(file_prefix_ + "_quadtree");
       write_delaunay_triangles(file_prefix_ + "a_delaunay_t", false);
     }

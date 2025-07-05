@@ -27,8 +27,8 @@ void InsetState::blur_density()
   execute_fftw_bwd_plan();
   timer.stop("Blur");
 
-  // Do not plot if the blur width is too small
-  if (args_.plot_density && bw > 0.1) {
+  // Do not plot if the blur width is too small or when redirecting to stdout
+  if (args_.plot_density && bw > 0.1 && !args_.redirect_exports_to_stdout) {
     std::string file_name = file_prefix_ + "_blurred_density.svg";
     write_density_image(file_name);
   }
