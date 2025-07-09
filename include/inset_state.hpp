@@ -2,15 +2,15 @@
 #define INSET_STATE_HPP_
 
 #include "colors.hpp"
+#include "constants.hpp"
 #include "ft_real_2d.hpp"
 #include "geo_div.hpp"
 #include "intersection.hpp"
+#include "nlohmann/json.hpp"
 #include "parse_arguments.hpp"
+#include "progress_tracker.hpp"
 #include "time_tracker.hpp"
 #include <boost/multi_array.hpp>
-#include <cairo/cairo.h>
-#include <nlohmann/json.hpp>
-#include "progress_tracker.hpp"
 
 struct max_area_error_info {
   double value;
@@ -33,6 +33,7 @@ struct proj_qd {  // quadtree-delaunay projection
 class InsetState
 {
 private:
+  std::map<unsigned int, double> threshold_at_integration_;
   std::unordered_map<std::string, double> area_errors_;
 
   std::unordered_set<Point> unique_quadtree_corners_;
@@ -163,35 +164,17 @@ public:
   bool flatten_density();  // Flatten said density with integration
   void flatten_ellipse_density();
   void flatten_density_on_square_grid();
-  bool flatten_density_on_node_vertices(); // Bool to check if failed
+  bool flatten_density_on_node_vertices();  // Bool to check if failed
 
   const std::vector<GeoDiv> &geo_divs() const;
-  std::vector<std::vector<Color>> grid_cell_colors(unsigned int cell_width);
+  const GeoDiv &geo_div_at_id(std::string id) const;
+  GeoDiv &geo_div_at_id(std::string id);
   Polygon grid_cell_edge_points(
     unsigned int x,
     unsigned int y,
-    unsigned int cell_width,
-    bool plot_equal_area_map);
-  double grid_cell_target_area(
-    const unsigned int i,
-    const unsigned int j,
-    const double total_target_area,
-    const double total_inset_area);
-  double grid_cell_area(
-    unsigned int x,
-    unsigned int y,
-    unsigned int cell_width);
-  double grid_cell_area_km(const unsigned int i, const unsigned int j);
+    unsigned int cell_width = plotted_cell_length,
+    bool plot_equal_area_map = false) const;
   void holes_inside_polygons() const;
-  double grid_cell_target_area_per_km(
-    const unsigned int i,
-    const unsigned int j,
-    const double total_target_area,
-    const double total_inset_area);
-  Bbox get_bbox_bar(const double bar_width, const double bar_height);
-
-  std::pair<double, unsigned int> get_km_legend_length();
-  std::pair<double, unsigned int> get_visual_variable_legend_length();
 
   void increment_n_fails_during_flatten_density();
   void increment_integration();
@@ -229,10 +212,6 @@ public:
   void make_fftw_plans_for_rho();
   void min_ellipses();
   max_area_error_info max_area_error() const;
-  std::pair<double, double> max_and_min_grid_cell_area(
-    unsigned int cell_width);
-  std::pair<Point, Point> max_and_min_grid_cell_area_index(
-    unsigned int cell_width);
   unsigned int n_finished_integrations() const;
   unsigned int n_fails_during_flatten_density() const;
   unsigned int n_geo_divs() const;
@@ -254,7 +233,7 @@ public:
   void project_with_bilinear_interpolation();
   Point projected_point(const Point &, bool = false) const;
   Point projected_point_with_triangulation(const Point &, bool = false) const;
-  void project_point_set(std::unordered_set<Point>& unprojected);
+  void project_point_set(std::unordered_set<Point> &unprojected);
   void project_with_cum_proj();
   void project_with_delaunay_t(bool);
   void project_with_triangulation();
@@ -272,70 +251,44 @@ public:
   void set_grid_dimensions(unsigned int, unsigned int);
   void set_geo_divs(std::vector<GeoDiv> new_geo_divs);
   void set_inset_name(const std::string &);
+  void simplify(unsigned int);
   void store_initial_area();
   void store_initial_target_area(const double override = 0.0);
-  void simplify(unsigned int);
   void store_original_geo_divs();
+  void store_quadtree_cell_corners(const Quadtree &);
   double target_area_at(const std::string &) const;
   bool target_area_is_missing(const std::string &) const;
   double total_inset_area(bool = false) const;
   double total_target_area() const;
-  Polygon transform_to_equal_area_projection_coor(Polygon edge_points);
   std::array<Point, 3> transformed_triangle(
     const std::array<Point, 3> &,
     bool = false) const;
 
   // Apply given function to all points
   void transform_points(const std::function<Point(Point)> &, bool = false);
-  void transform_polygons(const std::function<Polygon(Polygon)> &, bool = false);
+  void transform_polygons(
+    const std::function<Polygon(Polygon)> &,
+    bool = false);
   void scale_points(double scale_factor, bool project_original = false);
   void move_points(double dx, double dy, bool project_original = false);
   std::array<Point, 3> untransformed_triangle(const Point &, bool = false)
     const;
-  void trim_grid_heatmap(cairo_t *cr, double padding);
   void update_delaunay_t();
   void update_file_prefix();
   void update_gd_ids(const std::map<std::string, std::string> &);
 
-  // Cairo functions
-  void write_cairo_map(
+  void write_map(
     const std::string &,
     bool,
+    bool equal_area_map = false,
     const std::unordered_map<Point, Vector> =
       std::unordered_map<Point, Vector>()) const;
-  void write_cairo_polygons_to_svg(
-    const std::string &,
-    bool,
-    bool,
-    bool,
-    const std::unordered_map<Point, Vector> &) const;
 
   void write_delaunay_triangles(const std::string &, const bool);
   void write_grid_heatmap_data(const std::string filename);
-  void write_grid_heatmap_image(
-    const std::string filename,
-    const bool plot_equal_area_map,
-    const bool crop_polygons);
-  void write_cells_on_surface(cairo_t *cr);
-  void write_grid_colors_on_surface(
-    cairo_t *cr,
-    bool plot_equal_area_map,
-    bool crop_polygons);
-  void write_grid_on_surface(cairo_t *cr);
-  void write_polygons_on_surface(
-    cairo_t *cr,
-    const bool fill_polygons,
-    const bool colors,
-    const bool plot_equal_area_map,
-    const double line_width = 0.0,
-    const Color clr = Color{0.0, 0.0, 0.0}) const;
-  void write_labels_on_surface(cairo_t *cr);
   void write_density_image(
-    const std::string filename,
-    const bool plot_pycnophylactic);
+    const std::string filename);
   void write_intersections_image();
-  void write_legend_on_surface(cairo_t *cr, bool equal_area_map);
-  void write_polygon_points_on_surface(cairo_t *, Color);
   void write_quadtree(const std::string &);
 };
 

@@ -29,6 +29,6 @@ void InsetState::blur_density()
   // Do not plot if the blur width is too small
   if (args_.plot_density && bw > 0.1) {
     std::string file_name = file_prefix_ + "_blurred_density.svg";
-    write_density_image(file_name, false);
+    write_density_image(file_name);
   }
 }
