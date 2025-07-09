@@ -88,3 +88,6 @@ Makefile
 .idea
 .Rproj.user
 .vscode-ctags
+
+!conanfile.txt
+!requirements.txt
