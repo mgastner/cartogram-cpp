@@ -1,0 +1,4 @@
+pip
+wheel
+conan==2.16.1
+cmake==3.30.0

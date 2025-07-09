@@ -37,42 +37,64 @@ cartogram ./sample_data/world_by_country_since_2022/world_by_country_since_2022.
 
 Data produced by code in this repository are subject to the MIT license found [here](./LICENSE) and should cite the aforementioned paper by Gastner et al. (2018).
 
-While cloning this repository, please ensure you use the `--recurse-submodules` flag like so:
+Clone the repo:
 
 ```shell script
-git clone --recurse-submodules https://github.com/mgastner/cartogram-cpp.git
+git clone https://github.com/mgastner/cartogram-cpp.git
 ```
 
-## Dependencies
+## Build
 
-Please note, we only support UNIX-based systems, and have only tested on macOS, Linux, and GNU. That being said, the program should work on Windows Subsystem for Linux (WSL) as well, for which we have conducted minor testing.
+1. Create a virtual environment with the required dependencies
 
-### macOS
-
-#### Installing Homebrew
-
-Install [homebrew](brew.sh) by running the following command:
-
-```shell script
-/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+``` shell
+virtualenv .venv && .venv/bin/pip install -U -r requirements.txt
 ```
 
-#### Installing dependencies through Homebrew
+and activate it:
 
-Install pkg-config, boost, fftw, nlohmann-json, and cmake by running the following command:
-
-```shell script
-brew install libomp pkg-config boost fftw nlohmann-json cmake cairo
+``` shell
+source .venv/bin/activate
 ```
 
-### Debian-based distributions (Ubuntu, Arch Linux etc.)
+2. Setup Conan
 
-#### Installing relevant dependencies through apt:
+``` shell
+.venv/bin/conan remote update conancenter --url=https://center2.conan.io
+```
 
-Have a look through to apt-requirements.txt if you'd like to see what all will be installed. Then, run the following commands to install all dependencies through apt:
+The following command will detect your system's profile and set it up for you. If you already have a profile set up, this may yield an error, in which case you may skip this step.
 
-```shell script
-apt install -y g++-11 build-essential cmake libboost-all-dev nlohmann-json3-dev libomp-dev libfftw3-dev libcairo2-dev
+``` shell
+.venv/bin/conan profile detect
+```
+
+3. Install dependencies via Conan
+
+<!-- Alternatively, we can run `export CMAKE_MINIMUM_POLICY_VERSION=3.5` before running the `conan` command to still have everything working and remove the python dependency -->
+
+``` shell
+.venv/bin/conan install . --build=missing -s build_type=Release -s compiler.cppstd=20
+```
+
+4. Compile the project via CMake
+
+Configure,
+
+``` shell
+.venv/bin/cmake -B build/Release -S . -DCMAKE_TOOLCHAIN_FILE=build/Release/generators/conan_toolchain.cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_EXPORT_COMPILE_COMMANDS=ON
+```
+
+Build,
+
+``` shell
+.venv/bin/cmake --build build/Release -j10
+```
+
+And, optionally, install the program globally:
+
+``` shell
+sudo .venv/bin/cmake --install build/Release
 ```
 
 ### Windows (Using WSL)
@@ -83,27 +105,10 @@ Please install [Ubuntu](https://apps.microsoft.com/detail/9pdxgncfsczv) from the
 
 We recommend you to compile outside the `/mnt` directory, as compiling in the `/mnt` directory may lead to unexpected behavior.
 
-### Installation
-
-Go to the `cartogram-cpp` directory in your preferred terminal and execute the following commands.
-
-```shell script
-cmake -B build
-make -C build
-sudo make install -C build
-```
-
-If your computer has multiple cores, you may use the `make` command with the `-j` flag to use all your cores, or `-j` followed by a number to use the specified number of cores (for example, `-j4` to use 4 cores). You may perform the entire installation at once with:
-
-```shell script
-sudo cmake -B build && sudo make install -j -C build
-```
-
-Using lesser cores than you have is recommended so that your computer still has some headroom for other tasks. Thus, it may be a good idea for you to modify the above snippet, appending your preferred number of cores to `-j`.
 
 #### Installing using VScode
 
-If you are using VScode, you may also install the program by running the `CMake: Install` command from the command palette (accessible via `Ctrl/Command + Shift + P`). By default, VSCode builds the `DEBUG` version. If you would like to build the `RELEASE` version, you may change the build type in the `CMake: Select Variant` command. The `RELEASE` version will be much faster.
+If you are using VScode, you may also install the program by running the `CMake: Install` command from the command palette (accessible via `Ctrl/Command + Shift + P`). By default, VSCode builds the `Release` version. If you would like to build the `RELEASE` version, you may change the build type in the `CMake: Select Variant` command. The `RELEASE` version will be much faster.
 
 If you encounter any issues, please look at the troubleshooting section below, especially the last bullet point.
 
