@@ -40,15 +40,6 @@ target_link_libraries(cartogram_lib
 
 if(CMAKE_BUILD_TYPE STREQUAL Release)
   target_compile_options(cartogram_lib PUBLIC -O3)
-  target_compile_options(cartogram_lib PUBLIC
-    -fno-math-errno # drop errno bookkeeping
-    -fno-trapping-math # assume FP exceptions never trap
-    -fno-signed-zeros # treat +0 and –0 as identical
-  )
-
-  if(CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
-    target_compile_options(cartogram_lib PUBLIC -fdenormal-fp-math=positive-zero) # flush sub-normals to +0
-  endif()
 else()
   target_compile_options(cartogram_lib PUBLIC -O1)
 
