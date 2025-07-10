@@ -72,6 +72,7 @@ int main(const int argc, const char *argv[])
     std::vector<std::pair<size_t, size_t>> changes =
       inset_state.densification_changes;
     double max_ratio = 0.0;
+    double avg_ratio = 0.0;
     std::pair<size_t, size_t> worst_result = {0, 0};
     for (size_t i = 0; i < changes.size(); ++i) {
       double ratio = static_cast<double>(changes[i].second) / changes[i].first;
@@ -79,13 +80,15 @@ int main(const int argc, const char *argv[])
                 << "From: " << changes[i].first << ", "
                 << "To: " << changes[i].second << ", "
                 << "Ratio: " << ratio << std::endl;
+      avg_ratio += ratio;
       if (ratio > max_ratio) {
         max_ratio = ratio;
         worst_result = changes[i];
       }
     }
-
+    avg_ratio /= changes.size();
     std::cerr << "Maximum ratio: " << max_ratio << std::endl;
+    std::cerr << "Average ratio: " << avg_ratio << std::endl;
     std::string csv_file_name = "densification_changes.csv";
     if (!std::filesystem::exists(csv_file_name)) {
       std::ofstream out_file_csv(csv_file_name);
@@ -93,7 +96,7 @@ int main(const int argc, const char *argv[])
         std::cerr << "ERROR writing CSV: failed to open " << csv_file_name
                   << std::endl;
       } else {
-        out_file_csv << "csv_file,from,to,max_ratio\n";
+        out_file_csv << "csv_file,from,to,max_ratio,avg_ratio\n";
       }
     }
 
@@ -103,7 +106,7 @@ int main(const int argc, const char *argv[])
                  << "," << worst_result.second << ","
                  << static_cast<double>(worst_result.second) /
                       worst_result.first
-                 << "\n";
+                 << "," << avg_ratio << "\n";
     out_file_csv.close();
   }
 
