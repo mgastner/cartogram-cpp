@@ -73,7 +73,7 @@ Arguments parse_arguments(const int argc, const char *argv[])
     .help("Boolean: Enable Quadtree-Delaunay Triangulation Method")
     .default_value(true)
     .implicit_value(false);
-  arguments.add_argument("-S", "--simplify_and_densify")
+  arguments.add_argument("-S", "--disable_simplify_and_densify")
     .help(
       "Boolean: Disable iterative simplification and densification of "
       "polygons")
