@@ -19,10 +19,10 @@ jobs:
         include:
           # Linux
           - os: ubuntu-latest
-            compiler: gcc
-            version: 13
+            compiler: clang
+            version: 16
             build_type: Release
-            name: ubuntu-release-gcc
+            name: ubuntu-release-clang
           # macOS
           - os: macos-14
             compiler: apple-clang
