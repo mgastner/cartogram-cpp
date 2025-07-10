@@ -238,7 +238,6 @@ Arguments parse_arguments(const int argc, const char *argv[])
     if (arguments.is_used("--n_points")) {
       std::cerr << "--n_points ignored." << std::endl;
     }
-    std::cerr << arguments << std::endl;
   }
 
   // Check whether T flag is set, but not Q
