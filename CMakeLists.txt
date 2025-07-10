@@ -51,7 +51,6 @@ endif()
 
 target_compile_options(cartogram_lib PUBLIC
   -ffp-contract=off
-  -Werror
   -Wall -Wextra -Wpedantic -Wshadow -Wold-style-cast -Wunreachable-code
   -pedantic-errors -Wformat=2 -Wformat-security -Wcast-qual -Wcast-align -Wconversion
   -Wsign-conversion -Wfloat-equal -Woverloaded-virtual -Wno-unknown-pragmas

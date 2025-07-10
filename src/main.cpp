@@ -68,6 +68,45 @@ int main(const int argc, const char *argv[])
     cart_info.write_svg("cartogram");
   }
 
+  for (InsetState &inset_state : cart_info.ref_to_inset_states()) {
+    std::vector<std::pair<size_t, size_t>> changes =
+      inset_state.densification_changes;
+    double max_ratio = 0.0;
+    std::pair<size_t, size_t> worst_result = {0, 0};
+    for (size_t i = 0; i < changes.size(); ++i) {
+      double ratio = static_cast<double>(changes[i].second) / changes[i].first;
+      std::cerr << "Iteration: " << i + 1 << ", "
+                << "From: " << changes[i].first << ", "
+                << "To: " << changes[i].second << ", "
+                << "Ratio: " << ratio << std::endl;
+      if (ratio > max_ratio) {
+        max_ratio = ratio;
+        worst_result = changes[i];
+      }
+    }
+
+    std::cerr << "Maximum ratio: " << max_ratio << std::endl;
+    std::string csv_file_name = "densification_changes.csv";
+    if (!std::filesystem::exists(csv_file_name)) {
+      std::ofstream out_file_csv(csv_file_name);
+      if (!out_file_csv) {
+        std::cerr << "ERROR writing CSV: failed to open " << csv_file_name
+                  << std::endl;
+      } else {
+        out_file_csv << "csv_file,from,to,max_ratio\n";
+      }
+    }
+
+    // Append to the CSV file
+    std::ofstream out_file_csv(csv_file_name, std::ios_base::app);
+    out_file_csv << inset_state.inset_name() << "," << worst_result.first
+                 << "," << worst_result.second << ","
+                 << static_cast<double>(worst_result.second) /
+                      worst_result.first
+                 << "\n";
+    out_file_csv.close();
+  }
+
   // Stop total time timer, and print time summary report
   // Export report with area errors to CSV if requested
   cart_info.print_time_report();

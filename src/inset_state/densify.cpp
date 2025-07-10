@@ -427,6 +427,9 @@ void InsetState::densify_geo_divs_using_delaunay_t()
   // points_before_densification_.clear();
 
   std::cerr << "Densifying using Delaunay Triangulation" << std::endl;
+  size_t n_points_bef_densification = n_points();
+  std::cerr << "Points Before Densification: " << n_points_bef_densification
+            << std::endl;
   std::vector<GeoDiv> geodivs_dens;
   geodivs_dens.reserve(geo_divs_.size());
 
@@ -514,6 +517,12 @@ void InsetState::densify_geo_divs_using_delaunay_t()
     geodivs_dens.emplace_back(std::move(gd_dens));
   }
   geo_divs_ = std::move(geodivs_dens);
+  size_t n_points_aft_densification = n_points();
+  std::cerr << "Points After Densification: " << n_points_aft_densification
+            << std::endl;
+  densification_changes.emplace_back(
+    n_points_bef_densification,
+    n_points_aft_densification);
   is_simple(__func__);
   timer.stop("Densification (using Delanuay Triangles)");
 }

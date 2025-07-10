@@ -32,6 +32,8 @@ struct proj_qd {  // quadtree-delaunay projection
 
 class InsetState
 {
+public:
+  std::vector<std::pair<size_t, size_t>> densification_changes;
 private:
   std::map<unsigned int, double> threshold_at_integration_;
   std::unordered_map<std::string, double> area_errors_;
