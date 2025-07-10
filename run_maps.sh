@@ -43,7 +43,7 @@ for map_dir in */; do
       extra="--world"
     fi
 
-    command="../build/cartogram \"../sample_data/${geojson_file}\" \"../sample_data/${csv_file}\" $extra"
+    command="../build/Release/cartogram \"../sample_data/${geojson_file}\" \"../sample_data/${csv_file}\" $extra"
     echo "Command: $command"
 
     # Show the full path from the script location for the current map folder
