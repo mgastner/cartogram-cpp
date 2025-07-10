@@ -1,5 +1,6 @@
 #include "round_point.hpp"
 #include "constants.hpp"
+#include <bit>
 
 // TODO: THE COMMENTED-OUT CODE TREATED DIFFERENCES OF 1e-13 TO BE
 //       DISTINGUISHABLE, WHICH WAS TOO STRICT IN PRACTICE. AS A TEMPORARY
@@ -17,14 +18,19 @@ bool almost_equal(const double a, const double b)
 }
 
 // Determine whether points are almost equal
-bool points_almost_equal(const Point &a, const Point &b)
+bool almost_equal(const Point &a, const Point &b)
 {
   return (almost_equal(a.x(), b.x()) && almost_equal(a.y(), b.y()));
 }
 
-bool point_less_than(const Point &a, const Point &b)
+bool less_than(const double a, const double b)
 {
-  return !(points_almost_equal(a, b) || a >= b);
+  return !(almost_equal(a, b) || a >= b);
+}
+
+bool less_than(const Point &a, const Point &b)
+{
+  return !(almost_equal(a, b) || a >= b);
 }
 
 // Function to round a double to a nearby bicimal. Bicimals are a more
@@ -37,7 +43,8 @@ double rounded_to_bicimal(
 {
   double whole;
   const double fractional = std::modf(d, &whole);
-  const unsigned int n_bicimals = 40 - std::bit_width(std::max(lx, ly));
+  const unsigned int n_bicimals =
+    40u - static_cast<unsigned int>(std::bit_width(std::max(lx, ly)));
   const unsigned long int power_of_2 =
     (static_cast<unsigned long int>(1) << n_bicimals);
   auto dp2 = static_cast<double>(power_of_2);

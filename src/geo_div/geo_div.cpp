@@ -13,7 +13,9 @@ const std::set<std::string> &GeoDiv::adjacent_geodivs() const
 
 void GeoDiv::adjacent_to(const std::string &id)
 {
-  adjacent_geodivs_.insert(id);
+  if (id != id_) {
+    adjacent_geodivs_.insert(id);
+  }
 }
 
 double GeoDiv::area() const
@@ -77,9 +79,9 @@ const std::vector<Ellipse> &GeoDiv::min_ellipses() const
   return min_ellipses_;
 }
 
-unsigned int GeoDiv::n_points() const
+size_t GeoDiv::n_points() const
 {
-  unsigned int n_points = 0;
+  size_t n_points = 0;
   for (const auto &pwh : polygons_with_holes_) {
     const auto &outer = pwh.outer_boundary();
     n_points += outer.size();
@@ -99,7 +101,7 @@ unsigned int GeoDiv::n_rings() const
   return n_rings;
 }
 
-unsigned int GeoDiv::n_polygons_with_holes() const
+size_t GeoDiv::n_polygons_with_holes() const
 {
   return polygons_with_holes_.size();
 }

@@ -10,7 +10,7 @@ void InsetState::preprocess()
   }
 
   // Rescale map to fit into a rectangular box [0, lx] * [0, ly]
-  rescale_map(args_.n_grid_rows_or_cols, args_.world);
+  rescale_map();
 
   // Store original coordinates for morphing animation
   if (args_.redirect_exports_to_stdout) {
@@ -32,7 +32,8 @@ void InsetState::preprocess()
 
     // Color if necessary
     auto_color();
-    write_cairo_map(inset_name_ + "_input", args_.plot_grid);
+    initialize_identity_proj();
+    write_map(inset_name_ + "_input", args_.plot_grid, true);
   }
 
   timer.stop("Preprocessing");
@@ -95,7 +96,9 @@ void InsetState::integrate(ProgressTracker &progress_tracker)
   while (continue_integrating()) {
 
     update_file_prefix();
-    timer.start(file_prefix_);
+
+    if (args_.verbose)
+      timer.start(file_prefix_);
 
     // 1. Fill/Rasterize Density
     fill_with_density();
@@ -107,7 +110,8 @@ void InsetState::integrate(ProgressTracker &progress_tracker)
     if (!flatten_density()) {
 
       // Flatten density has failed. Increase blur width and try again
-      timer.stop(file_prefix_);
+      if (args_.verbose)
+        timer.stop(file_prefix_);
       continue;
     }
 
@@ -124,7 +128,8 @@ void InsetState::integrate(ProgressTracker &progress_tracker)
       n_finished_integrations_);
     increment_integration();
 
-    timer.stop(file_prefix_);
+    if (args_.verbose)
+      timer.stop(file_prefix_);
   }
   timer.stop("Integration");
 
@@ -134,7 +139,7 @@ void InsetState::integrate(ProgressTracker &progress_tracker)
 
   // Write SVG for this inset, if requested
   if (args_.plot_polygons) {
-    write_cairo_map(inset_name() + "_output", args_.plot_grid);
+    write_map(inset_name() + "_output", args_.plot_grid, false);
   }
 
   // Project original map with cumulative projection

@@ -1,6 +1,7 @@
 #include "cartogram_info.hpp"
 #include "constants.hpp"
 #include "csv.hpp"
+#include "round_point.hpp"
 #include <cstdlib>
 #include <iostream>
 
@@ -35,6 +36,16 @@ double CartogramInfo::cart_initial_total_target_area() const
   return target_area;
 }
 
+bool CartogramInfo::converged() const
+{
+  for (const InsetState &inset_state : inset_states_) {
+    if (!inset_state.converged()) {
+      return false;
+    }
+  }
+  return true;
+}
+
 double CartogramInfo::area() const
 {
   double area = 0.0;
@@ -53,16 +64,16 @@ bool CartogramInfo::is_world_map() const
   return is_world_map_;
 }
 
-unsigned int CartogramInfo::n_geo_divs() const
+size_t CartogramInfo::n_geo_divs() const
 {
-  unsigned int n_geo_divs = 0;
+  size_t n_geo_divs = 0;
   for (const InsetState &inset_state : inset_states_) {
     n_geo_divs += inset_state.n_geo_divs();
   }
   return n_geo_divs;
 }
 
-unsigned int CartogramInfo::n_insets() const
+size_t CartogramInfo::n_insets() const
 {
   return inset_states_.size();
 }
@@ -290,7 +301,7 @@ void CartogramInfo::replace_missing_and_zero_target_areas()
 
           // If all target areas are missing, make all GeoDivs equal to their
           // geographic area
-          if (total_target_area_with_data == 0.0) {
+          if (almost_equal(total_target_area_with_data, 0.0)) {
             new_target_area = gd.area();
           } else {
 
@@ -321,11 +332,6 @@ void CartogramInfo::rescale_insets()
         true);
     }
   }
-}
-
-void CartogramInfo::set_id_header(const std::string &id_header)
-{
-  id_header_ = id_header;
 }
 
 std::string CartogramInfo::set_map_name(const std::string &map_name)
@@ -430,7 +436,7 @@ void CartogramInfo::write_shifted_insets()
 void CartogramInfo::write_svg(const std::string &suffix)
 {
   InsetState insets_combined = convert_to_inset_state();
-  insets_combined.rescale_map(512, is_world_map_);
+  insets_combined.rescale_map();
 
   // TODO: Figure out how to add a grid
   // scale_factor = sqrt(scale_factor);
@@ -442,7 +448,7 @@ void CartogramInfo::write_svg(const std::string &suffix)
   for (const InsetState &inset_state : inset_states_) {
     inset_names += inset_state.pos();
   }
-  insets_combined.write_cairo_map(
+  insets_combined.write_map(
     map_name_ + "_" + inset_names + "_" + suffix,
-    true);
+    false);
 }

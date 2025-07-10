@@ -8,4 +8,4 @@ bool pwh_is_larger(
   const Polygon_with_holes &pwh1,
   const Polygon_with_holes &pwh2);
 
-#endif // PWH_H
+#endif  // PWH_H

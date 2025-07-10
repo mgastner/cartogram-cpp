@@ -38,14 +38,15 @@ std::vector<std::vector<intersection> > InsetState::intersec_with_parallel_to(
       // This should not be the case, as if floor and ceil return too low or
       // too high values, the rays will not intersect the polygon.
       // Investigate why the commented lines caused problems in the past.
-      for (int k = min_lim - 1;
-      // for (int k = floor(min_lim) - 1;
-      // for (int k = min_lim;
-      // for (int k = floor(min_lim);
-      // for (unsigned int k = static_cast<unsigned int>(std::max(0, (int)floor(min_lim) - 1));
-           k <= ceil(max_lim) + 1;
+      for (int k = static_cast<int>(min_lim - 1);
+           // for (int k = floor(min_lim) - 1;
+           // for (int k = min_lim;
+           // for (int k = floor(min_lim);
+           // for (unsigned int k = static_cast<unsigned int>(std::max(0,
+           // (int)floor(min_lim) - 1));
+           k <= static_cast<int>(ceil(max_lim) + 1);
            // Same issue as above TODO here.
-          //  k <= std::min((unsigned int)(max_lim), grid_length - 1);
+           //  k <= std::min((unsigned int)(max_lim), grid_length - 1);
            ++k) {
 
         // If the rays are in x-direction, iterate over each ray between the
@@ -96,8 +97,7 @@ std::vector<std::vector<intersection> > InsetState::intersec_with_parallel_to(
           if (intersections.size() % 2 != 0) {
             std::cerr << "ERROR: Incorrect Topology. "
                       << "Number of intersections: " << intersections.size()
-                      << ". "
-                      << axis << "-coordinate: " << ray << ". "
+                      << ". " << axis << "-coordinate: " << ray << ". "
                       << "Intersection points: ";
 
             for (auto &intersection : intersections) {
@@ -105,7 +105,7 @@ std::vector<std::vector<intersection> > InsetState::intersec_with_parallel_to(
                         << " ";
             }
             std::cerr << std::endl << std::endl;
-            _Exit(932875);
+            std::exit(932875);
           }
           std::sort(intersections.begin(), intersections.end());
 
@@ -122,54 +122,6 @@ std::vector<std::vector<intersection> > InsetState::intersec_with_parallel_to(
     }
   }
   return scanlines;
-}
-
-// Creates continuity/adjacency graph using horizontal and vertical scans
-void InsetState::create_contiguity_graph(unsigned int resolution)
-{
-  // Calculate horizontal and vertical scanlines
-  for (char axis : {'x', 'y'}) {
-    const std::vector<std::vector<intersection> > scanlines =
-      intersec_with_parallel_to(axis, resolution);
-    const unsigned int grid_length = (axis == 'x' ? ly_ : lx_);
-
-    // Iterate over rows (if axis is 'x') or columns
-    for (unsigned int k = 0; k < grid_length; ++k) {
-
-      // Iterate over rays in this row or column
-      for (double ray = k + 0.5 / resolution; ray < k + 1;
-           ray += (1.0 / resolution)) {
-
-        // Intersections for one ray
-        std::vector<intersection> intersections =
-          scanlines[static_cast<unsigned int>(
-            round((ray - (0.5 / resolution) * resolution)))];
-
-        // Sort intersections in ascending order
-        sort(intersections.begin(), intersections.end());
-        const int size = static_cast<int>(intersections.size()) - 1;
-
-        // Find adjacent GeoDivs by iterating over intersections
-        for (int l = 1; l < size; l += 2) {
-          const double coord_1 = intersections[l].x();
-          const double coord_2 = intersections[l + 1].x();
-          const std::string gd_1 = intersections[l].geo_div_id;
-          const std::string gd_2 = intersections[l + 1].geo_div_id;
-
-          // Update adjacency
-          if (gd_1 != gd_2 && coord_1 == coord_2) {
-            for (auto &gd : geo_divs_) {
-              if (gd.id() == gd_1) {
-                gd.adjacent_to(gd_2);
-              } else if (gd.id() == gd_2) {
-                gd.adjacent_to(gd_1);
-              }
-            }
-          }
-        }
-      }
-    }
-  }
 }
 
 // Returns line segments highlighting intersection points using scans above
@@ -203,12 +155,16 @@ std::vector<Segment> InsetState::intersecting_segments(
             intersec[l].ray_enters == intersec[l + 1].ray_enters &&
             intersec[l].ray_enters && l + 2 <= intersec.size()) {
             Segment temp;
-            if (axis == 'x' && intersec[l + 1].x() != intersec[l + 2].x()) {
+            if (
+              axis == 'x' &&
+              !almost_equal(intersec[l + 1].x(), intersec[l + 2].x())) {
               temp = Segment(
                 Point(intersec[l + 1].x(), ray),
                 Point(intersec[l + 2].x(), ray));
               int_segments.push_back(temp);
-            } else if (intersec[l + 1].y() != intersec[l + 2].y()) {
+            } else if (!almost_equal(
+                         intersec[l + 1].y(),
+                         intersec[l + 2].y())) {
               temp = Segment(
                 Point(ray, intersec[l + 1].y()),
                 Point(ray, intersec[l + 2].y()));

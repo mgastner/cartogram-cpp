@@ -1,7 +1,7 @@
 #ifndef PARSE_ARGUMENTS_HPP_
 #define PARSE_ARGUMENTS_HPP_
 
-#include "argparse.hpp"
+#include "argparse/argparse.hpp"
 
 struct Arguments {
 
@@ -11,6 +11,10 @@ struct Arguments {
 
   // Default number of grid cells along longer Cartesian coordinate axis
   unsigned int n_grid_rows_or_cols;
+
+  // Maximum allowed number of grid cells along longer Cartesian coordinate
+  // axis
+  unsigned int max_allowed_autoscale_grid_length;
 
   // Target number of points to retain after simplification
   unsigned int target_points_per_inset;
@@ -30,7 +34,7 @@ struct Arguments {
   // Use Quadtree-Delaunay triangulation method
   bool qtdt_method;
 
-// Should the polygons be simplified and densified?
+  // Should the polygons be simplified and densified?
   bool simplify;
 
   // If `rays` is true, we use the ray-shooting method to fill the grid cells.
@@ -59,12 +63,18 @@ struct Arguments {
   bool plot_polygons;
   bool plot_quadtree;
   bool skip_projection;
+
+  bool verbose;
+
+  // Column names in provided visual variables file (CSV)
+  std::optional<std::string> id_col;
+  std::optional<std::string> area_col;
+  std::string inset_col;
+  std::string color_col;
+  std::string label_col;
 };
 
 // Function to parse arguments and set variables in main()
-argparse::ArgumentParser parsed_arguments(
-  int argc,
-  const char *argv[],
-  Arguments &args);
+Arguments parse_arguments(int argc, const char *argv[]);
 
-#endif // PARSE_ARGUMENTS_HPP_
+#endif  // PARSE_ARGUMENTS_HPP_

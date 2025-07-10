@@ -1,8 +1,10 @@
-# cartogram-cpp: Cartogram generator in C++ [![DOI](https://zenodo.org/badge/281575635.svg)](https://zenodo.org/badge/latestdoi/281575635) [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](./LICENSE)
+# cartogram-cpp: Cartogram generator in C++ [![DOI](https://zenodo.org/badge/281575635.svg)](https://zenodo.org/badge/latestdoi/281575635) [![License: AGPL v3](https://img.shields.io/badge/License-AGPL%20v3-blue.svg)](https://www.gnu.org/licenses/agpl-3.0)
 
 <p align="center">
-    <a href="https://go-cart.io"><img src ="img/gocart_logo.svg" width="65%"></a>
+    <a href="https://go-cart.io"><img src ="img/gocart_logo.svg" alt="gocart.io logo" width="65%"></a>
 </p>
+
+This repository contains the underlying C++ program that powers [go-cart.io](https://go-cart.io). If you'd only like to create a cartogram, you may find it easier to visit the website directly. Otherwise, if you'd like to make code contributions, feature suggestions and/or play with the inner workings of our cartogram generator, you're at the right place!
 
 This program uses the fast flow-based method developed by Michael T. Gastner, Vivien Seguy, and Pratyush More. For more information, you may refer to the following [paper](https://www.pnas.org/content/115/10/E2156):
 
@@ -37,141 +39,160 @@ cartogram ./sample_data/world_by_country_since_2022/world_by_country_since_2022.
 
 Data produced by code in this repository are subject to the MIT license found [here](./LICENSE) and should cite the aforementioned paper by Gastner et al. (2018).
 
-While cloning this repository, please ensure you use the `--recurse-submodules` flag like so:
-
-```shell script
-git clone --recurse-submodules https://github.com/mgastner/cartogram-cpp.git
-```
-
-## Dependencies
-
-Please note, we only support UNIX-based systems, and have only tested on macOS, Linux, and GNU. That being said, the program should work on Windows Subsystem for Linux (WSL) as well, for which we have conducted minor testing.
-
-### macOS
-
-#### Installing Homebrew
-
-Install [homebrew](brew.sh) by running the following command:
-
-```shell script
-/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
-```
-
-#### Installing dependencies through Homebrew
-
-Install pkg-config, boost, fftw, nlohmann-json, and cmake by running the following command:
-
-```shell script
-brew install libomp pkg-config boost fftw nlohmann-json cmake cairo
-```
-
-### Debian-based distributions (Ubuntu, Arch Linux etc.)
-
-#### Installing relevant dependencies through apt:
-
-Have a look through to apt-requirements.txt if you'd like to see what all will be installed. Then, run the following commands to install all dependencies through apt:
-
-```shell script
-apt install -y g++-11 build-essential cmake libboost-all-dev nlohmann-json3-dev libomp-dev libfftw3-dev libcairo2-dev
-```
-
-### Windows (Using WSL)
-
-For Windows users, we recommend using our program through Windows Subsystem for Linux (WSL).
-
-Please install [Ubuntu](https://apps.microsoft.com/detail/9pdxgncfsczv) from the Microsoft Store, and then follow the same instructions as for Debian-based distributions (found above).
-
-We recommend you to compile outside the `/mnt` directory, as compiling in the `/mnt` directory may lead to unexpected behavior.
-
-### Installation
-
-Go to the `cartogram-cpp` directory in your preferred terminal and execute the following commands.
-
-```shell script
-cmake -B build
-make -C build
-sudo make install -C build
-```
-
-If your computer has multiple cores, you may use the `make` command with the `-j` flag to use all your cores, or `-j` followed by a number to use the specified number of cores (for example, `-j4` to use 4 cores). You may perform the entire installation at once with:
-
-```shell script
-sudo cmake -B build && sudo make install -j -C build
-```
-
-Using lesser cores than you have is recommended so that your computer still has some headroom for other tasks. Thus, it may be a good idea for you to modify the above snippet, appending your preferred number of cores to `-j`.
-
-#### Installing using VScode
-
-If you are using VScode, you may also install the program by running the `CMake: Install` command from the command palette (accessible via `Ctrl/Command + Shift + P`). By default, VSCode builds the `DEBUG` version. If you would like to build the `RELEASE` version, you may change the build type in the `CMake: Select Variant` command. The `RELEASE` version will be much faster.
-
-If you encounter any issues, please look at the troubleshooting section below, especially the last bullet point.
-
-### Troubleshooting
-
-- If compilation suddenly stopped working for you, you may remove the `build` directory with `rm -rf build` and run the installation commands again.
-- If running `cmake -B build` gives you an error, it is likely that a dependency was not installed correctly. Rerun the appropriate commands above to install the required dependencies and try again.
-- If you get an error which mentions permission issues, try running the command that gave you the error with `sudo` prefixed, as done with `sudo make install -C build` above.
-- If `cmake` complains that it could not find a particular library, please try uninstalling it and installing it again. After reinstalling it, please also unlink it and link it with the `--force` flag.
-- If you get errors related to CGAL, it's likely you have another version of CGAL installed on your computer that is getting chosen instead of the one contained as a submodule within this repository. It's also possible that when cloning this repository, the `--recurse-submodule` flag was missing. Try running `git submodule init` and `git submodule update` in the root directory of the repository.
-- If VScode's `CMake: Install` does not work, make sure you own `/usr/local/bin` and the working directory. You may assign ownership to your account with `sudo chown -R $(whoami) .`, replacing `.` with the directory of choice.
-
-### Usage
+## Usage
 
 Run the following command (replace `your-geojson-file.geojson` file with your geographic data and `your-csv-file.csv` with your visual variables file, containing target areas for each geographic region):
 
-```shell script
+``` shell
 cartogram your-geojson-file.geojson your-csv-file.csv
 ```
 
--   The first argument's input is a GeoJSON or JSON file, in the standard GeoJSON format.
--   The second argument's input is a `.csv` file with data about target areas.
+- The first argument's input is a GeoJSON or JSON file, in the standard GeoJSON format.
+- The second argument's input is a `.csv` file with data about target areas.
 
 _Note: use the `-h` flag to display more options._
 
 The CSV file should be in the following format:
 
-| NAME_1     | Data (e.g., Population) | Color   |
-| :--------- | :---------------------- | :------ |
-| Bruxelles  | 1208542                 | #e74c3c |
-| Vlaanderen | 6589069                 | #f1c40f |
-| Wallonie   | 3633795                 | #34495e |
+| NAME_1           | Data (e.g., Population) | Color   |
+| :--------------- | :---------------------- | :------ |
+| Brussels-Capital | 1208542                 | #e74c3c |
+| Flanders         | 6589069                 | #f1c40f |
+| Wallonia         | 3633795                 | #34495e |
 
--   `NAME_1` should be the same as the identifying property's name in the GeoJSON. The rows should also have the same data as is present in the identifying property.
--   `Data` contains the data you would like your cartogram to based on.
--   `Color` is the color you would like the geographic region to be. Colors may be represented in the following manner:
+- `NAME_1` should be the same as the identifying property's name in the GeoJSON. The rows should also have the same data as is present in the identifying property.
+- `Data` contains the data you would like your cartogram to based on.
+- `Color` is the color you would like the geographic region to be. Colors may be represented in the following manner:
 
-    1.  `cornflowerblue`: html color codes supported by `CSS3` (case-insensitive), full list of supported colors may be found in the "Extended colors" section of [web colors](https://en.wikipedia.org/wiki/Web_colors).
-    2.  `"rgb(255, 0, 120)"` or `rgb(255 0 120)` or `"255, 0, 120"` or `255 0 120`: red, green and blue values out of 255.
-    3.  `#e74c3c`: hex code of color, must start with `#`.
+    1. `cornflowerblue`: html color codes supported by `CSS3` (case-insensitive), full list of supported colors may be found in the "Extended colors" section of [web colors](https://en.wikipedia.org/wiki/Web_colors).
+    2. `"rgb(255, 0, 120)"` or `rgb(255 0 120)` or `"255, 0, 120"` or `255 0 120`: red, green and blue values out of 255.
+    3. `#e74c3c`: hex code of color, must start with `#`.
 
 You may find sample GeoJSON (containing geographic data) and CSV (containing information about target areas, colors and other visual variables) files in the `cartogram-cpp/sample_data` directory.
 
 To test whether whether the program was installed successfully and is working fine, you may run the following command from the repository root:
 
-```shell script
+``` shell
 cartogram sample_data/world_by_country_since_2022/world_by_country_since_2022.geojson sample_data/world_by_country_since_2022/world_population_by_country_2010.csv --plot_polygons --world
 ```
 
 You may inspect the resultant SVG to check if everything looks as expected.
 
-### Testing
+## Development
 
-If you'd like to contribute to the project, please run our tests after you make any changes.
+We manage dependencies with a Python virtual environment and Conan 2. The project supports GCC, Clang, and Apple Clang, all with C++20 support. Please ensure that Python 3.10 or later and a C++20-supported compiler are installed before proceeding.
 
-To run the unit tests, execute the following command:
+Only `Debug` build commands are shown below, but the same commands can be run with `Release` build by replacing `Debug` with `Release`.
 
-```shell script
-ctest --verbose
+1. Create a virtual environment with the required dependencies
+
+``` shell
+virtualenv .venv && .venv/bin/pip install -U -r requirements.txt
 ```
 
-To learn more about the tests, you may go to the `cartogram-cpp/tests` directory and read the `README.md` file.
+and activate it:
 
-Additionally, you may go to the `cartogram-cpp/tests` directory and run the following command:
-
-```shell script
-bash stress_test.sh
+``` shell
+source .venv/bin/activate
 ```
+
+2. Setup Conan
+
+``` shell
+.venv/bin/conan remote update conancenter --url=https://center2.conan.io
+```
+
+The following command will detect your system's profile and set it up for you. If you already have a profile set up, this may yield an error, in which case you may skip this step.
+
+``` shell
+.venv/bin/conan profile detect
+```
+
+3. Install dependencies via Conan
+
+<!-- Alternatively, we can run `export CMAKE_MINIMUM_POLICY_VERSION=3.5` before running the `conan` command to still have everything working and remove the python dependency -->
+
+``` shell
+.venv/bin/conan install . --build=missing -s build_type=Debug -s compiler.cppstd=20
+```
+
+4. Compile the project via CMake
+
+Configure,
+
+``` shell
+.venv/bin/cmake -B build/Debug -S . -DCMAKE_TOOLCHAIN_FILE=build/Debug/generators/conan_toolchain.cmake -DCMAKE_BUILD_TYPE=Debug -DCMAKE_EXPORT_COMPILE_COMMANDS=ON
+```
+
+Build,
+
+``` shell
+.venv/bin/cmake --build build/Debug -j4
+```
+
+And, optionally, install the program globally:
+
+``` shell
+sudo .venv/bin/cmake --install build/Debug
+```
+
+### Tests
+
+To run all the tests, execute the following command from the root directory of the repository:
+
+``` shell
+.venv/bin/ctest --test-dir build/Debug --output-on-failure
+```
+
+#### Unit Tests
+
+To run only the unit tests:
+
+``` shell
+.venv/bin/ctest --test-dir build/Debug --output-on-failure -L unit
+```
+
+To run a specific unit test, specify the test's name. For example, to run the `test_string_to_decimal_converter.cpp` unit test, use:
+
+``` shell
+.venv/bin/ctest --test-dir build/Debug --output-on-failure test_string_to_decimal_converter.cpp
+```
+
+#### Stress Tests
+
+This test will run all the maps in the `cartogram-cpp/sample_data` folder.
+
+To run only the stress tests:
+
+``` shell
+.venv/bin/ctest --test-dir build/Debug --output-on-failure -L stress
+```
+
+#### Fuzzer Tests
+
+Fuzzer tests run maps in the `cartogram-cpp/sample_data` folder with random data.
+
+To run only the fuzzer tests:
+
+``` shell
+.venv/bin/ctest --test-dir build/Debug -L fuzzer --verbose
+```
+
+This test will take a while to finish.
+
+Add `--verbose` to the command to see more details about the test results.
+
+### Windows (Using WSL)
+
+For Windows users, we recommend using our program through Windows Subsystem for Linux (WSL).
+
+### Troubleshooting
+
+- If you are unable to compile on the latest version of Ubuntu/macOS, please open an issue.
+- If compilation suddenly stopped working for you, you may remove the `build` directory with `rm -rf build` and run the installation commands again.
+- If running one of the commands starting with `.venv/bin/cmake` gives you an error, it is likely that a dependency was not installed correctly. Rerun the appropriate commands above to install the required dependencies and try again. If it still fails, make sure you have the virtual environment activated by running `source .venv/bin/activate` in your terminal, and then try again.
+- If you get an error which mentions permission issues, try running the command that gave you the error with `sudo` prefixed. Alternatively, you may follow the next instruction.
+- If you still get permission issues or VScode's `CMake: Install` does not work, make sure you own the relevant directories (i.e. `/usr/local/bin` and the working directory). You may assign ownership to your account with `sudo chown -R $(whoami) .`, replacing `.` with the directory of choice.
 
 ### Benchmarking
 
@@ -203,17 +224,18 @@ sudo make uninstall -C build
 
 Upon successful uninstallation, the following will be outputted:
 
-    > Built target uninstall
+  > Built target uninstall
 
 Further, running `cartogram` should no longer work.
 
 ### Pushing changes to [go-cart.io](https://go-cart.io)
 
-To push changes to production, please follow the the instructions on [go-cart-io/carotgram-docker](https://github.com/go-cart-io/cartogram-docker).
-
+To push changes to production, please follow the the instructions on [go-cart-io/cartogram-docker](https://github.com/go-cart-io/cartogram-docker).
 
 ### Contributing
 
 Contributions are highly encouraged! Please feel free to take a stab at any at any of the open issues and send in a pull request. If you need help getting setup or more guidance contributing, please @ any of the main contributors (@adisidev, @nihalzp, @mgastner) under any of the open issues (or after creating your own issue), and we'll be happy to guide you!
 
-Maintainers, please make sure to run the "Build and Release" workflow under GitHub Actions before approving the pull request. You may delete the newly created release before merging the pull-request. Another release should be automatically created after merging with main.
+If you'd like to contribute to the project, please run our tests after you make any changes.
+
+Maintainers, please make sure all the CI build and test checks pass and the performance comparison CI check results are expected before approving the pull request.

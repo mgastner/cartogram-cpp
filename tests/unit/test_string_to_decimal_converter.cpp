@@ -1,6 +1,8 @@
-#define BOOST_TEST_MODULE StringToDecimalConverterTest
+#define BOOST_TEST_MODULE test_string_to_decimal_converter
 #include "string_to_decimal_converter.hpp"
-#include <boost/test/unit_test.hpp>
+#include <boost/test/included/unit_test.hpp>
+
+BOOST_AUTO_TEST_SUITE(StringToDecimalConverterTests)
 
 BOOST_AUTO_TEST_CASE(TestIsStrNA_True)
 {
@@ -20,7 +22,8 @@ BOOST_AUTO_TEST_CASE(TestValidCharacters_BasicNumeric)
 
 BOOST_AUTO_TEST_CASE(TestValidCharacters_CommasAndPoints)
 {
-  BOOST_CHECK(StringToDecimalConverter::is_str_valid_characters("123,456.789"));
+  BOOST_CHECK(
+    StringToDecimalConverter::is_str_valid_characters("123,456.789"));
 }
 
 BOOST_AUTO_TEST_CASE(TestValidCharacters_InvalidCharacters)
@@ -40,7 +43,8 @@ BOOST_AUTO_TEST_CASE(TestValidCharacters_MultipleHyphens)
 
 BOOST_AUTO_TEST_CASE(TestValidCharacters_HyphenNotAtStart)
 {
-  BOOST_CHECK(!StringToDecimalConverter::is_str_valid_characters("123-456.789"));
+  BOOST_CHECK(
+    !StringToDecimalConverter::is_str_valid_characters("123-456.789"));
 }
 
 BOOST_AUTO_TEST_CASE(TestCorrectFormat_SimpleNumeric)
@@ -73,3 +77,5 @@ BOOST_AUTO_TEST_CASE(TestCorrectFormat_PointAtEnd)
 {
   BOOST_CHECK(!StringToDecimalConverter::is_str_correct_format("123456789."));
 }
+
+BOOST_AUTO_TEST_SUITE_END()

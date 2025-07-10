@@ -4,11 +4,8 @@
 
 int main(const int argc, const char *argv[])
 {
-  // Struct to store command line arguments
-  Arguments args;
-
   // Parse command-line arguments
-  argparse::ArgumentParser arguments = parsed_arguments(argc, argv, args);
+  Arguments args = parse_arguments(argc, argv);
 
   // Initialize cart_info. It contains all the information about the cartogram
   // that needs to be handled by functions called from main().
@@ -21,7 +18,7 @@ int main(const int argc, const char *argv[])
   if (!args.visual_file_name.empty()) {
 
     // Read visual variables (e.g., area and color) from CSV
-    cart_info.read_csv(arguments);
+    cart_info.read_csv();
   }
 
   // Project to equal area, if necessary
@@ -29,7 +26,7 @@ int main(const int argc, const char *argv[])
   cart_info.project_to_equal_area();
 
   // Store total number of GeoDivs to monitor progress
-  double total_geo_divs = cart_info.n_geo_divs();
+  size_t total_geo_divs = cart_info.n_geo_divs();
 
   // Write input map, with insets nicely placed
   if (args.plot_polygons) {
@@ -42,7 +39,7 @@ int main(const int argc, const char *argv[])
   }
 
   // Track progress of the cartogram generation
-  ProgressTracker progress_tracker(total_geo_divs);
+  ProgressTracker progress_tracker(static_cast<double>(total_geo_divs));
 
   // Preprocess Insets for Integration:
   // -- Set inset name: map_name + "_" + inset_pos
@@ -74,5 +71,7 @@ int main(const int argc, const char *argv[])
   // Stop total time timer, and print time summary report
   // Export report with area errors to CSV if requested
   cart_info.print_time_report();
+  if (!cart_info.converged())
+    return EXIT_FAILURE;
   return EXIT_SUCCESS;
 }

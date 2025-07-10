@@ -1,6 +1,5 @@
 #include "progress_tracker.hpp"
 #include "constants.hpp"
-#include "indicators.hpp"
 
 // Constructor
 ProgressTracker::ProgressTracker(double total_geo_divs)
@@ -86,6 +85,6 @@ void ProgressTracker::print_progress(double progress)
 // Method to print the progress bar
 void ProgressTracker::print_progress_bar(double progress)
 {
-  bar_.set_progress(static_cast<int>(round(progress * 100)));
+  bar_.set_progress(static_cast<size_t>(round(progress * 100)));
   std::cerr << std::endl;  // Print a new line after the progress bar
 }

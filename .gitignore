@@ -25,6 +25,9 @@ cartogram
 !/tests/*.sh
 !/tests/*.cpp
 !/tests/*.md
+!/tests/unit
+!/tests/stress
+!/tests/fuzzer
 
 # Ignore the Testing logs
 /Testing
@@ -35,8 +38,14 @@ cartogram
 # Ignore test logs
 *.txt
 
-# But, don't ignore CMakeLists.txt
+# Don't ignore CMakeLists.txt
 !CMakeLists.txt
+
+# Don't ignore conanfile
+!conanfile.txt
+
+# Don't ignore requirements.txt
+!requirements.txt
 
 # Boilerplate code for .gitignore
 
@@ -84,7 +93,12 @@ bin
 cmake_install.cmake
 CTestTestfile.cmake
 CMakeCache.txt
+CMakeUserPresets.json
 Makefile
 .idea
 .Rproj.user
 .vscode-ctags
+
+# Ignore Python virtual environment
+venv
+.venv

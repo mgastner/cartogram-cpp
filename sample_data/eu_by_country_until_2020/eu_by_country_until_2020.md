@@ -1,6 +1,6 @@
 # Sources
 
-## NUTS_by_region_until_2020.geojson
+## eu_by_country_until_2020.geojson
 Eurostat. Accessed via GISCO Data Distribution.
 Downloaded from: https://gisco-services.ec.europa.eu/distribution/v2/nuts/download/ref-nuts-2021-03m.geojson.zip on 29 July 2022.
 
@@ -26,7 +26,7 @@ geojson_write(
   lon = NULL,
   geometry = "point",
   group = NULL,
-  file = "NUTS_by_country_since_2021.geojson",
+  file = "eu_by_country_until_2020.geojson",
   overwrite = TRUE,
   precision = NULL,
   convert_wgs84 = FALSE,
@@ -35,8 +35,6 @@ geojson_write(
 unlink(nuts_unzip)
   ```
   
-## NUTS_population_2021.csv
+## eu_population_by_country_2021.csv
 Source: Eurostat. Population on 1 January by age and sex.
 Downloaded on 29 July 2022 from https://appsso.eurostat.ec.europa.eu/nui/show.do?dataset=demo_pjan&lang=en.
-
-

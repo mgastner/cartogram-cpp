@@ -17,7 +17,14 @@ InsetState::InsetState(std::string pos, Arguments args)
 
 double InsetState::area_error_at(const std::string &id) const
 {
-  return area_errors_.at(id);
+  try {
+    return area_errors_.at(id);
+  } catch (const std::out_of_range &e) {
+    std::cerr << "ERROR: Key '" << id << "' not found in area_errors_. "
+              << "Exception: " << e.what() << std::endl;
+    // Re-throw, or return a default value
+    throw;
+  }
 }
 
 Bbox InsetState::bbox(bool original_bbox) const
@@ -29,9 +36,8 @@ Bbox InsetState::bbox(bool original_bbox) const
   double inset_ymin = dbl_inf;
   double inset_ymax = -dbl_inf;
 #pragma omp parallel for default(none) shared(geo_divs) \
-  reduction(min                                         \
-            : inset_xmin, inset_ymin) reduction(max     \
-                                                : inset_xmax, inset_ymax)
+  reduction(min : inset_xmin, inset_ymin)               \
+  reduction(max : inset_xmax, inset_ymax)
   for (const auto &gd : geo_divs) {
     for (const auto &pwh : gd.polygons_with_holes()) {
       const auto bb = pwh.bbox();
@@ -104,6 +110,7 @@ bool InsetState::continue_integrating() const
 
   // Actually hasn't converged, just reached integration limit
   if (!within_integration_limit && !has_converged) {
+    converge_ = false;
     std::cerr << "ERROR: Could not converge!" << std::endl;
     if (area_error_above_threshold)
       std::cerr << "Max area error above threshold!" << std::endl;
@@ -114,8 +121,7 @@ bool InsetState::continue_integrating() const
   // Print control output (at end of previous integration)
   std::cerr << "Max. area err: " << max_area_err << ", GeoDiv: " << worst_gd
             << std::endl;
-  std::cerr << "Current Area: "
-            << geo_divs_[geo_divs_id_to_index_.at(worst_gd)].area()
+  std::cerr << "Current Area: " << geo_div_at_id(worst_gd).area()
             << ", Target Area: " << target_area_at(worst_gd) << std::endl;
   std::cerr << "Area drift: " << area_drift * 100.0 << "%" << std::endl;
 
@@ -123,6 +129,7 @@ bool InsetState::continue_integrating() const
     // Print next integration information.
     std::cerr << "\nIntegration number " << n_finished_integrations()
               << std::endl;
+    std::cerr << "Dimensions : " << lx_ << " " << ly_ << std::endl;
     std::cerr << "Number of Points: " << n_points() << std::endl;
   }
   return continue_integration;
@@ -130,7 +137,14 @@ bool InsetState::continue_integrating() const
 
 Color InsetState::color_at(const std::string &id) const
 {
-  return colors_.at(id);
+  try {
+    return colors_.at(id);
+  } catch (const std::out_of_range &e) {
+    std::cerr << "ERROR: Key '" << id << "' not found in colors_. "
+              << "Exception: " << e.what() << std::endl;
+    // Re-throw, or return a default value
+    throw;
+  }
 }
 
 bool InsetState::color_found(const std::string &id) const
@@ -138,14 +152,14 @@ bool InsetState::color_found(const std::string &id) const
   return colors_.count(id);
 }
 
-bool InsetState::colors_empty() const
-{
-  return colors_.empty();
-}
-
-unsigned int InsetState::colors_size() const
+size_t InsetState::colors_size() const
 {
   return colors_.size();
+}
+
+bool InsetState::converged() const
+{
+  return converge_;
 }
 
 void InsetState::create_delaunay_t()
@@ -159,42 +173,6 @@ void InsetState::create_delaunay_t()
   timer.stop("Delaunay Triangulation");
 }
 
-// TODO: Choose which insert_constraint_safely to keep
-bool InsetState::insert_constraint_safely_to_dt(
-  Delaunay &dt,
-  const Point &p1,
-  const Point &p2)
-{
-  // Try-catch block to avoid inserting intersecting constraints
-  try {
-    dt.insert_constraint(p1, p2);
-    return true;
-  } catch (const std::exception &e) {
-    // Print more information about the exception
-    std::cerr << "WARNING (dt projected): Could not insert constraint between "
-              << p1 << " and " << p2 << std::endl;
-    std::cerr << e.what() << std::endl;
-    // Add to the list of failed constraints
-    failed_constraints_dt_projected_.push_back(Segment(p1, p2));
-    return false;
-  }
-}
-
-bool InsetState::insert_constraint_safely(const Point &p1, const Point &p2)
-{
-  // Try-catch block to avoid inserting intersecting constraints
-  try {
-    proj_qd_.dt.insert_constraint(p1, p2);
-    return true;
-  } catch (const std::exception &e) {
-    std::cerr << "WARNING DIAGONAL: Could not insert constraint between " << p1
-              << " and " << p2 << std::endl;
-    std::cerr << e.what() << std::endl;
-    // Add to the list of failed constraints
-    failed_constraints_.push_back(Segment(p1, p2));
-    return false;
-  }
-}
 void InsetState::update_delaunay_t()
 {
   timer.start("Update Delanuay Triangulation");
@@ -251,7 +229,7 @@ void InsetState::update_delaunay_t()
     const Point p2 = edge.target();
 
     // if edge is diagonal, ignore it
-    if (p1.x() != p2.x() && p1.y() != p2.y()) {
+    if (!almost_equal(p1.x(), p2.x()) && !almost_equal(p1.y(), p2.y())) {
       continue;
     }
 
@@ -323,12 +301,14 @@ void InsetState::update_delaunay_t()
     const Point p2_orig = reverse_triangle_transformation.at(p2);
 
     // Automatically pick the edge if it is diagonal
-    if (p1_orig.x() != p2_orig.x() && p1_orig.y() != p2_orig.y()) {
+    if (
+      !almost_equal(p1_orig.x(), p2_orig.x()) &&
+      !almost_equal(p1_orig.y(), p2_orig.y())) {
       constraints.push_back({p1_orig, p2_orig});
     }
 
     // If edge is vertical, only add it if there are no point in between
-    if (p1_orig.x() == p2_orig.x()) {
+    if (almost_equal(p1_orig.x(), p2_orig.x())) {
       auto &y_coor_points = same_x_coor_points[p1_orig.x()];
 
       const double y_min = std::min(p1_orig.y(), p2_orig.y());
@@ -336,9 +316,9 @@ void InsetState::update_delaunay_t()
 
       // Binary search to find the number of points between the two y
       // coordinates
-      int cnt =
+      auto cnt = static_cast<std::size_t>(
         std::upper_bound(y_coor_points.begin(), y_coor_points.end(), y_max) -
-        std::lower_bound(y_coor_points.begin(), y_coor_points.end(), y_min);
+        std::lower_bound(y_coor_points.begin(), y_coor_points.end(), y_min));
 
       if (cnt == 2) {  // No points in between
         constraints.push_back({p1_orig, p2_orig});
@@ -346,7 +326,7 @@ void InsetState::update_delaunay_t()
     }
 
     // If edge is horizontal, only add it if there are no point in between
-    if (p1_orig.y() == p2_orig.y()) {
+    if (almost_equal(p1_orig.y(), p2_orig.y())) {
       // Check if there is a point in between
       auto &x_coor_points = same_y_coor_points[p1_orig.y()];
 
@@ -355,9 +335,9 @@ void InsetState::update_delaunay_t()
 
       // Binary search to find the number of points between the two y
       // coordinates
-      int cnt =
+      auto cnt = static_cast<std::size_t>(
         std::upper_bound(x_coor_points.begin(), x_coor_points.end(), x_max) -
-        std::lower_bound(x_coor_points.begin(), x_coor_points.end(), x_min);
+        std::lower_bound(x_coor_points.begin(), x_coor_points.end(), x_min));
       if (cnt == 2) {  // No points in between
         constraints.push_back({p1_orig, p2_orig});
       }
@@ -422,8 +402,8 @@ void InsetState::export_time_report() const
 
     // Time taken (in seconds)
     std::string timer_task_name = inset_name_ + "_" + std::to_string(i);
-    std::string time_in_seconds =
-      std::to_string(timer.duration(timer_task_name).count() / 1000.0);
+    std::string time_in_seconds = std::to_string(
+      static_cast<double>(timer.duration(timer_task_name).count()) / 1000.0);
     csv_rows[i + 1].push_back(time_in_seconds);
 
     // Max area error for that integration
@@ -443,132 +423,281 @@ const std::vector<GeoDiv> &InsetState::geo_divs() const
   return geo_divs_;
 }
 
-void InsetState::create_and_store_quadtree_cell_corners()
+// Const and non-const version of geo_div_at_id
+const GeoDiv &InsetState::geo_div_at_id(std::string id) const
 {
-  timer.start("Delaunay Triangulation");
-  std::vector<Point> points;
+  try {
+    return geo_divs_[geo_divs_id_to_index_.at(id)];
+  } catch (const std::out_of_range &e) {
+    std::cerr << "ERROR: Key '" << id
+              << "' not found in geo_divs_id_to_index_. "
+              << "Exception: " << e.what() << std::endl;
+    // Re-throw, or return a default value
+    throw;
+  }
+}
+GeoDiv &InsetState::geo_div_at_id(std::string id)
+{
+  try {
+    return geo_divs_[geo_divs_id_to_index_.at(id)];
+  } catch (const std::out_of_range &e) {
+    std::cerr << "ERROR: Key '" << id
+              << "' not found in geo_divs_id_to_index_. "
+              << "Exception: " << e.what() << std::endl;
+    // Re-throw, or return a default value
+    throw;
+  }
+}
 
-  for (const auto &gd : geo_divs_) {
+// Get unique points from GeoDivs
+static std::vector<Point> get_unique_points(InsetState &inset_state)
+{
+  std::vector<Point> points;
+  for (const auto &gd : inset_state.geo_divs()) {
     for (const auto &pwh : gd.polygons_with_holes()) {
       const Polygon &ext_ring = pwh.outer_boundary();
-
-      // Get exterior ring coordinates
       points.insert(
         points.end(),
         ext_ring.vertices_begin(),
         ext_ring.vertices_end());
-
-      // Get holes of polygon with holes
-      for (const auto &h : pwh.holes()) {
-        points.insert(points.end(), h.vertices_begin(), h.vertices_end());
+      for (const auto &hole : pwh.holes()) {
+        points.insert(
+          points.end(),
+          hole.vertices_begin(),
+          hole.vertices_end());
       }
     }
   }
 
-  // Add boundary points of mapping domain
+  // Add boundary points to force lx * ly size Quadtree
   points.push_back(Point(0, 0));
-  points.push_back(Point(0, ly_));
-  points.push_back(Point(lx_, 0));
-  points.push_back(Point(lx_, ly_));
+  points.push_back(Point(0, inset_state.ly()));
+  points.push_back(Point(inset_state.lx(), 0));
+  points.push_back(Point(inset_state.lx(), inset_state.ly()));
 
-  // Remove the duplicates from points
+  // Remove duplicates
   std::unordered_set<Point> unique_points(points.begin(), points.end());
+  return std::vector<Point>(unique_points.begin(), unique_points.end());
+}
 
-  std::vector<Point> unique_points_vec(
-    unique_points.begin(),
-    unique_points.end());
+// Counts the number of leaf nodes in a quadtree
+static int count_leaf_nodes(const Quadtree &qt)
+{
+  int leaf_count = 0;
+  for ([[maybe_unused]] const auto &node :
+       qt.traverse(CGAL::Orthtrees::Leaves_traversal<Quadtree>(qt))) {
+    ++leaf_count;
+  }
+  return leaf_count;
+}
 
-  // Create the quadtree and 'grade' it so that neighboring quadtree leaves
-  // differ by a depth that can only be 0 or 1.
-  Quadtree qt(unique_points_vec, Quadtree::PointMap(), 1);
-  const unsigned int depth =
-    static_cast<unsigned int>(std::max(log2(lx_), log2(ly_)));
-  std::cerr << "Using Quadtree depth: " << depth << std::endl;
+// Refine the quadtree by splitting nodes that exceed the given threshold
+struct Split_by_threshold {
+  const Quadtree &qt;
+  double threshold;
+  unsigned int max_depth;
+  InsetState &inset_state;
 
-  // Custom predicate to decide whether to split a node
-  auto can_split = [&depth, &qt, this](const Quadtree::Node &node) -> bool {
-    // if the node depth is greater than depth, do not split
-    if (node.depth() >= depth) {
+  Split_by_threshold(
+    const Quadtree &qt_,
+    double threshold_,
+    unsigned int max_depth_,
+    InsetState &inset_state_)
+      : qt(qt_), threshold(threshold_), max_depth(max_depth_),
+        inset_state(inset_state_)
+  {
+  }
+
+  template <typename Node_index, typename Tree>
+  bool operator()(Node_index idx, const Tree &tree) const
+  {
+    if (tree.depth(idx) >= max_depth)
       return false;
-    }
 
-    auto bbox = qt.bbox(node);
-    double rho_min = 1e9;
-    double rho_max = -1e9;
+    auto bbox = tree.bbox(idx);
+    double rho_min = std::numeric_limits<double>::infinity();
+    double rho_max = -std::numeric_limits<double>::infinity();
 
-    // get the minimum rho_init of the bbox of the node
-    for (int i = bbox.xmin(); i < bbox.xmax(); ++i) {
-      for (int j = bbox.ymin(); j < bbox.ymax(); ++j) {
-        if (i < 0 || j < 0) {
+    for (int x = static_cast<int>(bbox.xmin());
+         x < static_cast<int>(bbox.xmax());
+         ++x) {
+      for (int y = static_cast<int>(bbox.ymin());
+           y < static_cast<int>(bbox.ymax());
+           ++y) {
+        if (
+          x < 0 || y < 0 || x >= static_cast<int>(inset_state.lx()) ||
+          y >= static_cast<int>(inset_state.ly()))
           continue;
-        }
-        if (i >= (int)this->lx() || j >= (int)this->ly()) {
-          continue;
-        }
-        rho_min = std::min(rho_min, this->ref_to_rho_init()(i, j));
-        rho_max = std::max(rho_max, this->ref_to_rho_init()(i, j));
+        const unsigned int ux = static_cast<unsigned int>(x);
+        const unsigned int uy = static_cast<unsigned int>(y);
+        const double rho = inset_state.ref_to_rho_init()(ux, uy);
+        rho_min = std::min(rho_min, rho);
+        rho_max = std::max(rho_max, rho);
       }
     }
-    // Logic: as more integrations we increase, we split more aggressively
-    // (the difference threshold becomes smaller)
-    // TODO: Change to threshold that matches how densities are scaled
-    return rho_max - rho_min >
-           (0.001 + pow((1.0 / n_finished_integrations_), 2));
-    // return rho_max - rho_min >
-    //        (0.001 + pow((1.0 / n_finished_integrations_), 2));
-    // return (rho_max / rho_min) >
-    //        (1.0 + pow((1.0 / n_finished_integrations_), 2));
-    return (rho_max / rho_min) > (1.0 + 1.0 / n_finished_integrations_);
-    // rho_max / rho_min > 2;
-  };
-  // std::cerr << "Splitting threshold (difference must be greater than): " <<
-  // (0.001 + pow((1.0 / n_finished_integrations_), 2)) << std::endl;
-  std::cerr << "Split criteria: rho_max / rho_min > "
-            << (1.0 + pow((8.0 / n_finished_integrations_), 2)) << std::endl;
-  qt.refine(can_split);
+    return (rho_max - rho_min) > threshold;
+  }
+};
+
+static void refine_quadtree_with_threshold(
+  Quadtree &qt,
+  double threshold,
+  unsigned int depth,
+  InsetState &inset_state)
+{
+  qt.refine(Split_by_threshold(qt, threshold, depth, inset_state));
+}
+
+// Use binary search to find a threshold that results in a quadtree with a
+// at least the target number of leaf nodes
+static double find_threshold(
+  Quadtree &base_qt,
+  InsetState &state,
+  const unsigned int depth,
+  const int target_leaf_count,
+  const int tolerance,
+  double low_thresh,
+  double high_thresh,
+  const int max_iterations)
+{
+  double threshold = high_thresh;
+  // First, check if the high threshold is too low
+  {
+    Quadtree qt_copy_init(base_qt);
+    refine_quadtree_with_threshold(qt_copy_init, high_thresh, depth, state);
+    int leaves = count_leaf_nodes(qt_copy_init);
+    std::cerr << "Initial high threshold = " << high_thresh
+              << ", leaf nodes = " << leaves << std::endl;
+
+    // If the leaf count is more than 5 * target_leaf_count,
+    // increase the high threshold to lower the leaf count
+    while (leaves > 5 * target_leaf_count) {
+      high_thresh *= 2;
+      Quadtree qt_copy(base_qt);
+      refine_quadtree_with_threshold(qt_copy, high_thresh, depth, state);
+      leaves = count_leaf_nodes(qt_copy);
+      std::cerr << "Adjusted high threshold = " << high_thresh
+                << ", leaf nodes = " << leaves << std::endl;
+    }
+  }
+
+  for (int iter = 0; iter < max_iterations; ++iter) {
+    const double mid_thresh = (low_thresh + high_thresh) / 2.0;
+    Quadtree qt_copy(base_qt);
+    refine_quadtree_with_threshold(qt_copy, mid_thresh, depth, state);
+    const int leaves = count_leaf_nodes(qt_copy);
+
+    std::cerr << "iter " << iter << ": threshold = " << mid_thresh
+              << ", leaf nodes = " << leaves << std::endl;
+
+    if (
+      leaves >= target_leaf_count - tolerance &&
+      leaves <= target_leaf_count + tolerance) {  // Found a good threshold
+      threshold = mid_thresh;
+      break;
+    }
+    // Too few leaves: lower threshold to increase leaf count
+    if (leaves < target_leaf_count)
+      high_thresh = mid_thresh;
+    else  // Too many leaves: threshold is too low
+      low_thresh = mid_thresh;
+    threshold = mid_thresh;
+  }
+  return threshold;
+}
+
+/*
+  Create and refine the quadtree.
+  * Build a quadtree from the unique points of the GeoDivs
+  * Find a threshold that results in a quadtree with at least target_leaf_count
+    leaf nodes
+  * Refine the quadtree with the found threshold
+  * Grade the quadtree
+  * Store the bounding boxes of the leaf nodes
+*/
+void InsetState::create_and_refine_quadtree()
+{
+  timer.start("Delaunay Triangulation");
+
+  // Build a quadtree from the unique points of the GeoDivs
+  std::vector<Point> unique_points = get_unique_points(*this);
+  Quadtree qt(unique_points);
+
+  // Find a threshold that results in a quadtree with at least
+  // target_leaf_count leaf nodes
+  unsigned int depth =
+    static_cast<unsigned int>(std::max(log2(lx_), log2(ly_)));
+  std::cerr << "Using quadtree depth: " << depth << std::endl;
+
+  // Determine target leaf count as 0.3% of grid area.
+  int target_leaf_count = static_cast<int>(0.003 * lx_ * ly_);
+  std::cerr << "Quadtree target leaf count (pre-grading): "
+            << target_leaf_count << std::endl;
+  const int tolerance = 1000;
+  double low_thresh = 0.0;
+  double high_thresh = 1.0;
+
+  // Set high threshold as the same as the threshold at the previous
+  // integration to speed up the search
+  if (threshold_at_integration_.count(n_finished_integrations_ - 1)) {
+    high_thresh = threshold_at_integration_.at(n_finished_integrations_ - 1);
+  }
+  const int max_iterations = 10;
+  const double threshold = find_threshold(
+    qt,
+    *this,
+    depth,
+    target_leaf_count,
+    tolerance,
+    low_thresh,
+    high_thresh,
+    max_iterations);
+  std::cerr << "Using threshold: " << threshold << std::endl;
+  threshold_at_integration_.insert({n_finished_integrations_, threshold});
+  std::cerr << "Split criteria: rho_max - rho_min > " << threshold
+            << std::endl;
+
+  // Refine the quadtree with the found threshold
+  refine_quadtree_with_threshold(qt, threshold, depth, *this);
   qt.grade();
   std::cerr << "Quadtree root node bounding box: " << qt.bbox(qt.root())
             << std::endl;
 
-  // Clear corner points from last iteration
+  // Store the bounding boxes of the leaf nodes
+  store_quadtree_cell_corners(qt);
+
+  timer.stop("Delaunay Triangulation");
+}
+
+void InsetState::store_quadtree_cell_corners(const Quadtree &qt)
+{
   unique_quadtree_corners_.clear();
-
-  // Clear the vector of bounding boxes
   quadtree_bboxes_.clear();
-
-  // Get unique quadtree corners
-  for (const auto &node : qt.traverse<CGAL::Orthtrees::Leaves_traversal>()) {
-
-    // Get bounding box of the leaf node
-    const Bbox bbox = qt.bbox(node);
-
-    // check if points are between lx_ and ly_
+  for (const auto &node_idx :
+       qt.traverse(CGAL::Orthtrees::Leaves_traversal<Quadtree>(qt))) {
+    const auto bbox = qt.bbox(node_idx);
     if (
       bbox.xmin() < 0 || bbox.xmax() > lx_ || bbox.ymin() < 0 ||
-      bbox.ymax() > ly_) {
+      bbox.ymax() > ly_)
       continue;
-    }
 
-    // Store the bounding box
     quadtree_bboxes_.push_back(bbox);
-
-    // Insert the four vertices of the bbox into the corners set
     unique_quadtree_corners_.insert(Point(bbox.xmin(), bbox.ymin()));
     unique_quadtree_corners_.insert(Point(bbox.xmax(), bbox.ymax()));
     unique_quadtree_corners_.insert(Point(bbox.xmin(), bbox.ymax()));
     unique_quadtree_corners_.insert(Point(bbox.xmax(), bbox.ymin()));
   }
 
-  // Add boundary points of mapping domain in case they are omitted due to
-  // quadtree structure
+  // Ensure mapping domain boundary corners are included
   unique_quadtree_corners_.insert(Point(0, 0));
   unique_quadtree_corners_.insert(Point(0, ly_));
   unique_quadtree_corners_.insert(Point(lx_, 0));
   unique_quadtree_corners_.insert(Point(lx_, ly_));
 
-  std::cerr << "Number of unique corners: " << unique_quadtree_corners_.size()
+  std::cerr << "Number of unique quadtree corners: "
+            << unique_quadtree_corners_.size() << std::endl;
+  std::cerr << "Number of quadtree leaf nodes: " << count_leaf_nodes(qt)
             << std::endl;
-  timer.stop("Delaunay Triangulation");
 }
 
 void InsetState::increment_integration()
@@ -658,7 +787,15 @@ double InsetState::initial_target_area() const
 
 bool InsetState::is_input_target_area_missing(const std::string &id) const
 {
-  return is_input_target_area_missing_.at(id);
+  try {
+    return is_input_target_area_missing_.at(id);
+  } catch (const std::out_of_range &e) {
+    std::cerr << "ERROR: Key '" << id
+              << "' not found in is_input_target_area_missing_. "
+              << "Exception: " << e.what() << std::endl;
+    // Re-throw, or return a default value
+    throw;
+  }
 }
 
 double InsetState::latt_const() const
@@ -735,7 +872,7 @@ unsigned int InsetState::n_fails_during_flatten_density() const
 
 unsigned int InsetState::n_geo_divs() const
 {
-  return geo_divs_.size();
+  return static_cast<unsigned int>(geo_divs_.size());
 }
 
 unsigned long InsetState::n_points() const
@@ -857,7 +994,8 @@ void InsetState::set_area_errors()
   // accordingly inflate its target area to account for the area drift.
   double aef = area_expansion_factor();
 
-#pragma omp parallel for default(none) shared(sum_cart_area, sum_target_area)
+#pragma omp parallel for default(none) firstprivate(aef) \
+  shared(geo_divs_, area_errors_)
   for (const auto &gd : geo_divs_) {
     const double obj_area = target_area_at(gd.id()) * aef;
     area_errors_[gd.id()] = std::abs((gd.area() / obj_area) - 1);
@@ -873,15 +1011,13 @@ void InsetState::adjust_grid()
   if (
     n_finished_integrations_ > 4 &&
     curr_max_area_error >=
-      0.999 * max_area_errors_[n_finished_integrations_ - 1] &&
-    curr_max_area_error >=
-      0.999 * max_area_errors_[n_finished_integrations_ - 2]) {
+      0.999 * max_area_errors_[n_finished_integrations_ - 1]) {
 
     // Multiply grid size with factor
     std::cerr << "Adjusting grid size." << std::endl;
     if (
-      lx_ * default_grid_factor > max_allowed_autoscale_grid_length or
-      ly_ * default_grid_factor > max_allowed_autoscale_grid_length) {
+      lx_ * default_grid_factor > args_.max_allowed_autoscale_grid_length or
+      ly_ * default_grid_factor > args_.max_allowed_autoscale_grid_length) {
       std::cerr << "Cannot increase grid size further. ";
       std::cerr << "Grid size exceeds maximum allowed grid length."
                 << std::endl;
@@ -915,6 +1051,8 @@ void InsetState::adjust_grid()
     initialize_cum_proj();
     set_area_errors();
 
+    threshold_at_integration_.clear();
+
     Bbox bb = bbox();
     std::cerr << "New grid dimensions: " << lx_ << " " << ly_
               << " with bounding box\n\t(" << bb.xmin() << ", " << bb.ymin()
@@ -943,13 +1081,21 @@ void InsetState::store_initial_area()
 
 void InsetState::store_initial_target_area(const double override)
 {
-  initial_target_area_ = override ? override : total_target_area();
+  initial_target_area_ =
+    almost_equal(override, 0.0) ? total_target_area() : override;
 }
 
 bool InsetState::target_area_is_missing(const std::string &id) const
 {
   // We use negative area as indication that GeoDiv has no target area
-  return target_areas_.at(id) < 0.0;
+  try {
+    return target_areas_.at(id) < 0.0;
+  } catch (const std::out_of_range &e) {
+    std::cerr << "ERROR: Key '" << id << "' not found in target_areas_. "
+              << "Exception: " << e.what() << std::endl;
+    // Re-throw, or return a default value
+    throw;
+  }
 }
 
 double InsetState::target_area_at(const std::string &id) const
@@ -1056,7 +1202,14 @@ void InsetState::update_gd_ids(
   const std::map<std::string, std::string> &gd_id_map)
 {
   for (auto &gd : geo_divs_) {
-    gd.update_id(gd_id_map.at(gd.id()));
+    try {
+      gd.update_id(gd_id_map.at(gd.id()));
+    } catch (const std::out_of_range &e) {
+      std::cerr << "ERROR: Key '" << gd.id() << "' not found in gd_id_map. "
+                << "Exception: " << e.what() << std::endl;
+      // Re-throw, or return a default value
+      throw;
+    }
   }
 }
 
