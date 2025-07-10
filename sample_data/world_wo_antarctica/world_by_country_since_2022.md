@@ -1,0 +1,1 @@
+We use `remove_geodiv.ipynb` with `sample_data/world/geo_ne50_antimeridian_minus169_brewer.geojson` to create `sample_data/world_wo_antarctica/geo_wo_antarctica_ne50_antimeridian_minus169_brewer.geojson` which is a version of the original file without Antarctica.
