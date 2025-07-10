@@ -55,8 +55,6 @@ You may inspect the resultant SVG to check if everything looks as expected.
 
 We manage dependencies with a Python virtual environment and Conan 2. The project supports GCC, Clang, and Apple Clang, all with C++20 support. Please ensure that Python 3.10 or later and a C++20-supported compiler are installed before proceeding.
 
-Only `Debug` build commands are shown below, but the same commands can be run with `Release` build by replacing `Debug` with `Release`.
-
 1. Create a virtual environment with the required dependencies
 
 ``` shell
@@ -80,6 +78,8 @@ The following command will detect your system's profile and set it up for you. I
 ``` shell
 .venv/bin/conan profile detect
 ```
+
+Note: From step 3 onward, we show `Debug` build commands which do not optimise speed. These build steps are meant to make it easier for developers to use debuggers like `gdb` or `lldb`. For any performance testing, please skip to the `Release` build steps shown after step 4, as this is the version that we expect end users to run.
 
 3. Install dependencies via Conan
 
@@ -107,6 +107,17 @@ And, optionally, install the program globally:
 
 ``` shell
 sudo .venv/bin/cmake --install build/Debug
+```
+
+### Release Build
+
+To compile the project in `Release` mode, please run the following commands instead of those shown above:
+
+``` shell
+.venv/bin/conan install . --build=missing -s build_type=Release -s compiler.cppstd=20
+.venv/bin/cmake -B build/Release -S . -DCMAKE_TOOLCHAIN_FILE=build/Release/generators/conan_toolchain.cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_EXPORT_COMPILE_COMMANDS=ON
+.venv/bin/cmake --build build/Release -j4
+sudo .venv/bin/cmake --install build/Release
 ```
 
 ### Tests
