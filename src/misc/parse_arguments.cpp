@@ -144,7 +144,7 @@ Arguments parse_arguments(const int argc, const char *argv[])
     .default_value(static_cast<unsigned int>(0))
     .scan<'u', unsigned int>();
   arguments.add_argument("--verbose")
-    .help("Boolean: Print verbose output")
+    .help("Boolean: Print verbose time tracking output")
     .default_value(false)
     .implicit_value(true);
 

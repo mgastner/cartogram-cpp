@@ -353,13 +353,17 @@ void CartogramInfo::print_time_report()
 
   // Print time report for each inset
   for (const InsetState &inset_state : inset_states_) {
-    inset_state.print_time_report();
-    if (args_.export_time_report) {
+
+    // Print to output if verbose output requested
+    if (args_.verbose)
+      inset_state.print_time_report();
+
+    // Print to CSV if requested
+    if (args_.export_time_report)
       inset_state.export_time_report();
-    }
   }
 
-  // Print Total time
+  // Always print Total time
   timer.print_summary_report();
 }
 
