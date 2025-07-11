@@ -1,5 +1,8 @@
 #!/bin/bash
 
+# Save all the flags and arguments passed to the script
+user_args=("$@")
+
 # Change to the directory containing the sample_data folder and exit if it fails
 pushd "$(dirname "$0")" >/dev/null || exit
 cd sample_data || exit
@@ -38,21 +41,21 @@ for map_dir in */; do
     echo "Map: $map_name"
     echo "Data: $data_file"
 
-    extra=""
-    if [[ $map_name == *world* ]]; then
-      extra="--world"
-    fi
+    cmd=(../build/Release/cartogram
+      "../sample_data/$geojson_file"
+      "../sample_data/$csv_file")
 
-    command="../build/Release/cartogram \"../sample_data/${geojson_file}\" \"../sample_data/${csv_file}\" $extra"
-    echo "Command: $command"
+    [[ $map_name == *world* ]] && cmd+=(--world)
+    cmd+=("${user_args[@]}")
 
-    # Show the full path from the script location for the current map folder
-    current_folder="$(pwd)/$map_dir"
-    echo "Current folder: $current_folder"
+    printf 'Command: '
+    printf '%q ' "${cmd[@]}"
+    echo
+    echo "Current folder: $(pwd)/$map_dir"
 
     # Run the command and capture stderr output while timing it
     SECONDS=0
-    stderr_output=$(eval "$command" 2>&1 >/dev/null)
+    stderr_output=$("${cmd[@]}" 2>&1 >/dev/null)
 
     # Extract the last occurrences of "Integration number" and "Total time:" from stderr_output
     integration_line=$(echo "$stderr_output" | grep "Integration number" | tail -n 1)
