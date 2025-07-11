@@ -419,6 +419,47 @@ static std::vector<Point> densification_points_with_delaunay_t(
   return dens_points_unique;
 }
 
+std::vector<Point> densification_points_with_munching(
+  const Point &a,
+  const Point &b,
+  double segment_length,
+  double lx,
+  double ly)
+{
+  if (segment_length <= 0.0)
+    return {a, b};  // nothing to do
+
+  const double panel_diag = std::hypot(lx, ly);
+  if (panel_diag == 0.0)
+    return {a, b};
+
+  // Normalised distance of the original segment
+  const double dx = b.x() - a.x();
+  const double dy = b.y() - a.y();
+  const double len = std::hypot(dx, dy);  // absolute length
+  const double len_norm = len / panel_diag;  // 0 to 1 scale
+
+  // Count how many segments of the given length fit into the original segment
+  std::size_t extra =
+    static_cast<std::size_t>(std::floor(len_norm / segment_length));
+
+  if (extra < 1)
+    extra = 1;
+  if (extra > 10000)
+    extra = 10000;
+
+  // Evenly distribute points along the segment
+  std::vector<Point> pts;
+  pts.reserve(extra + 1);
+
+  for (std::size_t i = 0; i <= extra; ++i) {
+    const double t = static_cast<double>(i) / static_cast<double>(extra);
+    pts.emplace_back(a.x() + dx * t, a.y() + dy * t);
+  }
+
+  return pts;
+}
+
 void InsetState::densify_geo_divs_using_delaunay_t()
 {
   timer.start("Densification (using Delanuay Triangles)");
@@ -453,8 +494,15 @@ void InsetState::densify_geo_divs_using_delaunay_t()
         const Point b = (i + 1 == outer_sz) ? outer[0] : outer[i + 1];
 
         // Densify the segment
-        const std::vector<Point> outer_pts_dens =
-          densification_points_with_delaunay_t(a, b, proj_qd_.dt);
+        std::vector<Point> outer_pts_dens =
+          args_.use_munching_method_for_densification
+            ? densification_points_with_munching(
+                a,
+                b,
+                args_.munching_segment_length,
+                lx_,
+                ly_)
+            : densification_points_with_delaunay_t(a, b, proj_qd_.dt);
 
         // Push all points. Omit the last point because it will be included
         // in the next iteration. Otherwise, we would have duplicated points
@@ -489,8 +537,15 @@ void InsetState::densify_geo_divs_using_delaunay_t()
           const Point c = h[j];
           const Point d = (j + 1 == h_sz) ? h[0] : h[j + 1];
 
-          const std::vector<Point> hole_pts_dens =
-            densification_points_with_delaunay_t(c, d, proj_qd_.dt);
+          std::vector<Point> hole_pts_dens =
+            args_.use_munching_method_for_densification
+              ? densification_points_with_munching(
+                  c,
+                  d,
+                  args_.munching_segment_length,
+                  lx_,
+                  ly_)
+              : densification_points_with_delaunay_t(c, d, proj_qd_.dt);
 
           if (hole_pts_dens.size() > 1)
             hole_dens.insert(
