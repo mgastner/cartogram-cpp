@@ -10,12 +10,12 @@ else
     python3 -m venv .venv
     source .venv/bin/activate
 
-if [[ -z ${BUILD_TYPE} ]]; then
-    BUILD_TYPE=Release
-fi
+    if [[ -z ${BUILD_TYPE} ]]; then
+        BUILD_TYPE=Release
+    fi
 
-# Output BUILD_DIR and BUILD_TYPE
-echo "Building in directory: $BUILD_DIR, with build type: $BUILD_TYPE"
+    # Output BUILD_DIR and BUILD_TYPE
+    echo "Building in directory: $BUILD_DIR, with build type: $BUILD_TYPE"
 
 # Warn user if BUILD_DIR already exists
 if [[ -d $BUILD_DIR ]]; then
