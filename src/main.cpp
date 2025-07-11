@@ -55,11 +55,13 @@ int main(const int argc, const char *argv[])
     inset_state.integrate(progress_tracker);
   }
 
-  // Rescale insets in correct proportion to each other
-  cart_info.rescale_insets();
+  if (cart_info.n_insets() > 1) {
+    // Rescale insets in correct proportion to each other
+    cart_info.rescale_insets();
 
-  // Shift insets so that they do not overlap
-  cart_info.reposition_insets(args.redirect_exports_to_stdout);
+    // Shift insets so that they do not overlap
+    cart_info.reposition_insets(args.redirect_exports_to_stdout);
+  }
 
   // Output to GeoJSON
   cart_info.write_geojson("cartogram");

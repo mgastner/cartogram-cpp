@@ -73,11 +73,11 @@ Arguments parse_arguments(const int argc, const char *argv[])
     .help("Boolean: Enable Quadtree-Delaunay Triangulation Method")
     .default_value(true)
     .implicit_value(false);
-  arguments.add_argument("-S", "--simplify_and_densify")
+  arguments.add_argument("-S", "--disable_simplify_and_densify")
     .help(
-      "Boolean: Enable iterative simplification and densification of polygons")
-    .default_value(true)
-    .implicit_value(false);
+      "Boolean: Disable iterative simplification and densification of polygons")
+    .default_value(false)
+    .implicit_value(true);
   arguments.add_argument("--skip_projection")
     .help("Boolean: Skip projection to equal area")
     .default_value(false)
@@ -144,7 +144,7 @@ Arguments parse_arguments(const int argc, const char *argv[])
     .default_value(static_cast<unsigned int>(0))
     .scan<'u', unsigned int>();
   arguments.add_argument("--verbose")
-    .help("Boolean: Print verbose output")
+    .help("Boolean: Print verbose time tracking output")
     .default_value(false)
     .implicit_value(true);
 
@@ -179,7 +179,7 @@ Arguments parse_arguments(const int argc, const char *argv[])
   args.world = arguments.get<bool>("--world");
   args.triangulation = arguments.get<bool>("--triangulation");
   args.qtdt_method = arguments.get<bool>("--qtdt_method");
-  args.simplify = arguments.get<bool>("--simplify_and_densify");
+  args.simplify = !arguments.get<bool>("--disable_simplify_and_densify");
   args.remove_tiny_polygons = arguments.get<bool>("--remove_tiny_polygons");
   args.min_polygon_area = arguments.get<double>("--minimum_polygon_area");
   args.rays = arguments.get<bool>("--use_ray_shooting_method");
@@ -238,7 +238,6 @@ Arguments parse_arguments(const int argc, const char *argv[])
     if (arguments.is_used("--n_points")) {
       std::cerr << "--n_points ignored." << std::endl;
     }
-    std::cerr << arguments << std::endl;
   }
 
   // Check whether T flag is set, but not Q

@@ -50,8 +50,10 @@ void InsetState::prepare_for_integration()
   ref_to_fluxy_init().allocate(lx_, ly_);
   make_fftw_plans_for_rho();
   make_fftw_plans_for_flux();
-  initialize_identity_proj();
-  initialize_cum_proj();
+  if (args_.redirect_exports_to_stdout) {
+    initialize_identity_proj();
+    initialize_cum_proj();
+  }
 
   // Store initial inset area to calculate area drift,
   // set area errors based on this initial_area
@@ -97,7 +99,7 @@ void InsetState::integrate(ProgressTracker &progress_tracker)
 
     update_file_prefix();
 
-    if (args_.verbose)
+    if (args_.verbose || args_.export_time_report)
       timer.start(file_prefix_);
 
     // 1. Fill/Rasterize Density
@@ -110,7 +112,7 @@ void InsetState::integrate(ProgressTracker &progress_tracker)
     if (!flatten_density()) {
 
       // Flatten density has failed. Increase blur width and try again
-      if (args_.verbose)
+      if (args_.verbose || args_.export_time_report)
         timer.stop(file_prefix_);
       continue;
     }
@@ -128,7 +130,7 @@ void InsetState::integrate(ProgressTracker &progress_tracker)
       n_finished_integrations_);
     increment_integration();
 
-    if (args_.verbose)
+    if (args_.verbose || args_.export_time_report)
       timer.stop(file_prefix_);
   }
   timer.stop("Integration");
