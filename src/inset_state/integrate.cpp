@@ -50,8 +50,10 @@ void InsetState::prepare_for_integration()
   ref_to_fluxy_init().allocate(lx_, ly_);
   make_fftw_plans_for_rho();
   make_fftw_plans_for_flux();
-  initialize_identity_proj();
-  initialize_cum_proj();
+  if (args_.redirect_exports_to_stdout) {
+    initialize_identity_proj();
+    initialize_cum_proj();
+  }
 
   // Store initial inset area to calculate area drift,
   // set area errors based on this initial_area
