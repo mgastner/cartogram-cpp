@@ -83,6 +83,14 @@ Arguments parse_arguments(const int argc, const char *argv[])
     .help("Boolean: Disable optimisation of maximum angle of triangulation")
     .default_value(false)
     .implicit_value(true);
+  arguments.add_argument("--use_munching_method_for_densification")
+    .help("Boolean: Use munching method for densification")
+    .default_value(false)
+    .implicit_value(true);
+  arguments.add_argument("--munching_segment_length")
+    .help("Double: If munching enabled, then segment length for munching")
+    .default_value(0.01)
+    .scan<'g', double>();
   arguments.add_argument("--skip_projection")
     .help("Boolean: Skip projection to equal area")
     .default_value(false)
@@ -223,6 +231,28 @@ Arguments parse_arguments(const int argc, const char *argv[])
 
   // Check if user wants verbose output
   args.verbose = arguments.get<bool>("--verbose");
+
+  args.use_munching_method_for_densification =
+    arguments.get<bool>("--use_munching_method_for_densification");
+  args.munching_segment_length =
+    arguments.get<double>("--munching_segment_length");
+
+  if (
+    arguments.is_used("--munching_segment_length") &&
+    !args.use_munching_method_for_densification) {
+    std::cerr << "ERROR: Munching segment length specified, but munching "
+                 "method not enabled.\n";
+    std::cerr << "To enable munching method, pass the "
+                 "--use_munching_method_for_densification flag.\n";
+    std::exit(19);
+  }
+
+  if (args.use_munching_method_for_densification && !args.simplify) {
+    std::cerr << "ERROR: Munching method for densification requires "
+                 "simplification.\n";
+    std::cerr << "To enable simplification, do not pass the -S flag.\n";
+    std::exit(20);
+  }
 
   // Check if user wants to redirect output to stdout
   if (arguments.is_used("-O") && !args.simplify && !args.qtdt_method) {
