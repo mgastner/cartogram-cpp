@@ -91,7 +91,14 @@ int main(const int argc, const char *argv[])
     avg_ratio /= changes.size();
     std::cerr << "Maximum ratio: " << max_ratio << std::endl;
     std::cerr << "Average ratio: " << avg_ratio << std::endl;
-    std::string csv_file_name = "densification_changes.csv";
+    std::string csv_file_name = "densification_changes_";
+    if (args.use_munching_method_for_densification) {
+      csv_file_name +=
+        "munching_" + std::to_string(args.munching_segment_length) + "_";
+    } else {
+      csv_file_name += "delaunay_";
+    }
+    csv_file_name += ".csv";
     if (!std::filesystem::exists(csv_file_name)) {
       std::ofstream out_file_csv(csv_file_name);
       if (!out_file_csv) {
