@@ -10,6 +10,7 @@ cd sample_data || exit
 # Initialize success and fail counters
 success_count=0
 fail_count=0
+total_time_ms=0
 
 print_separator() {
   echo "----------------------------------------------------------------------------------------------------"
@@ -73,6 +74,9 @@ for map_dir in */; do
       echo ""
       echo "$integration_line"
       echo "$total_time_line"
+
+      ms=$(grep -oE '[0-9]+' <<<"$total_time_line")
+      ((total_time_ms += ms))
     else
       fail_count=$((fail_count + 1))
       echo "Result: Fail"
@@ -89,6 +93,8 @@ done
 echo "Final Results:"
 echo "Success count: $success_count"
 echo "Fail count: $fail_count"
+printf 'Total time: %d ms (≈ %.3f s)\n' \
+       "$total_time_ms" "$(awk "BEGIN{print $total_time_ms/1000}")"
 
 # Return to the original directory and exit if it fails
 popd >/dev/null || exit
