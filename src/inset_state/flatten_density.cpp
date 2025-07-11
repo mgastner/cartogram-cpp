@@ -46,14 +46,16 @@ bool InsetState::flatten_density()
       timer.stop("Flatten Density (Quadtree Method)");
       return false;
     }
+    
+    if (!args_.disable_triangulation_optimisation) {
+      // Update triangulation adding shorter diagonal as constraint for better
+      // shape similarity
+      update_delaunay_t();
 
-    // Update triangulation adding shorter diagonal as constraint for better
-    // shape similarity
-    update_delaunay_t();
-
-    // If triangles flipped after update, we need to try again
-    if (delaunay_triangle_flipped(proj_qd_))
-      return false;
+      // If triangles flipped after update, we need to try again
+      if (delaunay_triangle_flipped(proj_qd_))
+        return false;
+    }
 
   } else {
 

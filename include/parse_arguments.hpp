@@ -65,6 +65,8 @@ struct Arguments {
   bool skip_projection;
 
   bool verbose;
+  
+  bool disable_triangulation_optimisation;
 
   // Column names in provided visual variables file (CSV)
   std::optional<std::string> id_col;
