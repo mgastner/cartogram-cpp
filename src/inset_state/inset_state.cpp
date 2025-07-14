@@ -88,7 +88,7 @@ bool InsetState::continue_integrating() const
   auto [max_area_err, worst_gd] = max_area_error();
 
   // A GeoDiv is still above our area error threshold
-  bool area_error_above_threshold = max_area_err > max_permitted_area_error;
+  bool area_error_above_threshold = max_area_err > args_.max_permitted_area_error;
 
   // Area expansion factor is above our threshold
   // i.e. cartogram has become too big or too small

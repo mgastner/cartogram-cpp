@@ -55,6 +55,9 @@ struct Arguments {
   bool remove_tiny_polygons;
   double min_polygon_area;
 
+  // Maximum permitted area error for cartogram transformation
+  double max_permitted_area_error;
+
   // Other boolean values that are needed to parse the command line arguments
   bool make_csv;
   bool plot_density;

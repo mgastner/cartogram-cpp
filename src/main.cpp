@@ -39,7 +39,9 @@ int main(const int argc, const char *argv[])
   }
 
   // Track progress of the cartogram generation
-  ProgressTracker progress_tracker(static_cast<double>(total_geo_divs));
+  ProgressTracker progress_tracker(
+    static_cast<double>(total_geo_divs),
+    args.max_permitted_area_error);
 
   // Preprocess Insets for Integration:
   // -- Set inset name: map_name + "_" + inset_pos
