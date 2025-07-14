@@ -28,7 +28,8 @@ int main(const int argc, const char *argv[])
   // Store total number of GeoDivs to monitor progress
   size_t total_geo_divs = cart_info.n_geo_divs();
 
-  // Write input map, with insets nicely placed (but not when redirecting to stdout)
+  // Write input map, with insets nicely placed (but not when redirecting to
+  // stdout)
   if (args.plot_polygons && !args.redirect_exports_to_stdout) {
     cart_info.plot_input();
   }

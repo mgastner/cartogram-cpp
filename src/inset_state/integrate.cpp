@@ -137,7 +137,8 @@ void InsetState::integrate(ProgressTracker &progress_tracker)
   std::cerr << "Finished integrating inset " << pos_ << std::endl;
   progress_tracker.update_and_print_progress_end_integration(n_geo_divs());
 
-  // Write SVG for this inset, if requested (but not when redirecting to stdout)
+  // Write SVG for this inset, if requested (but not when redirecting to
+  // stdout)
   if (args_.plot_polygons && !args_.redirect_exports_to_stdout) {
     write_map(inset_name() + "_output", false);
   }
