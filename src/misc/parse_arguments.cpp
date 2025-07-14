@@ -156,6 +156,10 @@ Arguments parse_arguments(const int argc, const char *argv[])
     .help("Double: Maximum permitted area error for cartogram transformation")
     .default_value(default_max_permitted_area_error)
     .scan<'g', double>();
+  arguments.add_argument("--quadtree_leaf_count_factor")
+    .help("Unsigned int: Quadtree leaf count factor (should be a power of 2)")
+    .default_value(default_quadtree_leaf_count_factor)
+    .scan<'u', unsigned int>();
 
   // Parse command-line arguments
   try {
@@ -165,6 +169,18 @@ Arguments parse_arguments(const int argc, const char *argv[])
     std::cerr << arguments;
     std::exit(1);
   }
+
+  // Ensure quadtree_leaf_count_factor is a power of 2
+  unsigned int qlcf =
+    arguments.get<unsigned int>("--quadtree_leaf_count_factor");
+  // Round up to next power of 2 if not already a power of 2
+  if ((qlcf <= 0) || ((qlcf & (~qlcf + 1)) != qlcf)) {
+    std::cerr
+      << "ERROR: --quadtree_leaf_count_factor must be an integer power of 2."
+      << std::endl;
+    std::exit(15);
+  }
+  args.quadtree_leaf_count_factor = qlcf;
 
   // Set long grid-side length
   args.n_grid_rows_or_cols = arguments.get<unsigned int>("-n");

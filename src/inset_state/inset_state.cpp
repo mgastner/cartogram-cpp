@@ -629,8 +629,8 @@ void InsetState::create_and_refine_quadtree()
     static_cast<unsigned int>(std::max(log2(lx_), log2(ly_)));
   std::cerr << "Using quadtree depth: " << depth << std::endl;
 
-  // Determine target leaf count as 2^-9 times grid area.
-  int target_leaf_count = static_cast<int>((lx_ * ly_) / 512);
+  // Determine target leaf count as factor (default: 2^-9) of grid area.
+  int target_leaf_count = static_cast<int>((lx_ * ly_) / args_.quadtree_leaf_count_factor);
   std::cerr << "Quadtree target leaf count (pre-grading): "
             << target_leaf_count << std::endl;
   const int tolerance = 1000;
