@@ -2,7 +2,7 @@
 #define PROGRESS_TRACKER_H
 
 // clang-format off
-#include <cstdint> 
+#include <cstdint>
 #include "indicators/block_progress_bar.hpp"
 #include "indicators/color.hpp"
 #include "indicators/cursor_control.hpp"
@@ -25,7 +25,7 @@ class ProgressTracker
 {
 public:
   // Constructor
-  explicit ProgressTracker(double);
+  explicit ProgressTracker(double, double);
 
   // Destructor
   ~ProgressTracker();
@@ -48,6 +48,7 @@ private:
   double total_geo_divs_;  // Total number of GeoDivs to monitor progress
   double progress_;  // Progress measured on a scale from 0 (start) to 1 (end)
   double max_progress_;  // Maximum progress value ever reached
+  double max_permitted_area_error_;  // Maximum permitted area error
   indicators::ProgressBar bar_;
 };
 

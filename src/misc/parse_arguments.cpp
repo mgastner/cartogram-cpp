@@ -152,6 +152,10 @@ Arguments parse_arguments(const int argc, const char *argv[])
     .help("Boolean: Print verbose time tracking output")
     .default_value(false)
     .implicit_value(true);
+  arguments.add_argument("--max_permitted_area_error")
+    .help("Double: Maximum permitted area error for cartogram transformation")
+    .default_value(default_max_permitted_area_error)
+    .scan<'g', double>();
 
   // Parse command-line arguments
   try {
@@ -189,6 +193,8 @@ Arguments parse_arguments(const int argc, const char *argv[])
     !arguments.get<bool>("--disable_triangulation_optimisation");
   args.remove_tiny_polygons = arguments.get<bool>("--remove_tiny_polygons");
   args.min_polygon_area = arguments.get<double>("--minimum_polygon_area");
+  args.max_permitted_area_error =
+    arguments.get<double>("--max_permitted_area_error");
   args.rays = arguments.get<bool>("--use_ray_shooting_method");
   if (!args.triangulation && args.simplify) {
 
