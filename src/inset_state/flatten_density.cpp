@@ -46,7 +46,7 @@ bool InsetState::flatten_density()
       timer.stop("Flatten Density (Quadtree Method)");
       return false;
     }
-    
+
     if (!args_.disable_triangulation_optimisation) {
       // Update triangulation adding shorter diagonal as constraint for better
       // shape similarity
@@ -401,6 +401,7 @@ bool InsetState::flatten_density_on_node_vertices()
   // Constants for the numerical integrator
   const double inc_after_acc = 1.5;
   const double dec_after_not_acc = 0.5;
+  const double reject_delta_t_threshold = 1e-4;
   const double abs_tol = (std::min(lx_, ly_) * 1e-6);
 
   // Clear previous triangle transformation data
@@ -603,6 +604,12 @@ bool InsetState::flatten_density_on_node_vertices()
       }
       if (!accept) {
         delta_t *= dec_after_not_acc;
+        if (delta_t < reject_delta_t_threshold) {
+          std::cerr << "Time step became too small. Increasing blur width and "
+                       "running again."
+                    << std::endl;
+          return false;
+        }
       }
     }
 
