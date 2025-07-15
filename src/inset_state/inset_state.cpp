@@ -408,7 +408,9 @@ void InsetState::export_time_report() const
     csv_rows[i + 1].push_back(time_in_seconds);
 
     // Max area error for that integration
-    csv_rows[i + 1].push_back(std::to_string(max_area_errors_[i]));
+    std::ostringstream oss;
+    oss << std::setprecision(16) << max_area_errors_[i];
+    csv_rows[i + 1].push_back(oss.str());
   }
 
   // Write to CSV object, and close file afterwards
