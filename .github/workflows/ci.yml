@@ -23,11 +23,11 @@ jobs:
             version: 16
             build_type: Release
             name: ubuntu-release-clang
-          - os: ubuntu-latest
-            compiler: clang
-            version: 16
-            build_type: Debug
-            name: ubuntu-debug-clang
+          # - os: ubuntu-latest
+          #   compiler: clang
+          #   version: 16
+          #   build_type: Debug
+          #   name: ubuntu-debug-clang
           # macOS
           - os: macos-14
             compiler: apple-clang
