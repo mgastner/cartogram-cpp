@@ -37,11 +37,12 @@ benchmark() {
   local curr_cli=$cli
 
   if [[ "${country}" == world* ]]; then
-    curr_cli="${cli} -W"
+    curr_cli="${cli} --world"
   fi
 
   cmd="cartogram ${map} ${csv} ${curr_cli}"
-  hyperfine "$cmd" --export-csv tmp.csv
+  # hyperfine '$cmd' --export-csv tmp.csv
+  hyperfine --parameter-scan qlcf 5 15 "${cmd} --quadtree_leaf_count_factor \$((2**{qlcf}))" --export-csv tmp.csv $(echo "--command-name ${country}-"{05..15})
 
   if [ ! -f final_results.csv ]; then
     cp tmp.csv final_results.csv
