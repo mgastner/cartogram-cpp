@@ -88,7 +88,7 @@ bool InsetState::continue_integrating() const
   auto [max_area_err, worst_gd] = max_area_error();
 
   // A GeoDiv is still above our area error threshold
-  bool area_error_above_threshold = max_area_err > max_permitted_area_error;
+  bool area_error_above_threshold = max_area_err > args_.max_permitted_area_error;
 
   // Area expansion factor is above our threshold
   // i.e. cartogram has become too big or too small
@@ -407,7 +407,9 @@ void InsetState::export_time_report() const
     csv_rows[i + 1].push_back(time_in_seconds);
 
     // Max area error for that integration
-    csv_rows[i + 1].push_back(std::to_string(max_area_errors_[i]));
+    std::ostringstream oss;
+    oss << std::setprecision(16) << max_area_errors_[i];
+    csv_rows[i + 1].push_back(oss.str());
   }
 
   // Write to CSV object, and close file afterwards
@@ -629,8 +631,8 @@ void InsetState::create_and_refine_quadtree()
     static_cast<unsigned int>(std::max(log2(lx_), log2(ly_)));
   std::cerr << "Using quadtree depth: " << depth << std::endl;
 
-  // Determine target leaf count as 2^-9 times grid area.
-  int target_leaf_count = static_cast<int>((lx_ * ly_) / 512);
+  // Determine target leaf count as factor (default: 2^-9) of grid area.
+  int target_leaf_count = static_cast<int>((lx_ * ly_) / args_.quadtree_leaf_count_factor);
   std::cerr << "Quadtree target leaf count (pre-grading): "
             << target_leaf_count << std::endl;
   const int tolerance = 1000;

@@ -55,6 +55,12 @@ struct Arguments {
   bool remove_tiny_polygons;
   double min_polygon_area;
 
+  // Maximum permitted area error for cartogram transformation
+  double max_permitted_area_error;
+
+  // Quadtree leaf count factor (should be a power of 2)
+  unsigned int quadtree_leaf_count_factor;
+
   // Other boolean values that are needed to parse the command line arguments
   bool make_csv;
   bool plot_density;

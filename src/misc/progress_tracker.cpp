@@ -2,8 +2,11 @@
 #include "constants.hpp"
 
 // Constructor
-ProgressTracker::ProgressTracker(double total_geo_divs)
+ProgressTracker::ProgressTracker(
+  double total_geo_divs,
+  double max_permitted_area_error)
     : total_geo_divs_(total_geo_divs), progress_(0),
+      max_permitted_area_error_(max_permitted_area_error),
       bar_(indicators::ProgressBar(
         indicators::option::BarWidth{75},
         indicators::option::Start{"["},
@@ -32,7 +35,7 @@ void ProgressTracker::print_progress_mid_integration(
   // Calculate progress percentage. We assume that the maximum area
   // error is typically reduced to 1/5 of the previous value.
   const double ratio_actual_to_permitted_max_area_error =
-    max_area_error / max_permitted_area_error;
+    max_area_error / max_permitted_area_error_;
   const double n_predicted_integrations =
     std::max((log(ratio_actual_to_permitted_max_area_error) / log(5)), 1.0);
 
