@@ -1,0 +1,20 @@
+csv_file,from,to,max_ratio,avg_ratio
+austria_population_by_state_2020,9994,12057,1.20642,1.19994
+simplified_belgium_population_by_region_2022,98,5446,55.5714,10.1187
+belgium_population_by_region_2022,3526,7059,2.00199,1.23503
+brazil_population_by_state_2021,9565,21981,2.29807,2.14945
+croatia_population_by_county_2021,4964,16289,3.28143,1.98062
+croatia_covid_cases_by_county_2022,4964,16289,3.28143,1.89728
+NUTS_population_by_country_2021,36440,36548,1.00296,1.00283
+france_population_by_metropolitan_region_2008,9831,18009,1.83186,1.77973
+germany_population_by_state_2011,3884,15936,4.10299,1.98361
+indonesia_population_by_province_2024,4452,12506,2.80907,1.49129
+metropolitan_france_population_by_departement_2022,10141,38773,3.82339,3.69115
+switzerland_gdp_in_billion_chf_by_canton_2019,10129,21297,2.10258,2.04629
+switzerland_population_by_canton_2016,10013,20608,2.05812,2.00334
+tunisia_population_by_governate_2014,9914,20994,2.11761,2.03899
+vietnam_population_by_province_2019,9744,20735,2.12798,2.05903
+
+Final Results:
+Success count: 15
+Fail count: 17

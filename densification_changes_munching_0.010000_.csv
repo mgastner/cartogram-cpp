@@ -1,0 +1,15 @@
+csv_file,from,to,max_ratio,avg_ratio
+austria_population_by_state_2020,8898,8898,1,1
+simplified_belgium_population_by_region_2022,98,232,2.36735,1.31371
+belgium_population_by_region_2022,3526,3526,1,1
+croatia_population_by_county_2021,4964,4966,1.0004,1.00008
+croatia_covid_cases_by_county_2022,4964,4966,1.0004,1.00006
+NUTS_population_by_country_2021,36440,36440,1,1
+france_population_by_metropolitan_region_2008,10130,10132,1.0002,1.00003
+germany_population_by_state_2011,3884,3884,1,1
+switzerland_gdp_in_billion_chf_by_canton_2019,9999,10000,1.0001,1.00001
+switzerland_population_by_canton_2016,10001,10001,1,1
+
+Final Results:
+Success count: 10
+Fail count: 22
