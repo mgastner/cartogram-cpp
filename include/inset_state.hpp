@@ -11,6 +11,7 @@
 #include "progress_tracker.hpp"
 #include "time_tracker.hpp"
 #include <boost/multi_array.hpp>
+#include <quadtree.hpp>
 
 struct max_area_error_info {
   double value;
@@ -33,7 +34,6 @@ struct proj_qd {  // quadtree-delaunay projection
 class InsetState
 {
 private:
-  std::map<unsigned int, double> threshold_at_integration_;
   std::unordered_map<std::string, double> area_errors_;
 
   std::unordered_set<Point> unique_quadtree_corners_;
@@ -253,7 +253,8 @@ public:
   void store_initial_area();
   void store_initial_target_area(const double override = 0.0);
   void store_original_geo_divs();
-  void store_quadtree_cell_corners(const Quadtree &);
+  template <class MetricFn>
+  void store_quadtree_cell_corners(const Quadtree<MetricFn> &qt);
   double target_area_at(const std::string &) const;
   bool target_area_is_missing(const std::string &) const;
   double total_inset_area(bool = false) const;
