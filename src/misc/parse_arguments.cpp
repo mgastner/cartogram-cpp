@@ -206,7 +206,7 @@ Arguments parse_arguments(const int argc, const char *argv[])
   args.qtdt_method = arguments.get<bool>("--qtdt_method");
   args.simplify = !arguments.get<bool>("--disable_simplify_and_densify");
   args.disable_triangulation_optimisation =
-    !arguments.get<bool>("--disable_triangulation_optimisation");
+    arguments.get<bool>("--disable_triangulation_optimisation");
   args.remove_tiny_polygons = arguments.get<bool>("--remove_tiny_polygons");
   args.min_polygon_area = arguments.get<double>("--minimum_polygon_area");
   args.max_permitted_area_error =
