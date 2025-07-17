@@ -520,6 +520,12 @@ void InsetState::store_quadtree_cell_corners(const Quadtree<MetricFn> &qt)
     unique_quadtree_corners_.insert(Point(xmax, ymax));
   }
 
+  quadtree_bboxes_.push_back(Bbox(0, 0, lx_, ly_));
+  unique_quadtree_corners_.insert(Point(0, 0));
+  unique_quadtree_corners_.insert(Point(0, ly_));
+  unique_quadtree_corners_.insert(Point(lx_, 0));
+  unique_quadtree_corners_.insert(Point(lx_, ly_));
+
   std::cerr << "Number of unique quadtree corners: "
             << unique_quadtree_corners_.size() << '\n'
             << "Number of quadtree leaf nodes: " << qt.num_leaves() << '\n';
