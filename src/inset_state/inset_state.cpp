@@ -493,8 +493,8 @@ void InsetState::create_and_refine_quadtree()
   timer.stop("Quadtree");
 }
 
-template <class MetricFn>
-void InsetState::store_quadtree_cell_corners(const Quadtree<MetricFn> &qt)
+template <class QuadtreeImp>
+void InsetState::store_quadtree_cell_corners(const QuadtreeImp &qt)
 {
   unique_quadtree_corners_.clear();
   quadtree_bboxes_.clear();
