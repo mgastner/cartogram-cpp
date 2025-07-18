@@ -68,12 +68,15 @@ public:
       const std::size_t stable = leaves_.size();  // only old leaves
       for (std::size_t i = 0; i < stable; ++i) {
         const uint32_t idx = leaves_[i];
-        const Node &n = nodes_[idx];
 
-        check_balance(idx, n.x ? n.x - 1 : n.x, n.y, changed, cmp);
-        check_balance(idx, n.x + n.size, n.y, changed, cmp);
-        check_balance(idx, n.x, n.y ? n.y - 1 : n.y, changed, cmp);
-        check_balance(idx, n.x, n.y + n.size, changed, cmp);
+        const uint32_t x = nodes_[idx].x;
+        const uint32_t y = nodes_[idx].y;
+        const uint32_t sz = nodes_[idx].size;
+
+        check_balance(idx, x ? x - 1 : x, y, changed, cmp);
+        check_balance(idx, x + sz, y, changed, cmp);
+        check_balance(idx, x, y ? y - 1 : y, changed, cmp);
+        check_balance(idx, x, y + sz, changed, cmp);
       }
     } while (changed);
   }
