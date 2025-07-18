@@ -193,7 +193,7 @@ public:
   nlohmann::json inset_to_geojson(bool, bool = false) const;
 
   // Function to go from equal area to cartogram
-  void integrate(ProgressTracker &);
+  void integrate(ProgressTracker &, size_t n_insets);
 
   std::vector<Segment> intersecting_segments(unsigned int) const;
   std::vector<std::vector<intersection>> intersec_with_parallel_to(

@@ -76,7 +76,7 @@ void InsetState::cleanup_after_integration()
   ref_to_fluxy_init().free();
 }
 
-void InsetState::integrate(ProgressTracker &progress_tracker)
+void InsetState::integrate(ProgressTracker &progress_tracker, size_t n_insets)
 {
 
   timer.start(inset_name_);
@@ -139,7 +139,11 @@ void InsetState::integrate(ProgressTracker &progress_tracker)
 
   // Write SVG for this inset, if requested
   if (args_.plot_polygons) {
-    write_map(inset_name() + "_output", args_.plot_grid, false);
+    if (n_insets > 1) {
+      write_map(inset_name() + "_output", args_.plot_grid, false);
+    } else {
+      write_map(inset_name() + "_cartogram", args_.plot_grid, false);
+    }
   }
 
   // Project original map with cumulative projection
