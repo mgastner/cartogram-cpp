@@ -28,8 +28,9 @@ int main(const int argc, const char *argv[])
   // Store total number of GeoDivs to monitor progress
   size_t total_geo_divs = cart_info.n_geo_divs();
 
-  // Write input map, with insets nicely placed
-  if (args.plot_polygons) {
+  // Write input map, with insets nicely placed (but not when redirecting to
+  // stdout)
+  if (args.plot_polygons && !args.redirect_exports_to_stdout) {
     cart_info.plot_input();
   }
 
@@ -59,12 +60,12 @@ int main(const int argc, const char *argv[])
   cart_info.rescale_insets();
 
   // Shift insets so that they do not overlap
-  cart_info.reposition_insets(args.redirect_exports_to_stdout);
+  cart_info.reposition_insets();
 
   // Output to GeoJSON
   cart_info.write_geojson("cartogram");
 
-  if (args.plot_polygons) {
+  if (args.plot_polygons && !args.redirect_exports_to_stdout) {
     cart_info.write_svg("cartogram");
   }
 
