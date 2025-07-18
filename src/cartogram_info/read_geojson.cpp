@@ -1,6 +1,49 @@
 #include "cartogram_info.hpp"
 #include "constants.hpp"
 #include "csv.hpp"
+#include "round_point.hpp"
+#include "simdjson.h"
+
+inline bool has_key(
+  const simdjson::dom::object &obj,
+  std::string_view key) noexcept
+{
+  return obj.at_key(key).error() == simdjson::SUCCESS;
+}
+
+inline simdjson::dom::element at_key(
+  const simdjson::dom::object &obj,
+  std::string_view key)
+{
+  auto e = obj.at_key(key);
+  if (e.error() != simdjson::SUCCESS) {
+    throw simdjson::simdjson_error(e.error());
+  }
+  return e;
+}
+
+inline std::string to_std_string(const simdjson::dom::element &e)
+{
+  if (e.is_string()) {
+    auto sv = e.get_string();
+    if (sv.error())
+      throw simdjson::simdjson_error(sv.error());
+    return std::string{sv.value()};
+  }
+  if (e.is_null())
+    return "null";
+  return simdjson::to_string(e);
+}
+
+inline double as_double(const simdjson::dom::element &e)
+{
+  return e.get_double().value();
+}
+
+inline simdjson::dom::array as_array(const simdjson::dom::element &e)
+{
+  return e.get_array().value();
+}
 
 inline std::string strip_quotes(const std::string &s)
 {
@@ -10,52 +53,65 @@ inline std::string strip_quotes(const std::string &s)
   return s;
 }
 
-static void check_geojson_validity(const nlohmann::json &j)
+static void check_geojson_validity(const simdjson::dom::element &j)
 {
-  if (!j.contains(std::string{"type"})) {
+  const simdjson::dom::object obj = j.get_object();
+
+  if (!has_key(obj, "type")) {
     std::cerr << "ERROR: JSON does not contain a key 'type'" << std::endl;
     std::exit(4);
   }
-  if (j["type"] != "FeatureCollection") {
+
+  if (to_std_string(at_key(obj, "type")) != "FeatureCollection") {
     std::cerr << "ERROR: JSON is not a valid GeoJSON FeatureCollection"
               << std::endl;
     std::exit(5);
   }
-  if (!j.contains(std::string{"features"})) {
+
+  if (!has_key(obj, "features")) {
     std::cerr << "ERROR: JSON does not contain a key 'features'" << std::endl;
     std::exit(6);
   }
-  const auto &features = j["features"];
-  for (const auto &feature : features) {
-    if (!feature.contains(std::string{"type"})) {
+
+  const simdjson::dom::array features = at_key(obj, "features");
+  for (const simdjson::dom::element &feature_elem : features) {
+    const simdjson::dom::object feature = feature_elem.get_object();
+
+    if (!has_key(feature, "type")) {
       std::cerr << "ERROR: JSON contains a 'Features' element without key "
                 << "'type'" << std::endl;
       std::exit(7);
     }
-    if (feature["type"] != "Feature") {
+
+    if (to_std_string(at_key(feature, "type")) != "Feature") {
       std::cerr << "ERROR: JSON contains a 'Features' element whose type "
                 << "is not 'Feature'" << std::endl;
       std::exit(8);
     }
-    if (!feature.contains(std::string("geometry"))) {
+
+    if (!has_key(feature, "geometry")) {
       std::cerr << "ERROR: JSON contains a feature without key 'geometry'"
                 << std::endl;
       std::exit(9);
     }
-    const auto &geometry = feature["geometry"];
-    if (!geometry.contains(std::string("type"))) {
+
+    const simdjson::dom::object geometry = at_key(feature, "geometry");
+    if (!has_key(geometry, "type")) {
       std::cerr << "ERROR: JSON contains geometry without key 'type'"
                 << std::endl;
       std::exit(10);
     }
-    if (!geometry.contains(std::string("coordinates"))) {
+
+    if (!has_key(geometry, "coordinates")) {
       std::cerr << "ERROR: JSON contains geometry without key 'coordinates'"
                 << std::endl;
       std::exit(11);
     }
-    if (geometry["type"] != "MultiPolygon" && geometry["type"] != "Polygon") {
-      std::cerr << "ERROR: JSON contains unsupported geometry "
-                << geometry["type"] << std::endl;
+
+    const std::string gtype = to_std_string(at_key(geometry, "type"));
+    if (gtype != "MultiPolygon" && gtype != "Polygon") {
+      std::cerr << "ERROR: JSON contains unsupported geometry " << gtype
+                << std::endl;
       std::exit(12);
     }
   }
@@ -63,38 +119,35 @@ static void check_geojson_validity(const nlohmann::json &j)
 
 static std::pair<GeoDiv, bool> json_to_geodiv(
   const std::string &id,
-  const nlohmann::json &json_coords_raw,
+  const simdjson::dom::element &json_coords_raw,
   const bool is_polygon)
 {
   GeoDiv gd(id);
-  nlohmann::json json_coords;
-  if (is_polygon) {
-    json_coords["0"] = json_coords_raw;
-  } else {
-    json_coords = json_coords_raw;
-  }
   bool erico = false;  // Exterior ring is clockwise oriented?
-  for (const auto &json_pgn_holes_container : json_coords) {
 
+  auto process_polygon = [&](const simdjson::dom::array &rings) {
     // Store exterior ring in CGAL format
+    const simdjson::dom::array ext = as_array(rings.at(0));
     Polygon ext_ring;
-    const auto jphc_ext = json_pgn_holes_container[0];
-    for (size_t j = 0; j < jphc_ext.size() - 1; ++j) {
-      ext_ring.push_back(Point(
-        static_cast<double>(jphc_ext[j][0]),
-        static_cast<double>(jphc_ext[j][1])));
+
+    for (size_t j = 0; j + 1 < ext.size(); ++j) {
+      const simdjson::dom::array pt = as_array(ext.at(j));
+      ext_ring.push_back(Point(as_double(pt.at(0)), as_double(pt.at(1))));
     }
 
     // CGAL considers a polygon as simple only if first vertex and last vertex
     // are different
-    const auto last_ext_index = jphc_ext.size() - 1;
+    const size_t last_ext_index = ext.size() - 1;
+    const simdjson::dom::array pt0 = as_array(ext.at(0));
+    const simdjson::dom::array lastp = as_array(ext.at(last_ext_index));
+
     if (
-      jphc_ext[0][0] != jphc_ext[last_ext_index][0] ||
-      jphc_ext[0][1] != jphc_ext[last_ext_index][1]) {
-      ext_ring.push_back(Point(
-        static_cast<double>(jphc_ext[last_ext_index][0]),
-        static_cast<double>(jphc_ext[last_ext_index][1])));
+      !almost_equal(as_double(pt0.at(0)), as_double(lastp.at(0))) ||
+      !almost_equal(as_double(pt0.at(1)), as_double(lastp.at(1)))) {
+      ext_ring.push_back(
+        Point(as_double(lastp.at(0)), as_double(lastp.at(1))));
     }
+
     if (!ext_ring.is_simple()) {
       std::cerr
         << "ERROR: (GeoJSON Parsing) exterior ring not a simple polygon"
@@ -112,44 +165,53 @@ static std::pair<GeoDiv, bool> json_to_geodiv(
     //       wild, but it would still be sensible to allow cases where there
     //       are external rings with opposite winding directions.
     erico = ext_ring.is_clockwise_oriented();
-    if (erico) {
+    if (erico)
       ext_ring.reverse_orientation();
-    }
 
     // Store interior ring
     std::vector<Polygon> int_ring_v;
-    for (size_t i = 1; i < json_pgn_holes_container.size(); ++i) {
+    for (size_t i = 1; i < rings.size(); ++i) {
+      const simdjson::dom::array int_r = as_array(rings.at(i));
       Polygon int_ring;
-      const auto jphc_int = json_pgn_holes_container[i];
-      for (size_t j = 0; j < jphc_int.size() - 1; ++j) {
-        int_ring.push_back(Point(
-          static_cast<double>(jphc_int[j][0]),
-          static_cast<double>(jphc_int[j][1])));
+
+      for (size_t j = 0; j + 1 < int_r.size(); ++j) {
+        const simdjson::dom::array pt = as_array(int_r.at(j));
+        int_ring.push_back(Point(as_double(pt.at(0)), as_double(pt.at(1))));
       }
-      const size_t last_int_index = jphc_int.size() - 1;
+
+      const size_t last_int_index = int_r.size() - 1;
+      const simdjson::dom::array pt0_i = as_array(int_r.at(0));
+      const simdjson::dom::array lastp_i = as_array(int_r.at(last_int_index));
+
       if (
-        jphc_int[0][0] != jphc_int[last_int_index][0] ||
-        jphc_int[0][1] != jphc_int[last_int_index][1]) {
-        int_ring.push_back(Point(
-          static_cast<double>(jphc_int[last_int_index][0]),
-          static_cast<double>(jphc_int[last_int_index][1])));
+        !almost_equal(as_double(pt0_i.at(0)), as_double(lastp_i.at(0))) ||
+        !almost_equal(as_double(pt0_i.at(1)), as_double(lastp_i.at(1)))) {
+        int_ring.push_back(
+          Point(as_double(lastp_i.at(0)), as_double(lastp_i.at(1))));
       }
+
       if (!int_ring.is_simple()) {
         std::cerr
           << "ERROR: (GeoJSON Parsing) interior ring not a simple polygon"
           << std::endl;
         std::exit(14);
       }
-      if (int_ring.is_counterclockwise_oriented()) {
+
+      if (int_ring.is_counterclockwise_oriented())
         int_ring.reverse_orientation();
-      }
       int_ring_v.push_back(int_ring);
     }
-    const Polygon_with_holes pwh(
-      ext_ring,
-      int_ring_v.begin(),
-      int_ring_v.end());
-    gd.push_back(pwh);
+
+    gd.push_back(
+      Polygon_with_holes(ext_ring, int_ring_v.begin(), int_ring_v.end()));
+  };
+
+  if (is_polygon) {
+    process_polygon(as_array(json_coords_raw));
+  } else {
+    const simdjson::dom::array polys = as_array(json_coords_raw);
+    for (const simdjson::dom::element &poly_elem : polys)
+      process_polygon(as_array(poly_elem));
   }
   return {gd, erico};
 }
@@ -180,34 +242,37 @@ static void print_properties_map(
   }
 }
 
-static nlohmann::json load_geojson(const std::string &geometry_file_name)
+static simdjson::dom::element load_geojson(
+  const std::string &geometry_file_name)
 {
-  std::ifstream in_file(geometry_file_name);
-  if (!in_file) {
-    std::cerr << "ERROR reading GeoJSON: failed to open " << geometry_file_name
-              << std::endl;
-    std::exit(3);
-  }
+  static simdjson::dom::parser parser;
+  static std::vector<simdjson::padded_string> buffers;
 
-  nlohmann::json j;
   try {
-    in_file >> j;
-  } catch (nlohmann::json::parse_error &e) {
-    std::cerr << "ERROR: " << e.what() << ". Exception id: " << e.id
-              << ". Byte position of error: " << e.byte << std::endl;
+    auto &buf =
+      buffers.emplace_back(simdjson::padded_string::load(geometry_file_name));
+    return parser.parse(buf);
+  } catch (const simdjson::simdjson_error &e) {
+    std::cerr << "ERROR reading GeoJSON: " << e.what() << std::endl;
     std::exit(3);
   }
-
-  return j;
 }
 
 // Read coordinate reference system if it is included in the GeoJSON
-static void extract_crs(const nlohmann::json &j, std::string &crs)
+static void extract_crs(const simdjson::dom::element &j, std::string &crs)
 {
-  if (
-    j.contains("crs") && j["crs"].contains("properties") &&
-    j["crs"]["properties"].contains("name")) {
-    crs = j["crs"]["properties"]["name"];
+  if (j.type() != simdjson::dom::element_type::OBJECT)
+    return;
+
+  const simdjson::dom::object obj = j.get_object();
+  if (has_key(obj, "crs")) {
+    const simdjson::dom::object crs_obj = at_key(obj, "crs");
+    if (has_key(crs_obj, "properties")) {
+      const simdjson::dom::object props = at_key(crs_obj, "properties");
+      if (has_key(props, "name")) {
+        crs = to_std_string(at_key(props, "name"));
+      }
+    }
   }
   std::cerr << "Coordinate reference system: " << crs << std::endl;
 }
@@ -215,15 +280,20 @@ static void extract_crs(const nlohmann::json &j, std::string &crs)
 // Extract unique properties from GeoJSON and return them as a map
 // The keys are the property names, and the values are vectors of
 static std::map<std::string, std::vector<std::string>>
-extract_unique_properties_map(const nlohmann::json &j)
+extract_unique_properties_map(const simdjson::dom::element &j)
 {
   std::map<std::string, std::vector<std::string>> properties_map;
-  for (const auto &feature : j["features"]) {
-    for (const auto &property_item : feature["properties"].items()) {
-      const std::string key = property_item.key();
-      const std::string value = strip_quotes(property_item.value().dump());
 
-      const std::vector<std::string> value_vec = properties_map[key];
+  const simdjson::dom::array features = at_key(j.get_object(), "features");
+  for (const simdjson::dom::element &feature_elem : features) {
+    const simdjson::dom::object props =
+      at_key(feature_elem.get_object(), "properties");
+
+    for (auto [k, v] : props) {
+      const std::string key = std::string{k};
+      const std::string value = to_std_string(v);
+
+      const std::vector<std::string> &value_vec = properties_map[key];
       const bool value_not_inside =
         std::find(value_vec.begin(), value_vec.end(), value) ==
         value_vec.end();
@@ -234,8 +304,9 @@ extract_unique_properties_map(const nlohmann::json &j)
 
   // Discard keys with repeating or missing values
   auto unique_properties_map = properties_map;
+  const size_t n_features = features.size();
   for (const auto &[key, value_vec] : properties_map) {
-    if (value_vec.size() < j["features"].size())
+    if (value_vec.size() < n_features)
       unique_properties_map.erase(key);
   }
 
@@ -248,7 +319,7 @@ extract_unique_properties_map(const nlohmann::json &j)
 }
 
 static void generate_csv_template(
-  const nlohmann::json &j,
+  const simdjson::dom::element &j,
   const std::string &map_name_)
 {
   std::map<std::string, std::vector<std::string>> viable_properties_map =
@@ -360,28 +431,39 @@ static void generate_csv_template(
 }
 
 static std::vector<std::string> extract_initial_order_of_ids(
-  const nlohmann::json &j,
+  const simdjson::dom::element &j,
   const std::string &id_header)
 {
   std::vector<std::string> initial_id_order;
-  for (const auto &feature : j["features"]) {
-    const auto properties = feature["properties"];
-    assert(properties.contains(id_header));
-    const auto id = strip_quotes(properties[id_header].dump());
+
+  const simdjson::dom::array features = at_key(j.get_object(), "features");
+  for (const simdjson::dom::element &feature_elem : features) {
+    const simdjson::dom::object properties =
+      at_key(feature_elem.get_object(), "properties");
+    assert(has_key(properties, id_header));
+    const auto id = strip_quotes(to_std_string(at_key(properties, id_header)));
     initial_id_order.push_back(id);
   }
   return initial_id_order;
 }
 
-void CartogramInfo::construct_inset_state_from_geodivs(const nlohmann::json &j)
+void CartogramInfo::construct_inset_state_from_geodivs(
+  const simdjson::dom::element &j)
 {
   InsetState inset_state("C", args_);
-  for (const auto &feature : j["features"]) {
-    const auto geometry = feature["geometry"];
-    const bool is_polygon = (geometry["type"] == "Polygon");
+  const simdjson::dom::array features = at_key(j.get_object(), "features");
 
-    std::string id = strip_quotes(feature["properties"][id_header_].dump());
-    auto [gd, erico] = json_to_geodiv(id, geometry["coordinates"], is_polygon);
+  for (const simdjson::dom::element &feature_elem : features) {
+    const simdjson::dom::object geometry =
+      at_key(feature_elem.get_object(), "geometry");
+    const bool is_polygon =
+      (to_std_string(at_key(geometry, "type")) == "Polygon");
+
+    std::string id = strip_quotes(to_std_string(
+      at_key(at_key(feature_elem.get_object(), "properties"), id_header_)));
+
+    auto [gd, erico] =
+      json_to_geodiv(id, at_key(geometry, "coordinates"), is_polygon);
     inset_state.push_back(gd);
     gd_to_inset_.emplace(id, "C");
     original_ext_ring_is_clockwise_ = erico;
@@ -392,7 +474,7 @@ void CartogramInfo::construct_inset_state_from_geodivs(const nlohmann::json &j)
 void CartogramInfo::read_geojson()
 {
   std::string geometry_file_name = args_.geo_file_name;
-  nlohmann::json j = load_geojson(geometry_file_name);
+  simdjson::dom::element j = load_geojson(geometry_file_name);
   check_geojson_validity(j);
 
   if (args_.make_csv) {
