@@ -9,7 +9,6 @@
 #include <CGAL/Min_ellipse_2_traits_2.h>
 #include <CGAL/Polygon_with_holes_2.h>
 #include <CGAL/Polyline_simplification_2/simplify.h>
-#include <CGAL/Quadtree.h>
 
 typedef CGAL::Simple_cartesian<double> Scd;
 typedef CGAL::Polygon_2<Scd> Polygon;
@@ -26,9 +25,6 @@ typedef CGAL::Min_ellipse_2_traits_2<Scd> Ellipse_traits;
 typedef CGAL::Min_ellipse_2<Ellipse_traits> Min_ellipse;
 typedef CGAL::Min_circle_2_traits_2<Scd> Circle_traits;
 typedef CGAL::Min_circle_2<Circle_traits> Min_circle;
-
-// Quadtree
-typedef CGAL::Quadtree<Scd, std::vector<Point>> Quadtree;
 
 // Delaunay triangulation
 typedef CGAL::Constrained_Delaunay_triangulation_2<Scd> Delaunay;
