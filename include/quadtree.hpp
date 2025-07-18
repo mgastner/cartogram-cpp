@@ -21,7 +21,7 @@ public:
 
     // Reserve much more than target_cells to account for potential nodes
     // during grading
-    const std::size_t cap = target_ * 4 + 8;
+    const std::size_t cap = target_ * 5 + 8;
     nodes_.reserve(cap);
     leaves_.reserve(cap);
     heap_.reserve(cap);
