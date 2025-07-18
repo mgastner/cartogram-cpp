@@ -1,6 +1,7 @@
 #include "inset_state.hpp"
 #include "constants.hpp"
 #include "csv.hpp"
+#include "quadtree.hpp"
 
 InsetState::InsetState(std::string pos, Arguments args)
     : args_(args), pos_(pos)
@@ -449,255 +450,85 @@ GeoDiv &InsetState::geo_div_at_id(std::string id)
   }
 }
 
-// Get unique points from GeoDivs
-static std::vector<Point> get_unique_points(InsetState &inset_state)
+void InsetState::create_and_refine_quadtree()
 {
-  std::vector<Point> points;
-  for (const auto &gd : inset_state.geo_divs()) {
-    for (const auto &pwh : gd.polygons_with_holes()) {
-      const Polygon &ext_ring = pwh.outer_boundary();
-      points.insert(
-        points.end(),
-        ext_ring.vertices_begin(),
-        ext_ring.vertices_end());
-      for (const auto &hole : pwh.holes()) {
-        points.insert(
-          points.end(),
-          hole.vertices_begin(),
-          hole.vertices_end());
-      }
-    }
-  }
+  timer.start("Quadtree");
 
-  // Add boundary points to force lx * ly size Quadtree
-  points.push_back(Point(0, 0));
-  points.push_back(Point(0, inset_state.ly()));
-  points.push_back(Point(inset_state.lx(), 0));
-  points.push_back(Point(inset_state.lx(), inset_state.ly()));
+  // Determine target leaf count as 2^-9 times grid area.
+  size_t target_leaf_count = static_cast<size_t>((lx_ * ly_) / 512);
+  std::cerr << "Quadtree target leaf count (pre-grading): "
+            << target_leaf_count << std::endl;
 
-  // Remove duplicates
-  std::unordered_set<Point> unique_points(points.begin(), points.end());
-  return std::vector<Point>(unique_points.begin(), unique_points.end());
-}
-
-// Counts the number of leaf nodes in a quadtree
-static int count_leaf_nodes(const Quadtree &qt)
-{
-  int leaf_count = 0;
-  for ([[maybe_unused]] const auto &node :
-       qt.traverse(CGAL::Orthtrees::Leaves_traversal<Quadtree>(qt))) {
-    ++leaf_count;
-  }
-  return leaf_count;
-}
-
-// Refine the quadtree by splitting nodes that exceed the given threshold
-struct Split_by_threshold {
-  const Quadtree &qt;
-  double threshold;
-  unsigned int max_depth;
-  InsetState &inset_state;
-
-  Split_by_threshold(
-    const Quadtree &qt_,
-    double threshold_,
-    unsigned int max_depth_,
-    InsetState &inset_state_)
-      : qt(qt_), threshold(threshold_), max_depth(max_depth_),
-        inset_state(inset_state_)
-  {
-  }
-
-  template <typename Node_index, typename Tree>
-  bool operator()(Node_index idx, const Tree &tree) const
-  {
-    if (tree.depth(idx) >= max_depth)
-      return false;
-
-    auto bbox = tree.bbox(idx);
+  auto get_rho_diff = [&](uint32_t i, uint32_t j, uint32_t size) {
     double rho_min = std::numeric_limits<double>::infinity();
     double rho_max = -std::numeric_limits<double>::infinity();
 
-    for (int x = static_cast<int>(bbox.xmin());
-         x < static_cast<int>(bbox.xmax());
-         ++x) {
-      for (int y = static_cast<int>(bbox.ymin());
-           y < static_cast<int>(bbox.ymax());
-           ++y) {
-        if (
-          x < 0 || y < 0 || x >= static_cast<int>(inset_state.lx()) ||
-          y >= static_cast<int>(inset_state.ly()))
-          continue;
-        const unsigned int ux = static_cast<unsigned int>(x);
-        const unsigned int uy = static_cast<unsigned int>(y);
-        const double rho = inset_state.ref_to_rho_init()(ux, uy);
+    const uint32_t x_end = std::min(i + size, lx_);
+    const uint32_t y_end = std::min(j + size, ly_);
+
+    for (uint32_t x = i; x < x_end; ++x) {
+      for (uint32_t y = j; y < y_end; ++y) {
+        const double rho = ref_to_rho_init()(x, y);
         rho_min = std::min(rho_min, rho);
         rho_max = std::max(rho_max, rho);
       }
     }
-    return (rho_max - rho_min) > threshold;
-  }
-};
+    return (rho_max - rho_min);
+  };
 
-static void refine_quadtree_with_threshold(
-  Quadtree &qt,
-  double threshold,
-  unsigned int depth,
-  InsetState &inset_state)
-{
-  qt.refine(Split_by_threshold(qt, threshold, depth, inset_state));
-}
+  Quadtree qt(std::max(lx_, ly_), target_leaf_count, get_rho_diff);
+  qt.build();
 
-// Use binary search to find a threshold that results in a quadtree with a
-// at least the target number of leaf nodes
-static double find_threshold(
-  Quadtree &base_qt,
-  InsetState &state,
-  const unsigned int depth,
-  const int target_leaf_count,
-  const int tolerance,
-  double low_thresh,
-  double high_thresh,
-  const int max_iterations)
-{
-  double threshold = high_thresh;
-  // First, check if the high threshold is too low
-  {
-    Quadtree qt_copy_init(base_qt);
-    refine_quadtree_with_threshold(qt_copy_init, high_thresh, depth, state);
-    int leaves = count_leaf_nodes(qt_copy_init);
-    std::cerr << "Initial high threshold = " << high_thresh
-              << ", leaf nodes = " << leaves << std::endl;
+  const size_t n_leaves_bef_grading = qt.num_leaves();
 
-    // If the leaf count is more than 5 * target_leaf_count,
-    // increase the high threshold to lower the leaf count
-    while (leaves > 5 * target_leaf_count) {
-      high_thresh *= 2;
-      Quadtree qt_copy(base_qt);
-      refine_quadtree_with_threshold(qt_copy, high_thresh, depth, state);
-      leaves = count_leaf_nodes(qt_copy);
-      std::cerr << "Adjusted high threshold = " << high_thresh
-                << ", leaf nodes = " << leaves << std::endl;
-    }
-  }
-
-  for (int iter = 0; iter < max_iterations; ++iter) {
-    const double mid_thresh = (low_thresh + high_thresh) / 2.0;
-    Quadtree qt_copy(base_qt);
-    refine_quadtree_with_threshold(qt_copy, mid_thresh, depth, state);
-    const int leaves = count_leaf_nodes(qt_copy);
-
-    std::cerr << "iter " << iter << ": threshold = " << mid_thresh
-              << ", leaf nodes = " << leaves << std::endl;
-
-    if (
-      leaves >= target_leaf_count - tolerance &&
-      leaves <= target_leaf_count + tolerance) {  // Found a good threshold
-      threshold = mid_thresh;
-      break;
-    }
-    // Too few leaves: lower threshold to increase leaf count
-    if (leaves < target_leaf_count)
-      high_thresh = mid_thresh;
-    else  // Too many leaves: threshold is too low
-      low_thresh = mid_thresh;
-    threshold = mid_thresh;
-  }
-  return threshold;
-}
-
-/*
-  Create and refine the quadtree.
-  * Build a quadtree from the unique points of the GeoDivs
-  * Find a threshold that results in a quadtree with at least target_leaf_count
-    leaf nodes
-  * Refine the quadtree with the found threshold
-  * Grade the quadtree
-  * Store the bounding boxes of the leaf nodes
-*/
-void InsetState::create_and_refine_quadtree()
-{
-  timer.start("Delaunay Triangulation");
-
-  // Build a quadtree from the unique points of the GeoDivs
-  std::vector<Point> unique_points = get_unique_points(*this);
-  Quadtree qt(unique_points);
-
-  // Find a threshold that results in a quadtree with at least
-  // target_leaf_count leaf nodes
-  unsigned int depth =
-    static_cast<unsigned int>(std::max(log2(lx_), log2(ly_)));
-  std::cerr << "Using quadtree depth: " << depth << std::endl;
-
-  // Determine target leaf count as 2^-9 times grid area.
-  int target_leaf_count = static_cast<int>((lx_ * ly_) / 512);
-  std::cerr << "Quadtree target leaf count (pre-grading): "
-            << target_leaf_count << std::endl;
-  const int tolerance = 1000;
-  double low_thresh = 0.0;
-  double high_thresh = 1.0;
-
-  // Set high threshold as the same as the threshold at the previous
-  // integration to speed up the search
-  if (threshold_at_integration_.count(n_finished_integrations_ - 1)) {
-    high_thresh = threshold_at_integration_.at(n_finished_integrations_ - 1);
-  }
-  const int max_iterations = 10;
-  const double threshold = find_threshold(
-    qt,
-    *this,
-    depth,
-    target_leaf_count,
-    tolerance,
-    low_thresh,
-    high_thresh,
-    max_iterations);
-  std::cerr << "Using threshold: " << threshold << std::endl;
-  threshold_at_integration_.insert({n_finished_integrations_, threshold});
-  std::cerr << "Split criteria: rho_max - rho_min > " << threshold
-            << std::endl;
-
-  // Refine the quadtree with the found threshold
-  refine_quadtree_with_threshold(qt, threshold, depth, *this);
   qt.grade();
-  std::cerr << "Quadtree root node bounding box: " << qt.bbox(qt.root())
-            << std::endl;
 
   // Store the bounding boxes of the leaf nodes
   store_quadtree_cell_corners(qt);
 
-  timer.stop("Delaunay Triangulation");
+  std::cerr << "Quadtree Nodes pre-grading: " << n_leaves_bef_grading
+            << std::endl;
+  std::cerr << "Quadtree Nodes post-grading: " << qt.num_leaves() << std::endl;
+
+  timer.stop("Quadtree");
 }
 
-void InsetState::store_quadtree_cell_corners(const Quadtree &qt)
+template <class QuadtreeImp>
+void InsetState::store_quadtree_cell_corners(const QuadtreeImp &qt)
 {
   unique_quadtree_corners_.clear();
   quadtree_bboxes_.clear();
-  for (const auto &node_idx :
-       qt.traverse(CGAL::Orthtrees::Leaves_traversal<Quadtree>(qt))) {
-    const auto bbox = qt.bbox(node_idx);
-    if (
-      bbox.xmin() < 0 || bbox.xmax() > lx_ || bbox.ymin() < 0 ||
-      bbox.ymax() > ly_)
+
+  unique_quadtree_corners_.reserve(4 * qt.num_leaves());
+  quadtree_bboxes_.reserve(qt.num_leaves());
+
+  for (const auto &leaf : qt.leaves()) {
+    const uint32_t xmin = leaf.x;
+    const uint32_t ymin = leaf.y;
+    const uint32_t xmax = xmin + leaf.size;
+    const uint32_t ymax = ymin + leaf.size;
+
+    if ((xmax > lx_) + (ymax > ly_))
       continue;
 
+    Bbox bbox(xmin, ymin, xmax, ymax);
     quadtree_bboxes_.push_back(bbox);
-    unique_quadtree_corners_.insert(Point(bbox.xmin(), bbox.ymin()));
-    unique_quadtree_corners_.insert(Point(bbox.xmax(), bbox.ymax()));
-    unique_quadtree_corners_.insert(Point(bbox.xmin(), bbox.ymax()));
-    unique_quadtree_corners_.insert(Point(bbox.xmax(), bbox.ymin()));
+
+    unique_quadtree_corners_.insert(Point(xmin, ymin));
+    unique_quadtree_corners_.insert(Point(xmax, ymin));
+    unique_quadtree_corners_.insert(Point(xmin, ymax));
+    unique_quadtree_corners_.insert(Point(xmax, ymax));
   }
 
-  // Ensure mapping domain boundary corners are included
+  quadtree_bboxes_.push_back(Bbox(0, 0, lx_, ly_));
   unique_quadtree_corners_.insert(Point(0, 0));
   unique_quadtree_corners_.insert(Point(0, ly_));
   unique_quadtree_corners_.insert(Point(lx_, 0));
   unique_quadtree_corners_.insert(Point(lx_, ly_));
 
   std::cerr << "Number of unique quadtree corners: "
-            << unique_quadtree_corners_.size() << std::endl;
-  std::cerr << "Number of quadtree leaf nodes: " << count_leaf_nodes(qt)
-            << std::endl;
+            << unique_quadtree_corners_.size() << '\n'
+            << "Number of quadtree leaf nodes: " << qt.num_leaves() << '\n';
 }
 
 void InsetState::increment_integration()
@@ -1050,8 +881,6 @@ void InsetState::adjust_grid()
     initialize_identity_proj();
     initialize_cum_proj();
     set_area_errors();
-
-    threshold_at_integration_.clear();
 
     Bbox bb = bbox();
     std::cerr << "New grid dimensions: " << lx_ << " " << ly_
