@@ -51,9 +51,8 @@ failed_arr=(0 0 0 0 0)
 results_folder="" # User-specified results folder name
 
 # Parsing command line arguments
-if [ $# -eq 0 ]; then
-  cli=""
-else
+cli=""
+if [ $# -ne 0 ]; then
   for arg in "$@"; do
     if [ "$arg" == "--verbose" ]; then
       verbose=1

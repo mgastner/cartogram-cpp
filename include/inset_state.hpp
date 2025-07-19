@@ -35,7 +35,6 @@ class InsetState
 public:
   std::vector<std::pair<size_t, size_t>> densification_changes;
 private:
-  std::map<unsigned int, double> threshold_at_integration_;
   std::unordered_map<std::string, double> area_errors_;
 
   std::unordered_set<Point> unique_quadtree_corners_;
@@ -255,7 +254,8 @@ public:
   void store_initial_area();
   void store_initial_target_area(const double override = 0.0);
   void store_original_geo_divs();
-  void store_quadtree_cell_corners(const Quadtree &);
+  template <class QuadtreeImp>
+  void store_quadtree_cell_corners(const QuadtreeImp &qt);
   double target_area_at(const std::string &) const;
   bool target_area_is_missing(const std::string &) const;
   double total_inset_area(bool = false) const;

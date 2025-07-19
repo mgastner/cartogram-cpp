@@ -7,7 +7,7 @@ Arguments parse_arguments(const int argc, const char *argv[])
 
   // Create parser for arguments using argparse.
   // From https://github.com/p-ranav/argparse
-  argparse::ArgumentParser arguments("./cartogram");
+  argparse::ArgumentParser arguments("./cartogram", "25.7");
 
   // Positional argument accepting geometry file (GeoJSON, JSON) as input
   arguments.add_argument("geometry_file")
@@ -214,7 +214,7 @@ Arguments parse_arguments(const int argc, const char *argv[])
   args.qtdt_method = arguments.get<bool>("--qtdt_method");
   args.simplify = !arguments.get<bool>("--disable_simplify_and_densify");
   args.disable_triangulation_optimisation =
-    !arguments.get<bool>("--disable_triangulation_optimisation");
+    arguments.get<bool>("--disable_triangulation_optimisation");
   args.remove_tiny_polygons = arguments.get<bool>("--remove_tiny_polygons");
   args.min_polygon_area = arguments.get<double>("--minimum_polygon_area");
   args.max_permitted_area_error =

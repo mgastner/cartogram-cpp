@@ -3,11 +3,6 @@
 # Start time, and other metadata
 start_date=$(date '+%Y-%m-%d_%H-%M')
 
-# Create results directory and change to it
-results_dir="results_${start_date}"
-mkdir -p "${results_dir}"
-cd "${results_dir}"
-
 # Add colors
 red=1
 green=2
@@ -26,9 +21,29 @@ color() {
 cli=""
 if [ $# -ne 0 ]; then
   for arg in "$@"; do
-    cli="$cli $arg"
+    if [[ "$arg" == --results-folder=* ]]; then
+      results_folder="${arg#--results-folder=}"
+      printf "\nResults folder set to: $results_folder\n"
+    # elif [ "$arg" == "--verbose" ]; then
+    #   verbose=1
+    #   printf "\VERBOSE mode turned on.\n"
+    # elif [ "$arg" == "--flags" ]; then
+    #   flags=1
+    #   printf "\FLAGS mode turned on.\n"
+    else
+      cli="$cli $arg"
+    fi
   done
 fi
+
+# Create results directory and change to it
+if [ -n "$results_folder" ]; then
+  results_dir="$results_folder"
+else
+  results_dir="results_${start_date}"
+fi
+mkdir -p "${results_dir}"
+cd "${results_dir}"
 
 # Function to benchmark map with csv
 benchmark() {
@@ -41,8 +56,9 @@ benchmark() {
   fi
 
   cmd="cartogram ${map} ${csv} ${curr_cli}"
-  # hyperfine '$cmd' --export-csv tmp.csv
-  hyperfine --parameter-scan qlcf 5 15 "${cmd} --quadtree_leaf_count_factor \$((2**{qlcf}))" --export-csv tmp.csv $(echo "--command-name ${country}-"{05..15})
+  csv_base="${csv_name%.csv}"
+  # hyperfine '$cmd' --export-csv tmp.csv --command-name $csv_base
+  hyperfine --parameter-scan qlcf 5 15 "${cmd} --quadtree_leaf_count_factor \$((2**{qlcf}))" --export-csv tmp.csv $(echo "--command-name ${csv_base}-"{05..15})
 
   if [ ! -f final_results.csv ]; then
     cp tmp.csv final_results.csv
