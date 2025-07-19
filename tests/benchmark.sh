@@ -41,8 +41,9 @@ benchmark() {
   fi
 
   cmd="cartogram ${map} ${csv} ${curr_cli}"
-  # hyperfine '$cmd' --export-csv tmp.csv
-  hyperfine --parameter-scan qlcf 5 15 "${cmd} --quadtree_leaf_count_factor \$((2**{qlcf}))" --export-csv tmp.csv $(echo "--command-name ${country}-"{05..15})
+  csv_base="${csv_name%.csv}"
+  # hyperfine '$cmd' --export-csv tmp.csv --command-name $csv_base
+  hyperfine --parameter-scan qlcf 5 15 "${cmd} --quadtree_leaf_count_factor \$((2**{qlcf}))" --export-csv tmp.csv $(echo "--command-name ${csv_base}-"{05..15})
 
   if [ ! -f final_results.csv ]; then
     cp tmp.csv final_results.csv
