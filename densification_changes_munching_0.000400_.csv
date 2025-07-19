@@ -1,20 +1,40 @@
 csv_file,from,to,max_ratio,avg_ratio
-austria_population_by_state_2020,9972,13823,1.38618,1.37141
-simplified_belgium_population_by_region_2022,98,6815,69.5408,12.4468
-belgium_population_by_region_2022,3526,8807,2.49773,1.34927
-brazil_population_by_state_2021,9537,27067,2.8381,2.65169
-croatia_population_by_county_2021,4964,20995,4.22945,2.51004
-croatia_covid_cases_by_county_2022,4964,20995,4.22945,2.39414
-NUTS_population_by_country_2021,36440,36699,1.00711,1.00675
-france_population_by_metropolitan_region_2008,9795,22203,2.26677,2.20056
-germany_population_by_state_2011,3884,20274,5.21988,2.52277
-indonesia_population_by_province_2024,4452,16179,3.6341,1.87196
-metropolitan_france_population_by_departement_2022,10136,49244,4.85833,4.69494
-switzerland_gdp_in_billion_chf_by_canton_2019,10127,26460,2.61282,2.54127
-switzerland_population_by_canton_2016,10018,25678,2.56319,2.49118
-tunisia_population_by_governate_2014,9883,25695,2.59992,2.49143
-vietnam_population_by_province_2019,9714,25649,2.64042,2.55511
+algeria_population_by_wilaya_2022,10208,47478,4.65106,4.34547
+australia_population_by_state_and_territory_2021,14644,17046,1.16403,1.16403
+austria_population_by_state_2020,8898,12051,1.35435,1.35435
+bahamas_population_by_district_2010,19149,20766,1.08444,1.08444
+simplified_belgium_population_by_region_2022,98,6815,69.5408,23.8937
+belgium_population_by_region_2022,3526,8807,2.49773,1.56351
+brazil_population_by_state_2021,9514,27118,2.85033,2.65641
+china_population_by_province_2020,9611,35112,3.65331,3.40122
+conterminous_usa_population_by_state_2020,8937,28911,3.23498,3.08339
+usa_population_by_county_2021,51122,163012,3.18869,3.08747
+croatia_population_by_county_2021,4964,20995,4.22945,2.51787
+croatia_covid_cases_by_county_2022,4964,20995,4.22945,2.40453
+egypt_population_by_governate_2017,8572,27861,3.25023,3.1646
+england_population_by_region_2022,12913,25261,1.95625,1.84851
+NUTS_population_by_country_2021,36140,36398,1.00714,1.00705
+NUTS_population_by_region_2020,11784,19070,1.6183,1.6183
+france_population_by_metropolitan_region_2008,9795,22287,2.27534,2.1418
+germany_population_by_state_2011,3884,20274,5.21988,2.66767
+indonesia_population_by_province_2024,4452,16179,3.6341,1.72548
+japan_population_by_prefecture_2020,9814,14587,1.48635,1.36996
+malaysia_population_by_state_2020,9358,14965,1.59917,1.49256
+metropolitan_france_population_by_departement_2022,10091,48940,4.84987,4.70876
+russia_population_by_federal_subject_2010,9212,43899,4.76541,4.14101
+singapore_population_by_planning_area_2015,1707,23125,13.5472,7.88861
+switzerland_gdp_in_billion_chf_by_canton_2019,10112,26492,2.61986,2.53939
+switzerland_population_by_canton_2016,9999,25762,2.57646,2.48757
+tunisia_population_by_governate_2014,9844,25581,2.59864,2.47758
+usa_population_by_state_2020,8962,20052,2.23745,2.10607
+vietnam_population_by_province_2019,9739,25833,2.65253,2.5976
+world_population_by_country_2010,15866,63159,3.98078,3.98078
+csv_wo_antarctica_ne50_antimeridian_minus169_brewer_pop,22560,72491,3.21325,3.11942
+csv_ne50_antimeridian_minus169_brewer_pop,23923,75910,3.1731,3.1731
+
+Average: 5.310622813
+Median: 3.011715
 
 Final Results:
-Success count: 15
-Fail count: 17
+Success count: 19
+Fail count: 13

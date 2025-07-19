@@ -1,14 +1,35 @@
-csv_file,from,to,max_ratio,avg_ratio
+algeria_population_by_wilaya_2022,10352,10415,1.00609,1.00145
+australia_population_by_state_and_territory_2021,14644,14682,1.00259,1.00259
 austria_population_by_state_2020,8898,8898,1,1
-simplified_belgium_population_by_region_2022,98,232,2.36735,1.31371
-belgium_population_by_region_2022,3526,3526,1,1
+bahamas_population_by_district_2010,19149,19149,1,1
+simplified_belgium_population_by_region_2022,98,232,2.36735,1.52284
+belgium_population_by_region_2022,3526,3528,1.00057,1.00019
+brazil_population_by_state_2021,9795,9821,1.00265,1.00046
+china_population_by_province_2020,9884,9885,1.0001,1.00003
+conterminous_usa_population_by_state_2020,9960,10080,1.01205,1.01205
+usa_population_by_county_2021,49966,49973,1.00014,1.00014
 croatia_population_by_county_2021,4964,4966,1.0004,1.00008
-croatia_covid_cases_by_county_2022,4964,4966,1.0004,1.00006
+croatia_covid_cases_by_county_2022,4964,4966,1.0004,1.00007
+egypt_population_by_governate_2017,6711,6851,1.02086,1.01707
+england_population_by_region_2022,13950,13950,1,1
 NUTS_population_by_country_2021,36440,36440,1,1
-france_population_by_metropolitan_region_2008,10130,10132,1.0002,1.00003
+NUTS_population_by_region_2020,11785,11785,1,1
+france_population_by_metropolitan_region_2008,10130,10132,1.0002,1.00007
 germany_population_by_state_2011,3884,3884,1,1
-switzerland_gdp_in_billion_chf_by_canton_2019,9999,10000,1.0001,1.00001
+indonesia_population_by_province_2024,4452,4452,1,1
+japan_population_by_prefecture_2020,9799,9799,1,1
+malaysia_population_by_state_2020,9995,9997,1.0002,1.00007
+metropolitan_france_population_by_departement_2022,9971,9975,1.0004,1.00034
+russia_population_by_federal_subject_2010,10408,10408,1,1
+singapore_population_by_planning_area_2015,1707,1753,1.02695,1.02695
+switzerland_gdp_in_billion_chf_by_canton_2019,10001,10001,1,1
 switzerland_population_by_canton_2016,10001,10001,1,1
+tunisia_population_by_governate_2014,10039,10061,1.00219,1.00185
+usa_population_by_state_2020,9918,9936,1.00181,1.00171
+vietnam_population_by_province_2019,10076,10076,1,1
+world_population_by_country_2010,15866,15897,1.00195,1.00195
+csv_wo_antarctica_ne50_antimeridian_minus169_brewer_pop,22246,22270,1.00108,1.00108
+csv_ne50_antimeridian_minus169_brewer_pop,23923,24052,1.00539,1.00539
 
 Final Results:
 Success count: 10
