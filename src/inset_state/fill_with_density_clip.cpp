@@ -553,7 +553,7 @@ inline int get_edge_index_cw(
   const Point &p,
   double cx,
   double cy,
-  double eps = 1e-9)
+  double eps = 1e-7)
 {
   if (std::fabs(p.x() - (cx + 1)) < eps)
     return 0;  // right edge
