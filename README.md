@@ -1,14 +1,4 @@
-# cartogram-cpp: Cartogram generator in C++ [![DOI](https://zenodo.org/badge/281575635.svg)](https://zenodo.org/badge/latestdoi/281575635) [![License: AGPL v3](https://img.shields.io/badge/License-AGPL%20v3-blue.svg)](https://www.gnu.org/licenses/agpl-3.0)
-
-<p align="center">
-    <a href="https://go-cart.io"><img src ="img/gocart_logo.svg" alt="gocart.io logo" width="65%"></a>
-</p>
-
-This repository contains the underlying C++ program that powers [go-cart.io](https://go-cart.io). If you'd only like to create a cartogram, you may find it easier to visit the website directly. Otherwise, if you'd like to make code contributions, feature suggestions and/or play with the inner workings of our cartogram generator, you're at the right place!
-
-This program uses the fast flow-based method developed by Michael T. Gastner, Vivien Seguy, and Pratyush More. For more information, you may refer to the following [paper](https://www.pnas.org/content/115/10/E2156):
-
-Gastner MT, Seguy V, More P. _Fast flow-based algorithm for creating density-equalizing map projections_. Proc Natl Acad Sci USA 115(10):E2156–E2164 (2018). <https://doi.org/10.1073/pnas.0400280101>
+# cartogram-cpp: Cartogram generator in C++ 
 
 ## AsiaCarto 2024
 ### 5FCarto
@@ -37,7 +27,6 @@ cartogram ./sample_data/world_by_country_since_2022/world_by_country_since_2022.
 
 -----
 
-Data produced by code in this repository are subject to the MIT license found [here](./LICENSE) and should cite the aforementioned paper by Gastner et al. (2018).
 
 ## Usage
 
@@ -238,15 +227,3 @@ Upon successful uninstallation, the following will be outputted:
   > Built target uninstall
 
 Further, running `cartogram` should no longer work.
-
-### Pushing changes to [go-cart.io](https://go-cart.io)
-
-To push changes to production, please follow the the instructions on [go-cart-io/cartogram-docker](https://github.com/go-cart-io/cartogram-docker).
-
-### Contributing
-
-Contributions are highly encouraged! Please feel free to take a stab at any at any of the open issues and send in a pull request. If you need help getting setup or more guidance contributing, please @ any of the main contributors (@adisidev, @nihalzp, @mgastner) under any of the open issues (or after creating your own issue), and we'll be happy to guide you!
-
-If you'd like to contribute to the project, please run our tests after you make any changes.
-
-Maintainers, please make sure all the CI build and test checks pass and the performance comparison CI check results are expected before approving the pull request.

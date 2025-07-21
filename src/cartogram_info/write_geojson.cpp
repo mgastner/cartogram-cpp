@@ -196,7 +196,7 @@ void CartogramInfo::json_to_geojson(
   new_json["crs"] = {{"type", "name"}, {"properties", {{"name", custom_crs}}}};
 
   new_json["properties"]["note"] =
-    "Created using cartogram-cpp / go-cart.io with custom projection, not in "
+    "Created using cartogram-cpp with custom projection, not in "
     "EPSG:4326";
 
   // Iterate over GeoDivs and gd_ids in the container. The index

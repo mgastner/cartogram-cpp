@@ -24,7 +24,7 @@ Examples:
   Country borders are subject to many territorial disputes.
   Therefore, the description `from_natural_earth` is needed to indicate the
   data source.
-  The go-cart.io project does not adopt a political stance on the borders
+  The project does not adopt a political stance on the borders
   shown.
   The latest change in the data was in 2018, when Eswatini adopted its current
   name.
