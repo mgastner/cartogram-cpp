@@ -59,7 +59,7 @@ public:
   void rescale_insets();
 
   std::string set_map_name(const std::string &);
-  void reposition_insets(bool output_to_stdout = false);
+  void reposition_insets();
 
   void plot_input();
   void preprocess();
