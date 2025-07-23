@@ -1,7 +1,7 @@
 #include "cartogram_info.hpp"
 #include "constants.hpp"
 
-void CartogramInfo::reposition_insets(bool output_to_stdout)
+void CartogramInfo::reposition_insets()
 {
 
   // Warn user about repositoning insets with `--skip_projection` flag
@@ -28,7 +28,7 @@ void CartogramInfo::reposition_insets(bool output_to_stdout)
   // If the inset actually exists, we get its current bounding box
   for (const InsetState &inset_state : inset_states_) {
     std::string inset_pos = inset_state.pos();
-    bboxes.at(inset_pos) = inset_state.bbox(output_to_stdout);
+    bboxes.at(inset_pos) = inset_state.bbox(args_.redirect_exports_to_stdout);
   }
 
   // Calculate the width and height of all positioned insets without spacing
@@ -100,7 +100,7 @@ void CartogramInfo::reposition_insets(bool output_to_stdout)
     // Apply translation to all points
     inset_state.transform_points(translate, false);
 
-    if (output_to_stdout) {
+    if (args_.redirect_exports_to_stdout) {
       inset_state.transform_points(translate, true);
     }
   }

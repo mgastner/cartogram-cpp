@@ -14,8 +14,8 @@ void InsetState::fill_with_density()
     fill_with_density_clip();
   }
 
-  // Plot density map if requested
-  if (args_.plot_density) {
+  // Plot density map if requested (but not when redirecting to stdout)
+  if (args_.plot_density && !args_.redirect_exports_to_stdout) {
     std::string file_name = file_prefix_ + "_unblurred_density.svg";
     write_density_image(file_name);
   }

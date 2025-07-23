@@ -1,4 +1,8 @@
 # Find out if $BUILD_DIR is set, if not then assume it's in a local environment
+if [[ -z ${BUILD_DIR} ]]; then
+    BUILD_DIR=build
+fi
+
 if [[ -n ${BUILD_DIR} ]]; then
     # Docker is already a virtual environment so no need to create one
     # Build the project
@@ -10,13 +14,13 @@ else
     python3 -m venv .venv
     source .venv/bin/activate
 
-if [[ -z ${BUILD_TYPE} ]]; then
-    BUILD_TYPE=Release
+    if [[ -z ${BUILD_TYPE} ]]; then
+        BUILD_TYPE=Release
+    fi
+
+    # Output BUILD_DIR and BUILD_TYPE
+    echo "Building in directory: $BUILD_DIR, with build type: $BUILD_TYPE"
 fi
-
-# Output BUILD_DIR and BUILD_TYPE
-echo "Building in directory: $BUILD_DIR, with build type: $BUILD_TYPE"
-
 # Warn user if BUILD_DIR already exists
 if [[ -d $BUILD_DIR ]]; then
     echo "Warning: $BUILD_DIR already exists. Pre-existing cache may interfere with the build process and cause installation to fail. Consider deleting it before proceeding."

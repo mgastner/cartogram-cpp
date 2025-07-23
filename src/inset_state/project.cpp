@@ -11,8 +11,8 @@ void InsetState::project()
       densify_geo_divs_using_delaunay_t();
     }
 
-    // Plot if requested
-    if (args_.plot_quadtree) {
+    // Plot if requested (but not when redirecting to stdout)
+    if (args_.plot_quadtree && !args_.redirect_exports_to_stdout) {
       write_delaunay_triangles(
         file_prefix_ + "c_updated_delaunay_t_after_flatten",
         false);
@@ -21,7 +21,7 @@ void InsetState::project()
     // Project using the updated Delaunay triangulation and plot
     project_with_delaunay_t(args_.redirect_exports_to_stdout);
 
-    if (args_.plot_quadtree) {
+    if (args_.plot_quadtree && !args_.redirect_exports_to_stdout) {
       write_delaunay_triangles(
         file_prefix_ + "d_projected_with_updated_delaunay_t",
         true);
@@ -50,7 +50,7 @@ void InsetState::project()
 
     simplify(args_.target_points_per_inset);
   }
-  if (args_.plot_intersections) {
+  if (args_.plot_intersections && !args_.redirect_exports_to_stdout) {
     write_intersections_image();
   }
 }
