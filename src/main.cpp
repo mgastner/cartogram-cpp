@@ -39,7 +39,9 @@ int main(const int argc, const char *argv[])
   }
 
   // Track progress of the cartogram generation
-  ProgressTracker progress_tracker(static_cast<double>(total_geo_divs));
+  ProgressTracker progress_tracker(
+    static_cast<double>(total_geo_divs),
+    args.max_permitted_area_error);
 
   // Preprocess Insets for Integration:
   // -- Set inset name: map_name + "_" + inset_pos
@@ -55,11 +57,13 @@ int main(const int argc, const char *argv[])
     inset_state.integrate(progress_tracker);
   }
 
-  // Rescale insets in correct proportion to each other
-  cart_info.rescale_insets();
+  if (cart_info.n_insets() > 1) {
+    // Rescale insets in correct proportion to each other
+    cart_info.rescale_insets();
 
-  // Shift insets so that they do not overlap
-  cart_info.reposition_insets(args.redirect_exports_to_stdout);
+    // Shift insets so that they do not overlap
+    cart_info.reposition_insets(args.redirect_exports_to_stdout);
+  }
 
   // Output to GeoJSON
   cart_info.write_geojson("cartogram");

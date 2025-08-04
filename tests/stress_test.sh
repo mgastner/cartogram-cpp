@@ -3,11 +3,6 @@
 # Start time, and other metadata
 start_date=$(date '+%Y-%m-%d_%H-%M')
 
-# Create results directory and change to it
-results_dir="results_${start_date}"
-mkdir -p "${results_dir}"
-cd "${results_dir}"
-
 results_file="log.txt"
 successful_runs="successful_runs.txt"
 failed_runs="failed_runs.txt"
@@ -53,11 +48,11 @@ cli=""    # Default CLI options
 flags_arr=("No flags" "Plot polygons flag" "Export preprocessed flag" "Export time report flag" "Output equal area map flag")
 total_arr=(0 0 0 0 0)
 failed_arr=(0 0 0 0 0)
+results_folder="" # User-specified results folder name
 
 # Parsing command line arguments
-if [ $# -eq 0 ]; then
-  cli=""
-else
+cli=""
+if [ $# -ne 0 ]; then
   for arg in "$@"; do
     if [ "$arg" == "--verbose" ]; then
       verbose=1
@@ -65,11 +60,23 @@ else
     elif [ "$arg" == "--flags" ]; then
       flags=1
       printf "\FLAGS mode turned on.\n"
+    elif [[ "$arg" == --results-folder=* ]]; then
+      results_folder="${arg#--results-folder=}"
+      printf "\nResults folder set to: $results_folder\n"
     else
       cli="$cli $arg"
     fi
   done
 fi
+
+# Create results directory and change to it
+if [ -n "$results_folder" ]; then
+  results_dir="$results_folder"
+else
+  results_dir="results_${start_date}"
+fi
+mkdir -p "${results_dir}"
+cd "${results_dir}"
 
 printf "\nWriting to ${results_file}\n"
 printf "Tested on ${start_date}\n" >>"${results_file}"

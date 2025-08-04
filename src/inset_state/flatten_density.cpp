@@ -47,13 +47,15 @@ bool InsetState::flatten_density()
       return false;
     }
 
-    // Update triangulation adding shorter diagonal as constraint for better
-    // shape similarity
-    update_delaunay_t();
+    if (!args_.disable_triangulation_optimisation) {
+      // Update triangulation adding shorter diagonal as constraint for better
+      // shape similarity
+      update_delaunay_t();
 
-    // If triangles flipped after update, we need to try again
-    if (delaunay_triangle_flipped(proj_qd_))
-      return false;
+      // If triangles flipped after update, we need to try again
+      if (delaunay_triangle_flipped(proj_qd_))
+        return false;
+    }
 
   } else {
 
@@ -399,6 +401,7 @@ bool InsetState::flatten_density_on_node_vertices()
   // Constants for the numerical integrator
   const double inc_after_acc = 1.5;
   const double dec_after_not_acc = 0.5;
+  const double reject_delta_t_threshold = 1e-4;
   const double abs_tol = (std::min(lx_, ly_) * 1e-6);
 
   // Clear previous triangle transformation data
@@ -601,6 +604,12 @@ bool InsetState::flatten_density_on_node_vertices()
       }
       if (!accept) {
         delta_t *= dec_after_not_acc;
+        if (delta_t < reject_delta_t_threshold) {
+          std::cerr << "Time step became too small. Increasing blur width and "
+                       "running again."
+                    << std::endl;
+          return false;
+        }
       }
     }
 
