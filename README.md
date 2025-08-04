@@ -79,7 +79,7 @@ The following command will detect your system's profile and set it up for you. I
 .venv/bin/conan profile detect
 ```
 
-Note: From step 3 onward, we show `Debug` build commands which do not optimise speed. These build steps are meant to make it easier for developers to use debuggers like `gdb` or `lldb`. For any performance testing, please skip to the `Release` build steps shown after step 4, as this is the version that we expect end users to run.
+Note: From step 3 onward, we show `Debug` build commands which do not optimize speed. These build steps are meant to make it easier for developers to use debuggers like `gdb` or `lldb`. For any performance testing, please skip to the `Release` build steps shown after step 4, as this is the version that we expect end users to run.
 
 3. Install dependencies via Conan
 
