@@ -65,14 +65,6 @@ Arguments parse_arguments(const int argc, const char *argv[])
       "Boolean: Transform input GeoJSON into cartesian coordinates and exit")
     .default_value(false)
     .implicit_value(true);
-  arguments.add_argument("-T", "--triangulation")
-    .help("Boolean: Enable cartogram projection via triangulation")
-    .default_value(true)
-    .implicit_value(false);
-  arguments.add_argument("-Q", "--qtdt_method")
-    .help("Boolean: Enable Quadtree-Delaunay Triangulation Method")
-    .default_value(true)
-    .implicit_value(false);
   arguments.add_argument("-S", "--disable_simplify_and_densify")
     .help(
       "Boolean: Disable iterative simplification and densification of "
@@ -114,10 +106,6 @@ Arguments parse_arguments(const int argc, const char *argv[])
     .help("Double: Minimum size of tiny polygons as proportion of total area")
     .default_value(default_minimum_polygon_area)
     .scan<'g', double>();
-  arguments.add_argument("-r", "--use_ray_shooting_method")
-    .help("Boolean: Use old ray shooting method to fill density")
-    .default_value(false)
-    .implicit_value(true);
   arguments.add_argument("--export_preprocessed")
     .help("Boolean: write input GeoJSON and CSV after preprocessing")
     .default_value(false)
@@ -202,8 +190,6 @@ Arguments parse_arguments(const int argc, const char *argv[])
 
   // Set boolean values
   args.world = arguments.get<bool>("--world");
-  args.triangulation = arguments.get<bool>("--triangulation");
-  args.qtdt_method = arguments.get<bool>("--qtdt_method");
   args.simplify = !arguments.get<bool>("--disable_simplify_and_densify");
   args.disable_triangulation_optimisation =
     arguments.get<bool>("--disable_triangulation_optimisation");
@@ -211,17 +197,7 @@ Arguments parse_arguments(const int argc, const char *argv[])
   args.min_polygon_area = arguments.get<double>("--minimum_polygon_area");
   args.max_permitted_area_error =
     arguments.get<double>("--max_permitted_area_error");
-  args.rays = arguments.get<bool>("--use_ray_shooting_method");
-  if (!args.triangulation && args.simplify) {
 
-    // If tracer points are on the FTReal2d, then simplification requires
-    // triangulation. Otherwise, the cartogram may contain intersecting lines
-    // before simplification. The intersection coordinates would not be
-    // explicit in the non-simplified polygons, but they would be added to the
-    // simplified polygon, making it more difficult to uniquely match
-    // non-simplified and simplified polygons.
-    args.triangulation = true;
-  }
   args.skip_projection = arguments.get<bool>("--skip_projection");
   args.make_csv = arguments.get<bool>("--make_csv");
   args.output_equal_area_map = arguments.get<bool>("--output_equal_area_map");
@@ -246,17 +222,6 @@ Arguments parse_arguments(const int argc, const char *argv[])
   // Check if user wants verbose output
   args.verbose = arguments.get<bool>("--verbose");
 
-  // Check if user wants to redirect output to stdout
-  if (arguments.is_used("-O") && !args.simplify && !args.qtdt_method) {
-    std::cerr << "ERROR: simplification disabled!\n";
-    std::cerr << "--output_to_stdout flag is only supported with "
-                 "simplification or quadtree.\n";
-    std::cerr << "To enable simplification, do not pass the -S flag.\n";
-    std::cerr << "To enable quadtree, do not pass the -Q flag.\n";
-    std::cerr << arguments << std::endl;
-    std::exit(18);
-  }
-
   // Check whether n_points is specified but --simplify_and_densify not passed
   if (!args.simplify) {
     std::cerr << "WARNING: Simplification and densification disabled! "
@@ -267,18 +232,6 @@ Arguments parse_arguments(const int argc, const char *argv[])
     if (arguments.is_used("--n_points")) {
       std::cerr << "--n_points ignored." << std::endl;
     }
-    std::cerr << arguments << std::endl;
-  }
-
-  // Check whether T flag is set, but not Q
-  if (args.triangulation && !args.qtdt_method) {
-    std::cerr
-      << "ERROR: Can't disable qtdt_method without disabling triangulation."
-      << std::endl;
-    std::cerr << "QTDT method is necessary for Quadtree images." << std::endl;
-    std::cerr << "To disable Triangulation, pass the -T flag." << std::endl;
-    std::cerr << arguments << std::endl;
-    std::exit(17);
   }
 
   // Print names of geometry file
