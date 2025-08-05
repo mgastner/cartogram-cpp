@@ -42,7 +42,7 @@ bool InsetState::flatten_density()
 
     // Flatten density has failed. Increase blur width and try again
     increment_n_fails_during_flatten_density();
-    timer.stop("Flatten Density (Quadtree Method)");
+    timer.stop("Flatten Density");
     return false;
   }
 
@@ -103,7 +103,7 @@ static double calculate_velocity_for_point(
 
 bool InsetState::flatten_density_on_node_vertices()
 {
-  timer.start("Flatten Density (Quadtree Method)");
+  timer.start("Flatten Density");
   std::cerr << "In flatten_density_on_node_vertices()" << std::endl;
 
   // Constants for the numerical integrator
@@ -349,6 +349,6 @@ bool InsetState::flatten_density_on_node_vertices()
   }
 
   // Return true if the integration was successful
-  timer.stop("Flatten Density (Quadtree Method)");
+  timer.stop("Flatten Density");
   return true;
 }

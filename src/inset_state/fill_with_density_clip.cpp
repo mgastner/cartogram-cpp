@@ -1147,9 +1147,9 @@ void InsetState::create_contiguity_graph()
 
 void InsetState::fill_with_density_clip()
 {
-  std::cerr << "Filling density using clipping method" << std::endl;
+  std::cerr << "Filling density" << std::endl;
 
-  timer.start("Fill with Density (Clipping Method)");
+  timer.start("Fill with Density");
 
   // Step 1: Detect edges and store edge information
   boost::multi_array<std::vector<PolygonInfo>, 2> edge_cell_polyinfo(
@@ -1191,5 +1191,5 @@ void InsetState::fill_with_density_clip()
   dens_max_ = *max_iter;
 
   execute_fftw_fwd_plan();
-  timer.stop("Fill with Density (Clipping Method)");
+  timer.stop("Fill with Density");
 }

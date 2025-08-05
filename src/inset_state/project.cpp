@@ -73,7 +73,7 @@ static Point interpolate_point_with_barycentric_coordinates(
 
 void InsetState::project_with_delaunay_t(bool output_to_stdout)
 {
-  timer.start("Project (Delanuay Triangulation)");
+  timer.start("Project");
   std::function<Point(Point)> lambda_bary =
     [&dt = proj_qd_.dt,
      &proj_map = proj_qd_.triangle_transformation](Point p1) {
@@ -85,7 +85,7 @@ void InsetState::project_with_delaunay_t(bool output_to_stdout)
     transform_points(lambda_bary, true);
   }
   is_simple(__func__);
-  timer.stop("Project (Delanuay Triangulation)");
+  timer.stop("Project");
 }
 
 // Apply projection to all points in set
