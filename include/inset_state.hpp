@@ -133,7 +133,6 @@ public:
   void blur_density();
   double blur_width() const;
   void check_topology() const;
-  int chosen_diag(const Point v[4], unsigned int &, bool = false) const;
 
   void cleanup_after_integration();
 
@@ -145,27 +144,20 @@ public:
   void create_contiguity_graph();
   void create_delaunay_t();
   bool converged() const;
-  void densify_geo_divs();
   void densify_geo_divs_using_delaunay_t();
   void destroy_fftw_plans_for_flux();
   void destroy_fftw_plans_for_rho();
   void execute_fftw_bwd_plan() const;
   void execute_fftw_fwd_plan() const;
   void execute_fftw_plans_for_flux();
-  void exit_if_not_on_grid_or_edge(Point p1) const;
 
   // Write CSV of time and max_area_error per integration
   void export_time_report() const;
 
-  void fill_grid_diagonals(bool = false);
-
   // Density functions
   void fill_with_density();
-  void fill_with_density_rays();  // Fill map with density, using scanlines
   void fill_with_density_clip();  // Fill map with density, using clipping
   bool flatten_density();  // Flatten said density with integration
-  void flatten_ellipse_density();
-  void flatten_density_on_square_grid();
   bool flatten_density_on_node_vertices();  // Bool to check if failed
 
   const std::vector<GeoDiv> &geo_divs() const;
@@ -207,7 +199,6 @@ public:
   unsigned int ly() const;
   void make_fftw_plans_for_flux();
   void make_fftw_plans_for_rho();
-  void min_ellipses();
   max_area_error_info max_area_error() const;
   unsigned int n_finished_integrations() const;
   unsigned int n_fails_during_flatten_density() const;
@@ -227,23 +218,16 @@ public:
   void print_time_report() const;
 
   void project();
-  void project_with_bilinear_interpolation();
-  Point projected_point(const Point &, bool = false) const;
-  Point projected_point_with_triangulation(const Point &, bool = false) const;
   void project_point_set(std::unordered_set<Point> &unprojected);
-  void project_with_cum_proj();
   void project_with_delaunay_t(bool);
-  void project_with_triangulation();
   void push_back(const GeoDiv &);
   FTReal2d &ref_to_fluxx_init();
   FTReal2d &ref_to_fluxy_init();
   FTReal2d &ref_to_rho_ft();
   FTReal2d &ref_to_rho_init();
   void remove_tiny_polygons(const double &minimum_polygon_size);
-  void reset_n_finished_integrations();
   void replace_target_area(const std::string &, double);
   void rescale_map();
-  void revert_smyth_craster_projection();
   void set_area_errors();
   void set_grid_dimensions(unsigned int, unsigned int);
   void set_geo_divs(std::vector<GeoDiv> new_geo_divs);
@@ -258,19 +242,12 @@ public:
   bool target_area_is_missing(const std::string &) const;
   double total_inset_area(bool = false) const;
   double total_target_area() const;
-  std::array<Point, 3> transformed_triangle(
-    const std::array<Point, 3> &,
-    bool = false) const;
 
   // Apply given function to all points
-  void transform_points(const std::function<Point(Point)> &, bool = false);
-  void transform_polygons(
-    const std::function<Polygon(Polygon)> &,
-    bool = false);
+  template <class Transformer>
+  void transform_points(Transformer &&, bool = false);
   void scale_points(double scale_factor, bool project_original = false);
   void move_points(double dx, double dy, bool project_original = false);
-  std::array<Point, 3> untransformed_triangle(const Point &, bool = false)
-    const;
   void update_delaunay_t();
   void update_file_prefix();
   void update_gd_ids(const std::map<std::string, std::string> &);
@@ -288,5 +265,45 @@ public:
   void write_intersections_image();
   void write_quadtree(const std::string &);
 };
+
+template <class Transformer>
+void InsetState::transform_points(
+  Transformer &&transform_point,
+  bool project_original)
+{
+
+  auto &geo_divs =
+    project_original ? geo_divs_original_transformed_ : geo_divs_;
+
+  // Iterate over GeoDivs
+#pragma omp parallel for default(none) shared(transform_point, geo_divs)
+  for (auto &gd : geo_divs) {
+
+    // Iterate over Polygon_with_holes
+    for (auto &pwh : gd.ref_to_polygons_with_holes()) {
+
+      // Get outer boundary
+      auto &outer_boundary = pwh.outer_boundary();
+
+      // Iterate over outer boundary's coordinates
+      for (auto &coords_outer : outer_boundary) {
+
+        // Assign outer boundary's coordinates to transformed coordinates
+        coords_outer = transform_point(coords_outer);
+      }
+
+      // Iterate over holes
+      for (auto &h : pwh.holes()) {
+
+        // Iterate over hole's coordinates
+        for (auto &coords_hole : h) {
+
+          // Assign hole's coordinates to transformed coordinates
+          coords_hole = transform_point(coords_hole);
+        }
+      }
+    }
+  }
+}
 
 #endif  // INSET_STATE_HPP_

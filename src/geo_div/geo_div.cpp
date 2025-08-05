@@ -50,11 +50,6 @@ const std::string &GeoDiv::id() const
   return id_;
 }
 
-void GeoDiv::clear_min_ellipses()
-{
-  min_ellipses_.clear();
-}
-
 Polygon_with_holes GeoDiv::largest_polygon_with_holes() const
 {
   double max_area = -dbl_inf;
@@ -72,11 +67,6 @@ Polygon_with_holes GeoDiv::largest_polygon_with_holes() const
     }
   }
   return largest_pwh;
-}
-
-const std::vector<Ellipse> &GeoDiv::min_ellipses() const
-{
-  return min_ellipses_;
 }
 
 size_t GeoDiv::n_points() const
@@ -178,11 +168,6 @@ Point GeoDiv::point_on_surface_of_polygon_with_holes(
 const std::vector<Polygon_with_holes> &GeoDiv::polygons_with_holes() const
 {
   return polygons_with_holes_;
-}
-
-void GeoDiv::push_back(const Ellipse &ell)
-{
-  min_ellipses_.push_back(ell);
 }
 
 void GeoDiv::push_back(const Polygon_with_holes &pwh)

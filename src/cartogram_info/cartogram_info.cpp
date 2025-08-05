@@ -355,8 +355,7 @@ void CartogramInfo::print_time_report()
   for (const InsetState &inset_state : inset_states_) {
 
     // Print to output if verbose output requested
-    if (args_.verbose)
-      inset_state.print_time_report();
+    inset_state.print_time_report();
 
     // Print to CSV if requested
     if (args_.export_time_report)

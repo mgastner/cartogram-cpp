@@ -2,17 +2,7 @@
 
 void InsetState::fill_with_density()
 {
-  if (args_.rays) {
-
-    // Fill density using ray-shooting method
-    fill_with_density_rays();
-
-  } else {
-
-    // Fill density with new clipping method
-    // More precise, but slower
-    fill_with_density_clip();
-  }
+  fill_with_density_clip();
 
   // Plot density map if requested
   if (args_.plot_density) {

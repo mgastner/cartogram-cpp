@@ -18,11 +18,11 @@ using GridCoordinatesWithEdgeEndpoints =
 
 // Open-path clipping using a Sutherland–Hodgman–like algorithm
 // Here, 'path' is a polyline (open, not closed)
+template <typename IsInsideFn, typename ComputeIntersectionFn>
 static Polygon clip_path_sutherland_hodgman(
   const Polygon &path,
-  const std::function<bool(const Point &)> &is_inside,
-  const std::function<Point(const Point &, const Point &)>
-    &compute_intersection)
+  IsInsideFn &&is_inside,
+  ComputeIntersectionFn &&compute_intersection)
 {
   if (path.is_empty()) {
     return path;
@@ -118,11 +118,11 @@ static Polygon clip_path_by_rectangle(
 }
 
 // Similar to the idea used in `clip_path_sutherland_hodgman`, but for polygons
+template <typename IsInsideFn, typename ComputeIntersectionFn>
 static Polygon clip_polygon_sutherland_hodgman(
   const Polygon &polygon,
-  const std::function<bool(const Point &)> &is_inside,
-  const std::function<Point(const Point &, const Point &)>
-    &compute_intersection)
+  IsInsideFn &&is_inside,
+  ComputeIntersectionFn &&compute_intersection)
 {
   if (polygon.is_empty())
     return polygon;
@@ -1147,9 +1147,9 @@ void InsetState::create_contiguity_graph()
 
 void InsetState::fill_with_density_clip()
 {
-  std::cerr << "Filling density using clipping method" << std::endl;
+  std::cerr << "Filling density" << std::endl;
 
-  timer.start("Fill with Density (Clipping Method)");
+  timer.start("Fill with Density");
 
   // Step 1: Detect edges and store edge information
   boost::multi_array<std::vector<PolygonInfo>, 2> edge_cell_polyinfo(
@@ -1191,5 +1191,5 @@ void InsetState::fill_with_density_clip()
   dens_max_ = *max_iter;
 
   execute_fftw_fwd_plan();
-  timer.stop("Fill with Density (Clipping Method)");
+  timer.stop("Fill with Density");
 }

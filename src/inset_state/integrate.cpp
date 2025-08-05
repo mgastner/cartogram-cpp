@@ -144,12 +144,6 @@ void InsetState::integrate(ProgressTracker &progress_tracker)
     write_map(inset_name() + "_output", args_.plot_grid, false);
   }
 
-  // Project original map with cumulative projection
-  if (args_.redirect_exports_to_stdout and !args_.qtdt_method) {
-    fill_grid_diagonals(true);
-    project_with_cum_proj();
-  }
-
   // Free reserved memory
   cleanup_after_integration();
   timer.stop(inset_name_);
