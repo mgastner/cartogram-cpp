@@ -971,44 +971,6 @@ void InsetState::store_original_geo_divs()
   geo_divs_original_transformed_ = geo_divs_;
 }
 
-void InsetState::transform_points(
-  const std::function<Point(Point)> &transform_point,
-  bool project_original)
-{
-
-  auto &geo_divs =
-    project_original ? geo_divs_original_transformed_ : geo_divs_;
-
-  // Iterate over GeoDivs
-#pragma omp parallel for default(none) shared(transform_point, geo_divs)
-  for (auto &gd : geo_divs) {
-
-    // Iterate over Polygon_with_holes
-    for (auto &pwh : gd.ref_to_polygons_with_holes()) {
-
-      // Get outer boundary
-      auto &outer_boundary = pwh.outer_boundary();
-
-      // Iterate over outer boundary's coordinates
-      for (auto &coords_outer : outer_boundary) {
-
-        // Assign outer boundary's coordinates to transformed coordinates
-        coords_outer = transform_point(coords_outer);
-      }
-
-      // Iterate over holes
-      for (auto &h : pwh.holes()) {
-
-        // Iterate over hole's coordinates
-        for (auto &coords_hole : h) {
-
-          // Assign hole's coordinates to transformed coordinates
-          coords_hole = transform_point(coords_hole);
-        }
-      }
-    }
-  }
-}
 
 void InsetState::scale_points(double scale_factor, bool project_original)
 {
@@ -1047,34 +1009,4 @@ void InsetState::move_points(double dx, double dy, bool project_original)
     CGAL::TRANSLATION,
     CGAL::Vector_2<Scd>(dx, dy));
   transform_points(translate, project_original);
-}
-
-void InsetState::transform_polygons(
-  const std::function<Polygon(Polygon)> &transform_polygon,
-  bool project_original)
-{
-  auto &geo_divs =
-    project_original ? geo_divs_original_transformed_ : geo_divs_;
-
-  // Iterate over GeoDivs
-#pragma omp parallel for default(none) shared(transform_polygon, geo_divs)
-  for (auto &gd : geo_divs) {
-
-    // Iterate over Polygon_with_holes
-    for (auto &pwh : gd.ref_to_polygons_with_holes()) {
-
-      // Get outer boundary
-      auto &outer_boundary = pwh.outer_boundary();
-
-      // Transform outer boundary
-      outer_boundary = transform_polygon(outer_boundary);
-
-      // Iterate over holes
-      for (auto &h : pwh.holes()) {
-
-        // Transform hole
-        h = transform_polygon(h);
-      }
-    }
-  }
 }

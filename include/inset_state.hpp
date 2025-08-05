@@ -219,7 +219,6 @@ public:
 
   void project();
   void project_point_set(std::unordered_set<Point> &unprojected);
-  void project_with_cum_proj();
   void project_with_delaunay_t(bool);
   void push_back(const GeoDiv &);
   FTReal2d &ref_to_fluxx_init();
@@ -243,15 +242,10 @@ public:
   bool target_area_is_missing(const std::string &) const;
   double total_inset_area(bool = false) const;
   double total_target_area() const;
-  std::array<Point, 3> transformed_triangle(
-    const std::array<Point, 3> &,
-    bool = false) const;
 
   // Apply given function to all points
-  void transform_points(const std::function<Point(Point)> &, bool = false);
-  void transform_polygons(
-    const std::function<Polygon(Polygon)> &,
-    bool = false);
+  template <class Transformer>
+  void transform_points(const Transformer &, bool = false);
   void scale_points(double scale_factor, bool project_original = false);
   void move_points(double dx, double dy, bool project_original = false);
   std::array<Point, 3> untransformed_triangle(const Point &, bool = false)
@@ -273,5 +267,45 @@ public:
   void write_intersections_image();
   void write_quadtree(const std::string &);
 };
+
+template <class Transformer>
+void InsetState::transform_points(
+  const Transformer &transform_point,
+  bool project_original)
+{
+
+  auto &geo_divs =
+    project_original ? geo_divs_original_transformed_ : geo_divs_;
+
+  // Iterate over GeoDivs
+#pragma omp parallel for default(none) shared(transform_point, geo_divs)
+  for (auto &gd : geo_divs) {
+
+    // Iterate over Polygon_with_holes
+    for (auto &pwh : gd.ref_to_polygons_with_holes()) {
+
+      // Get outer boundary
+      auto &outer_boundary = pwh.outer_boundary();
+
+      // Iterate over outer boundary's coordinates
+      for (auto &coords_outer : outer_boundary) {
+
+        // Assign outer boundary's coordinates to transformed coordinates
+        coords_outer = transform_point(coords_outer);
+      }
+
+      // Iterate over holes
+      for (auto &h : pwh.holes()) {
+
+        // Iterate over hole's coordinates
+        for (auto &coords_hole : h) {
+
+          // Assign hole's coordinates to transformed coordinates
+          coords_hole = transform_point(coords_hole);
+        }
+      }
+    }
+  }
+}
 
 #endif  // INSET_STATE_HPP_
