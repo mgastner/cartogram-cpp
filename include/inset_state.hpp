@@ -245,11 +245,9 @@ public:
 
   // Apply given function to all points
   template <class Transformer>
-  void transform_points(const Transformer &, bool = false);
+  void transform_points(Transformer &&, bool = false);
   void scale_points(double scale_factor, bool project_original = false);
   void move_points(double dx, double dy, bool project_original = false);
-  std::array<Point, 3> untransformed_triangle(const Point &, bool = false)
-    const;
   void update_delaunay_t();
   void update_file_prefix();
   void update_gd_ids(const std::map<std::string, std::string> &);
@@ -270,7 +268,7 @@ public:
 
 template <class Transformer>
 void InsetState::transform_points(
-  const Transformer &transform_point,
+  Transformer &&transform_point,
   bool project_original)
 {
 
