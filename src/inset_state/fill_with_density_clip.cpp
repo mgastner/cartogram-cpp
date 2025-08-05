@@ -18,11 +18,11 @@ using GridCoordinatesWithEdgeEndpoints =
 
 // Open-path clipping using a Sutherland–Hodgman–like algorithm
 // Here, 'path' is a polyline (open, not closed)
+template <typename IsInsideFn, typename ComputeIntersectionFn>
 static Polygon clip_path_sutherland_hodgman(
   const Polygon &path,
-  const std::function<bool(const Point &)> &is_inside,
-  const std::function<Point(const Point &, const Point &)>
-    &compute_intersection)
+  IsInsideFn &&is_inside,
+  ComputeIntersectionFn &&compute_intersection)
 {
   if (path.is_empty()) {
     return path;
@@ -118,11 +118,11 @@ static Polygon clip_path_by_rectangle(
 }
 
 // Similar to the idea used in `clip_path_sutherland_hodgman`, but for polygons
+template <typename IsInsideFn, typename ComputeIntersectionFn>
 static Polygon clip_polygon_sutherland_hodgman(
   const Polygon &polygon,
-  const std::function<bool(const Point &)> &is_inside,
-  const std::function<Point(const Point &, const Point &)>
-    &compute_intersection)
+  IsInsideFn &&is_inside,
+  ComputeIntersectionFn &&compute_intersection)
 {
   if (polygon.is_empty())
     return polygon;

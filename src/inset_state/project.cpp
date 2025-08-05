@@ -92,11 +92,10 @@ void InsetState::project_with_delaunay_t(bool output_to_stdout)
 // Apply projection to all points in set
 void InsetState::project_point_set(std::unordered_set<Point> &unprojected)
 {
-  std::function<Point(Point)> lambda_bary =
-    [&dt = proj_qd_.dt,
-     &proj_map = proj_qd_.triangle_transformation](Point p1) {
-      return interpolate_point_with_barycentric_coordinates(p1, dt, proj_map);
-    };
+  auto lambda_bary = [&dt = proj_qd_.dt,
+                      &proj_map = proj_qd_.triangle_transformation](Point p1) {
+    return interpolate_point_with_barycentric_coordinates(p1, dt, proj_map);
+  };
   std::unordered_set<Point> projected;
   for (const Point &pt : unprojected) {
     Point pp = lambda_bary(pt);

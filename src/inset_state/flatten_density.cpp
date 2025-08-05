@@ -192,19 +192,18 @@ bool InsetState::flatten_density_on_node_vertices()
   while (t < 1.0 && iter <= max_iter) {
 
     // calculate_velocity lambda function
-    std::function<double(unsigned int, unsigned int, char)>
-      cal_velocity_at_current_time =
-        [&](unsigned int i, unsigned int j, char direction) {
-          return calculate_velocity_for_point(
-            i,
-            j,
-            direction,
-            t,
-            grid_fluxx_init_,
-            grid_fluxy_init_,
-            rho_ft_,
-            rho_init_);
-        };
+    auto cal_velocity_at_current_time =
+      [&](unsigned int i, unsigned int j, char direction) {
+        return calculate_velocity_for_point(
+          i,
+          j,
+          direction,
+          t,
+          grid_fluxx_init_,
+          grid_fluxy_init_,
+          rho_ft_,
+          rho_init_);
+      };
 
     for (const auto &[key, val] : proj_qd_.triangle_transformation) {
 
@@ -248,19 +247,18 @@ bool InsetState::flatten_density_on_node_vertices()
       //                        y + 0.5 * delta_t *v_y(x, y, t),
       //                        t + 0.5 * delta_t)
       // and similarly for y.
-      std::function<double(unsigned int, unsigned int, char)>
-        cal_velocity_at_mid_time =
-          [&](unsigned int i, unsigned int j, char direction) {
-            return calculate_velocity_for_point(
-              i,
-              j,
-              direction,
-              t + 0.5 * delta_t,
-              grid_fluxx_init_,
-              grid_fluxy_init_,
-              rho_ft_,
-              rho_init_);
-          };
+      auto cal_velocity_at_mid_time =
+        [&](unsigned int i, unsigned int j, char direction) {
+          return calculate_velocity_for_point(
+            i,
+            j,
+            direction,
+            t + 0.5 * delta_t,
+            grid_fluxx_init_,
+            grid_fluxy_init_,
+            rho_ft_,
+            rho_init_);
+        };
 
       // Make sure we do not pass a point outside [0, lx_] x [0, ly_] to
       // interpolate_bilinearly(). Otherwise, decrease the time step below and

@@ -971,7 +971,6 @@ void InsetState::store_original_geo_divs()
   geo_divs_original_transformed_ = geo_divs_;
 }
 
-
 void InsetState::scale_points(double scale_factor, bool project_original)
 {
   const Transformation scale(CGAL::SCALING, scale_factor);
