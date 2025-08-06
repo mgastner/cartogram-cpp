@@ -115,7 +115,7 @@ bool InsetState::flatten_density_on_node_vertices()
   // Clear previous triangle transformation data
   proj_qd_.triangle_transformation.clear();
 
-  for (const Point &pt : unique_quadtree_corners_) {
+  for (const auto &pt : unique_quadtree_corners_) {
     proj_qd_.triangle_transformation.insert_or_assign(pt, pt);
   }
 

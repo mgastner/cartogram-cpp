@@ -2,6 +2,7 @@
 #include "constants.hpp"
 #include "csv.hpp"
 #include "quadtree.hpp"
+#include <algorithm>
 
 InsetState::InsetState(std::string pos, Arguments args)
     : args_(args), pos_(pos)
@@ -518,17 +519,23 @@ void InsetState::store_quadtree_cell_corners(const QuadtreeImp &qt)
     Bbox bbox(xmin, ymin, xmax, ymax);
     quadtree_bboxes_.push_back(bbox);
 
-    unique_quadtree_corners_.insert(Point(xmin, ymin));
-    unique_quadtree_corners_.insert(Point(xmax, ymin));
-    unique_quadtree_corners_.insert(Point(xmin, ymax));
-    unique_quadtree_corners_.insert(Point(xmax, ymax));
+    unique_quadtree_corners_.emplace_back(xmin, ymin);
+    unique_quadtree_corners_.emplace_back(xmax, ymin);
+    unique_quadtree_corners_.emplace_back(xmin, ymax);
+    unique_quadtree_corners_.emplace_back(xmax, ymax);
   }
 
   quadtree_bboxes_.push_back(Bbox(0, 0, lx_, ly_));
-  unique_quadtree_corners_.insert(Point(0, 0));
-  unique_quadtree_corners_.insert(Point(0, ly_));
-  unique_quadtree_corners_.insert(Point(lx_, 0));
-  unique_quadtree_corners_.insert(Point(lx_, ly_));
+  unique_quadtree_corners_.emplace_back(0, 0);
+  unique_quadtree_corners_.emplace_back(0, ly_);
+  unique_quadtree_corners_.emplace_back(lx_, 0);
+  unique_quadtree_corners_.emplace_back(lx_, ly_);
+
+  std::sort(unique_quadtree_corners_.begin(), unique_quadtree_corners_.end());
+  auto new_end = std::unique(
+    unique_quadtree_corners_.begin(),
+    unique_quadtree_corners_.end());
+  unique_quadtree_corners_.erase(new_end, unique_quadtree_corners_.end());
 
   std::cerr << "Number of unique quadtree corners: "
             << unique_quadtree_corners_.size() << '\n'

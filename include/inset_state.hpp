@@ -11,6 +11,33 @@
 #include "progress_tracker.hpp"
 #include "time_tracker.hpp"
 #include <boost/multi_array.hpp>
+#include <cstdint>
+
+struct QuadtreeCorner {
+public:
+  QuadtreeCorner(uint32_t x, uint32_t y) : x_{x}, y_{y} {}
+
+  uint32_t x() const noexcept
+  {
+    return x_;
+  }
+  uint32_t y() const noexcept
+  {
+    return y_;
+  }
+
+  operator Point() const noexcept
+  {
+    return Point(static_cast<double>(x_), static_cast<double>(y_));
+  }
+
+  auto operator<=>(const QuadtreeCorner &) const noexcept = default;
+  bool operator==(const QuadtreeCorner &) const noexcept = default;
+
+private:
+  uint32_t x_;
+  uint32_t y_;
+};
 
 struct max_area_error_info {
   double value;
@@ -35,7 +62,7 @@ class InsetState
 private:
   std::unordered_map<std::string, double> area_errors_;
 
-  std::unordered_set<Point> unique_quadtree_corners_;
+  std::vector<QuadtreeCorner> unique_quadtree_corners_;
   proj_qd proj_qd_;
 
   // Failed constraints
