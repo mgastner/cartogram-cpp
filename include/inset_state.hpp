@@ -52,9 +52,52 @@ struct max_area_error_info {
   }
 };
 
-struct proj_qd {  // quadtree-delaunay projection
+class ProjectionData {
+private:
   Delaunay dt;
-  std::unordered_map<Point, Point> triangle_transformation;
+  boost::multi_array<uint32_t, 2> corner_to_idx;
+  std::vector<Point> projection;
+
+public:
+  void reserve(uint32_t lx, uint32_t ly)
+  {
+    corner_to_idx.resize(boost::extents[lx][ly]);
+  }
+
+  std::vector<Point> &get_projection() noexcept
+  {
+    return projection;
+  }
+
+  void build_fast_indexing(const std::vector<QuadtreeCorner> &keys) noexcept
+  {
+    for (uint32_t i = 0; i < keys.size(); ++i) {
+      uint32_t x = keys[i].x();
+      uint32_t y = keys[i].y();
+      corner_to_idx[x][y] = i;
+    }
+  }
+
+  Point get(uint32_t x, uint32_t y) const noexcept
+  {
+    uint32_t idx = corner_to_idx[x][y];
+    return projection[idx];
+  }
+
+  const Delaunay &get_dt() const noexcept
+  {
+    return dt;
+  }
+
+  Delaunay &get_dt() noexcept
+  {
+    return dt;
+  }
+
+  void set_dt(Delaunay &&new_dt) noexcept
+  {
+    dt = std::move(new_dt);
+  }
 };
 
 class InsetState
