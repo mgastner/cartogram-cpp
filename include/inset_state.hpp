@@ -52,7 +52,8 @@ struct max_area_error_info {
   }
 };
 
-class ProjectionData {
+class ProjectionData
+{
 private:
   Delaunay dt;
   boost::multi_array<uint32_t, 2> corner_to_idx;
