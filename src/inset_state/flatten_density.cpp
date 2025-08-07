@@ -2,18 +2,23 @@
 #include "inset_state.hpp"
 #include "interpolate_bilinearly.hpp"
 
-static bool delaunay_triangle_flipped(proj_qd &proj_qd)
+static bool delaunay_triangle_flipped(const ProjectionData &proj)
 {
-  for (Delaunay::Finite_faces_iterator fit = proj_qd.dt.finite_faces_begin();
-       fit != proj_qd.dt.finite_faces_end();
+  const auto &dt = proj.get_dt();
+  for (Delaunay::Finite_faces_iterator fit = dt.finite_faces_begin();
+       fit != dt.finite_faces_end();
        ++fit) {
-    const Point p1_ori = fit->vertex(0)->point();
-    const Point p2_ori = fit->vertex(1)->point();
-    const Point p3_ori = fit->vertex(2)->point();
+    const auto p1_ori = fit->vertex(0)->point();
+    const auto p2_ori = fit->vertex(1)->point();
+    const auto p3_ori = fit->vertex(2)->point();
 
-    const Point p1_proj = proj_qd.triangle_transformation[p1_ori];
-    const Point p2_proj = proj_qd.triangle_transformation[p2_ori];
-    const Point p3_proj = proj_qd.triangle_transformation[p3_ori];
+    auto to_uint = [](const double val) {
+      return static_cast<uint32_t>(val + 0.5);
+    };
+
+    const Point p1_proj = proj.get(to_uint(p1_ori.x()), to_uint(p1_ori.y()));
+    const Point p2_proj = proj.get(to_uint(p2_ori.x()), to_uint(p2_ori.y()));
+    const Point p3_proj = proj.get(to_uint(p3_ori.x()), to_uint(p3_ori.y()));
 
     CGAL::Orientation ori_ori = CGAL::orientation(p1_ori, p2_ori, p3_ori);
     CGAL::Orientation ori_proj = CGAL::orientation(p1_proj, p2_proj, p3_proj);
@@ -52,7 +57,7 @@ bool InsetState::flatten_density()
     update_delaunay_t();
 
     // If triangles flipped after update, we need to try again
-    if (delaunay_triangle_flipped(proj_qd_))
+    if (delaunay_triangle_flipped(proj_data_))
       return false;
   }
 
@@ -62,16 +67,18 @@ bool InsetState::flatten_density()
 
 static bool all_map_points_are_in_domain(
   const double delta_t,
-  const std::unordered_map<Point, Point> &proj_map,
-  const std::unordered_map<Point, Vector> &v_intp,
+  const std::vector<Point> &projection,
+  const std::vector<Vector> &velocity,
   const unsigned int lx,
   const unsigned int ly)
 {
   // Return false if and only if there exists a point that would be outside
   // [0, lx] x [0, ly]
-  for (const auto &[key, val] : proj_map) {
-    double x = val.x() + 0.5 * delta_t * v_intp.at(key).x();
-    double y = val.y() + 0.5 * delta_t * v_intp.at(key).y();
+  for (size_t i = 0; i < projection.size(); i++) {
+    const auto &pos = projection[i];
+    const auto &velo = velocity[i];
+    double x = pos.x() + 0.5 * delta_t * velo.x();
+    double y = pos.y() + 0.5 * delta_t * velo.y();
 
     // if close to 0 using EPS, make 0, or greater than lx or ly, make lx or ly
     if (abs(x) < dbl_epsilon || abs(x - lx) < dbl_epsilon)
@@ -112,11 +119,14 @@ bool InsetState::flatten_density_on_node_vertices()
   const double reject_delta_t_threshold = 1e-4;
   const double abs_tol = (std::min(lx_, ly_) * 1e-6);
 
-  // Clear previous triangle transformation data
-  proj_qd_.triangle_transformation.clear();
+  const size_t num_quadtree_corners = unique_quadtree_corners_.size();
 
-  for (const auto &pt : unique_quadtree_corners_) {
-    proj_qd_.triangle_transformation.insert_or_assign(pt, pt);
+  std::vector<Point> &projection = proj_data_.get_projection();
+
+  projection.resize(num_quadtree_corners);
+
+  for (size_t i = 0; i < num_quadtree_corners; ++i) {
+    projection[i] = unique_quadtree_corners_[i];
   }
 
   // eul[(i, j)] will be the new position of
@@ -124,26 +134,16 @@ bool InsetState::flatten_density_on_node_vertices()
   // move a full time interval delta_t with the velocity at time t and position
   // (proj_qd_.triangle_transformation[(i, j)].x,
   // proj_qd_.triangle_transformation[(i, j)].y)
-  std::unordered_map<Point, Point> eul;
-  eul.reserve(2 * proj_qd_.triangle_transformation.size());
+  std::vector<Point> eul(num_quadtree_corners);
 
   // mid[(i, j)] will be the new displacement proposed by the midpoint
   // method (see comment below for the formula)
-  std::unordered_map<Point, Point> mid;
-  mid.reserve(2 * proj_qd_.triangle_transformation.size());
+  std::vector<Point> mid(num_quadtree_corners);
 
   // v_intp[(i, j)] will be the velocity at position
   // (proj_qd_.triangle_transformation[(i, j)].x,
   // proj_qd_.triangle_transformation[(i, j)].y) at time t
-  std::unordered_map<Point, Vector> v_intp;
-  v_intp.reserve(2 * proj_qd_.triangle_transformation.size());
-
-  // v_intp_half[(i, j)] will be the velocity at the midpoint
-  // (proj_qd_.triangle_transformation[(i, j)].x + 0.5 * delta_t * v_intp[(i,
-  // j)].x, proj_qd_.triangle_transformation[(i, j)].y + 0.5 * delta_t *
-  // v_intp[(i, j)].y) at time t + 0.5 * delta_t
-  std::unordered_map<Point, Vector> v_intp_half;
-  v_intp_half.reserve(2 * proj_qd_.triangle_transformation.size());
+  std::vector<Vector> v_intp(num_quadtree_corners);
 
   // We must typecast lx_ and ly_ as double-precision numbers. Otherwise, the
   // ratios in the denominator will evaluate as zero.
@@ -205,7 +205,8 @@ bool InsetState::flatten_density_on_node_vertices()
           rho_init_);
       };
 
-    for (const auto &[key, val] : proj_qd_.triangle_transformation) {
+    for (size_t i = 0; i < num_quadtree_corners; ++i) {
+      const auto &pos = projection[i];
 
       // We know, either because of the initialization or because of the
       // check at the end of the last iteration, that
@@ -215,31 +216,32 @@ bool InsetState::flatten_density_on_node_vertices()
       // fail.
       Vector v_intp_val(
         interpolate_bilinearly(
-          val.x(),
-          val.y(),
+          pos.x(),
+          pos.y(),
           cal_velocity_at_current_time,
           'x',
           lx_,
           ly_),
         interpolate_bilinearly(
-          val.x(),
-          val.y(),
+          pos.x(),
+          pos.y(),
           cal_velocity_at_current_time,
           'y',
           lx_,
           ly_));
-      v_intp.insert_or_assign(key, v_intp_val);
+      v_intp[i] = v_intp_val;
     }
 
     bool accept = false;
     while (!accept) {
 
       // Simple Euler step.
-      for (const auto &[key, val] : proj_qd_.triangle_transformation) {
+      for (size_t i = 0; i < num_quadtree_corners; ++i) {
+        const auto &pos = projection[i];
         Point eul_val(
-          val.x() + v_intp[key].x() * delta_t,
-          val.y() + v_intp[key].y() * delta_t);
-        eul.insert_or_assign(key, eul_val);
+          pos.x() + v_intp[i].x() * delta_t,
+          pos.y() + v_intp[i].y() * delta_t);
+        eul[i] = eul_val;
       }
 
       // Use "explicit midpoint method"
@@ -263,47 +265,49 @@ bool InsetState::flatten_density_on_node_vertices()
       // Make sure we do not pass a point outside [0, lx_] x [0, ly_] to
       // interpolate_bilinearly(). Otherwise, decrease the time step below and
       // try again.
-      accept = all_map_points_are_in_domain(
-        delta_t,
-        proj_qd_.triangle_transformation,
-        v_intp,
-        lx_,
-        ly_);
+      accept =
+        all_map_points_are_in_domain(delta_t, projection, v_intp, lx_, ly_);
 
       if (accept) {
 
         // Okay, we can run interpolate_bilinearly()
-        for (const auto &[key, val] : proj_qd_.triangle_transformation) {
+        for (size_t i = 0; i < num_quadtree_corners; ++i) {
+          const auto &pos = projection[i];
+          const auto &velo = v_intp[i];
+
+          // v_intp_half[(i, j)] will be the velocity at the midpoint
+          // (proj_qd_.triangle_transformation[(i, j)].x + 0.5 * delta_t *
+          // v_intp[(i, j)].x, proj_qd_.triangle_transformation[(i, j)].y + 0.5
+          // * delta_t * v_intp[(i, j)].y) at time t + 0.5 * delta_t
           Vector v_intp_half_val(
             interpolate_bilinearly(
-              val.x() + 0.5 * delta_t * v_intp[key].x(),
-              val.y() + 0.5 * delta_t * v_intp[key].y(),
+              pos.x() + 0.5 * delta_t * velo.x(),
+              pos.y() + 0.5 * delta_t * velo.y(),
               cal_velocity_at_mid_time,
               'x',
               lx_,
               ly_),
             interpolate_bilinearly(
-              val.x() + 0.5 * delta_t * v_intp[key].x(),
-              val.y() + 0.5 * delta_t * v_intp[key].y(),
+              pos.x() + 0.5 * delta_t * velo.x(),
+              pos.y() + 0.5 * delta_t * velo.y(),
               cal_velocity_at_mid_time,
               'y',
               lx_,
               ly_));
-          v_intp_half.insert_or_assign(key, v_intp_half_val);
-          Point mid_val(
-            val.x() + v_intp_half[key].x() * delta_t,
-            val.y() + v_intp_half[key].y() * delta_t);
-          mid.insert_or_assign(key, mid_val);
+
+          mid[i] = Point(
+            pos.x() + v_intp_half_val.x() * delta_t,
+            pos.y() + v_intp_half_val.y() * delta_t);
 
           // Do not accept the integration step if the maximum squared
           // difference between the Euler and midpoint proposals exceeds
           // abs_tol. Neither should we accept the integration step if one
           // of the positions wandered out of the domain. If one of these
           // problems occurred, decrease the time step.
-          const double sq_dist = CGAL::squared_distance(mid[key], eul[key]);
+          const double sq_dist = CGAL::squared_distance(mid[i], eul[i]);
           if (
-            sq_dist > abs_tol || mid[key].x() < 0.0 || mid[key].x() > lx_ ||
-            mid[key].y() < 0.0 || mid[key].y() > ly_) {
+            sq_dist > abs_tol || mid[i].x() < 0.0 || mid[i].x() > lx_ ||
+            mid[i].y() < 0.0 || mid[i].y() > ly_) {
             accept = false;
           }
         }
@@ -330,13 +334,13 @@ bool InsetState::flatten_density_on_node_vertices()
     ++iter;
 
     // Update the triangle transformation map
-    proj_qd_.triangle_transformation = mid;
+    std::swap(projection, mid);
 
     // Check whether any Delaunay triangle projections flip the projected
     // triangle. This is an issue as it can lead to intersection during
     // project. We resolve by increasing the blur width and running the steps
     // again.
-    if (delaunay_triangle_flipped(proj_qd_)) {
+    if (delaunay_triangle_flipped(proj_data_)) {
       std::cerr << "Delaunay triangle flipped detected. Increasing blur width "
                    "and running again."
                 << std::endl;
