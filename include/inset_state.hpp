@@ -9,35 +9,10 @@
 #include "nlohmann/json.hpp"
 #include "parse_arguments.hpp"
 #include "progress_tracker.hpp"
+#include "projection_data.hpp"
 #include "time_tracker.hpp"
 #include <boost/multi_array.hpp>
 #include <cstdint>
-
-struct QuadtreeCorner {
-public:
-  QuadtreeCorner(uint32_t x, uint32_t y) : x_{x}, y_{y} {}
-
-  uint32_t x() const noexcept
-  {
-    return x_;
-  }
-  uint32_t y() const noexcept
-  {
-    return y_;
-  }
-
-  operator Point() const noexcept
-  {
-    return Point(static_cast<double>(x_), static_cast<double>(y_));
-  }
-
-  auto operator<=>(const QuadtreeCorner &) const noexcept = default;
-  bool operator==(const QuadtreeCorner &) const noexcept = default;
-
-private:
-  uint32_t x_;
-  uint32_t y_;
-};
 
 struct max_area_error_info {
   double value;
@@ -49,55 +24,6 @@ struct max_area_error_info {
   operator std::tuple<double, std::string>() const
   {
     return std::make_tuple(value, geo_div);
-  }
-};
-
-class ProjectionData
-{
-private:
-  Delaunay dt;
-  boost::multi_array<uint32_t, 2> corner_to_idx;
-  std::vector<Point> projection;
-
-public:
-  void reserve(uint32_t lx, uint32_t ly)
-  {
-    corner_to_idx.resize(boost::extents[lx][ly]);
-  }
-
-  std::vector<Point> &get_projection() noexcept
-  {
-    return projection;
-  }
-
-  void build_fast_indexing(const std::vector<QuadtreeCorner> &keys) noexcept
-  {
-    for (uint32_t i = 0; i < keys.size(); ++i) {
-      uint32_t x = keys[i].x();
-      uint32_t y = keys[i].y();
-      corner_to_idx[x][y] = i;
-    }
-  }
-
-  Point get(uint32_t x, uint32_t y) const noexcept
-  {
-    uint32_t idx = corner_to_idx[x][y];
-    return projection[idx];
-  }
-
-  const Delaunay &get_dt() const noexcept
-  {
-    return dt;
-  }
-
-  Delaunay &get_dt() noexcept
-  {
-    return dt;
-  }
-
-  void set_dt(Delaunay &&new_dt) noexcept
-  {
-    dt = std::move(new_dt);
   }
 };
 

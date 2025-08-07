@@ -15,9 +15,6 @@ InsetState::InsetState(std::string pos, Arguments args)
   dens_max_ = 0.0;
   latt_const_ = 0.0;
   initial_target_area_ = 0.0;
-  proj_data_.reserve(
-    max_allowed_autoscale_grid_length + 1,
-    max_allowed_autoscale_grid_length + 1);
 }
 
 double InsetState::area_error_at(const std::string &id) const
@@ -565,6 +562,7 @@ void InsetState::store_quadtree_cell_corners(const QuadtreeImp &qt)
 
   // Build fast indexing so that given the corner value, we can easily get the
   // projected value
+  proj_data_.reserve(lx_ + 1, ly_ + 1);
   proj_data_.build_fast_indexing(unique_quadtree_corners_);
 
   std::cerr << "Number of unique quadtree corners: "
