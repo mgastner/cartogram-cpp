@@ -2,6 +2,7 @@
 #include "constants.hpp"
 #include "csv.hpp"
 #include "quadtree.hpp"
+#include <algorithm>
 
 InsetState::InsetState(std::string pos, Arguments args)
     : args_(args), pos_(pos)
@@ -169,7 +170,7 @@ void InsetState::create_delaunay_t()
   timer.start("Delaunay Triangulation");
   Delaunay dt;
   dt.insert(unique_quadtree_corners_.begin(), unique_quadtree_corners_.end());
-  proj_qd_.dt = dt;
+  proj_data_.set_dt(std::move(dt));
   std::cerr << "Number of Delaunay triangles: " << dt.number_of_faces()
             << std::endl;
   timer.stop("Delaunay Triangulation");
@@ -184,9 +185,10 @@ void InsetState::update_delaunay_t()
 
   // Create the projected quadtree corners
   std::vector<Point> projected_unique_quadtree_corners;
+  projected_unique_quadtree_corners.reserve(unique_quadtree_corners_.size());
   for (auto &pt : unique_quadtree_corners_) {
     projected_unique_quadtree_corners.push_back(
-      proj_qd_.triangle_transformation.at(pt));
+      proj_data_.get(pt.x(), pt.y()));
   }
 
   // Create the projected Delaunay triangulation to get the shorter diagonal of
@@ -223,10 +225,11 @@ void InsetState::update_delaunay_t()
   // and if so, we insert them as constraints to the projected Delaunay
   std::vector<std::pair<Point, Point>> constraints_for_projected_dt;
 
-  for (Delaunay::Finite_edges_iterator eit = proj_qd_.dt.finite_edges_begin();
-       eit != proj_qd_.dt.finite_edges_end();
+  for (Delaunay::Finite_edges_iterator eit =
+         proj_data_.get_dt().finite_edges_begin();
+       eit != proj_data_.get_dt().finite_edges_end();
        ++eit) {
-    const Segment edge = proj_qd_.dt.segment(eit);
+    const Segment edge = proj_data_.get_dt().segment(eit);
     const Point p1 = edge.source();
     const Point p2 = edge.target();
 
@@ -240,8 +243,12 @@ void InsetState::update_delaunay_t()
       continue;
     }
 
-    Point p1_proj = proj_qd_.triangle_transformation.at(p1);
-    Point p2_proj = proj_qd_.triangle_transformation.at(p2);
+    auto to_uint = [](const double val) {
+      return static_cast<uint32_t>(val + 0.5);
+    };
+
+    Point p1_proj = proj_data_.get(to_uint(p1.x()), to_uint(p1.y()));
+    Point p2_proj = proj_data_.get(to_uint(p2.x()), to_uint(p2.y()));
 
     // To add the constraint later to the projected Delaunay triangulation
     constraints_for_projected_dt.push_back({p1_proj, p2_proj});
@@ -258,8 +265,11 @@ void InsetState::update_delaunay_t()
   // diagonal and insert it as a constraint to the original Delaunay
   std::unordered_map<Point, Point> reverse_triangle_transformation;
   reverse_triangle_transformation.reserve(2 * unique_quadtree_corners_.size());
-  for (auto &[key, val] : proj_qd_.triangle_transformation) {
-    reverse_triangle_transformation[val] = key;
+  std::vector<Point> &projection = proj_data_.get_projection();
+  for (size_t i = 0; i < unique_quadtree_corners_.size(); ++i) {
+    const auto &key = unique_quadtree_corners_[i];
+    const auto &pos = projection[i];
+    reverse_triangle_transformation[pos] = key;
   }
 
   // Potential edges of the quadtree cells
@@ -347,7 +357,9 @@ void InsetState::update_delaunay_t()
   }
 
   // Inserting range is faster than inserting one by one
-  proj_qd_.dt.insert_constraints(constraints.begin(), constraints.end());
+  proj_data_.get_dt().insert_constraints(
+    constraints.begin(),
+    constraints.end());
   timer.stop("Update Delanuay Triangulation");
 }
 
@@ -518,17 +530,40 @@ void InsetState::store_quadtree_cell_corners(const QuadtreeImp &qt)
     Bbox bbox(xmin, ymin, xmax, ymax);
     quadtree_bboxes_.push_back(bbox);
 
-    unique_quadtree_corners_.insert(Point(xmin, ymin));
-    unique_quadtree_corners_.insert(Point(xmax, ymin));
-    unique_quadtree_corners_.insert(Point(xmin, ymax));
-    unique_quadtree_corners_.insert(Point(xmax, ymax));
+    unique_quadtree_corners_.emplace_back(xmin, ymin);
+    unique_quadtree_corners_.emplace_back(xmax, ymin);
+    unique_quadtree_corners_.emplace_back(xmin, ymax);
+    unique_quadtree_corners_.emplace_back(xmax, ymax);
   }
 
   quadtree_bboxes_.push_back(Bbox(0, 0, lx_, ly_));
-  unique_quadtree_corners_.insert(Point(0, 0));
-  unique_quadtree_corners_.insert(Point(0, ly_));
-  unique_quadtree_corners_.insert(Point(lx_, 0));
-  unique_quadtree_corners_.insert(Point(lx_, ly_));
+  unique_quadtree_corners_.emplace_back(0, 0);
+  unique_quadtree_corners_.emplace_back(0, ly_);
+  unique_quadtree_corners_.emplace_back(lx_, 0);
+  unique_quadtree_corners_.emplace_back(lx_, ly_);
+
+  // NOTE: Avoiding sort + unique to remove the duplicates, because we want the
+  // corners of a quadtree cell to be close to each other as they are likely
+  // to be used together during projection for better cache locality.
+  std::unordered_set<uint64_t> seen;
+  seen.reserve(unique_quadtree_corners_.size() * 2);
+
+  std::vector<QuadtreeCorner> out;
+  out.reserve(unique_quadtree_corners_.size());
+
+  for (auto &c : unique_quadtree_corners_) {
+    uint64_t key = (uint64_t(c.x()) << 32) | c.y();
+    if (seen.insert(key).second) {
+      out.push_back(c);
+    }
+  }
+
+  unique_quadtree_corners_.swap(out);
+
+  // Build fast indexing so that given the corner value, we can easily get the
+  // projected value
+  proj_data_.reserve(lx_ + 1, ly_ + 1);
+  proj_data_.build_fast_indexing(unique_quadtree_corners_);
 
   std::cerr << "Number of unique quadtree corners: "
             << unique_quadtree_corners_.size() << '\n'

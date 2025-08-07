@@ -9,8 +9,10 @@
 #include "nlohmann/json.hpp"
 #include "parse_arguments.hpp"
 #include "progress_tracker.hpp"
+#include "projection_data.hpp"
 #include "time_tracker.hpp"
 #include <boost/multi_array.hpp>
+#include <cstdint>
 
 struct max_area_error_info {
   double value;
@@ -25,23 +27,17 @@ struct max_area_error_info {
   }
 };
 
-struct proj_qd {  // quadtree-delaunay projection
-  Delaunay dt;
-  std::unordered_map<Point, Point> triangle_transformation;
-};
-
 class InsetState
 {
 private:
   std::unordered_map<std::string, double> area_errors_;
 
-  std::unordered_set<Point> unique_quadtree_corners_;
-  proj_qd proj_qd_;
+  std::vector<QuadtreeCorner> unique_quadtree_corners_;
+  ProjectionData proj_data_;
 
   // Failed constraints
   std::vector<Segment> failed_constraints_dt_projected_;
   std::vector<Segment> failed_constraints_;
-  Delaunay og_dt_;
 
   // New points
   std::unordered_set<Point> points_from_densification_;
