@@ -9,24 +9,29 @@
 
 inline void write_triangles(
   Canvas &cvs,
-  const proj_qd &proj,
+  const auto &proj,
   const Color &clr,
   const unsigned int ly,
   bool draw_projected_points)
 {
   cvs.set_stroke(clr, 1.5e-3 * ly);
+  const auto &dt = proj.get_dt();
 
-  for (Delaunay::Finite_faces_iterator fit = proj.dt.finite_faces_begin();
-       fit != proj.dt.finite_faces_end();
+  for (Delaunay::Finite_faces_iterator fit = dt.finite_faces_begin();
+       fit != dt.finite_faces_end();
        ++fit) {
-    Point p1 = fit->vertex(0)->point();
-    Point p2 = fit->vertex(1)->point();
-    Point p3 = fit->vertex(2)->point();
+    auto p1 = fit->vertex(0)->point();
+    auto p2 = fit->vertex(1)->point();
+    auto p3 = fit->vertex(2)->point();
+
+    auto to_uint = [](const double val) {
+      return static_cast<uint32_t>(val + 0.5);
+    };
 
     if (draw_projected_points) {
-      p1 = proj.triangle_transformation.at(p1);
-      p2 = proj.triangle_transformation.at(p2);
-      p3 = proj.triangle_transformation.at(p3);
+      p1 = proj.get(to_uint(p1.x()), to_uint(p1.y()));
+      p2 = proj.get(to_uint(p2.x()), to_uint(p2.y()));
+      p3 = proj.get(to_uint(p3.x()), to_uint(p3.y()));
     }
 
     cvs.move_to(p1.x(), p1.y());

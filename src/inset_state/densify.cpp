@@ -172,7 +172,7 @@ void InsetState::densify_geo_divs_using_delaunay_t()
 
         // Densify the segment
         const std::vector<Point> outer_pts_dens =
-          densification_points_with_delaunay_t(a, b, proj_qd_.dt);
+          densification_points_with_delaunay_t(a, b, proj_data_.get_dt());
 
         // Push all points. Omit the last point because it will be included
         // in the next iteration. Otherwise, we would have duplicated points
@@ -208,7 +208,7 @@ void InsetState::densify_geo_divs_using_delaunay_t()
           const Point d = (j + 1 == h_sz) ? h[0] : h[j + 1];
 
           const std::vector<Point> hole_pts_dens =
-            densification_points_with_delaunay_t(c, d, proj_qd_.dt);
+            densification_points_with_delaunay_t(c, d, proj_data_.get_dt());
 
           if (hole_pts_dens.size() > 1)
             hole_dens.insert(

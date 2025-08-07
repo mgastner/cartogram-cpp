@@ -36,34 +36,37 @@ void InsetState::project()
 
 static Point interpolate_point_with_barycentric_coordinates(
   const Point &p,
-  const Delaunay &dt,
-  const std::unordered_map<Point, Point> &proj_map)
+  const ProjectionData &proj)
 {
   // Find the triangle containing the point
-  const Face_handle fh = dt.locate(p);
+  const Face_handle fh = proj.get_dt().locate(p);
 
   // Get the three vertices
-  const Point v1 = fh->vertex(0)->point();
-  const Point v2 = fh->vertex(1)->point();
-  const Point v3 = fh->vertex(2)->point();
+  const auto v1 = fh->vertex(0)->point();
+  const auto v2 = fh->vertex(1)->point();
+  const auto v3 = fh->vertex(2)->point();
 
   // Calculate barycentric coordinates
-  const std::tuple<Scd::FT, Scd::FT, Scd::FT> bary_coor =
-    CGAL::Barycentric_coordinates::triangle_coordinates_in_tuple_2<Point>(
+  auto bary =
+    CGAL::Barycentric_coordinates ::triangle_coordinates_in_tuple_2<Point>(
       v1,
       v2,
       v3,
       p);
 
   // Get the barycentric coordinates
-  const double bary_x = std::get<0>(bary_coor);
-  const double bary_y = std::get<1>(bary_coor);
-  const double bary_z = std::get<2>(bary_coor);
+  const double bary_x = std::get<0>(bary);
+  const double bary_y = std::get<1>(bary);
+  const double bary_z = std::get<2>(bary);
+
+  auto to_uint = [](const double val) {
+    return static_cast<uint32_t>(val + 0.5);
+  };
 
   // Get projected vertices
-  const Point v1_proj = proj_map.at(v1);
-  const Point v2_proj = proj_map.at(v2);
-  const Point v3_proj = proj_map.at(v3);
+  const Point v1_proj = proj.get(to_uint(v1.x()), to_uint(v1.y()));
+  const Point v2_proj = proj.get(to_uint(v2.x()), to_uint(v2.y()));
+  const Point v3_proj = proj.get(to_uint(v3.x()), to_uint(v3.y()));
 
   // Calculate projected point of p
   return {
@@ -75,10 +78,7 @@ void InsetState::project_with_delaunay_t(bool output_to_stdout)
 {
   timer.start("Project");
   auto lambda_bary = [&](Point p1) {
-    return interpolate_point_with_barycentric_coordinates(
-      p1,
-      proj_qd_.dt,
-      proj_qd_.triangle_transformation);
+    return interpolate_point_with_barycentric_coordinates(p1, proj_data_);
   };
   transform_points(lambda_bary);
 
@@ -92,9 +92,8 @@ void InsetState::project_with_delaunay_t(bool output_to_stdout)
 // Apply projection to all points in set
 void InsetState::project_point_set(std::unordered_set<Point> &unprojected)
 {
-  auto lambda_bary = [&dt = proj_qd_.dt,
-                      &proj_map = proj_qd_.triangle_transformation](Point p1) {
-    return interpolate_point_with_barycentric_coordinates(p1, dt, proj_map);
+  auto lambda_bary = [&](Point p1) {
+    return interpolate_point_with_barycentric_coordinates(p1, proj_data_);
   };
   std::unordered_set<Point> projected;
   for (const Point &pt : unprojected) {

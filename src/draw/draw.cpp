@@ -83,7 +83,7 @@ void InsetState::write_delaunay_triangles(
 
   write_triangles(
     cvs,
-    proj_qd_,
+    proj_data_,
     Color{0.6, 0.6, 0.6},
     ly_,
     draw_projected_points);

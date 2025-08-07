@@ -106,12 +106,11 @@ private:
   std::unordered_map<std::string, double> area_errors_;
 
   std::vector<QuadtreeCorner> unique_quadtree_corners_;
-  proj_qd proj_qd_;
+  ProjectionData proj_data_;
 
   // Failed constraints
   std::vector<Segment> failed_constraints_dt_projected_;
   std::vector<Segment> failed_constraints_;
-  Delaunay og_dt_;
 
   // New points
   std::unordered_set<Point> points_from_densification_;

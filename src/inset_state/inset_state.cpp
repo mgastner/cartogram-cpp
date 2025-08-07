@@ -15,6 +15,9 @@ InsetState::InsetState(std::string pos, Arguments args)
   dens_max_ = 0.0;
   latt_const_ = 0.0;
   initial_target_area_ = 0.0;
+  proj_data_.reserve(
+    max_allowed_autoscale_grid_length + 1,
+    max_allowed_autoscale_grid_length + 1);
 }
 
 double InsetState::area_error_at(const std::string &id) const
@@ -170,7 +173,7 @@ void InsetState::create_delaunay_t()
   timer.start("Delaunay Triangulation");
   Delaunay dt;
   dt.insert(unique_quadtree_corners_.begin(), unique_quadtree_corners_.end());
-  proj_qd_.dt = dt;
+  proj_data_.set_dt(std::move(dt));
   std::cerr << "Number of Delaunay triangles: " << dt.number_of_faces()
             << std::endl;
   timer.stop("Delaunay Triangulation");
@@ -185,9 +188,10 @@ void InsetState::update_delaunay_t()
 
   // Create the projected quadtree corners
   std::vector<Point> projected_unique_quadtree_corners;
+  projected_unique_quadtree_corners.reserve(unique_quadtree_corners_.size());
   for (auto &pt : unique_quadtree_corners_) {
     projected_unique_quadtree_corners.push_back(
-      proj_qd_.triangle_transformation.at(pt));
+      proj_data_.get(pt.x(), pt.y()));
   }
 
   // Create the projected Delaunay triangulation to get the shorter diagonal of
@@ -224,10 +228,11 @@ void InsetState::update_delaunay_t()
   // and if so, we insert them as constraints to the projected Delaunay
   std::vector<std::pair<Point, Point>> constraints_for_projected_dt;
 
-  for (Delaunay::Finite_edges_iterator eit = proj_qd_.dt.finite_edges_begin();
-       eit != proj_qd_.dt.finite_edges_end();
+  for (Delaunay::Finite_edges_iterator eit =
+         proj_data_.get_dt().finite_edges_begin();
+       eit != proj_data_.get_dt().finite_edges_end();
        ++eit) {
-    const Segment edge = proj_qd_.dt.segment(eit);
+    const Segment edge = proj_data_.get_dt().segment(eit);
     const Point p1 = edge.source();
     const Point p2 = edge.target();
 
@@ -241,8 +246,12 @@ void InsetState::update_delaunay_t()
       continue;
     }
 
-    Point p1_proj = proj_qd_.triangle_transformation.at(p1);
-    Point p2_proj = proj_qd_.triangle_transformation.at(p2);
+    auto to_uint = [](const double val) {
+      return static_cast<uint32_t>(val + 0.5);
+    };
+
+    Point p1_proj = proj_data_.get(to_uint(p1.x()), to_uint(p1.y()));
+    Point p2_proj = proj_data_.get(to_uint(p2.x()), to_uint(p2.y()));
 
     // To add the constraint later to the projected Delaunay triangulation
     constraints_for_projected_dt.push_back({p1_proj, p2_proj});
@@ -259,8 +268,11 @@ void InsetState::update_delaunay_t()
   // diagonal and insert it as a constraint to the original Delaunay
   std::unordered_map<Point, Point> reverse_triangle_transformation;
   reverse_triangle_transformation.reserve(2 * unique_quadtree_corners_.size());
-  for (auto &[key, val] : proj_qd_.triangle_transformation) {
-    reverse_triangle_transformation[val] = key;
+  std::vector<Point> &projection = proj_data_.get_projection();
+  for (size_t i = 0; i < unique_quadtree_corners_.size(); ++i) {
+    const auto &key = unique_quadtree_corners_[i];
+    const auto &pos = projection[i];
+    reverse_triangle_transformation[pos] = key;
   }
 
   // Potential edges of the quadtree cells
@@ -348,7 +360,9 @@ void InsetState::update_delaunay_t()
   }
 
   // Inserting range is faster than inserting one by one
-  proj_qd_.dt.insert_constraints(constraints.begin(), constraints.end());
+  proj_data_.get_dt().insert_constraints(
+    constraints.begin(),
+    constraints.end());
   timer.stop("Update Delanuay Triangulation");
 }
 
@@ -548,6 +562,10 @@ void InsetState::store_quadtree_cell_corners(const QuadtreeImp &qt)
   }
 
   unique_quadtree_corners_.swap(out);
+
+  // Build fast indexing so that given the corner value, we can easily get the
+  // projected value
+  proj_data_.build_fast_indexing(unique_quadtree_corners_);
 
   std::cerr << "Number of unique quadtree corners: "
             << unique_quadtree_corners_.size() << '\n'
