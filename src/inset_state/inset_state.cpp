@@ -531,11 +531,23 @@ void InsetState::store_quadtree_cell_corners(const QuadtreeImp &qt)
   unique_quadtree_corners_.emplace_back(lx_, 0);
   unique_quadtree_corners_.emplace_back(lx_, ly_);
 
-  std::sort(unique_quadtree_corners_.begin(), unique_quadtree_corners_.end());
-  auto new_end = std::unique(
-    unique_quadtree_corners_.begin(),
-    unique_quadtree_corners_.end());
-  unique_quadtree_corners_.erase(new_end, unique_quadtree_corners_.end());
+  // NOTE: Avoiding sort + unique to remove the duplicates, because we want the
+  // corners of a quadtree cell to be close to each other as they are likely
+  // to be used together during projection for better cache locality.
+  std::unordered_set<uint64_t> seen;
+  seen.reserve(unique_quadtree_corners_.size() * 2);
+
+  std::vector<QuadtreeCorner> out;
+  out.reserve(unique_quadtree_corners_.size());
+
+  for (auto &c : unique_quadtree_corners_) {
+    uint64_t key = (uint64_t(c.x()) << 32) | c.y();
+    if (seen.insert(key).second) {
+      out.push_back(c);
+    }
+  }
+
+  unique_quadtree_corners_.swap(out);
 
   std::cerr << "Number of unique quadtree corners: "
             << unique_quadtree_corners_.size() << '\n'
