@@ -5,9 +5,22 @@
 #include <cstdint>
 #include <vector>
 
-template <class MetricFn> class Quadtree
+template <class F>
+using metric_result_t =
+  std::remove_cvref_t<std::invoke_result_t<F &, uint32_t, uint32_t, uint32_t>>;
+
+template <class F>
+concept Metric =
+  std::invocable<F &, uint32_t, uint32_t, uint32_t> &&
+  requires(const metric_result_t<F> &a, const metric_result_t<F> &b) {
+    { a < b } -> std::convertible_to<bool>;  // Ensure the metric is comparable
+  };
+
+template <Metric MetricFn> class Quadtree
 {
 public:
+  using MetricResultType = metric_result_t<MetricFn>;
+
   struct Leaf {
     uint32_t x, y, size;
   };
@@ -95,7 +108,7 @@ public:
           if (nodes_[shallow].size > 1 && nodes_[shallow].is_leaf()) {
             split_grade(shallow);
 
-            // recheck both sides and the new children
+            // Recheck both sides and the new children
             q.push_back(idx);
             q.push_back(nb);
             enqueue_children(shallow);
@@ -147,7 +160,7 @@ private:
     uint32_t x, y, size;
     uint16_t depth;
     int32_t first_child;  // leaf if < 0
-    double priority;  // metric value
+    MetricResultType priority;  // metric value
     [[nodiscard]] bool is_leaf() const noexcept
     {
       return first_child < 0;
@@ -204,14 +217,14 @@ private:
         const uint32_t cx = p.x + dx * child_size;
         const uint32_t cy = p.y + dy * child_size;
 
-        double pr;
+        MetricResultType priority;
         if constexpr (maintain_heap) {
-          pr = metric_(cx, cy, child_size);
+          priority = metric_(cx, cy, child_size);
         } else {
-          pr = 0.0;
+          priority = MetricResultType{};
         }
 
-        nodes_.push_back({cx, cy, child_size, next_depth, -1, pr});
+        nodes_.push_back({cx, cy, child_size, next_depth, -1, priority});
         const uint32_t cid = static_cast<uint32_t>(nodes_.size() - 1);
         add_leaf(cid);
 

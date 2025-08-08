@@ -11,7 +11,7 @@ BOOST_AUTO_TEST_SUITE(QuadtreeTests)
 BOOST_AUTO_TEST_CASE(CTAD_and_initial_state)
 {
   auto metric = [](uint32_t, uint32_t, uint32_t s) {
-    return float(s);
+    return s;
   };
   Quadtree qt(16, 1, metric);
   BOOST_TEST(qt.num_leaves() == 1u);
@@ -21,7 +21,7 @@ BOOST_AUTO_TEST_CASE(Build_reaches_target_within_bounds)
 {
   constexpr std::size_t target = 50;
   auto metric = [](uint32_t, uint32_t, uint32_t s) {
-    return float(s);
+    return s;
   };
 
   Quadtree qt(256, target, metric);
@@ -46,7 +46,7 @@ BOOST_AUTO_TEST_CASE(Leaves_form_exact_tiling)
 {
   constexpr uint32_t root = 16;
   auto metric = [](uint32_t, uint32_t, uint32_t s) {
-    return float(s);
+    return s;
   };
 
   Quadtree qt(root, 40, metric);
