@@ -139,7 +139,7 @@ To run only the unit tests:
 To run a specific unit test, specify the test's name. For example, to run the `test_string_to_decimal_converter.cpp` unit test, use:
 
 ``` shell
-.venv/bin/ctest --test-dir build/Debug --output-on-failure test_string_to_decimal_converter.cpp
+.venv/bin/ctest --test-dir build/Debug --output-on-failure -R test_string_to_decimal_converter
 ```
 
 #### Stress Tests
