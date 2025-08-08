@@ -122,11 +122,14 @@ private:
 
   void remove_leaf(uint32_t idx)
   {
+    assert(idx < leaf_pos_.size());
     const uint32_t pos = leaf_pos_[idx];
+    assert(pos != uint32_t(-1) && pos < leaves_.size());
     const uint32_t last = leaves_.back();
     leaves_[pos] = last;
     leaf_pos_[last] = pos;
     leaves_.pop_back();
+    leaf_pos_[idx] = uint32_t(-1);
   }
 
   template <class Cmp> void heap_push(uint32_t idx, Cmp cmp)
@@ -135,26 +138,50 @@ private:
     std::push_heap(heap_.begin(), heap_.end(), cmp);
   }
 
-  template <class Cmp> void split(uint32_t idx, Cmp cmp)
+  template <class Cmp> void split_impl(uint32_t idx, Cmp cmp)
   {
     Node &p = nodes_[idx];
+    assert(p.is_leaf() && "split_impl called on non-leaf");
+    assert(p.size > 1 && "cannot split size == 1");
     remove_leaf(idx);
 
     p.first_child = static_cast<int32_t>(nodes_.size());
     const uint32_t child_size = p.size >> 1;
     const uint16_t next_depth = p.depth + 1;
 
+    constexpr bool maintain_heap =
+      !std::is_same_v<std::decay_t<Cmp>, std::nullptr_t>;
+
     for (uint32_t dy = 0; dy < 2; ++dy)
       for (uint32_t dx = 0; dx < 2; ++dx) {
         const uint32_t cx = p.x + dx * child_size;
         const uint32_t cy = p.y + dy * child_size;
-        const double pr = metric_(cx, cy, child_size);
+
+        double pr;
+        if constexpr (maintain_heap) {
+          pr = metric_(cx, cy, child_size);
+        } else {
+          pr = 0.0;
+        }
 
         nodes_.push_back({cx, cy, child_size, next_depth, -1, pr});
         const uint32_t cid = static_cast<uint32_t>(nodes_.size() - 1);
         add_leaf(cid);
-        heap_push(cid, cmp);
+
+        if constexpr (maintain_heap) {
+          heap_push(cid, cmp);
+        }
       }
+  }
+
+  template <class Cmp> void split_build(uint32_t idx, Cmp cmp)
+  {
+    split_impl(idx, cmp);
+  }
+
+  void split_grade(uint32_t idx)
+  {
+    split_impl(idx, nullptr);
   }
 
   uint32_t locate_leaf(uint32_t px, uint32_t py) const
