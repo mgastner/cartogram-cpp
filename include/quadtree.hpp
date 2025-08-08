@@ -1,6 +1,7 @@
 #pragma once
 #include <algorithm>
 #include <cassert>
+#include <cmath>
 #include <cstdint>
 #include <vector>
 
@@ -121,6 +122,24 @@ public:
   [[nodiscard]] std::size_t num_leaves() const noexcept
   {
     return leaves_.size();
+  }
+
+  [[nodiscard]] Leaf locate(double px, double py) const noexcept
+  {
+    const double rx = (px <= 0.0) ? 0.0
+                      : (px < double(root_size_))
+                        ? px
+                        : std::nextafter(double(root_size_), 0.0);
+    const double ry = (py <= 0.0) ? 0.0
+                      : (py < double(root_size_))
+                        ? py
+                        : std::nextafter(double(root_size_), 0.0);
+
+    const uint32_t ix = static_cast<uint32_t>(rx);
+    const uint32_t iy = static_cast<uint32_t>(ry);
+    const uint32_t idx = locate_leaf(ix, iy);
+    const Node &n = nodes_[idx];
+    return {n.x, n.y, n.size};
   }
 
 private:
