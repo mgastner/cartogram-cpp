@@ -49,7 +49,7 @@ public:
       // Cannot split further because already at the lowest resolution
       if (!n.is_leaf() || n.size == 1)
         continue;
-      split(idx, cmp);
+      split_build(idx, cmp);
     }
   }
 
@@ -58,27 +58,55 @@ public:
   // Number of new nodes that can be added by grading is bounded by 3 * target
   void grade()
   {
-    auto cmp = [this](uint32_t a, uint32_t b) {
-      return nodes_[a].priority < nodes_[b].priority;
+    std::vector<uint32_t> q;
+    q.reserve(leaves_.size());
+    for (uint32_t id : leaves_)
+      q.push_back(id);
+
+    auto enqueue_children = [&](uint32_t parent) {
+      const int32_t fc = nodes_[parent].first_child;
+      assert(fc >= 0);
+      q.push_back(static_cast<uint32_t>(fc + 0));
+      q.push_back(static_cast<uint32_t>(fc + 1));
+      q.push_back(static_cast<uint32_t>(fc + 2));
+      q.push_back(static_cast<uint32_t>(fc + 3));
     };
 
-    bool changed;
-    do {
-      changed = false;
-      const std::size_t stable = leaves_.size();  // only old leaves
-      for (std::size_t i = 0; i < stable; ++i) {
-        const uint32_t idx = leaves_[i];
+    while (!q.empty()) {
+      const uint32_t idx = q.back();
+      q.pop_back();
+      if (!nodes_[idx].is_leaf())
+        continue;  // it may have been split already
 
-        const uint32_t x = nodes_[idx].x;
-        const uint32_t y = nodes_[idx].y;
-        const uint32_t sz = nodes_[idx].size;
+      const uint32_t x = nodes_[idx].x;
+      const uint32_t y = nodes_[idx].y;
+      const uint32_t sz = nodes_[idx].size;
 
-        check_balance(idx, x ? x - 1 : x, y, changed, cmp);
-        check_balance(idx, x + sz, y, changed, cmp);
-        check_balance(idx, x, y ? y - 1 : y, changed, cmp);
-        check_balance(idx, x, y + sz, changed, cmp);
-      }
-    } while (changed);
+      auto check = [&](uint32_t qx, uint32_t qy) {
+        const uint32_t nb = locate_leaf(qx, qy);
+        if (nb == idx)
+          return;
+
+        const Node &a = nodes_[idx];
+        const Node &b = nodes_[nb];
+        if (std::abs(int(a.depth) - int(b.depth)) > 1) {
+          const uint32_t shallow = (a.depth < b.depth) ? idx : nb;
+          if (nodes_[shallow].size > 1 && nodes_[shallow].is_leaf()) {
+            split_grade(shallow);
+
+            // recheck both sides and the new children
+            q.push_back(idx);
+            q.push_back(nb);
+            enqueue_children(shallow);
+          }
+        }
+      };
+
+      check(x ? x - 1 : x, y);
+      check(x + sz, y);
+      check(x, y ? y - 1 : y);
+      check(x, y + sz);
+    }
   }
 
   [[nodiscard]] std::vector<Leaf> leaves() const
@@ -195,29 +223,6 @@ private:
       idx = static_cast<uint32_t>(n.first_child + (bottom << 1) + right);
     }
     return idx;
-  }
-
-  template <class Cmp>
-  void check_balance(
-    uint32_t idx,
-    uint32_t qx,
-    uint32_t qy,
-    bool &changed,
-    Cmp cmp)
-  {
-    const uint32_t nb = locate_leaf(qx, qy);
-    if (nb == idx)
-      return;
-
-    const Node &a = nodes_[idx];
-    const Node &b = nodes_[nb];
-    if (std::abs(int(a.depth) - int(b.depth)) > 1) {
-      const uint32_t shallow = (a.depth < b.depth) ? idx : nb;
-      if (nodes_[shallow].size > 1) {
-        split(shallow, cmp);
-        changed = true;
-      }
-    }
   }
 
   uint32_t root_size_;
