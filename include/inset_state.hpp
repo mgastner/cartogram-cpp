@@ -10,6 +10,7 @@
 #include "parse_arguments.hpp"
 #include "progress_tracker.hpp"
 #include "projection_data.hpp"
+#include "quadtree_leaf_locator.hpp"
 #include "time_tracker.hpp"
 #include <boost/multi_array.hpp>
 #include <cstdint>
@@ -34,6 +35,7 @@ private:
 
   std::vector<QuadtreeCorner> unique_quadtree_corners_;
   ProjectionData proj_data_;
+  QuadtreeLeafLocator qt_locator_;
 
   // Failed constraints
   std::vector<Segment> failed_constraints_dt_projected_;
