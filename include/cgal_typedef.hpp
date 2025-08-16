@@ -20,27 +20,4 @@ typedef CGAL::Line_2<Scd> Line;
 typedef CGAL::Iso_rectangle_2<Scd> Bbox;
 typedef CGAL::Segment_2<Scd> Segment;
 
-// Minimum enclosing ellipses and circles
-typedef CGAL::Min_ellipse_2_traits_2<Scd> Ellipse_traits;
-typedef CGAL::Min_ellipse_2<Ellipse_traits> Min_ellipse;
-typedef CGAL::Min_circle_2_traits_2<Scd> Circle_traits;
-typedef CGAL::Min_circle_2<Circle_traits> Min_circle;
-
-// Delaunay triangulation
-typedef CGAL::Constrained_Delaunay_triangulation_2<Scd> Delaunay;
-typedef Delaunay::Line_face_circulator Line_face_circulator;
-typedef Delaunay::Face_handle Face_handle;
-
-// Polyline simplification
-typedef CGAL::Polyline_simplification_2::Vertex_base_2<Scd> Vb;
-typedef CGAL::Constrained_triangulation_face_base_2<Scd> Fb;
-typedef CGAL::Triangulation_data_structure_2<Vb, Fb> TDS;
-typedef CGAL::
-  Constrained_Delaunay_triangulation_2<Scd, TDS, CGAL::Exact_predicates_tag>
-    CDT;
-typedef CGAL::Constrained_triangulation_plus_2<CDT> CT;
-typedef CT::Constraint_id Constraint_id;
-typedef CGAL::Polyline_simplification_2::Stop_below_count_ratio_threshold Stop;
-typedef CGAL::Polyline_simplification_2::Squared_distance_cost Cost;
-
 #endif  // CGAL_TYPEDEF_HPP_
