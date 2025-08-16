@@ -90,7 +90,7 @@ static std::vector<Point> densification_points_with_edge_tree(
   const double L2 = dax * dax + day * day;
 
   auto t_of = [&](const Point &p) -> double {
-    if (L2 == 0.0)
+    if (almost_equal(L2, 0.0))  // pt1 == pt2
       return 0.0;
     return ((p.x() - ax) * dax + (p.y() - ay) * day) / L2;
   };
