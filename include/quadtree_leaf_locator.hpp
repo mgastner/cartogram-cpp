@@ -19,6 +19,11 @@ public:
   struct Node {
     uint32_t x, y, size;
     int32_t first_child;
+    Node() = default;
+    Node(uint32_t x_, uint32_t y_, uint32_t s_, int32_t first_child_)
+        : x(x_), y(y_), size(s_), first_child(first_child_)
+    {
+    }
     [[nodiscard]] bool is_leaf() const noexcept
     {
       return first_child < 0;
