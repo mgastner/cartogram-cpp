@@ -169,9 +169,10 @@ bool InsetState::converged() const
 bool InsetState::create_delaunay_t()
 {
   timer.start("Delaunay Triangulation");
-  
-  if (!triang_.build(&qt_locator_, &proj_data_)) return false;
-  
+
+  if (!triang_.build(&qt_locator_, &proj_data_))
+    return false;
+
   timer.stop("Delaunay Triangulation");
   return true;
 }
