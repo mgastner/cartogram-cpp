@@ -1,47 +1,27 @@
 #pragma once
 
-#include "cgal_typedef.hpp"
+#include "quadtree_corner.hpp"
+#include <algorithm>
 #include <cstdint>
 #include <memory>
 #include <numeric>
 #include <vector>
 
-struct QuadtreeCorner {
-public:
-  QuadtreeCorner(uint32_t x, uint32_t y) : x_{x}, y_{y} {}
-
-  uint32_t x() const noexcept
-  {
-    return x_;
-  }
-  uint32_t y() const noexcept
-  {
-    return y_;
-  }
-
-  operator Point() const noexcept
-  {
-    return Point(static_cast<double>(x_), static_cast<double>(y_));
-  }
-
-  auto operator<=>(const QuadtreeCorner &) const noexcept = default;
-  bool operator==(const QuadtreeCorner &) const noexcept = default;
-
-private:
-  uint32_t x_;
-  uint32_t y_;
-};
-
 class ProjectionData
 {
 private:
-  Delaunay dt_;
-
   // Current grid size
   uint32_t lx_{0}, ly_{0};
 
   // Flat buffer of size lx_ * ly_, uninitialized PODs
-  std::unique_ptr<uint32_t[]> corner_to_idx_{};
+  // One 64-bit slot per cell: [ high 32 = generation | low 32 = index ]
+  // TODO: consider if top 8 bits for generation and rest 24 bits for index is
+  // enough
+  std::unique_ptr<uint64_t[]> corner_slot_{};
+
+  // Bumps each time you call build_fast_indexing()
+  uint32_t gen_{1};
+
   std::vector<Point> projection_;
 
   uint32_t get_buf_index(uint32_t x, uint32_t y) const noexcept
@@ -51,33 +31,36 @@ private:
 
   size_t buf_size() const noexcept
   {
-    return static_cast<size_t>(lx_) * ly_;
+    return static_cast<size_t>(lx_) * static_cast<size_t>(ly_);
   }
 
 public:
   ProjectionData() = default;
+
   ProjectionData(const ProjectionData &o)
-      : dt_(o.dt_), lx_(o.lx_), ly_(o.ly_),
-        corner_to_idx_(o.corner_to_idx_ ? new uint32_t[buf_size()] : nullptr),
-        projection_(o.projection_)
+      : lx_(o.lx_), ly_(o.ly_),
+        corner_slot_(
+          o.corner_slot_
+            ? std::unique_ptr<uint64_t[]>{new uint64_t[buf_size()]}
+            : nullptr),
+        gen_(o.gen_), projection_(o.projection_)
   {
-    if (corner_to_idx_) {
-      std::copy_n(o.corner_to_idx_.get(), buf_size(), corner_to_idx_.get());
-    }
+    if (corner_slot_)
+      std::copy_n(o.corner_slot_.get(), buf_size(), corner_slot_.get());
   }
 
   ProjectionData &operator=(const ProjectionData &o)
   {
     if (this == &o)
       return *this;
-    dt_ = o.dt_;
     lx_ = o.lx_;
     ly_ = o.ly_;
-    if (o.corner_to_idx_) {
-      corner_to_idx_.reset(new uint32_t[o.buf_size()]);
-      std::copy_n(o.corner_to_idx_.get(), o.buf_size(), corner_to_idx_.get());
+    gen_ = o.gen_;
+    if (o.corner_slot_) {
+      corner_slot_.reset(new uint64_t[o.buf_size()]);
+      std::copy_n(o.corner_slot_.get(), o.buf_size(), corner_slot_.get());
     } else {
-      corner_to_idx_.reset();
+      corner_slot_.reset();
     }
     projection_ = o.projection_;
     return *this;
@@ -89,51 +72,67 @@ public:
 
   void reserve(uint32_t new_lx, uint32_t new_ly)
   {
-    if (new_lx * new_ly <= lx_ * ly_)
-      return;
+    const uint64_t new_area = uint64_t(new_lx) * uint64_t(new_ly);
+    const uint64_t cap_area = uint64_t(lx_) * uint64_t(ly_);
 
+    // Update shape even if capacity is already enough
     lx_ = new_lx;
     ly_ = new_ly;
 
-    assert(
-      static_cast<uint64_t>(lx_) * ly_ <=
-      std::numeric_limits<uint32_t>::max());
+    // If we already have enough capacity and a buffer, keep it
+    if (corner_slot_ && new_area <= cap_area)
+      return;
 
-    corner_to_idx_.reset(new uint32_t[lx_ * ly_]);
+    assert(new_area <= std::numeric_limits<uint32_t>::max());
+
+    corner_slot_.reset(new uint64_t[buf_size()]());
   }
 
-  std::vector<Point> &get_projection() noexcept
+  [[nodiscard]] std::vector<Point> &get_projection() noexcept
   {
     return projection_;
   }
 
+  // We use `gen` because we would like to keep the same underlying buffer
+  // active across multiple intgrations and also be able to check if a corner
+  // is valid for the current integration. So, we use a generation
+  // number that increments each time we build the fast indexing.
+  // This allows us to check if a corner is valid for the current generation
+  // quickly by just checking the top 32 bits of the index
   void build_fast_indexing(const std::vector<QuadtreeCorner> &keys) noexcept
   {
+    ++gen_;
+    assert(corner_slot_ && "reserve() must be called before indexing");
     for (uint32_t i = 0; i < keys.size(); ++i) {
-      uint32_t x = keys[i].x();
-      uint32_t y = keys[i].y();
-      corner_to_idx_[get_buf_index(x, y)] = i;
+      const uint32_t x = keys[i].x();
+      const uint32_t y = keys[i].y();
+      const uint32_t idx = get_buf_index(x, y);
+      corner_slot_[idx] = (uint64_t(gen_) << 32) | uint64_t(i);
     }
   }
 
-  Point get(uint32_t x, uint32_t y) const noexcept
+  // Check if the corner (x, y) is valid in the current generation
+  [[nodiscard]] bool is_valid_corner(uint32_t x, uint32_t y) const noexcept
   {
-    uint32_t idx = corner_to_idx_[get_buf_index(x, y)];
+    const uint64_t idx = corner_slot_[get_buf_index(x, y)];
+    return uint32_t(idx >> 32) == gen_;
+  }
+
+  /// Precondition: (x, y) is valid for the current generation
+  [[nodiscard]] uint32_t offset(uint32_t x, uint32_t y) const noexcept
+  {
+    assert(is_valid_corner(x, y) && "invalid corner");
+    return static_cast<uint32_t>(corner_slot_[get_buf_index(x, y)]);
+  }
+
+  [[nodiscard]] Point get(uint32_t x, uint32_t y) const noexcept
+  {
+    const uint32_t idx = offset(x, y);
     return projection_[idx];
   }
 
-  const Delaunay &get_dt() const noexcept
+  [[nodiscard]] uint32_t num_unique_corners() const noexcept
   {
-    return dt_;
-  }
-
-  Delaunay &get_dt() noexcept
-  {
-    return dt_;
-  }
-
-  void set_dt(Delaunay &&new_dt) noexcept
-  {
-    dt_ = std::move(new_dt);
+    return static_cast<uint32_t>(projection_.size());
   }
 };
