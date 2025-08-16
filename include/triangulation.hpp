@@ -309,7 +309,6 @@ private:
         return;
       assert(cut[i][j] >= 0);
       size_t k = static_cast<size_t>(cut[i][j]);
-      assert(k >= 0);
 
       CGAL::Orientation orien_ori = CGAL::orientation(
         Point(leaf_pts[i]),
