@@ -83,6 +83,7 @@ void InsetState::write_delaunay_triangles(
 
   write_triangles(
     cvs,
+    triang_,
     proj_data_,
     Color{0.6, 0.6, 0.6},
     ly_,
@@ -181,6 +182,12 @@ void InsetState::write_map(
     write_grid(cvs, *this);
     write_legend(cvs, equal_area_map, *this);
   }
+
+  write_polygon(
+    cvs,
+    not_simple_polygon_,
+    Color{1.0, 0.0, 0.0},
+    Color{0.0, 0.0, 0.0});
 
   write_vectors(cvs, vectors, lx(), ly());
 }
