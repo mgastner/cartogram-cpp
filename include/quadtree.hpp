@@ -23,6 +23,11 @@ public:
 
   struct Leaf {
     uint32_t x, y, size;
+    Leaf() = default;
+    Leaf(uint32_t x_, uint32_t y_, uint32_t s_) noexcept
+        : x(x_), y(y_), size(s_)
+    {
+    }
   };
 
   struct Node {
