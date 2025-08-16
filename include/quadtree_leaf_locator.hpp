@@ -8,6 +8,7 @@ class QuadtreeLeafLocator
 public:
   struct Leaf {
     uint32_t x, y, size;
+    bool operator==(const Leaf &) const noexcept = default;
   };
 
   struct Node {
@@ -22,9 +23,11 @@ public:
   QuadtreeLeafLocator() = default;
 
   template <typename QuadtreeNodeCollection>
-  void build(uint32_t root_size, const QuadtreeNodeCollection &nodes)
+  void build(uint32_t lx, uint32_t ly, const QuadtreeNodeCollection &nodes)
   {
-    root_size_ = root_size;
+    root_size_ = std::max(lx, ly);
+    lx_ = lx;
+    ly_ = ly;
     nodes_.clear();
     nodes_.reserve(nodes.size());
     for (const auto &node : nodes) {
@@ -32,13 +35,25 @@ public:
     }
   }
 
-  bool empty() const noexcept
+  [[nodiscard]] bool empty() const noexcept
   {
     return nodes_.empty();
   }
-  uint32_t root_size() const noexcept
+
+  [[nodiscard]] uint32_t root_size() const noexcept
   {
     return root_size_;
+  }
+
+  [[nodiscard]] uint32_t num_nodes() const noexcept
+  {
+    return static_cast<uint32_t>(nodes_.size());
+  }
+
+  template <typename Point>
+  [[nodiscard]] Leaf locate(const Point &pt) const noexcept
+  {
+    return locate(pt.x(), pt.y());
   }
 
   [[nodiscard]] Leaf locate(double px, double py) const noexcept
@@ -59,6 +74,20 @@ public:
     return {n.x, n.y, n.size};
   }
 
+  [[nodiscard]] std::vector<Leaf> leaves() const
+  {
+    std::vector<Leaf> out;
+    out.reserve(nodes_.size());
+    for (const auto &node : nodes_) {
+      if (
+        node.is_leaf() && node.x + node.size <= lx_ &&
+        node.y + node.size <= ly_) {
+        out.emplace_back(node.x, node.y, node.size);
+      }
+    }
+    return out;
+  }
+
 private:
   uint32_t locate_leaf(uint32_t px, uint32_t py) const
   {
@@ -72,7 +101,7 @@ private:
     }
     return idx;
   }
-
+  uint32_t lx_{}, ly_{};
   uint32_t root_size_ = 0;
   std::vector<Node> nodes_;
 };
