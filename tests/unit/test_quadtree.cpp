@@ -113,7 +113,7 @@ BOOST_AUTO_TEST_CASE(Locate_clamps_and_boundaries)
   qt.build();
 
   QuadtreeLeafLocator qt_locator;
-  qt_locator.build(qt.root_size(), qt.nodes());
+  qt_locator.build(qt.root_size(), qt.root_size(), qt.nodes());
 
   auto a = qt_locator.locate(-10.0, -5.0);
   BOOST_TEST(a.x == 0u);
@@ -179,7 +179,7 @@ BOOST_AUTO_TEST_CASE(Locate_covers_all_pixels_after_build_and_grade)
   qt.grade();
 
   QuadtreeLeafLocator qt_locator;
-  qt_locator.build(qt.root_size(), qt.nodes());
+  qt_locator.build(qt.root_size(), qt.root_size(), qt.nodes());
 
   for (uint32_t py = 0; py < root; ++py) {
     for (uint32_t px = 0; px < root; ++px) {
@@ -204,7 +204,7 @@ BOOST_AUTO_TEST_CASE(Priority_driven_refinement)
   qt.build();
 
   QuadtreeLeafLocator qt_locator;
-  qt_locator.build(qt.root_size(), qt.nodes());
+  qt_locator.build(qt.root_size(), qt.root_size(), qt.nodes());
 
   auto a = qt_locator.locate(0.0, 0.0);
   BOOST_TEST(a.x == 0u);
@@ -226,7 +226,7 @@ BOOST_AUTO_TEST_CASE(Grade_balances_neighbors_next_to_unit_cell)
   qt.build();
 
   QuadtreeLeafLocator qt_locator;
-  qt_locator.build(qt.root_size(), qt.nodes());
+  qt_locator.build(qt.root_size(), qt.root_size(), qt.nodes());
 
   // Ensure (0,0) is unit-sized before grading
   auto a = qt_locator.locate(0.0, 0.0);
@@ -264,7 +264,7 @@ BOOST_AUTO_TEST_CASE(Locate_consistent_within_leaf)
   qt.build();
 
   QuadtreeLeafLocator qt_locator;
-  qt_locator.build(qt.root_size(), qt.nodes());
+  qt_locator.build(qt.root_size(), qt.root_size(), qt.nodes());
 
   auto lf = qt_locator.locate(20.2, 37.7);
   const double eps = 1e-9;
@@ -380,7 +380,7 @@ BOOST_AUTO_TEST_CASE(Predictable_4x4_build_and_grade)
   };
 
   QuadtreeLeafLocator qt_locator;
-  qt_locator.build(qt.root_size(), qt.nodes());
+  qt_locator.build(qt.root_size(), qt.root_size(), qt.nodes());
 
   for (uint32_t py = 0; py < root; ++py) {
     for (uint32_t px = 0; px < root; ++px) {
@@ -404,7 +404,7 @@ BOOST_AUTO_TEST_CASE(Predictable_4x4_build_and_grade)
     BOOST_TEST(after[i].size == expected[i].size);
   }
 
-  qt_locator.build(qt.root_size(), qt.nodes());
+  qt_locator.build(qt.root_size(), qt.root_size(), qt.nodes());
 
   for (uint32_t py = 0; py < root; ++py) {
     for (uint32_t px = 0; px < root; ++px) {
@@ -471,7 +471,7 @@ BOOST_AUTO_TEST_CASE(Predictable_8x8_build_then_grade_changes)
     BOOST_TEST(v == 1);
 
   QuadtreeLeafLocator qt_locator;
-  qt_locator.build(qt.root_size(), qt.nodes());
+  qt_locator.build(qt.root_size(), qt.root_size(), qt.nodes());
   for (uint32_t py = 0; py < root; ++py)
     for (uint32_t px = 0; px < root; ++px) {
       auto lf = qt_locator.locate(px + 0.5, py + 0.5);
@@ -515,7 +515,7 @@ BOOST_AUTO_TEST_CASE(Predictable_8x8_build_then_grade_changes)
   for (unsigned char v : mask)
     BOOST_TEST(v == 1);
 
-  qt_locator.build(qt.root_size(), qt.nodes());
+  qt_locator.build(qt.root_size(), qt.root_size(), qt.nodes());
 
   for (uint32_t py = 0; py < root; ++py)
     for (uint32_t px = 0; px < root; ++px) {
