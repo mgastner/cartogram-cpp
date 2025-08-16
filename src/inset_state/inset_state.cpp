@@ -2,6 +2,7 @@
 #include "constants.hpp"
 #include "csv.hpp"
 #include "quadtree.hpp"
+#include "triangulation.hpp"
 #include <algorithm>
 
 InsetState::InsetState(std::string pos, Arguments args)
@@ -165,202 +166,14 @@ bool InsetState::converged() const
   return converge_;
 }
 
-void InsetState::create_delaunay_t()
+bool InsetState::create_delaunay_t()
 {
   timer.start("Delaunay Triangulation");
-  Delaunay dt;
-  dt.insert(unique_quadtree_corners_.begin(), unique_quadtree_corners_.end());
-  proj_data_.set_dt(std::move(dt));
-  std::cerr << "Number of Delaunay triangles: " << dt.number_of_faces()
-            << std::endl;
+  
+  if (!triang_.build(&qt_locator_, &proj_data_)) return false;
+  
   timer.stop("Delaunay Triangulation");
-}
-
-void InsetState::update_delaunay_t()
-{
-  timer.start("Update Delanuay Triangulation");
-
-  // Goal is to first create the Delauany triangulation from the projected
-  // quadtree corners
-
-  // Create the projected quadtree corners
-  std::vector<Point> projected_unique_quadtree_corners;
-  projected_unique_quadtree_corners.reserve(unique_quadtree_corners_.size());
-  for (auto &pt : unique_quadtree_corners_) {
-    projected_unique_quadtree_corners.push_back(
-      proj_data_.get(pt.x(), pt.y()));
-  }
-
-  // Create the projected Delaunay triangulation to get the shorter diagonal of
-  // the projected quadtree cells
-  Delaunay dt_projected;
-  dt_projected.insert(
-    projected_unique_quadtree_corners.begin(),
-    projected_unique_quadtree_corners.end());
-
-  // To make sure that we do get the triangles with the same endpoints as the
-  // original Delaunay triangulation, we now need to insert the edges of the
-  // projected quadtree cells as constraints to the projected Delaunay.
-
-  // To later check if a segment is an edge of the quadtree cell
-  std::unordered_set<Segment> is_edge;
-  is_edge.reserve(8 * quadtree_bboxes_.size());
-  for (auto bbox : quadtree_bboxes_) {
-    Point xmin_ymin = Point(bbox.xmin(), bbox.ymin());
-    Point xmax_ymax = Point(bbox.xmax(), bbox.ymax());
-    Point xmin_ymax = Point(bbox.xmin(), bbox.ymax());
-    Point xmax_ymin = Point(bbox.xmax(), bbox.ymin());
-    is_edge.insert(Segment(xmin_ymin, xmax_ymin));
-    is_edge.insert(Segment(xmax_ymin, xmin_ymin));
-    is_edge.insert(Segment(xmin_ymin, xmin_ymax));
-    is_edge.insert(Segment(xmin_ymax, xmin_ymin));
-    is_edge.insert(Segment(xmin_ymax, xmax_ymax));
-    is_edge.insert(Segment(xmax_ymax, xmin_ymax));
-    is_edge.insert(Segment(xmax_ymax, xmax_ymin));
-    is_edge.insert(Segment(xmax_ymin, xmax_ymax));
-  }
-
-  // Add the edges of the quadtree cells to the projected quadtree cell polygon
-  // We check now whether the potential edges are edges of the quadtree cells
-  // and if so, we insert them as constraints to the projected Delaunay
-  std::vector<std::pair<Point, Point>> constraints_for_projected_dt;
-
-  for (Delaunay::Finite_edges_iterator eit =
-         proj_data_.get_dt().finite_edges_begin();
-       eit != proj_data_.get_dt().finite_edges_end();
-       ++eit) {
-    const Segment edge = proj_data_.get_dt().segment(eit);
-    const Point p1 = edge.source();
-    const Point p2 = edge.target();
-
-    // if edge is diagonal, ignore it
-    if (!almost_equal(p1.x(), p2.x()) && !almost_equal(p1.y(), p2.y())) {
-      continue;
-    }
-
-    // If edge is not part of the quadtree cell, ignore it
-    if (is_edge.count(Segment(p1, p2)) == 0) {
-      continue;
-    }
-
-    auto to_uint = [](const double val) {
-      return static_cast<uint32_t>(val + 0.5);
-    };
-
-    Point p1_proj = proj_data_.get(to_uint(p1.x()), to_uint(p1.y()));
-    Point p2_proj = proj_data_.get(to_uint(p2.x()), to_uint(p2.y()));
-
-    // To add the constraint later to the projected Delaunay triangulation
-    constraints_for_projected_dt.push_back({p1_proj, p2_proj});
-  }
-
-  // Finally, we add the projected quadtree cell edges as constraints to the
-  // projected Delaunay triangulation
-  dt_projected.insert_constraints(
-    constraints_for_projected_dt.begin(),
-    constraints_for_projected_dt.end());
-
-  // Reverse map is necessary to get the original point of the projected vertex
-  // Then we can project back the chosen projected diagonal to the unprojected
-  // diagonal and insert it as a constraint to the original Delaunay
-  std::unordered_map<Point, Point> reverse_triangle_transformation;
-  reverse_triangle_transformation.reserve(2 * unique_quadtree_corners_.size());
-  std::vector<Point> &projection = proj_data_.get_projection();
-  for (size_t i = 0; i < unique_quadtree_corners_.size(); ++i) {
-    const auto &key = unique_quadtree_corners_[i];
-    const auto &pos = projection[i];
-    reverse_triangle_transformation[pos] = key;
-  }
-
-  // Potential edges of the quadtree cells
-  std::unordered_map<double, std::vector<double>> same_x_coor_points;
-  std::unordered_map<double, std::vector<double>> same_y_coor_points;
-
-  same_x_coor_points.reserve(2 * lx_);
-  same_y_coor_points.reserve(2 * ly_);
-
-  for (auto &pt : unique_quadtree_corners_) {
-    auto x = pt.x();
-    auto y = pt.y();
-    same_x_coor_points[x].push_back(y);
-    same_y_coor_points[y].push_back(x);
-  }
-
-  for (auto &[x_coor, points] : same_x_coor_points) {
-    // Sort and remove the duplicates
-    std::sort(points.begin(), points.end());
-    points.erase(std::unique(points.begin(), points.end()), points.end());
-  }
-
-  for (auto &[y_coor, points] : same_y_coor_points) {
-    // Sort and remove the duplicates
-    std::sort(points.begin(), points.end());
-    points.erase(std::unique(points.begin(), points.end()), points.end());
-  }
-
-  // Add the projected Delaunay triangles as constraints if they are valid to
-  // the original Delaunay triangulation
-  std::vector<std::pair<Point, Point>> constraints;
-  for (Delaunay::Finite_edges_iterator eit = dt_projected.finite_edges_begin();
-       eit != dt_projected.finite_edges_end();
-       ++eit) {
-    const Segment edge = dt_projected.segment(eit);
-    const Point p1 = edge.source();
-    const Point p2 = edge.target();
-
-    // Reverse the transformation back to the original coordinates
-    const Point p1_orig = reverse_triangle_transformation.at(p1);
-    const Point p2_orig = reverse_triangle_transformation.at(p2);
-
-    // Automatically pick the edge if it is diagonal
-    if (
-      !almost_equal(p1_orig.x(), p2_orig.x()) &&
-      !almost_equal(p1_orig.y(), p2_orig.y())) {
-      constraints.push_back({p1_orig, p2_orig});
-    }
-
-    // If edge is vertical, only add it if there are no point in between
-    if (almost_equal(p1_orig.x(), p2_orig.x())) {
-      auto &y_coor_points = same_x_coor_points[p1_orig.x()];
-
-      const double y_min = std::min(p1_orig.y(), p2_orig.y());
-      const double y_max = std::max(p1_orig.y(), p2_orig.y());
-
-      // Binary search to find the number of points between the two y
-      // coordinates
-      auto cnt = static_cast<std::size_t>(
-        std::upper_bound(y_coor_points.begin(), y_coor_points.end(), y_max) -
-        std::lower_bound(y_coor_points.begin(), y_coor_points.end(), y_min));
-
-      if (cnt == 2) {  // No points in between
-        constraints.push_back({p1_orig, p2_orig});
-      }
-    }
-
-    // If edge is horizontal, only add it if there are no point in between
-    if (almost_equal(p1_orig.y(), p2_orig.y())) {
-      // Check if there is a point in between
-      auto &x_coor_points = same_y_coor_points[p1_orig.y()];
-
-      const double x_min = std::min(p1_orig.x(), p2_orig.x());
-      const double x_max = std::max(p1_orig.x(), p2_orig.x());
-
-      // Binary search to find the number of points between the two y
-      // coordinates
-      auto cnt = static_cast<std::size_t>(
-        std::upper_bound(x_coor_points.begin(), x_coor_points.end(), x_max) -
-        std::lower_bound(x_coor_points.begin(), x_coor_points.end(), x_min));
-      if (cnt == 2) {  // No points in between
-        constraints.push_back({p1_orig, p2_orig});
-      }
-    }
-  }
-
-  // Inserting range is faster than inserting one by one
-  proj_data_.get_dt().insert_constraints(
-    constraints.begin(),
-    constraints.end());
-  timer.stop("Update Delanuay Triangulation");
+  return true;
 }
 
 void InsetState::destroy_fftw_plans_for_flux()
@@ -499,8 +312,18 @@ void InsetState::create_and_refine_quadtree()
 
   qt.grade();
 
-  // Store the bounding boxes of the leaf nodes
+  // Store the bounding boxes of the leaf nodes (updates
+  // unique_quadtree_corners_)
   store_quadtree_cell_corners(qt);
+
+  // Only keep minimum data to be able to locate the leaves from arbitrary
+  // point
+  qt_locator_.build(lx_, ly_, qt.nodes());
+
+  // Build fast indexing so that given the corner value, we can easily get the
+  // projected value
+  proj_data_.reserve(lx_ + 1, ly_ + 1);
+  proj_data_.build_fast_indexing(unique_quadtree_corners_);
 
   std::cerr << "Quadtree nodes pre-grading: " << n_leaves_bef_grading
             << std::endl;
@@ -559,11 +382,6 @@ void InsetState::store_quadtree_cell_corners(const QuadtreeImp &qt)
   }
 
   unique_quadtree_corners_.swap(out);
-
-  // Build fast indexing so that given the corner value, we can easily get the
-  // projected value
-  proj_data_.reserve(lx_ + 1, ly_ + 1);
-  proj_data_.build_fast_indexing(unique_quadtree_corners_);
 
   std::cerr << "Number of unique quadtree corners: "
             << unique_quadtree_corners_.size() << '\n'

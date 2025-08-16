@@ -2,41 +2,11 @@
 #include "inset_state.hpp"
 #include "interpolate_bilinearly.hpp"
 
-static bool delaunay_triangle_flipped(const ProjectionData &proj)
-{
-  const auto &dt = proj.get_dt();
-  for (Delaunay::Finite_faces_iterator fit = dt.finite_faces_begin();
-       fit != dt.finite_faces_end();
-       ++fit) {
-    const auto p1_ori = fit->vertex(0)->point();
-    const auto p2_ori = fit->vertex(1)->point();
-    const auto p3_ori = fit->vertex(2)->point();
-
-    auto to_uint = [](const double val) {
-      return static_cast<uint32_t>(val + 0.5);
-    };
-
-    const Point p1_proj = proj.get(to_uint(p1_ori.x()), to_uint(p1_ori.y()));
-    const Point p2_proj = proj.get(to_uint(p2_ori.x()), to_uint(p2_ori.y()));
-    const Point p3_proj = proj.get(to_uint(p3_ori.x()), to_uint(p3_ori.y()));
-
-    CGAL::Orientation ori_ori = CGAL::orientation(p1_ori, p2_ori, p3_ori);
-    CGAL::Orientation ori_proj = CGAL::orientation(p1_proj, p2_proj, p3_proj);
-
-    // Check if triangles flips or either of them is collinear
-    if (ori_proj == CGAL::COLLINEAR || ori_ori != ori_proj) {
-      return true;
-    }
-  }
-  return false;
-}
-
 bool InsetState::flatten_density()
 {
 
   // Create Delaunay triangulation based on quadtree corners and plot
   create_and_refine_quadtree();
-  create_delaunay_t();
 
   if (args_.plot_quadtree) {
     write_quadtree(file_prefix_ + "_quadtree");
@@ -46,19 +16,8 @@ bool InsetState::flatten_density()
   if (!flatten_density_on_node_vertices()) {
 
     // Flatten density has failed. Increase blur width and try again
-    increment_n_fails_during_flatten_density();
     timer.stop("Flatten Density");
     return false;
-  }
-
-  if (!args_.disable_triangulation_optimisation) {
-    // Update triangulation adding shorter diagonal as constraint for better
-    // shape similarity
-    update_delaunay_t();
-
-    // If triangles flipped after update, we need to try again
-    if (delaunay_triangle_flipped(proj_data_))
-      return false;
   }
 
   // Flatten density passed.
@@ -93,7 +52,7 @@ static bool all_map_points_are_in_domain(
   return true;
 }
 
-static double calculate_velocity_for_point(
+static inline double calculate_velocity_for_point(
   unsigned int i,
   unsigned int j,
   char direction,
@@ -336,17 +295,6 @@ bool InsetState::flatten_density_on_node_vertices()
     // Update the triangle transformation map
     std::swap(projection, mid);
 
-    // Check whether any Delaunay triangle projections flip the projected
-    // triangle. This is an issue as it can lead to intersection during
-    // project. We resolve by increasing the blur width and running the steps
-    // again.
-    if (delaunay_triangle_flipped(proj_data_)) {
-      std::cerr << "Delaunay triangle flipped detected. Increasing blur width "
-                   "and running again."
-                << std::endl;
-
-      return false;
-    }
     delta_t *= inc_after_acc;  // Try a larger step next time
   }
 
