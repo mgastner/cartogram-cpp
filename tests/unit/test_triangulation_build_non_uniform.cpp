@@ -374,6 +374,7 @@ static void run_gold_case(
       std::sort(got_idxs.begin(), got_idxs.end(), sort3);
       std::sort(exp_idxs.begin(), exp_idxs.end(), sort3);
 
+      // clang-format off
       BOOST_CHECK_EQUAL(got_idxs.size(), exp_idxs.size());
       BOOST_CHECK(
         std::is_permutation(
@@ -381,6 +382,7 @@ static void run_gold_case(
           got_idxs.end(),
           exp_idxs.begin(),
           exp_idxs.end()));
+      // clang-format on
     }
   }
 }
