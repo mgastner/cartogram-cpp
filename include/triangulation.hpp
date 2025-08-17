@@ -23,7 +23,7 @@ public:
     std::array<QuadtreeCorner, 3> vertices;  // grid corners (x, y)
   };
 
-  using TriangleIt = typename std::vector<Triangle>::iterator;
+  using ConstTriangleIt = typename std::vector<Triangle>::const_iterator;
 
   // We first build per Quadtree leaf triangulation (we choose the
   // triangulation that maximizes the minimum angle in the projected space).
@@ -39,7 +39,7 @@ public:
 
     const auto &leaves = qt_locator_->leaves();
     triangles_.reserve(leaves.size() * 4);
-    leaf_to_triangle_idxs_.resize(leaves.size() * 4);
+    leaf_to_triangle_idxs_.resize(proj_data_->num_unique_corners());
 
     // The leaves from the qt_locator_ only contains the bottom-left corner
     // (x, y) and the size of the leaf. In order to triangulate the leaf, we
@@ -122,7 +122,7 @@ public:
   // worry about choosing the wrong triangle because of some bad choice of
   // EPSILON With EPICK, all predicates such as orientation, contains, etc. are
   // exact, so we can use them directly without worrying about numerical issues
-  TriangleIt locate(const Point &p)
+  ConstTriangleIt locate(const Point &p) const
   {
     auto contains = [&](const Triangle &T) -> bool {
       const EPoint A(T.vertices[0].x(), T.vertices[0].y());
@@ -153,7 +153,7 @@ public:
     // a low cost containment check in the last located triangle
     if (last_locate_triangle_idx_ != UINT32_MAX) {
       if (contains(triangles_[last_locate_triangle_idx_]))
-        return triangles_.begin() + last_locate_triangle_idx_;
+        return triangles_.cbegin() + last_locate_triangle_idx_;
     }
 
     // First find the leaf from quadtree that contains the point p
@@ -169,12 +169,12 @@ public:
     for (const uint32_t idx : triangle_indices) {
       if (contains(triangles_[idx])) {
         last_locate_triangle_idx_ = idx;
-        return triangles_.begin() + idx;
+        return triangles_.cbegin() + idx;
       }
     }
 
     assert(false && "No triangle found for the point in the quadtree leaf");
-    return triangles_.end();
+    return triangles_.cend();
   }
 
   [[nodiscard]] const std::vector<Triangle> &triangles() const
