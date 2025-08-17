@@ -8,6 +8,9 @@ cd sample_data || exit
 success_count=0
 fail_count=0
 
+# Sum of all command runtimes (in seconds)
+total_secs=0
+
 print_separator() {
   echo "----------------------------------------------------------------------------------------------------"
 }
@@ -43,7 +46,7 @@ for map_dir in */; do
       extra="--world"
     fi
 
-    command="../build/cartogram \"../sample_data/${geojson_file}\" \"../sample_data/${csv_file}\" $extra"
+    command="../build/Release/cartogram \"../sample_data/${geojson_file}\" \"../sample_data/${csv_file}\" $extra"
     echo "Command: $command"
 
     # Show the full path from the script location for the current map folder
@@ -53,6 +56,8 @@ for map_dir in */; do
     # Run the command and capture stderr output while timing it
     SECONDS=0
     stderr_output=$(eval "$command" 2>&1 >/dev/null)
+    elapsed_secs=$SECONDS
+    total_secs=$((total_secs + elapsed_secs))
 
     # Extract the last occurrences of "Integration number" and "Total time:" from stderr_output
     integration_line=$(echo "$stderr_output" | grep "Integration number" | tail -n 1)
@@ -86,6 +91,10 @@ done
 echo "Final Results:"
 echo "Success count: $success_count"
 echo "Fail count: $fail_count"
+
+# Pretty-print total_secs as MM:SS
+printf -v total_ms "%02d:%02d" $(((total_secs%3600)/60)) $((total_secs%60))
+echo "Total time: ${total_ms} (${total_secs}s)"
 
 # Return to the original directory and exit if it fails
 popd >/dev/null || exit
