@@ -120,8 +120,9 @@ public:
   // Internally, we use the CGAL EPICK-based containment to locate the triangle
   // that contains the point p. The benefit of this is that we do not have to
   // worry about choosing the wrong triangle because of some bad choice of
-  // EPSILON With EPICK, all predicates such as orientation, contains, etc. are
-  // exact, so we can use them directly without worrying about numerical issues
+  // EPSILON. With EPICK, all predicates such as orientation, contains, etc.
+  // are exact, so we can use them directly without worrying about numerical
+  // issues
   ConstTriangleIt locate(const Point &p) const
   {
     auto contains = [&](const Triangle &T) -> bool {
