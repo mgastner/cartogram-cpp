@@ -19,16 +19,18 @@ void InsetState::simplify(const unsigned int target_points_per_inset)
   timer.start("Simplification");
   const size_t n_pts_before = n_points();
   std::cerr << n_pts_before << " points in inset. ";
-  if (n_pts_before <= target_points_per_inset) {
-    std::cerr << "No need for simplification." << std::endl;
-    return;
-  }
+
   const unsigned int n_rings = this->n_rings();
   const unsigned long target_pts =
     std::max(target_points_per_inset, min_points_per_ring * n_rings);
+  std::cerr << "Target points: " << target_pts << std::endl;
+
+  if (n_pts_before <= target_pts) {
+    std::cerr << "No need for simplification." << std::endl;
+    return;
+  }
   const double ratio =
     static_cast<double>(target_pts) / static_cast<double>(n_pts_before);
-  std::cerr << "Target points: " << target_pts << std::endl;
   std::cerr << "Simplifying the inset. " << std::endl;
 
   // Store Polygons as a CT (Constrained Triangulation) object. Code inspired
@@ -53,40 +55,32 @@ void InsetState::simplify(const unsigned int target_points_per_inset)
   pgn_id = 0;
   for (auto &gd : geo_divs_) {
     for (auto &pwh : gd.ref_to_polygons_with_holes()) {
-
       auto cit = pgn_id_to_constraint_id[pgn_id++];
-      auto beg = ct.vertices_in_constraint_begin(cit);
-      auto end = ct.vertices_in_constraint_end(cit);
 
       Polygon ext_ring;
-      const std::ptrdiff_t len = std::distance(beg, end);
-      if (len > 1)
-        ext_ring.reserve(static_cast<std::size_t>(len - 1));
-      for (auto it = beg; std::next(it) != end; ++it)
-        ext_ring.push_back((*it)->point());
+      for (auto pit = ct.points_in_constraint_begin(cit),
+                pend = ct.points_in_constraint_end(cit);
+           std::next(pit) != pend;
+           ++pit)
+        ext_ring.push_back(*pit);
 
       std::vector<Polygon> int_ring_v;
       int_ring_v.reserve(pwh.number_of_holes());
       for (auto h : pwh.holes()) {
         cit = pgn_id_to_constraint_id[pgn_id++];
-        beg = ct.vertices_in_constraint_begin(cit);
-        end = ct.vertices_in_constraint_end(cit);
-
         Polygon int_ring;
-        const std::ptrdiff_t ring_len = std::distance(beg, end);
-        if (ring_len > 1)
-          ext_ring.reserve(static_cast<std::size_t>(ring_len - 1));
-        for (auto it = beg; std::next(it) != end; ++it)
-          int_ring.push_back((*it)->point());
-
+        for (auto pit = ct.points_in_constraint_begin(cit),
+                  pend = ct.points_in_constraint_end(cit);
+             std::next(pit) != pend;
+             ++pit)
+          int_ring.push_back(*pit);
         int_ring_v.emplace_back(std::move(int_ring));
       }
 
-      Polygon_with_holes pgnwh(
+      pwh = Polygon_with_holes(
         std::move(ext_ring),
         int_ring_v.begin(),
         int_ring_v.end());
-      pwh = std::move(pgnwh);
     }
   }
 
