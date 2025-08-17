@@ -2,8 +2,11 @@
 #include "interpolate_bilinearly.hpp"
 #include "round_point.hpp"
 
-void InsetState::project()
+bool InsetState::project()
 {
+
+  if (!create_delaunay_t())  // Triangle has flipped during triangulation
+    return false;
 
   if (args_.simplify) {
     densify_geo_divs_using_delaunay_t();
@@ -32,19 +35,20 @@ void InsetState::project()
   if (args_.plot_intersections) {
     write_intersections_image();
   }
+
+  return true;
 }
 
+template <typename Triangle>
 static Point interpolate_point_with_barycentric_coordinates(
   const Point &p,
+  const Triangle &triangle,
   const ProjectionData &proj)
 {
-  // Find the triangle containing the point
-  const Face_handle fh = proj.get_dt().locate(p);
-
   // Get the three vertices
-  const auto v1 = fh->vertex(0)->point();
-  const auto v2 = fh->vertex(1)->point();
-  const auto v3 = fh->vertex(2)->point();
+  const Point v1 = triangle.vertices[0];
+  const Point v2 = triangle.vertices[1];
+  const Point v3 = triangle.vertices[2];
 
   // Calculate barycentric coordinates
   auto bary =
@@ -78,7 +82,10 @@ void InsetState::project_with_delaunay_t(bool output_to_stdout)
 {
   timer.start("Project");
   auto lambda_bary = [&](Point p1) {
-    return interpolate_point_with_barycentric_coordinates(p1, proj_data_);
+    return interpolate_point_with_barycentric_coordinates(
+      p1,
+      *triang_.locate(p1),
+      proj_data_);
   };
   transform_points(lambda_bary);
 
@@ -93,7 +100,10 @@ void InsetState::project_with_delaunay_t(bool output_to_stdout)
 void InsetState::project_point_set(std::unordered_set<Point> &unprojected)
 {
   auto lambda_bary = [&](Point p1) {
-    return interpolate_point_with_barycentric_coordinates(p1, proj_data_);
+    return interpolate_point_with_barycentric_coordinates(
+      p1,
+      *triang_.locate(p1),
+      proj_data_);
   };
   std::unordered_set<Point> projected;
   for (const Point &pt : unprojected) {

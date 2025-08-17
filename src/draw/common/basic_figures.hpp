@@ -9,35 +9,34 @@
 
 inline void write_triangles(
   Canvas &cvs,
+  const auto &triang_,
   const auto &proj,
   const Color &clr,
   const unsigned int ly,
   bool draw_projected_points)
 {
   cvs.set_stroke(clr, 1.5e-3 * ly);
-  const auto &dt = proj.get_dt();
+  std::cerr << "draw projected triangles: " << draw_projected_points
+            << std::endl;
 
-  for (Delaunay::Finite_faces_iterator fit = dt.finite_faces_begin();
-       fit != dt.finite_faces_end();
-       ++fit) {
-    auto p1 = fit->vertex(0)->point();
-    auto p2 = fit->vertex(1)->point();
-    auto p3 = fit->vertex(2)->point();
+  const auto &triangles = triang_.triangles();
 
-    auto to_uint = [](const double val) {
-      return static_cast<uint32_t>(val + 0.5);
-    };
+  for (const auto &triangle : triangles) {
+    const auto &v1 = triangle.vertices[0];
+    const auto &v2 = triangle.vertices[1];
+    const auto &v3 = triangle.vertices[2];
 
     if (draw_projected_points) {
-      p1 = proj.get(to_uint(p1.x()), to_uint(p1.y()));
-      p2 = proj.get(to_uint(p2.x()), to_uint(p2.y()));
-      p3 = proj.get(to_uint(p3.x()), to_uint(p3.y()));
+      cvs.move_to(proj.get(v1.x(), v1.y()).x(), proj.get(v1.x(), v1.y()).y());
+      cvs.line_to(proj.get(v2.x(), v2.y()).x(), proj.get(v2.x(), v2.y()).y());
+      cvs.line_to(proj.get(v3.x(), v3.y()).x(), proj.get(v3.x(), v3.y()).y());
+      cvs.line_to(proj.get(v1.x(), v1.y()).x(), proj.get(v1.x(), v1.y()).y());
+    } else {
+      cvs.move_to(v1.x(), v1.y());
+      cvs.line_to(v2.x(), v2.y());
+      cvs.line_to(v3.x(), v3.y());
+      cvs.line_to(v1.x(), v1.y());
     }
-
-    cvs.move_to(p1.x(), p1.y());
-    cvs.line_to(p2.x(), p2.y());
-    cvs.line_to(p3.x(), p3.y());
-    cvs.line_to(p1.x(), p1.y());
     cvs.stroke();
   }
 }
@@ -260,4 +259,22 @@ inline void write_polygons(
     if (fs > 0)
       cvs.text(pt.x(), pt.y(), lbl, fs);
   }
+}
+
+inline void write_polygon(
+  Canvas &cvs,
+  Polygon polygon,
+  const Color &fill_color,
+  const Color &stroke_color)
+{
+  bg::model::polygon<CanvasPoint> poly;
+
+  poly.outer().reserve(polygon.size());
+  for (const auto &pt : polygon)
+    poly.outer().push_back({pt.x(), pt.y()});
+
+  cvs.set_fill(fill_color);
+  cvs.fill_polygon(poly);
+  cvs.set_stroke(stroke_color, 1.0);
+  cvs.stroke_polygon_outline(poly);
 }

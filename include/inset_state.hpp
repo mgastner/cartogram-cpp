@@ -10,7 +10,9 @@
 #include "parse_arguments.hpp"
 #include "progress_tracker.hpp"
 #include "projection_data.hpp"
+#include "quadtree_leaf_locator.hpp"
 #include "time_tracker.hpp"
+#include "triangulation.hpp"
 #include <boost/multi_array.hpp>
 #include <cstdint>
 
@@ -34,6 +36,8 @@ private:
 
   std::vector<QuadtreeCorner> unique_quadtree_corners_;
   ProjectionData proj_data_;
+  QuadtreeLeafLocator qt_locator_;
+  Triangulation<QuadtreeLeafLocator, ProjectionData> triang_;
 
   // Failed constraints
   std::vector<Segment> failed_constraints_dt_projected_;
@@ -89,6 +93,8 @@ private:
   // to later be able to normalize inset area by comparing among the insets
   double initial_target_area_;
 
+  mutable Polygon not_simple_polygon_;
+
   // Map name. Inset position is appended to the name if n_insets > 2.
   std::string inset_name_;
   std::unordered_map<std::string, bool> is_input_target_area_missing_;
@@ -138,7 +144,7 @@ public:
   bool continue_integrating() const;
   void create_and_refine_quadtree();
   void create_contiguity_graph();
-  void create_delaunay_t();
+  bool create_delaunay_t();
   bool converged() const;
   void densify_geo_divs_using_delaunay_t();
   void destroy_fftw_plans_for_flux();
@@ -213,7 +219,7 @@ public:
 
   void print_time_report() const;
 
-  void project();
+  bool project();
   void project_point_set(std::unordered_set<Point> &unprojected);
   void project_with_delaunay_t(bool);
   void push_back(const GeoDiv &);

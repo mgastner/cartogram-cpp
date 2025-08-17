@@ -1,5 +1,6 @@
 #define BOOST_TEST_MODULE test_quadtree
 #include "quadtree.hpp"
+#include "quadtree_leaf_locator.hpp"
 #include <bit>
 #include <boost/test/included/unit_test.hpp>
 #include <cmath>
@@ -111,27 +112,30 @@ BOOST_AUTO_TEST_CASE(Locate_clamps_and_boundaries)
   Quadtree qt(root, 10000, metric);  // force full refinement
   qt.build();
 
-  auto a = qt.locate(-10.0, -5.0);
+  QuadtreeLeafLocator qt_locator;
+  qt_locator.build(qt.root_size(), qt.root_size(), qt.nodes());
+
+  auto a = qt_locator.locate(-10.0, -5.0);
   BOOST_TEST(a.x == 0u);
   BOOST_TEST(a.y == 0u);
   BOOST_TEST(a.size == 1u);
 
-  auto b = qt.locate(root, 0.0);
+  auto b = qt_locator.locate(root, 0.0);
   BOOST_TEST(b.x == root - 1);
   BOOST_TEST(b.y == 0u);
   BOOST_TEST(b.size == 1u);
 
-  auto c = qt.locate(0.0, root);
+  auto c = qt_locator.locate(0.0, root);
   BOOST_TEST(c.x == 0u);
   BOOST_TEST(c.y == root - 1);
   BOOST_TEST(c.size == 1u);
 
-  auto d = qt.locate(root, root);
+  auto d = qt_locator.locate(root, root);
   BOOST_TEST(d.x == root - 1);
   BOOST_TEST(d.y == root - 1);
   BOOST_TEST(d.size == 1u);
 
-  auto e = qt.locate(8.0, 8.0);
+  auto e = qt_locator.locate(8.0, 8.0);
   BOOST_TEST(e.x == 8u);
   BOOST_TEST(e.y == 8u);
   BOOST_TEST(e.size == 1u);
@@ -174,9 +178,12 @@ BOOST_AUTO_TEST_CASE(Locate_covers_all_pixels_after_build_and_grade)
   qt.build();
   qt.grade();
 
+  QuadtreeLeafLocator qt_locator;
+  qt_locator.build(qt.root_size(), qt.root_size(), qt.nodes());
+
   for (uint32_t py = 0; py < root; ++py) {
     for (uint32_t px = 0; px < root; ++px) {
-      auto lf = qt.locate(double(px), double(py));
+      auto lf = qt_locator.locate(double(px), double(py));
       BOOST_TEST(px >= lf.x);
       BOOST_TEST(px < lf.x + lf.size);
       BOOST_TEST(py >= lf.y);
@@ -196,12 +203,15 @@ BOOST_AUTO_TEST_CASE(Priority_driven_refinement)
   Quadtree qt(root, 100, metric);
   qt.build();
 
-  auto a = qt.locate(0.0, 0.0);
+  QuadtreeLeafLocator qt_locator;
+  qt_locator.build(qt.root_size(), qt.root_size(), qt.nodes());
+
+  auto a = qt_locator.locate(0.0, 0.0);
   BOOST_TEST(a.x == 0u);
   BOOST_TEST(a.y == 0u);
   BOOST_TEST(a.size == 1u);  // refined deeply at the hotspot
 
-  auto b = qt.locate(root - 1.0, root - 1.0);
+  auto b = qt_locator.locate(root - 1.0, root - 1.0);
   BOOST_TEST(b.size > 1u);  // away from hotspot stays larger
 }
 
@@ -215,15 +225,18 @@ BOOST_AUTO_TEST_CASE(Grade_balances_neighbors_next_to_unit_cell)
   Quadtree qt(root, 100, metric);
   qt.build();
 
+  QuadtreeLeafLocator qt_locator;
+  qt_locator.build(qt.root_size(), qt.root_size(), qt.nodes());
+
   // Ensure (0,0) is unit-sized before grading
-  auto a = qt.locate(0.0, 0.0);
+  auto a = qt_locator.locate(0.0, 0.0);
   BOOST_TEST(a.size == 1u);
 
   qt.grade();
 
   // Neighbors along +x and +y must become size <= 2 for 1‑irregularity
-  auto nx = qt.locate(1.0, 0.0);
-  auto ny = qt.locate(0.0, 1.0);
+  auto nx = qt_locator.locate(1.0, 0.0);
+  auto ny = qt_locator.locate(0.0, 1.0);
   BOOST_TEST(nx.size <= 2u);
   BOOST_TEST(ny.size <= 2u);
 }
@@ -250,12 +263,15 @@ BOOST_AUTO_TEST_CASE(Locate_consistent_within_leaf)
   Quadtree qt(root, 150, metric);
   qt.build();
 
-  auto lf = qt.locate(20.2, 37.7);
+  QuadtreeLeafLocator qt_locator;
+  qt_locator.build(qt.root_size(), qt.root_size(), qt.nodes());
+
+  auto lf = qt_locator.locate(20.2, 37.7);
   const double eps = 1e-9;
-  auto p1 = qt.locate(lf.x + 0.1, lf.y + 0.1);
-  auto p2 = qt.locate(lf.x + lf.size - eps, lf.y + 0.1);
-  auto p3 = qt.locate(lf.x + 0.1, lf.y + lf.size - eps);
-  auto p4 = qt.locate(lf.x + lf.size - eps, lf.y + lf.size - eps);
+  auto p1 = qt_locator.locate(lf.x + 0.1, lf.y + 0.1);
+  auto p2 = qt_locator.locate(lf.x + lf.size - eps, lf.y + 0.1);
+  auto p3 = qt_locator.locate(lf.x + 0.1, lf.y + lf.size - eps);
+  auto p4 = qt_locator.locate(lf.x + lf.size - eps, lf.y + lf.size - eps);
 
   auto same = [](auto a, auto b) {
     return a.x == b.x && a.y == b.y && a.size == b.size;
@@ -362,9 +378,13 @@ BOOST_AUTO_TEST_CASE(Predictable_4x4_build_and_grade)
       return QT::Leaf{0, 2, 2};
     return QT::Leaf{2, 2, 2};
   };
+
+  QuadtreeLeafLocator qt_locator;
+  qt_locator.build(qt.root_size(), qt.root_size(), qt.nodes());
+
   for (uint32_t py = 0; py < root; ++py) {
     for (uint32_t px = 0; px < root; ++px) {
-      auto lf = qt.locate(px + 0.5, py + 0.5);
+      auto lf = qt_locator.locate(px + 0.5, py + 0.5);
       auto ex = expected_for(px, py);
       BOOST_TEST(lf.x == ex.x);
       BOOST_TEST(lf.y == ex.y);
@@ -384,9 +404,11 @@ BOOST_AUTO_TEST_CASE(Predictable_4x4_build_and_grade)
     BOOST_TEST(after[i].size == expected[i].size);
   }
 
+  qt_locator.build(qt.root_size(), qt.root_size(), qt.nodes());
+
   for (uint32_t py = 0; py < root; ++py) {
     for (uint32_t px = 0; px < root; ++px) {
-      auto lf = qt.locate(px + 0.5, py + 0.5);
+      auto lf = qt_locator.locate(px + 0.5, py + 0.5);
       auto ex = expected_for(px, py);
       BOOST_TEST(lf.x == ex.x);
       BOOST_TEST(lf.y == ex.y);
@@ -448,9 +470,11 @@ BOOST_AUTO_TEST_CASE(Predictable_8x8_build_then_grade_changes)
   for (unsigned char v : mask)
     BOOST_TEST(v == 1);
 
+  QuadtreeLeafLocator qt_locator;
+  qt_locator.build(qt.root_size(), qt.root_size(), qt.nodes());
   for (uint32_t py = 0; py < root; ++py)
     for (uint32_t px = 0; px < root; ++px) {
-      auto lf = qt.locate(px + 0.5, py + 0.5);
+      auto lf = qt_locator.locate(px + 0.5, py + 0.5);
       BOOST_TEST(px >= lf.x);
       BOOST_TEST(px < lf.x + lf.size);
       BOOST_TEST(py >= lf.y);
@@ -491,9 +515,11 @@ BOOST_AUTO_TEST_CASE(Predictable_8x8_build_then_grade_changes)
   for (unsigned char v : mask)
     BOOST_TEST(v == 1);
 
+  qt_locator.build(qt.root_size(), qt.root_size(), qt.nodes());
+
   for (uint32_t py = 0; py < root; ++py)
     for (uint32_t px = 0; px < root; ++px) {
-      auto lf = qt.locate(px + 0.5, py + 0.5);
+      auto lf = qt_locator.locate(px + 0.5, py + 0.5);
       BOOST_TEST(px >= lf.x);
       BOOST_TEST(px < lf.x + lf.size);
       BOOST_TEST(py >= lf.y);

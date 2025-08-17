@@ -111,7 +111,12 @@ void InsetState::integrate(ProgressTracker &progress_tracker)
     // 2. Flatten Density
     if (!flatten_density()) {
 
-      // Flatten density has failed. Increase blur width and try again
+      std::cerr << "Blur width is too low. Integrator failed to flatten "
+                   "density. Increasing blur width and trying again."
+                << std::endl;
+
+      increment_n_fails_during_flatten_density();
+
       if (args_.verbose || args_.export_time_report)
         timer.stop(file_prefix_);
       continue;
@@ -119,7 +124,17 @@ void InsetState::integrate(ProgressTracker &progress_tracker)
 
     // 3. Project Polygon Points by Interpolating "Flattened" (Projected) Proxy
     // Geometry
-    project();
+    if (!project()) {
+
+      std::cerr << "Triangle has flipped during triangulation. Increasing "
+                   "blur width and trying again."
+                << std::endl;
+      increment_n_fails_during_flatten_density();
+
+      if (args_.verbose || args_.export_time_report)
+        timer.stop(file_prefix_);
+      continue;
+    }
 
     // 4. Update area errors and try again if necessary
     set_area_errors();

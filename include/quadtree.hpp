@@ -23,6 +23,22 @@ public:
 
   struct Leaf {
     uint32_t x, y, size;
+    Leaf() = default;
+    Leaf(uint32_t x_, uint32_t y_, uint32_t s_) noexcept
+        : x(x_), y(y_), size(s_)
+    {
+    }
+  };
+
+  struct Node {
+    uint32_t x, y, size;
+    uint16_t depth;
+    int32_t first_child;  // leaf if < 0
+    MetricResultType priority;  // metric value
+    [[nodiscard]] bool is_leaf() const noexcept
+    {
+      return first_child < 0;
+    }
   };
 
   Quadtree(uint32_t root_size, std::size_t target_cells, MetricFn metric)
@@ -137,36 +153,18 @@ public:
     return leaves_.size();
   }
 
-  [[nodiscard]] Leaf locate(double px, double py) const noexcept
+  [[nodiscard]] uint32_t root_size() const noexcept
   {
-    const double rx = (px <= 0.0) ? 0.0
-                      : (px < double(root_size_))
-                        ? px
-                        : std::nextafter(double(root_size_), 0.0);
-    const double ry = (py <= 0.0) ? 0.0
-                      : (py < double(root_size_))
-                        ? py
-                        : std::nextafter(double(root_size_), 0.0);
+    return root_size_;
+  }
 
-    const uint32_t ix = static_cast<uint32_t>(rx);
-    const uint32_t iy = static_cast<uint32_t>(ry);
-    const uint32_t idx = locate_leaf(ix, iy);
-    const Node &n = nodes_[idx];
-    return {n.x, n.y, n.size};
+  // Used for QuadtreeLeafLocator
+  [[nodiscard]] const std::vector<Node> &nodes() const noexcept
+  {
+    return nodes_;
   }
 
 private:
-  struct Node {
-    uint32_t x, y, size;
-    uint16_t depth;
-    int32_t first_child;  // leaf if < 0
-    MetricResultType priority;  // metric value
-    [[nodiscard]] bool is_leaf() const noexcept
-    {
-      return first_child < 0;
-    }
-  };
-
   void ensure_leafpos(std::size_t idx)
   {
     if (idx >= leaf_pos_.size())

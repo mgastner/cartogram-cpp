@@ -4,6 +4,16 @@
 #include "constants.hpp"
 #include "inset_state.hpp"
 
+using Vb = CGAL::Polyline_simplification_2::Vertex_base_2<Scd>;
+using Fb = CGAL::Constrained_triangulation_face_base_2<Scd>;
+using TDS = CGAL::Triangulation_data_structure_2<Vb, Fb>;
+using CDT = CGAL::
+  Constrained_Delaunay_triangulation_2<Scd, TDS, CGAL::Exact_predicates_tag>;
+using CT = CGAL::Constrained_triangulation_plus_2<CDT>;
+using Constraint_id = CT::Constraint_id;
+using Stop = CGAL::Polyline_simplification_2::Stop_below_count_ratio_threshold;
+using Cost = CGAL::Polyline_simplification_2::Squared_distance_cost;
+
 void InsetState::simplify(const unsigned int target_points_per_inset)
 {
   timer.start("Simplification");
