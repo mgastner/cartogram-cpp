@@ -1,26 +1,41 @@
 #include "constants.hpp"
 #include "inset_state.hpp"
+#include <cmath>
+#include <vector>
 
 void InsetState::blur_density()
 {
   timer.start("Blur");
-  // Figure out the blur width
-  const double bw = blur_width();
 
-  // No blur left to apply
-  if (bw <= 0.0)
+  const double bw = blur_width();
+  if (bw <= 0.0) {
+    timer.stop("Blur");
     return;
+  }
 
   const double prefactor = -0.5 * bw * bw * pi * pi;
-#pragma omp parallel for default(none) shared(prefactor)
+
+  const double inv_lx2 = 1.0 / (double(lx_) * double(lx_));
+  const double inv_ly2 = 1.0 / (double(ly_) * double(ly_));
+
+  const double norm = 1.0 / (4.0 * double(lx_) * double(ly_));
+
+  std::vector<double> w_x(lx_), w_y(ly_);
+
   for (unsigned int i = 0; i < lx_; ++i) {
-    const double scaled_i = static_cast<double>(i) / lx_;
-    const double scaled_i_squared = scaled_i * scaled_i;
+    const double i2 = double(i) * double(i);
+    w_x[i] = std::exp(prefactor * (i2 * inv_lx2)) * norm;
+  }
+
+  for (unsigned int j = 0; j < ly_; ++j) {
+    const double j2 = double(j) * double(j);
+    w_y[j] = std::exp(prefactor * (j2 * inv_ly2));
+  }
+
+  for (unsigned i = 0; i < lx_; ++i) {
+    const double wi = w_x[i];
     for (unsigned int j = 0; j < ly_; ++j) {
-      const double scaled_j = static_cast<double>(j) / ly_;
-      const double scaled_j_squared = scaled_j * scaled_j;
-      rho_ft_(i, j) *= exp(prefactor * (scaled_i_squared + scaled_j_squared)) /
-                       (4 * lx_ * ly_);
+      rho_ft_(i, j) *= wi * w_y[j];
     }
   }
 
