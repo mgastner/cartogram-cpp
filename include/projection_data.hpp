@@ -34,6 +34,11 @@ private:
     return static_cast<size_t>(lx_) * static_cast<size_t>(ly_);
   }
 
+  bool in_bounds(uint32_t x, uint32_t y) const noexcept
+  {
+    return x < lx_ && y < ly_;
+  }
+
 public:
   ProjectionData() = default;
 
@@ -106,6 +111,9 @@ public:
     for (uint32_t i = 0; i < keys.size(); ++i) {
       const uint32_t x = keys[i].x();
       const uint32_t y = keys[i].y();
+
+      assert(in_bounds(x, y) && "key outside reserved grid");
+
       const uint32_t idx = get_buf_index(x, y);
       corner_slot_[idx] = (uint64_t(gen_) << 32) | uint64_t(i);
     }
@@ -114,6 +122,9 @@ public:
   // Check if the corner (x, y) is valid in the current generation
   [[nodiscard]] bool is_valid_corner(uint32_t x, uint32_t y) const noexcept
   {
+    assert(corner_slot_ && "reserve() must be called before indexing");
+    if (!in_bounds(x, y))
+      return false;
     const uint64_t idx = corner_slot_[get_buf_index(x, y)];
     return uint32_t(idx >> 32) == gen_;
   }
@@ -121,6 +132,7 @@ public:
   /// Precondition: (x, y) is valid for the current generation
   [[nodiscard]] uint32_t offset(uint32_t x, uint32_t y) const noexcept
   {
+    assert(in_bounds(x, y) && "offset() out of bounds");
     assert(is_valid_corner(x, y) && "invalid corner");
     return static_cast<uint32_t>(corner_slot_[get_buf_index(x, y)]);
   }
@@ -128,6 +140,7 @@ public:
   [[nodiscard]] Point get(uint32_t x, uint32_t y) const noexcept
   {
     const uint32_t idx = offset(x, y);
+    assert(idx < projection_.size() && "projection index out of range");
     return projection_[idx];
   }
 
