@@ -3,9 +3,18 @@
 #include <iostream>
 #include <vector>
 
+TimeTracker::TimeTracker() : program_start_(std::chrono::steady_clock::now())
+{
+}
+
+TimeTracker::TimeTracker(std::string name)
+    : name_(std::move(name)), program_start_(std::chrono::steady_clock::now())
+{
+}
+
 void TimeTracker::set_name(std::string name)
 {
-  name_ = name;
+  name_ = std::move(name);
 }
 
 void TimeTracker::start(const std::string &task_name)
@@ -67,4 +76,13 @@ std::chrono::milliseconds TimeTracker::duration(
     // Re-throw, or return a default value
     throw;
   }
+}
+
+double TimeTracker::total_elapsed_time_in_seconds() const
+{
+  using clock = std::chrono::steady_clock;
+  using seconds_d = std::chrono::duration<double>;
+
+  return std::chrono::duration_cast<seconds_d>(clock::now() - program_start_)
+    .count();
 }
