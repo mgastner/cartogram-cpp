@@ -71,10 +71,6 @@ Arguments parse_arguments(const int argc, const char *argv[])
       "polygons")
     .default_value(false)
     .implicit_value(true);
-  arguments.add_argument("--disable_triangulation_optimisation")
-    .help("Boolean: Disable optimisation of maximum angle of triangulation")
-    .default_value(false)
-    .implicit_value(true);
   arguments.add_argument("--skip_projection")
     .help("Boolean: Skip projection to equal area")
     .default_value(false)
@@ -191,8 +187,6 @@ Arguments parse_arguments(const int argc, const char *argv[])
   // Set boolean values
   args.world = arguments.get<bool>("--world");
   args.simplify = !arguments.get<bool>("--disable_simplify_and_densify");
-  args.disable_triangulation_optimisation =
-    arguments.get<bool>("--disable_triangulation_optimisation");
   args.remove_tiny_polygons = arguments.get<bool>("--remove_tiny_polygons");
   args.min_polygon_area = arguments.get<double>("--minimum_polygon_area");
   args.max_permitted_area_error =

@@ -72,8 +72,6 @@ struct Arguments {
 
   bool verbose;
 
-  bool disable_triangulation_optimisation;
-
   // Column names in provided visual variables file (CSV)
   std::optional<std::string> id_col;
   std::optional<std::string> area_col;
