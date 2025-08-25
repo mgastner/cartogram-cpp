@@ -72,6 +72,9 @@ struct Arguments {
 
   bool verbose;
 
+  // Timeout in seconds
+  unsigned int timeout_in_seconds;
+
   // Column names in provided visual variables file (CSV)
   std::optional<std::string> id_col;
   std::optional<std::string> area_col;

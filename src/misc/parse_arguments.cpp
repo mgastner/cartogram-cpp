@@ -28,6 +28,12 @@ Arguments parse_arguments(const int argc, const char *argv[])
       "Integer: Number of starting grid cells along longer Cartesian "
       "coordinate axis");
 
+  arguments.add_argument("-T", "--timeout")
+    .default_value(UINT_MAX)
+    .scan<'u', unsigned int>()
+    .help(
+      "Integer: Maximum time (in seconds) allowed for cartogram generation");
+
   arguments.add_argument("-N", "--max_allowed_autoscale_grid_length")
     .default_value(max_allowed_autoscale_grid_length)
     .scan<'u', unsigned int>()
@@ -206,6 +212,8 @@ Arguments parse_arguments(const int argc, const char *argv[])
   args.plot_polygons = arguments.get<bool>("--plot_polygons");
   args.plot_quadtree = arguments.get<bool>("--plot_quadtree");
   args.output_shifted_insets = arguments.get<bool>("--output_shifted_insets");
+
+  args.timeout_in_seconds = arguments.get<unsigned int>("--timeout");
 
   // arguments.present returns an optional
   args.id_col = arguments.present<std::string>("--id");
