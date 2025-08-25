@@ -8,7 +8,7 @@ bool InsetState::project()
   if (!create_delaunay_t())  // Triangle has flipped during triangulation
     return false;
 
-  if (args_.simplify) {
+  if (!args_.disable_simplification_densification) {
     densify_geo_divs_using_delaunay_t();
   }
 
@@ -28,7 +28,7 @@ bool InsetState::project()
       true);
   }
 
-  if (args_.simplify) {
+  if (!args_.disable_simplification_densification) {
 
     simplify(args_.target_points_per_inset);
   }

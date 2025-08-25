@@ -35,7 +35,7 @@ struct Arguments {
   bool qtdt_method;
 
   // Should the polygons be simplified and densified?
-  bool simplify;
+  bool disable_simplification_densification;
 
   // If `rays` is true, we use the ray-shooting method to fill the grid cells.
   bool rays;
@@ -72,7 +72,11 @@ struct Arguments {
 
   bool verbose;
 
-  bool disable_triangulation_optimisation;
+  // Timeout in seconds
+  unsigned int timeout_in_seconds;
+
+  // Whether to exit gracefully if intersections are found
+  bool do_not_fail_on_intersections;
 
   // Column names in provided visual variables file (CSV)
   std::optional<std::string> id_col;

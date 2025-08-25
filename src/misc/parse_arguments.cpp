@@ -1,5 +1,6 @@
 #include "parse_arguments.hpp"
 #include "constants.hpp"
+#include <limits>
 
 Arguments parse_arguments(const int argc, const char *argv[])
 {
@@ -7,7 +8,7 @@ Arguments parse_arguments(const int argc, const char *argv[])
 
   // Create parser for arguments using argparse.
   // From https://github.com/p-ranav/argparse
-  argparse::ArgumentParser arguments("./cartogram", "25.7");
+  argparse::ArgumentParser arguments("./cartogram", "25.8");
 
   // Positional argument accepting geometry file (GeoJSON, JSON) as input
   arguments.add_argument("geometry_file")
@@ -27,6 +28,12 @@ Arguments parse_arguments(const int argc, const char *argv[])
     .help(
       "Integer: Number of starting grid cells along longer Cartesian "
       "coordinate axis");
+
+  arguments.add_argument("-T", "--timeout")
+    .default_value(std::numeric_limits<unsigned int>::max())
+    .scan<'u', unsigned int>()
+    .help(
+      "Integer: Maximum time (in seconds) allowed for cartogram generation");
 
   arguments.add_argument("-N", "--max_allowed_autoscale_grid_length")
     .default_value(max_allowed_autoscale_grid_length)
@@ -71,10 +78,6 @@ Arguments parse_arguments(const int argc, const char *argv[])
       "polygons")
     .default_value(false)
     .implicit_value(true);
-  arguments.add_argument("--disable_triangulation_optimisation")
-    .help("Boolean: Disable optimisation of maximum angle of triangulation")
-    .default_value(false)
-    .implicit_value(true);
   arguments.add_argument("--skip_projection")
     .help("Boolean: Skip projection to equal area")
     .default_value(false)
@@ -93,6 +96,14 @@ Arguments parse_arguments(const int argc, const char *argv[])
     // Currently, this help message is not accurate.
     .default_value(false)
     .implicit_value(true);
+
+  arguments.add_argument("--do_not_fail_on_intersections")
+    .help(
+      "Boolean: Whether to still produce cartogram if polygons do not remain "
+      "simple")
+    .default_value(false)
+    .implicit_value(true);
+
   arguments.add_argument("--output_shifted_insets")
     .help(
       "Boolean: Output repositioned insets in cartesian coordinates GeoJSON")
@@ -190,9 +201,8 @@ Arguments parse_arguments(const int argc, const char *argv[])
 
   // Set boolean values
   args.world = arguments.get<bool>("--world");
-  args.simplify = !arguments.get<bool>("--disable_simplify_and_densify");
-  args.disable_triangulation_optimisation =
-    arguments.get<bool>("--disable_triangulation_optimisation");
+  args.disable_simplification_densification =
+    arguments.get<bool>("--disable_simplify_and_densify");
   args.remove_tiny_polygons = arguments.get<bool>("--remove_tiny_polygons");
   args.min_polygon_area = arguments.get<double>("--minimum_polygon_area");
   args.max_permitted_area_error =
@@ -211,6 +221,10 @@ Arguments parse_arguments(const int argc, const char *argv[])
   args.plot_polygons = arguments.get<bool>("--plot_polygons");
   args.plot_quadtree = arguments.get<bool>("--plot_quadtree");
   args.output_shifted_insets = arguments.get<bool>("--output_shifted_insets");
+  args.do_not_fail_on_intersections =
+    arguments.get<bool>("--do_not_fail_on_intersections");
+
+  args.timeout_in_seconds = arguments.get<unsigned int>("--timeout");
 
   // arguments.present returns an optional
   args.id_col = arguments.present<std::string>("--id");
@@ -223,7 +237,7 @@ Arguments parse_arguments(const int argc, const char *argv[])
   args.verbose = arguments.get<bool>("--verbose");
 
   // Check whether n_points is specified but --simplify_and_densify not passed
-  if (!args.simplify) {
+  if (args.disable_simplification_densification) {
     std::cerr << "WARNING: Simplification and densification disabled! "
               << "Polygons will not simplified (or densified). "
               << "This may result and in polygon intersections. "

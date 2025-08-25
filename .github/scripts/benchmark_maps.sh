@@ -9,7 +9,6 @@ BASE_BIN=$2
 OUT_JSON=$3
 
 MAP_ROOT="sample_data"
-WARMUP=1
 MIN_RUNS=6
 MAX_RUNS=15
 
@@ -81,10 +80,10 @@ for dir in "$MAP_ROOT"/*; do
     echo "Benchmarking:  $map_name"
 
     hyperfine --ignore-failure \
-      --warmup "$WARMUP" \
       --min-runs "$MIN_RUNS" \
       --max-runs "$MAX_RUNS" \
       --export-json "hf.json" \
+      --prepare 'bash -lc "if [ -e /proc/sys/vm/drop_caches ]; then sudo -n sh -c '\''sync; echo 3 > /proc/sys/vm/drop_caches'\'' >/dev/null 2>&1 || true; fi"' \
       --command-name main \
       "bash -c '[[ \$4 =~ world ]] && set -- \"\$1\" \"\$2\" \"\$3\" --world || set -- \"\$1\" \"\$2\" \"\$3\"; exec \"\$@\"' _ \
          \"$BASE_BIN\" \"$geo\" \"$csv\" \"$dir\"" \

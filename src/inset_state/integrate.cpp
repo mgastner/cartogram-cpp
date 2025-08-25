@@ -17,7 +17,7 @@ void InsetState::preprocess()
     store_original_geo_divs();
   }
 
-  if (args_.simplify) {
+  if (!args_.disable_simplification_densification) {
     std::cerr << "Start of initial simplification of " << pos_ << std::endl;
 
     // Simplification reduces the number of points used to represent the
@@ -76,6 +76,73 @@ void InsetState::cleanup_after_integration()
   ref_to_rho_ft().free();
   ref_to_fluxx_init().free();
   ref_to_fluxy_init().free();
+}
+
+bool InsetState::continue_integrating() const
+{
+  if (intersections_found_) {
+    std::cerr << "WARNING: Polygons do not remain simple during integration! "
+                 "Exiting gracefully."
+              << std::endl;
+    return false;
+  }
+
+  // Calculate all the necessary information to decide whether to continue
+  auto [max_area_err, worst_gd] = max_area_error();
+
+  // A GeoDiv is still above our area error threshold
+  bool area_error_above_threshold =
+    max_area_err > args_.max_permitted_area_error;
+
+  // Area expansion factor is above our threshold
+  // i.e. cartogram has become too big or too small
+  double area_drift = area_expansion_factor() - 1.0;
+  bool area_expansion_factor_above_threshold =
+    std::abs(area_drift) > max_permitted_area_drift;
+
+  // If both the above metrics are above our threshold
+  bool has_converged =
+    !area_error_above_threshold && !area_expansion_factor_above_threshold;
+
+  // Make sure to not continue endlesslely: cap at max_integrations
+  bool within_integration_limit = n_finished_integrations() < max_integrations;
+
+  // We continue if we are within the integration limit and have not converged
+  bool continue_integration =
+    (within_integration_limit && !has_converged) ||
+    (n_finished_integrations_ < args_.min_integrations);
+
+  // Actually hasn't converged, just reached integration limit
+  if (!within_integration_limit && !has_converged) {
+    converge_ = false;
+    std::cerr << "ERROR: Could not converge!" << std::endl;
+    if (area_error_above_threshold)
+      std::cerr << "Max area error above threshold!" << std::endl;
+    if (area_expansion_factor_above_threshold)
+      std::cerr << "Area expansion factor above threshold!" << std::endl;
+  }
+
+  // Print control output (at end of previous integration)
+  std::cerr << "Max. area err: " << max_area_err << ", GeoDiv: " << worst_gd
+            << std::endl;
+  std::cerr << "Current Area: " << geo_div_at_id(worst_gd).area()
+            << ", Target Area: " << target_area_at(worst_gd) << std::endl;
+  std::cerr << "Area drift: " << area_drift * 100.0 << "%" << std::endl;
+
+  if (timer.total_elapsed_time_in_seconds() > args_.timeout_in_seconds) {
+    std::cerr << "WARNING: Timeout of " << args_.timeout_in_seconds
+              << " seconds reached!" << std::endl;
+    return false;
+  }
+
+  if (continue_integration) {
+    // Print next integration information.
+    std::cerr << "\nIntegration number " << n_finished_integrations()
+              << std::endl;
+    std::cerr << "Dimensions : " << lx_ << " " << ly_ << std::endl;
+    std::cerr << "Number of Points: " << n_points() << std::endl;
+  }
+  return continue_integration;
 }
 
 void InsetState::integrate(ProgressTracker &progress_tracker)
