@@ -1,5 +1,6 @@
 #include "parse_arguments.hpp"
 #include "constants.hpp"
+#include <limits>
 
 Arguments parse_arguments(const int argc, const char *argv[])
 {
@@ -29,7 +30,7 @@ Arguments parse_arguments(const int argc, const char *argv[])
       "coordinate axis");
 
   arguments.add_argument("-T", "--timeout")
-    .default_value(UINT_MAX)
+    .default_value(std::numeric_limits<unsigned int>::max())
     .scan<'u', unsigned int>()
     .help(
       "Integer: Maximum time (in seconds) allowed for cartogram generation");
