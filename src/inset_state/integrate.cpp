@@ -116,18 +116,18 @@ bool InsetState::continue_integrating() const
       std::cerr << "Area expansion factor above threshold!" << std::endl;
   }
 
-  if (timer.total_elapsed_time_in_seconds() > args_.timeout_in_seconds) {
-    std::cerr << "Warning: Timeout of " << args_.timeout_in_seconds
-              << " seconds reached!" << std::endl;
-    return false;
-  }
-
   // Print control output (at end of previous integration)
   std::cerr << "Max. area err: " << max_area_err << ", GeoDiv: " << worst_gd
             << std::endl;
   std::cerr << "Current Area: " << geo_div_at_id(worst_gd).area()
             << ", Target Area: " << target_area_at(worst_gd) << std::endl;
   std::cerr << "Area drift: " << area_drift * 100.0 << "%" << std::endl;
+
+  if (timer.total_elapsed_time_in_seconds() > args_.timeout_in_seconds) {
+    std::cerr << "Warning: Timeout of " << args_.timeout_in_seconds
+              << " seconds reached!" << std::endl;
+    return false;
+  }
 
   if (continue_integration) {
     // Print next integration information.
