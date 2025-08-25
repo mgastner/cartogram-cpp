@@ -16,6 +16,13 @@ using Cost = CGAL::Polyline_simplification_2::Squared_distance_cost;
 
 void InsetState::simplify(const unsigned int target_points_per_inset)
 {
+  if (intersections_found_) {
+    std::cerr
+      << "WARNING: Intersections found previously; skipping simplification!"
+      << std::endl;
+    return;
+  }
+
   timer.start("Simplification");
   const size_t n_pts_before = n_points();
   std::cerr << n_pts_before << " points in inset. ";

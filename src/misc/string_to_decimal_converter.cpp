@@ -223,7 +223,7 @@ bool StringToDecimalConverter::is_comma_as_separator(
   }
 
   if (!point_as_separator_strs.empty()) {
-    std::cerr << "Warning: Cannot determine separator with certainty.\n";
+    std::cerr << "WARNING: Cannot determine separator with certainty.\n";
     std::cerr << "Comma as separator areas:\n";
     std::cerr << "Contradictory example areas:\n";
     std::cerr << "  Comma as separator: " << comma_as_separator_strs[0]

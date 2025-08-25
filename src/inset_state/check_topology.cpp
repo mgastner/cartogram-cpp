@@ -37,6 +37,14 @@ void InsetState::is_simple(const char *caller_func) const
   for (const auto &gd : geo_divs_) {
     for (const auto &pwh : gd.polygons_with_holes()) {
       if (!pwh.outer_boundary().is_simple()) {
+        intersections_found_ = true;
+        if (args_.do_not_fail_on_intersections) {
+          std::cerr << "WARNING: Outer boundary is not simple for GeoDiv "
+                    << gd.id();
+          std::cerr << ". is_simple() called from " << caller_func
+                    << std::endl;
+          continue;
+        }
         not_simple_polygon_ = pwh.outer_boundary();
         std::cerr << "ERROR: Outer boundary is not simple for GeoDiv "
                   << gd.id();
@@ -47,8 +55,16 @@ void InsetState::is_simple(const char *caller_func) const
           false);
         exit(1);
       }
+
       for (const auto &h : pwh.holes()) {
         if (!h.is_simple()) {
+          intersections_found_ = true;
+          if (args_.do_not_fail_on_intersections) {
+            std::cerr << "WARNING: Hole is not simple for GeoDiv " << gd.id();
+            std::cerr << ". is_simple() called from " << caller_func
+                      << std::endl;
+            continue;
+          }
           not_simple_polygon_ = h;
           std::cerr << "ERROR: Hole is not simple for GeoDiv " << gd.id();
           std::cerr << ". is_simple() called from " << caller_func

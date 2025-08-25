@@ -116,6 +116,8 @@ private:
   // Whether convergence has been reached
   mutable bool converge_{true};
 
+  mutable bool intersections_found_{false};
+
   // Make default constructor private so that only
   // InsetState(const std::string, Arguments) can be called as constructor
   InsetState();

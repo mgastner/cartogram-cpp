@@ -95,6 +95,14 @@ Arguments parse_arguments(const int argc, const char *argv[])
     // Currently, this help message is not accurate.
     .default_value(false)
     .implicit_value(true);
+
+  arguments.add_argument("--do_not_fail_on_intersections")
+    .help(
+      "Boolean: Whether to still produce cartogram if polygons do not remain "
+      "simple")
+    .default_value(false)
+    .implicit_value(true);
+
   arguments.add_argument("--output_shifted_insets")
     .help(
       "Boolean: Output repositioned insets in cartesian coordinates GeoJSON")
@@ -212,6 +220,8 @@ Arguments parse_arguments(const int argc, const char *argv[])
   args.plot_polygons = arguments.get<bool>("--plot_polygons");
   args.plot_quadtree = arguments.get<bool>("--plot_quadtree");
   args.output_shifted_insets = arguments.get<bool>("--output_shifted_insets");
+  args.do_not_fail_on_intersections =
+    arguments.get<bool>("--do_not_fail_on_intersections");
 
   args.timeout_in_seconds = arguments.get<unsigned int>("--timeout");
 

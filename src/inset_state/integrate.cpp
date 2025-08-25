@@ -80,6 +80,12 @@ void InsetState::cleanup_after_integration()
 
 bool InsetState::continue_integrating() const
 {
+  if (intersections_found_) {
+    std::cerr << "WARNING: Polygons do not remain simple during integration! "
+                 "Exiting gracefully."
+              << std::endl;
+    return false;
+  }
 
   // Calculate all the necessary information to decide whether to continue
   auto [max_area_err, worst_gd] = max_area_error();
@@ -124,7 +130,7 @@ bool InsetState::continue_integrating() const
   std::cerr << "Area drift: " << area_drift * 100.0 << "%" << std::endl;
 
   if (timer.total_elapsed_time_in_seconds() > args_.timeout_in_seconds) {
-    std::cerr << "Warning: Timeout of " << args_.timeout_in_seconds
+    std::cerr << "WARNING: Timeout of " << args_.timeout_in_seconds
               << " seconds reached!" << std::endl;
     return false;
   }

@@ -221,7 +221,7 @@ static void check_validity_of_csv_ids(
 
   for (const auto &id : initial_id_order) {
     if (std::find(csv_ids.begin(), csv_ids.end(), id) == csv_ids.end()) {
-      std::cerr << "Warning: ID " << id << " in GeoJSON is not in CSV"
+      std::cerr << "WARNING: ID " << id << " in GeoJSON is not in CSV"
                 << std::endl;
       csv_data[id] =
         {{"area", "NA"}, {"color", ""}, {"label", ""}, {"inset_pos", "C"}};
