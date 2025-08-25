@@ -116,9 +116,6 @@ def main():
         # Run
         cmd = [carto_bin, geo_path, tmp_csv]
 
-        # Make sure the cartogram runs fast
-        cmd.extend(["--max_allowed_autoscale_grid_length", "512"])
-
         if "world" in args.single_map.lower():
             cmd.append("--world")
 
@@ -147,6 +144,9 @@ def main():
                 errfh.write(proc.stderr)
 
         os.remove(tmp_csv)
+
+    if n_fail == 0 and os.path.isdir(fail_dir):
+        os.rmdir(fail_dir)
 
     print("\nFuzzer summary:", "FAILURES detected." if n_fail else "All passed.")
     print()
