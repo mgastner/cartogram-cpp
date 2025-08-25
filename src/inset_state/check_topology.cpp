@@ -30,7 +30,7 @@ void InsetState::holes_inside_polygons() const
 
 void InsetState::is_simple(const char *caller_func) const
 {
-  if (!args_.simplify)
+  if (args_.disable_simplification_densification)
     return;
 
   // Only check topology if simplification and densification is enabled.

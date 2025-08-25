@@ -186,7 +186,8 @@ Arguments parse_arguments(const int argc, const char *argv[])
 
   // Set boolean values
   args.world = arguments.get<bool>("--world");
-  args.simplify = !arguments.get<bool>("--disable_simplify_and_densify");
+  args.disable_simplification_densification =
+    arguments.get<bool>("--disable_simplify_and_densify");
   args.remove_tiny_polygons = arguments.get<bool>("--remove_tiny_polygons");
   args.min_polygon_area = arguments.get<double>("--minimum_polygon_area");
   args.max_permitted_area_error =
@@ -217,7 +218,7 @@ Arguments parse_arguments(const int argc, const char *argv[])
   args.verbose = arguments.get<bool>("--verbose");
 
   // Check whether n_points is specified but --simplify_and_densify not passed
-  if (!args.simplify) {
+  if (args.disable_simplification_densification) {
     std::cerr << "WARNING: Simplification and densification disabled! "
               << "Polygons will not simplified (or densified). "
               << "This may result and in polygon intersections. "

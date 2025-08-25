@@ -35,7 +35,7 @@ struct Arguments {
   bool qtdt_method;
 
   // Should the polygons be simplified and densified?
-  bool simplify;
+  bool disable_simplification_densification;
 
   // If `rays` is true, we use the ray-shooting method to fill the grid cells.
   bool rays;

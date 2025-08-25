@@ -17,7 +17,7 @@ void InsetState::preprocess()
     store_original_geo_divs();
   }
 
-  if (args_.simplify) {
+  if (!args_.disable_simplification_densification) {
     std::cerr << "Start of initial simplification of " << pos_ << std::endl;
 
     // Simplification reduces the number of points used to represent the
