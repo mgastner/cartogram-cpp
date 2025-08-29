@@ -140,7 +140,7 @@ void InsetState::apply_albers_projection()
   const double phi_1 = 0.5 * (phi_0 + max_lat);
   const double phi_2 = 0.5 * (phi_0 + min_lat);
 
-  static thread_local AlbersProjector proj(lambda_0, phi_0, phi_1, phi_2);
+  AlbersProjector proj(lambda_0, phi_0, phi_1, phi_2);
 
   transform_points([&](const Point &q) {
     return proj(q);
