@@ -3,7 +3,7 @@ name: CI
 on:
   push:
     branches:
-      - asiacarto-2024
+      - old-eq-area
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}

@@ -1,65 +1,6 @@
 #include "constants.hpp"
 #include "inset_state.hpp"
-#include <boost/geometry.hpp>
-#include <boost/geometry/srs/projections/proj4.hpp>
-#include <boost/geometry/srs/transformation.hpp>
-
-namespace bg = boost::geometry;
-namespace srs = bg::srs;
-
-class AlbersProjector
-{
-  using trans_t = srs::transformation<>;
-
-public:
-  AlbersProjector(double lambda0, double phi0, double phi1, double phi2)
-      : lambda0_(lambda0), phi1_(phi1),
-        cylindrical_(std::abs(phi1 + phi2) < 1e-6)
-  {
-    if (cylindrical_)
-      return;
-
-    // Write up parameters to be used for Albers projection
-    // NOTE: R (radius) is set to 1 for our conversion
-    const std::string src = "+proj=longlat +R=1 +no_defs";
-    const std::string dst =
-      "+proj=aea +lat_1=" + std::to_string(phi1) +
-      " +lat_2=" + std::to_string(phi2) + " +lat_0=" + std::to_string(phi0) +
-      " +lon_0=" + std::to_string(lambda0) + " +R=1 +no_defs";
-
-    trans_ = std::make_unique<trans_t>(srs::proj4(src), srs::proj4(dst));
-  }
-
-  Point operator()(const Point &p) const
-  {
-    if (cylindrical_) {
-      // If n = 0 (i.e., phi_1 = -phi_2), the Albers projection becomes a
-      // cylindrical equal-area projection with standard parallel phi_1. The
-      // formula is at:
-      // https://en.wikipedia.org/wiki/Cylindrical_equal-area_projection
-      const double lon = p.x() * pi / 180.0;
-      const double lat = p.y() * pi / 180.0;
-      const double x = (lon - lambda0_) * std::cos(phi1_);
-      const double y = std::sin(lat) / std::cos(phi1_);
-      return {x, y};
-    }
-
-    bg::model::point<double, 2, bg::cs::geographic<bg::degree>> in(
-      p.x(),
-      p.y());
-    bg::model::point<double, 2, bg::cs::cartesian> out;
-
-    (*trans_).forward(in, out);
-
-    return {bg::get<0>(out), bg::get<1>(out)};
-  }
-
-private:
-  double lambda0_;
-  double phi1_;
-  bool cylindrical_;
-  std::unique_ptr<trans_t> trans_;
-};
+#include "round_point.hpp"
 
 void InsetState::adjust_for_dual_hemisphere()
 {
@@ -113,6 +54,39 @@ void InsetState::adjust_for_dual_hemisphere()
   }
 }
 
+Point point_after_albers_projection(
+  const Point &coords,
+  double lambda_0,
+  double phi_0,
+  double phi_1,
+  double phi_2)
+{
+  const double lon_in_radians = (coords.x() * pi) / 180;
+  const double lat_in_radians = (coords.y() * pi) / 180;
+  double x, y;
+  if (abs(phi_1 + phi_2) < 1e-6) {
+
+    // If n = 0 (i.e., phi_1 = -phi_2), the Albers projection becomes a
+    // cylindrical equal-area projection with standard parallel phi_1. The
+    // formula is at:
+    // https://en.wikipedia.org/wiki/Cylindrical_equal-area_projection
+    x = (lon_in_radians - lambda_0) * cos(phi_1);
+    y = sin(lat_in_radians) / cos(phi_1);
+  } else {
+
+    // Albers projection formula:
+    // https://en.wikipedia.org/wiki/Albers_projection
+    const double n = 0.5 * (sin(phi_1) + sin(phi_2));
+    const double c = cos(phi_1) * cos(phi_1) + 2 * n * sin(phi_1);
+    const double rho_0 = sqrt(c - 2 * n * sin(phi_0)) / n;
+    const double theta = n * (lon_in_radians - lambda_0);
+    const double rho = sqrt(c - (2 * n * sin(lat_in_radians))) / n;
+    x = rho * sin(theta);
+    y = rho_0 - (rho * cos(theta));
+  }
+  return rounded_point({x, y}, 15);
+}
+
 void InsetState::apply_albers_projection()
 {
   // Adjust the longitude coordinates if the inset spans both the eastern and
@@ -123,14 +97,10 @@ void InsetState::apply_albers_projection()
   const auto bb = bbox();
 
   // Declarations for albers_formula()
-  // const double min_lon = (bb.xmin() * pi) / 180;
-  // const double min_lat = (bb.ymin() * pi) / 180;
-  // const double max_lon = (bb.xmax() * pi) / 180;
-  // const double max_lat = (bb.ymax() * pi) / 180;
-  const double min_lon = bb.xmin();
-  const double min_lat = bb.ymin();
-  const double max_lon = bb.xmax();
-  const double max_lat = bb.ymax();
+  const double min_lon = (bb.xmin() * pi) / 180;
+  const double min_lat = (bb.ymin() * pi) / 180;
+  const double max_lon = (bb.xmax() * pi) / 180;
+  const double max_lat = (bb.ymax() * pi) / 180;
 
   // Reference longitude and latitude
   const double lambda_0 = 0.5 * (min_lon + max_lon);
@@ -140,9 +110,12 @@ void InsetState::apply_albers_projection()
   const double phi_1 = 0.5 * (phi_0 + max_lat);
   const double phi_2 = 0.5 * (phi_0 + min_lat);
 
-  AlbersProjector proj(lambda_0, phi_0, phi_1, phi_2);
+  // Specialize/curry point_after_albers_projection() s0 that it only requires
+  // one argument (Point p1).
+  auto lambda = [=](Point p1) {
+    return point_after_albers_projection(p1, lambda_0, phi_0, phi_1, phi_2);
+  };
 
-  transform_points([&](const Point &q) {
-    return proj(q);
-  });
+  // Apply `lambda` to all points
+  transform_points(lambda);
 }
