@@ -39,7 +39,7 @@ target_link_libraries(cartogram_lib
 )
 
 if(CMAKE_BUILD_TYPE STREQUAL Release)
-  target_compile_options(cartogram_lib PUBLIC -O3)
+  target_compile_options(cartogram_lib PUBLIC -O0)
 else()
   target_compile_options(cartogram_lib PUBLIC -O1)
 
