@@ -48,6 +48,7 @@ public:
   [[nodiscard]] size_t n_geo_divs() const;
   [[nodiscard]] size_t n_insets() const;
 
+  void rescale_map();
   void read_csv();
   void read_geojson();
   std::vector<InsetState> &ref_to_inset_states();

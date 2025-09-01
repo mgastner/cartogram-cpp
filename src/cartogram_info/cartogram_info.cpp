@@ -180,9 +180,94 @@ void CartogramInfo::project_to_equal_area()
       // according to each inset, rather than the entire map.
       reposition_insets();
     }
+    rescale_map();
     write_geojson("equal_area");
     std::exit(EXIT_SUCCESS);
   }
+}
+
+void CartogramInfo::rescale_map()
+{
+  Bbox bb;
+  if (args_.world) {
+    std::cerr << "Rescaling (global) world map across all insets..."
+              << std::endl;
+    bb = Bbox(-2.50663, -1.25331, 2.50663, 1.25331);
+  } else {
+    double xmin = dbl_inf, ymin = dbl_inf;
+    double xmax = -dbl_inf, ymax = -dbl_inf;
+
+    for (const InsetState &inset_state : inset_states_) {
+      const Bbox bi = inset_state.bbox();
+      xmin = std::min(xmin, bi.xmin());
+      ymin = std::min(ymin, bi.ymin());
+      xmax = std::max(xmax, bi.xmax());
+      ymax = std::max(ymax, bi.ymax());
+    }
+    bb = Bbox(xmin, ymin, xmax, ymax);
+  }
+
+  const double padding = 1.5;
+  double new_xmin =
+    0.5 * ((1.0 - padding) * bb.xmax() + (1.0 + padding) * bb.xmin());
+  double new_xmax =
+    0.5 * ((1.0 + padding) * bb.xmax() + (1.0 - padding) * bb.xmin());
+  double new_ymin =
+    0.5 * ((1.0 - padding) * bb.ymax() + (1.0 + padding) * bb.ymin());
+  double new_ymax =
+    0.5 * ((1.0 + padding) * bb.ymax() + (1.0 - padding) * bb.ymin());
+
+  unsigned int lx, ly;
+  double latt_const;
+  if ((bb.xmax() - bb.xmin()) > (bb.ymax() - bb.ymin())) {
+    lx = 512;
+    latt_const = (new_xmax - new_xmin) / lx;
+    ly = 1u << static_cast<unsigned int>(
+           std::ceil(std::log2((new_ymax - new_ymin) / latt_const)));
+    const double cy = 0.5 * (bb.ymax() + bb.ymin());
+    new_ymax = cy + 0.5 * ly * latt_const;
+    new_ymin = cy - 0.5 * ly * latt_const;
+  } else {
+    ly = 512;
+    latt_const = (new_ymax - new_ymin) / ly;
+    lx = 1u << static_cast<unsigned int>(
+           std::ceil(std::log2((new_xmax - new_xmin) / latt_const)));
+    const double cx = 0.5 * (bb.xmax() + bb.xmin());
+    new_xmax = cx + 0.5 * lx * latt_const;
+    new_xmin = cx - 0.5 * lx * latt_const;
+  }
+
+  std::cerr << "Rescaling all insets to " << lx << "-by-" << ly
+            << " grid with bounding box\n\t(" << new_xmin << ", " << new_ymin
+            << ", " << new_xmax << ", " << new_ymax << ")" << std::endl;
+
+  const Transformation translate(
+    CGAL::TRANSLATION,
+    CGAL::Vector_2<Scd>(-new_xmin, -new_ymin));
+  const Transformation scale(CGAL::SCALING, (1.0 / latt_const));
+
+  for (InsetState &inset_state : inset_states_) {
+    inset_state.set_grid_dimensions(lx, ly);
+    inset_state.transform_points(translate, false);
+    inset_state.transform_points(scale, false);
+  }
+
+  double xmin = dbl_inf, ymin = dbl_inf;
+  double xmax = -dbl_inf, ymax = -dbl_inf;
+
+  for (const InsetState &inset_state : inset_states_) {
+    const Bbox bi = inset_state.bbox();
+    xmin = std::min(xmin, bi.xmin());
+    ymin = std::min(ymin, bi.ymin());
+    xmax = std::max(xmax, bi.xmax());
+    ymax = std::max(ymax, bi.ymax());
+  }
+
+  Bbox bb_after(xmin, ymin, xmax, ymax);
+
+  std::cerr << "New global bounding box: (" << bb_after.xmin() << ", "
+            << bb_after.ymin() << ", " << bb_after.xmax() << ", "
+            << bb_after.ymax() << ")" << std::endl;
 }
 
 std::vector<InsetState> &CartogramInfo::ref_to_inset_states()
