@@ -3,6 +3,7 @@
 <p align="center">
     <a href="https://go-cart.io"><img src ="img/gocart_logo.svg" alt="gocart.io logo" width="65%"></a>
 </p>
+The website can be accessed using this <a href = "https://go-cart.io">link.</a>
 
 This repository contains the underlying C++ program that powers [go-cart.io](https://go-cart.io). If you'd only like to create a cartogram, you may find it easier to visit the website directly. Otherwise, if you'd like to make code contributions, feature suggestions and/or play with the inner workings of our cartogram generator, you're at the right place!
 
