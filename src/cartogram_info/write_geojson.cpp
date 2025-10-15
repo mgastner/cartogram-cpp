@@ -1,5 +1,6 @@
 #include "cartogram_info.hpp"
 #include "constants.hpp"
+#include <format>
 
 // Function that returns coordinates of the end points of a "divider" line
 // segment used to separate between different insets
@@ -192,9 +193,10 @@ void CartogramInfo::json_to_geojson(
       add_dividers_to_geojson(container[(container.size() - 1)]);
   }
 
-  new_json["properties"]["note"] =
-    "Created using cartogram-cpp / go-cart.io with custom projection, not in "
-    "EPSG:4326";
+  new_json["properties"]["note"] = std::format(
+    "Created with cartogram-cpp v{}. Coordinates are in a custom projection, "
+    "not EPSG:4326.",
+    version);
 
   // Write that the map is projected
   new_json["properties"]["projected"] = true;

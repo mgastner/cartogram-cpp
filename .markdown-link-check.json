@@ -5,6 +5,7 @@
   "ignorePatterns": [
     { "pattern": "go-cart\\.io" },
     { "pattern": "pnas\\.org/content/115/10/E2156" },
-    { "pattern": "doi\\.org/10\\.1073/pnas\\.0400280101" }
+    { "pattern": "doi\\.org/10\\.1073/pnas\\.0400280101" },
+    { "pattern": "gnu\\.org/licenses/agpl-3\\.0" }
   ]
 }

@@ -65,4 +65,7 @@ constexpr double xi_sq = 4.0;
 // ly
 constexpr unsigned int plotted_cell_length = 8;
 
+// Version
+const std::string version = "25.10";
+
 #endif  // CONST_HPP_
