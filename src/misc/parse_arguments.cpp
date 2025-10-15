@@ -8,7 +8,7 @@ Arguments parse_arguments(const int argc, const char *argv[])
 
   // Create parser for arguments using argparse.
   // From https://github.com/p-ranav/argparse
-  argparse::ArgumentParser arguments("./cartogram", "25.9");
+  argparse::ArgumentParser arguments("./cartogram", "25.10");
 
   // Positional argument accepting geometry file (GeoJSON, JSON) as input
   arguments.add_argument("geometry_file")
