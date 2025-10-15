@@ -1,9 +1,18 @@
 #include "cartogram_info.hpp"
+#include "constants.hpp"
 #include "parse_arguments.hpp"
 #include "progress_tracker.hpp"
+#include <format>
+#include <iomanip>
+#include <ranges>
+#include <span>
+
+static void print_version_and_command_line(const int, const char *[]);
 
 int main(const int argc, const char *argv[])
 {
+  print_version_and_command_line(argc, argv);
+
   // Parse command-line arguments
   Arguments args = parse_arguments(argc, argv);
 
@@ -78,4 +87,18 @@ int main(const int argc, const char *argv[])
   if (!cart_info.converged())
     return EXIT_FAILURE;
   return EXIT_SUCCESS;
+}
+
+static void print_version_and_command_line(const int argc, const char *argv[])
+{
+  std::cerr << std::format("Version {}\n", version);
+
+  std::span<const char *> raw_args{argv, static_cast<std::size_t>(argc)};
+  if (!raw_args.empty()) {
+    std::cerr << "Command: " << std::quoted(raw_args.front());
+    std::ranges::for_each(raw_args | std::views::drop(1), [](const char *s) {
+      std::cerr << ' ' << std::quoted(s);
+    });
+    std::cerr << '\n';
+  }
 }
