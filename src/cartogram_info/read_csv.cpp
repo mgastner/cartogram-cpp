@@ -1,9 +1,18 @@
 #include "cartogram_info.hpp"
-#include "csv.hpp"
 #include "string_to_decimal_converter.hpp"
+#include <algorithm>
 #include <cctype>
+#include <fstream>
+#include <iostream>
+#include <jsoncons/json.hpp>
+#include <jsoncons_ext/csv/csv.hpp>
+#include <locale>
+#include <map>
+#include <set>
+#include <string>
+#include <unordered_set>
+#include <vector>
 
-// Trim helpers (ASCII + CR/LF)
 static inline void ltrim_ascii(std::string &s)
 {
   size_t i = 0;
@@ -47,31 +56,9 @@ static inline std::string normalize_id_token(std::string s)
   return s;
 }
 
-static int extract_color_col_index(
-  const csv::CSVReader &reader,
-  const std::string color_col_name)
-{
-  // Find index of column with color specifiers. If no color column header was
-  // passed with the command-line flag --color, the header is assumed to be
-  // "Color".
-  int color_col = reader.index_of(color_col_name);
-
-  // If the default "Color" header cannot be found, try again using the British
-  // spelling "Colour"
-  if (color_col == csv::CSV_NOT_FOUND && color_col_name == "Color") {
-    color_col = reader.index_of("Colour");
-  }
-
-  return color_col;
-}
-
 static void check_validity_of_area_str(const std::string &area_as_str)
 {
-  std::string area_process_str = area_as_str;
-
-  if (area_process_str.empty()) {
-    area_process_str = "NA";
-  }
+  std::string area_process_str = area_as_str.empty() ? "NA" : area_as_str;
 
   if (!StringToDecimalConverter::is_str_valid_characters(area_process_str)) {
     std::cerr
@@ -82,7 +69,7 @@ static void check_validity_of_area_str(const std::string &area_as_str)
   }
 
   if (
-    !StringToDecimalConverter::is_str_NA(area_process_str) and
+    !StringToDecimalConverter::is_str_NA(area_process_str) &&
     !StringToDecimalConverter::is_str_correct_format(area_process_str)) {
     std::cerr << "ERROR: Invalid area string format: " << area_process_str
               << std::endl;
@@ -97,20 +84,13 @@ static void check_validity_of_area_str(const std::string &area_as_str)
 
 static std::string process_inset_pos_str(const std::string &inset_pos_as_str)
 {
-  std::string inset_pos = inset_pos_as_str;
-
-  if (inset_pos.empty()) {
-    inset_pos = "C";
-  }
-
-  inset_pos = std::toupper(inset_pos[0], std::locale());
-
-  if (inset_pos == "U") {
+  std::string inset_pos = inset_pos_as_str.empty() ? "C" : inset_pos_as_str;
+  inset_pos[0] =
+    static_cast<char>(std::toupper(static_cast<unsigned char>(inset_pos[0])));
+  if (inset_pos == "U")
     inset_pos = "T";
-  }
-  if (inset_pos == "D") {
+  if (inset_pos == "D")
     inset_pos = "B";
-  }
   return inset_pos;
 }
 
@@ -127,13 +107,85 @@ static void check_validity_of_inset_pos(
   }
 }
 
+using jsoncons::ojson;
+namespace jcc = jsoncons::csv;
+
+struct HeaderMap {
+  std::vector<std::string> raw;  // as in file
+  std::vector<std::string> norm;  // trimmed/BOM-stripped view
+
+  int index_of_norm(const std::string &name) const
+  {
+    std::string target = name;
+    ltrim_ascii(target);
+    rtrim_ascii(target);
+    // Do not strip BOM from 'name'; caller passes canonical tokens like
+    // "Color"
+    auto it = std::find(norm.begin(), norm.end(), target);
+    return it == norm.end() ? -1 : static_cast<int>(it - norm.begin());
+  }
+
+  const std::string &raw_at(size_t i) const
+  {
+    return raw[i];
+  }
+
+  const std::string &norm_at(size_t i) const
+  {
+    return norm[i];
+  }
+};
+
+static ojson load_csv_rows(const std::string &path)
+{
+  std::ifstream is(path);
+  if (!is) {
+    std::cerr << "ERROR: Cannot open CSV file: " << path << std::endl;
+    std::exit(17);
+  }
+  jcc::csv_options opts;
+  opts.assume_header(true).ignore_empty_lines(true).trim(true).infer_types(
+    false);  // keep all fields as strings for stable behavior
+  try {
+    return jcc::decode_csv<ojson>(is, opts);  // array of row-objects
+  } catch (const std::exception &e) {
+    std::cerr << "ERROR: Failed to parse CSV: " << e.what() << std::endl;
+    std::exit(17);
+  }
+}
+
+static HeaderMap headers_from(const ojson &rows)
+{
+  HeaderMap hm;
+  if (!rows.is_array() || rows.empty())
+    return hm;
+
+  const ojson &first = rows.at(0);
+  for (const auto &kv : first.object_range()) {
+    hm.raw.emplace_back(std::string(kv.key()));
+    hm.norm.emplace_back(normalize_id_token(std::string(kv.key())));
+  }
+  return hm;
+}
+
+static int extract_color_col_index(
+  const HeaderMap &hm,
+  const std::string &color_col_name)
+{
+  int idx = hm.index_of_norm(color_col_name);
+  if (idx < 0 && color_col_name == "Color")
+    idx = hm.index_of_norm("Colour");
+  return idx;
+}
+
 // Find the matching ID columns in both the CSV and GeoJSON file
 // Returns the header name of the matching ID column in the GeoJSON file
 std::string CartogramInfo::match_id_columns(
   const std::optional<std::string> &id_col)
 {
-  csv::CSVReader reader(args_.visual_file_name);
-  std::string csv_id_header;
+  ojson rows = load_csv_rows(args_.visual_file_name);
+  const HeaderMap hm = headers_from(rows);
+  std::string csv_id_header_norm;
 
   // Build normalized sets from GeoJSON unique properties
   std::map<std::string, std::set<std::string>> geojson_properties_info;
@@ -146,32 +198,39 @@ std::string CartogramInfo::match_id_columns(
 
   std::string matching_id_header;
 
-  auto try_match =
-    [&](const std::string &header, csv::CSVReader &rdr) -> bool {
+  auto try_match = [&](const std::string &header_norm) -> bool {
+    int idx = hm.index_of_norm(header_norm);
+    if (idx < 0)
+      return false;
+    const std::string &raw_key = hm.raw_at(static_cast<size_t>(idx));
+
     std::set<std::string> data_set;
-    size_t row_count = 0;
-    for (auto row = rdr.begin(); row != rdr.end(); ++row) {
-      ++row_count;
-      data_set.insert(normalize_id_token((*row)[header].get()));
+    size_t row_count = rows.size();
+    for (const auto &r : rows.array_range()) {
+      std::string cell;
+      if (r.contains(raw_key)) {
+        const ojson &v = r.at(raw_key);
+        // Values are strings because infer_types(false)
+        cell = v.is_string() ? v.as_string() : std::string();
+      }
+      data_set.insert(normalize_id_token(cell));
     }
 
-    // Must be unique and complete
     if (data_set.size() != row_count)
       return false;
 
     for (auto &[key, value_set] : geojson_properties_info) {
       if (data_set == value_set) {
         matching_id_header = key;
-        csv_id_header = header;
+        csv_id_header_norm = header_norm;
         return true;
       }
     }
     return false;
   };
 
-  // 1) Honor user-specified id_col first
   if (id_col) {
-    if (!try_match(*id_col, reader)) {
+    if (!try_match(*id_col)) {
       std::cerr << "Given ID header " << *id_col
                 << " does not match with any GeoJSON properties. "
                    "Finding next best matching ID column..."
@@ -179,12 +238,12 @@ std::string CartogramInfo::match_id_columns(
     }
   }
 
-  // 2) Otherwise, search all columns
   if (matching_id_header.empty()) {
-    for (const std::string &header : reader.get_col_names()) {
-      csv::CSVReader loop_reader(args_.visual_file_name);
-      if (try_match(header, loop_reader))
+    for (const auto &h : hm.norm) {
+      if (try_match(h)) {
+        std::cerr << "Matched ID column: " << h << std::endl;
         break;
+      }
     }
   }
 
@@ -195,7 +254,13 @@ std::string CartogramInfo::match_id_columns(
     std::exit(16);
   }
 
-  id_col_ = reader.index_of(csv_id_header);
+  int idx = hm.index_of_norm(csv_id_header_norm);
+  if (idx < 0) {
+    std::cerr << "ERROR: Internal error determining ID column index."
+              << std::endl;
+    std::exit(16);
+  }
+  id_col_ = idx;  // index into normalized header list
   return matching_id_header;
 }
 
@@ -221,7 +286,8 @@ void CartogramInfo::update_id_header_info(
     const std::string csv_id = geojson_id_to_csv_id.at(geojson_id);
     new_gd_to_inset[csv_id] = inset_pos;
   }
-  gd_to_inset_ = new_gd_to_inset;
+  
+  gd_to_inset_ = std::move(new_gd_to_inset);
 
   for (InsetState &inset_state : inset_states_) {
     inset_state.update_gd_ids(geojson_id_to_csv_id);
@@ -235,9 +301,9 @@ static void check_validity_of_csv_ids(
   const std::vector<std::string> &initial_id_order)
 {
   std::vector<std::string> csv_ids;
-  for (const auto &[id, data] : csv_data) {
+  csv_ids.reserve(csv_data.size());
+  for (const auto &[id, _] : csv_data)
     csv_ids.push_back(id);
-  }
 
   for (const auto &id : csv_ids) {
     if (
@@ -255,7 +321,6 @@ static void check_validity_of_csv_ids(
                 << std::endl;
       csv_data[id] =
         {{"area", "NA"}, {"color", ""}, {"label", ""}, {"inset_pos", "C"}};
-      // std::exit(22);
     }
   }
 }
@@ -289,13 +354,12 @@ void CartogramInfo::relocate_geodivs_based_on_inset_pos(
 
       // Add color and label info, if present
       std::string color = gd_info.at("color");
-      if (!color.empty()) {
+      if (!color.empty())
         new_inset_state.insert_color(id, color);
-      }
+
       const std::string &label = gd_info.at("label");
-      if (!label.empty()) {
+      if (!label.empty())
         new_inset_state.insert_label(id, label);
-      }
     }
     new_inset_states.emplace_back(std::move(new_inset_state));
   }
@@ -310,26 +374,20 @@ static bool is_point_as_separator(
   const std::map<std::string, std::map<std::string, std::string>> &csv_data)
 {
   std::vector<std::string> area_strs;
-  for (const auto &[id, data] : csv_data) {
+  area_strs.reserve(csv_data.size());
+  for (const auto &[_, data] : csv_data)
     area_strs.push_back(data.at("area"));
-  }
-
-  if (StringToDecimalConverter::is_comma_as_separator(area_strs)) {
-    return false;
-  }
-
-  return true;
+  return !StringToDecimalConverter::is_comma_as_separator(area_strs);
 }
 
 static void process_area_strs(
   std::map<std::string, std::map<std::string, std::string>> &csv_data)
 {
   const bool uses_point_separator = is_point_as_separator(csv_data);
-  for (auto &[id, data] : csv_data) {
+  for (auto &[_, data] : csv_data) {
     std::string &area_as_str = data.at("area");
-    if (area_as_str.empty()) {
+    if (area_as_str.empty())
       area_as_str = "NA";
-    }
     area_as_str =
       StringToDecimalConverter::parse_str(area_as_str, uses_point_separator);
   }
@@ -337,24 +395,55 @@ static void process_area_strs(
 
 void CartogramInfo::read_csv()
 {
-  csv::CSVReader reader(args_.visual_file_name);
+  ojson rows = load_csv_rows(args_.visual_file_name);
+  const HeaderMap hm = headers_from(rows);
+
+  if (hm.norm.size() < 2) {
+    std::cerr
+      << "ERROR: CSV with >= 2 columns (IDs, target areas) required. Some "
+         "rows in your CSV may not have values for all columns"
+      << std::endl;
+    std::exit(17);
+  }
 
   const std::string new_id_header = match_id_columns(args_.id_col);
-  const int id_col = id_col_;
-  // Unless named through command-line argument,
-  // 2nd column is assumed to be target areas
-  const int area_col = args_.area_col ? reader.index_of(*args_.area_col) : 1;
+  const int id_col = id_col_;  // index into hm.norm
 
-  // Defaults set in parse_arguments.cpp
-  const int inset_col = reader.index_of(args_.inset_col);  // default: "Inset"
-  const int label_col = reader.index_of(args_.label_col);  // default: "Label"
+  auto col_index = [&](const std::string &name) -> int {
+    return hm.index_of_norm(name);
+  };
 
-  // default: "Color" | "Colour"
-  const int color_col = extract_color_col_index(reader, args_.color_col);
+  const int area_col = args_.area_col ? col_index(*args_.area_col) : 1;
+  if (area_col < 0) {
+    std::cerr
+      << "ERROR: CSV with >= 2 columns (IDs, target areas) required. Some "
+         "rows in your CSV may not have values for all columns"
+      << std::endl;
+    std::exit(17);
+  }
+
+  const int inset_col = col_index(args_.inset_col);  // default: "Inset"
+  const int label_col = col_index(args_.label_col);  // default: "Label"
+  const int color_col = extract_color_col_index(
+    hm,
+    args_.color_col);  // default: "Color" | "Colour"
+
+  const std::string &id_key = hm.raw_at(static_cast<size_t>(id_col));
+  const std::string &area_key = hm.raw_at(static_cast<size_t>(area_col));
+  const std::string color_key = (color_col >= 0)
+                                  ? hm.raw_at(static_cast<size_t>(color_col))
+                                  : std::string();
+  const std::string label_key = (label_col >= 0)
+                                  ? hm.raw_at(static_cast<size_t>(label_col))
+                                  : std::string();
+  const std::string inset_key = (inset_col >= 0)
+                                  ? hm.raw_at(static_cast<size_t>(inset_col))
+                                  : std::string();
 
   std::map<std::string, std::map<std::string, std::string>> csv_data;
-  for (auto &row : reader) {
-    if (row.size() < 2) {
+
+  for (const auto &r : rows.array_range()) {
+    if (!r.contains(id_key) || !r.contains(area_key)) {
       std::cerr
         << "ERROR: CSV with >= 2 columns (IDs, target areas) required. Some "
            "rows in your CSV may not have values for all columns"
@@ -362,23 +451,21 @@ void CartogramInfo::read_csv()
       std::exit(17);
     }
 
-    const std::string id =
-      normalize_id_token(row[static_cast<size_t>(id_col)].get());
-    const std::string area_as_str = row[static_cast<size_t>(area_col)].get();
+    std::string id = normalize_id_token(r.at(id_key).as_string());
+    std::string area_as_str = r.at(area_key).as_string();
     check_validity_of_area_str(area_as_str);
 
-    const std::string color = (color_col != csv::CSV_NOT_FOUND)
-                                ? row[static_cast<size_t>(color_col)].get()
-                                : "";
+    std::string color;
+    if (!color_key.empty() && r.contains(color_key))
+      color = r.at(color_key).as_string();
 
-    const std::string label = (label_col != csv::CSV_NOT_FOUND)
-                                ? row[static_cast<size_t>(label_col)].get()
-                                : "";
+    std::string label;
+    if (!label_key.empty() && r.contains(label_key))
+      label = r.at(label_key).as_string();
 
-    const std::string inset_pos_as_str =
-      (inset_col != csv::CSV_NOT_FOUND)
-        ? row[static_cast<size_t>(inset_col)].get()
-        : "C";
+    std::string inset_pos_as_str = "C";
+    if (!inset_key.empty() && r.contains(inset_key))
+      inset_pos_as_str = r.at(inset_key).as_string();
 
     const std::string inset_pos = process_inset_pos_str(inset_pos_as_str);
     check_validity_of_inset_pos(inset_pos, id);
