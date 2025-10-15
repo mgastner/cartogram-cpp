@@ -14,6 +14,8 @@ find_package(argparse REQUIRED CONFIG)
 find_package(vincentlaucsb-csv-parser REQUIRED CONFIG)
 find_package(indicators REQUIRED CONFIG)
 find_package(PkgConfig REQUIRED)
+find_package(jsoncons REQUIRED)
+
 pkg_search_module(FFTW REQUIRED IMPORTED_TARGET fftw3)
 
 # ----------------------------- Cartogram Library  ---------------------------
@@ -36,6 +38,7 @@ target_link_libraries(cartogram_lib
   vincentlaucsb-csv-parser::vincentlaucsb-csv-parser
   indicators::indicators
   PkgConfig::FFTW
+  jsoncons
 )
 
 if(CMAKE_BUILD_TYPE STREQUAL Release)

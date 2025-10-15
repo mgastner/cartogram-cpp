@@ -7,6 +7,7 @@ nlohmann_json/3.11.3
 boost/1.83.0
 fftw/3.3.10
 pkgconf/2.2.0
+jsoncons/1.3.0
 
 [tool_requires]
 pkgconf/2.2.0

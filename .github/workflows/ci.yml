@@ -114,6 +114,17 @@ jobs:
             version: 16
             build_type: Debug
             name: ubuntu-debug-clang
+          # Linux arm
+          - os: ubuntu-24.04-arm
+            compiler: clang
+            version: 16
+            build_type: Release
+            name: ubuntu-arm64-release-clang
+          - os: ubuntu-24.04-arm
+            compiler: clang
+            version: 16
+            build_type: Debug
+            name: ubuntu-arm64-debug-clang
           # macOS
           - os: macos-14
             compiler: apple-clang
@@ -270,17 +281,19 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        target:
-          - ubuntu-release-gcc
-          - ubuntu-release-clang
-          - ubuntu-debug-gcc
-          - ubuntu-debug-clang
-          - macos-release-appleclang
-          - macos-debug-appleclang
-          - asan
-          - ubsan
-          - tsan
-    runs-on: "${{ contains(matrix.target, 'mac') && 'macos-14' || 'ubuntu-latest' }}"
+        include:
+          - { target: ubuntu-release-gcc,         os: ubuntu-latest }
+          - { target: ubuntu-release-clang,       os: ubuntu-latest }
+          - { target: ubuntu-debug-gcc,           os: ubuntu-latest }
+          - { target: ubuntu-debug-clang,         os: ubuntu-latest }
+          - { target: ubuntu-arm64-release-clang, os: ubuntu-24.04-arm }
+          - { target: ubuntu-arm64-debug-clang,   os: ubuntu-24.04-arm }
+          - { target: macos-release-appleclang,   os: macos-14 }
+          - { target: macos-debug-appleclang,     os: macos-14 }
+          - { target: asan,                       os: ubuntu-latest }
+          - { target: ubsan,                      os: ubuntu-latest }
+          - { target: tsan,                       os: ubuntu-latest }
+    runs-on: ${{ matrix.os }}
 
     steps:
       - uses: actions/download-artifact@v4
@@ -301,17 +314,19 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        target:
-          - ubuntu-release-gcc
-          - ubuntu-release-clang
-          - ubuntu-debug-gcc
-          - ubuntu-debug-clang
-          - macos-release-appleclang
-          - macos-debug-appleclang
-          - asan
-          - ubsan
-          - tsan
-    runs-on: "${{ contains(matrix.target, 'mac') && 'macos-14' || 'ubuntu-latest' }}"
+        include:
+          - { target: ubuntu-release-gcc,         os: ubuntu-latest }
+          - { target: ubuntu-release-clang,       os: ubuntu-latest }
+          - { target: ubuntu-debug-gcc,           os: ubuntu-latest }
+          - { target: ubuntu-debug-clang,         os: ubuntu-latest }
+          - { target: ubuntu-arm64-release-clang, os: ubuntu-24.04-arm }
+          - { target: ubuntu-arm64-debug-clang,   os: ubuntu-24.04-arm }
+          - { target: macos-release-appleclang,   os: macos-14 }
+          - { target: macos-debug-appleclang,     os: macos-14 }
+          - { target: asan,                       os: ubuntu-latest }
+          - { target: ubsan,                      os: ubuntu-latest }
+          - { target: tsan,                       os: ubuntu-latest }
+    runs-on: ${{ matrix.os }}
 
     steps:
       - uses: actions/checkout@v4
