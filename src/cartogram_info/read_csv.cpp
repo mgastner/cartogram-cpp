@@ -286,7 +286,7 @@ void CartogramInfo::update_id_header_info(
     const std::string csv_id = geojson_id_to_csv_id.at(geojson_id);
     new_gd_to_inset[csv_id] = inset_pos;
   }
-  
+
   gd_to_inset_ = std::move(new_gd_to_inset);
 
   for (InsetState &inset_state : inset_states_) {
