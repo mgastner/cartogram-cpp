@@ -1,27 +1,27 @@
 shapeName,Population (people),Color,Inset,Label
-Glarus,40147,,,
-Luzern,403397,,,
-Bern,1026513,,,
-Aargau,663462,,,
-Basel-Landschaft,285624,,,
-Zug,123948,,,
-Obwalden,37378,,,
-Nidwalden,42556,,,
-Grisons,197550,,,
-Appenzell Ausserrhoden,54954,,,
-Appenzell Innerrhoden,16003,,,
-Valais/Wallis,339176,,,
-Sankt Gallen,502552,,,
-Ticino,354375,,,
-Schwyz,155863,,,
-Zurich,1487969,,,
-Thurgau,270709,,,
-Uri,36145,,,
-Schaffhausen,80769,,,
-Jura,73122,,,
-Fribourg,311914,,,
-Basel-City,193070,,,
-Solothurn,269441,,,
-Geneva,489524,,,
-Neuchâtel,178567,,,
-Vaud,784822,,,
+Aargau,663462,,,AG
+Appenzell Ausserrhoden,54954,,,AR
+Appenzell Innerrhoden,16003,,,AI
+Basel-City,193070,,,BS
+Basel-Landschaft,285624,,,BL
+Bern,1026513,,,BE
+Fribourg,311914,,,FR
+Geneva,489524,,,GE
+Glarus,40147,,,GL
+Grisons,197550,,,GR
+Jura,73122,,,JU
+Luzern,403397,,,LU
+Neuchâtel,178567,,,NE
+Nidwalden,42556,,,NW
+Obwalden,37378,,,OW
+Sankt Gallen,502552,,,SG
+Schaffhausen,80769,,,SH
+Schwyz,155863,,,SZ
+Solothurn,269441,,,SO
+Thurgau,270709,,,TG
+Ticino,354375,,,TI
+Uri,36145,,,UR
+Valais/Wallis,339176,,,VS
+Vaud,784822,,,VD
+Zug,123948,,,ZG
+Zurich,1487969,,,ZH

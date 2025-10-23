@@ -1,50 +1,50 @@
-"shapeName",Population (people),"Color","Inset","Label"
-"Alabama",5024279,,"C",
-"Arizona",7151502,,"C",
-"Arkansas",3011524,,"C",
-"California",39538223,,"C",
-"Colorado",5773714,,"C",
-"Connecticut",3605944,,"C",
-"Delaware",989948,,"C",
-"District of Columbia",689545,,"C",
-"Florida",21538187,,"C",
-"Georgia",10711908,,"C",
-"Idaho",1839106,,"C",
-"Illinois",12812508,,"C",
-"Indiana",6785528,,"C",
-"Iowa",3190369,,"C",
-"Kansas",2937880,,"C",
-"Kentucky",4505836,,"C",
-"Louisiana",4657757,,"C",
-"Maine",1362359,,"C",
-"Maryland",6177224,,"C",
-"Massachusetts",7029917,,"C",
-"Michigan",10077331,,"C",
-"Minnesota",5706494,,"C",
-"Mississippi",2961279,,"C",
-"Missouri",6154913,,"C",
-"Montana",1084225,,"C",
-"Nebraska",1961504,,"C",
-"Nevada",3104614,,"C",
-"New Hampshire",1377529,,"C",
-"New Jersey",9288994,,"C",
-"New Mexico",2117522,,"C",
-"New York",20201249,,"C",
-"North Carolina",10439388,,"C",
-"North Dakota",779094,,"C",
-"Ohio",11799448,,"C",
-"Oklahoma",3959353,,"C",
-"Oregon",4237256,,"C",
-"Pennsylvania",13002700,,"C",
-"Rhode Island",1097379,,"C",
-"South Carolina",5118425,,"C",
-"South Dakota",886667,,"C",
-"Tennessee",6910840,,"C",
-"Texas",29145505,,"C",
-"Utah",3271616,,"C",
-"Vermont",643077,,"C",
-"Virginia",8631393,,"C",
-"Washington",7705281,,"C",
-"West Virginia",1793716,,"C",
-"Wisconsin",5893718,,"C",
-"Wyoming",576851,,"C",
+shapeName,Population (people),Color,Inset,Label
+Alabama,5024279,,C,AL
+Arizona,7151502,,C,AZ
+Arkansas,3011524,,C,AR
+California,39538223,,C,CA
+Colorado,5773714,,C,CO
+Connecticut,3605944,,C,CT
+Delaware,989948,,C,DE
+District of Columbia,689545,,C,DC
+Florida,21538187,,C,FL
+Georgia,10711908,,C,GA
+Idaho,1839106,,C,ID
+Illinois,12812508,,C,IL
+Indiana,6785528,,C,IN
+Iowa,3190369,,C,IO
+Kansas,2937880,,C,KS
+Kentucky,4505836,,C,KY
+Louisiana,4657757,,C,LA
+Maine,1362359,,C,ME
+Maryland,6177224,,C,MD
+Massachusetts,7029917,,C,MA
+Michigan,10077331,,C,MI
+Minnesota,5706494,,C,MN
+Mississippi,2961279,,C,MS
+Missouri,6154913,,C,MO
+Montana,1084225,,C,MT
+Nebraska,1961504,,C,NE
+Nevada,3104614,,C,NV
+New Hampshire,1377529,,C,NH
+New Jersey,9288994,,C,NJ
+New Mexico,2117522,,C,NM
+New York,20201249,,C,NY
+North Carolina,10439388,,C,NC
+North Dakota,779094,,C,ND
+Ohio,11799448,,C,OH
+Oklahoma,3959353,,C,OK
+Oregon,4237256,,C,OR
+Pennsylvania,13002700,,C,PA
+Rhode Island,1097379,,C,RI
+South Carolina,5118425,,C,SC
+South Dakota,886667,,C,SD
+Tennessee,6910840,,C,TN
+Texas,29145505,,C,TX
+Utah,3271616,,C,UT
+Vermont,643077,,C,VT
+Virginia,8631393,,C,VA
+Washington,7705281,,C,WA
+West Virginia,1793716,,C,WV
+Wisconsin,5893718,,C,WI
+Wyoming,576851,,C,WY

@@ -1,56 +1,56 @@
 shapeName,Population (people),Color,Inset,Label
-Ang Mo Kio,174770,,,
-Bedok,289750,,,
-Bishan,90700,,,
-Boon Lay,30,,,
-Bukit Batok,139270,,,
-Bukit Merah,155840,,,
-Bukit Panjang,139030,,,
-Bukit Timah,74470,,,
-Central Water Catchment,10,,,
-Changi,2530,,,
-Changi Bay,0,,,
-Choa Chu Kang,174330,,,
-Clementi,91630,,,
-Downtown Core,3720,,,
-Geylang,116960,,,
-Hougang,222310,,,
-Jurong East,84980,,,
-Jurong West,272660,,,
-Kallang,101210,,,
-Lim Chu Kang,90,,,
-Mandai,2120,,,
-Marina East,0,,,
-Marina South,0,,,
-Marine Parade,48730,,,
-Museum,380,,,
-Newton,6920,,,
-North-Eastern Islands,60,,,
-Novena,47990,,,
-Orchard,920,,,
-Outram,22080,,,
-Pasir Ris,139890,,,
-Paya Lebar,40,,,
-Pioneer,100,,,
-PuunggolL,109750,,,
-Queenstown,98050,,,
-River Valley,9190,,,
-Rochor,14590,,,
-Seletar,270,,,
-Sembawang,76530,,,
-Sengkang,206680,,,
-Serangoon,120670,,,
-Simpang,0,,,
-Singapore River,2720,,,
-Southern Islands,1480,,,
-Straits View,0,,,
-Sungei Kadut,850,,,
-Tampines,261230,,,
-Tanglin,19000,,,
-Tengah,10,,,
-Toa Payoh,124940,,,
-Tuas,70,,,
-Western Islands,0,,,
-Western Water Catchment,900,,,
-Woodlands,250290,,,
-Yishun,201970,,,
+Ang Mo Kio,174770,,,AM
+Bedok,289750,,,BD
+Bishan,90700,,,BS
+Boon Lay,30,,,BL
+Bukit Batok,139270,,,BK
+Bukit Merah,155840,,,BM
+Bukit Panjang,139030,,,BP
+Bukit Timah,74470,,,BT
+Central Water Catchment,10,,,CC
+Changi,2530,,,CH
+Changi Bay,0,,,CB
+Choa Chu Kang,174330,,,CK
+Clementi,91630,,,CL
+Downtown Core,3720,,,DT
+Geylang,116960,,,GL
+Hougang,222310,,,HG
+Jurong East,84980,,,JE
+Jurong West,272660,,,JW
+Kallang,101210,,,KL
+Lim Chu Kang,90,,,LK
+Mandai,2120,,,MD
+Marina East,0,,,ME
+Marina South,0,,,MS
+Marine Parade,48730,,,MP
+Museum,380,,,MU
+Newton,6920,,,NT
+North-Eastern Islands,60,,,NE
+Novena,47990,,,NV
+Orchard,920,,,OR
+Outram,22080,,,OT
+Pasir Ris,139890,,,PR
+Paya Lebar,40,,,PL
+Pioneer,100,,,PN
+PuunggolL,109750,,,PG
+Queenstown,98050,,,QT
+River Valley,9190,,,RV
+Rochor,14590,,,RC
+Seletar,270,,,SL
+Sembawang,76530,,,SB
+Sengkang,206680,,,SE
+Serangoon,120670,,,SG
+Simpang,0,,,SM
+Singapore River,2720,,,SR
+Southern Islands,1480,,,SI
+Straits View,0,,,SV
+Sungei Kadut,850,,,SK
+Tampines,261230,,,TM
+Tanglin,19000,,,TN
+Tengah,10,,,TH
+Toa Payoh,124940,,,TP
+Tuas,70,,,TS
+Western Islands,0,,,WI
+Western Water Catchment,900,,,WC
+Woodlands,250290,,,WD
+Yishun,201970,,,YS

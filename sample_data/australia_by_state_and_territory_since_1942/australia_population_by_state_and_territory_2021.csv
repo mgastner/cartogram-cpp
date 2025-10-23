@@ -1,10 +1,10 @@
-shapeName,Population (people)
-External Territories,5100
-Australian Capital Territory,453324
-New South Wales,8095430
-Northern Territory,249345
-Queensland,5265043
-South Australia,1806599
-Tasmania,569827
-Victoria,6559941
-Western Australia,2762234
+shapeName,Population (people),Label
+External Territories,5100,ET
+Australian Capital Territory,453324,ACT
+New South Wales,8095430,NSW
+Northern Territory,249345,NT
+Queensland,5265043,QLD
+South Australia,1806599,SA
+Tasmania,569827,TAS
+Victoria,6559941,VIC
+Western Australia,2762234,WA

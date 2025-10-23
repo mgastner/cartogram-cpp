@@ -1,27 +1,27 @@
 shapeName,GDP (billion chf),Color,Inset,Label
-Glarus,2891.24057,,,
-Luzern,28304.31765,,,
-Bern,82365.69844,,,
-Aargau,44509.24537,,,
-Basel-Landschaft,20816.19197,,,
-Zug,20308.51413,,,
-Obwalden,2630.1019,,,
-Nidwalden,3025.56778,,,
-Grisons,14937.00048,,,
-Appenzell Ausserrhoden,3254.50915,,,
-Appenzell Innerrhoden,1046.87968,,,
-Valais/Wallis,19819.03323,,,
-Sankt Gallen,38961.85693,,,
-Ticino,30990.05371,,,
-Schwyz,9954.6804,,,
-Zurich,155290.7418,,,
-Thurgau,17358.08306,,,
-Uri,2000.81065,,,
-Schaffhausen,7293.68099,,,
-Jura,5098.25717,,,
-Fribourg,19459.65648,,,
-Basel-City,38316.71638,,,
-Solothurn,18620.63281,,,
-Geneva,54591.22122,,,
-Neuchâtel,16398.4668,,,
-Vaud,58635.43105,,,
+Glarus,2891.24057,,,AG
+Luzern,28304.31765,,,AR
+Bern,82365.69844,,,AI
+Aargau,44509.24537,,,BS
+Basel-Landschaft,20816.19197,,,BL
+Zug,20308.51413,,,BE
+Obwalden,2630.1019,,,FR
+Nidwalden,3025.56778,,,GE
+Grisons,14937.00048,,,GL
+Appenzell Ausserrhoden,3254.50915,,,GR
+Appenzell Innerrhoden,1046.87968,,,JU
+Valais/Wallis,19819.03323,,,LU
+Sankt Gallen,38961.85693,,,NE
+Ticino,30990.05371,,,NW
+Schwyz,9954.6804,,,OW
+Zurich,155290.7418,,,SG
+Thurgau,17358.08306,,,SH
+Uri,2000.81065,,,SZ
+Schaffhausen,7293.68099,,,SO
+Jura,5098.25717,,,TG
+Fribourg,19459.65648,,,TI
+Basel-City,38316.71638,,,UR
+Solothurn,18620.63281,,,VS
+Geneva,54591.22122,,,VD
+Neuchâtel,16398.4668,,,ZG
+Vaud,58635.43105,,,ZH

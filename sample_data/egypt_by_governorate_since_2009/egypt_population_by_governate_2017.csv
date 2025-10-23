@@ -1,28 +1,28 @@
 shapeName,Population (people),Color,Inset,Label
-Al Sharqia Governorate,7163824,,,
-Alexandria Governorate,5163750,,,
-Aswan Governorate,1473975,,,
-Asyut Governorate,4383289,,,
-Beheira Governorate,6171613,,,
-Beni Suef Governorate,3154100,,,
-Cairo Governorate,9539673,,,
-Dakahlia Governorate,6492381,,,
-Damietta Governorate,1496765,,,
-Faiyum Governorate,3596954,,,
-Gharbiyya Governorate,4999633,,,
-Giza Governorate,8632021,,,
-Ismailia Governorate,1303993,,,
-Kafr el-Sheikh Governorate,3362185,,,
-Luxor Governate,1250209,,,
-Matrouh Governorate,425624,,,
-Minya Governate,5497095,,,
-Monufia Governorate,4301601,,,
-New Valley Governorate,241247,,,
-North Sinai Governorate,450328,,,
-Port Said Governorate,749371,,,
-Qalyubia Governorate,5627420,,,
-Qena Governorate,3164281,,,
-Red Sea Governorate,359888,,,
-Sohag Governorate,4967409,,,
-South Sinai Governorate,102018,,,
-Suez Governorate,728180,,,
+Al Sharqia Governorate,7163824,,,SH
+Alexandria Governorate,5163750,,,ALX
+Aswan Governorate,1473975,,,ASN
+Asyut Governorate,4383289,,,AST
+Beheira Governorate,6171613,,,BH
+Beni Suef Governorate,3154100,,,BNS
+Cairo Governorate,9539673,,,C
+Dakahlia Governorate,6492381,,,DK
+Damietta Governorate,1496765,,,DT
+Faiyum Governorate,3596954,,,FYM
+Gharbiyya Governorate,4999633,,,GH
+Giza Governorate,8632021,,,GZ
+Ismailia Governorate,1303993,,,IS
+Kafr el-Sheikh Governorate,3362185,,,KFS
+Luxor Governate,1250209,,,LX
+Matrouh Governorate,425624,,,MT
+Minya Governate,5497095,,,MN
+Monufia Governorate,4301601,,,MNF
+New Valley Governorate,241247,,,WAD
+North Sinai Governorate,450328,,,SIN
+Port Said Governorate,749371,,,PTS
+Qalyubia Governorate,5627420,,,KB
+Qena Governorate,3164281,,,KN
+Red Sea Governorate,359888,,,BA
+Sohag Governorate,4967409,,,SHG
+South Sinai Governorate,102018,,,JS
+Suez Governorate,728180,,,SUZ

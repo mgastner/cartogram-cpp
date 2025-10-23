@@ -1,13 +1,13 @@
 shapeName,Population (people),Color,Inset,Label
-Pays de la Loire,3510170,,,
-Hauts-de-France,5931091,,,
-Provence-Alpes-Côte d'Azur,4882913,,,
-Nouvelle-Aquitane,5671076,,,
-Grand Est,5521452,,,
-Normandie,3293092,,,
-Auvergne Rhône-Alpes,7459092,,,
-Bretagne,3149701,,,
-Bourgogne Franche-Comté,2802519,,,
-Centre Val-de-Loire,2531588,,,
-Occitanie,5419946,,,
-Ile-de-France,11659260,,,
+Pays de la Loire,3510170,,,PL
+Hauts-de-France,5931091,,,NC
+Provence-Alpes-Côte d'Azur,4882913,,,PR
+Nouvelle-Aquitane,5671076,,,AC
+Grand Est,5521452,,,AO
+Normandie,3293092,,,ND
+Auvergne Rhône-Alpes,7459092,,,AR
+Bretagne,3149701,,,BT
+Bourgogne Franche-Comté,2802519,,,BF
+Centre Val-de-Loire,2531588,,,CN
+Occitanie,5419946,,,LP
+Ile-de-France,11659260,,,IF
