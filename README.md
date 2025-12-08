@@ -224,3 +224,7 @@ Contributions are highly encouraged! Please feel free to take a stab at any at a
 If you'd like to contribute to the project, please run our tests after you make any changes.
 
 Maintainers, please make sure all the CI build and test checks pass and the performance comparison CI check results are expected before approving the pull request.
+
+## Funding
+
+Development of this software has been supported by the Ministry of Education, Singapore, under its Academic Research Fund Tier 2 (EP2) programme (Award No. MOE-T2EP20221-0007). The views expressed in this repository are those of the authors and do not necessarily reflect the views of the Ministry of Education, Singapore.
