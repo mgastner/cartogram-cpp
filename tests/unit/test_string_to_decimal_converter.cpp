@@ -78,4 +78,87 @@ BOOST_AUTO_TEST_CASE(TestCorrectFormat_PointAtEnd)
   BOOST_CHECK(!StringToDecimalConverter::is_str_correct_format("123456789."));
 }
 
+BOOST_AUTO_TEST_CASE(TestValidCharacters_ScientificNotation)
+{
+  // Basic scientific notation
+  BOOST_CHECK(StringToDecimalConverter::is_str_valid_characters("1.23e4"));
+  BOOST_CHECK(StringToDecimalConverter::is_str_valid_characters("1.23E4"));
+
+  // Negative exponents
+  BOOST_CHECK(StringToDecimalConverter::is_str_valid_characters("1.23e-4"));
+  BOOST_CHECK(StringToDecimalConverter::is_str_valid_characters("1.23E-4"));
+
+  // With commas as thousand separators
+  BOOST_CHECK(StringToDecimalConverter::is_str_valid_characters("1,234.56e4"));
+  BOOST_CHECK(StringToDecimalConverter::is_str_valid_characters("1.234,56E4"));
+
+  // Negative numbers
+  BOOST_CHECK(StringToDecimalConverter::is_str_valid_characters("-1.23e4"));
+  BOOST_CHECK(StringToDecimalConverter::is_str_valid_characters("-1.23E-4"));
+
+  // Invalid scientific notation
+  BOOST_CHECK(!StringToDecimalConverter::is_str_valid_characters(
+    "1.23e"));  // Missing exponent
+  BOOST_CHECK(!StringToDecimalConverter::is_str_valid_characters(
+    "e4"));  // Missing mantissa
+  BOOST_CHECK(!StringToDecimalConverter::is_str_valid_characters(
+    "1.23ee4"));  // Multiple e's
+  BOOST_CHECK(!StringToDecimalConverter::is_str_valid_characters(
+    "1.23e4.5"));  // Non-integer exponent
+  BOOST_CHECK(!StringToDecimalConverter::is_str_valid_characters(
+    "1.23e-"));  // Incomplete negative exponent
+}
+
+BOOST_AUTO_TEST_CASE(TestCorrectFormat_ScientificNotation)
+{
+  // Valid formats
+  BOOST_CHECK(StringToDecimalConverter::is_str_correct_format("1.23e4"));
+  BOOST_CHECK(StringToDecimalConverter::is_str_correct_format("1.23E4"));
+  BOOST_CHECK(StringToDecimalConverter::is_str_correct_format("1,234.56e4"));
+  BOOST_CHECK(StringToDecimalConverter::is_str_correct_format("1.234,56E4"));
+  BOOST_CHECK(StringToDecimalConverter::is_str_correct_format("-1.23e4"));
+  BOOST_CHECK(StringToDecimalConverter::is_str_correct_format("-1.23E-4"));
+
+  // Invalid formats
+  BOOST_CHECK(!StringToDecimalConverter::is_str_correct_format(
+    "1.23e4.5"));  // Non-integer exponent
+  BOOST_CHECK(!StringToDecimalConverter::is_str_correct_format(
+    "1.23e4,"));  // Comma at end
+  BOOST_CHECK(!StringToDecimalConverter::is_str_correct_format(
+    "1.23e4."));  // Point at end
+  BOOST_CHECK(!StringToDecimalConverter::is_str_correct_format(
+    "1.23,456.789e4"));  // Multiple separators
+  BOOST_CHECK(!StringToDecimalConverter::is_str_correct_format(
+    "1.23e4e5"));  // Multiple e's
+  BOOST_CHECK(!StringToDecimalConverter::is_str_correct_format(
+    "1.23e"));  // Missing exponent
+  BOOST_CHECK(!StringToDecimalConverter::is_str_correct_format(
+    "e4"));  // Missing mantissa
+}
+
+BOOST_AUTO_TEST_CASE(TestParseStr_ScientificNotation)
+{
+  // Test parsing with point as decimal separator
+  BOOST_CHECK_EQUAL(
+    StringToDecimalConverter::parse_str("1.23e4", true),
+    "1.23e4");
+  BOOST_CHECK_EQUAL(
+    StringToDecimalConverter::parse_str("1,234.56e4", true),
+    "1234.56e4");
+  BOOST_CHECK_EQUAL(
+    StringToDecimalConverter::parse_str("-1.23e-4", true),
+    "-1.23e-4");
+
+  // Test parsing with comma as decimal separator
+  BOOST_CHECK_EQUAL(
+    StringToDecimalConverter::parse_str("1,23e4", false),
+    "1.23e4");
+  BOOST_CHECK_EQUAL(
+    StringToDecimalConverter::parse_str("1.234,56E4", false),
+    "1234.56E4");
+  BOOST_CHECK_EQUAL(
+    StringToDecimalConverter::parse_str("-1,23e-4", false),
+    "-1.23e-4");
+}
+
 BOOST_AUTO_TEST_SUITE_END()

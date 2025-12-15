@@ -7,7 +7,7 @@ const std::string StringToDecimalConverter::NA_ = "NA";
 
 bool StringToDecimalConverter::is_valid_char(char ch)
 {
-  return (std::isdigit(ch)) || ch == point_ || ch == comma_ || ch == minus_;
+  return (std::isdigit(ch)) || ch == point_ || ch == comma_ || ch == minus_ || ch == 'e' || ch == 'E';
 }
 
 std::string StringToDecimalConverter::remove_char(std::string str, char ch)
@@ -87,22 +87,66 @@ bool StringToDecimalConverter::is_str_valid_characters(const std::string &str)
     return true;
   }
 
-  // Only 0 to 9, '.', '-', and ',' are allowed
+  // Only 0 to 9, '.', '-', ',', 'e', and 'E' are allowed
   for (const auto &c : str) {
     if (!is_valid_char(c)) {
       return false;
     }
   }
 
-  // '-' can only be used once
-  if (count_char(str, minus_) > 1) {
-    return false;
+  // '-' can only be used once in the mantissa and once in the exponent
+  size_t first_e = str.find_first_of("eE");
+  if (first_e != std::string::npos) {
+    // Check mantissa part
+    std::string mantissa = str.substr(0, first_e);
+    if (count_char(mantissa, minus_) > 1) {
+      return false;
+    }
+    if (count_char(mantissa, minus_) == 1 && mantissa[0] != minus_) {
+      return false;
+    }
+    // Check exponent part
+    std::string exponent = str.substr(first_e + 1);
+    if (count_char(exponent, minus_) > 1) {
+      return false;
+    }
+    if (count_char(exponent, minus_) == 1 && exponent[0] != minus_) {
+      return false;
+    }
+  } else {
+    // No scientific notation, check as before
+    if (count_char(str, minus_) > 1) {
+      return false;
+    }
+    if (count_char(str, minus_) == 1 && str[0] != minus_) {
+      return false;
+    }
   }
 
-  // '-' can only be used at the beginning
-  if (count_char(str, minus_) == 1 and str[0] != minus_) {
+  // Check for valid scientific notation format
+  size_t e_count = count_char(str, 'e') + count_char(str, 'E');
+  if (e_count > 1) {
     return false;
   }
+  if (e_count == 1) {
+    size_t e_pos = str.find_first_of("eE");
+    // Must have digits before and after 'e'/'E'
+    if (e_pos == 0 || e_pos == str.length() - 1) {
+      return false;
+    }
+    // Must have at least one digit after 'e'/'E'
+    bool has_digit_after = false;
+    for (size_t i = e_pos + 1; i < str.length(); i++) {
+      if (std::isdigit(str[i])) {
+        has_digit_after = true;
+        break;
+      }
+    }
+    if (!has_digit_after) {
+      return false;
+    }
+  }
+
   return true;
 }
 
@@ -111,19 +155,37 @@ bool StringToDecimalConverter::is_str_correct_format(const std::string &str)
   assert(is_str_valid_characters(str));
   assert(is_str_NA(str) == false);
 
-  // if the number of commas and points both are more than 1, then this format
-  // does not belong to any known convention
+  // Handle scientific notation separately
+  size_t e_pos = str.find_first_of("eE");
+  if (e_pos != std::string::npos) {
+    // Check mantissa part
+    std::string mantissa = str.substr(0, e_pos);
+    if (has_multiple_commas_and_points(mantissa)) {
+      return false;
+    }
+    if (has_invalid_comma_point_sequence(mantissa)) {
+      return false;
+    }
+    if (has_separator_at_the_end(mantissa)) {
+      return false;
+    }
+    // Exponent part should only contain digits and optional minus sign
+    std::string exponent = str.substr(e_pos + 1);
+    for (char c : exponent) {
+      if (!std::isdigit(c) && c != minus_) {
+        return false;
+      }
+    }
+    return true;
+  }
+
+  // Original format validation for non-scientific notation
   if (has_multiple_commas_and_points(str)) {
     return false;
   }
-
-  // Check for commas before and after a point, or points before and after a
-  // comma
   if (has_invalid_comma_point_sequence(str)) {
     return false;
   }
-
-  // Check for separators at the end of the string
   if (has_separator_at_the_end(str)) {
     return false;
   }
