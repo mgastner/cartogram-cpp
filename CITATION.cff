@@ -1,0 +1,37 @@
+cff-version: 1.2.0
+message: "If you use this software, please cite the paper below."
+type: software
+title: "cartogram-cpp"
+repository-code: "https://github.com/mgastner/cartogram-cpp"
+url: "https://go-cart.io"
+license: "AGPL-3.0-only"
+
+authors:
+  - family-names: "Gastner"
+    given-names: "Michael T."
+  - family-names: "Miaji"
+    given-names: "Nihal Z."
+  - family-names: "Singhania"
+    given-names: "Adi"
+
+preferred-citation:
+  type: article
+  title: "Topology-preserving line densification for creating contiguous cartograms"
+  authors:
+    - family-names: "Miaji"
+      given-names: "Nihal Z."
+    - family-names: "Singhania"
+      given-names: "Adi"
+    - family-names: "Goh"
+      given-names: "Matthias E."
+    - family-names: "Le"
+      given-names: "Callista"
+    - family-names: "Tharatipyakul"
+      given-names: "Atima"
+    - family-names: "Gastner"
+      given-names: "Michael T."
+  journal: "Cartography and Geographic Information Science"
+  year: 2026
+  start: 1
+  end: 16
+  doi: "10.1080/15230406.2026.2625329"
