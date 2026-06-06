@@ -6,11 +6,15 @@
 
 This repository contains the underlying C++ program that powers [go-cart.io](https://go-cart.io). If you'd only like to create a cartogram, you may find it easier to visit the website directly. Otherwise, if you'd like to make code contributions, feature suggestions and/or play with the inner workings of our cartogram generator, you're at the right place!
 
-This program uses the fast flow-based method developed by Michael T. Gastner, Vivien Seguy, and Pratyush More. For more information, you may refer to the following [paper](https://www.pnas.org/content/115/10/E2156):
+This program implements 5FCarto, a topology-preserving contiguous cartogram generator that combines the topology-preserving line densification method developed by Nihal Z. Miaji, Adi Singhania, Matthias E. Goh, Callista Le, Atima Tharatipyakul, and Michael T. Gastner with the fast flow-based method developed by Michael T. Gastner, Vivien Seguy, and Pratyush More. For more information, you may refer to the following [paper](https://www.tandfonline.com/doi/full/10.1080/15230406.2026.2625329):
 
-Gastner MT, Seguy V, More P. _Fast flow-based algorithm for creating density-equalizing map projections_. Proc Natl Acad Sci USA 115(10):E2156–E2164 (2018). <https://doi.org/10.1073/pnas.0400280101>
+Miaji NZ, Singhania A, Goh ME, Le C, Tharatipyakul A, Gastner MT. _Topology-preserving line densification for creating contiguous cartograms_. Cartography and Geographic Information Science 1–16 (2026). <https://doi.org/10.1080/15230406.2026.2625329>
 
-Data produced by code in this repository are subject to the MIT license found [here](./LICENSE) and should cite the aforementioned paper by Gastner et al. (2018).
+Data produced by code in this repository are subject to the MIT license and should cite the aforementioned paper by Miaji et al. (2026).
+
+The underlying flow-based cartogram algorithm is described in:
+
+Gastner MT, Seguy V, More P. _Fast flow-based algorithm for creating density-equalizing map projections_. Proc Natl Acad Sci USA 115(10):E2156–E2164 (2018). <https://doi.org/10.1073/pnas.1712674115>
 
 ## Usage
 
