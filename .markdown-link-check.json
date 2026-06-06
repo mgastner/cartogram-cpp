@@ -4,6 +4,7 @@
   "retryCount": 3,
   "ignorePatterns": [
     { "pattern": "go-cart\\.io" },
+    { "pattern": "zenodo\\.org/badge/281575635\\.svg" },
     { "pattern": "zenodo\\.org/badge/latestdoi/281575635" },
     { "pattern": "www\\.tandfonline\\.com/doi/full/10\\.1080/15230406\\.2026\\.2625329" },
     { "pattern": "doi\\.org/10\\.1080/15230406\\.2026\\.2625329" },
