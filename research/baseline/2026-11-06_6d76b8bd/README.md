@@ -47,7 +47,9 @@ Every run was launched from its own subdirectory with
 - Every pass rasterizes the density from the current polygons. As a result,
   simplification changes T0 itself, not only the drawn output.
 - Simplification is also what makes T0 non-reproducible.
-- With simplification off, China no longer triggers `adjust_grid`. The run
+- With simplification off and the default 256² starting grid, China no
+  longer triggers `adjust_grid`. Coarser starting grids still do: China
+  doubles once from 128² and three times from 64². The run
   `conterminous_usa_nosimplify_n128/` is the real-data fixture for the grid
   doubling (×2) path instead.
 
