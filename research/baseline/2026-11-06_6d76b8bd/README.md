@@ -39,6 +39,17 @@ Every run was launched from its own subdirectory with
 | `china/` | defaults | 9 | 256² → 512² after pass 7 | 0.33 % (Macao) | 0.51 s | **no** |
 | `conterminous_usa_nosimplify/` | `-P 100000000` | 6 | 256² | 0.77 % (Oregon) | 0.27 s | yes (8 of 8) |
 | `china_nosimplify/` | `-P 100000000` | 8 | 256², no doubling | 0.55 % (Inner Mongolia) | 0.52 s | yes (3 of 3) |
+| `conterminous_usa_nosimplify_n128/` | `-P 100000000 -n 128` | 11 | 128² → 256² (one doubling) | 0.38 % (Oregon) | 0.40 s | yes (3 of 3) |
+
+**Research runs use `-P 100000000`, so simplification is off** (decided
+2026-11-06).
+
+- Every pass rasterizes the density from the current polygons. As a result,
+  simplification changes T0 itself, not only the drawn output.
+- Simplification is also what makes T0 non-reproducible.
+- With simplification off, China no longer triggers `adjust_grid`. The run
+  `conterminous_usa_nosimplify_n128/` is the real-data fixture for the grid
+  doubling (×2) path instead.
 
 Data sources:
 
@@ -54,6 +65,7 @@ d43e9549ce8768dec86caa28247020964d7e6e1819bfa7e298311a74952df1a2  conterminous_u
 1bcf92e079b34410152b3866f8ea5bf01dbf503cc6d73d9b65b82caa12562e2f  china/china_population_by_province_2020_cartogram.geojson
 b8391ad52d490739da80df0c173db4309e35ca8165c14148464b3a1e3924cf95  conterminous_usa_nosimplify/conterminous_usa_population_by_state_2020_cartogram.geojson
 d84f8fc3e5373edf403146447a12ac16884455c1635a0c7d8fe751055b4b8ffc  china_nosimplify/china_population_by_province_2020_cartogram.geojson
+091efa6ad41f7e8e8bc8aa9f5a23b90ab3c173f702a3d6242ea263c2f61fef30  conterminous_usa_nosimplify_n128/conterminous_usa_population_by_state_2020_cartogram.geojson
 ```
 
 ## Default settings are not reproducible run to run

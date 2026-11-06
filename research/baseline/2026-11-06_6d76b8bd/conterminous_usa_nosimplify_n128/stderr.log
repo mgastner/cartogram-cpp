@@ -1,0 +1,325 @@
+Version 25.10
+Command: "/Users/mgastner/cartogram-cpp/build/Release/cartogram" "/Users/mgastner/cartogram-cpp/sample_data/conterminous_usa_by_state_since_1959/conterminous_usa_by_state_since_1959.geojson" "/Users/mgastner/cartogram-cpp/sample_data/conterminous_usa_by_state_since_1959/conterminous_usa_population_by_state_2020.csv" "-P" "100000000" "-n" "128" "--export_time_report"
+Using geometry from file /Users/mgastner/cartogram-cpp/sample_data/conterminous_usa_by_state_since_1959/conterminous_usa_by_state_since_1959.geojson
+Using visual variables from file /Users/mgastner/cartogram-cpp/sample_data/conterminous_usa_by_state_since_1959/conterminous_usa_population_by_state_2020.csv
+No `crs` field found.
+Default coordinate reference system assumed: +proj=longlat
+Matched ID column: shapeName
+[■--------------------------------------------------------------------------] 0% [00m:00s] Mean density: 1.71392e+09
+Using Small target area threshold: 32926.1
+Rescaling to 128-by-128 grid with bounding box
+	(-0.554147, -0.517515, 0.53524, 0.571872)
+New bounding box: 21.3333 37.2812 106.667 90.7188
+Start of initial simplification of C
+30850 points in inset. Target points: 100000000
+No need for simplification.
+End of initial simplification of C
+
+Integrating inset C
+Max. area err: 17.5098, GeoDiv: Wyoming
+Current Area: 86.0064, Target Area: 4.64653
+Area drift: 0%
+
+Integration number 0
+Dimensions : 128 128
+Number of Points: 30850
+Filling density
+blur_width = 1
+Quadtree target leaf count (pre-grading): 64
+Number of unique quadtree corners: 167
+Number of quadtree leaf nodes: 127
+Quadtree nodes pre-grading: 64
+Quadtree nodes post-grading: 127
+In flatten_density_on_node_vertices()
+iter 0: t = 0, delta_t = 0.0046875
+iter 10: t = 0.0400729, delta_t = 0.00844703
+iter 20: t = 0.0948876, delta_t = 0.00761091
+iter 30: t = 0.174251, delta_t = 0.00685755
+iter 40: t = 0.28425, delta_t = 0.0123575
+iter 50: t = 0.454431, delta_t = 0.0111343
+iter 60: t = 0.633749, delta_t = 0.0200644
+iter 70: t = 0.828688, delta_t = 0.0180784
+Densifying
+Num points before densification: 30850
+Num points after densification: 31447
+31447 points in inset. Target points: 100000000
+No need for simplification.
+Progress: 0.1
+[■■■■■■■■-------------------------------------------------------------------] 10% [00m:00s] 
+Max. area err: 4.64228, GeoDiv: North Dakota
+Current Area: 33.9457, Target Area: 6.2756
+Area drift: -4.13176%
+
+Integration number 1
+Dimensions : 128 128
+Number of Points: 31447
+Filling density
+blur_width = 0.707107
+Quadtree target leaf count (pre-grading): 64
+Number of unique quadtree corners: 192
+Number of quadtree leaf nodes: 142
+Quadtree nodes pre-grading: 64
+Quadtree nodes post-grading: 142
+In flatten_density_on_node_vertices()
+iter 0: t = 0, delta_t = 0.01875
+iter 10: t = 0.224596, delta_t = 0.0337881
+iter 20: t = 0.531487, delta_t = 0.0304436
+iter 30: t = 0.95074, delta_t = 0.0274302
+Densifying
+Num points before densification: 31447
+Num points after densification: 32338
+32338 points in inset. Target points: 100000000
+No need for simplification.
+Progress: 0.19
+[■■■■■■■■■■■■■■■------------------------------------------------------------] 19% [00m:00s] 
+Max. area err: 2.14819, GeoDiv: Vermont
+Current Area: 15.6134, Target Area: 5.17998
+Area drift: -4.25656%
+
+Integration number 2
+Dimensions : 128 128
+Number of Points: 32338
+Filling density
+blur_width = 0.5
+Quadtree target leaf count (pre-grading): 64
+Number of unique quadtree corners: 194
+Number of quadtree leaf nodes: 145
+Quadtree nodes pre-grading: 64
+Quadtree nodes post-grading: 145
+In flatten_density_on_node_vertices()
+iter 0: t = 0, delta_t = 0.0375
+iter 10: t = 0.601524, delta_t = 0.0675762
+Densifying
+Num points before densification: 32338
+Num points after densification: 33360
+33360 points in inset. Target points: 100000000
+No need for simplification.
+Progress: 0.271
+[■■■■■■■■■■■■■■■■■■■■■------------------------------------------------------] 27% [00m:00s] 
+Max. area err: 1.02241, GeoDiv: Vermont
+Current Area: 10.157, Target Area: 5.17998
+Area drift: -3.04513%
+
+Integration number 3
+Dimensions : 128 128
+Number of Points: 33360
+Filling density
+blur_width = 0.353553
+Quadtree target leaf count (pre-grading): 64
+Number of unique quadtree corners: 181
+Number of quadtree leaf nodes: 136
+Quadtree nodes pre-grading: 64
+Quadtree nodes post-grading: 136
+In flatten_density_on_node_vertices()
+iter 0: t = 0, delta_t = 0.15
+Densifying
+Num points before densification: 33360
+Num points after densification: 34198
+34198 points in inset. Target points: 100000000
+No need for simplification.
+Progress: 0.3439
+[■■■■■■■■■■■■■■■■■■■■■■■■■■-------------------------------------------------] 34% [00m:00s] 
+Max. area err: 0.87956, GeoDiv: Vermont
+Current Area: 9.51866, Target Area: 5.17998
+Area drift: -2.23313%
+
+Integration number 4
+Dimensions : 128 128
+Number of Points: 34198
+Filling density
+blur_width = 0.25
+Quadtree target leaf count (pre-grading): 64
+Number of unique quadtree corners: 179
+Number of quadtree leaf nodes: 133
+Quadtree nodes pre-grading: 64
+Quadtree nodes post-grading: 133
+In flatten_density_on_node_vertices()
+iter 0: t = 0, delta_t = 0.15
+Densifying
+Num points before densification: 34198
+Num points after densification: 35010
+35010 points in inset. Target points: 100000000
+No need for simplification.
+Progress: 0.434397
+[■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■------------------------------------------] 43% [00m:00s] 
+Max. area err: 0.406496, GeoDiv: Wyoming
+Current Area: 6.46178, Target Area: 4.64653
+Area drift: -1.12541%
+
+Integration number 5
+Dimensions : 128 128
+Number of Points: 35010
+Filling density
+blur_width = 0.176777
+Quadtree target leaf count (pre-grading): 64
+Number of unique quadtree corners: 142
+Number of quadtree leaf nodes: 103
+Quadtree nodes pre-grading: 64
+Quadtree nodes post-grading: 103
+In flatten_density_on_node_vertices()
+iter 0: t = 0, delta_t = 0.15
+Densifying
+Num points before densification: 35010
+Num points after densification: 35880
+35880 points in inset. Target points: 100000000
+No need for simplification.
+Adjusting grid size.
+New grid dimensions: 256 256 with bounding box
+	(44.553, 66.5302, 219.806, 189.116)
+Progress: 0.490958
+[■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■--------------------------------------] 49% [00m:00s] 
+Max. area err: 0.332215, GeoDiv: New Mexico
+Current Area: 90.0466, Target Area: 68.2265
+Area drift: -0.930508%
+
+Integration number 6
+Dimensions : 256 256
+Number of Points: 35880
+Filling density
+blur_width = 0.25
+Quadtree target leaf count (pre-grading): 256
+Number of unique quadtree corners: 589
+Number of quadtree leaf nodes: 460
+Quadtree nodes pre-grading: 256
+Quadtree nodes post-grading: 460
+In flatten_density_on_node_vertices()
+iter 0: t = 0, delta_t = 0.3
+Densifying
+Num points before densification: 35880
+Num points after densification: 37862
+37862 points in inset. Target points: 100000000
+No need for simplification.
+Progress: 0.541862
+[■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■----------------------------------] 54% [00m:00s] 
+Max. area err: 0.235285, GeoDiv: Vermont
+Current Area: 25.4553, Target Area: 20.7199
+Area drift: -0.545691%
+
+Integration number 7
+Dimensions : 256 256
+Number of Points: 37862
+Filling density
+blur_width = 0.176777
+Quadtree target leaf count (pre-grading): 256
+Number of unique quadtree corners: 625
+Number of quadtree leaf nodes: 484
+Quadtree nodes pre-grading: 256
+Quadtree nodes post-grading: 484
+In flatten_density_on_node_vertices()
+iter 0: t = 0, delta_t = 0.3
+Densifying
+Num points before densification: 37862
+Num points after densification: 39603
+39603 points in inset. Target points: 100000000
+No need for simplification.
+Progress: 0.75
+[■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■------------------] 75% [00m:00s] 
+Max. area err: 0.0604726, GeoDiv: Delaware
+Current Area: 33.7684, Target Area: 31.8961
+Area drift: -0.167106%
+
+Integration number 8
+Dimensions : 256 256
+Number of Points: 39603
+Filling density
+blur_width = 0.125
+Quadtree target leaf count (pre-grading): 256
+Number of unique quadtree corners: 524
+Number of quadtree leaf nodes: 406
+Quadtree nodes pre-grading: 256
+Quadtree nodes post-grading: 406
+In flatten_density_on_node_vertices()
+iter 0: t = 0, delta_t = 0.3
+Densifying
+Num points before densification: 39603
+Num points after densification: 41342
+41342 points in inset. Target points: 100000000
+No need for simplification.
+Progress: 0.775
+[■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■----------------] 78% [00m:00s] 
+Max. area err: 0.0386409, GeoDiv: Delaware
+Current Area: 33.1215, Target Area: 31.8961
+Area drift: -0.0212536%
+
+Integration number 9
+Dimensions : 256 256
+Number of Points: 41342
+Filling density
+blur_width = 0.0883883
+Quadtree target leaf count (pre-grading): 256
+Number of unique quadtree corners: 602
+Number of quadtree leaf nodes: 469
+Quadtree nodes pre-grading: 256
+Quadtree nodes post-grading: 469
+In flatten_density_on_node_vertices()
+iter 0: t = 0, delta_t = 0.3
+Densifying
+Num points before densification: 41342
+Num points after densification: 43147
+43147 points in inset. Target points: 100000000
+No need for simplification.
+Progress: 0.7975
+[■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■--------------] 80% [00m:00s] 
+Max. area err: 0.0165669, GeoDiv: New Hampshire
+Current Area: 43.6312, Target Area: 44.3839
+Area drift: -0.0400364%
+
+Integration number 10
+Dimensions : 256 256
+Number of Points: 43147
+Filling density
+blur_width = 0.0625
+Quadtree target leaf count (pre-grading): 256
+Number of unique quadtree corners: 622
+Number of quadtree leaf nodes: 484
+Quadtree nodes pre-grading: 256
+Quadtree nodes post-grading: 484
+In flatten_density_on_node_vertices()
+iter 0: t = 0, delta_t = 0.3
+Densifying
+Num points before densification: 43147
+Num points after densification: 45029
+45029 points in inset. Target points: 100000000
+No need for simplification.
+Progress: 0.81775
+[■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■-------------] 82% [00m:00s] 
+Max. area err: 0.00383308, GeoDiv: Oregon
+Current Area: 137.039, Target Area: 136.524
+Area drift: -0.00588856%
+Finished integrating inset C
+Progress: 1
+[■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■] 100% [00m:00s] 
+
+Writing conterminous_usa_population_by_state_2020_cartogram.geojson
+
+********** Time Report **********
+(conterminous_usa_population_by_state_2020)
+
+conterminous_usa_population_by_state_2020: 330 ms
+Integration: 329 ms
+Densification: 152 ms
+Fill with Density: 77 ms
+Project: 52 ms
+conterminous_usa_population_by_state_2020_10: 39 ms
+conterminous_usa_population_by_state_2020_9: 35 ms
+conterminous_usa_population_by_state_2020_8: 35 ms
+conterminous_usa_population_by_state_2020_7: 35 ms
+conterminous_usa_population_by_state_2020_6: 33 ms
+conterminous_usa_population_by_state_2020_5: 27 ms
+conterminous_usa_population_by_state_2020_4: 24 ms
+conterminous_usa_population_by_state_2020_3: 24 ms
+conterminous_usa_population_by_state_2020_2: 24 ms
+conterminous_usa_population_by_state_2020_0: 23 ms
+conterminous_usa_population_by_state_2020_1: 23 ms
+Flatten Density: 5 ms
+Preprocessing: 0 ms
+Quadtree: 0 ms
+Blur: 0 ms
+Delaunay Triangulation: 0 ms
+*********************************
+
+********** Time Report **********
+(conterminous_usa_population_by_state_2020)
+
+Total time: 397 ms
+*********************************
