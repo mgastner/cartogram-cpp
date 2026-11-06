@@ -1,0 +1,336 @@
+Version 25.10
+Command: "/Users/mgastner/cartogram-cpp/build/Release/cartogram" "/Users/mgastner/cartogram-cpp/sample_data/china_by_province_with_chinese_taipei_since_1998/china_by_province_with_chinese_taipei_since_1998.geojson" "/Users/mgastner/cartogram-cpp/sample_data/china_by_province_with_chinese_taipei_since_1998/china_population_by_province_2020.csv" "--export_time_report"
+Using geometry from file /Users/mgastner/cartogram-cpp/sample_data/china_by_province_with_chinese_taipei_since_1998/china_by_province_with_chinese_taipei_since_1998.geojson
+Using visual variables from file /Users/mgastner/cartogram-cpp/sample_data/china_by_province_with_chinese_taipei_since_1998/china_population_by_province_2020.csv
+No `crs` field found.
+Default coordinate reference system assumed: +proj=longlat
+Matched ID column: ADM1_EN
+[■--------------------------------------------------------------------------] 0% [00m:00s] Mean density: 6.26411e+09
+Using Small target area threshold: 144174
+Rescaling to 256-by-256 grid with bounding box
+	(-0.592859, -0.558981, 0.547389, 0.581267)
+New bounding box: 42.6667 56.9728 213.333 199.027
+Start of initial simplification of C
+49490 points in inset. Target points: 10000
+Simplifying the inset. 
+11958 points after simplification.
+End of initial simplification of C
+
+Integrating inset C
+Max. area err: 46.5922, GeoDiv: Tibet Autonomous Region
+Current Area: 1397.02, Target Area: 29.3541
+Area drift: 0%
+
+Integration number 0
+Dimensions : 256 256
+Number of Points: 11958
+Filling density
+blur_width = 2
+Quadtree target leaf count (pre-grading): 256
+Number of unique quadtree corners: 449
+Number of quadtree leaf nodes: 355
+Quadtree nodes pre-grading: 256
+Quadtree nodes post-grading: 355
+In flatten_density_on_node_vertices()
+iter 0: t = 0, delta_t = 0.000585937
+iter 10: t = 0.0086949, delta_t = 0.00105588
+iter 20: t = 0.0232358, delta_t = 0.00190273
+iter 30: t = 0.0417221, delta_t = 0.00171439
+iter 40: t = 0.060972, delta_t = 0.00308938
+iter 50: t = 0.0797825, delta_t = 0.00139179
+iter 60: t = 0.102108, delta_t = 0.00250805
+iter 70: t = 0.130142, delta_t = 0.0022598
+iter 80: t = 0.161262, delta_t = 0.00407223
+iter 90: t = 0.195959, delta_t = 0.00366914
+iter 100: t = 0.234219, delta_t = 0.00330596
+iter 110: t = 0.27382, delta_t = 0.00595745
+iter 120: t = 0.324579, delta_t = 0.00536775
+iter 130: t = 0.37673, delta_t = 0.00483643
+iter 140: t = 0.438744, delta_t = 0.00871541
+iter 150: t = 0.507767, delta_t = 0.00785273
+iter 160: t = 0.595941, delta_t = 0.00707543
+iter 170: t = 0.686663, delta_t = 0.0127502
+iter 180: t = 0.794812, delta_t = 0.0114881
+iter 190: t = 0.906426, delta_t = 0.010351
+Triangle has flipped during triangulation. Increasing blur width and trying again.
+Max. area err: 46.5922, GeoDiv: Tibet Autonomous Region
+Current Area: 1397.02, Target Area: 29.3541
+Area drift: 0%
+
+Integration number 0
+Dimensions : 256 256
+Number of Points: 11958
+Filling density
+blur_width = 4
+Quadtree target leaf count (pre-grading): 256
+Number of unique quadtree corners: 416
+Number of quadtree leaf nodes: 331
+Quadtree nodes pre-grading: 256
+Quadtree nodes post-grading: 331
+In flatten_density_on_node_vertices()
+iter 0: t = 0, delta_t = 0.00117187
+iter 10: t = 0.0140373, delta_t = 0.00211176
+iter 20: t = 0.037749, delta_t = 0.00380545
+iter 30: t = 0.065855, delta_t = 0.00342878
+iter 40: t = 0.096998, delta_t = 0.00308938
+iter 50: t = 0.142842, delta_t = 0.00556717
+iter 60: t = 0.190276, delta_t = 0.00501611
+iter 70: t = 0.246344, delta_t = 0.0045196
+iter 80: t = 0.308585, delta_t = 0.00814446
+iter 90: t = 0.38256, delta_t = 0.00733829
+iter 100: t = 0.470461, delta_t = 0.00661192
+iter 110: t = 0.561517, delta_t = 0.0119149
+iter 120: t = 0.677278, delta_t = 0.0107355
+iter 130: t = 0.805873, delta_t = 0.00967287
+iter 140: t = 0.939082, delta_t = 0.00871541
+Densifying
+Num points before densification: 11958
+Num points after densification: 13133
+13133 points in inset. Target points: 10000
+Simplifying the inset. 
+9855 points after simplification.
+Progress: 0.1
+[■■■■■■■■-------------------------------------------------------------------] 10% [00m:00s] 
+Max. area err: 12.6552, GeoDiv: Tibet Autonomous Region
+Current Area: 415.028, Target Area: 29.3541
+Area drift: 3.54048%
+
+Integration number 1
+Dimensions : 256 256
+Number of Points: 9855
+Filling density
+blur_width = 2.82843
+Quadtree target leaf count (pre-grading): 256
+Number of unique quadtree corners: 508
+Number of quadtree leaf nodes: 406
+Quadtree nodes pre-grading: 256
+Quadtree nodes post-grading: 406
+In flatten_density_on_node_vertices()
+iter 0: t = 0, delta_t = 0.009375
+iter 10: t = 0.0647916, delta_t = 0.00844703
+iter 20: t = 0.159639, delta_t = 0.0152218
+iter 30: t = 0.330556, delta_t = 0.0274302
+iter 40: t = 0.597058, delta_t = 0.0247151
+iter 50: t = 0.894165, delta_t = 0.0222687
+Densifying
+Num points before densification: 9855
+Num points after densification: 11268
+11268 points in inset. Target points: 10000
+Simplifying the inset. 
+10050 points after simplification.
+Progress: 0.19
+[■■■■■■■■■■■■■■■------------------------------------------------------------] 19% [00m:00s] 
+Max. area err: 3.74752, GeoDiv: Tibet Autonomous Region
+Current Area: 141.821, Target Area: 29.3541
+Area drift: 1.76683%
+
+Integration number 2
+Dimensions : 256 256
+Number of Points: 10050
+Filling density
+blur_width = 2
+Quadtree target leaf count (pre-grading): 256
+Number of unique quadtree corners: 535
+Number of quadtree leaf nodes: 427
+Quadtree nodes pre-grading: 256
+Quadtree nodes post-grading: 427
+In flatten_density_on_node_vertices()
+iter 0: t = 0, delta_t = 0.01875
+iter 10: t = 0.300762, delta_t = 0.0337881
+iter 20: t = 0.734, delta_t = 0.0304436
+Densifying
+Num points before densification: 10050
+Num points after densification: 11743
+11743 points in inset. Target points: 10000
+Simplifying the inset. 
+9960 points after simplification.
+Progress: 0.271
+[■■■■■■■■■■■■■■■■■■■■■------------------------------------------------------] 27% [00m:00s] 
+Max. area err: 1.1658, GeoDiv: Tibet Autonomous Region
+Current Area: 63.7888, Target Area: 29.3541
+Area drift: 0.33631%
+
+Integration number 3
+Dimensions : 256 256
+Number of Points: 9960
+Filling density
+blur_width = 1.41421
+Quadtree target leaf count (pre-grading): 256
+Number of unique quadtree corners: 549
+Number of quadtree leaf nodes: 430
+Quadtree nodes pre-grading: 256
+Quadtree nodes post-grading: 430
+In flatten_density_on_node_vertices()
+iter 0: t = 0, delta_t = 0.075
+iter 10: t = 0.901598, delta_t = 0.0675762
+Densifying
+Num points before densification: 9960
+Num points after densification: 11662
+11662 points in inset. Target points: 10000
+Simplifying the inset. 
+9907 points after simplification.
+Progress: 0.3439
+[■■■■■■■■■■■■■■■■■■■■■■■■■■-------------------------------------------------] 34% [00m:00s] 
+Max. area err: 0.712654, GeoDiv: Macao Special Administrative Region
+Current Area: 1.49867, Target Area: 5.22481
+Area drift: -0.177401%
+
+Integration number 4
+Dimensions : 256 256
+Number of Points: 9907
+Filling density
+blur_width = 1
+Quadtree target leaf count (pre-grading): 256
+Number of unique quadtree corners: 601
+Number of quadtree leaf nodes: 469
+Quadtree nodes pre-grading: 256
+Quadtree nodes post-grading: 469
+In flatten_density_on_node_vertices()
+iter 0: t = 0, delta_t = 0.15
+Densifying
+Num points before densification: 9907
+Num points after densification: 11707
+11707 points in inset. Target points: 10000
+Simplifying the inset. 
+9955 points after simplification.
+Progress: 0.427202
+[■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■------------------------------------------] 43% [00m:00s] 
+Max. area err: 0.432672, GeoDiv: Macao Special Administrative Region
+Current Area: 2.96364, Target Area: 5.22481
+Area drift: -0.0180704%
+
+Integration number 5
+Dimensions : 256 256
+Number of Points: 9955
+Filling density
+blur_width = 0.707107
+Quadtree target leaf count (pre-grading): 256
+Number of unique quadtree corners: 590
+Number of quadtree leaf nodes: 463
+Quadtree nodes pre-grading: 256
+Quadtree nodes post-grading: 463
+In flatten_density_on_node_vertices()
+iter 0: t = 0, delta_t = 0.3
+Densifying
+Num points before densification: 9955
+Num points after densification: 11804
+11804 points in inset. Target points: 10000
+Simplifying the inset. 
+9920 points after simplification.
+Progress: 0.562816
+[■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■--------------------------------] 56% [00m:00s] 
+Max. area err: 0.174549, GeoDiv: Macao Special Administrative Region
+Current Area: 4.31134, Target Area: 5.22481
+Area drift: -0.0343207%
+
+Integration number 6
+Dimensions : 256 256
+Number of Points: 9920
+Filling density
+blur_width = 0.5
+Quadtree target leaf count (pre-grading): 256
+Number of unique quadtree corners: 628
+Number of quadtree leaf nodes: 490
+Quadtree nodes pre-grading: 256
+Quadtree nodes post-grading: 490
+In flatten_density_on_node_vertices()
+iter 0: t = 0, delta_t = 0.3
+Densifying
+Num points before densification: 9920
+Num points after densification: 11781
+11781 points in inset. Target points: 10000
+Simplifying the inset. 
+9951 points after simplification.
+Progress: 0.75
+[■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■------------------] 75% [00m:00s] 
+Max. area err: 0.0186954, GeoDiv: Macao Special Administrative Region
+Current Area: 5.12807, Target Area: 5.22481
+Area drift: 0.0183604%
+
+Integration number 7
+Dimensions : 256 256
+Number of Points: 9951
+Filling density
+blur_width = 0.353553
+Quadtree target leaf count (pre-grading): 256
+Number of unique quadtree corners: 579
+Number of quadtree leaf nodes: 442
+Quadtree nodes pre-grading: 256
+Quadtree nodes post-grading: 442
+In flatten_density_on_node_vertices()
+iter 0: t = 0, delta_t = 0.3
+Densifying
+Num points before densification: 9951
+Num points after densification: 11933
+11933 points in inset. Target points: 10000
+Simplifying the inset. 
+9828 points after simplification.
+Adjusting grid size.
+New grid dimensions: 512 512 with bounding box
+	(100.624, 102.313, 420.314, 405.978)
+Progress: 0.775
+[■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■----------------] 78% [00m:00s] 
+Max. area err: 0.022321, GeoDiv: Macao Special Administrative Region
+Current Area: 20.4336, Target Area: 20.8992
+Area drift: 0.00409941%
+
+Integration number 8
+Dimensions : 512 512
+Number of Points: 9828
+Filling density
+blur_width = 0.5
+Quadtree target leaf count (pre-grading): 1024
+Number of unique quadtree corners: 2109
+Number of quadtree leaf nodes: 1681
+Quadtree nodes pre-grading: 1024
+Quadtree nodes post-grading: 1681
+In flatten_density_on_node_vertices()
+iter 0: t = 0, delta_t = 0.3
+Densifying
+Num points before densification: 9828
+Num points after densification: 13644
+13644 points in inset. Target points: 10000
+Simplifying the inset. 
+9894 points after simplification.
+Progress: 0.7975
+[■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■--------------] 80% [00m:00s] 
+Max. area err: 0.00328308, GeoDiv: Macao Special Administrative Region
+Current Area: 20.9672, Target Area: 20.8992
+Area drift: -0.00309579%
+Finished integrating inset C
+Progress: 1
+[■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■] 100% [00m:00s] 
+
+Writing china_population_by_province_2020_cartogram.geojson
+
+********** Time Report **********
+(china_population_by_province_2020)
+
+china_population_by_province_2020: 328 ms
+Integration: 326 ms
+Simplification: 226 ms
+Preprocessing: 116 ms
+Fill with Density: 85 ms
+china_population_by_province_2020_8: 54 ms
+china_population_by_province_2020_0: 51 ms
+Densification: 41 ms
+china_population_by_province_2020_7: 32 ms
+china_population_by_province_2020_5: 31 ms
+china_population_by_province_2020_4: 31 ms
+china_population_by_province_2020_3: 31 ms
+china_population_by_province_2020_2: 31 ms
+china_population_by_province_2020_1: 31 ms
+china_population_by_province_2020_6: 30 ms
+Flatten Density: 24 ms
+Project: 11 ms
+Blur: 2 ms
+Quadtree: 1 ms
+Delaunay Triangulation: 1 ms
+*********************************
+
+********** Time Report **********
+(china_population_by_province_2020)
+
+Total time: 507 ms
+*********************************
+$R/build/Release/cartogram   --export_time_report  0.49s user 0.02s system 99% cpu 0.512 total
