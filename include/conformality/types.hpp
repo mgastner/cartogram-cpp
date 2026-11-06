@@ -19,6 +19,31 @@ struct Mat2 {
   double a22{0.0};
 };
 
+inline constexpr Mat2 identity_mat2() noexcept
+{
+  return {1.0, 0.0, 0.0, 1.0};
+}
+
+inline constexpr double det(const Mat2 &a) noexcept
+{
+  return a.a11 * a.a22 - a.a12 * a.a21;
+}
+
+// Squared Frobenius norm
+inline constexpr double frobenius_sq(const Mat2 &a) noexcept
+{
+  return a.a11 * a.a11 + a.a12 * a.a12 + a.a21 * a.a21 + a.a22 * a.a22;
+}
+
+inline constexpr Mat2 operator*(const Mat2 &a, const Mat2 &b) noexcept
+{
+  return {
+    a.a11 * b.a11 + a.a12 * b.a21,
+    a.a11 * b.a12 + a.a12 * b.a22,
+    a.a21 * b.a11 + a.a22 * b.a21,
+    a.a21 * b.a12 + a.a22 * b.a22};
+}
+
 }  // namespace conformality
 
 #endif  // CONFORMALITY_TYPES_HPP_
