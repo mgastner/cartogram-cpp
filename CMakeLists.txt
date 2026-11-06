@@ -18,11 +18,25 @@ find_package(jsoncons REQUIRED)
 
 pkg_search_module(FFTW REQUIRED IMPORTED_TARGET fftw3)
 
+# ----------------------------- Compiler flags  ------------------------------
+# Shared by cartogram_lib and conformality_core
+set(CARTOGRAM_STRICT_FLAGS
+  -ffp-contract=off
+  -Werror
+  -Wall -Wextra -Wpedantic -Wshadow -Wold-style-cast -Wunreachable-code
+  -pedantic-errors -Wformat=2 -Wformat-security -Wcast-qual -Wcast-align -Wconversion
+  -Wsign-conversion -Wfloat-equal -Woverloaded-virtual -Wno-unknown-pragmas
+  -Wmissing-declarations -Werror=return-type -Wnon-virtual-dtor
+)
+
 # ----------------------------- Cartogram Library  ---------------------------
 file(GLOB_RECURSE CARTOGRAM_SOURCES CONFIGURE_DEPENDS src/*.cpp)
 
 # Exclude main.cpp from the list of sources
 list(FILTER CARTOGRAM_SOURCES EXCLUDE REGEX ".*/main\\.cpp$")
+
+# The conformality core is built as its own library (see below)
+list(FILTER CARTOGRAM_SOURCES EXCLUDE REGEX ".*/src/conformality/.*")
 
 add_library(cartogram_lib STATIC ${CARTOGRAM_SOURCES})
 target_include_directories(cartogram_lib
@@ -52,14 +66,7 @@ else()
   )
 endif()
 
-target_compile_options(cartogram_lib PUBLIC
-  -ffp-contract=off
-  -Werror
-  -Wall -Wextra -Wpedantic -Wshadow -Wold-style-cast -Wunreachable-code
-  -pedantic-errors -Wformat=2 -Wformat-security -Wcast-qual -Wcast-align -Wconversion
-  -Wsign-conversion -Wfloat-equal -Woverloaded-virtual -Wno-unknown-pragmas
-  -Wmissing-declarations -Werror=return-type -Wnon-virtual-dtor
-)
+target_compile_options(cartogram_lib PUBLIC ${CARTOGRAM_STRICT_FLAGS})
 
 if(CMAKE_BUILD_TYPE STREQUAL Release)
   include(CheckCXXCompilerFlag)
@@ -107,6 +114,30 @@ endif()
 target_include_directories(cartogram_lib
   PUBLIC ${PROJECT_SOURCE_DIR}/include
 )
+
+# ----------------------------- Conformality core  ---------------------------
+# Numerical core of the Jacobian-preserving conformality postprocessor. It
+# has no dependency on InsetState, CGAL, or the other third-party libraries.
+file(GLOB_RECURSE CONFORMALITY_SOURCES CONFIGURE_DEPENDS
+  src/conformality/*.cpp)
+
+add_library(conformality_core STATIC ${CONFORMALITY_SOURCES})
+target_include_directories(conformality_core
+  PUBLIC ${PROJECT_SOURCE_DIR}/include
+)
+
+if(CMAKE_BUILD_TYPE STREQUAL Release)
+  target_compile_options(conformality_core PUBLIC -O3)
+  if(HAS_MARCH_NATIVE)
+    target_compile_options(conformality_core PUBLIC -march=native)
+  elseif(HAS_MTUNE_NATIVE)
+    target_compile_options(conformality_core PUBLIC -mtune=native)
+  endif()
+else()
+  target_compile_options(conformality_core PUBLIC -O1)
+endif()
+
+target_compile_options(conformality_core PUBLIC ${CARTOGRAM_STRICT_FLAGS})
 
 # ----------------------------- Main executable  -----------------------------
 add_executable(cartogram src/main.cpp)

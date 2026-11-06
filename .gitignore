@@ -28,6 +28,7 @@ cartogram
 !/tests/unit
 !/tests/stress
 !/tests/fuzzer
+!/tests/conformality
 
 # Ignore the Testing logs
 /Testing

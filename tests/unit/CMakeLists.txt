@@ -13,6 +13,7 @@ foreach(src IN LISTS UNIT_SRCS)
     PRIVATE
     boost::boost
     cartogram_lib
+    conformality_core
   )
   add_test(NAME ${test_name} COMMAND ${test_name})
   set_tests_properties(${test_name} PROPERTIES LABELS "unit" TIMEOUT 1)
