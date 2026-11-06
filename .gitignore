@@ -102,3 +102,6 @@ Makefile
 # Ignore Python virtual environment
 venv
 .venv*
+
+# Ignore local Claude Code settings
+.claude/settings.local.json
