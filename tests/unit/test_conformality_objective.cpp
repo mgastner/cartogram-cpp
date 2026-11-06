@@ -2,12 +2,10 @@
 #include "conformality/node_set.hpp"
 #include "conformality/objective.hpp"
 #include "conformality/spectral_basis.hpp"
-#include <algorithm>
+#include "conformality_test_maps.hpp"
 #include <boost/test/included/unit_test.hpp>
 #include <cmath>
 #include <cstddef>
-#include <limits>
-#include <numbers>
 #include <stdexcept>
 #include <vector>
 
@@ -21,66 +19,12 @@ using conformality::modal_derivatives;
 using conformality::NodeSet;
 using conformality::objective;
 using conformality::SpectralBasis;
+using conformality_test::asymmetric_map_nodes;
+using conformality_test::max_abs;
+using conformality_test::shear_map_nodes;
 
 namespace
 {
-
-constexpr double pi = std::numbers::pi;
-
-// Handover test map on [0, 1]^2: T(x) = (x1 + eps sin(2 pi x1) / (2 pi), x2)
-NodeSet shear_map_nodes(double eps, std::size_t n)
-{
-  NodeSet nodes = make_cell_centre_nodes(1.0, 1.0, n, n);
-  for (std::size_t j = 0; j < nodes.size(); ++j) {
-    const double x1 = nodes.x[j].x;
-    nodes.y[j] = {x1 + eps * std::sin(2 * pi * x1) / (2 * pi), nodes.x[j].y};
-    nodes.jac[j] = {1.0 + eps * std::cos(2 * pi * x1), 0.0, 0.0, 1.0};
-    nodes.g0[j] = det(nodes.jac[j]);
-  }
-  return nodes;
-}
-
-// Side-preserving map on [0, lx] x [0, ly] without separable structure or
-// mirror symmetry, so that every modal derivative is generically nonzero:
-//   T1 = x1 + a sin(pi x1/lx) sin(pi x2/ly) (1 + x1/lx + 2 x2/ly)
-//   T2 = x2 + b sin(2 pi x1/lx) sin(pi x2/ly) (1 + x1/lx)
-NodeSet asymmetric_map_nodes(
-  double lx,
-  double ly,
-  std::size_t nx,
-  std::size_t ny)
-{
-  constexpr double a = 0.05;
-  constexpr double b = 0.03;
-  NodeSet nodes = make_cell_centre_nodes(lx, ly, nx, ny);
-  for (std::size_t j = 0; j < nodes.size(); ++j) {
-    const double x1 = nodes.x[j].x;
-    const double x2 = nodes.x[j].y;
-    const double s1 = std::sin(pi * x1 / lx), c1 = std::cos(pi * x1 / lx);
-    const double s2 = std::sin(pi * x2 / ly), c2 = std::cos(pi * x2 / ly);
-    const double s1d = std::sin(2 * pi * x1 / lx);
-    const double c1d = std::cos(2 * pi * x1 / lx);
-    const double psi = 1.0 + x1 / lx + 2.0 * x2 / ly;
-    const double chi = 1.0 + x1 / lx;
-    nodes.y[j] = {x1 + a * s1 * s2 * psi, x2 + b * s1d * s2 * chi};
-    nodes.jac[j] = {
-      1.0 + a * ((pi / lx) * c1 * s2 * psi + s1 * s2 / lx),
-      a * ((pi / ly) * s1 * c2 * psi + 2.0 * s1 * s2 / ly),
-      b * ((2 * pi / lx) * c1d * s2 * chi + s1d * s2 / lx),
-      1.0 + b * (pi / ly) * s1d * c2 * chi};
-    nodes.g0[j] = det(nodes.jac[j]);
-  }
-  return nodes;
-}
-
-double max_abs(const std::vector<double> &v)
-{
-  double m = 0.0;
-  for (const double x : v) {
-    m = std::max(m, std::abs(x));
-  }
-  return m;
-}
 
 // Nodes whose Jacobians are perturbed by J -> (I + eta Dv(y)) J, where Dv is
 // the velocity gradient of the stream function with coefficients c
