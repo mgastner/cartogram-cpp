@@ -66,6 +66,20 @@ BOOST_AUTO_TEST_CASE(excess_mips_values)
   // Singular values 2 and 1: K + 1/K - 2 = 0.5, independent of scale
   BOOST_TEST(std::abs(excess_mips({2.0, 0.0, 0.0, 1.0}) - 0.5) < 1e-15);
   BOOST_TEST(std::abs(excess_mips({10.0, 0.0, 0.0, 5.0}) - 0.5) < 1e-15);
+
+  // Nearly conformal J: diag(1 + e, 1) has K + 1/K - 2 = e^2 / (1 + e)
+  // exactly. The value must keep full relative accuracy, which the naive
+  // form ||J||^2 / det J - 2 loses to cancellation.
+  const double e = 1e-7;
+  const double near = excess_mips({1.0 + e, 0.0, 0.0, 1.0});
+  BOOST_TEST(std::abs(near / (e * e / (1.0 + e)) - 1.0) < 1e-8);
+
+  // A general matrix agrees with the defining formula
+  const Mat2 general{1.3, -0.4, 0.7, 0.9};
+  BOOST_TEST(
+    std::abs(
+      excess_mips(general) -
+      (conformality::frobenius_sq(general) / det(general) - 2.0)) < 1e-14);
 }
 
 BOOST_AUTO_TEST_CASE(identity_map_has_zero_energy_and_derivatives)

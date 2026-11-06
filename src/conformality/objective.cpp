@@ -49,7 +49,12 @@ double total_weight(const NodeSet &nodes)
 
 double excess_mips(const Mat2 &jac) noexcept
 {
-  return frobenius_sq(jac) / det(jac) - 2.0;
+  // ||J||^2 - 2 det J = (a11 - a22)^2 + (a12 + a21)^2. This form avoids the
+  // cancellation in ||J||^2 / det J - 2 for nearly conformal J, so small
+  // energies keep full relative accuracy.
+  const double p = jac.a11 - jac.a22;
+  const double q = jac.a12 + jac.a21;
+  return (p * p + q * q) / det(jac);
 }
 
 double objective(const NodeSet &nodes)

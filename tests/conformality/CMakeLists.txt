@@ -16,6 +16,11 @@ foreach(src IN LISTS CONFORMALITY_TEST_SRCS)
     boost::boost
     conformality_core
   )
+
+  # Shared manufactured maps live next to the fast unit tests
+  target_include_directories(${test_name}
+    PRIVATE ${CMAKE_SOURCE_DIR}/tests/unit
+  )
   add_test(NAME ${test_name} COMMAND ${test_name})
   set_tests_properties(${test_name}
     PROPERTIES LABELS "conformality" TIMEOUT 300)
