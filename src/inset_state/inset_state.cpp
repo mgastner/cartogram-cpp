@@ -660,6 +660,9 @@ void InsetState::adjust_grid()
 
     initial_area_ *= default_grid_factor * default_grid_factor;
     transform_points(scale, true);
+    if (conf_.active) {
+      scale_conformality_tracers(default_grid_factor);
+    }
 
     normalize_target_area();
     destroy_fftw_plans_for_rho();

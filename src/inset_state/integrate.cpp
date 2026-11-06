@@ -65,6 +65,11 @@ void InsetState::prepare_for_integration()
   normalize_target_area();
 
   set_area_errors();
+
+  // Seed tracers of the cumulative map at the input polygons' lattice frame
+  if (args_.conformality) {
+    seed_conformality_tracers();
+  }
 }
 
 void InsetState::cleanup_after_integration()
@@ -221,6 +226,13 @@ void InsetState::integrate(ProgressTracker &progress_tracker)
   // Update and display progress information
   std::cerr << "Finished integrating inset " << pos_ << std::endl;
   progress_tracker.update_and_print_progress_end_integration(n_geo_divs());
+
+  // Freeze g0 = det DT0 and report diagnostics of the cumulative map
+  // recorded by the conformality tracers
+  if (conf_.active) {
+    finalize_conformality_t0();
+    report_conformality_t0();
+  }
 
   // Write SVG for this inset, if requested
   if (args_.plot_polygons) {

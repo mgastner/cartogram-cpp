@@ -2,6 +2,7 @@
 #define INSET_STATE_HPP_
 
 #include "colors.hpp"
+#include "conformality_tracers.hpp"
 #include "constants.hpp"
 #include "ft_real_2d.hpp"
 #include "geo_div.hpp"
@@ -118,6 +119,10 @@ private:
 
   mutable bool intersections_found_{false};
 
+  // Tracers of the cumulative map for the conformality postprocessor
+  // (empty unless --conformality is set)
+  ConformalityTracers conf_;
+
   // Make default constructor private so that only
   // InsetState(const std::string, Arguments) can be called as constructor
   InsetState();
@@ -230,6 +235,14 @@ public:
   FTReal2d &ref_to_rho_ft();
   FTReal2d &ref_to_rho_init();
   void remove_tiny_polygons(const double &minimum_polygon_size);
+
+  // Conformality postprocessor (src/inset_state/conformality_adapter.cpp)
+  void seed_conformality_tracers();
+  void update_conformality_tracers();
+  void scale_conformality_tracers(double factor);
+  void finalize_conformality_t0();
+  void report_conformality_t0() const;
+
   void replace_target_area(const std::string &, double);
   void rescale_map();
   void set_area_errors();

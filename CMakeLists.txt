@@ -139,6 +139,9 @@ endif()
 
 target_compile_options(conformality_core PUBLIC ${CARTOGRAM_STRICT_FLAGS})
 
+# The cartogram library hosts the adapter that feeds the core
+target_link_libraries(cartogram_lib PUBLIC conformality_core)
+
 # ----------------------------- Main executable  -----------------------------
 add_executable(cartogram src/main.cpp)
 target_link_libraries(cartogram

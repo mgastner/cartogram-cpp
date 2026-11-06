@@ -159,6 +159,24 @@ Arguments parse_arguments(const int argc, const char *argv[])
     .help("Unsigned int: Quadtree leaf count factor (should be a power of 2)")
     .default_value(default_quadtree_leaf_count_factor)
     .scan<'u', unsigned int>();
+  arguments.add_argument("--conformality")
+    .help(
+      "Boolean: Track the cumulative map for the conformality postprocessor "
+      "(experimental)")
+    .default_value(false)
+    .implicit_value(true);
+  arguments.add_argument("--conf_quad")
+    .help(
+      "Unsigned int: Conformality quadrature nodes per lattice cell along "
+      "each axis")
+    .default_value(static_cast<unsigned int>(2))
+    .scan<'u', unsigned int>();
+  arguments.add_argument("--conf_eval_quad")
+    .help(
+      "Unsigned int: Nodes per lattice cell along each axis of the "
+      "independent conformality evaluation cloud")
+    .default_value(static_cast<unsigned int>(4))
+    .scan<'u', unsigned int>();
 
   // Parse command-line arguments
   try {
@@ -225,6 +243,15 @@ Arguments parse_arguments(const int argc, const char *argv[])
     arguments.get<bool>("--do_not_fail_on_intersections");
 
   args.timeout_in_seconds = arguments.get<unsigned int>("--timeout");
+
+  args.conformality = arguments.get<bool>("--conformality");
+  args.conf_quad = arguments.get<unsigned int>("--conf_quad");
+  args.conf_eval_quad = arguments.get<unsigned int>("--conf_eval_quad");
+  if (args.conformality && (args.conf_quad == 0 || args.conf_eval_quad == 0)) {
+    std::cerr << "ERROR: --conf_quad and --conf_eval_quad must be positive."
+              << std::endl;
+    std::exit(17);
+  }
 
   // arguments.present returns an optional
   args.id_col = arguments.present<std::string>("--id");

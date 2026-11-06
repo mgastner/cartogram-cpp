@@ -92,6 +92,13 @@ void InsetState::project_with_delaunay_t(bool output_to_stdout)
   if (output_to_stdout) {
     transform_points(lambda_bary, true);
   }
+
+  // Move the conformality tracers with the same piecewise-affine map. This
+  // happens after the polygons are projected so that the cache inside
+  // Triangulation::locate() cannot affect the polygon output.
+  if (conf_.active) {
+    update_conformality_tracers();
+  }
   is_simple(__func__);
   timer.stop("Project");
 }

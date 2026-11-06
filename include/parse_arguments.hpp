@@ -78,6 +78,13 @@ struct Arguments {
   // Whether to exit gracefully if intersections are found
   bool do_not_fail_on_intersections;
 
+  // Conformality postprocessor: whether to track the cumulative map, and the
+  // number of quadrature nodes per lattice cell along each axis for the
+  // optimization and evaluation clouds
+  bool conformality;
+  unsigned int conf_quad;
+  unsigned int conf_eval_quad;
+
   // Column names in provided visual variables file (CSV)
   std::optional<std::string> id_col;
   std::optional<std::string> area_col;

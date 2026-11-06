@@ -40,6 +40,12 @@ void InsetState::simplify(const unsigned int target_points_per_inset)
     static_cast<double>(target_pts) / static_cast<double>(n_pts_before);
   std::cerr << "Simplifying the inset. " << std::endl;
 
+  // After simplification, the polygons are no longer exact images of the
+  // input polygons under the map recorded by the conformality tracers
+  if (conf_.active) {
+    conf_.simplified_after_seeding = true;
+  }
+
   // Store Polygons as a CT (Constrained Triangulation) object. Code inspired
   // by https://doc.cgal.org/latest/Polyline_simplification_2/index.html
   std::vector<Constraint_id> pgn_id_to_constraint_id(n_rings);
