@@ -58,12 +58,17 @@ struct FlowStats {
   double max_residual{0.0};
 };
 
+// Combines the statistics of two integrations (order independent)
+void accumulate(FlowStats &total, const FlowStats &part) noexcept;
+
 // Advances all nodes through the flow of the fixed velocity with stream
 // coefficients c for total time h, using n_substeps equal implicit-midpoint
 // substeps shared by all nodes. Positions are updated, and each Jacobian is
 // replaced by (tangent of the step) * J. Nodes whose solve does not
 // converge are still advanced; the caller must reject the trial when
-// FlowStats::converged is false.
+// FlowStats::converged is false. Nodes are advanced in parallel if the core
+// was built with OpenMP; each node is independent of the others, so the
+// result does not depend on the number of threads.
 FlowStats advance_nodes(
   NodeSet &nodes,
   const SpectralBasis &basis,
@@ -75,7 +80,7 @@ FlowStats advance_nodes(
 // Same flow applied to passive points. If tangents is not null, it must
 // have the same length as points, and each entry is replaced by
 // (tangent of the step) * entry, so that starting from the identity it
-// accumulates the Jacobian of the flow map.
+// accumulates the Jacobian of the flow map. Parallel like advance_nodes.
 FlowStats advance_points(
   std::vector<Vec2> &points,
   std::vector<Mat2> *tangents,

@@ -5,6 +5,7 @@
 #include "conformality/node_set.hpp"
 #include "conformality/spectral_basis.hpp"
 #include <cstddef>
+#include <functional>
 #include <iosfwd>
 #include <limits>
 #include <string>
@@ -12,6 +13,33 @@
 
 namespace conformality
 {
+
+// Diagnostics of one outer iteration
+struct IterationRecord {
+  unsigned iteration{0};
+
+  // State at the start of the iteration
+  double energy{0.0};
+  double r{0.0};
+  double slope{0.0};
+
+  // Accepted trial (zero if none was accepted). The strain is h times the
+  // bound on ||Dv||_F of the iteration's velocity.
+  double h{0.0};
+  double strain{0.0};
+  std::size_t n_substeps{0};
+  unsigned backtracks{0};
+  double energy_after{0.0};
+
+  // Armijo margin: E + sigma h d - E(trial), non-negative when accepted
+  double armijo_margin{0.0};
+  double max_det_drift{0.0};
+  unsigned max_solver_iterations{0};
+  double max_solver_residual{0.0};
+
+  // Wall-clock time of the iteration in seconds
+  double seconds{0.0};
+};
 
 struct OptimizerSettings {
 
@@ -33,6 +61,15 @@ struct OptimizerSettings {
   // Upper bound on any trial duration
   double max_step{std::numeric_limits<double>::infinity()};
 
+  // Upper bound on the strain h B of any trial, where B bounds ||Dv||_F
+  // everywhere. It limits how much one step can deform the map (for the
+  // exact flow map A_h, ||DA_h||_2 <= exp(h B)), and so caps the substep
+  // count of a trial at max_strain / substep_factor. On the first real maps
+  // (USA and China, 16^2 and 32^2 modes), no accepted step exceeded h B = 3.2,
+  // while the first trial E / R overshot up to h B = 25 and cost most of the
+  // run time.
+  double max_strain{4.0};
+
   // Each rejected trial halves the duration, at most this many times per
   // outer iteration
   unsigned max_backtracks{30};
@@ -52,10 +89,21 @@ struct OptimizerSettings {
   // energy_tol * E (stagnation)
   double energy_tol{1e-12};
 
+  // Converged when the last stall_window accepted steps together decreased
+  // E by at most stall_tol * E (slow tail). A window of 0 disables the
+  // test. On the first real maps, E was then within 1e-5 of its value
+  // after 200 iterations.
+  unsigned stall_window{10};
+  double stall_tol{1e-5};
+
   // A trial is rejected if max_j |det J_j / g0_j - 1| exceeds this value
   double det_drift_tol{1e-9};
 
   ImplicitMidpointSettings solver{};
+
+  // Called after every outer iteration with its record (e.g. to print
+  // progress)
+  std::function<void(const IterationRecord &)> on_iteration{};
 };
 
 enum class Outcome { converged, numerical_failure, budget_exhausted };
@@ -71,28 +119,6 @@ struct AcceptedStep {
   std::vector<double> coeffs;
   double h{0.0};
   std::size_t n_substeps{0};
-};
-
-// Diagnostics of one outer iteration
-struct IterationRecord {
-  unsigned iteration{0};
-
-  // State at the start of the iteration
-  double energy{0.0};
-  double r{0.0};
-  double slope{0.0};
-
-  // Accepted trial (zero if none was accepted)
-  double h{0.0};
-  std::size_t n_substeps{0};
-  unsigned backtracks{0};
-  double energy_after{0.0};
-
-  // Armijo margin: E + sigma h d - E(trial), non-negative when accepted
-  double armijo_margin{0.0};
-  double max_det_drift{0.0};
-  unsigned max_solver_iterations{0};
-  double max_solver_residual{0.0};
 };
 
 struct OptimizationResult {

@@ -3,6 +3,7 @@
 
 #include "conformality/node_set.hpp"
 #include "conformality/spectral_basis.hpp"
+#include <cstddef>
 #include <vector>
 
 namespace conformality
@@ -14,12 +15,25 @@ namespace conformality
 // when J is a positive multiple of a rotation.
 [[nodiscard]] double excess_mips(const Mat2 &jac) noexcept;
 
+// Distortion measures of Gastner, Seguy and More (2018), Table 1, for a
+// Jacobian with positive determinant and singular values a >= b:
+// e = ln(a / b), and the maximum angular distortion 2 arcsin((a - b)/(a + b)).
+// Both are computed from excess_mips(), which keeps them accurate for nearly
+// conformal J.
+[[nodiscard]] double log_axis_ratio(const Mat2 &jac) noexcept;
+[[nodiscard]] double max_angular_distortion(const Mat2 &jac) noexcept;
+
 // Mean excess MIPS energy for alpha = 0 and unit importance weight,
 //   E0 = sum_j w_j m(J_j) / sum_j w_j,
 // with the actual det J_j in m. Returns +infinity if some det J_j <= 0
 // (an inverted or degenerate node) or if the total weight is not positive.
 // Uses compensated summation.
 [[nodiscard]] double objective(const NodeSet &nodes);
+
+// Nodes per block in the sums of modal_derivatives(). The partial sums of
+// each block are added in block order, so F does not depend on the number
+// of threads.
+inline constexpr std::size_t modal_block_size = 4096;
 
 // Modal derivatives F_mn = delta E0[T; v_mn], the first variation of E0
 // along the velocity mode v_mn of `basis`, evaluated at the current nodes:

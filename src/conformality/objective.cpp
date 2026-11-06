@@ -1,4 +1,5 @@
 #include "conformality/objective.hpp"
+#include <algorithm>
 #include <cassert>
 #include <cmath>
 #include <limits>
@@ -57,6 +58,19 @@ double excess_mips(const Mat2 &jac) noexcept
   return (p * p + q * q) / det(jac);
 }
 
+double log_axis_ratio(const Mat2 &jac) noexcept
+{
+  // K = a / b satisfies K + 1/K = 2 + m, so K - 1 = m/2 + sqrt(m + m^2/4)
+  const double m = excess_mips(jac);
+  return std::log1p(0.5 * m + std::sqrt(m * (1.0 + 0.25 * m)));
+}
+
+double max_angular_distortion(const Mat2 &jac) noexcept
+{
+  // (K - 1) / (K + 1) = tanh(ln(K) / 2)
+  return 2.0 * std::asin(std::tanh(0.5 * log_axis_ratio(jac)));
+}
+
 double objective(const NodeSet &nodes)
 {
   nodes.check_consistent();
@@ -86,46 +100,77 @@ std::vector<double> modal_derivatives(
   }
   const std::size_t mx = basis.mx();
   const std::size_t my = basis.my();
+  const std::size_t n_modes = mx * my;
 
   // With A = J J^T and S_m, C_m, T_n, U_n the sines and cosines of
   // kx_m y1 and ky_n y2,
   //   (A : Dv_mn) = (A11 - A22) kx_m ky_n C_m U_n
   //                 + A12 (kx_m^2 - ky_n^2) S_m T_n.
   // Accumulate the two node sums separately, then apply the wavenumbers.
-  std::vector<double> cos_sum(mx * my, 0.0);
-  std::vector<double> sin_sum(mx * my, 0.0);
-  std::vector<double> sx(mx), cx(mx), sy(my), cy(my);
-  for (std::size_t j = 0; j < nodes.size(); ++j) {
-    const Mat2 &jac = nodes.jac[j];
-    const double d = det(jac);
-    if (!(d > 0.0)) {
-      throw std::domain_error("modal_derivatives: det J must be positive");
-    }
-    const double a11 = jac.a11 * jac.a11 + jac.a12 * jac.a12;
-    const double a22 = jac.a21 * jac.a21 + jac.a22 * jac.a22;
-    const double a12 = jac.a11 * jac.a21 + jac.a12 * jac.a22;
-    const double scale = 2.0 * nodes.w[j] / (z * d);
-    const double a = scale * (a11 - a22);
-    const double b = scale * a12;
-    fill_harmonics(
-      std::numbers::pi * nodes.y[j].x / basis.lx(),
-      mx,
-      sx.data(),
-      cx.data());
-    fill_harmonics(
-      std::numbers::pi * nodes.y[j].y / basis.ly(),
-      my,
-      sy.data(),
-      cy.data());
-    for (std::size_t m = 0; m < mx; ++m) {
-      const double am = a * cx[m];
-      const double bm = b * sx[m];
-      double *crow = cos_sum.data() + m * my;
-      double *srow = sin_sum.data() + m * my;
-      for (std::size_t n = 0; n < my; ++n) {
-        crow[n] += am * cy[n];
-        srow[n] += bm * sy[n];
+  //
+  // Each block of modal_block_size consecutive nodes has its own partial
+  // sums, which are added in block order afterwards. The blocks are fixed,
+  // so the result does not depend on the number of threads.
+  const std::size_t n_nodes = nodes.size();
+  const std::size_t n_blocks =
+    (n_nodes + modal_block_size - 1) / modal_block_size;
+  std::vector<double> partial(n_blocks * 2 * n_modes, 0.0);
+  bool inverted = false;
+#pragma omp parallel
+  {
+    std::vector<double> sx(mx), cx(mx), sy(my), cy(my);
+#pragma omp for schedule(dynamic, 1) reduction(|| : inverted)
+    for (std::size_t blk = 0; blk < n_blocks; ++blk) {
+      double *cos_sum = partial.data() + blk * 2 * n_modes;
+      double *sin_sum = cos_sum + n_modes;
+      const std::size_t end = std::min(n_nodes, (blk + 1) * modal_block_size);
+      for (std::size_t j = blk * modal_block_size; j < end; ++j) {
+        const Mat2 &jac = nodes.jac[j];
+        const double d = det(jac);
+        if (!(d > 0.0)) {
+          inverted = true;
+          continue;
+        }
+        const double a11 = jac.a11 * jac.a11 + jac.a12 * jac.a12;
+        const double a22 = jac.a21 * jac.a21 + jac.a22 * jac.a22;
+        const double a12 = jac.a11 * jac.a21 + jac.a12 * jac.a22;
+        const double scale = 2.0 * nodes.w[j] / (z * d);
+        const double a = scale * (a11 - a22);
+        const double b = scale * a12;
+        fill_harmonics(
+          std::numbers::pi * nodes.y[j].x / basis.lx(),
+          mx,
+          sx.data(),
+          cx.data());
+        fill_harmonics(
+          std::numbers::pi * nodes.y[j].y / basis.ly(),
+          my,
+          sy.data(),
+          cy.data());
+        for (std::size_t m = 0; m < mx; ++m) {
+          const double am = a * cx[m];
+          const double bm = b * sx[m];
+          double *crow = cos_sum + m * my;
+          double *srow = sin_sum + m * my;
+          for (std::size_t n = 0; n < my; ++n) {
+            crow[n] += am * cy[n];
+            srow[n] += bm * sy[n];
+          }
+        }
       }
+    }
+  }
+  if (inverted) {
+    throw std::domain_error("modal_derivatives: det J must be positive");
+  }
+  std::vector<double> cos_sum(n_modes, 0.0);
+  std::vector<double> sin_sum(n_modes, 0.0);
+  for (std::size_t blk = 0; blk < n_blocks; ++blk) {
+    const double *cos_part = partial.data() + blk * 2 * n_modes;
+    const double *sin_part = cos_part + n_modes;
+    for (std::size_t k = 0; k < n_modes; ++k) {
+      cos_sum[k] += cos_part[k];
+      sin_sum[k] += sin_part[k];
     }
   }
 

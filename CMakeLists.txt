@@ -139,6 +139,16 @@ endif()
 
 target_compile_options(conformality_core PUBLIC ${CARTOGRAM_STRICT_FLAGS})
 
+# Optional multithreading of the core's node loops. Results do not depend on
+# the thread count (see include/conformality/parallel.hpp). OpenMP is linked
+# privately, so the rest of cartogram_lib is still compiled without it. With
+# Apple Clang, pass -DOpenMP_ROOT=$(brew --prefix libomp).
+option(CONFORMALITY_OPENMP "Parallelize the conformality core with OpenMP" OFF)
+if(CONFORMALITY_OPENMP)
+  find_package(OpenMP REQUIRED COMPONENTS CXX)
+  target_link_libraries(conformality_core PRIVATE OpenMP::OpenMP_CXX)
+endif()
+
 # The cartogram library hosts the adapter that feeds the core
 target_link_libraries(cartogram_lib PUBLIC conformality_core)
 

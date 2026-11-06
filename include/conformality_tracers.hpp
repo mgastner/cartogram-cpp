@@ -48,11 +48,36 @@ struct ConformalityTracers {
   std::vector<conformality::Vec2> corners;
 
   // Finite-difference companions: for node fd_parent[k], tracers seeded at
-  // x + fd_delta e1 and x + fd_delta e2
+  // x + fd_delta e_i (fd_e1, fd_e2) and at x + (fd_delta / 2) e_i (fd_e1h,
+  // fd_e2h). Forward differences are exact for the piecewise-affine T0
+  // unless a pair straddles a piece; after the smooth correction A, the
+  // Richardson combination of both step sizes cancels the O(delta) error.
   double fd_delta{1e-4};
   std::vector<std::size_t> fd_parent;
   std::vector<conformality::Vec2> fd_e1;
   std::vector<conformality::Vec2> fd_e2;
+  std::vector<conformality::Vec2> fd_e1h;
+  std::vector<conformality::Vec2> fd_e2h;
+
+  // Square graticule for figures: lines of constant x and y in the initial
+  // lattice, every grid_spacing lattice units, sampled at
+  // grid_samples_per_unit points per lattice unit. grid_lines holds the
+  // current positions, grid_lines_t0 a snapshot after the last pass.
+  double grid_spacing{8.0};
+  unsigned int grid_samples_per_unit{4};
+  std::vector<std::vector<conformality::Vec2>> grid_lines;
+  std::vector<std::vector<conformality::Vec2>> grid_lines_t0;
+
+  // Rings of the input polygons at seeding time, with the index of their
+  // GeoDiv, for figures of the original map
+  std::vector<std::vector<conformality::Vec2>> input_rings;
+  std::vector<int> input_ring_region;
+
+  // After the optimizer ran: the output polygons of T0, densified, with the
+  // correction A applied (for figures of T = A o T0)
+  bool optimized{false};
+  std::vector<std::vector<conformality::Vec2>> t_rings;
+  std::vector<int> t_ring_region;
 };
 
 #endif  // CONFORMALITY_TRACERS_HPP_

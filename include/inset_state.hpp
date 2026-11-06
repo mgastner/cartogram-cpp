@@ -242,6 +242,8 @@ public:
   void scale_conformality_tracers(double factor);
   void finalize_conformality_t0();
   void report_conformality_t0() const;
+  void run_conformality_optimization();
+  void write_conformality_plot_data() const;
 
   void replace_target_area(const std::string &, double);
   void rescale_map();

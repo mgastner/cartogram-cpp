@@ -1,6 +1,7 @@
 #include "conformality/optimizer.hpp"
 #include "conformality/objective.hpp"
 #include <algorithm>
+#include <chrono>
 #include <cmath>
 #include <ostream>
 #include <stdexcept>
@@ -8,18 +9,6 @@
 
 namespace conformality
 {
-
-namespace
-{
-
-void merge(FlowStats &total, const FlowStats &part)
-{
-  total.converged = total.converged && part.converged;
-  total.max_iterations = std::max(total.max_iterations, part.max_iterations);
-  total.max_residual = std::max(total.max_residual, part.max_residual);
-}
-
-}  // namespace
 
 std::string to_string(const Outcome outcome)
 {
@@ -56,7 +45,8 @@ OptimizationResult optimize(
   nodes.check_consistent();
   if (
     !(settings.sigma > 0.0 && settings.sigma < 1.0) ||
-    !(settings.substep_factor > 0.0) || settings.max_substeps == 0) {
+    !(settings.substep_factor > 0.0) || settings.max_substeps == 0 ||
+    !(settings.max_strain > 0.0) || !(settings.stall_tol >= 0.0)) {
     throw std::invalid_argument("optimize: invalid settings");
   }
 
@@ -73,6 +63,7 @@ OptimizationResult optimize(
   double h = settings.initial_step;
   double r0 = 0.0;
   for (unsigned k = 0;; ++k) {
+    const auto iteration_start = std::chrono::steady_clock::now();
     const std::vector<double> f = modal_derivatives(nodes, basis);
     const H1Descent descent = h1_descent(basis, f);
 
@@ -114,6 +105,9 @@ OptimizationResult optimize(
     }
     h = std::min(h, settings.max_step);
     const double bound = velocity_gradient_bound(basis, descent.coeffs);
+    if (bound > 0.0) {
+      h = std::min(h, settings.max_strain / bound);
+    }
 
     bool accepted = false;
     NodeSet trial;
@@ -148,6 +142,7 @@ OptimizationResult optimize(
         std::isfinite(trial_energy) && margin >= 0.0 &&
         drift <= settings.det_drift_tol) {
         record.h = h;
+        record.strain = h * bound;
         record.n_substeps = n_substeps;
         record.energy_after = trial_energy;
         record.armijo_margin = margin;
@@ -158,7 +153,13 @@ OptimizationResult optimize(
       }
       h *= 0.5;
     }
+    record.seconds = std::chrono::duration<double>(
+                       std::chrono::steady_clock::now() - iteration_start)
+                       .count();
     result.history.push_back(record);
+    if (settings.on_iteration) {
+      settings.on_iteration(record);
+    }
     if (!accepted) {
       result.outcome = Outcome::numerical_failure;
       result.reason = "no trial satisfied the acceptance tests";
@@ -174,6 +175,17 @@ OptimizationResult optimize(
       result.reason = "relative energy decrease below tolerance";
       break;
     }
+    const std::size_t window = settings.stall_window;
+    if (window > 0 && result.history.size() >= window) {
+      const double earlier =
+        result.history[result.history.size() - window].energy;
+      if (earlier - energy <= settings.stall_tol * energy) {
+        result.outcome = Outcome::converged;
+        result.reason = "relative energy decrease over the last " +
+                        std::to_string(window) + " iterations below tolerance";
+        break;
+      }
+    }
     h = std::min(2.0 * h, settings.max_step);
   }
   return result;
@@ -187,7 +199,7 @@ FlowStats replay(
 {
   FlowStats total;
   for (const auto &step : steps) {
-    merge(
+    accumulate(
       total,
       advance_nodes(
         nodes,
@@ -209,7 +221,7 @@ FlowStats replay(
 {
   FlowStats total;
   for (const auto &step : steps) {
-    merge(
+    accumulate(
       total,
       advance_points(
         points,

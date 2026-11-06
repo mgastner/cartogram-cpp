@@ -82,6 +82,29 @@ BOOST_AUTO_TEST_CASE(excess_mips_values)
       (conformality::frobenius_sq(general) / det(general) - 2.0)) < 1e-14);
 }
 
+BOOST_AUTO_TEST_CASE(distortion_measures_match_singular_values)
+{
+  using conformality::log_axis_ratio;
+  using conformality::max_angular_distortion;
+
+  // Rotation times diag(3, 1.5) times rotation: a / b = 2
+  const double t = 0.4, u = -1.1;
+  const Mat2 r1{std::cos(t), -std::sin(t), std::sin(t), std::cos(t)};
+  const Mat2 r2{std::cos(u), -std::sin(u), std::sin(u), std::cos(u)};
+  const Mat2 j = r1 * Mat2{3.0, 0.0, 0.0, 1.5} * r2;
+  BOOST_TEST(std::abs(log_axis_ratio(j) - std::log(2.0)) < 1e-14);
+  BOOST_TEST(
+    std::abs(max_angular_distortion(j) - 2.0 * std::asin(1.0 / 3.0)) < 1e-14);
+
+  // Conformal J has no distortion; nearly conformal J keeps relative
+  // accuracy: ln(1 + e) for diag(1 + e, 1)
+  BOOST_TEST(std::abs(log_axis_ratio(r1)) < 1e-15);
+  const double e = 1e-9;
+  BOOST_TEST(
+    std::abs(log_axis_ratio({1.0 + e, 0.0, 0.0, 1.0}) / std::log1p(e) - 1.0) <
+    1e-6);
+}
+
 BOOST_AUTO_TEST_CASE(identity_map_has_zero_energy_and_derivatives)
 {
   const NodeSet nodes = make_cell_centre_nodes(2.0, 1.0, 40, 20);

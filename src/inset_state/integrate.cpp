@@ -232,6 +232,10 @@ void InsetState::integrate(ProgressTracker &progress_tracker)
   if (conf_.active) {
     finalize_conformality_t0();
     report_conformality_t0();
+    if (args_.conf_optimize) {
+      run_conformality_optimization();
+    }
+    write_conformality_plot_data();
   }
 
   // Write SVG for this inset, if requested

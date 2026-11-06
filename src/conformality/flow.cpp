@@ -48,7 +48,54 @@ void advance_one(
   }
 }
 
+// Advances y[j] (and tangent[j] if tangent is not null) for all
+// j < count. Every point is integrated on its own, so neither the thread
+// count nor the schedule affects the result.
+FlowStats advance_all(
+  Vec2 *y,
+  Mat2 *tangent,
+  const std::size_t count,
+  const SpectralBasis &basis,
+  const std::vector<double> &c,
+  const double dt,
+  const std::size_t n_substeps,
+  const ImplicitMidpointSettings &settings)
+{
+  FlowStats stats;
+#pragma omp parallel
+  {
+    SpectralBasis::Workspace ws;
+    FlowStats local;
+
+    // Fixed-point iteration counts vary between points, so hand out small
+    // chunks dynamically
+#pragma omp for schedule(dynamic, 64) nowait
+    for (std::size_t j = 0; j < count; ++j) {
+      advance_one(
+        y[j],
+        tangent != nullptr ? tangent + j : nullptr,
+        basis,
+        c,
+        dt,
+        n_substeps,
+        settings,
+        ws,
+        local);
+    }
+#pragma omp critical(conformality_flow_stats)
+    accumulate(stats, local);
+  }
+  return stats;
+}
+
 }  // namespace
+
+void accumulate(FlowStats &total, const FlowStats &part) noexcept
+{
+  total.converged = total.converged && part.converged;
+  total.max_iterations = std::max(total.max_iterations, part.max_iterations);
+  total.max_residual = std::max(total.max_residual, part.max_residual);
+}
 
 Mat2 cayley(const Mat2 &d, const double dt) noexcept
 {
@@ -136,21 +183,15 @@ FlowStats advance_nodes(
   nodes.check_consistent();
   check_flow_arguments(h, n_substeps);
   const double dt = h / static_cast<double>(n_substeps);
-  FlowStats stats;
-  SpectralBasis::Workspace ws;
-  for (std::size_t j = 0; j < nodes.size(); ++j) {
-    advance_one(
-      nodes.y[j],
-      &nodes.jac[j],
-      basis,
-      c,
-      dt,
-      n_substeps,
-      settings,
-      ws,
-      stats);
-  }
-  return stats;
+  return advance_all(
+    nodes.y.data(),
+    nodes.jac.data(),
+    nodes.size(),
+    basis,
+    c,
+    dt,
+    n_substeps,
+    settings);
 }
 
 FlowStats advance_points(
@@ -168,21 +209,15 @@ FlowStats advance_points(
       "advance_points: tangents and points differ in length");
   }
   const double dt = h / static_cast<double>(n_substeps);
-  FlowStats stats;
-  SpectralBasis::Workspace ws;
-  for (std::size_t j = 0; j < points.size(); ++j) {
-    advance_one(
-      points[j],
-      tangents != nullptr ? &(*tangents)[j] : nullptr,
-      basis,
-      c,
-      dt,
-      n_substeps,
-      settings,
-      ws,
-      stats);
-  }
-  return stats;
+  return advance_all(
+    points.data(),
+    tangents != nullptr ? tangents->data() : nullptr,
+    points.size(),
+    basis,
+    c,
+    dt,
+    n_substeps,
+    settings);
 }
 
 }  // namespace conformality

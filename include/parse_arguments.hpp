@@ -85,6 +85,13 @@ struct Arguments {
   unsigned int conf_quad;
   unsigned int conf_eval_quad;
 
+  // Whether to run the conformality optimizer on the tracked map (implies
+  // conformality), the number of Fourier modes along the longer lattice
+  // axis, and the maximum number of outer iterations
+  bool conf_optimize;
+  unsigned int conf_modes;
+  unsigned int conf_max_iter;
+
   // Column names in provided visual variables file (CSV)
   std::optional<std::string> id_col;
   std::optional<std::string> area_col;

@@ -177,6 +177,23 @@ Arguments parse_arguments(const int argc, const char *argv[])
       "independent conformality evaluation cloud")
     .default_value(static_cast<unsigned int>(4))
     .scan<'u', unsigned int>();
+  arguments.add_argument("--conf_optimize")
+    .help(
+      "Boolean: Run the conformality optimizer on the tracked map "
+      "(experimental; implies --conformality)")
+    .default_value(false)
+    .implicit_value(true);
+  arguments.add_argument("--conf_modes")
+    .help(
+      "Unsigned int: Fourier modes of the conformality correction along the "
+      "longer lattice axis")
+    .default_value(static_cast<unsigned int>(16))
+    .scan<'u', unsigned int>();
+  arguments.add_argument("--conf_max_iter")
+    .help(
+      "Unsigned int: Maximum outer iterations of the conformality optimizer")
+    .default_value(static_cast<unsigned int>(200))
+    .scan<'u', unsigned int>();
 
   // Parse command-line arguments
   try {
@@ -244,11 +261,18 @@ Arguments parse_arguments(const int argc, const char *argv[])
 
   args.timeout_in_seconds = arguments.get<unsigned int>("--timeout");
 
-  args.conformality = arguments.get<bool>("--conformality");
+  args.conf_optimize = arguments.get<bool>("--conf_optimize");
+  args.conformality =
+    arguments.get<bool>("--conformality") || args.conf_optimize;
   args.conf_quad = arguments.get<unsigned int>("--conf_quad");
   args.conf_eval_quad = arguments.get<unsigned int>("--conf_eval_quad");
-  if (args.conformality && (args.conf_quad == 0 || args.conf_eval_quad == 0)) {
-    std::cerr << "ERROR: --conf_quad and --conf_eval_quad must be positive."
+  args.conf_modes = arguments.get<unsigned int>("--conf_modes");
+  args.conf_max_iter = arguments.get<unsigned int>("--conf_max_iter");
+  if (
+    args.conformality && (args.conf_quad == 0 || args.conf_eval_quad == 0 ||
+                          args.conf_modes == 0)) {
+    std::cerr << "ERROR: --conf_quad, --conf_eval_quad and --conf_modes must "
+                 "be positive."
               << std::endl;
     std::exit(17);
   }
