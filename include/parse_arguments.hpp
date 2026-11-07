@@ -101,6 +101,10 @@ struct Arguments {
   double conf_perturb;
   unsigned int conf_seed;
 
+  // Memory of the L-BFGS direction of the conformality optimizer (0: H1
+  // steepest descent)
+  unsigned int conf_lbfgs;
+
   // Column names in provided visual variables file (CSV)
   std::optional<std::string> id_col;
   std::optional<std::string> area_col;

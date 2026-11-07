@@ -1092,6 +1092,7 @@ void InsetState::run_conformality_optimization()
   conformality::OptimizerSettings settings;
   settings.max_iterations = args_.conf_max_iter;
   settings.stall_tol = args_.conf_stall_tol;
+  settings.lbfgs_memory = args_.conf_lbfgs;
   settings.on_iteration = [](const conformality::IterationRecord &r) {
     std::cerr << "  conformality iteration " << r.iteration << ": E "
               << r.energy << " -> " << r.energy_after << ", R " << r.r
@@ -1365,6 +1366,7 @@ void InsetState::run_conformality_optimization()
       {"ocean_weight", args_.conf_ocean_weight},
       {"random_start_strain", args_.conf_perturb},
       {"random_start_seed", args_.conf_seed},
+      {"lbfgs_memory", settings.lbfgs_memory},
       {"sigma", settings.sigma},
       {"max_iterations", settings.max_iterations},
       {"gradient_tol", settings.gradient_tol},

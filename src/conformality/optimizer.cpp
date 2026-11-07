@@ -62,12 +62,93 @@ OptimizationResult optimize(
     return result;
   }
 
+  // Inverse H1 metric, indexed like the coefficients
+  std::vector<double> inv_g(basis.n_modes());
+  for (std::size_t m = 1; m <= basis.mx(); ++m) {
+    for (std::size_t n = 1; n <= basis.my(); ++n) {
+      inv_g[basis.index(m, n)] = 1.0 / basis.h1_norm_sq(m, n);
+    }
+  }
+  auto dot = [](const std::vector<double> &a, const std::vector<double> &b) {
+    double sum = 0.0;
+    for (std::size_t i = 0; i < a.size(); ++i) {
+      sum += a[i] * b[i];
+    }
+    return sum;
+  };
+
+  // L-BFGS memory: steps s_i, gradient changes y_i and 1 / (s_i . y_i)
+  std::vector<std::vector<double>> mem_s;
+  std::vector<std::vector<double>> mem_y;
+  std::vector<double> mem_rho;
+  std::vector<double> previous_f;
+  std::vector<double> previous_s;
+
   double h = settings.initial_step;
   double r0 = 0.0;
   for (unsigned k = 0;; ++k) {
     const auto iteration_start = std::chrono::steady_clock::now();
     const std::vector<double> f = modal_derivatives(nodes, basis);
-    const H1Descent descent = h1_descent(basis, f);
+    H1Descent descent = h1_descent(basis, f);
+
+    // Quasi-Newton direction from the stored pairs
+    bool quasi_newton = false;
+    if (settings.lbfgs_memory > 0) {
+      if (!previous_s.empty()) {
+        std::vector<double> y(f.size());
+        for (std::size_t i = 0; i < f.size(); ++i) {
+          y[i] = f[i] - previous_f[i];
+        }
+        const double sy = dot(previous_s, y);
+        if (sy > 0.0) {
+          if (mem_s.size() == settings.lbfgs_memory) {
+            mem_s.erase(mem_s.begin());
+            mem_y.erase(mem_y.begin());
+            mem_rho.erase(mem_rho.begin());
+          }
+          mem_s.push_back(previous_s);
+          mem_y.push_back(std::move(y));
+          mem_rho.push_back(1.0 / sy);
+        }
+      }
+      if (!mem_s.empty()) {
+        std::vector<double> q = f;
+        std::vector<double> a(mem_s.size());
+        for (std::size_t i = mem_s.size(); i-- > 0;) {
+          a[i] = mem_rho[i] * dot(mem_s[i], q);
+          for (std::size_t j = 0; j < q.size(); ++j) {
+            q[j] -= a[i] * mem_y[i][j];
+          }
+        }
+        const std::vector<double> &yn = mem_y.back();
+        double y_ginv_y = 0.0;
+        for (std::size_t j = 0; j < yn.size(); ++j) {
+          y_ginv_y += yn[j] * yn[j] * inv_g[j];
+        }
+        const double gamma = 1.0 / (mem_rho.back() * y_ginv_y);
+        for (std::size_t j = 0; j < q.size(); ++j) {
+          q[j] *= gamma * inv_g[j];
+        }
+        for (std::size_t i = 0; i < mem_s.size(); ++i) {
+          const double b = mem_rho[i] * dot(mem_y[i], q);
+          for (std::size_t j = 0; j < q.size(); ++j) {
+            q[j] += (a[i] - b) * mem_s[i][j];
+          }
+        }
+        std::vector<double> p(q.size());
+        for (std::size_t j = 0; j < q.size(); ++j) {
+          p[j] = -q[j];
+        }
+        if (dot(p, f) < 0.0) {
+          descent.coeffs = std::move(p);
+          quasi_newton = true;
+        } else {
+          mem_s.clear();
+          mem_y.clear();
+          mem_rho.clear();
+        }
+      }
+    }
 
     // Slope of E along the velocity that will actually be integrated
     double slope = 0.0;
@@ -104,6 +185,12 @@ OptimizationResult optimize(
 
     if (!(h > 0.0)) {
       h = energy / descent.r;
+    }
+    // Steepest-descent duration, kept for iterations without a quasi-Newton
+    // direction
+    const double h_descent = h;
+    if (quasi_newton) {
+      h = 1.0;
     }
     h = std::min(h, settings.max_step);
     const double bound = velocity_gradient_bound(basis, descent.coeffs);
@@ -169,6 +256,13 @@ OptimizationResult optimize(
     }
 
     nodes = std::move(trial);
+    if (settings.lbfgs_memory > 0) {
+      previous_f = f;
+      previous_s = descent.coeffs;
+      for (double &x : previous_s) {
+        x *= h;
+      }
+    }
     const double previous = energy;
     energy = record.energy_after;
     result.final_energy = energy;
@@ -188,7 +282,10 @@ OptimizationResult optimize(
         break;
       }
     }
-    h = std::min(2.0 * h, settings.max_step);
+    // The next steepest-descent trial doubles the accepted duration; after a
+    // quasi-Newton step, it reuses the steepest-descent duration of this
+    // iteration
+    h = quasi_newton ? h_descent : std::min(2.0 * h, settings.max_step);
   }
   return result;
 }

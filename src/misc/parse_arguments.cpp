@@ -221,6 +221,12 @@ Arguments parse_arguments(const int argc, const char *argv[])
       "conformality optimization (0: none)")
     .default_value(0.0)
     .scan<'g', double>();
+  arguments.add_argument("--conf_lbfgs")
+    .help(
+      "Unsigned int: Memory of the L-BFGS direction of the conformality "
+      "optimizer (0: H1 steepest descent)")
+    .default_value(static_cast<unsigned int>(0))
+    .scan<'u', unsigned int>();
   arguments.add_argument("--conf_seed")
     .help("Unsigned int: Seed of the random correction (see --conf_perturb)")
     .default_value(static_cast<unsigned int>(1))
@@ -312,6 +318,7 @@ Arguments parse_arguments(const int argc, const char *argv[])
   args.conf_stall_tol = arguments.get<double>("--conf_stall_tol");
   args.conf_perturb = arguments.get<double>("--conf_perturb");
   args.conf_seed = arguments.get<unsigned int>("--conf_seed");
+  args.conf_lbfgs = arguments.get<unsigned int>("--conf_lbfgs");
   if (!(args.conf_alpha >= 0.0 && args.conf_alpha <= 1.0)) {
     std::cerr << "ERROR: --conf_alpha must be in [0, 1]." << std::endl;
     std::exit(17);

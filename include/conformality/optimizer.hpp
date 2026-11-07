@@ -100,6 +100,18 @@ struct OptimizerSettings {
   // A trial is rejected if max_j |det J_j / g0_j - 1| exceeds this value
   double det_drift_tol{1e-9};
 
+  // Number of (step, gradient change) pairs of a limited-memory BFGS
+  // direction; 0 gives H1 steepest descent. The pairs live in coefficient
+  // space: the step of an iteration is h times its coefficients, and the
+  // gradient change is the difference of the modal derivatives at the two
+  // states (the velocity fields are Eulerian, so no transport is needed).
+  // The initial inverse Hessian is the inverse H1 metric scaled by
+  // (s.y)/(y.G^-1 y) of the newest pair. Quasi-Newton trials start at
+  // duration 1; a pair with s.y <= 0 is skipped, and a direction that is not
+  // a descent direction falls back to steepest descent with an empty
+  // memory.
+  unsigned lbfgs_memory{0};
+
   ImplicitMidpointSettings solver{};
 
   // Called after every outer iteration with its record (e.g. to print

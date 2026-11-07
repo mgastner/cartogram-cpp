@@ -137,8 +137,9 @@ struct ShearRecovery {
 };
 
 // T0 = B o P with B from three modes of a 4 x 4 basis, optimized with
-// modes x modes retained modes
-ShearRecovery recover_shear_map(std::size_t modes)
+// modes x modes retained modes (L-BFGS with the given memory, 0 for
+// steepest descent)
+ShearRecovery recover_shear_map(std::size_t modes, unsigned lbfgs = 0)
 {
   constexpr double eps = 0.3;
   const SpectralBasis b_basis(1.0, 1.0, 4, 4);
@@ -159,6 +160,7 @@ ShearRecovery recover_shear_map(std::size_t modes)
 
   OptimizerSettings settings;
   settings.gradient_tol = 1e-6;
+  settings.lbfgs_memory = lbfgs;
   out.result = optimize(nodes, basis, settings);
   log_summary(out.result);
   check_history(out.result, settings.det_drift_tol);
@@ -192,6 +194,21 @@ BOOST_AUTO_TEST_CASE(recovers_shear_map_with_non_uniform_jacobian)
   // Refinement in the retained modes reduces the residual
   BOOST_TEST(std::abs(gap_fine) * 10.0 < std::abs(gap_coarse));
   BOOST_TEST(fine.d_final * 10.0 < coarse.d_final);
+}
+
+// The L-BFGS direction reaches the same minimizer as steepest descent, to
+// the same accuracy, and the accepted steps still preserve the Jacobian
+BOOST_AUTO_TEST_CASE(lbfgs_recovers_shear_map)
+{
+  const ShearRecovery descent = recover_shear_map(8);
+  const ShearRecovery lbfgs = recover_shear_map(8, 8);
+  BOOST_TEST_MESSAGE(
+    "steps: steepest descent " << descent.result.steps.size() << ", L-BFGS "
+                               << lbfgs.result.steps.size());
+  BOOST_TEST(
+    std::abs(lbfgs.result.final_energy - lbfgs.e_p) <=
+    1e-5 * (lbfgs.e_start - lbfgs.e_p));
+  BOOST_TEST(lbfgs.d_final <= 1e-3 * lbfgs.d_start);
 }
 
 // Replaying the logged steps on a copy of the starting nodes reproduces the
