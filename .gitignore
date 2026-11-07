@@ -106,3 +106,6 @@ venv
 
 # Ignore local Claude Code settings
 .claude/settings.local.json
+
+# Python bytecode of the research scripts
+__pycache__/
