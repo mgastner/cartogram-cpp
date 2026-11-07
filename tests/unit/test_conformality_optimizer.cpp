@@ -1,5 +1,6 @@
 #define BOOST_TEST_MODULE test_conformality_optimizer
 #include "conformality/flow.hpp"
+#include "conformality/mesh_check.hpp"
 #include "conformality/node_set.hpp"
 #include "conformality/objective.hpp"
 #include "conformality/optimizer.hpp"
@@ -138,6 +139,67 @@ BOOST_AUTO_TEST_CASE(stall_window_stops_slow_tail)
   BOOST_TEST(stalled.history.size() == 5u);
   BOOST_TEST(stalled.reason.find("last 3 iterations") != std::string::npos);
   BOOST_TEST(same_bits({stalled.final_energy}, {e[5]}));
+}
+
+// Without steps, every cell keeps its area up to rounding. A single smooth
+// area-preserving step bends the cell edges, so straight-edged image cells
+// have an O((h / s)^2) area error for cells of size h with s samples per
+// edge: in the asymptotic regime it falls by about 4 per halving of h and
+// per doubling of s.
+BOOST_AUTO_TEST_CASE(mesh_check_converges_at_second_order)
+{
+  const SpectralBasis basis(lx, ly, 2, 1);
+  const auto identity =
+    conformality::check_mesh_areas(basis, {}, lx, ly, 4, 4);
+  BOOST_TEST_REQUIRE(identity.size() == 5u);
+  for (const auto &c : identity) {
+    BOOST_TEST(c.max_rel_error < 1e-14);
+  }
+
+  // A generic smooth flow: no cell edge lies on a nodal line
+  const SpectralBasis generic(lx, ly, 3, 2);
+  std::mt19937 rng(11);
+  conformality::AcceptedStep step;
+  step.coeffs = random_coefficients(generic.n_modes(), 1e-2, rng);
+  step.h = 1.0;
+  step.n_substeps = 4;
+  const auto checks =
+    conformality::check_mesh_areas(generic, {step}, lx, ly, 4, 8);
+  for (const auto &c : checks) {
+    BOOST_TEST_MESSAGE(
+      c.cells_long << " cells, " << c.samples_per_edge
+                   << " samples per edge: " << c.max_rel_error);
+  }
+  BOOST_TEST_REQUIRE(checks.size() == 7u);
+
+  // Finer meshes with one sample per edge (4, 8, 16 and 32 cells): the
+  // largest error moves between cells until they are small compared with
+  // the length scale of the bending, so only the finest pair is asymptotic
+  for (std::size_t k = 1; k < 4; ++k) {
+    BOOST_TEST(checks[k].cells_long == 2 * checks[k - 1].cells_long);
+    BOOST_TEST(checks[k].max_rel_error < checks[k - 1].max_rel_error);
+  }
+  const double finest = checks[2].max_rel_error / checks[3].max_rel_error;
+  BOOST_TEST(finest > 3.0);
+  BOOST_TEST(finest < 5.0);
+
+  // Four cells with 1, 2, 4 and 8 samples per edge
+  const std::vector<double> samples = {
+    checks[0].max_rel_error,
+    checks[4].max_rel_error,
+    checks[5].max_rel_error,
+    checks[6].max_rel_error};
+  BOOST_TEST(checks[6].samples_per_edge == 8u);
+  for (std::size_t k = 1; k < samples.size(); ++k) {
+    const double ratio = samples[k - 1] / samples[k];
+    BOOST_TEST(ratio > 3.0);
+    BOOST_TEST(ratio < 5.0);
+  }
+
+  BOOST_CHECK_THROW(
+    static_cast<void>(
+      conformality::check_mesh_areas(generic, {step}, lx, ly, 4, 3)),
+    std::invalid_argument);
 }
 
 BOOST_AUTO_TEST_CASE(invalid_settings_are_rejected)

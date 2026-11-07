@@ -18,7 +18,9 @@ using conformality::Mat2;
 using conformality::modal_derivatives;
 using conformality::NodeSet;
 using conformality::objective;
+using conformality::objective_alpha;
 using conformality::SpectralBasis;
+using conformality::weight_by_g0;
 using conformality_test::asymmetric_map_nodes;
 using conformality_test::max_abs;
 using conformality_test::shear_map_nodes;
@@ -218,6 +220,52 @@ BOOST_AUTO_TEST_CASE(modal_derivatives_match_finite_differences)
         "mode (" << m << ", " << n << "): FD " << fd << ", F " << f[k]);
     }
   }
+}
+
+// Weighting by cartogram area (alpha = 1): objective_alpha() agrees bit for
+// bit with objective() of the reweighted nodes, and the modal derivatives
+// of the reweighted nodes are the derivatives of E_1, which here checks
+// modal_derivatives() with non-uniform weights. With constant g0, the
+// weighting changes nothing.
+BOOST_AUTO_TEST_CASE(cartogram_area_weighting)
+{
+  const double lx = 2.0, ly = 1.0;
+  const NodeSet nodes = asymmetric_map_nodes(lx, ly, 96, 48);
+  BOOST_TEST(objective_alpha(nodes, 0.0) == objective(nodes));
+  NodeSet weighted = nodes;
+  weight_by_g0(weighted, 1.0);
+  const double e1 = objective_alpha(nodes, 1.0);
+  BOOST_TEST(objective(weighted) == e1);
+  BOOST_TEST_MESSAGE("E_0 " << objective(nodes) << ", E_1 " << e1);
+  BOOST_TEST(std::abs(e1 - objective(nodes)) > 1e-3 * e1);
+
+  const SpectralBasis basis(lx, ly, 4, 3);
+  const std::vector<double> f = modal_derivatives(weighted, basis);
+  const double scale = max_abs(f);
+  for (std::size_t m = 1; m <= basis.mx(); ++m) {
+    for (std::size_t n = 1; n <= basis.my(); ++n) {
+      std::vector<double> c(basis.n_modes(), 0.0);
+      const std::size_t k = basis.index(m, n);
+      c[k] = 1.0;
+      const double k_sq =
+        basis.kx(m) * basis.kx(m) + basis.ky(n) * basis.ky(n);
+      const double eta = 1e-4 / k_sq;
+      const double ep =
+        objective_alpha(perturbed_nodes(nodes, basis, c, eta), 1.0);
+      const double em =
+        objective_alpha(perturbed_nodes(nodes, basis, c, -eta), 1.0);
+      const double fd = (ep - em) / (2 * eta);
+      BOOST_TEST(
+        std::abs(fd - f[k]) < 1e-6 * scale,
+        "mode (" << m << ", " << n << "): FD " << fd << ", F " << f[k]);
+    }
+  }
+
+  NodeSet flat = nodes;
+  flat.g0.assign(flat.size(), 2.5);
+  BOOST_TEST(
+    objective_alpha(flat, 1.0) == objective(flat),
+    boost::test_tools::tolerance(1e-14));
 }
 
 // The descent velocity has initial slope -R, both as the sum c . F and as a

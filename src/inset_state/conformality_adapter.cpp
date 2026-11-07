@@ -3,6 +3,7 @@
 // flattening pass with the same piecewise-affine map that projects the
 // polygons, and reports diagnostics of the recorded map.
 
+#include "conformality/mesh_check.hpp"
 #include "conformality/objective.hpp"
 #include "conformality/optimizer.hpp"
 #include "conformality/parallel.hpp"
@@ -180,6 +181,12 @@ struct CloudSummary {
   double total_det_rel_error{0.0};
   double energy{0.0};
   double energy_land{0.0};
+  double energy_ocean{0.0};
+
+  // E_1, the same energy weighted by area on the cartogram (alpha = 1)
+  double energy_alpha1{0.0};
+  double energy_alpha1_land{0.0};
+  double energy_alpha1_ocean{0.0};
   double max_region_rel_error{0.0};
   double mean_region_rel_error{0.0};
   int worst_region{-1};
@@ -197,6 +204,7 @@ CloudSummary summarize_cloud(
   double total = 0.0;
   std::vector<double> region_sum(geo_divs.size(), 0.0);
   NodeSet land;
+  NodeSet ocean;
   for (std::size_t j = 0; j < nodes.size(); ++j) {
     const double d = det(nodes.jac[j]);
     s.min_det = std::min(s.min_det, d);
@@ -206,16 +214,21 @@ CloudSummary summarize_cloud(
     total += nodes.w[j] * d;
     if (region[j] >= 0) {
       region_sum[static_cast<std::size_t>(region[j])] += nodes.w[j] * d;
-      land.x.push_back(nodes.x[j]);
-      land.w.push_back(nodes.w[j]);
-      land.g0.push_back(nodes.g0[j]);
-      land.y.push_back(nodes.y[j]);
-      land.jac.push_back(nodes.jac[j]);
     }
+    NodeSet &part = (region[j] >= 0) ? land : ocean;
+    part.x.push_back(nodes.x[j]);
+    part.w.push_back(nodes.w[j]);
+    part.g0.push_back(nodes.g0[j]);
+    part.y.push_back(nodes.y[j]);
+    part.jac.push_back(nodes.jac[j]);
   }
   s.total_det_rel_error = total / domain_area - 1.0;
   s.energy = conformality::objective(nodes);
   s.energy_land = conformality::objective(land);
+  s.energy_ocean = conformality::objective(ocean);
+  s.energy_alpha1 = conformality::objective_alpha(nodes, 1.0);
+  s.energy_alpha1_land = conformality::objective_alpha(land, 1.0);
+  s.energy_alpha1_ocean = conformality::objective_alpha(ocean, 1.0);
 
   // Area-weighted mean and maximum of the relative error of the quadrature
   // of det J over each region, compared with the area of the output polygon
@@ -251,6 +264,10 @@ nlohmann::json cloud_to_json(
     {"sum_w_det_J_over_area_minus_1", s.total_det_rel_error},
     {"E0", s.energy},
     {"E0_land", s.energy_land},
+    {"E0_ocean", s.energy_ocean},
+    {"E1", s.energy_alpha1},
+    {"E1_land", s.energy_alpha1_land},
+    {"E1_ocean", s.energy_alpha1_ocean},
     {"region_area_rel_error_max", s.max_region_rel_error},
     {"region_area_rel_error_area_weighted_mean", s.mean_region_rel_error},
     {"region_area_worst",
@@ -412,8 +429,28 @@ nlohmann::json fd_to_json(const FdCheck &c, const ConformalityTracers &conf)
     {"n_crossing", c.n_crossing}};
 }
 
-// Distortion measures of Gastner, Seguy and More (2018), Table 1, over the
-// nodes (uniform in the original map, as in that table) or over land only
+// Part of the rectangle over which distortion is summarized. Land is the
+// union of the GeoDivs in the original map; ocean is everything else,
+// including the padding.
+enum class Subset { rectangle, land, ocean };
+
+bool in_subset(const int region, const Subset subset)
+{
+  switch (subset) {
+  case Subset::land:
+    return region >= 0;
+  case Subset::ocean:
+    return region < 0;
+  case Subset::rectangle:
+    break;
+  }
+  return true;
+}
+
+// Distortion measures of Gastner, Seguy and More (2018), Table 1: the
+// log axis ratio e = ln(a/b) and the maximum angular distortion
+// 2 arcsin((a - b)/(a + b)), averaged uniformly over the nodes (uniform in
+// the original map, as in that table), with quantiles and maxima
 struct DistortionStats {
   std::size_t n{0};
   double e_mean{0.0};
@@ -423,47 +460,58 @@ struct DistortionStats {
   double e_p99{0.0};
   double angular_mean{0.0};
   double angular_max{0.0};
+  double angular_p50{0.0};
+  double angular_p90{0.0};
+  double angular_p99{0.0};
 };
+
+// Nearest-rank quantile of sorted values
+double quantile(const std::vector<double> &sorted, const double p)
+{
+  const auto i =
+    static_cast<std::size_t>(p * static_cast<double>(sorted.size() - 1) + 0.5);
+  return sorted[std::min(i, sorted.size() - 1)];
+}
 
 DistortionStats distortion_stats(
   const NodeSet &nodes,
   const std::vector<int> &region,
-  const bool land_only)
+  const Subset subset)
 {
   DistortionStats d;
   std::vector<double> e;
+  std::vector<double> angular;
   e.reserve(nodes.size());
-  double angular_sum = 0.0;
+  angular.reserve(nodes.size());
   for (std::size_t j = 0; j < nodes.size(); ++j) {
-    if (land_only && region[j] < 0) {
+    if (!in_subset(region[j], subset)) {
       continue;
     }
-    const double ej = conformality::log_axis_ratio(nodes.jac[j]);
-    const double aj = conformality::max_angular_distortion(nodes.jac[j]);
-    e.push_back(ej);
-    angular_sum += aj;
-    d.angular_max = std::max(d.angular_max, aj);
+    e.push_back(conformality::log_axis_ratio(nodes.jac[j]));
+    angular.push_back(conformality::max_angular_distortion(nodes.jac[j]));
   }
   d.n = e.size();
   if (e.empty()) {
     return d;
   }
-  double sum = 0.0;
-  for (const double v : e) {
-    sum += v;
+  double e_sum = 0.0;
+  double angular_sum = 0.0;
+  for (std::size_t k = 0; k < e.size(); ++k) {
+    e_sum += e[k];
+    angular_sum += angular[k];
   }
-  d.e_mean = sum / static_cast<double>(e.size());
+  d.e_mean = e_sum / static_cast<double>(e.size());
   d.angular_mean = angular_sum / static_cast<double>(e.size());
   std::sort(e.begin(), e.end());
-  auto quantile = [&](const double p) {
-    const auto i =
-      static_cast<std::size_t>(p * static_cast<double>(e.size() - 1) + 0.5);
-    return e[std::min(i, e.size() - 1)];
-  };
-  d.e_p50 = quantile(0.5);
-  d.e_p90 = quantile(0.9);
-  d.e_p99 = quantile(0.99);
+  std::sort(angular.begin(), angular.end());
+  d.e_p50 = quantile(e, 0.5);
+  d.e_p90 = quantile(e, 0.9);
+  d.e_p99 = quantile(e, 0.99);
   d.e_max = e.back();
+  d.angular_p50 = quantile(angular, 0.5);
+  d.angular_p90 = quantile(angular, 0.9);
+  d.angular_p99 = quantile(angular, 0.99);
+  d.angular_max = angular.back();
   return d;
 }
 
@@ -477,7 +525,71 @@ nlohmann::json distortion_to_json(const DistortionStats &d)
     {"e_p90", d.e_p90},
     {"e_p99", d.e_p99},
     {"angular_mean", d.angular_mean},
-    {"angular_max", d.angular_max}};
+    {"angular_max", d.angular_max},
+    {"angular_p50", d.angular_p50},
+    {"angular_p90", d.angular_p90},
+    {"angular_p99", d.angular_p99}};
+}
+
+// Distortion of all subsets, keyed as in the JSON reports
+struct SubsetDistortion {
+  DistortionStats rectangle;
+  DistortionStats land;
+  DistortionStats ocean;
+};
+
+SubsetDistortion subset_distortion(
+  const NodeSet &nodes,
+  const std::vector<int> &region)
+{
+  return {
+    distortion_stats(nodes, region, Subset::rectangle),
+    distortion_stats(nodes, region, Subset::land),
+    distortion_stats(nodes, region, Subset::ocean)};
+}
+
+// Mean ln(a/b) and mean excess MIPS energy of the evaluation nodes in each
+// cell of the distortion field (NaN, written as null, for a cell without
+// nodes)
+void distortion_field(
+  const ConformalityTracers &conf,
+  std::vector<double> &e_mean,
+  std::vector<double> &m_mean)
+{
+  const std::size_t n_cells =
+    static_cast<std::size_t>(conf.field_nx) * conf.field_ny;
+  std::vector<double> e_sum(n_cells, 0.0);
+  std::vector<double> m_sum(n_cells, 0.0);
+  std::vector<std::size_t> count(n_cells, 0);
+  const NodeSet &nodes = conf.eval_nodes;
+  for (std::size_t j = 0; j < nodes.size(); ++j) {
+    const auto i = std::min<std::size_t>(
+      conf.field_nx - 1,
+      static_cast<std::size_t>(nodes.x[j].x / conf.field_cell));
+    const auto k = std::min<std::size_t>(
+      conf.field_ny - 1,
+      static_cast<std::size_t>(nodes.x[j].y / conf.field_cell));
+    const std::size_t c = k * conf.field_nx + i;
+    e_sum[c] += conformality::log_axis_ratio(nodes.jac[j]);
+    m_sum[c] += conformality::excess_mips(nodes.jac[j]);
+    ++count[c];
+  }
+  e_mean.assign(n_cells, std::numeric_limits<double>::quiet_NaN());
+  m_mean.assign(n_cells, std::numeric_limits<double>::quiet_NaN());
+  for (std::size_t c = 0; c < n_cells; ++c) {
+    if (count[c] > 0) {
+      e_mean[c] = e_sum[c] / static_cast<double>(count[c]);
+      m_mean[c] = m_sum[c] / static_cast<double>(count[c]);
+    }
+  }
+}
+
+nlohmann::json subset_distortion_to_json(const SubsetDistortion &d)
+{
+  return {
+    {"rectangle", distortion_to_json(d.rectangle)},
+    {"land", distortion_to_json(d.land)},
+    {"ocean", distortion_to_json(d.ocean)}};
 }
 
 }  // namespace
@@ -563,6 +675,18 @@ void InsetState::seed_conformality_tracers()
   }
   for (double c = 0.0; c <= ly + 1e-9; c += spacing) {
     conf_.grid_lines.push_back(sampled_line(false, std::min(c, ly)));
+  }
+
+  // Corners of the distortion-field cells
+  const double cell = conf_.field_cell;
+  conf_.field_nx = static_cast<unsigned int>(std::ceil(lx / cell));
+  conf_.field_ny = static_cast<unsigned int>(std::ceil(ly / cell));
+  for (unsigned int k = 0; k <= conf_.field_ny; ++k) {
+    for (unsigned int i = 0; i <= conf_.field_nx; ++i) {
+      conf_.field_corners.push_back(
+        {std::min(lx, static_cast<double>(i) * cell),
+         std::min(ly, static_cast<double>(k) * cell)});
+    }
   }
 
   // Input polygons, for figures of the original map
@@ -655,7 +779,8 @@ void InsetState::update_conformality_tracers()
         &conf_.fd_e1,
         &conf_.fd_e2,
         &conf_.fd_e1h,
-        &conf_.fd_e2h}) {
+        &conf_.fd_e2h,
+        &conf_.field_corners}) {
     for (auto &p : *pts) {
       p = map_point(p, nullptr);
     }
@@ -688,7 +813,8 @@ void InsetState::scale_conformality_tracers(const double factor)
         &conf_.fd_e1,
         &conf_.fd_e2,
         &conf_.fd_e1h,
-        &conf_.fd_e2h}) {
+        &conf_.fd_e2h,
+        &conf_.field_corners}) {
     for (auto &p : *pts) {
       p = {factor * p.x, factor * p.y};
     }
@@ -710,6 +836,8 @@ void InsetState::finalize_conformality_t0()
     }
   }
   conf_.grid_lines_t0 = conf_.grid_lines;
+  conf_.field_corners_t0 = conf_.field_corners;
+  distortion_field(conf_, conf_.field_e_t0, conf_.field_m_t0);
 }
 
 void InsetState::report_conformality_t0() const
@@ -738,7 +866,13 @@ void InsetState::report_conformality_t0() const
             << " x " << ly_ << std::endl;
   std::cerr << "  E0(T0) = " << opt.energy << " (evaluation cloud "
             << eval.energy << "), on land " << opt.energy_land << " ("
-            << eval.energy_land << ")" << std::endl;
+            << eval.energy_land << "), on ocean " << opt.energy_ocean << " ("
+            << eval.energy_ocean << ")" << std::endl;
+  std::cerr << "  E1(T0) = " << opt.energy_alpha1 << " (evaluation cloud "
+            << eval.energy_alpha1 << "), on land " << opt.energy_alpha1_land
+            << " (" << eval.energy_alpha1_land << "), on ocean "
+            << opt.energy_alpha1_ocean << " (" << eval.energy_alpha1_ocean
+            << ")" << std::endl;
   std::cerr << "  min det J = " << opt.min_det
             << ", sum w det J / area - 1 = " << opt.total_det_rel_error << " ("
             << eval.total_det_rel_error << ")" << std::endl;
@@ -772,127 +906,14 @@ void InsetState::report_conformality_t0() const
     {"boundary", boundary_to_json(bc, conf_.boundary.size())},
     {"finite_differences", fd_to_json(fc, conf_)},
     {"distortion",
-     {{"rectangle",
-       distortion_to_json(
-         distortion_stats(conf_.eval_nodes, conf_.eval_region, false))},
-      {"land",
-       distortion_to_json(
-         distortion_stats(conf_.eval_nodes, conf_.eval_region, true))}}}};
+     subset_distortion_to_json(
+       subset_distortion(conf_.eval_nodes, conf_.eval_region))}};
   std::ofstream out(inset_name_ + "_conformality_t0.json");
   out << std::setw(2) << report << std::endl;
 }
 
 namespace
 {
-
-// Cell areas of a regular mesh of the final lattice after replaying the
-// correction A. Each cell boundary is sampled at s points per edge, and the
-// image cell is the polygon through the replayed samples. Besides any loss
-// of area preservation by A, the polygon misses the curvature of the
-// images of the edges, an O((h / s)^2) error for cells of size h. Two
-// refinements separate the two:
-//   - finer meshes with s = 1: the error falls by about 4 per halving of h
-//     once in the asymptotic regime;
-//   - more samples per edge on a fixed mesh: the error tends to the area
-//     error of A itself.
-struct MeshAreaCheck {
-  std::size_t cells_long{0};
-  std::size_t samples_per_edge{1};
-  std::size_t n_cells{0};
-  double max_rel_error{0.0};
-  double mean_rel_error{0.0};
-};
-
-// Replays A once on a lattice with base_cells * max_refinement intervals
-// along the longer side (max_refinement a power of 2) and returns the
-// checks for meshes of base_cells * r cells with s = 1, followed by the
-// mesh of base_cells cells with s = r, for r = 1, 2, 4, ..., max_refinement
-std::vector<MeshAreaCheck> check_mesh_areas(
-  const conformality::SpectralBasis &basis,
-  const std::vector<conformality::AcceptedStep> &steps,
-  const double lx,
-  const double ly,
-  const std::size_t base_cells,
-  const std::size_t max_refinement)
-{
-  const double longer = std::max(lx, ly);
-  const auto ncx = std::max<std::size_t>(
-    1,
-    static_cast<std::size_t>(
-      std::lround(static_cast<double>(base_cells) * lx / longer)));
-  const auto ncy = std::max<std::size_t>(
-    1,
-    static_cast<std::size_t>(
-      std::lround(static_cast<double>(base_cells) * ly / longer)));
-  const std::size_t nx = ncx * max_refinement;
-  const std::size_t ny = ncy * max_refinement;
-  const double fx = lx / static_cast<double>(nx);
-  const double fy = ly / static_cast<double>(ny);
-  std::vector<Vec2> pts;
-  pts.reserve((nx + 1) * (ny + 1));
-  for (std::size_t i = 0; i <= nx; ++i) {
-    for (std::size_t j = 0; j <= ny; ++j) {
-      pts.push_back(
-        {static_cast<double>(i) * fx, static_cast<double>(j) * fy});
-    }
-  }
-  static_cast<void>(conformality::replay(pts, nullptr, basis, steps));
-  auto at = [&](const std::size_t i, const std::size_t j) {
-    return pts[i * (ny + 1) + j];
-  };
-
-  // Mesh of cells spanning `stride` lattice intervals, with boundary
-  // samples every `step` intervals
-  auto evaluate = [&](const std::size_t stride, const std::size_t step) {
-    MeshAreaCheck m;
-    m.cells_long = base_cells * (max_refinement / stride);
-    m.samples_per_edge = stride / step;
-    m.n_cells = (nx / stride) * (ny / stride);
-    const double nominal =
-      static_cast<double>(stride) * fx * static_cast<double>(stride) * fy;
-    double sum = 0.0;
-    for (std::size_t i0 = 0; i0 < nx; i0 += stride) {
-      for (std::size_t j0 = 0; j0 < ny; j0 += stride) {
-
-        // Shoelace formula relative to the first corner, counterclockwise
-        const Vec2 origin = at(i0, j0);
-        double twice_area = 0.0;
-        Vec2 prev{0.0, 0.0};
-        auto visit = [&](const std::size_t i, const std::size_t j) {
-          const Vec2 q = at(i, j);
-          const Vec2 p{q.x - origin.x, q.y - origin.y};
-          twice_area += prev.x * p.y - p.x * prev.y;
-          prev = p;
-        };
-        for (std::size_t k = step; k <= stride; k += step) {
-          visit(i0 + k, j0);
-        }
-        for (std::size_t k = step; k <= stride; k += step) {
-          visit(i0 + stride, j0 + k);
-        }
-        for (std::size_t k = step; k <= stride; k += step) {
-          visit(i0 + stride - k, j0 + stride);
-        }
-        for (std::size_t k = step; k <= stride; k += step) {
-          visit(i0, j0 + stride - k);
-        }
-        const double rel = std::abs(0.5 * twice_area / nominal - 1.0);
-        m.max_rel_error = std::max(m.max_rel_error, rel);
-        sum += rel;
-      }
-    }
-    m.mean_rel_error = sum / static_cast<double>(m.n_cells);
-    return m;
-  };
-  std::vector<MeshAreaCheck> checks;
-  for (std::size_t r = 1; r <= max_refinement; r *= 2) {
-    checks.push_back(evaluate(max_refinement / r, max_refinement / r));
-  }
-  for (std::size_t r = 2; r <= max_refinement; r *= 2) {
-    checks.push_back(evaluate(max_refinement, max_refinement / r));
-  }
-  return checks;
-}
 
 // Densifies a ring so that no segment is longer than max_len. The points
 // inside a segment are computed from its lexicographically smaller end, so
@@ -1022,14 +1043,15 @@ conformality::FlowStats replay_sets(
   return stats;
 }
 
-nlohmann::json mesh_to_json(const MeshAreaCheck &m)
+nlohmann::json mesh_to_json(const conformality::MeshAreaCheck &m)
 {
   return {
     {"cells_long", m.cells_long},
     {"samples_per_edge", m.samples_per_edge},
     {"n_cells", m.n_cells},
     {"max_rel_area_error", m.max_rel_error},
-    {"mean_rel_area_error", m.mean_rel_error}};
+    {"mean_rel_area_error", m.mean_rel_error},
+    {"worst_cell_corner", {m.worst_x, m.worst_y}}};
 }
 
 }  // namespace
@@ -1066,13 +1088,13 @@ void InsetState::run_conformality_optimization()
               << " backtracks, " << r.seconds << " s" << std::endl;
   };
 
+  const double alpha = static_cast<double>(args_.conf_alpha);
   std::cerr << "\nConformality optimization for inset " << pos_ << ": " << mx
             << " x " << my << " modes, " << conf_.nodes.size() << " nodes, "
-            << conformality::max_threads() << " threads" << std::endl;
-  const DistortionStats rect_before =
-    distortion_stats(conf_.eval_nodes, conf_.eval_region, false);
-  const DistortionStats land_before =
-    distortion_stats(conf_.eval_nodes, conf_.eval_region, true);
+            << conformality::max_threads() << " threads, objective E_"
+            << args_.conf_alpha << std::endl;
+  const SubsetDistortion before =
+    subset_distortion(conf_.eval_nodes, conf_.eval_region);
   const CloudSummary opt_before =
     summarize_cloud(conf_.nodes, conf_.region, geo_divs_, domain_area);
   const CloudSummary eval_before = summarize_cloud(
@@ -1083,8 +1105,15 @@ void InsetState::run_conformality_optimization()
 
   timer.start("Conformality optimization");
   const auto t0 = std::chrono::steady_clock::now();
+  // For alpha = 1, the optimizer sees the weights w g0 (g0 is fixed, so its
+  // objective is E_1); the base weights are restored for every summary
+  const std::vector<double> base_weights = conf_.nodes.w;
+  if (alpha != 0.0) {
+    conformality::weight_by_g0(conf_.nodes, alpha);
+  }
   const conformality::OptimizationResult result =
     conformality::optimize(conf_.nodes, basis, settings);
+  conf_.nodes.w = base_weights;
   const auto t1 = std::chrono::steady_clock::now();
 
   // Apply the same correction to every other tracer set
@@ -1120,7 +1149,8 @@ void InsetState::run_conformality_optimization()
     &conf_.fd_e1,
     &conf_.fd_e2,
     &conf_.fd_e1h,
-    &conf_.fd_e2h};
+    &conf_.fd_e2h,
+    &conf_.field_corners};
   for (auto &line : conf_.grid_lines) {
     passive.push_back(&line);
   }
@@ -1145,18 +1175,16 @@ void InsetState::run_conformality_optimization()
   conf_.t_ring_region = std::move(ring_region);
   conf_.optimized = true;
 
-  const std::vector<MeshAreaCheck> mesh_checks =
-    check_mesh_areas(basis, result.steps, lx, ly, 64, 8);
+  const std::vector<conformality::MeshAreaCheck> mesh_checks =
+    conformality::check_mesh_areas(basis, result.steps, lx, ly, 64, 8);
   const auto t2 = std::chrono::steady_clock::now();
   timer.stop("Conformality optimization");
 
   const double optimize_seconds =
     std::chrono::duration<double>(t1 - t0).count();
   const double replay_seconds = std::chrono::duration<double>(t2 - t1).count();
-  const DistortionStats rect_after =
-    distortion_stats(conf_.eval_nodes, conf_.eval_region, false);
-  const DistortionStats land_after =
-    distortion_stats(conf_.eval_nodes, conf_.eval_region, true);
+  const SubsetDistortion after =
+    subset_distortion(conf_.eval_nodes, conf_.eval_region);
   const CloudSummary opt_after =
     summarize_cloud(conf_.nodes, conf_.region, geo_divs_, domain_area);
   const CloudSummary eval_after = summarize_cloud(
@@ -1177,10 +1205,21 @@ void InsetState::run_conformality_optimization()
   std::cerr << "  E0: " << opt_before.energy << " -> " << opt_after.energy
             << " (evaluation cloud " << eval_before.energy << " -> "
             << eval_after.energy << "); on land " << eval_before.energy_land
-            << " -> " << eval_after.energy_land << std::endl;
-  std::cerr << "  mean ln(a/b): rectangle " << rect_before.e_mean << " -> "
-            << rect_after.e_mean << ", land " << land_before.e_mean << " -> "
-            << land_after.e_mean << std::endl;
+            << " -> " << eval_after.energy_land << ", on ocean "
+            << eval_before.energy_ocean << " -> " << eval_after.energy_ocean
+            << std::endl;
+  std::cerr << "  E1: " << opt_before.energy_alpha1 << " -> "
+            << opt_after.energy_alpha1 << " (evaluation cloud "
+            << eval_before.energy_alpha1 << " -> " << eval_after.energy_alpha1
+            << "); on land " << eval_before.energy_alpha1_land << " -> "
+            << eval_after.energy_alpha1_land << ", on ocean "
+            << eval_before.energy_alpha1_ocean << " -> "
+            << eval_after.energy_alpha1_ocean << std::endl;
+  std::cerr << "  mean ln(a/b): rectangle " << before.rectangle.e_mean
+            << " -> " << after.rectangle.e_mean << ", land "
+            << before.land.e_mean << " -> " << after.land.e_mean << ", ocean "
+            << before.ocean.e_mean << " -> " << after.ocean.e_mean
+            << std::endl;
   std::cerr << "  max |det J / g0 - 1|: " << drift_opt << " (evaluation cloud "
             << drift_eval << ")" << std::endl;
   std::cerr << "  check-mesh cell areas, max rel. error:";
@@ -1236,6 +1275,7 @@ void InsetState::run_conformality_optimization()
     {"inset", pos_},
     {"lattice", {lx_, ly_}},
     {"modes", {mx, my}},
+    {"alpha", args_.conf_alpha},
     {"coefficient_index", "c[(m - 1) * my + (n - 1)] for mode (m, n)"},
     {"solver",
      {{"residual_tol", solver.residual_tol},
@@ -1266,7 +1306,8 @@ void InsetState::run_conformality_optimization()
     {"lattice", {lx_, ly_}},
     {"modes", {mx, my}},
     {"settings",
-     {{"sigma", settings.sigma},
+     {{"alpha", args_.conf_alpha},
+      {"sigma", settings.sigma},
       {"max_iterations", settings.max_iterations},
       {"gradient_tol", settings.gradient_tol},
       {"energy_tol", settings.energy_tol},
@@ -1288,14 +1329,16 @@ void InsetState::run_conformality_optimization()
      {{"optimization_cloud", cloud_to_json(opt_before, geo_divs_, conf_.quad)},
       {"evaluation_cloud",
        cloud_to_json(eval_before, geo_divs_, conf_.eval_quad)},
-      {"distortion_rectangle", distortion_to_json(rect_before)},
-      {"distortion_land", distortion_to_json(land_before)}}},
+      {"distortion_rectangle", distortion_to_json(before.rectangle)},
+      {"distortion_land", distortion_to_json(before.land)},
+      {"distortion_ocean", distortion_to_json(before.ocean)}}},
     {"after",
      {{"optimization_cloud", cloud_to_json(opt_after, geo_divs_, conf_.quad)},
       {"evaluation_cloud",
        cloud_to_json(eval_after, geo_divs_, conf_.eval_quad)},
-      {"distortion_rectangle", distortion_to_json(rect_after)},
-      {"distortion_land", distortion_to_json(land_after)}}},
+      {"distortion_rectangle", distortion_to_json(after.rectangle)},
+      {"distortion_land", distortion_to_json(after.land)},
+      {"distortion_ocean", distortion_to_json(after.ocean)}}},
     {"checks",
      {{"max_det_drift_optimization_cloud", drift_opt},
       {"max_det_drift_evaluation_cloud", drift_eval},
@@ -1312,7 +1355,8 @@ void InsetState::run_conformality_optimization()
 namespace
 {
 
-// Coordinates rounded to 1e-4 lattice units keep the plot data compact
+// Coordinates rounded to 1e-4 lattice units keep the graticule and field
+// data compact
 nlohmann::json points_to_json(const std::vector<Vec2> &pts)
 {
   nlohmann::json out = nlohmann::json::array();
@@ -1322,13 +1366,19 @@ nlohmann::json points_to_json(const std::vector<Vec2> &pts)
   return out;
 }
 
+// Polygon rings keep full precision: rounding can make nearly touching
+// edges cross, which breaks polygon measures computed from these rings
 nlohmann::json rings_to_json(
   const std::vector<std::vector<Vec2>> &rings,
   const std::vector<int> &region)
 {
   nlohmann::json out = nlohmann::json::array();
   for (std::size_t i = 0; i < rings.size(); ++i) {
-    out.push_back({{"region", region[i]}, {"ring", points_to_json(rings[i])}});
+    nlohmann::json ring = nlohmann::json::array();
+    for (const Vec2 p : rings[i]) {
+      ring.push_back({p.x, p.y});
+    }
+    out.push_back({{"region", region[i]}, {"ring", ring}});
   }
   return out;
 }
@@ -1370,12 +1420,44 @@ void InsetState::write_conformality_plot_data() const
   for (const auto &gd : geo_divs_) {
     names.push_back(gd.id());
   }
+
+  // Distortion field of T0 and, after optimization, of T, with the images
+  // of the cell corners under both maps
+  auto values_to_json = [](const std::vector<double> &v) {
+    nlohmann::json out = nlohmann::json::array();
+    for (const double x : v) {
+      if (std::isfinite(x)) {
+        out.push_back(std::round(x * 1e5) / 1e5);
+      } else {
+        out.push_back(nullptr);
+      }
+    }
+    return out;
+  };
+  std::vector<double> field_e_t;
+  std::vector<double> field_m_t;
+  if (conf_.optimized) {
+    distortion_field(conf_, field_e_t, field_m_t);
+  }
+  const nlohmann::json field = {
+    {"cell", conf_.field_cell},
+    {"shape", {conf_.field_nx, conf_.field_ny}},
+    {"corner_order", "row by row from y = 0, (nx + 1) x (ny + 1) corners"},
+    {"corners_t0", points_to_json(conf_.field_corners_t0)},
+    {"corners_t",
+     conf_.optimized ? points_to_json(conf_.field_corners) : nlohmann::json()},
+    {"e_t0", values_to_json(conf_.field_e_t0)},
+    {"m_t0", values_to_json(conf_.field_m_t0)},
+    {"e_t", conf_.optimized ? values_to_json(field_e_t) : nlohmann::json()},
+    {"m_t", conf_.optimized ? values_to_json(field_m_t) : nlohmann::json()}};
+
   const nlohmann::json data = {
     {"inset", pos_},
     {"initial_lattice", {conf_.lx0, conf_.ly0}},
     {"final_lattice", {lx_, ly_}},
     {"grid_spacing", conf_.grid_spacing},
     {"region_names", names},
+    {"field", field},
     {"grid",
      {{"t0", lines_to_json(conf_.grid_lines_t0)},
       {"t",

@@ -88,6 +88,35 @@ double objective(const NodeSet &nodes)
   return e.value() / z;
 }
 
+double objective_alpha(const NodeSet &nodes, const double alpha)
+{
+  nodes.check_consistent();
+  CompensatedSum z;
+  CompensatedSum e;
+  bool inverted = false;
+  for (std::size_t j = 0; j < nodes.size(); ++j) {
+    const double w = nodes.w[j] * std::pow(nodes.g0[j], alpha);
+    z.add(w);
+    if (!(det(nodes.jac[j]) > 0.0)) {
+      inverted = true;
+      continue;
+    }
+    e.add(w * excess_mips(nodes.jac[j]));
+  }
+  if (inverted || !(z.value() > 0.0)) {
+    return std::numeric_limits<double>::infinity();
+  }
+  return e.value() / z.value();
+}
+
+void weight_by_g0(NodeSet &nodes, const double alpha)
+{
+  nodes.check_consistent();
+  for (std::size_t j = 0; j < nodes.size(); ++j) {
+    nodes.w[j] *= std::pow(nodes.g0[j], alpha);
+  }
+}
+
 std::vector<double> modal_derivatives(
   const NodeSet &nodes,
   const SpectralBasis &basis)

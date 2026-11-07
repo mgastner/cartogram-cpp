@@ -87,10 +87,13 @@ struct Arguments {
 
   // Whether to run the conformality optimizer on the tracked map (implies
   // conformality), the number of Fourier modes along the longer lattice
-  // axis, and the maximum number of outer iterations
+  // axis, the maximum number of outer iterations, and the exponent alpha of
+  // the weight g0^alpha in the objective (0: input-map area, 1: cartogram
+  // area)
   bool conf_optimize;
   unsigned int conf_modes;
   unsigned int conf_max_iter;
+  unsigned int conf_alpha;
 
   // Column names in provided visual variables file (CSV)
   std::optional<std::string> id_col;

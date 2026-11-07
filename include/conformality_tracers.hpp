@@ -68,6 +68,21 @@ struct ConformalityTracers {
   std::vector<std::vector<conformality::Vec2>> grid_lines;
   std::vector<std::vector<conformality::Vec2>> grid_lines_t0;
 
+  // Distortion field for figures, on cells of field_cell x field_cell units
+  // of the initial lattice (field_nx x field_ny cells, the last row and
+  // column possibly narrower). field_corners holds the current images of
+  // the cell corners, row by row from y = 0, and field_corners_t0 a
+  // snapshot after the last pass. field_e_t0 and field_m_t0 hold the mean
+  // ln(a/b) and mean excess MIPS energy of T0 over the evaluation nodes in
+  // each cell, in the same order.
+  double field_cell{2.0};
+  unsigned int field_nx{0};
+  unsigned int field_ny{0};
+  std::vector<conformality::Vec2> field_corners;
+  std::vector<conformality::Vec2> field_corners_t0;
+  std::vector<double> field_e_t0;
+  std::vector<double> field_m_t0;
+
   // Rings of the input polygons at seeding time, with the index of their
   // GeoDiv, for figures of the original map
   std::vector<std::vector<conformality::Vec2>> input_rings;

@@ -30,6 +30,19 @@ namespace conformality
 // Uses compensated summation.
 [[nodiscard]] double objective(const NodeSet &nodes);
 
+// Mean excess MIPS energy with each weight multiplied by g0^alpha,
+//   E_alpha = sum_j w_j g0_j^alpha m(J_j) / sum_j w_j g0_j^alpha.
+// For alpha = 0 it equals objective(). For alpha = 1 it averages over the
+// cartogram, because w_j g0_j is the area of the image of node j's cell
+// under T0. Same conventions as objective(); with the weights multiplied by
+// weight_by_g0(), objective() gives the same value bit for bit.
+[[nodiscard]] double objective_alpha(const NodeSet &nodes, double alpha);
+
+// Multiplies every weight w_j by g0_j^alpha. Because g0 is fixed, the
+// objective() and modal_derivatives() of the result are E_alpha and its
+// modal derivatives, so the optimizer minimizes E_alpha unchanged.
+void weight_by_g0(NodeSet &nodes, double alpha);
+
 // Nodes per block in the sums of modal_derivatives(). The partial sums of
 // each block are added in block order, so F does not depend on the number
 // of threads.

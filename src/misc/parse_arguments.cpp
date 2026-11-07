@@ -194,6 +194,12 @@ Arguments parse_arguments(const int argc, const char *argv[])
       "Unsigned int: Maximum outer iterations of the conformality optimizer")
     .default_value(static_cast<unsigned int>(200))
     .scan<'u', unsigned int>();
+  arguments.add_argument("--conf_alpha")
+    .help(
+      "Unsigned int: Weighting of the conformality objective, 0 for area on "
+      "the input map, 1 for area on the cartogram")
+    .default_value(static_cast<unsigned int>(0))
+    .scan<'u', unsigned int>();
 
   // Parse command-line arguments
   try {
@@ -274,6 +280,11 @@ Arguments parse_arguments(const int argc, const char *argv[])
     std::cerr << "ERROR: --conf_quad, --conf_eval_quad and --conf_modes must "
                  "be positive."
               << std::endl;
+    std::exit(17);
+  }
+  args.conf_alpha = arguments.get<unsigned int>("--conf_alpha");
+  if (args.conf_alpha > 1) {
+    std::cerr << "ERROR: --conf_alpha must be 0 or 1." << std::endl;
     std::exit(17);
   }
 

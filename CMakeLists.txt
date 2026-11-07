@@ -159,5 +159,11 @@ target_link_libraries(cartogram
 )
 install(TARGETS cartogram RUNTIME DESTINATION bin)
 
+# Independent area check of a logged conformality correction (research tool)
+add_executable(conformality_check research/tools/conformality_check.cpp)
+target_link_libraries(conformality_check
+  PRIVATE conformality_core nlohmann_json::nlohmann_json
+)
+
 # ----------------------------- Tests  -----------------------------
 add_subdirectory(tests)
