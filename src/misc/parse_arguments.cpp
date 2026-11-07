@@ -1,6 +1,8 @@
 #include "parse_arguments.hpp"
 #include "constants.hpp"
+#include <cmath>
 #include <limits>
+#include <utility>
 
 Arguments parse_arguments(const int argc, const char *argv[])
 {
@@ -196,9 +198,32 @@ Arguments parse_arguments(const int argc, const char *argv[])
     .scan<'u', unsigned int>();
   arguments.add_argument("--conf_alpha")
     .help(
-      "Unsigned int: Weighting of the conformality objective, 0 for area on "
-      "the input map, 1 for area on the cartogram")
-    .default_value(static_cast<unsigned int>(0))
+      "Double: Exponent alpha in [0, 1] of the weight g0^alpha in the "
+      "conformality objective, 0 for area on the input map, 1 for area on "
+      "the cartogram")
+    .default_value(0.0)
+    .scan<'g', double>();
+  arguments.add_argument("--conf_ocean_weight")
+    .help(
+      "Double: Factor (>= 0) on the conformality objective's weight of "
+      "points outside every region")
+    .default_value(1.0)
+    .scan<'g', double>();
+  arguments.add_argument("--conf_stall_tol")
+    .help(
+      "Double: The conformality optimizer stops when the last 10 accepted "
+      "steps lowered the energy by at most this fraction (0: never)")
+    .default_value(1e-5)
+    .scan<'g', double>();
+  arguments.add_argument("--conf_perturb")
+    .help(
+      "Double: Strain bound of a random smooth correction applied before the "
+      "conformality optimization (0: none)")
+    .default_value(0.0)
+    .scan<'g', double>();
+  arguments.add_argument("--conf_seed")
+    .help("Unsigned int: Seed of the random correction (see --conf_perturb)")
+    .default_value(static_cast<unsigned int>(1))
     .scan<'u', unsigned int>();
 
   // Parse command-line arguments
@@ -282,10 +307,24 @@ Arguments parse_arguments(const int argc, const char *argv[])
               << std::endl;
     std::exit(17);
   }
-  args.conf_alpha = arguments.get<unsigned int>("--conf_alpha");
-  if (args.conf_alpha > 1) {
-    std::cerr << "ERROR: --conf_alpha must be 0 or 1." << std::endl;
+  args.conf_alpha = arguments.get<double>("--conf_alpha");
+  args.conf_ocean_weight = arguments.get<double>("--conf_ocean_weight");
+  args.conf_stall_tol = arguments.get<double>("--conf_stall_tol");
+  args.conf_perturb = arguments.get<double>("--conf_perturb");
+  args.conf_seed = arguments.get<unsigned int>("--conf_seed");
+  if (!(args.conf_alpha >= 0.0 && args.conf_alpha <= 1.0)) {
+    std::cerr << "ERROR: --conf_alpha must be in [0, 1]." << std::endl;
     std::exit(17);
+  }
+  for (const auto &[flag, value] :
+       {std::pair{"--conf_ocean_weight", args.conf_ocean_weight},
+        std::pair{"--conf_stall_tol", args.conf_stall_tol},
+        std::pair{"--conf_perturb", args.conf_perturb}}) {
+    if (!(value >= 0.0) || !std::isfinite(value)) {
+      std::cerr << "ERROR: " << flag << " must be finite and non-negative."
+                << std::endl;
+      std::exit(17);
+    }
   }
 
   // arguments.present returns an optional

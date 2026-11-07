@@ -202,6 +202,42 @@ BOOST_AUTO_TEST_CASE(mesh_check_converges_at_second_order)
     std::invalid_argument);
 }
 
+// A seed gives the same random step on every call. The step meets its strain
+// bound, uses the optimizer's substep rule and preserves area.
+BOOST_AUTO_TEST_CASE(random_step_is_reproducible_and_area_preserving)
+{
+  const SpectralBasis basis(lx, ly, 6, 4);
+  const auto a = conformality::random_step(basis, 2.0, 7);
+  const auto b = conformality::random_step(basis, 2.0, 7);
+  const auto c = conformality::random_step(basis, 2.0, 8);
+  const bool same =
+    (a.coeffs == b.coeffs) &&
+    (std::bit_cast<std::uint64_t>(a.h) == std::bit_cast<std::uint64_t>(b.h));
+  const bool different = (a.coeffs != c.coeffs);
+  BOOST_TEST(same);
+  BOOST_TEST(different);
+  BOOST_TEST(
+    std::abs(a.h * velocity_gradient_bound(basis, a.coeffs) - 2.0) < 1e-12);
+  BOOST_TEST(a.n_substeps == 20u);
+
+  NodeSet nodes = conformality::make_cell_centre_nodes(lx, ly, 16, 8);
+  const NodeSet start = nodes;
+  const auto stats = conformality::replay(nodes, basis, {a});
+  BOOST_TEST(stats.converged);
+  BOOST_TEST(conformality::max_det_drift(nodes) < 1e-12);
+  double moved = 0.0;
+  for (std::size_t j = 0; j < nodes.size(); ++j) {
+    moved = std::max(
+      moved,
+      std::hypot(nodes.y[j].x - start.y[j].x, nodes.y[j].y - start.y[j].y));
+  }
+  BOOST_TEST(moved > 1e-3);
+
+  BOOST_CHECK_THROW(
+    static_cast<void>(conformality::random_step(basis, 0.0, 1)),
+    std::invalid_argument);
+}
+
 BOOST_AUTO_TEST_CASE(invalid_settings_are_rejected)
 {
   NodeSet nodes = asymmetric_map_nodes(lx, ly, 8, 4);

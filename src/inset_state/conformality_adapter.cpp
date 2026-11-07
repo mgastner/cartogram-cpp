@@ -187,6 +187,11 @@ struct CloudSummary {
   double energy_alpha1{0.0};
   double energy_alpha1_land{0.0};
   double energy_alpha1_ocean{0.0};
+
+  // E_1/2, weighted by the geometric mean of the two areas (alpha = 1/2)
+  double energy_alpha_half{0.0};
+  double energy_alpha_half_land{0.0};
+  double energy_alpha_half_ocean{0.0};
   double max_region_rel_error{0.0};
   double mean_region_rel_error{0.0};
   int worst_region{-1};
@@ -229,6 +234,9 @@ CloudSummary summarize_cloud(
   s.energy_alpha1 = conformality::objective_alpha(nodes, 1.0);
   s.energy_alpha1_land = conformality::objective_alpha(land, 1.0);
   s.energy_alpha1_ocean = conformality::objective_alpha(ocean, 1.0);
+  s.energy_alpha_half = conformality::objective_alpha(nodes, 0.5);
+  s.energy_alpha_half_land = conformality::objective_alpha(land, 0.5);
+  s.energy_alpha_half_ocean = conformality::objective_alpha(ocean, 0.5);
 
   // Area-weighted mean and maximum of the relative error of the quadrature
   // of det J over each region, compared with the area of the output polygon
@@ -268,6 +276,9 @@ nlohmann::json cloud_to_json(
     {"E1", s.energy_alpha1},
     {"E1_land", s.energy_alpha1_land},
     {"E1_ocean", s.energy_alpha1_ocean},
+    {"E_half", s.energy_alpha_half},
+    {"E_half_land", s.energy_alpha_half_land},
+    {"E_half_ocean", s.energy_alpha_half_ocean},
     {"region_area_rel_error_max", s.max_region_rel_error},
     {"region_area_rel_error_area_weighted_mean", s.mean_region_rel_error},
     {"region_area_worst",
@@ -1080,6 +1091,7 @@ void InsetState::run_conformality_optimization()
 
   conformality::OptimizerSettings settings;
   settings.max_iterations = args_.conf_max_iter;
+  settings.stall_tol = args_.conf_stall_tol;
   settings.on_iteration = [](const conformality::IterationRecord &r) {
     std::cerr << "  conformality iteration " << r.iteration << ": E "
               << r.energy << " -> " << r.energy_after << ", R " << r.r
@@ -1088,11 +1100,11 @@ void InsetState::run_conformality_optimization()
               << " backtracks, " << r.seconds << " s" << std::endl;
   };
 
-  const double alpha = static_cast<double>(args_.conf_alpha);
+  const double alpha = args_.conf_alpha;
   std::cerr << "\nConformality optimization for inset " << pos_ << ": " << mx
             << " x " << my << " modes, " << conf_.nodes.size() << " nodes, "
-            << conformality::max_threads() << " threads, objective E_"
-            << args_.conf_alpha << std::endl;
+            << conformality::max_threads() << " threads, objective E_" << alpha
+            << ", ocean weight " << args_.conf_ocean_weight << std::endl;
   const SubsetDistortion before =
     subset_distortion(conf_.eval_nodes, conf_.eval_region);
   const CloudSummary opt_before =
@@ -1105,20 +1117,52 @@ void InsetState::run_conformality_optimization()
 
   timer.start("Conformality optimization");
   const auto t0 = std::chrono::steady_clock::now();
-  // For alpha = 1, the optimizer sees the weights w g0 (g0 is fixed, so its
-  // objective is E_1); the base weights are restored for every summary
+  // Optional random start: a smooth random correction of the optimization
+  // nodes before optimizing. It is the first step of the replay log, so
+  // every other tracer set gets the same A.
+  std::vector<conformality::AcceptedStep> steps;
+  if (args_.conf_perturb > 0.0) {
+    steps.push_back(
+      conformality::random_step(
+        basis,
+        args_.conf_perturb,
+        args_.conf_seed,
+        settings.substep_factor));
+    const conformality::FlowStats start_stats =
+      conformality::replay(conf_.nodes, basis, steps, settings.solver);
+    if (!start_stats.converged) {
+      std::cerr << "WARNING: the implicit-midpoint solve of the random start "
+                   "did not converge."
+                << std::endl;
+    }
+    std::cerr << "  random start: strain bound " << args_.conf_perturb
+              << ", seed " << args_.conf_seed << ", E0 "
+              << conformality::objective(conf_.nodes) << std::endl;
+  }
+
+  // The optimizer sees the weights w g0^alpha (g0 is fixed, so its objective
+  // is E_alpha), times the ocean weight at nodes outside every region. The
+  // base weights are restored for every summary.
   const std::vector<double> base_weights = conf_.nodes.w;
   if (alpha != 0.0) {
     conformality::weight_by_g0(conf_.nodes, alpha);
   }
+  if (args_.conf_ocean_weight != 1.0) {
+    for (std::size_t j = 0; j < conf_.nodes.size(); ++j) {
+      if (conf_.region[j] < 0) {
+        conf_.nodes.w[j] *= args_.conf_ocean_weight;
+      }
+    }
+  }
   const conformality::OptimizationResult result =
     conformality::optimize(conf_.nodes, basis, settings);
   conf_.nodes.w = base_weights;
+  steps.insert(steps.end(), result.steps.begin(), result.steps.end());
   const auto t1 = std::chrono::steady_clock::now();
 
   // Apply the same correction to every other tracer set
   conformality::FlowStats replay_stats =
-    conformality::replay(conf_.eval_nodes, basis, result.steps);
+    conformality::replay(conf_.eval_nodes, basis, steps);
 
   // Output polygons of T0, densified at three maximum segment lengths so
   // that the curved images of their edges under A are resolved; they are
@@ -1159,9 +1203,7 @@ void InsetState::run_conformality_optimization()
       passive.push_back(&ring);
     }
   }
-  conformality::accumulate(
-    replay_stats,
-    replay_sets(passive, basis, result.steps));
+  conformality::accumulate(replay_stats, replay_sets(passive, basis, steps));
   std::vector<RegionAreaCheck> region_checks;
   for (std::size_t d = 0; d < ring_segments.size(); ++d) {
     region_checks.push_back(check_region_areas(
@@ -1176,7 +1218,7 @@ void InsetState::run_conformality_optimization()
   conf_.optimized = true;
 
   const std::vector<conformality::MeshAreaCheck> mesh_checks =
-    conformality::check_mesh_areas(basis, result.steps, lx, ly, 64, 8);
+    conformality::check_mesh_areas(basis, steps, lx, ly, 64, 8);
   const auto t2 = std::chrono::steady_clock::now();
   timer.stop("Conformality optimization");
 
@@ -1215,6 +1257,14 @@ void InsetState::run_conformality_optimization()
             << eval_after.energy_alpha1_land << ", on ocean "
             << eval_before.energy_alpha1_ocean << " -> "
             << eval_after.energy_alpha1_ocean << std::endl;
+  std::cerr << "  E_1/2: " << opt_before.energy_alpha_half << " -> "
+            << opt_after.energy_alpha_half << " (evaluation cloud "
+            << eval_before.energy_alpha_half << " -> "
+            << eval_after.energy_alpha_half << "); on land "
+            << eval_before.energy_alpha_half_land << " -> "
+            << eval_after.energy_alpha_half_land << ", on ocean "
+            << eval_before.energy_alpha_half_ocean << " -> "
+            << eval_after.energy_alpha_half_ocean << std::endl;
   std::cerr << "  mean ln(a/b): rectangle " << before.rectangle.e_mean
             << " -> " << after.rectangle.e_mean << ", land "
             << before.land.e_mean << " -> " << after.land.e_mean << ", ocean "
@@ -1264,7 +1314,7 @@ void InsetState::run_conformality_optimization()
   // Replay log: applying these steps in order with the same basis and
   // solver settings reproduces A on any point set
   nlohmann::json steps_json = nlohmann::json::array();
-  for (const auto &step : result.steps) {
+  for (const auto &step : steps) {
     steps_json.push_back(
       {{"h", step.h},
        {"n_substeps", step.n_substeps},
@@ -1276,6 +1326,11 @@ void InsetState::run_conformality_optimization()
     {"lattice", {lx_, ly_}},
     {"modes", {mx, my}},
     {"alpha", args_.conf_alpha},
+    {"ocean_weight", args_.conf_ocean_weight},
+    {"random_start",
+     {{"strain", args_.conf_perturb},
+      {"seed", args_.conf_seed},
+      {"is_first_step", args_.conf_perturb > 0.0}}},
     {"coefficient_index", "c[(m - 1) * my + (n - 1)] for mode (m, n)"},
     {"solver",
      {{"residual_tol", solver.residual_tol},
@@ -1307,6 +1362,9 @@ void InsetState::run_conformality_optimization()
     {"modes", {mx, my}},
     {"settings",
      {{"alpha", args_.conf_alpha},
+      {"ocean_weight", args_.conf_ocean_weight},
+      {"random_start_strain", args_.conf_perturb},
+      {"random_start_seed", args_.conf_seed},
       {"sigma", settings.sigma},
       {"max_iterations", settings.max_iterations},
       {"gradient_tol", settings.gradient_tol},

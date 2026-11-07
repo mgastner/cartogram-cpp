@@ -5,6 +5,7 @@
 #include "conformality/node_set.hpp"
 #include "conformality/spectral_basis.hpp"
 #include <cstddef>
+#include <cstdint>
 #include <functional>
 #include <iosfwd>
 #include <limits>
@@ -142,6 +143,20 @@ struct OptimizationResult {
   NodeSet &nodes,
   const SpectralBasis &basis,
   const OptimizerSettings &settings = {});
+
+// A random smooth correction, for starting the optimization from a
+// perturbed map. The coefficients are c_mn = z_mn / (kx_m^2 + ky_n^2)^(3/2)
+// with independent standard normal z_mn (Box-Muller on std::mt19937_64, so a
+// seed gives the same step on every platform). The duration h makes the
+// strain bound h * B (see velocity_gradient_bound) equal to `strain`, and the
+// step uses ceil(strain / substep_factor) substeps, like an optimizer step.
+// Throws std::invalid_argument unless strain and substep_factor are positive
+// and finite.
+[[nodiscard]] AcceptedStep random_step(
+  const SpectralBasis &basis,
+  double strain,
+  std::uint64_t seed,
+  double substep_factor = 0.1);
 
 // Applies the accepted steps of an optimization to nodes (positions and
 // Jacobians) or to passive points (and optionally their tangents), in order

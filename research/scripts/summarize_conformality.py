@@ -5,9 +5,10 @@ Each RUN_DIR must contain one <inset>_conformality_opt.json written by
 cartogram with --conf_optimize. Prints these tables to stdout:
 
   1. effect sizes (E0 and e = ln(a/b)) on the evaluation cloud,
-  2. both weightings of the energy, E0 (area on the input map) and E1
-     (area on the cartogram), and which one the run minimized (alpha), for
-     runs that report E1,
+  2. the weightings of the energy, E0 (area on the input map), E1/2
+     (geometric mean of the two areas) and E1 (area on the cartogram), with
+     the run's settings (alpha, ocean weight, random start), for runs that
+     report E1,
   3. distortion by subset (rectangle, land, ocean), for runs that report
      ocean statistics,
   4. correctness checks (det drift, check mesh, region areas, FD, boundary),
@@ -46,7 +47,11 @@ def table(header, rows):
 
 
 def main():
-    runs = [(Path(d).name, load(d)) for d in sys.argv[1:]]
+    names = [Path(d).name for d in sys.argv[1:]]
+    # Use the paths as given when two run directories share a name
+    if len(set(names)) < len(names):
+        names = [str(Path(d)) for d in sys.argv[1:]]
+    runs = [(n, load(d)) for n, d in zip(names, sys.argv[1:])]
     if not runs:
         sys.exit(__doc__)
 
@@ -79,12 +84,22 @@ def main():
             ]
         )
         if "E1" in be:
+            st = r["settings"]
+            start = st.get("random_start_strain", 0)
             weighting.append(
-                [name, modes, r["settings"].get("alpha", 0)]
+                [
+                    name,
+                    modes,
+                    st.get("alpha", 0),
+                    st.get("ocean_weight", 1),
+                    f"{start} (seed {st['random_start_seed']})" if start else "none",
+                ]
                 + [
                     change(be[f"{e}{s}"], ae[f"{e}{s}"])
+                    if f"{e}{s}" in be
+                    else "n/a"
                     for s in ("", "_land", "_ocean")
-                    for e in ("E0", "E1")
+                    for e in ("E0", "E_half", "E1")
                 ]
             )
         if has_ocean:
@@ -165,8 +180,8 @@ def main():
     )
     if weighting:
         print(
-            "\nBoth weightings (evaluation cloud; the run minimized "
-            "E_alpha):\n"
+            "\nWeightings (evaluation cloud; the run minimized E_alpha, with "
+            "the ocean weight on points outside every region):\n"
         )
         print(
             table(
@@ -174,11 +189,16 @@ def main():
                     "Run",
                     "Modes",
                     "alpha",
+                    "Ocean weight",
+                    "Random start",
                     "E0 rectangle",
+                    "E½ rectangle",
                     "E1 rectangle",
                     "E0 land",
+                    "E½ land",
                     "E1 land",
                     "E0 ocean",
+                    "E½ ocean",
                     "E1 ocean",
                 ],
                 weighting,

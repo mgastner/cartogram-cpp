@@ -3,7 +3,9 @@
 #include <algorithm>
 #include <chrono>
 #include <cmath>
+#include <cstdint>
 #include <ostream>
+#include <random>
 #include <stdexcept>
 #include <utility>
 
@@ -189,6 +191,41 @@ OptimizationResult optimize(
     h = std::min(2.0 * h, settings.max_step);
   }
   return result;
+}
+
+AcceptedStep random_step(
+  const SpectralBasis &basis,
+  const double strain,
+  const std::uint64_t seed,
+  const double substep_factor)
+{
+  if (
+    !(strain > 0.0) || !std::isfinite(strain) || !(substep_factor > 0.0) ||
+    !std::isfinite(substep_factor)) {
+    throw std::invalid_argument(
+      "random_step: strain and substep_factor must be positive and finite");
+  }
+  std::mt19937_64 rng(seed);
+  // Uniform deviate in (0, 1] from the top 53 bits of a draw
+  auto uniform = [&rng]() {
+    return (static_cast<double>(rng() >> 11) + 1.0) * 0x1.0p-53;
+  };
+  constexpr double two_pi = 6.283185307179586;
+  AcceptedStep step;
+  step.coeffs.assign(basis.n_modes(), 0.0);
+  for (std::size_t m = 1; m <= basis.mx(); ++m) {
+    for (std::size_t n = 1; n <= basis.my(); ++n) {
+      const double u1 = uniform();
+      const double u2 = uniform();
+      const double z = std::sqrt(-2.0 * std::log(u1)) * std::cos(two_pi * u2);
+      const double k2 = basis.kx(m) * basis.kx(m) + basis.ky(n) * basis.ky(n);
+      step.coeffs[basis.index(m, n)] = z / (k2 * std::sqrt(k2));
+    }
+  }
+  step.h = strain / velocity_gradient_bound(basis, step.coeffs);
+  step.n_substeps =
+    static_cast<std::size_t>(std::ceil(strain / substep_factor));
+  return step;
 }
 
 FlowStats replay(
