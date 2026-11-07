@@ -7,13 +7,17 @@
 #include "conformality/optimizer.hpp"
 #include "conformality/parallel.hpp"
 #include "inset_state.hpp"
+#include <CGAL/Exact_predicates_inexact_constructions_kernel.h>
+#include <CGAL/Polygon_2.h>
 #include <algorithm>
+#include <array>
 #include <chrono>
 #include <cmath>
 #include <fstream>
 #include <iomanip>
 #include <limits>
 #include <stdexcept>
+#include <utility>
 
 using conformality::det;
 using conformality::frobenius_sq;
@@ -890,6 +894,108 @@ std::vector<MeshAreaCheck> check_mesh_areas(
   return checks;
 }
 
+// Densifies a ring so that no segment is longer than max_len. The points
+// inside a segment are computed from its lexicographically smaller end, so
+// that a boundary shared by two rings gets bitwise identical points in
+// both, and so do their images under A.
+std::vector<Vec2> densify_ring(const Polygon &ring, const double max_len)
+{
+  const std::vector<Point> pts(ring.begin(), ring.end());
+  std::vector<Vec2> dense;
+  for (std::size_t i = 0; i < pts.size(); ++i) {
+    const Point &a = pts[i];
+    const Point &b = pts[(i + 1) % pts.size()];
+    dense.push_back({a.x(), a.y()});
+    const double len = std::hypot(b.x() - a.x(), b.y() - a.y());
+    const auto n = std::max<std::size_t>(
+      1,
+      static_cast<std::size_t>(std::ceil(len / max_len)));
+    const bool forward =
+      std::make_pair(a.x(), a.y()) < std::make_pair(b.x(), b.y());
+    const Point &p = forward ? a : b;
+    const Point &q = forward ? b : a;
+    for (std::size_t k = 1; k < n; ++k) {
+      const double t =
+        static_cast<double>(forward ? k : n - k) / static_cast<double>(n);
+      dense.push_back(
+        {p.x() + t * (q.x() - p.x()), p.y() + t * (q.y() - p.y())});
+    }
+  }
+  return dense;
+}
+
+// Unsigned area of a closed ring, by the shoelace formula relative to its
+// first point
+double ring_area(const std::vector<Vec2> &ring)
+{
+  if (ring.size() < 3) {
+    return 0.0;
+  }
+  const Vec2 o = ring.front();
+  double twice = 0.0;
+  for (std::size_t i = 1; i + 1 < ring.size(); ++i) {
+    const double ax = ring[i].x - o.x, ay = ring[i].y - o.y;
+    const double bx = ring[i + 1].x - o.x, by = ring[i + 1].y - o.y;
+    twice += ax * by - bx * ay;
+  }
+  return 0.5 * std::abs(twice);
+}
+
+// Whether a ring is simple, decided with exact predicates
+bool ring_is_simple(const std::vector<Vec2> &ring)
+{
+  using Kernel = CGAL::Exact_predicates_inexact_constructions_kernel;
+  CGAL::Polygon_2<Kernel> poly;
+  for (const auto &p : ring) {
+    poly.push_back(Kernel::Point_2(p.x, p.y));
+  }
+  return poly.is_simple();
+}
+
+// Area of each region in the corrected polygons (rings densified with
+// segments of at most max_segment before applying A), compared with the
+// area of the same region in the T0 output polygons. Because A preserves
+// area, the ratio tends to 1 as max_segment -> 0, at second order.
+struct RegionAreaCheck {
+  double max_segment{0.0};
+  std::size_t n_points{0};
+  double max_rel_error{0.0};
+  double mean_rel_error{0.0};
+  std::size_t worst_region{0};
+  std::size_t non_simple_rings{0};
+};
+
+RegionAreaCheck check_region_areas(
+  const std::vector<std::vector<Vec2>> &rings,
+  const std::vector<int> &ring_region,
+  const std::vector<bool> &ring_is_hole,
+  const std::vector<GeoDiv> &geo_divs,
+  const double max_segment)
+{
+  RegionAreaCheck c;
+  c.max_segment = max_segment;
+  std::vector<double> area(geo_divs.size(), 0.0);
+  for (std::size_t r = 0; r < rings.size(); ++r) {
+    c.n_points += rings[r].size();
+    const double a = ring_area(rings[r]);
+    area[static_cast<std::size_t>(ring_region[r])] += ring_is_hole[r] ? -a : a;
+    if (!ring_is_simple(rings[r])) {
+      ++c.non_simple_rings;
+    }
+  }
+  double sum = 0.0;
+  for (std::size_t g = 0; g < geo_divs.size(); ++g) {
+    const double rel = std::abs(area[g] / geo_divs[g].area() - 1.0);
+    if (rel > c.max_rel_error) {
+      c.max_rel_error = rel;
+      c.worst_region = g;
+    }
+    sum += rel;
+  }
+  c.mean_rel_error = sum / static_cast<double>(geo_divs.size());
+  return c;
+}
+
 // Replays the correction on several point sets at once, so that every
 // substep is one parallel loop over all their points
 conformality::FlowStats replay_sets(
@@ -985,35 +1091,26 @@ void InsetState::run_conformality_optimization()
   conformality::FlowStats replay_stats =
     conformality::replay(conf_.eval_nodes, basis, result.steps);
 
-  // Output polygons of T0, densified so that the curved images of their
-  // edges under A are resolved at a quarter lattice unit; they are
-  // corrected below together with the other passive tracers
-  conf_.t_rings.clear();
-  conf_.t_ring_region.clear();
+  // Output polygons of T0, densified at three maximum segment lengths so
+  // that the curved images of their edges under A are resolved; they are
+  // corrected below together with the other passive tracers. The middle
+  // length (a quarter lattice unit) is used for figures.
+  constexpr std::array<double, 3> ring_segments{0.5, 0.25, 0.125};
+  std::array<std::vector<std::vector<Vec2>>, 3> dense_rings;
+  std::vector<int> ring_region;
+  std::vector<bool> ring_hole;
   for (std::size_t g = 0; g < geo_divs_.size(); ++g) {
     for (const auto &pwh : geo_divs_[g].polygons_with_holes()) {
-      auto add_ring = [&](const Polygon &ring) {
-        const std::vector<Point> pts(ring.begin(), ring.end());
-        std::vector<Vec2> dense;
-        for (std::size_t i = 0; i < pts.size(); ++i) {
-          const Point &a = pts[i];
-          const Point &b = pts[(i + 1) % pts.size()];
-          const double len = std::hypot(b.x() - a.x(), b.y() - a.y());
-          const auto n = std::max<std::size_t>(
-            1,
-            static_cast<std::size_t>(std::ceil(len / 0.25)));
-          for (std::size_t k = 0; k < n; ++k) {
-            const double t = static_cast<double>(k) / static_cast<double>(n);
-            dense.push_back(
-              {a.x() + t * (b.x() - a.x()), a.y() + t * (b.y() - a.y())});
-          }
+      auto add_ring = [&](const Polygon &ring, const bool hole) {
+        for (std::size_t d = 0; d < ring_segments.size(); ++d) {
+          dense_rings[d].push_back(densify_ring(ring, ring_segments[d]));
         }
-        conf_.t_rings.push_back(std::move(dense));
-        conf_.t_ring_region.push_back(static_cast<int>(g));
+        ring_region.push_back(static_cast<int>(g));
+        ring_hole.push_back(hole);
       };
-      add_ring(pwh.outer_boundary());
+      add_ring(pwh.outer_boundary(), false);
       for (const auto &hole : pwh.holes()) {
-        add_ring(hole);
+        add_ring(hole, true);
       }
     }
   }
@@ -1027,12 +1124,25 @@ void InsetState::run_conformality_optimization()
   for (auto &line : conf_.grid_lines) {
     passive.push_back(&line);
   }
-  for (auto &ring : conf_.t_rings) {
-    passive.push_back(&ring);
+  for (auto &rings : dense_rings) {
+    for (auto &ring : rings) {
+      passive.push_back(&ring);
+    }
   }
   conformality::accumulate(
     replay_stats,
     replay_sets(passive, basis, result.steps));
+  std::vector<RegionAreaCheck> region_checks;
+  for (std::size_t d = 0; d < ring_segments.size(); ++d) {
+    region_checks.push_back(check_region_areas(
+      dense_rings[d],
+      ring_region,
+      ring_hole,
+      geo_divs_,
+      ring_segments[d]));
+  }
+  conf_.t_rings = std::move(dense_rings[1]);
+  conf_.t_ring_region = std::move(ring_region);
   conf_.optimized = true;
 
   const std::vector<MeshAreaCheck> mesh_checks =
@@ -1079,6 +1189,14 @@ void InsetState::run_conformality_optimization()
               << m.samples_per_edge << "/edge)";
   }
   std::cerr << std::endl;
+  std::cerr << "  region areas of corrected polygons vs T0, max rel. error:";
+  for (const auto &c : region_checks) {
+    std::cerr << " " << c.max_rel_error << " ("
+              << geo_divs_[c.worst_region].id()
+              << ", segments <= " << c.max_segment << ", "
+              << c.non_simple_rings << " non-simple rings)";
+  }
+  std::cerr << std::endl;
   std::cerr << "  boundary: max offset from side " << bc.max_side_offset
             << ", max corner motion " << bc.max_corner_motion
             << "; finite differences: " << fc.n_within << " pairs within "
@@ -1089,6 +1207,16 @@ void InsetState::run_conformality_optimization()
                "not yet applied to them."
             << std::endl;
 
+  nlohmann::json region_json = nlohmann::json::array();
+  for (const auto &c : region_checks) {
+    region_json.push_back(
+      {{"max_segment", c.max_segment},
+       {"n_points", c.n_points},
+       {"max_rel_area_error", c.max_rel_error},
+       {"mean_rel_area_error", c.mean_rel_error},
+       {"worst_region", geo_divs_[c.worst_region].id()},
+       {"non_simple_rings", c.non_simple_rings}});
+  }
   nlohmann::json mesh_json = nlohmann::json::array();
   for (const auto &m : mesh_checks) {
     mesh_json.push_back(mesh_to_json(m));
@@ -1173,6 +1301,7 @@ void InsetState::run_conformality_optimization()
       {"max_det_drift_evaluation_cloud", drift_eval},
       {"replay_converged", replay_stats.converged},
       {"mesh", mesh_json},
+      {"region_areas", region_json},
       {"boundary", boundary_to_json(bc, conf_.boundary.size())},
       {"finite_differences", fd_to_json(fc, conf_)}}},
     {"history", history}};
