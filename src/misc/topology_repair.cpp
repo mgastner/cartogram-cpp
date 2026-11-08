@@ -1,4 +1,5 @@
 #include "topology_repair.hpp"
+#include <algorithm>
 #include <cmath>
 #include <geos_c.h>
 #include <stdexcept>
@@ -338,15 +339,59 @@ TopologyRepairResult repair_topology(
         clones.data(),
         static_cast<unsigned int>(n)),
       "GEOSGeom_createCollection"));
+
+  // Snapping distance. The default equals the one GEOS would choose itself:
+  // the diameter of the bounding box of all regions divided by 1e8.
+  double snapping_distance = settings.snapping_distance;
+  if (snapping_distance < 0.0) {
+    double x_min = 0.0;
+    double y_min = 0.0;
+    double x_max = 0.0;
+    double y_max = 0.0;
+    if (
+      GEOSGeom_getExtent_r(
+        ctx.get(),
+        collection.get(),
+        &x_min,
+        &y_min,
+        &x_max,
+        &y_max) != 1) {
+      throw std::runtime_error("GEOSGeom_getExtent failed");
+    }
+    snapping_distance = std::hypot(x_max - x_min, y_max - y_min) / 1e8;
+  }
+
+  // A valid coverage (borders that match exactly, no overlaps) without gaps
+  // narrower than the snapping distance needs no cleaning. Checking this is
+  // several times faster than cleaning.
+  if (
+    std::none_of(
+      self_intersecting.begin(),
+      self_intersecting.end(),
+      [](const bool b) {
+        return b;
+      })) {
+    GEOSGeometry *invalid_edges = nullptr;
+    const int valid = GEOSCoverageIsValid_r(
+      ctx.get(),
+      collection.get(),
+      snapping_distance,
+      &invalid_edges);
+    if (invalid_edges != nullptr) {
+      GEOSGeom_destroy_r(ctx.get(), invalid_edges);
+    }
+    if (valid == 1) {
+      return {{}, true};
+    }
+  }
+
   GEOSCoverageCleanParams *params = ctx.check(
     GEOSCoverageCleanParams_create_r(ctx.get()),
     "GEOSCoverageCleanParams_create");
-  if (settings.snapping_distance >= 0.0) {
-    GEOSCoverageCleanParams_setSnappingDistance_r(
-      ctx.get(),
-      params,
-      settings.snapping_distance);
-  }
+  GEOSCoverageCleanParams_setSnappingDistance_r(
+    ctx.get(),
+    params,
+    snapping_distance);
   GEOSGeometry *cleaned_raw =
     GEOSCoverageCleanWithParams_r(ctx.get(), collection.get(), params);
   GEOSCoverageCleanParams_destroy_r(ctx.get(), params);
