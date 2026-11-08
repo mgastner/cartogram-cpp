@@ -236,6 +236,16 @@ Arguments parse_arguments(const int argc, const char *argv[])
       "String: Integrator of the conformality flow: midpoint (implicit "
       "midpoint), euler (symplectic Euler) or verlet (Stormer-Verlet)")
     .default_value(std::string("midpoint"));
+  arguments.add_argument("--conf_bias_region")
+    .help(
+      "String: Region whose conformality weights are multiplied by "
+      "--conf_bias_factor in a first optimization phase, before a second "
+      "phase with the true weights (empty: no biased phase)")
+    .default_value(std::string(""));
+  arguments.add_argument("--conf_bias_factor")
+    .help("Double: Weight factor of the biased phase (see --conf_bias_region)")
+    .default_value(1.0)
+    .scan<'g', double>();
   arguments.add_argument("--conf_substep_factor")
     .help(
       "Double: Substeps of the conformality flow keep dt times the bound on "
@@ -332,6 +342,14 @@ Arguments parse_arguments(const int argc, const char *argv[])
   args.conf_lbfgs = arguments.get<unsigned int>("--conf_lbfgs");
   args.conf_integrator = arguments.get<std::string>("--conf_integrator");
   args.conf_substep_factor = arguments.get<double>("--conf_substep_factor");
+  args.conf_bias_region = arguments.get<std::string>("--conf_bias_region");
+  args.conf_bias_factor = arguments.get<double>("--conf_bias_factor");
+  if (
+    !(args.conf_bias_factor > 0.0) || !std::isfinite(args.conf_bias_factor)) {
+    std::cerr << "ERROR: --conf_bias_factor must be positive and finite."
+              << std::endl;
+    std::exit(17);
+  }
   if (
     args.conf_integrator != "midpoint" && args.conf_integrator != "euler" &&
     args.conf_integrator != "verlet") {

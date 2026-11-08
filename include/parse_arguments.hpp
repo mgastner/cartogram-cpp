@@ -106,6 +106,8 @@ struct Arguments {
   unsigned int conf_lbfgs;
   std::string conf_integrator;
   double conf_substep_factor;
+  std::string conf_bias_region;
+  double conf_bias_factor;
 
   // Column names in provided visual variables file (CSV)
   std::optional<std::string> id_col;

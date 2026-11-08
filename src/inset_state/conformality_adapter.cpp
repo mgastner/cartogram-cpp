@@ -1166,6 +1166,60 @@ void InsetState::run_conformality_optimization()
       }
     }
   }
+
+  // Optional biased first phase (a basin-hopping test): optimize with the
+  // weights of one region multiplied by a factor, then continue from that
+  // state with the true weights. Both phases are in the replay log; the
+  // report's history and outcome are those of the second phase.
+  nlohmann::json bias_json = nullptr;
+  if (!args_.conf_bias_region.empty()) {
+    int target = -1;
+    for (std::size_t g = 0; g < geo_divs_.size(); ++g) {
+      if (geo_divs_[g].id() == args_.conf_bias_region) {
+        target = static_cast<int>(g);
+      }
+    }
+    if (target < 0) {
+      std::cerr << "ERROR: --conf_bias_region " << args_.conf_bias_region
+                << " is not a region of inset " << pos_ << "." << std::endl;
+      std::exit(17);
+    }
+    const std::vector<double> objective_weights = conf_.nodes.w;
+    const double e_start = conformality::objective(conf_.nodes);
+    std::size_t n_target = 0;
+    for (std::size_t j = 0; j < conf_.nodes.size(); ++j) {
+      if (conf_.region[j] == target) {
+        conf_.nodes.w[j] *= args_.conf_bias_factor;
+        ++n_target;
+      }
+    }
+    std::cerr << "  biased phase: weights of " << args_.conf_bias_region
+              << " (" << n_target << " nodes) times " << args_.conf_bias_factor
+              << std::endl;
+    const conformality::OptimizationResult biased =
+      conformality::optimize(conf_.nodes, basis, settings);
+    steps.insert(steps.end(), biased.steps.begin(), biased.steps.end());
+    conf_.nodes.w = objective_weights;
+    const double e_after = conformality::objective(conf_.nodes);
+    std::cerr << "  biased phase: " << biased.steps.size()
+              << " steps, objective " << e_start << " -> " << e_after
+              << std::endl;
+    nlohmann::json biased_history = nlohmann::json::array();
+    for (const auto &r : biased.history) {
+      biased_history.push_back({{"E_biased", r.energy}, {"h", r.h}});
+    }
+    bias_json = {
+      {"region", args_.conf_bias_region},
+      {"factor", args_.conf_bias_factor},
+      {"n_nodes", n_target},
+      {"outcome", conformality::to_string(biased.outcome)},
+      {"n_accepted_steps", biased.steps.size()},
+      {"objective_before", e_start},
+      {"objective_after", e_after},
+      {"biased_objective_after", biased.final_energy},
+      {"history", biased_history}};
+  }
+
   const conformality::OptimizationResult result =
     conformality::optimize(conf_.nodes, basis, settings);
   conf_.nodes.w = base_weights;
@@ -1378,6 +1432,8 @@ void InsetState::run_conformality_optimization()
      {{"strain", args_.conf_perturb},
       {"seed", args_.conf_seed},
       {"is_first_step", args_.conf_perturb > 0.0}}},
+    {"bias",
+     {{"region", args_.conf_bias_region}, {"factor", args_.conf_bias_factor}}},
     {"coefficient_index", "c[(m - 1) * my + (n - 1)] for mode (m, n)"},
     {"solver",
      {{"integrator", conformality::to_string(solver.integrator)},
@@ -1423,6 +1479,8 @@ void InsetState::run_conformality_optimization()
       {"max_strain", settings.max_strain},
       {"substep_factor", settings.substep_factor},
       {"integrator", conformality::to_string(settings.solver.integrator)},
+      {"bias_region", args_.conf_bias_region},
+      {"bias_factor", args_.conf_bias_factor},
       {"det_drift_tol", settings.det_drift_tol},
       {"openmp", conformality::openmp_enabled()},
       {"threads", conformality::max_threads()}}},
@@ -1456,7 +1514,8 @@ void InsetState::run_conformality_optimization()
       {"region_areas", region_json},
       {"boundary", boundary_to_json(bc, conf_.boundary.size())},
       {"finite_differences", fd_to_json(fc, conf_)}}},
-    {"history", history}};
+    {"history", history},
+    {"bias", bias_json}};
   std::ofstream out(inset_name_ + "_conformality_opt.json");
   out << std::setw(2) << report << std::endl;
 }
