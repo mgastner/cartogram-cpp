@@ -13,6 +13,7 @@
 
 using conformality::advance_nodes;
 using conformality::det;
+using conformality::Integrator;
 using conformality::make_cell_centre_nodes;
 using conformality::max_det_drift;
 using conformality::NodeSet;
@@ -139,7 +140,10 @@ struct ShearRecovery {
 // T0 = B o P with B from three modes of a 4 x 4 basis, optimized with
 // modes x modes retained modes (L-BFGS with the given memory, 0 for
 // steepest descent)
-ShearRecovery recover_shear_map(std::size_t modes, unsigned lbfgs = 0)
+ShearRecovery recover_shear_map(
+  std::size_t modes,
+  unsigned lbfgs = 0,
+  Integrator integrator = Integrator::implicit_midpoint)
 {
   constexpr double eps = 0.3;
   const SpectralBasis b_basis(1.0, 1.0, 4, 4);
@@ -161,6 +165,7 @@ ShearRecovery recover_shear_map(std::size_t modes, unsigned lbfgs = 0)
   OptimizerSettings settings;
   settings.gradient_tol = 1e-6;
   settings.lbfgs_memory = lbfgs;
+  settings.solver.integrator = integrator;
   out.result = optimize(nodes, basis, settings);
   log_summary(out.result);
   check_history(out.result, settings.det_drift_tol);
@@ -211,6 +216,21 @@ BOOST_AUTO_TEST_CASE(lbfgs_recovers_shear_map)
   BOOST_TEST(lbfgs.d_final <= 1e-3 * lbfgs.d_start);
 }
 
+// The splitting integrators reach the same minimizer to the same accuracy
+// (with L-BFGS)
+BOOST_AUTO_TEST_CASE(splitting_integrators_recover_shear_map)
+{
+  for (const Integrator integrator :
+       {Integrator::symplectic_euler, Integrator::stormer_verlet}) {
+    const ShearRecovery r = recover_shear_map(8, 8, integrator);
+    BOOST_TEST_MESSAGE(
+      to_string(integrator) << ": " << r.result.steps.size() << " steps");
+    BOOST_TEST(
+      std::abs(r.result.final_energy - r.e_p) <= 1e-5 * (r.e_start - r.e_p));
+    BOOST_TEST(r.d_final <= 1e-3 * r.d_start);
+  }
+}
+
 // Replaying the logged steps on a copy of the starting nodes reproduces the
 // optimized nodes bit for bit, and the optimizer leaves g0 untouched
 BOOST_AUTO_TEST_CASE(replay_reproduces_optimized_nodes)
@@ -229,7 +249,7 @@ BOOST_AUTO_TEST_CASE(replay_reproduces_optimized_nodes)
   BOOST_TEST(result.final_energy < result.initial_energy);
 
   NodeSet replayed = start;
-  BOOST_REQUIRE(replay(replayed, basis, result.steps).converged);
+  BOOST_REQUIRE(replay(replayed, basis, result.steps, {}).converged);
   double max_diff = 0.0;
   for (std::size_t j = 0; j < nodes.size(); ++j) {
     max_diff = std::max(

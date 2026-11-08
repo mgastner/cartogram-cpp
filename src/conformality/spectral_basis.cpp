@@ -101,6 +101,26 @@ double SpectralBasis::ky(const std::size_t n) const noexcept
   return ky_[n - 1];
 }
 
+const std::vector<double> &SpectralBasis::kx_all() const noexcept
+{
+  return kx_;
+}
+
+const std::vector<double> &SpectralBasis::kx_sq_all() const noexcept
+{
+  return kx_sq_;
+}
+
+const std::vector<double> &SpectralBasis::ky_all() const noexcept
+{
+  return ky_;
+}
+
+const std::vector<double> &SpectralBasis::ky_sq_all() const noexcept
+{
+  return ky_sq_;
+}
+
 double SpectralBasis::h1_norm_sq(const std::size_t m, const std::size_t n)
   const noexcept
 {

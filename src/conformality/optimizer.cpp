@@ -329,7 +329,7 @@ FlowStats replay(
   NodeSet &nodes,
   const SpectralBasis &basis,
   const std::vector<AcceptedStep> &steps,
-  const ImplicitMidpointSettings &solver)
+  const FlowSettings &solver)
 {
   FlowStats total;
   for (const auto &step : steps) {
@@ -351,7 +351,7 @@ FlowStats replay(
   std::vector<Mat2> *tangents,
   const SpectralBasis &basis,
   const std::vector<AcceptedStep> &steps,
-  const ImplicitMidpointSettings &solver)
+  const FlowSettings &solver)
 {
   FlowStats total;
   for (const auto &step : steps) {

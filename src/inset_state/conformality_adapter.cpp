@@ -1033,7 +1033,8 @@ RegionAreaCheck check_region_areas(
 conformality::FlowStats replay_sets(
   const std::vector<std::vector<Vec2> *> &sets,
   const conformality::SpectralBasis &basis,
-  const std::vector<conformality::AcceptedStep> &steps)
+  const std::vector<conformality::AcceptedStep> &steps,
+  const conformality::FlowSettings &solver)
 {
   std::vector<Vec2> all;
   std::size_t total = 0;
@@ -1044,7 +1045,7 @@ conformality::FlowStats replay_sets(
   for (const auto *set : sets) {
     all.insert(all.end(), set->begin(), set->end());
   }
-  const auto stats = conformality::replay(all, nullptr, basis, steps);
+  const auto stats = conformality::replay(all, nullptr, basis, steps, solver);
   std::size_t offset = 0;
   for (auto *set : sets) {
     for (auto &p : *set) {
@@ -1093,6 +1094,9 @@ void InsetState::run_conformality_optimization()
   settings.max_iterations = args_.conf_max_iter;
   settings.stall_tol = args_.conf_stall_tol;
   settings.lbfgs_memory = args_.conf_lbfgs;
+  settings.substep_factor = args_.conf_substep_factor;
+  settings.solver.integrator =
+    conformality::integrator_from_string(args_.conf_integrator);
   settings.on_iteration = [](const conformality::IterationRecord &r) {
     std::cerr << "  conformality iteration " << r.iteration << ": E "
               << r.energy << " -> " << r.energy_after << ", R " << r.r
@@ -1105,7 +1109,9 @@ void InsetState::run_conformality_optimization()
   std::cerr << "\nConformality optimization for inset " << pos_ << ": " << mx
             << " x " << my << " modes, " << conf_.nodes.size() << " nodes, "
             << conformality::max_threads() << " threads, objective E_" << alpha
-            << ", ocean weight " << args_.conf_ocean_weight << std::endl;
+            << ", ocean weight " << args_.conf_ocean_weight << ", integrator "
+            << conformality::to_string(settings.solver.integrator)
+            << ", substep factor " << settings.substep_factor << std::endl;
   const SubsetDistortion before =
     subset_distortion(conf_.eval_nodes, conf_.eval_region);
   const CloudSummary opt_before =
@@ -1115,6 +1121,11 @@ void InsetState::run_conformality_optimization()
     conf_.eval_region,
     geo_divs_,
     domain_area);
+
+  // Starting state of the optimization nodes, to check after the run that
+  // replaying the step log reproduces the optimized nodes exactly (the
+  // replay must use the optimizer's integrator and solver settings)
+  const conformality::NodeSet start_nodes = conf_.nodes;
 
   timer.start("Conformality optimization");
   const auto t0 = std::chrono::steady_clock::now();
@@ -1132,7 +1143,7 @@ void InsetState::run_conformality_optimization()
     const conformality::FlowStats start_stats =
       conformality::replay(conf_.nodes, basis, steps, settings.solver);
     if (!start_stats.converged) {
-      std::cerr << "WARNING: the implicit-midpoint solve of the random start "
+      std::cerr << "WARNING: the implicit solve of the random start "
                    "did not converge."
                 << std::endl;
     }
@@ -1163,7 +1174,7 @@ void InsetState::run_conformality_optimization()
 
   // Apply the same correction to every other tracer set
   conformality::FlowStats replay_stats =
-    conformality::replay(conf_.eval_nodes, basis, steps);
+    conformality::replay(conf_.eval_nodes, basis, steps, settings.solver);
 
   // Output polygons of T0, densified at three maximum segment lengths so
   // that the curved images of their edges under A are resolved; they are
@@ -1204,7 +1215,9 @@ void InsetState::run_conformality_optimization()
       passive.push_back(&ring);
     }
   }
-  conformality::accumulate(replay_stats, replay_sets(passive, basis, steps));
+  conformality::accumulate(
+    replay_stats,
+    replay_sets(passive, basis, steps, settings.solver));
   std::vector<RegionAreaCheck> region_checks;
   for (std::size_t d = 0; d < ring_segments.size(); ++d) {
     region_checks.push_back(check_region_areas(
@@ -1219,13 +1232,46 @@ void InsetState::run_conformality_optimization()
   conf_.optimized = true;
 
   const std::vector<conformality::MeshAreaCheck> mesh_checks =
-    conformality::check_mesh_areas(basis, steps, lx, ly, 64, 8);
+    conformality::check_mesh_areas(
+      basis,
+      steps,
+      lx,
+      ly,
+      64,
+      8,
+      settings.solver);
   const auto t2 = std::chrono::steady_clock::now();
   timer.stop("Conformality optimization");
 
   const double optimize_seconds =
     std::chrono::duration<double>(t1 - t0).count();
   const double replay_seconds = std::chrono::duration<double>(t2 - t1).count();
+
+  // Replay of the whole log on the starting nodes; it must reproduce the
+  // optimized positions and Jacobians bit for bit
+  conformality::NodeSet replayed = start_nodes;
+  static_cast<void>(
+    conformality::replay(replayed, basis, steps, settings.solver));
+  double replay_mismatch = 0.0;
+  for (std::size_t j = 0; j < replayed.size(); ++j) {
+    const Vec2 a = replayed.y[j];
+    const Vec2 b = conf_.nodes.y[j];
+    const conformality::Mat2 &ja = replayed.jac[j];
+    const conformality::Mat2 &jb = conf_.nodes.jac[j];
+    replay_mismatch = std::max(
+      {replay_mismatch,
+       std::abs(a.x - b.x),
+       std::abs(a.y - b.y),
+       std::abs(ja.a11 - jb.a11),
+       std::abs(ja.a12 - jb.a12),
+       std::abs(ja.a21 - jb.a21),
+       std::abs(ja.a22 - jb.a22)});
+  }
+  if (replay_mismatch > 0.0) {
+    std::cerr << "WARNING: replaying the step log does not reproduce the "
+                 "optimized nodes (max difference "
+              << replay_mismatch << ")." << std::endl;
+  }
   const SubsetDistortion after =
     subset_distortion(conf_.eval_nodes, conf_.eval_region);
   const CloudSummary opt_after =
@@ -1321,7 +1367,7 @@ void InsetState::run_conformality_optimization()
        {"n_substeps", step.n_substeps},
        {"coeffs", step.coeffs}});
   }
-  const conformality::ImplicitMidpointSettings &solver = settings.solver;
+  const conformality::FlowSettings &solver = settings.solver;
   const nlohmann::json step_log = {
     {"inset", pos_},
     {"lattice", {lx_, ly_}},
@@ -1334,7 +1380,8 @@ void InsetState::run_conformality_optimization()
       {"is_first_step", args_.conf_perturb > 0.0}}},
     {"coefficient_index", "c[(m - 1) * my + (n - 1)] for mode (m, n)"},
     {"solver",
-     {{"residual_tol", solver.residual_tol},
+     {{"integrator", conformality::to_string(solver.integrator)},
+      {"residual_tol", solver.residual_tol},
       {"max_iterations", solver.max_iterations}}},
     {"steps", steps_json}};
   std::ofstream(inset_name_ + "_conformality_steps.json") << step_log << '\n';
@@ -1375,6 +1422,7 @@ void InsetState::run_conformality_optimization()
       {"stall_tol", settings.stall_tol},
       {"max_strain", settings.max_strain},
       {"substep_factor", settings.substep_factor},
+      {"integrator", conformality::to_string(settings.solver.integrator)},
       {"det_drift_tol", settings.det_drift_tol},
       {"openmp", conformality::openmp_enabled()},
       {"threads", conformality::max_threads()}}},
@@ -1403,6 +1451,7 @@ void InsetState::run_conformality_optimization()
      {{"max_det_drift_optimization_cloud", drift_opt},
       {"max_det_drift_evaluation_cloud", drift_eval},
       {"replay_converged", replay_stats.converged},
+      {"replay_mismatch_optimization_cloud", replay_mismatch},
       {"mesh", mesh_json},
       {"region_areas", region_json},
       {"boundary", boundary_to_json(bc, conf_.boundary.size())},

@@ -20,6 +20,8 @@
 #include <vector>
 
 using conformality::advance_nodes;
+using conformality::FlowSettings;
+using conformality::Integrator;
 using conformality::max_threads;
 using conformality::modal_derivatives;
 using conformality::NodeSet;
@@ -150,7 +152,7 @@ BOOST_AUTO_TEST_CASE(mesh_check_converges_at_second_order)
 {
   const SpectralBasis basis(lx, ly, 2, 1);
   const auto identity =
-    conformality::check_mesh_areas(basis, {}, lx, ly, 4, 4);
+    conformality::check_mesh_areas(basis, {}, lx, ly, 4, 4, {});
   BOOST_TEST_REQUIRE(identity.size() == 5u);
   for (const auto &c : identity) {
     BOOST_TEST(c.max_rel_error < 1e-14);
@@ -164,7 +166,7 @@ BOOST_AUTO_TEST_CASE(mesh_check_converges_at_second_order)
   step.h = 1.0;
   step.n_substeps = 4;
   const auto checks =
-    conformality::check_mesh_areas(generic, {step}, lx, ly, 4, 8);
+    conformality::check_mesh_areas(generic, {step}, lx, ly, 4, 8, {});
   for (const auto &c : checks) {
     BOOST_TEST_MESSAGE(
       c.cells_long << " cells, " << c.samples_per_edge
@@ -198,7 +200,7 @@ BOOST_AUTO_TEST_CASE(mesh_check_converges_at_second_order)
 
   BOOST_CHECK_THROW(
     static_cast<void>(
-      conformality::check_mesh_areas(generic, {step}, lx, ly, 4, 3)),
+      conformality::check_mesh_areas(generic, {step}, lx, ly, 4, 3, {})),
     std::invalid_argument);
 }
 
@@ -222,7 +224,7 @@ BOOST_AUTO_TEST_CASE(random_step_is_reproducible_and_area_preserving)
 
   NodeSet nodes = conformality::make_cell_centre_nodes(lx, ly, 16, 8);
   const NodeSet start = nodes;
-  const auto stats = conformality::replay(nodes, basis, {a});
+  const auto stats = conformality::replay(nodes, basis, {a}, {});
   BOOST_TEST(stats.converged);
   BOOST_TEST(conformality::max_det_drift(nodes) < 1e-12);
   double moved = 0.0;
@@ -254,8 +256,9 @@ BOOST_AUTO_TEST_CASE(invalid_settings_are_rejected)
     std::invalid_argument);
 }
 
-// The flow and the modal derivatives give bitwise identical results on one
-// thread and on several. Without OpenMP, both runs are serial.
+// The flow (with every integrator) and the modal derivatives give bitwise
+// identical results on one thread and on several. Without OpenMP, both runs
+// are serial.
 BOOST_AUTO_TEST_CASE(results_do_not_depend_on_thread_count)
 {
   const ThreadCountGuard guard;
@@ -270,31 +273,38 @@ BOOST_AUTO_TEST_CASE(results_do_not_depend_on_thread_count)
   std::mt19937 rng(7);
   const auto c = random_coefficients(basis.n_modes(), 2e-3, rng);
 
-  auto run = [&](const int threads) {
-    set_max_threads(threads);
-    NodeSet nodes = start;
-    const auto stats = advance_nodes(nodes, basis, c, 1.0, 3);
-    BOOST_TEST_REQUIRE(stats.converged);
-    return std::make_pair(nodes, modal_derivatives(nodes, basis));
-  };
-  const auto [serial_nodes, serial_f] = run(1);
-  const auto [parallel_nodes, parallel_f] = run(4);
+  for (const Integrator integrator :
+       {Integrator::implicit_midpoint,
+        Integrator::symplectic_euler,
+        Integrator::stormer_verlet}) {
+    FlowSettings flow;
+    flow.integrator = integrator;
+    auto run = [&](const int threads) {
+      set_max_threads(threads);
+      NodeSet nodes = start;
+      const auto stats = advance_nodes(nodes, basis, c, 1.0, 3, flow);
+      BOOST_TEST_REQUIRE(stats.converged);
+      return std::make_pair(nodes, modal_derivatives(nodes, basis));
+    };
+    const auto [serial_nodes, serial_f] = run(1);
+    const auto [parallel_nodes, parallel_f] = run(4);
 
-  std::size_t position_mismatches = 0;
-  std::size_t jacobian_mismatches = 0;
-  for (std::size_t j = 0; j < start.size(); ++j) {
-    const auto &a = serial_nodes.y[j];
-    const auto &b = parallel_nodes.y[j];
-    position_mismatches += same_bits({a.x, a.y}, {b.x, b.y}) ? 0 : 1;
-    const auto &ja = serial_nodes.jac[j];
-    const auto &jb = parallel_nodes.jac[j];
-    jacobian_mismatches += same_bits(
-                             {ja.a11, ja.a12, ja.a21, ja.a22},
-                             {jb.a11, jb.a12, jb.a21, jb.a22})
-                             ? 0
-                             : 1;
+    std::size_t position_mismatches = 0;
+    std::size_t jacobian_mismatches = 0;
+    for (std::size_t j = 0; j < start.size(); ++j) {
+      const auto &a = serial_nodes.y[j];
+      const auto &b = parallel_nodes.y[j];
+      position_mismatches += same_bits({a.x, a.y}, {b.x, b.y}) ? 0 : 1;
+      const auto &ja = serial_nodes.jac[j];
+      const auto &jb = parallel_nodes.jac[j];
+      jacobian_mismatches += same_bits(
+                               {ja.a11, ja.a12, ja.a21, ja.a22},
+                               {jb.a11, jb.a12, jb.a21, jb.a22})
+                               ? 0
+                               : 1;
+    }
+    BOOST_TEST(position_mismatches == 0u);
+    BOOST_TEST(jacobian_mismatches == 0u);
+    BOOST_TEST(same_bits(serial_f, parallel_f));
   }
-  BOOST_TEST(position_mismatches == 0u);
-  BOOST_TEST(jacobian_mismatches == 0u);
-  BOOST_TEST(same_bits(serial_f, parallel_f));
 }

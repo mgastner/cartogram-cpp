@@ -19,7 +19,7 @@ using conformality::FlowStats;
 using conformality::frobenius_sq;
 using conformality::h1_descent;
 using conformality::identity_mat2;
-using conformality::ImplicitMidpointSettings;
+using conformality::FlowSettings;
 using conformality::Mat2;
 using conformality::modal_derivatives;
 using conformality::NodeSet;
@@ -319,7 +319,7 @@ BOOST_AUTO_TEST_CASE(non_convergent_solve_is_reported)
   const auto c = random_coefficients(basis.n_modes(), 1.0, rng);
 
   // One huge substep: the fixed-point map is far from a contraction
-  ImplicitMidpointSettings settings;
+  FlowSettings settings;
   settings.max_iterations = 5;
   std::vector<Vec2> pts = {{0.3, 0.4}, {0.6, 0.7}};
   const FlowStats stats =

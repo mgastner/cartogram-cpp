@@ -37,10 +37,14 @@ public:
     Mat2 dv{};
   };
 
-  // Scratch space for evaluate(). Reusing one workspace across calls avoids
-  // reallocating the harmonic tables.
+  // Scratch space for evaluate() and the flow integrators. Reusing one
+  // workspace across calls avoids reallocating the harmonic tables.
   struct Workspace {
     std::vector<double> sin_x, cos_x, sin_y, cos_y;
+
+    // Sums over one coordinate's modes at a fixed value of that coordinate,
+    // and the negated transposed coefficients (see flow.cpp)
+    std::vector<double> line_a, line_b, line_e, transposed;
   };
 
   // Throws std::invalid_argument unless lx > 0, ly > 0, mx >= 1, my >= 1
@@ -57,6 +61,13 @@ public:
 
   [[nodiscard]] double kx(std::size_t m) const noexcept;
   [[nodiscard]] double ky(std::size_t n) const noexcept;
+
+  // All wavenumbers and their squares, indexed from 0: kx_all()[m - 1] is
+  // kx_m, kx_sq_all()[m - 1] is kx_m^2, and likewise for y
+  [[nodiscard]] const std::vector<double> &kx_all() const noexcept;
+  [[nodiscard]] const std::vector<double> &kx_sq_all() const noexcept;
+  [[nodiscard]] const std::vector<double> &ky_all() const noexcept;
+  [[nodiscard]] const std::vector<double> &ky_sq_all() const noexcept;
 
   // Squared homogeneous H1 norm of the velocity mode (m, n),
   // G_mn = integral of dv_mn : dv_mn = (lx ly / 4) (kx_m^2 + ky_n^2)^2

@@ -104,6 +104,8 @@ struct Arguments {
   // Memory of the L-BFGS direction of the conformality optimizer (0: H1
   // steepest descent)
   unsigned int conf_lbfgs;
+  std::string conf_integrator;
+  double conf_substep_factor;
 
   // Column names in provided visual variables file (CSV)
   std::optional<std::string> id_col;

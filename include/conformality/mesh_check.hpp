@@ -42,7 +42,7 @@ struct MeshAreaCheck {
   double ly,
   std::size_t base_cells,
   std::size_t max_refinement,
-  const ImplicitMidpointSettings &solver = {});
+  const FlowSettings &solver);
 
 }  // namespace conformality
 

@@ -79,7 +79,10 @@ int main(int argc, char *argv[])
     const double ly = log.at("lattice").at(1).get<double>();
     const auto mx = log.at("modes").at(0).get<std::size_t>();
     const auto my = log.at("modes").at(1).get<std::size_t>();
-    conformality::ImplicitMidpointSettings solver;
+    conformality::FlowSettings solver;
+    // Logs written before the integrator option used implicit midpoint
+    solver.integrator = conformality::integrator_from_string(
+      log.at("solver").value("integrator", std::string("midpoint")));
     solver.residual_tol = log.at("solver").at("residual_tol").get<double>();
     solver.max_iterations =
       log.at("solver").at("max_iterations").get<unsigned>();

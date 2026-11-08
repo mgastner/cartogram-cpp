@@ -231,6 +231,17 @@ Arguments parse_arguments(const int argc, const char *argv[])
     .help("Unsigned int: Seed of the random correction (see --conf_perturb)")
     .default_value(static_cast<unsigned int>(1))
     .scan<'u', unsigned int>();
+  arguments.add_argument("--conf_integrator")
+    .help(
+      "String: Integrator of the conformality flow: midpoint (implicit "
+      "midpoint), euler (symplectic Euler) or verlet (Stormer-Verlet)")
+    .default_value(std::string("midpoint"));
+  arguments.add_argument("--conf_substep_factor")
+    .help(
+      "Double: Substeps of the conformality flow keep dt times the bound on "
+      "the velocity gradient at most this value")
+    .default_value(0.1)
+    .scan<'g', double>();
 
   // Parse command-line arguments
   try {
@@ -319,6 +330,22 @@ Arguments parse_arguments(const int argc, const char *argv[])
   args.conf_perturb = arguments.get<double>("--conf_perturb");
   args.conf_seed = arguments.get<unsigned int>("--conf_seed");
   args.conf_lbfgs = arguments.get<unsigned int>("--conf_lbfgs");
+  args.conf_integrator = arguments.get<std::string>("--conf_integrator");
+  args.conf_substep_factor = arguments.get<double>("--conf_substep_factor");
+  if (
+    args.conf_integrator != "midpoint" && args.conf_integrator != "euler" &&
+    args.conf_integrator != "verlet") {
+    std::cerr << "ERROR: --conf_integrator must be midpoint, euler or verlet."
+              << std::endl;
+    std::exit(17);
+  }
+  if (
+    !(args.conf_substep_factor > 0.0) ||
+    !std::isfinite(args.conf_substep_factor)) {
+    std::cerr << "ERROR: --conf_substep_factor must be positive and finite."
+              << std::endl;
+    std::exit(17);
+  }
   if (!(args.conf_alpha >= 0.0 && args.conf_alpha <= 1.0)) {
     std::cerr << "ERROR: --conf_alpha must be in [0, 1]." << std::endl;
     std::exit(17);

@@ -13,7 +13,7 @@ std::vector<MeshAreaCheck> check_mesh_areas(
   const double ly,
   const std::size_t base_cells,
   const std::size_t max_refinement,
-  const ImplicitMidpointSettings &solver)
+  const FlowSettings &solver)
 {
   if (
     base_cells == 0 || max_refinement == 0 ||

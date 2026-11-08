@@ -77,7 +77,11 @@ struct OptimizerSettings {
 
   unsigned max_iterations{200};
 
-  // Substeps are chosen so that dt * (bound on ||Dv||_F) <= substep_factor
+  // Substeps are chosen so that dt * (bound on ||Dv||_F) <= substep_factor.
+  // Every integrator preserves area at any substep size; the factor sets
+  // how closely a step follows the continuous flow and how many iterations
+  // the implicit solves need. For symplectic Euler and Stormer-Verlet, a
+  // factor of at most 2 also guarantees that every substep is one to one.
   double substep_factor{0.1};
 
   // If a trial would need more substeps, its duration is shortened
@@ -112,7 +116,8 @@ struct OptimizerSettings {
   // memory.
   unsigned lbfgs_memory{0};
 
-  ImplicitMidpointSettings solver{};
+  // Integrator of the flow and its implicit solve
+  FlowSettings solver{};
 
   // Called after every outer iteration with its record (e.g. to print
   // progress)
@@ -171,18 +176,21 @@ struct OptimizationResult {
   double substep_factor = 0.1);
 
 // Applies the accepted steps of an optimization to nodes (positions and
-// Jacobians) or to passive points (and optionally their tangents), in order
+// Jacobians) or to passive points (and optionally their tangents), in order.
+// The flow settings must be those of the optimization (in particular its
+// integrator), or a different correction is applied; they have no default
+// for that reason.
 FlowStats replay(
   NodeSet &nodes,
   const SpectralBasis &basis,
   const std::vector<AcceptedStep> &steps,
-  const ImplicitMidpointSettings &solver = {});
+  const FlowSettings &solver);
 FlowStats replay(
   std::vector<Vec2> &points,
   std::vector<Mat2> *tangents,
   const SpectralBasis &basis,
   const std::vector<AcceptedStep> &steps,
-  const ImplicitMidpointSettings &solver = {});
+  const FlowSettings &solver);
 
 }  // namespace conformality
 
