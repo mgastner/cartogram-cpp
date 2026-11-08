@@ -58,6 +58,14 @@ struct Arguments {
   // Maximum permitted area error for cartogram transformation
   double max_permitted_area_error;
 
+  // Repair of the input topology (see topology_repair.hpp): self-intersecting
+  // rings and regions whose shared borders do not match. A repair that
+  // changes a region's area by more than max_repair_area_change (relative)
+  // stops the program. A negative repair_snapping_distance lets GEOS choose.
+  bool disable_topology_repair;
+  double max_repair_area_change;
+  double repair_snapping_distance;
+
   // Quadtree leaf count factor (should be a power of 2)
   unsigned int quadtree_leaf_count_factor;
 

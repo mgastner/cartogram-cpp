@@ -8,7 +8,10 @@
 // on a shared border are misclassified, the copies of the border are merged
 // only in part, and spurious intersection points are constructed. The
 // coordinates themselves remain doubles. Borders that two GeoDivs share are
-// simplified identically only if both copies have the same vertices.
+// simplified identically if both copies have the same vertices. The repair
+// of the input topology (topology_repair.hpp) gives both copies the same
+// vertices where they overlap or miss each other by less than the snapping
+// distance, unless --disable_topology_repair is passed.
 using SimplifyKernel = CGAL::Exact_predicates_inexact_constructions_kernel;
 using Vb = CGAL::Polyline_simplification_2::Vertex_base_2<SimplifyKernel>;
 using Fb = CGAL::Constrained_triangulation_face_base_2<SimplifyKernel>;

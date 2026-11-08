@@ -1,6 +1,7 @@
 [requires]
 argparse/3.2
 cgal/6.2.1
+geos/3.14.1
 vincentlaucsb-csv-parser/2.3.0
 indicators/2.3
 nlohmann_json/3.11.3

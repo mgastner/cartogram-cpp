@@ -14,6 +14,10 @@ constexpr double dbl_inf = std::numeric_limits<double>::infinity();
 constexpr double dbl_resolution = 1e-8;
 constexpr unsigned int max_integrations = 100;
 constexpr double default_max_permitted_area_error = 0.01;
+
+// Largest relative change of a region's area that the repair of the input
+// topology may cause without stopping the program
+constexpr double default_max_repair_area_change = 1e-3;
 constexpr double max_permitted_area_drift = 0.05;
 constexpr double padding_unless_world = 1.5;
 constexpr double pi = std::numbers::pi;
