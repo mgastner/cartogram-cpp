@@ -40,6 +40,33 @@ depend on how densely T0 and T are sampled; --segment 0 uses the vertices as
 given. The rings of the input map, T0 and T start at corresponding points,
 so the Frechet distance pairs the curves from those starting points.
 
+Miaji et al. do not optimize over rotations. With --rotation, each of the
+three measures is also computed with rotations of the normalized cartogram
+region about its centroid permitted, minimized separately for each measure.
+On a grid of 72 equally spaced angles,
+
+  --rotation local   descends from the angle 0 to the nearest local minimum,
+                     the rotation by which the region has turned;
+  --rotation global  takes the best angle on the whole circle.
+
+Either is then refined by golden-section search within one grid spacing.
+For the Frechet distance, the grid is evaluated on rings resampled at four
+times the --segment length, and the refinement at --segment. Both searches
+can mistake other deformations for rotations. The global minimum turns
+roughly centrally symmetric regions upside down (on the USA T0, California
+by -179 degrees, Illinois by 146 degrees), and the local search turns
+squashed near-rectangles by almost 90 degrees (Colorado, Connecticut).
+
+  --rotation map     rotates each cartogram region back by its own rotation
+                     under the map, so the three measures share one angle.
+
+The rotation is the least-squares (orthogonal Procrustes) rotation of the
+region's field cells (the 2 x 2 cells of the plot data) from the input map
+to the cartogram. It uses the map's own point correspondence, so it cannot
+mistake a symmetric shape for a rotated one. The angles in the JSON output
+(degrees, positive counterclockwise) are the rotations applied to the
+cartogram region.
+
 With --metrics 2018 (or all), it also uses the three measures that Gastner,
 Seguy and More (2018, Table 1) took from the cartogram literature:
 
@@ -75,7 +102,8 @@ is the standard library.
 
 Usage: polygon_measures.py PLOT_JSON [PLOT_JSON ...]
            [--metrics miaji|2018|all] [--unit region|polygon]
-           [--segment LENGTH] [--json OUT.json]
+           [--segment LENGTH] [--rotation local|global|map]
+           [--json OUT.json]
 """
 
 import argparse
@@ -87,7 +115,7 @@ from pathlib import Path
 try:
     import numpy as np
     import shapely
-    from shapely.affinity import scale, translate
+    from shapely.affinity import rotate, scale, translate
     from shapely.geometry import LineString, Polygon
     from shapely.ops import unary_union
 except ImportError:
@@ -350,6 +378,149 @@ def one_sided_hausdorff(a, b):
     return float(shapely.distance(shapely.points(np.asarray(a.coords)), b).max())
 
 
+def golden_min(f, lo, hi, tol=1e-3):
+    """Local minimum of f on [lo, hi] by golden-section search; returns the
+    argument and the value."""
+    g = (math.sqrt(5.0) - 1.0) / 2.0
+    a, b = lo, hi
+    c, d = b - g * (b - a), a + g * (b - a)
+    fc, fd = f(c), f(d)
+    while b - a > tol:
+        if fc <= fd:
+            b, d, fd = d, c, fc
+            c = b - g * (b - a)
+            fc = f(c)
+        else:
+            a, c, fc = c, d, fd
+            d = a + g * (b - a)
+            fd = f(d)
+    return (c, fc) if fc <= fd else (d, fd)
+
+
+def min_over_rotation(f, coarse=None, n_grid=72, mode="local"):
+    """Minimum of f(theta) over rotation angles theta (radians) and the angle
+    in (-pi, pi]. On n_grid equally spaced angles (evaluated with coarse, a
+    cheaper approximation of f, if given), mode "local" descends from the
+    angle 0 to the nearest local minimum and mode "global" takes the best
+    angle; either is refined by golden-section search within one grid
+    spacing. The angle 0 is always a candidate, so the result never exceeds
+    f(0)."""
+    step = 2.0 * math.pi / n_grid
+    g = coarse or f
+    cache = {}
+
+    def grid(k):
+        k %= n_grid
+        if k not in cache:
+            cache[k] = g(k * step)
+        return cache[k]
+
+    if mode == "global":
+        k = min(range(n_grid), key=grid)
+    else:
+        k = 0
+        for _ in range(n_grid // 2):
+            left, right = grid(k - 1), grid(k + 1)
+            if min(left, right) >= grid(k):
+                break
+            k = k - 1 if left < right else k + 1
+    theta, value = golden_min(f, (k - 1) * step, (k + 1) * step)
+    f0 = f(0.0)
+    if f0 <= value:
+        return f0, 0.0
+    return value, math.remainder(theta, 2.0 * math.pi)
+
+
+def rotated_coords(coords, theta):
+    """Coordinates rotated counterclockwise by theta about the origin."""
+    xy = np.asarray(coords, dtype=float)
+    c, s = math.cos(theta), math.sin(theta)
+    return np.column_stack((c * xy[:, 0] - s * xy[:, 1], s * xy[:, 0] + c * xy[:, 1]))
+
+
+def resampled(line, spacing):
+    """Points at equal arc-length spacing (at most `spacing`) along line,
+    including both ends."""
+    n = max(2, int(math.ceil(line.length / spacing)) + 1)
+    pts = shapely.line_interpolate_point(line, np.linspace(0.0, line.length, n))
+    return shapely.get_coordinates(pts)
+
+
+def rotation_measures(p, q, a, b, segment, mode="local", angle=None):
+    """Symmetric difference, Frechet and one-sided Hausdorff distance after a
+    rotation of the cartogram geometry (q, b) about the origin: each
+    minimized over rotations (mode "local" or "global"), or all three at the
+    given angle (mode "map", angle in radians). p, q: normalized regions;
+    a, b: normalized outer rings (input, cartogram), already resampled at
+    `segment`. Returns {measure: (value, angle in degrees)}, where the angle
+    is the rotation applied to the cartogram geometry."""
+    a_xy = np.asarray(a.coords)
+    b_xy = np.asarray(b.coords)
+    a_pts = shapely.points(a_xy)
+    funcs = {
+        "symdiff": lambda th: p.symmetric_difference(
+            rotate(q, th, origin=(0, 0), use_radians=True)
+        ).area,
+        "frechet": lambda th: discrete_frechet(a_xy, rotated_coords(b_xy, th)),
+        "hausdorff": lambda th: float(
+            shapely.distance(a_pts, LineString(rotated_coords(b_xy, th))).max()
+        ),
+    }
+    if mode == "map":
+        return {m: (f(angle), math.degrees(angle)) for m, f in funcs.items()}
+    coarse_spacing = 4.0 * segment if segment > 0 else 0.04
+    a_coarse = resampled(a, coarse_spacing)
+    b_coarse = resampled(b, coarse_spacing)
+    coarse = {
+        "frechet": lambda th: discrete_frechet(
+            a_coarse, rotated_coords(b_coarse, th)
+        )
+    }
+    out = {}
+    for m, f in funcs.items():
+        v, t = min_over_rotation(f, coarse=coarse.get(m), mode=mode)
+        out[m] = (v, math.degrees(t))
+    return out
+
+
+def map_rotations(data, regions_original):
+    """Rotation of each region under T0 and under T, from the map itself:
+    the least-squares (orthogonal Procrustes) rotation that takes the
+    centred centres of the field cells inside the region on the input map to
+    their centred images, i.e. atan2(sum p x q, sum p . q). The images of
+    the cell centres are the means of the images of the cell corners.
+    Returns {key: [angle in radians or None]} for key in ("t0", "t"); None
+    for a region with fewer than three cell centres."""
+    f = data["field"]
+    nx, ny = f["shape"]
+    cell = f["cell"]
+    jj, ii = np.mgrid[0:ny, 0:nx]
+    xc = ((ii + 0.5) * cell).ravel()
+    yc = ((jj + 0.5) * cell).ravel()
+    masks = [
+        None if g is None else shapely.contains_xy(g, xc, yc)
+        for g in regions_original
+    ]
+    out = {}
+    for key in ("t0", "t"):
+        c = np.asarray(f[f"corners_{key}"], dtype=float).reshape(ny + 1, nx + 1, 2)
+        img = 0.25 * (c[:-1, :-1] + c[:-1, 1:] + c[1:, :-1] + c[1:, 1:])
+        img = img.reshape(-1, 2)
+        angles = []
+        for mask in masks:
+            if mask is None or mask.sum() < 3:
+                angles.append(None)
+                continue
+            px, py = xc[mask] - xc[mask].mean(), yc[mask] - yc[mask].mean()
+            qx = img[mask, 0] - img[mask, 0].mean()
+            qy = img[mask, 1] - img[mask, 1].mean()
+            angles.append(
+                math.atan2(np.sum(px * qy - py * qx), np.sum(px * qx + py * qy))
+            )
+        out[key] = angles
+    return out
+
+
 def normalized(geom, region):
     """geom under the map that takes region to unit area with its centroid
     at the origin."""
@@ -358,7 +529,7 @@ def normalized(geom, region):
     return scale(translate(geom, -c.x, -c.y), xfact=f, yfact=f, origin=(0, 0))
 
 
-def miaji_measures(data, segment):
+def miaji_measures(data, segment, rotation=None):
     """Symmetric difference, Frechet and Hausdorff distance per region, after
     Miaji et al. (2026, section 5.1.3)."""
     names = data["region_names"]
@@ -379,6 +550,11 @@ def miaji_measures(data, segment):
         a = abs(signed_area(ring))
         if region not in largest or a > largest[region][1]:
             largest[region] = (k, a)
+    turns = None
+    if rotation == "map":
+        if "field" not in data:
+            sys.exit("--rotation map needs the distortion field in the plot data")
+        turns = map_rotations(data, regions["original"])
     units = []
     for i, name in enumerate(names):
         if i not in largest or any(
@@ -406,23 +582,40 @@ def miaji_measures(data, segment):
             # Distance between the normalized starting points, to check that
             # the rings start at corresponding points
             entry[f"start_{key}"] = math.dist(a.coords[0], b.coords[0])
+            if rotation:
+                # In mode "map", undo the region's own rotation under the map
+                # (no rotation if the region holds too few field cells)
+                angle = None
+                if turns is not None:
+                    angle = -(turns[key][i] or 0.0)
+                for m, (v, angle) in rotation_measures(
+                    p, q, a, b, segment, rotation, angle
+                ).items():
+                    entry[f"{m}_rot_{key}"] = v
+                    entry[f"{m}_angle_{key}"] = angle
         units.append(entry)
+    names_avg = ["symdiff", "frechet", "hausdorff", "hausdorff_sym"]
+    if rotation:
+        names_avg += ["symdiff_rot", "frechet_rot", "hausdorff_rot"]
     maps = {}
     for key in ("t0", "t"):
         maps[key] = {
-            m: sum(u[f"{m}_{key}"] for u in units) / len(units)
-            for m in ("symdiff", "frechet", "hausdorff", "hausdorff_sym")
+            m: sum(u[f"{m}_{key}"] for u in units) / len(units) for m in names_avg
         }
+        if rotation:
+            for m in ("symdiff", "frechet", "hausdorff"):
+                angles = sorted(abs(u[f"{m}_angle_{key}"]) for u in units)
+                maps[key][f"{m}_median_abs_angle"] = angles[len(angles) // 2]
     return {"n_regions": len(units), "maps": maps, "units": units}, repaired
 
 
-def measures(path, unit, metrics="2018", segment=0.01):
+def measures(path, unit, metrics="2018", segment=0.01, rotation=None):
     data = json.loads(Path(path).read_text())
     if data["polygons"]["t"] is None:
         sys.exit(f"{path}: no corrected polygons (run with --conf_optimize)")
     result = {"file": str(path)}
     if metrics in ("miaji", "all"):
-        result["miaji"], repaired = miaji_measures(data, segment)
+        result["miaji"], repaired = miaji_measures(data, segment, rotation)
         result["miaji"]["segment"] = segment
         result["n_rings_repaired"] = repaired
         if metrics == "miaji":
@@ -492,10 +685,20 @@ def main():
         default=0.01,
         help="resample rings for Frechet and Hausdorff (0: vertices only)",
     )
+    parser.add_argument(
+        "--rotation",
+        choices=("local", "global", "map"),
+        help="also compute each Miaji measure after a rotation: the nearest "
+        "local minimum from the angle 0, the global minimum, or the region's "
+        "own rotation under the map",
+    )
     parser.add_argument("--json", type=Path, help="write per-unit results")
     args = parser.parse_args()
 
-    results = [measures(p, args.unit, args.metrics, args.segment) for p in args.plot_json]
+    results = [
+        measures(p, args.unit, args.metrics, args.segment, args.rotation)
+        for p in args.plot_json
+    ]
 
     def short(r):
         return Path(r["file"]).name.replace("_conformality_plot.json", "")
@@ -516,6 +719,26 @@ def main():
             )
             if r["n_rings_repaired"]:
                 print(f"  ({r['n_rings_repaired']} invalid rings repaired)")
+        if args.rotation:
+            print(
+                f"\nWith rotations permitted ({args.rotation} minimum; "
+                "median |angle| in degrees):\n"
+            )
+            print(
+                "| Map | SymDiff T0 | SymDiff T | Fréchet T0 | Fréchet T "
+                "| Hausdorff T0 | Hausdorff T | SymDiff |angle| T0 | T |"
+            )
+            print("|---|---|---|---|---|---|---|---|---|")
+            for r in results:
+                m = r["miaji"]["maps"]
+                print(
+                    f"| {short(r)} | "
+                    f"{m['t0']['symdiff_rot']:.4f} | {m['t']['symdiff_rot']:.4f} | "
+                    f"{m['t0']['frechet_rot']:.4f} | {m['t']['frechet_rot']:.4f} | "
+                    f"{m['t0']['hausdorff_rot']:.4f} | {m['t']['hausdorff_rot']:.4f} | "
+                    f"{m['t0']['symdiff_median_abs_angle']:.1f} | "
+                    f"{m['t']['symdiff_median_abs_angle']:.1f} |"
+                )
     if args.metrics in ("2018", "all"):
         label = "Polygons" if args.unit == "polygon" else "Regions"
         print(f"| Map | {label} | α input | α T0 | α T | δ T0 | δ T | θ T0 | θ T |")
