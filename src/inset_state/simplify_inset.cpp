@@ -1,14 +1,22 @@
-// TODO: What happens if two polygons have touching lines, but the corner
-//       points are not identical in both lines?
-
 #include "constants.hpp"
 #include "inset_state.hpp"
+#include <CGAL/Exact_predicates_inexact_constructions_kernel.h>
 
-using Vb = CGAL::Polyline_simplification_2::Vertex_base_2<Scd>;
-using Fb = CGAL::Constrained_triangulation_face_base_2<Scd>;
+// The constrained triangulation decides whether vertices of one ring lie on
+// another ring's segments and whether segments cross. These decisions need
+// exact predicates: with plain double arithmetic, nearly collinear vertices
+// on a shared border are misclassified, the copies of the border are merged
+// only in part, and spurious intersection points are constructed. The
+// coordinates themselves remain doubles. Borders that two GeoDivs share are
+// simplified identically only if both copies have the same vertices.
+using SimplifyKernel = CGAL::Exact_predicates_inexact_constructions_kernel;
+using Vb = CGAL::Polyline_simplification_2::Vertex_base_2<SimplifyKernel>;
+using Fb = CGAL::Constrained_triangulation_face_base_2<SimplifyKernel>;
 using TDS = CGAL::Triangulation_data_structure_2<Vb, Fb>;
-using CDT = CGAL::
-  Constrained_Delaunay_triangulation_2<Scd, TDS, CGAL::Exact_predicates_tag>;
+using CDT = CGAL::Constrained_Delaunay_triangulation_2<
+  SimplifyKernel,
+  TDS,
+  CGAL::Exact_predicates_tag>;
 using CT = CGAL::Constrained_triangulation_plus_2<CDT>;
 using Constraint_id = CT::Constraint_id;
 using Stop = CGAL::Polyline_simplification_2::Stop_below_count_ratio_threshold;
@@ -45,12 +53,20 @@ void InsetState::simplify(const unsigned int target_points_per_inset)
   std::vector<Constraint_id> pgn_id_to_constraint_id(n_rings);
   size_t pgn_id = 0;
   CT ct;
+  auto insert_ring = [&ct](const Polygon &ring) {
+    std::vector<CT::Point> pts;
+    pts.reserve(ring.size());
+    for (const auto &p : ring) {
+      pts.emplace_back(p.x(), p.y());
+    }
+    return ct.insert_constraint(
+      CGAL::Polygon_2<SimplifyKernel>(pts.begin(), pts.end()));
+  };
   for (const auto &gd : geo_divs_) {
     for (const auto &pwh : gd.polygons_with_holes()) {
-      pgn_id_to_constraint_id[pgn_id++] =
-        ct.insert_constraint(pwh.outer_boundary());
+      pgn_id_to_constraint_id[pgn_id++] = insert_ring(pwh.outer_boundary());
       for (const auto &h : pwh.holes()) {
-        pgn_id_to_constraint_id[pgn_id++] = ct.insert_constraint(h);
+        pgn_id_to_constraint_id[pgn_id++] = insert_ring(h);
       }
     }
   }
@@ -69,7 +85,7 @@ void InsetState::simplify(const unsigned int target_points_per_inset)
                 pend = ct.points_in_constraint_end(cit);
            std::next(pit) != pend;
            ++pit)
-        ext_ring.push_back(*pit);
+        ext_ring.push_back(Point(pit->x(), pit->y()));
 
       std::vector<Polygon> int_ring_v;
       int_ring_v.reserve(pwh.number_of_holes());
@@ -80,7 +96,7 @@ void InsetState::simplify(const unsigned int target_points_per_inset)
                   pend = ct.points_in_constraint_end(cit);
              std::next(pit) != pend;
              ++pit)
-          int_ring.push_back(*pit);
+          int_ring.push_back(Point(pit->x(), pit->y()));
         int_ring_v.emplace_back(std::move(int_ring));
       }
 
