@@ -109,6 +109,12 @@ struct Arguments {
   std::string conf_bias_region;
   double conf_bias_factor;
 
+  // File to which the T0 images of the conformality optimization nodes are
+  // saved, and a file of T0 images saved by another run to which the map is
+  // registered before optimizing (empty: none)
+  std::string conf_save_t0;
+  std::string conf_register;
+
   // Column names in provided visual variables file (CSV)
   std::optional<std::string> id_col;
   std::optional<std::string> area_col;

@@ -119,6 +119,14 @@ struct OptimizerSettings {
   // Integrator of the flow and its implicit solve
   FlowSettings solver{};
 
+  // Objective to minimize and its modal derivatives at the nodes (for
+  // example registration_objective() and registration_derivatives()). Set
+  // both or neither; if both are empty, the optimizer minimizes objective()
+  // with modal_derivatives(). The derivatives must be those of the
+  // objective along the velocity modes, or the slope test fails.
+  std::function<double(const NodeSet &)> energy{};
+  std::function<std::vector<double>(const NodeSet &)> derivatives{};
+
   // Called after every outer iteration with its record (e.g. to print
   // progress)
   std::function<void(const IterationRecord &)> on_iteration{};
@@ -153,9 +161,10 @@ struct OptimizationResult {
 // Largest |det J_j / g0_j - 1| over the nodes
 [[nodiscard]] double max_det_drift(const NodeSet &nodes);
 
-// Minimizes E0 over maps A o T reachable by successive spectral Hamiltonian
-// flows, starting from the current nodes, by H1 steepest descent with
-// Armijo backtracking. On return, `nodes` holds the last accepted state.
+// Minimizes E0 (or settings.energy) over maps A o T reachable by successive
+// spectral Hamiltonian flows, starting from the current nodes, by H1
+// steepest descent or L-BFGS with Armijo backtracking. On return, `nodes`
+// holds the last accepted state.
 [[nodiscard]] OptimizationResult optimize(
   NodeSet &nodes,
   const SpectralBasis &basis,

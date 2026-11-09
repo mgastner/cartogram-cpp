@@ -252,6 +252,17 @@ Arguments parse_arguments(const int argc, const char *argv[])
       "the velocity gradient at most this value")
     .default_value(0.1)
     .scan<'g', double>();
+  arguments.add_argument("--conf_save_t0")
+    .help(
+      "String: File to which the T0 images of the conformality optimization "
+      "nodes are saved (see --conf_register)")
+    .default_value(std::string(""));
+  arguments.add_argument("--conf_register")
+    .help(
+      "String: File of T0 node images saved by another run with "
+      "--conf_save_t0; the map is first moved as close to them as its "
+      "Jacobian allows, then optimized (empty: no registration)")
+    .default_value(std::string(""));
 
   // Parse command-line arguments
   try {
@@ -344,6 +355,8 @@ Arguments parse_arguments(const int argc, const char *argv[])
   args.conf_substep_factor = arguments.get<double>("--conf_substep_factor");
   args.conf_bias_region = arguments.get<std::string>("--conf_bias_region");
   args.conf_bias_factor = arguments.get<double>("--conf_bias_factor");
+  args.conf_save_t0 = arguments.get<std::string>("--conf_save_t0");
+  args.conf_register = arguments.get<std::string>("--conf_register");
   if (
     !(args.conf_bias_factor > 0.0) || !std::isfinite(args.conf_bias_factor)) {
     std::cerr << "ERROR: --conf_bias_factor must be positive and finite."

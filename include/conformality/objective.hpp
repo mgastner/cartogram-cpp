@@ -63,6 +63,29 @@ inline constexpr std::size_t modal_block_size = 4096;
   const NodeSet &nodes,
   const SpectralBasis &basis);
 
+// Weighted mean squared distance of the current node positions from target
+// positions z_j,
+//   D = sum_j w_j |y_j - z_j|^2 / sum_j w_j.
+// Minimizing D over maps A o T, with A area preserving, moves T as close to
+// another map with images z_j as its fixed Jacobian allows (for example to
+// a cartogram computed by a different method). Returns +infinity if the
+// total weight is not positive. Throws std::invalid_argument unless there
+// is one target per node.
+[[nodiscard]] double registration_objective(
+  const NodeSet &nodes,
+  const std::vector<Vec2> &targets);
+
+// Modal derivatives of D along the velocity modes v_mn of `basis`,
+//   F_mn = (2 / Z) sum_j w_j (y_j - z_j) . v_mn(y_j),   Z = sum_j w_j,
+// the exact derivative of D along the flow of v_mn, because dy_j/dt =
+// v(y_j). Summed in the fixed blocks of modal_derivatives(), so the result
+// does not depend on the number of threads. Throws std::invalid_argument
+// unless there is one target per node and the total weight is positive.
+[[nodiscard]] std::vector<double> registration_derivatives(
+  const NodeSet &nodes,
+  const std::vector<Vec2> &targets,
+  const SpectralBasis &basis);
+
 // Galerkin-projected H1 gradient and its descent direction
 struct H1Descent {
 

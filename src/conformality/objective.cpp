@@ -215,6 +215,114 @@ std::vector<double> modal_derivatives(
   return f;
 }
 
+double registration_objective(
+  const NodeSet &nodes,
+  const std::vector<Vec2> &targets)
+{
+  nodes.check_consistent();
+  if (targets.size() != nodes.size()) {
+    throw std::invalid_argument(
+      "registration_objective: one target per node is required");
+  }
+  const double z = total_weight(nodes);
+  if (!(z > 0.0)) {
+    return std::numeric_limits<double>::infinity();
+  }
+  CompensatedSum d;
+  for (std::size_t j = 0; j < nodes.size(); ++j) {
+    const double dx = nodes.y[j].x - targets[j].x;
+    const double dy = nodes.y[j].y - targets[j].y;
+    d.add(nodes.w[j] * (dx * dx + dy * dy));
+  }
+  return d.value() / z;
+}
+
+std::vector<double> registration_derivatives(
+  const NodeSet &nodes,
+  const std::vector<Vec2> &targets,
+  const SpectralBasis &basis)
+{
+  nodes.check_consistent();
+  if (targets.size() != nodes.size()) {
+    throw std::invalid_argument(
+      "registration_derivatives: one target per node is required");
+  }
+  const double z = total_weight(nodes);
+  if (!(z > 0.0)) {
+    throw std::invalid_argument(
+      "registration_derivatives: total weight must be positive");
+  }
+  const std::size_t mx = basis.mx();
+  const std::size_t my = basis.my();
+  const std::size_t n_modes = mx * my;
+
+  // With S_m, C_m, T_n, U_n the sines and cosines of kx_m y1 and ky_n y2,
+  // v_mn = (ky_n S_m U_n, -kx_m C_m T_n), so with r = y - z,
+  //   r . v_mn = ky_n r1 S_m U_n - kx_m r2 C_m T_n.
+  // Accumulate the two node sums separately per block, as in
+  // modal_derivatives(), then apply the wavenumbers.
+  const std::size_t n_nodes = nodes.size();
+  const std::size_t n_blocks =
+    (n_nodes + modal_block_size - 1) / modal_block_size;
+  std::vector<double> partial(n_blocks * 2 * n_modes, 0.0);
+#pragma omp parallel
+  {
+    std::vector<double> sx(mx), cx(mx), sy(my), cy(my);
+#pragma omp for schedule(dynamic, 1)
+    for (std::size_t blk = 0; blk < n_blocks; ++blk) {
+      double *su_sum = partial.data() + blk * 2 * n_modes;
+      double *ct_sum = su_sum + n_modes;
+      const std::size_t end = std::min(n_nodes, (blk + 1) * modal_block_size);
+      for (std::size_t j = blk * modal_block_size; j < end; ++j) {
+        const double scale = 2.0 * nodes.w[j] / z;
+        const double a = scale * (nodes.y[j].x - targets[j].x);
+        const double b = scale * (nodes.y[j].y - targets[j].y);
+        fill_harmonics(
+          std::numbers::pi * nodes.y[j].x / basis.lx(),
+          mx,
+          sx.data(),
+          cx.data());
+        fill_harmonics(
+          std::numbers::pi * nodes.y[j].y / basis.ly(),
+          my,
+          sy.data(),
+          cy.data());
+        for (std::size_t m = 0; m < mx; ++m) {
+          const double am = a * sx[m];
+          const double bm = b * cx[m];
+          double *su_row = su_sum + m * my;
+          double *ct_row = ct_sum + m * my;
+          for (std::size_t n = 0; n < my; ++n) {
+            su_row[n] += am * cy[n];
+            ct_row[n] += bm * sy[n];
+          }
+        }
+      }
+    }
+  }
+  std::vector<double> su_sum(n_modes, 0.0);
+  std::vector<double> ct_sum(n_modes, 0.0);
+  for (std::size_t blk = 0; blk < n_blocks; ++blk) {
+    const double *su_part = partial.data() + blk * 2 * n_modes;
+    const double *ct_part = su_part + n_modes;
+    for (std::size_t k = 0; k < n_modes; ++k) {
+      su_sum[k] += su_part[k];
+      ct_sum[k] += ct_part[k];
+    }
+  }
+
+  std::vector<double> f(n_modes);
+  for (std::size_t m = 1; m <= mx; ++m) {
+    const double kx = basis.kx(m);
+    for (std::size_t n = 1; n <= my; ++n) {
+      const double ky = basis.ky(n);
+      const std::size_t k = basis.index(m, n);
+      f[k] = ky * su_sum[k] - kx * ct_sum[k];
+    }
+  }
+  return f;
+}
+
 H1Descent h1_descent(const SpectralBasis &basis, const std::vector<double> &f)
 {
   if (f.size() != basis.n_modes()) {

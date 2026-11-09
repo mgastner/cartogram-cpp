@@ -48,12 +48,21 @@ OptimizationResult optimize(
   if (
     !(settings.sigma > 0.0 && settings.sigma < 1.0) ||
     !(settings.substep_factor > 0.0) || settings.max_substeps == 0 ||
-    !(settings.max_strain > 0.0) || !(settings.stall_tol >= 0.0)) {
+    !(settings.max_strain > 0.0) || !(settings.stall_tol >= 0.0) ||
+    static_cast<bool>(settings.energy) !=
+      static_cast<bool>(settings.derivatives)) {
     throw std::invalid_argument("optimize: invalid settings");
   }
+  const auto energy_of = [&settings](const NodeSet &n) {
+    return settings.energy ? settings.energy(n) : objective(n);
+  };
+  const auto derivatives_of = [&settings, &basis](const NodeSet &n) {
+    return settings.derivatives ? settings.derivatives(n)
+                                : modal_derivatives(n, basis);
+  };
 
   OptimizationResult result;
-  double energy = objective(nodes);
+  double energy = energy_of(nodes);
   result.initial_energy = energy;
   result.final_energy = energy;
   if (!std::isfinite(energy)) {
@@ -88,7 +97,7 @@ OptimizationResult optimize(
   double r0 = 0.0;
   for (unsigned k = 0;; ++k) {
     const auto iteration_start = std::chrono::steady_clock::now();
-    const std::vector<double> f = modal_derivatives(nodes, basis);
+    const std::vector<double> f = derivatives_of(nodes);
     H1Descent descent = h1_descent(basis, f);
 
     // Quasi-Newton direction from the stored pairs
@@ -219,7 +228,7 @@ OptimizationResult optimize(
         n_substeps,
         settings.solver);
       const double trial_energy = flow.converged
-                                    ? objective(trial)
+                                    ? energy_of(trial)
                                     : std::numeric_limits<double>::infinity();
       const double drift = max_det_drift(trial);
       const double margin = energy + settings.sigma * h * slope - trial_energy;

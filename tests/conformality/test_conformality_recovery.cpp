@@ -22,6 +22,8 @@ using conformality::OptimizationResult;
 using conformality::optimize;
 using conformality::OptimizerSettings;
 using conformality::Outcome;
+using conformality::registration_derivatives;
+using conformality::registration_objective;
 using conformality::replay;
 using conformality::SpectralBasis;
 using conformality::to_string;
@@ -266,4 +268,80 @@ BOOST_AUTO_TEST_CASE(replay_reproduces_optimized_nodes)
   for (std::size_t j = 0; j < nodes.size(); ++j) {
     BOOST_TEST(std::abs(nodes.g0[j] - start.g0[j]) <= 0.0);
   }
+}
+
+namespace
+{
+
+struct RegistrationRecovery {
+  double d_start{0.0};
+  double d_final{0.0};
+  double max_start{0.0};
+  double max_final{0.0};
+};
+
+// Targets: the images of the nodes of an asymmetric map under a known
+// area-preserving flow B (three modes of a 4 x 4 basis). Registered with
+// modes x modes retained modes, L-BFGS and Stormer-Verlet.
+RegistrationRecovery register_to_flow_target(std::size_t modes)
+{
+  const double lx = 2.0, ly = 1.0;
+  const SpectralBasis b_basis(lx, ly, 4, 4);
+  const SpectralBasis basis(lx, ly, modes, modes);
+  NodeSet nodes = asymmetric_map_nodes(lx, ly, 64, 32);
+  NodeSet target_nodes = nodes;
+  BOOST_REQUIRE(advance_nodes(
+                  target_nodes,
+                  b_basis,
+                  perturbation_coefficients(b_basis),
+                  1.0,
+                  64)
+                  .converged);
+  const std::vector<Vec2> targets = target_nodes.y;
+  RegistrationRecovery out;
+  out.d_start = registration_objective(nodes, targets);
+  out.max_start = max_distance(nodes.y, targets);
+
+  OptimizerSettings settings;
+  settings.gradient_tol = 1e-8;
+  settings.lbfgs_memory = 8;
+  settings.solver.integrator = Integrator::stormer_verlet;
+  settings.substep_factor = 1.0;
+  settings.energy = [&targets](const NodeSet &n) {
+    return registration_objective(n, targets);
+  };
+  settings.derivatives = [&targets, &basis](const NodeSet &n) {
+    return registration_derivatives(n, targets, basis);
+  };
+  const OptimizationResult result = optimize(nodes, basis, settings);
+  log_summary(result);
+  check_history(result, settings.det_drift_tol);
+  out.d_final = result.final_energy;
+  out.max_final = max_distance(nodes.y, targets);
+  BOOST_TEST_MESSAGE(
+    modes << " x " << modes << " modes: D " << out.d_start << " -> "
+          << out.d_final << ", max |y - z| " << out.max_start << " -> "
+          << out.max_final);
+  BOOST_TEST(result.outcome == Outcome::converged);
+  BOOST_TEST(max_det_drift(nodes) <= 1e-12);
+  return out;
+}
+
+}  // namespace
+
+// Registration approaches a reachable target. B is a single flow of a field
+// in the retained span, but the descent composes many flows, and their
+// compositions leave a residual outside the span that first-order moves
+// cannot remove. As for the shear-map recovery, the residual is set by the
+// retained modes (when the test was written: max |y - z| 1.9e-4 of the
+// start at 8 x 8 modes, 2.5e-5 at 16 x 16; D 1.6e-8 and 1.5e-10 of the
+// start).
+BOOST_AUTO_TEST_CASE(registration_reaches_area_preserving_target)
+{
+  const RegistrationRecovery coarse = register_to_flow_target(8);
+  const RegistrationRecovery fine = register_to_flow_target(16);
+  BOOST_TEST(coarse.d_final <= 1e-7 * coarse.d_start);
+  BOOST_TEST(fine.d_final <= 1e-9 * fine.d_start);
+  BOOST_TEST(fine.max_final <= 1e-4 * fine.max_start);
+  BOOST_TEST(fine.d_final * 10.0 < coarse.d_final);
 }

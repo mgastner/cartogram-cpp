@@ -19,7 +19,10 @@ using conformality::modal_derivatives;
 using conformality::NodeSet;
 using conformality::objective;
 using conformality::objective_alpha;
+using conformality::registration_derivatives;
+using conformality::registration_objective;
 using conformality::SpectralBasis;
+using conformality::Vec2;
 using conformality::weight_by_g0;
 using conformality_test::asymmetric_map_nodes;
 using conformality_test::max_abs;
@@ -299,4 +302,71 @@ BOOST_AUTO_TEST_CASE(descent_direction_has_slope_minus_r)
   const double fd = (ep - em) / (2 * eta);
   BOOST_TEST_MESSAGE("R = " << descent.r << ", FD slope = " << fd);
   BOOST_TEST(std::abs(fd + descent.r) < 1e-6 * descent.r);
+}
+
+// Registration objective D = sum w |y - z|^2 / sum w. Along the flow of a
+// velocity mode, dy/dt = v(y), so dD/dt = (2 / Z) sum w (y - z) . v(y).
+// D is quadratic in the positions, so the central difference of D over
+// y -> y +- eta v(y) equals this derivative up to rounding.
+BOOST_AUTO_TEST_CASE(registration_derivatives_match_finite_differences)
+{
+  const double lx = 2.0, ly = 1.0;
+  const NodeSet nodes = asymmetric_map_nodes(lx, ly, 96, 48);
+  const SpectralBasis basis(lx, ly, 6, 5);
+
+  // Targets: the identity map, and a smooth non-area-preserving map
+  std::vector<Vec2> targets(nodes.size());
+  for (std::size_t j = 0; j < nodes.size(); ++j) {
+    const Vec2 x = nodes.x[j];
+    targets[j] = {
+      x.x + 0.05 * std::sin(1.3 * x.x + 0.4) * x.y,
+      x.y + 0.03 * x.x * x.y * (1.0 - x.y)};
+  }
+  const double d = registration_objective(nodes, targets);
+  BOOST_TEST(d > 0.0);
+  const std::vector<double> f =
+    registration_derivatives(nodes, targets, basis);
+  const double scale = max_abs(f);
+  BOOST_TEST(scale > 0.0);
+
+  SpectralBasis::Workspace ws;
+  for (std::size_t m = 1; m <= basis.mx(); ++m) {
+    for (std::size_t n = 1; n <= basis.my(); ++n) {
+      std::vector<double> c(basis.n_modes(), 0.0);
+      const std::size_t k = basis.index(m, n);
+      c[k] = 1.0;
+      const double eta = 1e-3 / (basis.kx(m) + basis.ky(n));
+      NodeSet plus = nodes;
+      NodeSet minus = nodes;
+      for (std::size_t j = 0; j < nodes.size(); ++j) {
+        const Vec2 v = basis.evaluate(c, nodes.y[j], ws).v;
+        plus.y[j] = {nodes.y[j].x + eta * v.x, nodes.y[j].y + eta * v.y};
+        minus.y[j] = {nodes.y[j].x - eta * v.x, nodes.y[j].y - eta * v.y};
+      }
+      const double fd = (registration_objective(plus, targets) -
+                         registration_objective(minus, targets)) /
+                        (2 * eta);
+      BOOST_TEST(
+        std::abs(fd - f[k]) < 1e-9 * scale,
+        "mode (" << m << ", " << n << "): FD " << fd << ", F " << f[k]);
+    }
+  }
+}
+
+// At the targets, D and its derivatives vanish; a target count that differs
+// from the node count is rejected
+BOOST_AUTO_TEST_CASE(registration_vanishes_at_targets)
+{
+  const double lx = 2.0, ly = 1.0;
+  const NodeSet nodes = asymmetric_map_nodes(lx, ly, 32, 16);
+  const SpectralBasis basis(lx, ly, 4, 3);
+  BOOST_TEST(registration_objective(nodes, nodes.y) == 0.0);
+  BOOST_TEST(max_abs(registration_derivatives(nodes, nodes.y, basis)) == 0.0);
+  const std::vector<Vec2> short_targets(nodes.size() - 1);
+  BOOST_CHECK_THROW(
+    (void)registration_objective(nodes, short_targets),
+    std::invalid_argument);
+  BOOST_CHECK_THROW(
+    (void)registration_derivatives(nodes, short_targets, basis),
+    std::invalid_argument);
 }

@@ -12,8 +12,10 @@
 #include <CGAL/Polygon_2.h>
 #include <algorithm>
 #include <array>
+#include <bit>
 #include <chrono>
 #include <cmath>
+#include <cstdint>
 #include <fstream>
 #include <iomanip>
 #include <limits>
@@ -1066,6 +1068,87 @@ nlohmann::json mesh_to_json(const conformality::MeshAreaCheck &m)
     {"worst_cell_corner", {m.worst_x, m.worst_y}}};
 }
 
+// Binary file of the optimization nodes of T0 (see --conf_save_t0): an
+// 8-byte tag, the node count, the lattice size, then x and y = T0(x) of
+// every node as four doubles, in native byte order
+constexpr char t0_file_tag[8] = {'C', 'O', 'N', 'F', 'T', '0', 'v', '1'};
+
+void save_t0_nodes(
+  const std::string &path,
+  const NodeSet &nodes,
+  const double lx,
+  const double ly)
+{
+  std::ofstream out(path, std::ios::binary);
+  const std::uint64_t n = nodes.size();
+  out.write(t0_file_tag, sizeof t0_file_tag);
+  out.write(reinterpret_cast<const char *>(&n), sizeof n);
+  out.write(reinterpret_cast<const char *>(&lx), sizeof lx);
+  out.write(reinterpret_cast<const char *>(&ly), sizeof ly);
+  for (std::size_t j = 0; j < nodes.size(); ++j) {
+    const double v[4] =
+      {nodes.x[j].x, nodes.x[j].y, nodes.y[j].x, nodes.y[j].y};
+    out.write(reinterpret_cast<const char *>(v), sizeof v);
+  }
+  if (!out) {
+    std::cerr << "ERROR: could not write " << path << "." << std::endl;
+    std::exit(17);
+  }
+}
+
+// Targets of a registration: the T0 images saved by another run with the
+// same tracers (equal x, bit for bit). If that run ended on a lattice
+// doubled a different number of times, its images are rescaled to this
+// lattice.
+std::vector<Vec2> load_t0_targets(
+  const std::string &path,
+  const NodeSet &nodes,
+  const double lx,
+  const double ly)
+{
+  std::ifstream in(path, std::ios::binary);
+  char tag[8];
+  std::uint64_t n = 0;
+  double file_lx = 0.0;
+  double file_ly = 0.0;
+  in.read(tag, sizeof tag);
+  in.read(reinterpret_cast<char *>(&n), sizeof n);
+  in.read(reinterpret_cast<char *>(&file_lx), sizeof file_lx);
+  in.read(reinterpret_cast<char *>(&file_ly), sizeof file_ly);
+  if (
+    !in || !std::equal(tag, tag + 8, t0_file_tag) || n != nodes.size() ||
+    !(file_lx > 0.0) || !(file_ly > 0.0)) {
+    std::cerr << "ERROR: " << path
+              << " is not a T0 node file for these tracers." << std::endl;
+    std::exit(17);
+  }
+  const double scale = lx / file_lx;
+  if (std::abs(scale - ly / file_ly) > 1e-12 * scale) {
+    std::cerr << "ERROR: the lattice of " << path << " (" << file_lx << " x "
+              << file_ly << ") is not a scaled copy of " << lx << " x " << ly
+              << "." << std::endl;
+    std::exit(17);
+  }
+  std::vector<Vec2> targets(nodes.size());
+  for (std::size_t j = 0; j < nodes.size(); ++j) {
+    double v[4];
+    in.read(reinterpret_cast<char *>(v), sizeof v);
+    const auto bits = [](const double d) {
+      return std::bit_cast<std::uint64_t>(d);
+    };
+    if (
+      !in || bits(v[0]) != bits(nodes.x[j].x) ||
+      bits(v[1]) != bits(nodes.x[j].y)) {
+      std::cerr << "ERROR: the nodes of " << path
+                << " differ from these tracers (node " << j << ")."
+                << std::endl;
+      std::exit(17);
+    }
+    targets[j] = {scale * v[2], scale * v[3]};
+  }
+  return targets;
+}
+
 }  // namespace
 
 void InsetState::run_conformality_optimization()
@@ -1126,6 +1209,10 @@ void InsetState::run_conformality_optimization()
   // replaying the step log reproduces the optimized nodes exactly (the
   // replay must use the optimizer's integrator and solver settings)
   const conformality::NodeSet start_nodes = conf_.nodes;
+  if (!args_.conf_save_t0.empty()) {
+    save_t0_nodes(args_.conf_save_t0, conf_.nodes, lx, ly);
+    std::cerr << "  T0 nodes saved to " << args_.conf_save_t0 << std::endl;
+  }
 
   timer.start("Conformality optimization");
   const auto t0 = std::chrono::steady_clock::now();
@@ -1150,6 +1237,81 @@ void InsetState::run_conformality_optimization()
     std::cerr << "  random start: strain bound " << args_.conf_perturb
               << ", seed " << args_.conf_seed << ", E0 "
               << conformality::objective(conf_.nodes) << std::endl;
+  }
+
+  // Optional registration phase, a distant start inside this map's
+  // feasible set: first move the nodes as close as the fixed Jacobian
+  // allows to the T0 images saved by another run (--conf_save_t0), with the
+  // base weights, then minimize E as usual. Both phases are in the replay
+  // log; the report's history and outcome are those of the second phase.
+  nlohmann::json registration_json = nullptr;
+  if (!args_.conf_register.empty()) {
+    const std::vector<Vec2> targets =
+      load_t0_targets(args_.conf_register, conf_.nodes, lx, ly);
+    const auto land_rms = [this, &targets]() {
+      double sum = 0.0;
+      double weight = 0.0;
+      for (std::size_t j = 0; j < conf_.nodes.size(); ++j) {
+        if (conf_.region[j] >= 0) {
+          const double dx = conf_.nodes.y[j].x - targets[j].x;
+          const double dy = conf_.nodes.y[j].y - targets[j].y;
+          sum += conf_.nodes.w[j] * (dx * dx + dy * dy);
+          weight += conf_.nodes.w[j];
+        }
+      }
+      return weight > 0.0 ? std::sqrt(sum / weight) : 0.0;
+    };
+    conformality::OptimizerSettings reg_settings = settings;
+    reg_settings.energy = [&targets](const NodeSet &n) {
+      return conformality::registration_objective(n, targets);
+    };
+    reg_settings.derivatives = [&targets, &basis](const NodeSet &n) {
+      return conformality::registration_derivatives(n, targets, basis);
+    };
+    reg_settings.on_iteration = [](const conformality::IterationRecord &r) {
+      std::cerr << "  registration iteration " << r.iteration << ": D "
+                << r.energy << " -> " << r.energy_after << ", h " << r.h
+                << " (strain " << r.strain << "), " << r.n_substeps
+                << " substeps, " << r.backtracks << " backtracks" << std::endl;
+    };
+    const double d_before =
+      conformality::registration_objective(conf_.nodes, targets);
+    const double land_before = land_rms();
+    const double e0_before = conformality::objective(conf_.nodes);
+    const conformality::OptimizationResult registered =
+      conformality::optimize(conf_.nodes, basis, reg_settings);
+    steps.insert(
+      steps.end(),
+      registered.steps.begin(),
+      registered.steps.end());
+    const double d_after =
+      conformality::registration_objective(conf_.nodes, targets);
+    const double land_after = land_rms();
+    const double e0_after = conformality::objective(conf_.nodes);
+    std::cerr << "  registration to " << args_.conf_register << ": "
+              << registered.steps.size() << " steps ("
+              << conformality::to_string(registered.outcome)
+              << "), RMS distance " << std::sqrt(d_before) << " -> "
+              << std::sqrt(d_after) << " (land " << land_before << " -> "
+              << land_after << "), E0 " << e0_before << " -> " << e0_after
+              << std::endl;
+    nlohmann::json reg_history = nlohmann::json::array();
+    for (const auto &r : registered.history) {
+      reg_history.push_back({{"D", r.energy}, {"h", r.h}});
+    }
+    registration_json = {
+      {"file", args_.conf_register},
+      {"outcome", conformality::to_string(registered.outcome)},
+      {"reason", registered.reason},
+      {"n_accepted_steps", registered.steps.size()},
+      {"rms_distance_before", std::sqrt(d_before)},
+      {"rms_distance_after", std::sqrt(d_after)},
+      {"rms_distance_land_before", land_before},
+      {"rms_distance_land_after", land_after},
+      {"E0_before", e0_before},
+      {"E0_after", e0_after},
+      {"E_alpha_after", conformality::objective_alpha(conf_.nodes, alpha)},
+      {"history", reg_history}};
   }
 
   // The optimizer sees the weights w g0^alpha (g0 is fixed, so its objective
@@ -1434,6 +1596,7 @@ void InsetState::run_conformality_optimization()
       {"is_first_step", args_.conf_perturb > 0.0}}},
     {"bias",
      {{"region", args_.conf_bias_region}, {"factor", args_.conf_bias_factor}}},
+    {"registration_file", args_.conf_register},
     {"coefficient_index", "c[(m - 1) * my + (n - 1)] for mode (m, n)"},
     {"solver",
      {{"integrator", conformality::to_string(solver.integrator)},
@@ -1481,6 +1644,7 @@ void InsetState::run_conformality_optimization()
       {"integrator", conformality::to_string(settings.solver.integrator)},
       {"bias_region", args_.conf_bias_region},
       {"bias_factor", args_.conf_bias_factor},
+      {"registration_file", args_.conf_register},
       {"det_drift_tol", settings.det_drift_tol},
       {"openmp", conformality::openmp_enabled()},
       {"threads", conformality::max_threads()}}},
@@ -1515,7 +1679,8 @@ void InsetState::run_conformality_optimization()
       {"boundary", boundary_to_json(bc, conf_.boundary.size())},
       {"finite_differences", fd_to_json(fc, conf_)}}},
     {"history", history},
-    {"bias", bias_json}};
+    {"bias", bias_json},
+    {"registration", registration_json}};
   std::ofstream out(inset_name_ + "_conformality_opt.json");
   out << std::setw(2) << report << std::endl;
 }
