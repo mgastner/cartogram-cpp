@@ -404,7 +404,7 @@ static std::vector<std::string> extract_initial_order_of_ids(
   return initial_id_order;
 }
 
-// Repairs self-intersecting rings and borders that neighbouring GeoDivs do
+// Repairs self-intersecting rings and borders that neighboring GeoDivs do
 // not share exactly (see topology_repair.hpp). Stops the program if the
 // repair would change a GeoDiv's area by more than the permitted fraction.
 static void repair_input_topology(
@@ -431,7 +431,7 @@ static void repair_input_topology(
   for (const auto &r : result.changed) {
     std::cerr << "  " << r.id << ": "
               << (r.had_self_intersection ? "self-intersecting ring repaired"
-                                          : "border matched to neighbours")
+                                          : "border matched to neighbors")
               << ", relative area change " << r.relative_area_change << "\n";
   }
   if (!result.within_tolerance) {
