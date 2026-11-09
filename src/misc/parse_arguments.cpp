@@ -225,7 +225,7 @@ Arguments parse_arguments(const int argc, const char *argv[])
     .help(
       "Unsigned int: Memory of the L-BFGS direction of the conformality "
       "optimizer (0: H1 steepest descent)")
-    .default_value(static_cast<unsigned int>(0))
+    .default_value(static_cast<unsigned int>(8))
     .scan<'u', unsigned int>();
   arguments.add_argument("--conf_seed")
     .help("Unsigned int: Seed of the random correction (see --conf_perturb)")
@@ -235,7 +235,7 @@ Arguments parse_arguments(const int argc, const char *argv[])
     .help(
       "String: Integrator of the conformality flow: midpoint (implicit "
       "midpoint), euler (symplectic Euler) or verlet (Stormer-Verlet)")
-    .default_value(std::string("midpoint"));
+    .default_value(std::string("verlet"));
   arguments.add_argument("--conf_bias_region")
     .help(
       "String: Region whose conformality weights are multiplied by "
@@ -250,7 +250,7 @@ Arguments parse_arguments(const int argc, const char *argv[])
     .help(
       "Double: Substeps of the conformality flow keep dt times the bound on "
       "the velocity gradient at most this value")
-    .default_value(0.1)
+    .default_value(1.0)
     .scan<'g', double>();
   arguments.add_argument("--conf_save_t0")
     .help(
