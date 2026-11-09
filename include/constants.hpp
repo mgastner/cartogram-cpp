@@ -19,6 +19,18 @@ constexpr double padding_unless_world = 1.5;
 constexpr double pi = std::numbers::pi;
 constexpr double earth_surface_area = 510.1e6;
 
+// Over-relaxation of the flow-based method (see flow_overrelaxation.hpp).
+// Fraction of the over-relaxation that would cancel the predicted residual
+constexpr double flow_overrelaxation_safety_factor = 0.8;
+
+// Upper bounds on the over-relaxation and on the residual share b
+constexpr double max_flow_overrelaxation = 1.0;
+constexpr double max_flow_residual_share = 0.9;
+
+// Past t = 1, the interpolated density must stay at least this fraction of
+// the mean density
+constexpr double min_flow_density_fraction = 0.5;
+
 // The resolution represents the number of rays to shoot through each cell
 // (see inset_state/scanline_graph.cpp).
 // default_resolution is used for filling grid cells with density.

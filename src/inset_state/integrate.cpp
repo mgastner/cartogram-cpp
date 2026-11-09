@@ -1,3 +1,4 @@
+#include "flow_overrelaxation.hpp"
 #include "inset_state.hpp"
 
 void InsetState::preprocess()
@@ -65,6 +66,10 @@ void InsetState::prepare_for_integration()
   normalize_target_area();
 
   set_area_errors();
+
+  // The first integration is not over-relaxed
+  signed_area_errors_before_integration_ = signed_area_errors();
+  flow_overrelaxation_ = 0.0;
 }
 
 void InsetState::cleanup_after_integration()
@@ -206,7 +211,23 @@ void InsetState::integrate(ProgressTracker &progress_tracker)
 
     // 4. Update area errors and try again if necessary
     set_area_errors();
+
+    // Over-relaxation of the next integration, estimated from how much of
+    // each area error this integration has left
+    std::vector<double> errors = signed_area_errors();
+    flow_overrelaxation_ = next_flow_overrelaxation(
+      signed_area_errors_before_integration_,
+      errors,
+      flow_t_reached_ - 1.0);
+    signed_area_errors_before_integration_ = std::move(errors);
+
+    // On a finer grid, an integration leaves a smaller share of the error,
+    // so the estimate from the coarser grid does not apply
+    const unsigned int lx_before_adjustment = lx_;
     adjust_grid();
+    if (lx_ != lx_before_adjustment) {
+      flow_overrelaxation_ = 0.0;
+    }
     progress_tracker.print_progress_mid_integration(
       max_area_error().value,
       n_geo_divs(),

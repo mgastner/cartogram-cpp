@@ -631,6 +631,28 @@ void InsetState::set_area_errors()
   }
 }
 
+std::vector<double> InsetState::signed_area_errors() const
+{
+  // Same formula as in set_area_errors(), without the absolute value
+  const double aef = area_expansion_factor();
+  std::vector<double> errors;
+  errors.reserve(geo_divs_.size());
+  for (const auto &gd : geo_divs_) {
+    errors.push_back(gd.area() / (target_area_at(gd.id()) * aef) - 1);
+  }
+  return errors;
+}
+
+double InsetState::flow_t_reached() const
+{
+  return flow_t_reached_;
+}
+
+void InsetState::set_flow_overrelaxation(const double omega)
+{
+  flow_overrelaxation_ = omega;
+}
+
 void InsetState::adjust_grid()
 {
   auto [curr_max_area_error, worst_gd] = max_area_error();
