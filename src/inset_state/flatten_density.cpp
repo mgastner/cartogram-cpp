@@ -142,13 +142,35 @@ bool InsetState::flatten_density_on_node_vertices()
   // grid_fluxy_init
   execute_fftw_plans_for_flux();
 
+  // The blurred density is equalized at t = 1. With over-relaxation, we
+  // integrate further, to t_end = 1 + omega (see flow_overrelaxation.hpp).
+  // For t > 1, the interpolated density
+  //   rho(t) = rho_bar - (t - 1) * (rho_init - rho_bar)
+  // falls below rho_bar where rho_init > rho_bar. We limit omega so that
+  // rho(t) stays at least min_flow_density_fraction * rho_bar everywhere.
+  const double rho_bar = rho_ft_(0, 0);
+  double rho_max = rho_bar;
+  for (unsigned int i = 0; i < lx_; ++i) {
+    for (unsigned int j = 0; j < ly_; ++j) {
+      rho_max = std::max(rho_max, rho_init_(i, j));
+    }
+  }
+  double omega = std::max(0.0, flow_overrelaxation_);
+  if (rho_max > rho_bar) {
+    omega = std::min(
+      omega,
+      (1.0 - min_flow_density_fraction) * rho_bar / (rho_max - rho_bar));
+  }
+  const double t_end = 1.0 + omega;
+  std::cerr << "Integrating to t = " << t_end << std::endl;
+
   double t = 0.0;
   double delta_t = 0.30;  // Initial time step.
   unsigned int iter = 0;
   unsigned int max_iter = 300;
 
   // Integrate
-  while (t < 1.0 && iter <= max_iter) {
+  while (t < t_end && iter <= max_iter) {
 
     // calculate_velocity lambda function
     auto cal_velocity_at_current_time =
@@ -191,10 +213,8 @@ bool InsetState::flatten_density_on_node_vertices()
       v_intp[i] = v_intp_val;
     }
 
-    // The density is equalized at t = 1. Shorten the step so that it ends
-    // there; for t > 1, the interpolated density would keep moving the points
-    // past the equalized map.
-    delta_t = std::min(delta_t, 1.0 - t);
+    // Shorten the step so that the integration ends exactly at t_end
+    delta_t = std::min(delta_t, t_end - t);
 
     bool accept = false;
     while (!accept) {
@@ -294,15 +314,23 @@ bool InsetState::flatten_density_on_node_vertices()
     }
 
     // When we get here, the integration step was accepted. If it was the
-    // shortened last step, set t to 1 exactly so that rounding cannot leave a
-    // tiny remainder.
-    t = (delta_t < 1.0 - t) ? t + delta_t : 1.0;
+    // shortened last step, set t to t_end exactly so that rounding cannot
+    // leave a tiny remainder.
+    t = (delta_t < t_end - t) ? t + delta_t : t_end;
     ++iter;
 
     // Update the triangle transformation map
     std::swap(projection, mid);
 
     delta_t *= inc_after_acc;  // Try a larger step next time
+  }
+
+  // The loop also ends after max_iter accepted steps. The integration then
+  // stops before t_end; the next over-relaxation takes this into account.
+  flow_t_reached_ = t;
+  if (t < t_end) {
+    std::cerr << "WARNING: Integration stopped at t = " << t << " after "
+              << iter << " time steps, before t = " << t_end << std::endl;
   }
 
   // Return true if the integration was successful
