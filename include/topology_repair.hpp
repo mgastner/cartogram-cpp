@@ -10,15 +10,15 @@
 // 1. Rings that are not simple (self-intersections). The polygon is rebuilt
 //    with GEOS MakeValid ("structure" method), which keeps the area enclosed
 //    by the exterior rings and removes the area enclosed by the holes.
-// 2. Neighbouring regions that do not share their borders exactly. GEOS
+// 2. Neighboring regions that do not share their borders exactly. GEOS
 //    CoverageCleaner snaps vertices that lie on or within the snapping
-//    distance of a neighbour's border into that border, so both regions get
+//    distance of a neighbor's border into that border, so both regions get
 //    the same vertices there, and it merges any overlap into one of the
 //    overlapping regions (the one with the longest shared border).
 //
 // Without the second repair, CGAL's polyline simplification may simplify the
 // two copies of a shared border differently, which opens gaps and overlaps
-// between neighbours.
+// between neighbors.
 
 struct TopologyRepairSettings {
 
