@@ -90,3 +90,30 @@ BOOST_AUTO_TEST_CASE(slope_is_least_squares_fit_through_origin)
     next_flow_overrelaxation(before, after, 0.0) == expected_omega(beta),
     tt::tolerance(1e-14));
 }
+
+BOOST_AUTO_TEST_CASE(plain_integration_keeps_grid_criterion)
+{
+  // An integration that ends at t = 1 must reduce the maximum area error by
+  // min_max_area_error_reduction
+  const double required = 1.0 - min_max_area_error_reduction;
+  BOOST_TEST(max_area_error_reduction_too_small(1.0, required, 1.0));
+  BOOST_TEST(!max_area_error_reduction_too_small(1.0, required - 0.01, 1.0));
+}
+
+BOOST_AUTO_TEST_CASE(overrelaxed_integration_must_reduce_error_more)
+{
+  // An integration to t = 2 must reduce the maximum area error by twice the
+  // fraction
+  const double required = 1.0 - 2.0 * min_max_area_error_reduction;
+  BOOST_TEST(max_area_error_reduction_too_small(1.0, required + 0.01, 2.0));
+  BOOST_TEST(!max_area_error_reduction_too_small(1.0, required - 0.01, 2.0));
+}
+
+BOOST_AUTO_TEST_CASE(integration_stopped_early_needs_smaller_reduction)
+{
+  // An integration that stopped at t = 0.5 must reduce the maximum area error
+  // by half the fraction
+  const double required = 1.0 - 0.5 * min_max_area_error_reduction;
+  BOOST_TEST(max_area_error_reduction_too_small(1.0, required + 0.01, 0.5));
+  BOOST_TEST(!max_area_error_reduction_too_small(1.0, required - 0.01, 0.5));
+}

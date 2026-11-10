@@ -32,3 +32,12 @@ double next_flow_overrelaxation(
     max_flow_overrelaxation,
     flow_overrelaxation_safety_factor * b / (1.0 - b));
 }
+
+bool max_area_error_reduction_too_small(
+  const double max_error_before,
+  const double max_error_after,
+  const double t_reached)
+{
+  return max_error_after >=
+         (1.0 - t_reached * min_max_area_error_reduction) * max_error_before;
+}

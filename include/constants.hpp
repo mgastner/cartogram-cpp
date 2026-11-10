@@ -31,6 +31,10 @@ constexpr double max_flow_residual_share = 0.9;
 // the mean density
 constexpr double min_flow_density_fraction = 0.5;
 
+// An integration that ends at t = 1 must reduce the maximum area error by at
+// least this fraction, or else the grid is refined (see adjust_grid())
+constexpr double min_max_area_error_reduction = 0.2;
+
 // The resolution represents the number of rays to shoot through each cell
 // (see inset_state/scanline_graph.cpp).
 // default_resolution is used for filling grid cells with density.
