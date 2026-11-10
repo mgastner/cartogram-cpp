@@ -91,6 +91,47 @@ BOOST_AUTO_TEST_CASE(slope_is_least_squares_fit_through_origin)
     tt::tolerance(1e-14));
 }
 
+BOOST_AUTO_TEST_CASE(no_oscillation_without_earlier_integration)
+{
+  const std::vector<double> none;
+  BOOST_TEST(!area_errors_oscillate(none, errors_before, scaled(0.4)));
+}
+
+BOOST_AUTO_TEST_CASE(steady_decrease_is_no_oscillation)
+{
+  // Every error shrinks by the same share in both integrations
+  BOOST_TEST(!area_errors_oscillate(scaled(2.0), errors_before, scaled(0.5)));
+}
+
+BOOST_AUTO_TEST_CASE(overshoot_alone_is_no_oscillation)
+{
+  // The second integration overshoots, but the errors keep moving in the
+  // same direction
+  BOOST_TEST(!area_errors_oscillate(scaled(2.0), errors_before, scaled(-0.3)));
+}
+
+BOOST_AUTO_TEST_CASE(return_after_overshoot_is_oscillation)
+{
+  // The first integration overshoots, and the second moves the errors back
+  BOOST_TEST(area_errors_oscillate(errors_before, scaled(-0.3), scaled(0.1)));
+}
+
+BOOST_AUTO_TEST_CASE(errors_alternating_between_regions_are_oscillation)
+{
+  // The largest error alternates between two regions, while the scalar
+  // product of each region's errors before and after stays positive
+  const std::vector<double> before_previous{0.10, 0.02};
+  const std::vector<double> before{0.03, 0.09};
+  const std::vector<double> after{0.09, 0.03};
+  BOOST_TEST(area_errors_oscillate(before_previous, before, after));
+}
+
+BOOST_AUTO_TEST_CASE(unchanged_errors_are_no_oscillation)
+{
+  BOOST_TEST(
+    !area_errors_oscillate(errors_before, errors_before, errors_before));
+}
+
 BOOST_AUTO_TEST_CASE(plain_integration_keeps_grid_criterion)
 {
   // An integration that ends at t = 1 must reduce the maximum area error by

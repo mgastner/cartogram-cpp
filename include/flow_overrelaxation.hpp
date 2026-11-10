@@ -34,6 +34,19 @@ double next_flow_overrelaxation(
   const std::vector<double> &errors_after,
   double omega_used);
 
+// Whether the signed area errors oscillate between integrations: the change
+// of the errors in the integration that has just finished,
+// errors_after - errors_before, points against the change in the integration
+// before it, errors_before - errors_before_previous (negative scalar
+// product). Over-relaxation slows the decay of such an oscillation: at
+// omega = 1, an error component that an integration to t = 1 would remove
+// changes sign without shrinking. The next integration then ends at t = 1.
+// An empty errors_before_previous (no earlier integration) gives false.
+bool area_errors_oscillate(
+  const std::vector<double> &errors_before_previous,
+  const std::vector<double> &errors_before,
+  const std::vector<double> &errors_after);
+
 // Whether an integration has reduced the maximum area error too little, so
 // that the grid should be refined. An integration that ends at t = 1 must
 // reduce the maximum area error by at least the fraction
