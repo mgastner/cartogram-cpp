@@ -47,6 +47,15 @@ bool area_errors_oscillate(
   const std::vector<double> &errors_before,
   const std::vector<double> &errors_after);
 
+// Whether the next integration may be over-relaxed, given the signed area
+// errors e = area / target - 1 after the integration that has just
+// finished. Over-relaxing the integrations that remove large area errors
+// makes the cartogram less conformal, so over-relaxation starts only once
+// the maximum area error max |e| is below
+// max_area_error_for_flow_overrelaxation. Because e > -1, a value of 1
+// means that no region may be more than twice as large as its target.
+bool flow_overrelaxation_allowed(const std::vector<double> &errors);
+
 // Whether an integration has reduced the maximum area error too little, so
 // that the grid should be refined. An integration that ends at t = 1 must
 // reduce the maximum area error by at least the fraction

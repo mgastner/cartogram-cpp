@@ -2,6 +2,7 @@
 #include "constants.hpp"
 #include <algorithm>
 #include <cassert>
+#include <cmath>
 #include <cstddef>
 
 double next_flow_overrelaxation(
@@ -61,4 +62,13 @@ bool max_area_error_reduction_too_small(
 {
   return max_error_after >=
          (1.0 - t_reached * min_max_area_error_reduction) * max_error_before;
+}
+
+bool flow_overrelaxation_allowed(const std::vector<double> &errors)
+{
+  double max_error = 0.0;
+  for (const double e : errors) {
+    max_error = std::max(max_error, std::abs(e));
+  }
+  return max_error < max_area_error_for_flow_overrelaxation;
 }

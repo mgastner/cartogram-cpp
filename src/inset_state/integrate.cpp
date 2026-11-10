@@ -230,6 +230,12 @@ void InsetState::integrate(ProgressTracker &progress_tracker)
     if (errors_oscillate) {
       flow_overrelaxation_ = 0.0;
     }
+
+    // Over-relaxing the integrations that remove large area errors makes
+    // the cartogram less conformal
+    if (!flow_overrelaxation_allowed(errors)) {
+      flow_overrelaxation_ = 0.0;
+    }
     signed_area_errors_before_previous_integration_ =
       std::move(signed_area_errors_before_integration_);
     signed_area_errors_before_integration_ = std::move(errors);

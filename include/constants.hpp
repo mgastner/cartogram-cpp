@@ -31,6 +31,10 @@ constexpr double max_flow_residual_share = 0.9;
 // the mean density
 constexpr double min_flow_density_fraction = 0.5;
 
+// Over-relaxation starts only once the maximum area error is below this
+// value (see flow_overrelaxation_allowed())
+constexpr double max_area_error_for_flow_overrelaxation = 1.0;
+
 // An integration that ends at t = 1 must reduce the maximum area error by at
 // least this fraction, or else the grid is refined (see adjust_grid())
 constexpr double min_max_area_error_reduction = 0.2;
