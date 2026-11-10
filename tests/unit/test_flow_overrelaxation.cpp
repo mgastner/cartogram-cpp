@@ -158,3 +158,21 @@ BOOST_AUTO_TEST_CASE(integration_stopped_early_needs_smaller_reduction)
   BOOST_TEST(max_area_error_reduction_too_small(1.0, required + 0.01, 0.5));
   BOOST_TEST(!max_area_error_reduction_too_small(1.0, required - 0.01, 0.5));
 }
+
+BOOST_AUTO_TEST_CASE(large_area_error_prevents_overrelaxation)
+{
+  BOOST_TEST(!flow_overrelaxation_allowed({0.5, -0.3, 1.5}));
+}
+
+BOOST_AUTO_TEST_CASE(maximum_area_error_must_be_below_threshold)
+{
+  const double threshold = max_area_error_for_flow_overrelaxation;
+  BOOST_TEST(!flow_overrelaxation_allowed({threshold}));
+  BOOST_TEST(flow_overrelaxation_allowed({0.99 * threshold}));
+}
+
+BOOST_AUTO_TEST_CASE(region_far_below_target_allows_overrelaxation)
+{
+  // A region with a tenth of its target area has the area error 0.9
+  BOOST_TEST(flow_overrelaxation_allowed({0.5, -0.9}));
+}
