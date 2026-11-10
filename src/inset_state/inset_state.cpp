@@ -1,6 +1,7 @@
 #include "inset_state.hpp"
 #include "constants.hpp"
 #include "csv.hpp"
+#include "flow_overrelaxation.hpp"
 #include "quadtree.hpp"
 #include "triangulation.hpp"
 #include <algorithm>
@@ -659,10 +660,14 @@ void InsetState::adjust_grid()
   max_area_errors_.push_back(curr_max_area_error);
   // TODO: Change to a more sophisticated grid adjustment strategy
   // (based on a tolerance of area error)
+  // An over-relaxed integration must reduce the maximum area error by more
+  // than an integration that ends at t = 1 (see flow_overrelaxation.hpp)
   if (
     n_finished_integrations_ > 3 &&
-    curr_max_area_error >=
-      0.8 * max_area_errors_[n_finished_integrations_ - 1]) {
+    max_area_error_reduction_too_small(
+      max_area_errors_[n_finished_integrations_ - 1],
+      curr_max_area_error,
+      flow_t_reached_)) {
 
     // Multiply grid size with factor
     std::cerr << "Adjusting grid size." << std::endl;
