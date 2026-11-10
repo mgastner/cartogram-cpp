@@ -123,6 +123,10 @@ private:
   // Signed area errors before the current integration
   std::vector<double> signed_area_errors_before_integration_;
 
+  // Signed area errors before the previous integration, to detect
+  // oscillations of the errors (see flow_overrelaxation.hpp)
+  std::vector<double> signed_area_errors_before_previous_integration_;
+
   // Whether convergence has been reached
   mutable bool converge_{true};
 

@@ -33,6 +33,27 @@ double next_flow_overrelaxation(
     flow_overrelaxation_safety_factor * b / (1.0 - b));
 }
 
+bool area_errors_oscillate(
+  const std::vector<double> &errors_before_previous,
+  const std::vector<double> &errors_before,
+  const std::vector<double> &errors_after)
+{
+  if (errors_before_previous.empty()) {
+    return false;
+  }
+  assert(errors_before_previous.size() == errors_before.size());
+  assert(errors_before.size() == errors_after.size());
+
+  // Scalar product of the change of the errors in the integration that has
+  // just finished and the change in the integration before it
+  double product = 0.0;
+  for (std::size_t i = 0; i < errors_before.size(); ++i) {
+    product += (errors_after[i] - errors_before[i]) *
+               (errors_before[i] - errors_before_previous[i]);
+  }
+  return product < 0.0;
+}
+
 bool max_area_error_reduction_too_small(
   const double max_error_before,
   const double max_error_after,

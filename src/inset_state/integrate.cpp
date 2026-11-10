@@ -69,6 +69,7 @@ void InsetState::prepare_for_integration()
 
   // The first integration is not over-relaxed
   signed_area_errors_before_integration_ = signed_area_errors();
+  signed_area_errors_before_previous_integration_.clear();
   flow_overrelaxation_ = 0.0;
 }
 
@@ -219,6 +220,18 @@ void InsetState::integrate(ProgressTracker &progress_tracker)
       signed_area_errors_before_integration_,
       errors,
       flow_t_reached_ - 1.0);
+
+    // Over-relaxation slows the decay of an oscillation of the errors
+    // between integrations, so the next integration then ends at t = 1
+    const bool errors_oscillate = area_errors_oscillate(
+      signed_area_errors_before_previous_integration_,
+      signed_area_errors_before_integration_,
+      errors);
+    if (errors_oscillate) {
+      flow_overrelaxation_ = 0.0;
+    }
+    signed_area_errors_before_previous_integration_ =
+      std::move(signed_area_errors_before_integration_);
     signed_area_errors_before_integration_ = std::move(errors);
 
     // On a finer grid, an integration leaves a smaller share of the error,
