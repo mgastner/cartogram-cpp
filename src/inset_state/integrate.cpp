@@ -223,11 +223,11 @@ void InsetState::integrate(ProgressTracker &progress_tracker)
 
     // Over-relaxation slows the decay of an oscillation of the errors
     // between integrations, so the next integration then ends at t = 1
-    if (
-      area_errors_oscillate(
-        signed_area_errors_before_previous_integration_,
-        signed_area_errors_before_integration_,
-        errors)) {
+    const bool errors_oscillate = area_errors_oscillate(
+      signed_area_errors_before_previous_integration_,
+      signed_area_errors_before_integration_,
+      errors);
+    if (errors_oscillate) {
       flow_overrelaxation_ = 0.0;
     }
     signed_area_errors_before_previous_integration_ =
