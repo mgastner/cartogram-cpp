@@ -68,6 +68,7 @@ struct Arguments {
   bool plot_intersections;
   bool plot_polygons;
   bool plot_quadtree;
+  bool plot_velocity;
   bool skip_projection;
 
   bool verbose;

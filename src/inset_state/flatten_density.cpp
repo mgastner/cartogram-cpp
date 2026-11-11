@@ -67,6 +67,56 @@ static inline double calculate_velocity_for_point(
                             : (-grid_fluxy_init(i, j) / rho);
 }
 
+// Returns arrows for --plot_velocity (#184): the velocity field at time 0
+// at the centers of a coarse grid with about 32 cells along the longer side
+// of the lattice. Grid value (i, j) belongs to the point (i + 0.5, j + 0.5).
+// The arrows are scaled so that the longest one is as long as the spacing
+// of the coarse grid; write_vectors() draws each arrow at twice its length,
+// hence the factor 0.5.
+static std::unordered_map<Point, Vector> velocity_arrows(
+  const unsigned int lx,
+  const unsigned int ly,
+  const FTReal2d &grid_fluxx_init,
+  const FTReal2d &grid_fluxy_init,
+  const FTReal2d &rho_ft,
+  const FTReal2d &rho_init)
+{
+  const unsigned int spacing = std::max(1u, std::max(lx, ly) / 32);
+  std::vector<std::pair<Point, Vector>> arrows;
+  double max_speed = 0.0;
+  for (unsigned int i = spacing / 2; i < lx; i += spacing) {
+    for (unsigned int j = spacing / 2; j < ly; j += spacing) {
+      const Vector v(
+        calculate_velocity_for_point(
+          i,
+          j,
+          'x',
+          0.0,
+          grid_fluxx_init,
+          grid_fluxy_init,
+          rho_ft,
+          rho_init),
+        calculate_velocity_for_point(
+          i,
+          j,
+          'y',
+          0.0,
+          grid_fluxx_init,
+          grid_fluxy_init,
+          rho_ft,
+          rho_init));
+      max_speed = std::max(max_speed, std::hypot(v.x(), v.y()));
+      arrows.emplace_back(Point(i + 0.5, j + 0.5), v);
+    }
+  }
+  const double scale = (max_speed > 0.0) ? 0.5 * spacing / max_speed : 0.0;
+  std::unordered_map<Point, Vector> scaled_arrows;
+  for (const auto &[point, velocity] : arrows) {
+    scaled_arrows.emplace(point, velocity * scale);
+  }
+  return scaled_arrows;
+}
+
 bool InsetState::flatten_density_on_node_vertices()
 {
   timer.start("Flatten Density");
@@ -141,6 +191,20 @@ bool InsetState::flatten_density_on_node_vertices()
   // Compute the flux vector and store the result in grid_fluxx_init and
   // grid_fluxy_init
   execute_fftw_plans_for_flux();
+
+  if (args_.plot_velocity) {
+    write_map(
+      file_prefix_ + "_velocity",
+      false,
+      false,
+      velocity_arrows(
+        lx_,
+        ly_,
+        grid_fluxx_init_,
+        grid_fluxy_init_,
+        rho_ft_,
+        rho_init_));
+  }
 
   double t = 0.0;
   double delta_t = 0.30;  // Initial time step.

@@ -59,6 +59,12 @@ Arguments parse_arguments(const int argc, const char *argv[])
     .help("Boolean: Plot images of flatten and blur density")
     .default_value(false)
     .implicit_value(true);
+  arguments.add_argument("--plot_velocity")
+    .help(
+      "Boolean: Plot images of the velocity field at the start of each "
+      "integration")
+    .default_value(false)
+    .implicit_value(true);
   arguments.add_argument("-g", "--add_grid")
     .help("Boolean: Add area legend and grid to relevant plots")
     .default_value(false)
@@ -220,6 +226,7 @@ Arguments parse_arguments(const int argc, const char *argv[])
   args.plot_intersections = arguments.get<bool>("--plot_intersections");
   args.plot_polygons = arguments.get<bool>("--plot_polygons");
   args.plot_quadtree = arguments.get<bool>("--plot_quadtree");
+  args.plot_velocity = arguments.get<bool>("--plot_velocity");
   args.output_shifted_insets = arguments.get<bool>("--output_shifted_insets");
   args.do_not_fail_on_intersections =
     arguments.get<bool>("--do_not_fail_on_intersections");
