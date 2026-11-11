@@ -234,7 +234,7 @@ bool StringToDecimalConverter::is_comma_as_separator(
   }
 
   assert(!comma_as_separator_strs.empty());
-  assert(!point_as_separator_strs.empty());
+  assert(point_as_separator_strs.empty());
 
   return true;
 }
@@ -271,7 +271,13 @@ std::string StringToDecimalConverter::parse_str(
 
   } else {
     processed_str = remove_char(processed_str, point_);
-    processed_str[processed_str.rfind(comma_)] = point_;
+
+    // A value without a comma, such as "2" in a column with "1,5", has no
+    // decimal part to convert
+    const size_t last_comma_pos = processed_str.rfind(comma_);
+    if (last_comma_pos != std::string::npos) {
+      processed_str[last_comma_pos] = point_;
+    }
     processed_str = remove_char(processed_str, comma_);
   }
 

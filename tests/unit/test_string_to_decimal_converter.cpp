@@ -78,4 +78,25 @@ BOOST_AUTO_TEST_CASE(TestCorrectFormat_PointAtEnd)
   BOOST_CHECK(!StringToDecimalConverter::is_str_correct_format("123456789."));
 }
 
+BOOST_AUTO_TEST_CASE(TestIsCommaAsSeparator_CommaAndInteger)
+{
+  // A decimal comma in one value and an integer in another. Before the fix,
+  // an assert() that could never hold stopped Debug builds here.
+  BOOST_CHECK(StringToDecimalConverter::is_comma_as_separator({"1,5", "2"}));
+}
+
+BOOST_AUTO_TEST_CASE(TestParseStr_CommaSeparator)
+{
+  BOOST_CHECK_EQUAL(
+    StringToDecimalConverter::parse_str("1.234,5", false),
+    "1234.5");
+
+  // Before the fix, a value without a comma made parse_str() write before
+  // the start of the string
+  BOOST_CHECK_EQUAL(StringToDecimalConverter::parse_str("2", false), "2");
+  BOOST_CHECK_EQUAL(
+    StringToDecimalConverter::parse_str("1.222", false),
+    "1222");
+}
+
 BOOST_AUTO_TEST_SUITE_END()
