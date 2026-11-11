@@ -33,7 +33,7 @@ void InsetState::preprocess()
     // Color if necessary
     auto_color();
     initialize_identity_proj();
-    write_map(inset_name_ + "_input", args_.plot_grid, true);
+    write_map(name_ + "_input", args_.plot_grid, true);
   }
 
   timer.stop("Preprocessing");
@@ -149,7 +149,7 @@ void InsetState::integrate(ProgressTracker &progress_tracker)
 {
   std::cerr << std::endl << "Integrating inset " << pos_ << std::endl;
 
-  timer.start(inset_name_);
+  timer.start(name_);
 
   // Prepare Inset for Cartogram Generation
   // -- Set up Fourier transforms
@@ -224,10 +224,10 @@ void InsetState::integrate(ProgressTracker &progress_tracker)
 
   // Write SVG for this inset, if requested
   if (args_.plot_polygons) {
-    write_map(inset_name() + "_output", args_.plot_grid, false);
+    write_map(name() + "_output", args_.plot_grid, false);
   }
 
   // Free reserved memory
   cleanup_after_integration();
-  timer.stop(inset_name_);
+  timer.stop(name_);
 }

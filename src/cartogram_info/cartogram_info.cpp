@@ -91,7 +91,7 @@ void CartogramInfo::plot_input()
   CartogramInfo tmp_ci = *this;
 
   for (InsetState &inset_state : tmp_ci.ref_to_inset_states()) {
-    inset_state.normalize_inset_area(tmp_ci.initial_total_target_area(), true);
+    inset_state.normalize_area(tmp_ci.initial_total_target_area(), true);
   }
 
   // Shift insets so that they do not overlap
@@ -112,7 +112,7 @@ void CartogramInfo::preprocess()
     if (n_insets() > 1) {
       inset_name += "_" + inset_state.pos();
     }
-    inset_state.set_inset_name(inset_name);
+    inset_state.set_name(inset_name);
 
     // Preprocess inset
     inset_state.preprocess();
@@ -321,12 +321,12 @@ void CartogramInfo::rescale_insets()
 
   // Iterate over insets and normalize areas
   for (InsetState &inset_state : inset_states_) {
-    inset_state.normalize_inset_area(
+    inset_state.normalize_area(
       default_long_grid_length * default_long_grid_length);
 
     // Rescale copy of original map too
     if (args_.redirect_exports_to_stdout) {
-      inset_state.normalize_inset_area(
+      inset_state.normalize_area(
         default_long_grid_length * default_long_grid_length,
         false,
         true);
@@ -426,7 +426,7 @@ void CartogramInfo::write_shifted_insets()
     // project_to_equal_area should take care of it.
     // if (!args_.output_equal_area_map)
     inset_state.adjust_for_dual_hemisphere();
-    inset_state.normalize_inset_area(initial_total_target_area(), true);
+    inset_state.normalize_area(initial_total_target_area(), true);
   }
   // Shift insets so that they do not overlap
   reposition_insets();

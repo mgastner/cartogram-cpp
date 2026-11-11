@@ -154,7 +154,7 @@ void InsetState::export_time_report() const
 {
   // Open CSV to write, and create empty object to write to
   std::ofstream out_file_csv;
-  std::string csv_file_name = inset_name_ + "_time_report.csv";
+  std::string csv_file_name = name_ + "_time_report.csv";
   out_file_csv.open(csv_file_name);
   if (!out_file_csv) {
     std::cerr << "ERROR writing CSV: failed to open " << csv_file_name
@@ -174,7 +174,7 @@ void InsetState::export_time_report() const
     csv_rows[i + 1].push_back(std::to_string(i));
 
     // Time taken (in seconds)
-    std::string timer_task_name = inset_name_ + "_" + std::to_string(i);
+    std::string timer_task_name = name_ + "_" + std::to_string(i);
     std::string time_in_seconds = std::to_string(
       static_cast<double>(timer.duration(timer_task_name).count()) / 1000.0);
     csv_rows[i + 1].push_back(time_in_seconds);
@@ -404,9 +404,9 @@ void InsetState::insert_whether_input_target_area_is_missing(
   is_input_target_area_missing_.insert({id, is_missing});
 }
 
-std::string InsetState::inset_name() const
+std::string InsetState::name() const
 {
-  return inset_name_;
+  return name_;
 }
 
 double InsetState::initial_area() const
@@ -529,7 +529,7 @@ unsigned int InsetState::n_rings() const
 
 void InsetState::normalize_target_area()
 {
-  double ta = total_target_area();
+  double ta = target_area();
 
   // Assign normalized target area to GeoDivs
   for (const auto &gd : geo_divs_) {
@@ -695,10 +695,10 @@ void InsetState::set_grid_dimensions(
   ly_ = ly;
 }
 
-void InsetState::set_inset_name(const std::string &inset_name)
+void InsetState::set_name(const std::string &new_name)
 {
-  inset_name_ = inset_name;
-  timer.set_name(inset_name);
+  name_ = new_name;
+  timer.set_name(new_name);
 }
 
 void InsetState::store_initial_area()
@@ -709,7 +709,7 @@ void InsetState::store_initial_area()
 void InsetState::store_initial_target_area(const double override)
 {
   initial_target_area_ =
-    almost_equal(override, 0.0) ? total_target_area() : override;
+    almost_equal(override, 0.0) ? target_area() : override;
 }
 
 bool InsetState::target_area_is_missing(const std::string &id) const
@@ -747,13 +747,13 @@ double InsetState::area(bool original_area) const
   return total_area;
 }
 
-double InsetState::total_target_area() const
+double InsetState::target_area() const
 {
-  double inset_total_target_area = 0;
+  double total = 0;
   for (const auto &geo_div_target_area : target_areas_) {
-    inset_total_target_area += geo_div_target_area.second;
+    total += geo_div_target_area.second;
   }
-  return inset_total_target_area;
+  return total;
 }
 
 std::string InsetState::label_at(const std::string &id) const
@@ -783,7 +783,7 @@ void InsetState::set_geo_divs(std::vector<GeoDiv> new_geo_divs)
 
 void InsetState::update_file_prefix()
 {
-  file_prefix_ = inset_name_ + "_" + std::to_string(n_finished_integrations_);
+  file_prefix_ = name_ + "_" + std::to_string(n_finished_integrations_);
 }
 
 void InsetState::update_gd_ids(

@@ -913,11 +913,10 @@ static void compute_area(
     gd_target_density.push_back(
       inset_state.target_area_at(gd.id()) / gd.area());
   }
-  const double ocean_density = (lx * ly - inset_state.total_target_area()) /
-                               (lx * ly - inset_state.area());
+  const double ocean_density =
+    (lx * ly - inset_state.target_area()) / (lx * ly - inset_state.area());
   const double ocean_area_error = std::abs(
-    (lx * ly - inset_state.area()) /
-      (lx * ly - inset_state.total_target_area()) -
+    (lx * ly - inset_state.area()) / (lx * ly - inset_state.target_area()) -
     1.0);
 
 #pragma omp parallel for collapse(2) schedule(dynamic)
@@ -1070,11 +1069,10 @@ static void compute_area(
     }
   }
 
-  const double ocean_density = (lx * ly - inset_state.total_target_area()) /
-                               (lx * ly - inset_state.area());
+  const double ocean_density =
+    (lx * ly - inset_state.target_area()) / (lx * ly - inset_state.area());
   const double ocean_area_error = std::abs(
-    (lx * ly - inset_state.area()) /
-      (lx * ly - inset_state.total_target_area()) -
+    (lx * ly - inset_state.area()) / (lx * ly - inset_state.target_area()) -
     1.0);
 
   for (unsigned int i = 0; i < lx; ++i) {

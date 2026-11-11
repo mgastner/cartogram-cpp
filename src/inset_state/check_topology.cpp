@@ -50,7 +50,7 @@ void InsetState::is_simple(const char *caller_func) const
                   << gd.id();
         std::cerr << ". is_simple() called from " << caller_func << std::endl;
         write_map(
-          inset_name_ + "_" + std::to_string(n_finished_integrations_) +
+          name_ + "_" + std::to_string(n_finished_integrations_) +
             "_not_simple_after_" + caller_func,
           false);
         exit(1);
@@ -70,7 +70,7 @@ void InsetState::is_simple(const char *caller_func) const
           std::cerr << ". is_simple() called from " << caller_func
                     << std::endl;
           write_map(
-            inset_name_ + "_" + std::to_string(n_finished_integrations_) +
+            name_ + "_" + std::to_string(n_finished_integrations_) +
               "_not_simple_after_" + caller_func,
             false);
           exit(1);

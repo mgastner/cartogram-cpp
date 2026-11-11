@@ -137,7 +137,7 @@ void InsetState::write_quadtree(const std::string &filename)
 void InsetState::write_intersections_image()
 {
   unsigned int res = intersections_resolution;
-  std::string svg_name = inset_name() + "_intersections_" +
+  std::string svg_name = name() + "_intersections_" +
                          std::to_string(n_finished_integrations()) + ".svg";
 
   std::vector<Segment> intersections = intersecting_segments(res);

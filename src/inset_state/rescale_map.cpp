@@ -72,7 +72,7 @@ void InsetState::rescale_map()
   std::cerr << "New bounding box: " << bbox() << std::endl;
 }
 
-void InsetState::normalize_inset_area(
+void InsetState::normalize_area(
   double total_cart_target_area,
   bool equal_area,
   bool normalize_original)

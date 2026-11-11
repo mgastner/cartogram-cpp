@@ -96,7 +96,7 @@ private:
   mutable Polygon not_simple_polygon_;
 
   // Map name. Inset position is appended to the name if n_insets > 2.
-  std::string inset_name_;
+  std::string name_;
   std::unordered_map<std::string, bool> is_input_target_area_missing_;
   std::unordered_map<std::string, std::string> labels_;
   unsigned int lx_{}, ly_{};  // Lattice dimensions
@@ -185,7 +185,7 @@ public:
   void insert_label(const std::string &, const std::string &);
   void insert_target_area(const std::string &, double);
   void insert_whether_input_target_area_is_missing(const std::string &, bool);
-  std::string inset_name() const;
+  std::string name() const;
   nlohmann::json inset_to_geojson(bool, bool = false) const;
 
   // Function to go from equal area to cartogram
@@ -209,7 +209,7 @@ public:
   unsigned int n_geo_divs() const;
   unsigned long n_points() const;
   unsigned int n_rings() const;
-  void normalize_inset_area(
+  void normalize_area(
     double total_cart_target_area,
     bool equal_area = false,
     bool normalize_original = false);
@@ -235,7 +235,7 @@ public:
   void set_area_errors();
   void set_grid_dimensions(unsigned int, unsigned int);
   void set_geo_divs(std::vector<GeoDiv> new_geo_divs);
-  void set_inset_name(const std::string &);
+  void set_name(const std::string &);
   void simplify(unsigned int);
   void store_initial_area();
   void store_initial_target_area(const double override = 0.0);
@@ -245,7 +245,7 @@ public:
   double target_area_at(const std::string &) const;
   bool target_area_is_missing(const std::string &) const;
   double area(bool = false) const;
-  double total_target_area() const;
+  double target_area() const;
 
   // Apply given function to all points
   template <class Transformer>
