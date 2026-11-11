@@ -165,24 +165,28 @@ inline void write_vectors(
   unsigned int lx,
   unsigned int ly)
 {
-  cvs.set_stroke(Color{0, 0, 0}, 5e-3 * std::min(lx, ly));
+  cvs.set_stroke(Color{0, 0, 0}, 2e-3 * std::min(lx, ly));
 
+  // Each arrow is twice as long as its vector, and each half of the
+  // arrowhead is a quarter as long as the arrow
   for (auto const &[p, v] : vectors) {
-    double theta = std::atan2(v.y(), v.x());
-    double r = std::hypot(v.x(), v.y());
+    const double theta = std::atan2(v.y(), v.x());
+    const double head = 0.5 * std::hypot(v.x(), v.y());
 
-    double x_end = p.x() + 2 * v.x();
-    double y_end = p.y() + 2 * v.y();
+    const double x_end = p.x() + 2 * v.x();
+    const double y_end = p.y() + 2 * v.y();
 
+    const double x1 = x_end - head * std::cos(theta + M_PI / 6);
+    const double y1 = y_end - head * std::sin(theta + M_PI / 6);
+    const double x2 = x_end - head * std::cos(theta - M_PI / 6);
+    const double y2 = y_end - head * std::sin(theta - M_PI / 6);
+
+    // Canvas::move_to() discards the current path, so the shaft and the
+    // first half of the head must be stroked before the second half starts
     cvs.move_to(p.x(), p.y());
     cvs.line_to(x_end, y_end);
-
-    double x1 = x_end - 0.05 * r * std::cos(theta + M_PI / 6);
-    double y1 = y_end - 0.05 * r * std::sin(theta + M_PI / 6);
-    double x2 = x_end - 0.05 * r * std::cos(theta - M_PI / 6);
-    double y2 = y_end - 0.05 * r * std::sin(theta - M_PI / 6);
-
     cvs.line_to(x1, y1);
+    cvs.stroke();
     cvs.move_to(x_end, y_end);
     cvs.line_to(x2, y2);
     cvs.stroke();
