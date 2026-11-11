@@ -5,6 +5,32 @@
 #include <cmath>
 #include <cstddef>
 
+namespace
+{
+
+// Centered log ratios of the region areas to their targets:
+// d = ln(1 + e) minus its mean over the regions
+std::vector<double> centered_log_ratios(const std::vector<double> &errors)
+{
+  std::vector<double> d;
+  if (errors.empty()) {
+    return d;
+  }
+  d.reserve(errors.size());
+  double mean = 0.0;
+  for (const double e : errors) {
+    d.push_back(std::log1p(e));
+    mean += d.back();
+  }
+  mean /= static_cast<double>(errors.size());
+  for (double &x : d) {
+    x -= mean;
+  }
+  return d;
+}
+
+}  // namespace
+
 double next_flow_overrelaxation(
   const std::vector<double> &errors_before,
   const std::vector<double> &errors_after,
@@ -12,13 +38,15 @@ double next_flow_overrelaxation(
 {
   assert(errors_before.size() == errors_after.size());
 
-  // Least-squares slope of the errors after the integration on the errors
-  // before it, through the origin
+  // Least-squares slope of the centered log ratios after the integration on
+  // those before it. Both have mean 0, so the fit needs no intercept.
+  const std::vector<double> d_before = centered_log_ratios(errors_before);
+  const std::vector<double> d_after = centered_log_ratios(errors_after);
   double sum_bb = 0.0;
   double sum_ba = 0.0;
-  for (std::size_t i = 0; i < errors_before.size(); ++i) {
-    sum_bb += errors_before[i] * errors_before[i];
-    sum_ba += errors_before[i] * errors_after[i];
+  for (std::size_t i = 0; i < d_before.size(); ++i) {
+    sum_bb += d_before[i] * d_before[i];
+    sum_ba += d_before[i] * d_after[i];
   }
   const double t_reached = 1.0 + omega_used;
   if (!(sum_bb > 0.0) || !(t_reached > 0.0)) {
