@@ -296,6 +296,30 @@ void CartogramInfo::update_id_header_info(
   id_header_ = matching_id_header;
 }
 
+// The IDs in csv_data are trimmed, but the IDs from the GeoJSON keep any
+// leading or trailing whitespace, for example "San Andres y Providencia  "
+// (#310). Replace each CSV ID by the GeoJSON ID with the same trimmed form,
+// so that the IDs match.
+static void use_geojson_spelling_of_ids(
+  std::map<std::string, std::map<std::string, std::string>> &csv_data,
+  const std::vector<std::string> &geojson_ids)
+{
+  std::map<std::string, std::string> geojson_id_of_trimmed_id;
+  for (const auto &geojson_id : geojson_ids) {
+    geojson_id_of_trimmed_id.emplace(
+      normalize_id_token(geojson_id),
+      geojson_id);
+  }
+  std::map<std::string, std::map<std::string, std::string>> renamed_csv_data;
+  for (auto &[id, data] : csv_data) {
+    const auto it = geojson_id_of_trimmed_id.find(id);
+    const std::string &new_id =
+      (it == geojson_id_of_trimmed_id.end()) ? id : it->second;
+    renamed_csv_data[new_id] = std::move(data);
+  }
+  csv_data = std::move(renamed_csv_data);
+}
+
 static void check_validity_of_csv_ids(
   std::map<std::string, std::map<std::string, std::string>> &csv_data,
   const std::vector<std::string> &initial_id_order)
@@ -478,6 +502,7 @@ void CartogramInfo::read_csv()
   }
 
   update_id_header_info(new_id_header);
+  use_geojson_spelling_of_ids(csv_data, initial_id_order_);
   check_validity_of_csv_ids(csv_data, initial_id_order_);
   process_area_strs(csv_data);
   relocate_geodivs_based_on_inset_pos(csv_data);
