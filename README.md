@@ -53,7 +53,7 @@ You may inspect the resultant SVG to check if everything looks as expected.
 
 ## Development
 
-We manage dependencies with a Python virtual environment and Conan 2. The project supports GCC, Clang, and Apple Clang, all with C++20 support. Please ensure that Python 3.10 or later and a C++20-supported compiler are installed before proceeding.
+We manage dependencies with a Python virtual environment and Conan 2. The project requires GCC 15 or later, Clang 22 or later, or Apple Clang 21 or later, which are the compilers that CI tests. Please ensure that Python 3.10 or later and one of these compilers are installed before proceeding.
 
 1. Create a virtual environment with the required dependencies
 
