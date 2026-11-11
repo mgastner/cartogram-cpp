@@ -60,3 +60,24 @@ set_tests_properties(${test_name}
   LABELS "stress"
   TIMEOUT 60
 )
+
+# An area that overflows or underflows a double must stop the program with
+# EXIT_FAILURE and an error message, not abort it with an uncaught exception.
+foreach(case IN ITEMS huge tiny)
+  set(test_name cli_area_outside_double_range_${case})
+  set(work_dir "${CMAKE_CURRENT_BINARY_DIR}/${test_name}")
+  file(MAKE_DIRECTORY "${work_dir}")
+  add_test(
+    NAME ${test_name}
+    COMMAND sh -c "\"$0\" \"$1\" \"$2\" -P 100000000 > /dev/null 2> err.txt; test $? -eq 1 && grep -q '^ERROR: ' err.txt"
+      "${CMAKE_BINARY_DIR}/cartogram"
+      "${DATA_DIR}/two_squares_padded_ids.geojson"
+      "${DATA_DIR}/two_squares_${case}_area.csv"
+    WORKING_DIRECTORY "${work_dir}"
+  )
+  set_tests_properties(${test_name}
+    PROPERTIES
+    LABELS "stress"
+    TIMEOUT 60
+  )
+endforeach()
