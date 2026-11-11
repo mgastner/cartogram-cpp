@@ -100,9 +100,11 @@ static void check_validity_of_inset_pos(
 {
   std::unordered_set<std::string> permitted_pos{"C", "L", "R", "T", "B"};
   if (!permitted_pos.contains(inset_pos)) {
-    std::cerr << "Unrecognized inset position : " << inset_pos
-              << " for Region: " << id << "\nSetting " << id
-              << "\'s inset position to Center (C)." << std::endl;
+    std::cerr << "ERROR: Unrecognized inset position \"" << inset_pos
+              << "\" for region " << id
+              << ". Use C (center), L (left), R (right), T (top), or B "
+                 "(bottom)."
+              << std::endl;
     std::exit(20);
   }
 }

@@ -273,7 +273,8 @@ Arguments parse_arguments(const int argc, const char *argv[])
     // CSV file not given, and user does not want to create one
     std::cerr << arguments << std::endl;
     std::cerr << "ERROR: No CSV file provided!" << std::endl;
-    std::cerr << "To create a CSV, please use the -m flag." << std::endl;
+    std::cerr << "To create a CSV, please use the -M (--make_csv) flag."
+              << std::endl;
     std::exit(15);
   } else {
     args.visual_file_name = "";
