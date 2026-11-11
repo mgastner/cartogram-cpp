@@ -77,7 +77,13 @@ if(CMAKE_BUILD_TYPE STREQUAL Release)
 
   if(CMAKE_CXX_COMPILER_ID STREQUAL "Clang" AND CMAKE_SYSTEM_NAME STREQUAL "Linux")
     if(ipo_ok)
-      find_program(LLD_PATH NAMES lld ld.lld)
+      # With -fuse-ld=lld, clang runs the ld.lld in its own directory if
+      # there is one, and otherwise the one on the PATH. Search in the same
+      # order, so that LTO is not disabled when only a versioned package
+      # such as lld-22 is installed, and the version found is the one used.
+      file(REAL_PATH "${CMAKE_CXX_COMPILER}" cxx_compiler_real_path)
+      cmake_path(GET cxx_compiler_real_path PARENT_PATH cxx_compiler_dir)
+      find_program(LLD_PATH NAMES ld.lld lld HINTS "${cxx_compiler_dir}")
 
       if(NOT LLD_PATH)
         message(WARNING "lld not found; disabling IPO. Install with: sudo apt install lld")
