@@ -164,6 +164,9 @@ jobs:
           pip install -U -r requirements.txt
           conan remote update conancenter --url=https://center2.conan.io
           conan profile detect
+          # The CGAL recipe requires mpfr 4.2.1, whose configure script fails with
+          # clang on Ubuntu 26.04 (x86_64). Version 4.2.2 fixes the script.
+          printf '\n[replace_requires]\nmpfr/4.2.1: mpfr/4.2.2\n' >> "$(conan profile path default)"
 
       # We only perform static builds so the output can be exported as an artifact
       # for testing on a clean system without installing dependencies.
@@ -246,6 +249,9 @@ jobs:
           pip install -U -r requirements.txt
           conan remote update conancenter --url=https://center2.conan.io
           conan profile detect
+          # The CGAL recipe requires mpfr 4.2.1, whose configure script fails with
+          # clang on Ubuntu 26.04 (x86_64). Version 4.2.2 fixes the script.
+          printf '\n[replace_requires]\nmpfr/4.2.1: mpfr/4.2.2\n' >> "$(conan profile path default)"
 
       - name: Download dependencies
         run: |
@@ -401,6 +407,9 @@ jobs:
           pip install --upgrade -r "$GITHUB_WORKSPACE/requirements.txt"
           conan remote update conancenter --url=https://center2.conan.io
           conan profile detect
+          # The CGAL recipe requires mpfr 4.2.1, whose configure script fails with
+          # clang on Ubuntu 26.04 (x86_64). Version 4.2.2 fixes the script.
+          printf '\n[replace_requires]\nmpfr/4.2.1: mpfr/4.2.2\n' >> "$(conan profile path default)"
           conan install . --output-folder build \
                           --build missing \
                           -s build_type=${{ matrix.build_type }} \
