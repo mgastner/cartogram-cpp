@@ -85,8 +85,8 @@ std::vector<Point> project_strip(
     }
   }
 
-  // Cosine coefficients in the normalization of blur_density(): the inverse
-  // FFTW_REDFT01 transform weighs frequency 1 by 2
+  // Cosine coefficients in the normalization that flatten_density() expects:
+  // the inverse FFTW_REDFT01 transform weighs frequency 1 by 2
   rho_ft(0, 0) = 1.0;
   rho_ft(1, 0) = a / 2.0;
 
