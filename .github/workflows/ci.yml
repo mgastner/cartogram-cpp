@@ -15,7 +15,7 @@ concurrency:
 jobs:
   style-check:
     name: Style check (clang-format)
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-26.04
     env:
       # Pinned so that a new release of clang-format cannot make the check fail.
       # The same version can be installed locally with
@@ -62,7 +62,7 @@ jobs:
 
   docs-check:
     name: Docs check
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-26.04
 
     steps:
       - uses: actions/checkout@v4
@@ -97,44 +97,44 @@ jobs:
       matrix:
         include:
           # Linux
-          - os: ubuntu-latest
+          - os: ubuntu-26.04
             compiler: gcc
-            version: 13
+            version: 15
             build_type: Release
             name: ubuntu-release-gcc
-          - os: ubuntu-latest
+          - os: ubuntu-26.04
             compiler: clang
-            version: 16
+            version: 22
             build_type: Release
             name: ubuntu-release-clang
-          - os: ubuntu-latest
+          - os: ubuntu-26.04
             compiler: gcc
-            version: 13
+            version: 15
             build_type: Debug
             name: ubuntu-debug-gcc
-          - os: ubuntu-latest
+          - os: ubuntu-26.04
             compiler: clang
-            version: 16
+            version: 22
             build_type: Debug
             name: ubuntu-debug-clang
           # Linux arm
-          - os: ubuntu-24.04-arm
+          - os: ubuntu-26.04-arm
             compiler: clang
-            version: 16
+            version: 22
             build_type: Release
             name: ubuntu-arm64-release-clang
-          - os: ubuntu-24.04-arm
+          - os: ubuntu-26.04-arm
             compiler: clang
-            version: 16
+            version: 22
             build_type: Debug
             name: ubuntu-arm64-debug-clang
           # macOS
-          - os: macos-14
+          - os: macos-26
             compiler: apple-clang
             version: ""
             build_type: Release
             name: macos-release-appleclang
-          - os: macos-14
+          - os: macos-26
             compiler: apple-clang
             version: ""
             build_type: Debug
@@ -209,7 +209,7 @@ jobs:
 
   build-sanitize:
     name: "Build (${{ matrix.san }})"
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-26.04
     needs: [style-check, docs-check]
 
     strategy:
@@ -239,12 +239,12 @@ jobs:
 
       # We only run sanitizers on Linux with Clang, since GCC's support is less mature
       # and sanitizer support on macOS is incomplete.
-      - name: Install clang-16
+      - name: Install clang-22
         run: |
           sudo apt-get update
-          sudo apt-get install -y clang-16 lld-16
-          echo "CC=clang-16"    >> $GITHUB_ENV
-          echo "CXX=clang++-16" >> $GITHUB_ENV
+          sudo apt-get install -y clang-22 lld-22
+          echo "CC=clang-22"    >> $GITHUB_ENV
+          echo "CXX=clang++-22" >> $GITHUB_ENV
 
       - name: Download dependencies
         run: |
@@ -285,17 +285,17 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - { target: ubuntu-release-gcc,         os: ubuntu-latest }
-          - { target: ubuntu-release-clang,       os: ubuntu-latest }
-          - { target: ubuntu-debug-gcc,           os: ubuntu-latest }
-          - { target: ubuntu-debug-clang,         os: ubuntu-latest }
-          - { target: ubuntu-arm64-release-clang, os: ubuntu-24.04-arm }
-          - { target: ubuntu-arm64-debug-clang,   os: ubuntu-24.04-arm }
-          - { target: macos-release-appleclang,   os: macos-14 }
-          - { target: macos-debug-appleclang,     os: macos-14 }
-          - { target: asan,                       os: ubuntu-latest }
-          - { target: ubsan,                      os: ubuntu-latest }
-          - { target: tsan,                       os: ubuntu-latest }
+          - { target: ubuntu-release-gcc,         os: ubuntu-26.04 }
+          - { target: ubuntu-release-clang,       os: ubuntu-26.04 }
+          - { target: ubuntu-debug-gcc,           os: ubuntu-26.04 }
+          - { target: ubuntu-debug-clang,         os: ubuntu-26.04 }
+          - { target: ubuntu-arm64-release-clang, os: ubuntu-26.04-arm }
+          - { target: ubuntu-arm64-debug-clang,   os: ubuntu-26.04-arm }
+          - { target: macos-release-appleclang,   os: macos-26 }
+          - { target: macos-debug-appleclang,     os: macos-26 }
+          - { target: asan,                       os: ubuntu-26.04 }
+          - { target: ubsan,                      os: ubuntu-26.04 }
+          - { target: tsan,                       os: ubuntu-26.04 }
     runs-on: ${{ matrix.os }}
 
     steps:
@@ -318,17 +318,17 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - { target: ubuntu-release-gcc,         os: ubuntu-latest }
-          - { target: ubuntu-release-clang,       os: ubuntu-latest }
-          - { target: ubuntu-debug-gcc,           os: ubuntu-latest }
-          - { target: ubuntu-debug-clang,         os: ubuntu-latest }
-          - { target: ubuntu-arm64-release-clang, os: ubuntu-24.04-arm }
-          - { target: ubuntu-arm64-debug-clang,   os: ubuntu-24.04-arm }
-          - { target: macos-release-appleclang,   os: macos-14 }
-          - { target: macos-debug-appleclang,     os: macos-14 }
-          - { target: asan,                       os: ubuntu-latest }
-          - { target: ubsan,                      os: ubuntu-latest }
-          - { target: tsan,                       os: ubuntu-latest }
+          - { target: ubuntu-release-gcc,         os: ubuntu-26.04 }
+          - { target: ubuntu-release-clang,       os: ubuntu-26.04 }
+          - { target: ubuntu-debug-gcc,           os: ubuntu-26.04 }
+          - { target: ubuntu-debug-clang,         os: ubuntu-26.04 }
+          - { target: ubuntu-arm64-release-clang, os: ubuntu-26.04-arm }
+          - { target: ubuntu-arm64-debug-clang,   os: ubuntu-26.04-arm }
+          - { target: macos-release-appleclang,   os: macos-26 }
+          - { target: macos-debug-appleclang,     os: macos-26 }
+          - { target: asan,                       os: ubuntu-26.04 }
+          - { target: ubsan,                      os: ubuntu-26.04 }
+          - { target: tsan,                       os: ubuntu-26.04 }
     runs-on: ${{ matrix.os }}
 
     steps:
@@ -355,9 +355,9 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - os: ubuntu-latest
+          - os: ubuntu-26.04
             compiler: clang
-            version: 16
+            version: 22
             build_type: Release
             name: ubuntu-release-clang
 
@@ -453,7 +453,7 @@ jobs:
   #         - ubuntu-release-gcc
   #         - ubuntu-release-clang
   #         - macos-release-appleclang
-  #   runs-on: "${{ contains(matrix.target, 'mac') && 'macos-14' || 'ubuntu-latest' }}"
+  #   runs-on: "${{ contains(matrix.target, 'mac') && 'macos-26' || 'ubuntu-26.04' }}"
 
   #   steps:
   #     - uses: actions/checkout@v4

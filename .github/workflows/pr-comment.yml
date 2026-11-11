@@ -12,7 +12,7 @@ permissions:
 jobs:
   perf-comment:
     name: Post Performance Report
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-26.04
 
     # Only run when CI was triggered by a PR (regardless of success/failure)
     # Because perf-tests might pass but some other tests fail,
