@@ -3,14 +3,17 @@
 #include <cassert>
 #include <iostream>
 
-const std::string StringToDecimalConverter::NA_ = "NA";
+static constexpr char point = '.';
+static constexpr char comma = ',';
+static constexpr char minus = '-';
+static const std::string na = "NA";
 
-bool StringToDecimalConverter::is_valid_char(char ch)
+static bool is_valid_char(char ch)
 {
-  return (std::isdigit(ch)) || ch == point_ || ch == comma_ || ch == minus_;
+  return (std::isdigit(ch)) || ch == point || ch == comma || ch == minus;
 }
 
-std::string StringToDecimalConverter::remove_char(std::string str, char ch)
+static std::string remove_char(std::string str, char ch)
 {
   str.erase(std::remove(str.begin(), str.end(), ch), str.end());
   return str;
@@ -21,25 +24,23 @@ static unsigned int count_char(const std::string &str, char ch)
   return static_cast<unsigned int>(std::count(str.begin(), str.end(), ch));
 }
 
-bool StringToDecimalConverter::has_multiple_commas_and_points(
-  const std::string &str)
+static bool has_multiple_commas_and_points(const std::string &str)
 {
-  return count_char(str, comma_) > 1 && count_char(str, point_) > 1;
+  return count_char(str, comma) > 1 && count_char(str, point) > 1;
 }
 
-bool StringToDecimalConverter::has_separator_at_the_end(const std::string &str)
+static bool has_separator_at_the_end(const std::string &str)
 {
   assert(str.length() > 0);
-  return (str.back() == comma_ || str.back() == point_);
+  return (str.back() == comma || str.back() == point);
 }
 
-bool StringToDecimalConverter::has_invalid_comma_point_sequence(
-  const std::string &str)
+static bool has_invalid_comma_point_sequence(const std::string &str)
 {
   assert(!has_multiple_commas_and_points(str));
 
-  const unsigned int comma_count = count_char(str, comma_);
-  const unsigned int point_count = count_char(str, point_);
+  const unsigned int comma_count = count_char(str, comma);
+  const unsigned int point_count = count_char(str, point);
 
   // If both comma and point are not found, the sequence is valid
   if (comma_count == 0 || point_count == 0) {
@@ -48,8 +49,8 @@ bool StringToDecimalConverter::has_invalid_comma_point_sequence(
 
   if (comma_count > 1) {
     assert(point_count == 1);
-    size_t last_comma_pos = str.rfind(comma_);
-    size_t point_pos = str.find(point_);
+    size_t last_comma_pos = str.rfind(comma);
+    size_t point_pos = str.find(point);
 
     // Check if the point is the rightmost among all separators
     if (point_pos < last_comma_pos) {
@@ -59,8 +60,8 @@ bool StringToDecimalConverter::has_invalid_comma_point_sequence(
 
   if (point_count > 1) {
     assert(comma_count == 1);
-    size_t last_point_pos = str.rfind(point_);
-    size_t comma_pos = str.find(comma_);
+    size_t last_point_pos = str.rfind(point);
+    size_t comma_pos = str.find(comma);
 
     // Check if the comma is the rightmost among all separators
     if (comma_pos < last_point_pos) {
@@ -73,7 +74,7 @@ bool StringToDecimalConverter::has_invalid_comma_point_sequence(
 
 bool StringToDecimalConverter::is_str_NA(const std::string &str)
 {
-  return (str.compare(NA_) == 0);
+  return (str.compare(na) == 0);
 }
 
 bool StringToDecimalConverter::is_str_valid_characters(const std::string &str)
@@ -83,7 +84,7 @@ bool StringToDecimalConverter::is_str_valid_characters(const std::string &str)
   }
 
   // Allow str being "NA"
-  if (str == NA_) {
+  if (str == na) {
     return true;
   }
 
@@ -95,12 +96,12 @@ bool StringToDecimalConverter::is_str_valid_characters(const std::string &str)
   }
 
   // '-' can only be used once
-  if (count_char(str, minus_) > 1) {
+  if (count_char(str, minus) > 1) {
     return false;
   }
 
   // '-' can only be used at the beginning
-  if (count_char(str, minus_) == 1 and str[0] != minus_) {
+  if (count_char(str, minus) == 1 and str[0] != minus) {
     return false;
   }
   return true;
@@ -252,16 +253,16 @@ std::string StringToDecimalConverter::parse_str(
   std::string processed_str = str;
 
   if (is_point_as_separator) {
-    processed_str = remove_char(processed_str, comma_);
+    processed_str = remove_char(processed_str, comma);
 
-    if (count_char(processed_str, point_) > 1) {
-      size_t last_point_pos = processed_str.rfind(point_);
+    if (count_char(processed_str, point) > 1) {
+      size_t last_point_pos = processed_str.rfind(point);
       std::string cleaned_str;
 
       // Only keep the last point. This should not arise in practice if data is
       // consistent
       for (size_t i = 0; i < processed_str.size(); ++i) {
-        if (processed_str[i] != point_ || i == last_point_pos) {
+        if (processed_str[i] != point || i == last_point_pos) {
           cleaned_str += processed_str[i];
         }
       }
@@ -270,9 +271,9 @@ std::string StringToDecimalConverter::parse_str(
     }
 
   } else {
-    processed_str = remove_char(processed_str, point_);
-    processed_str[processed_str.rfind(comma_)] = point_;
-    processed_str = remove_char(processed_str, comma_);
+    processed_str = remove_char(processed_str, point);
+    processed_str[processed_str.rfind(comma)] = point;
+    processed_str = remove_char(processed_str, comma);
   }
 
   return processed_str;
