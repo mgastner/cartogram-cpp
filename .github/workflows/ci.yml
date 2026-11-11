@@ -419,7 +419,7 @@ jobs:
                 -DCMAKE_TOOLCHAIN_FILE=build/build/${{ matrix.build_type }}/generators/conan_toolchain.cmake \
                 -DCMAKE_BUILD_TYPE=${{ matrix.build_type }} \
                 -DBUILD_SHARED_LIBS=OFF
-          cmake --build build -j"$(nproc)"
+          cmake --build build --target cartogram -j"$(nproc)"
           popd
 
       # Benchmarks
