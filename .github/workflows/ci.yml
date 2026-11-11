@@ -143,14 +143,6 @@ jobs:
     steps:
       - uses: actions/checkout@v7
 
-      - name: Setup Python & Conan
-        run: |
-          python3 -m venv .venv
-          source .venv/bin/activate
-          pip install -U -r requirements.txt
-          conan remote update conancenter --url=https://center2.conan.io
-          conan profile detect
-
       - name: Install compiler (Linux only)
         if: runner.os == 'Linux'
         run: |
@@ -164,6 +156,15 @@ jobs:
             echo "CC=clang-${{ matrix.version }}"   >> $GITHUB_ENV
             echo "CXX=clang++-${{ matrix.version }}" >> $GITHUB_ENV
           fi
+
+      - name: Setup Python & Conan
+        run: |
+          python3 -m venv .venv
+          source .venv/bin/activate
+          pip install -U -r requirements.txt
+          conan remote update conancenter --url=https://center2.conan.io
+          conan profile detect
+
       # We only perform static builds so the output can be exported as an artifact
       # for testing on a clean system without installing dependencies.
       - name: Download Dependencies
@@ -229,14 +230,6 @@ jobs:
     steps:
       - uses: actions/checkout@v7
 
-      - name: Setup Python & Conan
-        run: |
-          python3 -m venv .venv
-          source .venv/bin/activate
-          pip install -U -r requirements.txt
-          conan remote update conancenter --url=https://center2.conan.io
-          conan profile detect
-
       # We only run sanitizers on Linux with Clang, since GCC's support is less mature
       # and sanitizer support on macOS is incomplete.
       - name: Install clang-22
@@ -245,6 +238,14 @@ jobs:
           sudo apt-get install -y clang-22 lld-22
           echo "CC=clang-22"    >> $GITHUB_ENV
           echo "CXX=clang++-22" >> $GITHUB_ENV
+
+      - name: Setup Python & Conan
+        run: |
+          python3 -m venv .venv
+          source .venv/bin/activate
+          pip install -U -r requirements.txt
+          conan remote update conancenter --url=https://center2.conan.io
+          conan profile detect
 
       - name: Download dependencies
         run: |
