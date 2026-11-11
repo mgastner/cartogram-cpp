@@ -261,7 +261,8 @@ public:
     bool,
     bool equal_area_map = false,
     const std::unordered_map<Point, Vector> =
-      std::unordered_map<Point, Vector>()) const;
+      std::unordered_map<Point, Vector>(),
+    const std::vector<std::vector<double>> &dividers = {}) const;
 
   void write_delaunay_triangles(const std::string &, const bool);
   void write_grid_heatmap_data(const std::string filename);

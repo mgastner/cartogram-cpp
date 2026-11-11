@@ -51,42 +51,20 @@ nlohmann::json CartogramInfo::cgal_to_json(
       inset_container.end());
   }
 
-  // Get joint bounding box for all insets.
+  // Get joint bounding box for all insets, and the bounding box of each
+  // inset for the divider lines
   double bb_xmin = dbl_inf;
   double bb_ymin = dbl_inf;
   double bb_xmax = -dbl_inf;
   double bb_ymax = -dbl_inf;
-
-  // Get the joint minimum and maximum y-coordinates for the insets "L", "C",
-  // and "R". Also get the joint minimum and maximum x-coordinates for the
-  // insets "T", "C", and "B". These coordinates are needed to facilitate
-  // calculations for the positions of the divider lines.
-  double min_xmin_tcb = dbl_inf;
-  double min_ymin_lcr = dbl_inf;
-  double max_xmax_tcb = -dbl_inf;
-  double max_ymax_lcr = -dbl_inf;
-
-  // Get bounding box of central inset
-  Bbox inset_c_bb =
-    Bbox(dbl_inf, dbl_inf, -dbl_inf, -dbl_inf);  // Initialize to invalid bbox
+  std::vector<std::pair<std::string, Bbox>> inset_bboxes;
   for (const InsetState &inset_state : inset_states_) {
-    std::string inset_pos = inset_state.pos();
     const Bbox inset_bb = inset_state.bbox(original_geo_divs_to_geojson);
     bb_xmin = std::min(bb_xmin, inset_bb.xmin());
     bb_ymin = std::min(bb_ymin, inset_bb.ymin());
     bb_xmax = std::max(bb_xmax, inset_bb.xmax());
     bb_ymax = std::max(bb_ymax, inset_bb.ymax());
-    if (inset_pos == "T" || inset_pos == "C" || inset_pos == "B") {
-      max_xmax_tcb = std::max(max_xmax_tcb, inset_bb.xmax());
-      min_xmin_tcb = std::min(min_xmin_tcb, inset_bb.xmin());
-    }
-    if (inset_pos == "L" || inset_pos == "C" || inset_pos == "R") {
-      min_ymin_lcr = std::min(min_ymin_lcr, inset_bb.ymin());
-      max_ymax_lcr = std::max(max_ymax_lcr, inset_bb.ymax());
-    }
-    if (inset_pos == "C") {
-      inset_c_bb = inset_bb;
-    }
+    inset_bboxes.emplace_back(inset_state.pos(), inset_bb);
   }
 
   // Insert joint bounding box into the container as a vector with four
@@ -100,39 +78,72 @@ nlohmann::json CartogramInfo::cgal_to_json(
 
   // Container to store divider lines
   nlohmann::json divider_container;
+  for (const auto &line : divider_lines(inset_bboxes)) {
+    divider_container.push_back(line);
+  }
+  container.push_back(divider_container);
+  return container;
+}
+
+std::vector<std::vector<double>> CartogramInfo::divider_lines(
+  const std::vector<std::pair<std::string, Bbox>> &inset_bboxes)
+{
+  // Get the joint minimum and maximum y-coordinates for the insets "L", "C",
+  // and "R". Also get the joint minimum and maximum x-coordinates for the
+  // insets "T", "C", and "B". These coordinates are needed to facilitate
+  // calculations for the positions of the divider lines.
+  double min_xmin_tcb = dbl_inf;
+  double min_ymin_lcr = dbl_inf;
+  double max_xmax_tcb = -dbl_inf;
+  double max_ymax_lcr = -dbl_inf;
+
+  // Get bounding box of central inset
+  Bbox inset_c_bb =
+    Bbox(dbl_inf, dbl_inf, -dbl_inf, -dbl_inf);  // Initialize to invalid bbox
+  for (const auto &[inset_pos, inset_bb] : inset_bboxes) {
+    if (inset_pos == "T" || inset_pos == "C" || inset_pos == "B") {
+      max_xmax_tcb = std::max(max_xmax_tcb, inset_bb.xmax());
+      min_xmin_tcb = std::min(min_xmin_tcb, inset_bb.xmin());
+    }
+    if (inset_pos == "L" || inset_pos == "C" || inset_pos == "R") {
+      min_ymin_lcr = std::min(min_ymin_lcr, inset_bb.ymin());
+      max_ymax_lcr = std::max(max_ymax_lcr, inset_bb.ymax());
+    }
+    if (inset_pos == "C") {
+      inset_c_bb = inset_bb;
+    }
+  }
 
   // Insert divider lines between all insets
-  for (const InsetState &inset_state : inset_states_) {
-    std::string inset_pos = inset_state.pos();
-    const Bbox inset_bb = inset_state.bbox(original_geo_divs_to_geojson);
+  std::vector<std::vector<double>> lines;
+  for (const auto &[inset_pos, inset_bb] : inset_bboxes) {
     if (inset_pos == "T") {
-      divider_container.push_back(divider_points(
+      lines.push_back(divider_points(
         min_xmin_tcb,
         (inset_bb.ymin() + inset_c_bb.ymax()) / 2,
         max_xmax_tcb,
         (inset_bb.ymin() + inset_c_bb.ymax()) / 2));
     } else if (inset_pos == "B") {
-      divider_container.push_back(divider_points(
+      lines.push_back(divider_points(
         min_xmin_tcb,
         (inset_bb.ymax() + inset_c_bb.ymin()) / 2,
         max_xmax_tcb,
         (inset_bb.ymax() + inset_c_bb.ymin()) / 2));
     } else if (inset_pos == "L") {
-      divider_container.push_back(divider_points(
+      lines.push_back(divider_points(
         (inset_bb.xmax() + inset_c_bb.xmin()) / 2,
         max_ymax_lcr,
         (inset_bb.xmax() + inset_c_bb.xmin()) / 2,
         min_ymin_lcr));
     } else if (inset_pos == "R") {
-      divider_container.push_back(divider_points(
+      lines.push_back(divider_points(
         (inset_bb.xmin() + inset_c_bb.xmax()) / 2,
         max_ymax_lcr,
         (inset_bb.xmin() + inset_c_bb.xmax()) / 2,
         min_ymin_lcr));
     }
   }
-  container.push_back(divider_container);
-  return container;
+  return lines;
 }
 
 // The format of the divider lines in the GeoJSON file is as follows:

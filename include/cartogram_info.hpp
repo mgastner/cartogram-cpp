@@ -27,6 +27,11 @@ private:
   bool original_ext_ring_is_clockwise_{};
   nlohmann::json cgal_to_json(bool = false);
 
+  // End points {x1, y1, x2, y2} of the lines that separate the insets, given
+  // the position ("C", "L", ...) and the bounding box of each inset
+  static std::vector<std::vector<double>> divider_lines(
+    const std::vector<std::pair<std::string, Bbox>> &inset_bboxes);
+
   std::string crs_;
 
   TimeTracker timer;

@@ -164,7 +164,8 @@ void InsetState::write_map(
   const std::string &file_name,
   const bool plot_grid,
   const bool equal_area_map,
-  const std::unordered_map<Point, Vector> vectors) const
+  const std::unordered_map<Point, Vector> vectors,
+  const std::vector<std::vector<double>> &dividers) const
 {
   const auto svg_name = file_name + ".svg";
   std::cerr << "Writing " << svg_name << std::endl;
@@ -190,4 +191,12 @@ void InsetState::write_map(
     Color{0.0, 0.0, 0.0});
 
   write_vectors(cvs, vectors, lx(), ly());
+
+  // Lines {x1, y1, x2, y2} that separate the insets
+  cvs.set_stroke(Color{0.6, 0.6, 0.6}, 2e-3 * std::min(lx(), ly()));
+  for (const auto &line : dividers) {
+    cvs.move_to(line[0], line[1]);
+    cvs.line_to(line[2], line[3]);
+    cvs.stroke();
+  }
 }

@@ -4,6 +4,7 @@
 #include "round_point.hpp"
 #include <cstdlib>
 #include <iostream>
+#include <unordered_set>
 
 CartogramInfo::CartogramInfo(const Arguments args) : args_(args)
 {
@@ -379,7 +380,7 @@ void CartogramInfo::write_csv(const std::string &csv_file_name)
   }
 
   // Each vector of strings will represent one row, starting with column names
-  std::vector<std::vector<std::string> > csv_rows(1);
+  std::vector<std::vector<std::string>> csv_rows(1);
 
   csv_rows[0].push_back(id_header_);
   csv_rows[0].push_back("Target Area");
@@ -453,7 +454,41 @@ void CartogramInfo::write_svg(const std::string &suffix)
   for (const InsetState &inset_state : inset_states_) {
     inset_names += inset_state.pos();
   }
+
+  // Lines that separate the insets, as in the GeoJSON output (#225). The
+  // bounding boxes come from the combined map, which rescale_map() has
+  // moved into the frame of the image.
+  std::vector<std::vector<double>> dividers;
+  if (n_insets() > 1) {
+    std::vector<std::pair<std::string, Bbox>> inset_bboxes;
+    for (const InsetState &inset_state : inset_states_) {
+      std::unordered_set<std::string> ids_in_inset;
+      for (const GeoDiv &gd : inset_state.geo_divs()) {
+        ids_in_inset.insert(gd.id());
+      }
+      double xmin = dbl_inf;
+      double ymin = dbl_inf;
+      double xmax = -dbl_inf;
+      double ymax = -dbl_inf;
+      for (const GeoDiv &gd : insets_combined.geo_divs()) {
+        if (ids_in_inset.contains(gd.id())) {
+          const Bbox gd_bb = gd.bbox();
+          xmin = std::min(xmin, gd_bb.xmin());
+          ymin = std::min(ymin, gd_bb.ymin());
+          xmax = std::max(xmax, gd_bb.xmax());
+          ymax = std::max(ymax, gd_bb.ymax());
+        }
+      }
+      inset_bboxes.emplace_back(
+        inset_state.pos(),
+        Bbox(xmin, ymin, xmax, ymax));
+    }
+    dividers = divider_lines(inset_bboxes);
+  }
   insets_combined.write_map(
     map_name_ + "_" + inset_names + "_" + suffix,
-    false);
+    false,
+    false,
+    std::unordered_map<Point, Vector>(),
+    dividers);
 }
