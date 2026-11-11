@@ -1,6 +1,7 @@
 #include "inset_state.hpp"
 #include "constants.hpp"
 #include "csv.hpp"
+#include "flow_overrelaxation.hpp"
 #include "quadtree.hpp"
 #include "triangulation.hpp"
 #include <algorithm>
@@ -631,16 +632,42 @@ void InsetState::set_area_errors()
   }
 }
 
+std::vector<double> InsetState::signed_area_errors() const
+{
+  // Same formula as in set_area_errors(), without the absolute value
+  const double aef = area_expansion_factor();
+  std::vector<double> errors;
+  errors.reserve(geo_divs_.size());
+  for (const auto &gd : geo_divs_) {
+    errors.push_back(gd.area() / (target_area_at(gd.id()) * aef) - 1);
+  }
+  return errors;
+}
+
+double InsetState::flow_t_reached() const
+{
+  return flow_t_reached_;
+}
+
+void InsetState::set_flow_overrelaxation(const double omega)
+{
+  flow_overrelaxation_ = omega;
+}
+
 void InsetState::adjust_grid()
 {
   auto [curr_max_area_error, worst_gd] = max_area_error();
   max_area_errors_.push_back(curr_max_area_error);
   // TODO: Change to a more sophisticated grid adjustment strategy
   // (based on a tolerance of area error)
+  // An over-relaxed integration must reduce the maximum area error by more
+  // than an integration that ends at t = 1 (see flow_overrelaxation.hpp)
   if (
     n_finished_integrations_ > 3 &&
-    curr_max_area_error >=
-      0.8 * max_area_errors_[n_finished_integrations_ - 1]) {
+    max_area_error_reduction_too_small(
+      max_area_errors_[n_finished_integrations_ - 1],
+      curr_max_area_error,
+      flow_t_reached_)) {
 
     // Multiply grid size with factor
     std::cerr << "Adjusting grid size." << std::endl;

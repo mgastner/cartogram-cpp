@@ -114,6 +114,20 @@ private:
   // Area errors
   std::vector<double> max_area_errors_;
 
+  // Over-relaxation of the flow-based method: the next integration runs to
+  // t_end = 1 + flow_overrelaxation_ (see flow_overrelaxation.hpp)
+  double flow_overrelaxation_{0.0};
+
+  // Time reached by the last integration of the flow-based method
+  double flow_t_reached_{1.0};
+
+  // Signed area errors before the current integration
+  std::vector<double> signed_area_errors_before_integration_;
+
+  // Signed area errors before the previous integration, to detect
+  // oscillations of the errors (see flow_overrelaxation.hpp)
+  std::vector<double> signed_area_errors_before_previous_integration_;
+
   // Whether convergence has been reached
   mutable bool converge_{true};
 
@@ -168,6 +182,7 @@ public:
   void fill_with_density_clip();  // Fill map with density, using clipping
   bool flatten_density();  // Flatten said density with integration
   bool flatten_density_on_node_vertices();  // Bool to check if failed
+  double flow_t_reached() const;
 
   const std::vector<GeoDiv> &geo_divs() const;
   const GeoDiv &geo_div_at_id(std::string id) const;
@@ -248,9 +263,13 @@ public:
   void replace_target_area(const std::string &, double);
   void rescale_map();
   void set_area_errors();
+  void set_flow_overrelaxation(double);
   void set_grid_dimensions(unsigned int, unsigned int);
   void set_geo_divs(std::vector<GeoDiv> new_geo_divs);
   void set_inset_name(const std::string &);
+
+  // Signed relative area errors area / target - 1, in the order of geo_divs()
+  std::vector<double> signed_area_errors() const;
   void simplify(unsigned int);
   void store_initial_area();
   void store_initial_target_area(const double override = 0.0);

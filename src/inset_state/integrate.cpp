@@ -1,3 +1,4 @@
+#include "flow_overrelaxation.hpp"
 #include "inset_state.hpp"
 
 void InsetState::preprocess()
@@ -70,6 +71,11 @@ void InsetState::prepare_for_integration()
   if (args_.conformality) {
     seed_conformality_tracers();
   }
+
+  // The first integration is not over-relaxed
+  signed_area_errors_before_integration_ = signed_area_errors();
+  signed_area_errors_before_previous_integration_.clear();
+  flow_overrelaxation_ = 0.0;
 }
 
 void InsetState::cleanup_after_integration()
@@ -211,7 +217,41 @@ void InsetState::integrate(ProgressTracker &progress_tracker)
 
     // 4. Update area errors and try again if necessary
     set_area_errors();
+
+    // Over-relaxation of the next integration, estimated from how much of
+    // each area error this integration has left
+    std::vector<double> errors = signed_area_errors();
+    flow_overrelaxation_ = next_flow_overrelaxation(
+      signed_area_errors_before_integration_,
+      errors,
+      flow_t_reached_ - 1.0);
+
+    // Over-relaxation slows the decay of an oscillation of the errors
+    // between integrations, so the next integration then ends at t = 1
+    const bool errors_oscillate = area_errors_oscillate(
+      signed_area_errors_before_previous_integration_,
+      signed_area_errors_before_integration_,
+      errors);
+    if (errors_oscillate) {
+      flow_overrelaxation_ = 0.0;
+    }
+
+    // Over-relaxing the integrations that remove large area errors makes
+    // the cartogram less conformal
+    if (!flow_overrelaxation_allowed(errors)) {
+      flow_overrelaxation_ = 0.0;
+    }
+    signed_area_errors_before_previous_integration_ =
+      std::move(signed_area_errors_before_integration_);
+    signed_area_errors_before_integration_ = std::move(errors);
+
+    // On a finer grid, an integration leaves a smaller share of the error,
+    // so the estimate from the coarser grid does not apply
+    const unsigned int lx_before_adjustment = lx_;
     adjust_grid();
+    if (lx_ != lx_before_adjustment) {
+      flow_overrelaxation_ = 0.0;
+    }
     progress_tracker.print_progress_mid_integration(
       max_area_error().value,
       n_geo_divs(),
