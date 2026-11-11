@@ -12,20 +12,34 @@ So that every number can be traced to a commit, the script
      untracked changes (unless --allow-dirty),
   2. builds the cartogram target in BUILD_DIR, so that the binary matches
      the commit,
-  3. writes provenance.json into each run directory: the commit, the SHA-256
-     of the binary, the command, the number of OpenMP threads, the host,
+  3. writes provenance.json into each run directory: the commit, the last
+     commit that changed the sources, the SHA-256 of the binary, the command, the number of OpenMP threads, the host,
      the exit code, and the wall time,
   4. writes OUT_DIR/tables.md: the provenance of the runs, followed by the
      tables of summarize_conformality.py.
-A run whose directory already has a provenance.json with the same commit
-and binary, and exit code 0, is not repeated (use --force to repeat it).
+A run whose directory already has a provenance.json with the same source
+commit and binary, and exit code 0, is not repeated (use --force to repeat
+it). Commits that change only scripts or notes therefore repeat no runs.
+
+With --mesh-check, conformality_check (built in BUILD_DIR) replays the
+correction A of the runs whose default check mesh is too coarse to show
+the refinement ratios of 4 (64 modes per side, and the world) on a lattice
+with 2048 intervals along the longer side (--base 64 --refine 32). It
+writes mesh_check_2048.txt into the run directory, and tables.md gets a
+table of the finest errors and the last two ratios of both series.
+
+With --figures PYTHON, the plotting scripts in this directory are run with
+PYTHON, which needs numpy, matplotlib, and shapely. They draw the graticules
+and the distortion field of the 32-mode runs and the convergence of the USA
+and China runs into OUT_DIR/figs.
 
 On macOS, caffeinate keeps the machine awake while the script runs.
 
 Only the Python standard library is used.
 
 Usage: paper_runs.py BUILD_DIR OUT_DIR [--threads N] [--only NAME[,NAME...]]
-                     [--allow-dirty] [--force]
+                     [--allow-dirty] [--force] [--mesh-check]
+                     [--figures PYTHON]
 """
 
 import argparse
@@ -129,6 +143,8 @@ def main():
     p.add_argument("--only", help="comma-separated run names")
     p.add_argument("--allow-dirty", action="store_true")
     p.add_argument("--force", action="store_true")
+    p.add_argument("--mesh-check", action="store_true")
+    p.add_argument("--figures", metavar="PYTHON")
     args = p.parse_args()
 
     runs = RUNS
@@ -147,12 +163,19 @@ def main():
     if dirty and not args.allow_dirty:
         sys.exit(f"uncommitted changes in the sources:\n{dirty}")
     commit = git("rev-parse", "HEAD")
+    source_commit = git(
+        "log", "-1", "--format=%H", "--", "src", "include", "CMakeLists.txt",
+        "conanfile.txt",
+    )
     if dirty:
         commit += "-dirty"
+        source_commit += "-dirty"
 
+    targets = ["cartogram"] + (["conformality_check"] if args.mesh_check
+                               else [])
     subprocess.run(
         [cmake_command(args.build_dir), "--build", str(args.build_dir),
-         "--target", "cartogram"],
+         "--target", *targets],
         check=True,
     )
     binary = (args.build_dir / "cartogram").resolve()
@@ -168,9 +191,8 @@ def main():
         prov_file = run_dir / "provenance.json"
         if prov_file.exists() and not args.force:
             old = json.loads(prov_file.read_text())
-            if (old["commit"], old["binary_sha256"], old["exit_code"]) == (
-                commit, binary_sha, 0
-            ):
+            if (old.get("source_commit"), old["binary_sha256"],
+                    old["exit_code"]) == (source_commit, binary_sha, 0):
                 print(f"{name}: done before, skipped", flush=True)
                 continue
         run_dir.mkdir(exist_ok=True)
@@ -188,6 +210,7 @@ def main():
         wall = time.perf_counter() - t0
         prov = {
             "commit": commit,
+            "source_commit": source_commit,
             "binary": str(binary),
             "binary_sha256": binary_sha,
             "command": cmd,
@@ -214,12 +237,15 @@ def main():
     lines = [
         "# Conformality runs of the ICC 2027 paper",
         "",
-        "| run | commit | binary SHA-256 | threads | start | wall time (s) |",
-        "|---|---|---|---|---|---|",
+        "| run | commit | source commit | binary SHA-256 | threads | start "
+        "| wall time (s) |",
+        "|---|---|---|---|---|---|---|",
     ]
     for name, prov in done:
         lines.append(
-            f"| {name} | {prov['commit'][:12]} | {prov['binary_sha256'][:12]} "
+            f"| {name} | {prov['commit'][:12]} "
+            f"| {prov.get('source_commit', '')[:12]} "
+            f"| {prov['binary_sha256'][:12]} "
             f"| {prov['omp_num_threads']} | {prov['start']} "
             f"| {prov['wall_seconds']:.0f} |"
         )
@@ -229,10 +255,79 @@ def main():
         + [str(args.out_dir / name) for name, _ in done],
         check=True, capture_output=True, text=True,
     ).stdout
+    mesh = mesh_check_table(args, done) if args.mesh_check else ""
     (args.out_dir / "tables.md").write_text(
-        "\n".join(lines) + "\n\n" + summary
+        "\n".join(lines) + "\n\n" + summary + mesh
     )
     print(f"wrote {args.out_dir / 'tables.md'}")
+    if args.figures:
+        draw_figures(args.figures, args.out_dir, {name for name, _ in done})
+
+
+def mesh_check_table(args, done):
+    """Run conformality_check on the 64-mode and world runs, and tabulate
+    the finest errors and the last two refinement ratios of both series."""
+    binary = args.build_dir / "conformality_check"
+    rows = []
+    for name, prov in done:
+        if not (name.endswith("64") or name.startswith("world")):
+            continue
+        run_dir = args.out_dir / name
+        out = run_dir / "mesh_check_2048.txt"
+        if args.force or not out.exists():
+            steps = next(run_dir.glob("*_conformality_steps.json"))
+            with open(out, "w") as f:
+                subprocess.run(
+                    [str(binary), str(steps), "--base", "64", "--refine", "32",
+                     "--threads", str(args.threads)],
+                    stdout=f, stderr=subprocess.STDOUT, check=True,
+                )
+            print(f"{name}: mesh check done", flush=True)
+        # Rows: cells_long samples_per_edge n_cells max_rel_error ratio ...
+        series = [l.split() for l in out.read_text().splitlines()
+                  if re.match(r"^\d+ \d+ \d+ ", l)]
+        cells = [s for s in series if s[1] == "1"]
+        samples = [s for s in series if s[0] == series[0][0]]
+        rows.append(
+            f"| {name} | {cells[-1][3]} ({cells[-2][4]}, {cells[-1][4]}) "
+            f"| {samples[-1][3]} ({samples[-2][4]}, {samples[-1][4]}) |"
+        )
+    if not rows:
+        return ""
+    return (
+        "\nMesh check with 2048 intervals along the longer side (maximum "
+        "relative cell-area error at the finest level; the last two "
+        "refinement ratios, which tend to 4 for a second-order check):\n\n"
+        "| Run | 2048 cells along the longer side | 64 cells, 32 samples "
+        "per edge |\n|---|---|---|\n" + "\n".join(rows) + "\n"
+    )
+
+
+def draw_figures(python, out_dir, names):
+    scripts = Path(__file__).parent
+    figs = out_dir / "figs"
+    figs.mkdir(exist_ok=True)
+    for name in sorted(names):
+        if not name.endswith("32"):
+            continue
+        plot_json = next((out_dir / name).glob("*_conformality_plot.json"))
+        for script, suffix in [("plot_conformality.py", "graticule"),
+                               ("plot_distortion_field.py", "distortion")]:
+            subprocess.run(
+                [python, str(scripts / script), str(plot_json),
+                 "-o", str(figs / f"{name}_{suffix}.svg")],
+                check=True,
+            )
+    conv = [n for n in ("usa16", "usa32", "usa64", "china16", "china32",
+                        "china64") if n in names]
+    if conv:
+        subprocess.run(
+            [python, str(scripts / "plot_convergence.py"),
+             *[str(out_dir / n) for n in conv],
+             "-o", str(figs / "convergence_usa_china.svg")],
+            check=True,
+        )
+    print(f"wrote the figures into {figs}")
 
 
 if __name__ == "__main__":
