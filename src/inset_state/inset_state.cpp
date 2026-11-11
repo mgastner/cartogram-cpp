@@ -60,11 +60,12 @@ double InsetState::blur_width() const
   // We slowly reduce the blur width so that the areas can reach their
   // target values. In case of failure during flatten_density, we increase
   // the blur width to avoid the flipped Delaunay triangles.
-  // TODO: whenever blur_width hits 0, the maximum area error will start
-  //       increasing again and eventually lead to an invalid grid
-  //       cell error when projecting with triangulation. Investigate
-  //       why. As a temporary fix, we set blur_width to be always
-  //       positive, regardless of the number of integrations.
+  // NOTE: blur_width is always positive, regardless of the number of
+  //       integrations. Since execute_fftw_fwd_plan() normalizes rho_ft_,
+  //       integrations with a blur width of 0 converge on most sample
+  //       maps. On some maps, however, every integration with a blur
+  //       width of 0 fails, so a schedule that reaches 0 would need a
+  //       positive blur width after a failure.
   const unsigned int blur_default_pow =
     static_cast<unsigned int>(
       1 + log2(std::max(lx(), ly()) / default_long_grid_length)) +
@@ -72,7 +73,7 @@ double InsetState::blur_width() const
   double blur_width =
     std::pow(2.0, blur_default_pow - (0.5 * n_finished_integrations_));
 
-  // NOTE: Read TODO above
+  // NOTE: Read the note above
   // if (inset_state.n_finished_integrations() < max_integrations) {
   //   blur_width =
   //     std::pow(2.0, 5 - int(inset_state.n_finished_integrations()));
@@ -145,9 +146,21 @@ void InsetState::execute_fftw_plans_for_flux()
   grid_fluxy_init_.execute_fftw_plan();
 }
 
-void InsetState::execute_fftw_fwd_plan() const
+void InsetState::execute_fftw_fwd_plan()
 {
   fftw_execute(fwd_plan_for_rho_);
+
+  // FFTW's REDFT10 and REDFT01 transforms are unnormalized: the backward
+  // transform of the forward transform multiplies each value by 4 lx ly.
+  // Normalizing here, rather than in blur_density(), keeps rho_ft_
+  // normalized when blur_density() returns early because the blur width
+  // is 0.
+  const double norm = 1.0 / (4.0 * double(lx_) * double(ly_));
+  for (unsigned int i = 0; i < lx_; ++i) {
+    for (unsigned int j = 0; j < ly_; ++j) {
+      rho_ft_(i, j) *= norm;
+    }
+  }
 }
 
 void InsetState::export_time_report() const
