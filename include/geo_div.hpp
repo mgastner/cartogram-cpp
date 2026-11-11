@@ -12,9 +12,9 @@ private:
   GeoDiv();
 
 public:
-  explicit GeoDiv(std::string);
+  explicit GeoDiv(std::string i);
   [[nodiscard]] const std::set<std::string> &adjacent_geodivs() const;
-  void adjacent_to(const std::string &);
+  void adjacent_to(const std::string &id);
   [[nodiscard]] double area() const;
   [[nodiscard]] Bbox bbox() const;
   [[nodiscard]] const std::string &id() const;
@@ -24,13 +24,13 @@ public:
   [[nodiscard]] unsigned int n_rings() const;
   [[nodiscard]] Point point_on_surface_of_geodiv() const;
   [[nodiscard]] Point point_on_surface_of_polygon_with_holes(
-    const Polygon_with_holes &) const;
+    const Polygon_with_holes &pwh) const;
   [[nodiscard]] const std::vector<Polygon_with_holes> &polygons_with_holes()
     const;
-  void push_back(const Polygon_with_holes &);
+  void push_back(const Polygon_with_holes &pwh);
   std::vector<Polygon_with_holes> &ref_to_polygons_with_holes();
   void sort_pwh_descending_by_area();
-  void update_id(const std::string &);
+  void update_id(const std::string &new_id);
 };
 
 #endif  // GEO_DIV_HPP_

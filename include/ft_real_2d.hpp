@@ -12,18 +12,18 @@ private:
 
 public:
   [[nodiscard]] double *as_1d_array() const;
-  void set_array_size(unsigned int, unsigned int);
-  void allocate(unsigned int, unsigned int);
+  void set_array_size(unsigned int i, unsigned int j);
+  void allocate(unsigned int lx, unsigned int ly);
   void free();
-  void make_fftw_plan(const fftw_r2r_kind &, const fftw_r2r_kind &);
+  void make_fftw_plan(const fftw_r2r_kind &kind0, const fftw_r2r_kind &kind1);
   void execute_fftw_plan();
   void destroy_fftw_plan();
 
   // Setter for array elements
-  double &operator()(unsigned int, unsigned int);
+  double &operator()(unsigned int i, unsigned int j);
 
   // Getter for array elements
-  double operator()(unsigned int, unsigned int) const;
+  double operator()(unsigned int i, unsigned int j) const;
 };
 
 #endif  // FT_REAL_2D_HPP_

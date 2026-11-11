@@ -7,7 +7,7 @@ static double choose_font_size(
   std::string_view label,
   const Point &label_pt,
   const GeoDiv &gd,
-  const InsetState &)
+  const InsetState & /*inset_state*/)
 {
   constexpr double char_factor = 0.55;  // width
   constexpr double line_factor = 0.75;  // height

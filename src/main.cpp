@@ -7,7 +7,7 @@
 #include <ranges>
 #include <span>
 
-static void print_version_and_command_line(const int, const char *[]);
+static void print_version_and_command_line(const int argc, const char *argv[]);
 
 int main(const int argc, const char *argv[])
 {

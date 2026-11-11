@@ -123,7 +123,7 @@ private:
   InsetState();
 
 public:
-  explicit InsetState(std::string, Arguments);
+  explicit InsetState(std::string pos, Arguments args);
   void adjust_for_dual_hemisphere();
   void adjust_grid();
   void apply_albers_projection();
@@ -131,17 +131,17 @@ public:
 
   // Calculate difference between initial area and current area
   double area_expansion_factor() const;
-  double area_error_at(const std::string &) const;
+  double area_error_at(const std::string &id) const;
   void auto_color();  // Automatically color GeoDivs
-  Bbox bbox(bool = false) const;
+  Bbox bbox(bool original_bbox = false) const;
   void blur_density();
   double blur_width() const;
   void check_topology() const;
 
   void cleanup_after_integration();
 
-  Color color_at(const std::string &) const;
-  bool color_found(const std::string &) const;
+  Color color_at(const std::string &id) const;
+  bool color_found(const std::string &id) const;
   size_t colors_size() const;
   bool continue_integrating() const;
   void create_and_refine_quadtree();
@@ -180,24 +180,28 @@ public:
   double initial_target_area() const;
   void initialize_cum_proj();
   void initialize_identity_proj();
-  void insert_color(const std::string &, const Color &);
-  void insert_color(const std::string &, std::string &);
-  void insert_label(const std::string &, const std::string &);
-  void insert_target_area(const std::string &, double);
-  void insert_whether_input_target_area_is_missing(const std::string &, bool);
+  void insert_color(const std::string &id, const Color &c);
+  void insert_color(const std::string &id, std::string &color);
+  void insert_label(const std::string &id, const std::string &label);
+  void insert_target_area(const std::string &id, double area);
+  void insert_whether_input_target_area_is_missing(
+    const std::string &id,
+    bool is_missing);
   std::string inset_name() const;
-  nlohmann::json inset_to_geojson(bool, bool = false) const;
+  nlohmann::json inset_to_geojson(
+    bool original_ext_ring_is_clockwise,
+    bool original_geo_divs_to_geojson = false) const;
 
   // Function to go from equal area to cartogram
-  void integrate(ProgressTracker &);
+  void integrate(ProgressTracker &progress_tracker);
 
-  std::vector<Segment> intersecting_segments(unsigned int) const;
+  std::vector<Segment> intersecting_segments(unsigned int resolution) const;
   std::vector<std::vector<intersection>> intersec_with_parallel_to(
-    char,
-    unsigned int) const;
-  bool is_input_target_area_missing(const std::string &) const;
+    char axis,
+    unsigned int resolution) const;
+  bool is_input_target_area_missing(const std::string &id) const;
   void is_simple(const char *caller_func) const;
-  std::string label_at(const std::string &) const;
+  std::string label_at(const std::string &id) const;
   double latt_const() const;
   unsigned int lx() const;
   unsigned int ly() const;
@@ -223,51 +227,55 @@ public:
 
   bool project();
   void project_point_set(std::unordered_set<Point> &unprojected);
-  void project_with_delaunay_t(bool);
-  void push_back(const GeoDiv &);
+  void project_with_delaunay_t(bool output_to_stdout);
+  void push_back(const GeoDiv &gd);
   FTReal2d &ref_to_fluxx_init();
   FTReal2d &ref_to_fluxy_init();
   FTReal2d &ref_to_rho_ft();
   FTReal2d &ref_to_rho_init();
   void remove_tiny_polygons(const double &minimum_polygon_size);
-  void replace_target_area(const std::string &, double);
+  void replace_target_area(const std::string &id, double area);
   void rescale_map();
   void set_area_errors();
-  void set_grid_dimensions(unsigned int, unsigned int);
+  void set_grid_dimensions(unsigned int lx, unsigned int ly);
   void set_geo_divs(std::vector<GeoDiv> new_geo_divs);
-  void set_inset_name(const std::string &);
-  void simplify(unsigned int);
+  void set_inset_name(const std::string &inset_name);
+  void simplify(unsigned int target_points_per_inset);
   void store_initial_area();
   void store_initial_target_area(const double override = 0.0);
   void store_original_geo_divs();
   template <class QuadtreeImp>
   void store_quadtree_cell_corners(const QuadtreeImp &qt);
-  double target_area_at(const std::string &) const;
-  bool target_area_is_missing(const std::string &) const;
-  double total_inset_area(bool = false) const;
+  double target_area_at(const std::string &id) const;
+  bool target_area_is_missing(const std::string &id) const;
+  double total_inset_area(bool original_area = false) const;
   double total_target_area() const;
 
   // Apply given function to all points
   template <class Transformer>
-  void transform_points(Transformer &&, bool = false);
+  void transform_points(
+    Transformer &&transform_point,
+    bool project_original = false);
   void scale_points(double scale_factor, bool project_original = false);
   void move_points(double dx, double dy, bool project_original = false);
   void update_delaunay_t();
   void update_file_prefix();
-  void update_gd_ids(const std::map<std::string, std::string> &);
+  void update_gd_ids(const std::map<std::string, std::string> &gd_id_map);
 
   void write_map(
-    const std::string &,
-    bool,
+    const std::string &file_name,
+    bool plot_grid,
     bool equal_area_map = false,
-    const std::unordered_map<Point, Vector> =
+    const std::unordered_map<Point, Vector> vectors =
       std::unordered_map<Point, Vector>()) const;
 
-  void write_delaunay_triangles(const std::string &, const bool);
+  void write_delaunay_triangles(
+    const std::string &filename,
+    const bool draw_projected_points);
   void write_grid_heatmap_data(const std::string filename);
   void write_density_image(const std::string filename);
   void write_intersections_image();
-  void write_quadtree(const std::string &);
+  void write_quadtree(const std::string &filename);
 };
 
 template <class Transformer>

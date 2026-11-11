@@ -25,7 +25,7 @@ private:
   //       files in the wild, but it would still be sensible to allow cases
   //       where there are external rings with opposite winding directions.
   bool original_ext_ring_is_clockwise_{};
-  nlohmann::json cgal_to_json(bool = false);
+  nlohmann::json cgal_to_json(bool original_geo_divs_to_geojson = false);
 
   std::string crs_;
 
@@ -36,16 +36,16 @@ private:
   CartogramInfo();
 
 public:
-  explicit CartogramInfo(Arguments);
+  explicit CartogramInfo(Arguments args);
   [[nodiscard]] double cart_initial_total_target_area() const;
-  void construct_inset_state_from_geodivs(const nlohmann::json &);
+  void construct_inset_state_from_geodivs(const nlohmann::json &j);
   bool converged() const;
   [[nodiscard]] double area() const;
   [[nodiscard]] bool is_world_map() const;
   void json_to_geojson(
-    const nlohmann::json &,
-    nlohmann::ordered_json &,
-    const nlohmann::json &);
+    const nlohmann::json &old_json,
+    nlohmann::ordered_json &new_json,
+    const nlohmann::json &container);
   [[nodiscard]] size_t n_geo_divs() const;
   [[nodiscard]] size_t n_insets() const;
 
@@ -53,13 +53,13 @@ public:
   void read_geojson();
   std::vector<InsetState> &ref_to_inset_states();
   void relocate_geodivs_based_on_inset_pos(
-    const std::map<std::string, std::map<std::string, std::string>> &);
+    const std::map<std::string, std::map<std::string, std::string>> &csv_data);
   void replace_missing_and_zero_target_areas();
 
   // Rescale insets in correct proportion to each other
   void rescale_insets();
 
-  std::string set_map_name(const std::string &);
+  std::string set_map_name(const std::string &map_name);
   void reposition_insets(bool output_to_stdout = false);
 
   void plot_input();
@@ -67,10 +67,10 @@ public:
   void print_time_report();
   void project_to_equal_area();
 
-  std::string match_id_columns(const std::optional<std::string> &);
-  void update_id_header_info(const std::string &);
+  std::string match_id_columns(const std::optional<std::string> &id_col);
+  void update_id_header_info(const std::string &matching_id_header);
   void write_csv(const std::string &csv_file_name);
-  void write_geojson(const std::string &);
+  void write_geojson(const std::string &suffix);
   void write_shifted_insets();
   InsetState convert_to_inset_state();
   void write_svg(const std::string &suffix = "");

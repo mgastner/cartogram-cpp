@@ -23,7 +23,9 @@ public:
   static bool is_str_NA(const std::string &str);
   static bool is_str_valid_characters(const std::string &str);
   static bool is_str_correct_format(const std::string &str);
-  static std::string parse_str(const std::string &str, bool);
+  static std::string parse_str(
+    const std::string &str,
+    bool is_point_as_separator);
 };
 
 #endif  // STRING_TO_DECIMAL_CONVERTER_H

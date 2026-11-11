@@ -25,7 +25,9 @@ class ProgressTracker
 {
 public:
   // Constructor
-  explicit ProgressTracker(double, double);
+  explicit ProgressTracker(
+    double total_geo_divs,
+    double max_permitted_area_error);
 
   // Destructor
   ~ProgressTracker();
@@ -39,10 +41,10 @@ public:
     const unsigned int n_geo_divs_in_inset);
 
   // Method to print the current progress
-  void print_progress(const double);
+  void print_progress(const double progress);
 
   // Method to print the progress bar
-  void print_progress_bar(const double);
+  void print_progress_bar(const double progress);
 
 private:
   double total_geo_divs_;  // Total number of GeoDivs to monitor progress

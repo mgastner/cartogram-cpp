@@ -26,22 +26,22 @@ public:
   }
 
   // Constructors
-  explicit intersection(bool);
+  explicit intersection(bool side);
   intersection();
 
   [[nodiscard]] double x() const;
   [[nodiscard]] double y() const;
-  bool ray_intersects(Point, Point, double, double, double);
+  bool ray_intersects(Point a, Point b, double ray, double td, double epsilon);
 };
 
 void add_intersections(
-  std::vector<intersection> &,
-  const Polygon &,
-  double,
-  double,
-  double,
-  const std::string &,
-  size_t,
-  char);
+  std::vector<intersection> &intersections,
+  const Polygon &pgn,
+  double ray,
+  double target_density,
+  double epsilon,
+  const std::string &gd_id,
+  size_t pwh_idx,
+  char axis);
 
 #endif  // INTERSECTION_HPP_

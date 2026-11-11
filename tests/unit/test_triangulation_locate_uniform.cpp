@@ -80,7 +80,7 @@ struct ProjectionBase {
   }
 
   // Build only queries midpoints for s>1; we keep this permissive.
-  bool is_valid_corner(uint32_t, uint32_t) const
+  bool is_valid_corner(uint32_t /*x*/, uint32_t /*y*/) const
   {
     return true;
   }

@@ -19,7 +19,7 @@ public:
   TimeTracker();
   explicit TimeTracker(std::string name);
 
-  void set_name(std::string);
+  void set_name(std::string name);
   void start(const std::string &task_name);
   void stop(const std::string &task_name);
   void swap(const std::string &t1, const std::string &t2);
