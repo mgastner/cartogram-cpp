@@ -39,7 +39,7 @@ The CSV file should be in the following format:
 
     1. `cornflowerblue`: html color codes supported by `CSS3` (case-insensitive), full list of supported colors may be found in the "Extended colors" section of [web colors](https://en.wikipedia.org/wiki/Web_colors).
     2. `"rgb(255, 0, 120)"` or `rgb(255 0 120)` or `"255, 0, 120"` or `255 0 120`: red, green and blue values out of 255.
-    3. `#e74c3c`: hex code of color, must start with `#`.
+    3. `#e74c3c`: hex code of color, must start with `#`. The short form of CSS, such as `#e4c` for `#ee44cc`, also works.
 
 You may find sample GeoJSON (containing geographic data) and CSV (containing information about target areas, colors and other visual variables) files in the `cartogram-cpp/sample_data` directory.
 

@@ -1,5 +1,6 @@
 #include "colors.hpp"
 #include <algorithm>
+#include <cctype>
 #include <iostream>
 #include <sstream>
 #include <unordered_map>
@@ -17,6 +18,30 @@ Color::Color(double red, double green, double blue) : r(red), g(green), b(blue)
 }
 
 Color::Color(int red, int green, int blue) : r(red), g(green), b(blue) {}
+
+// Returns the six hexadecimal digits of a color written as "#rrggbb" or in
+// the short form "#rgb" of CSS, which stands for "#rrggbb". For any other
+// string, returns an empty string.
+static std::string hex_digits_of_color(const std::string &color_as_string)
+{
+  if (color_as_string.empty() || color_as_string[0] != '#') {
+    return "";
+  }
+  const std::string digits = color_as_string.substr(1);
+  const bool all_hex = std::all_of(digits.begin(), digits.end(), [](char c) {
+    return std::isxdigit(static_cast<unsigned char>(c)) != 0;
+  });
+  if (!all_hex) {
+    return "";
+  }
+  if (digits.size() == 6) {
+    return digits;
+  }
+  if (digits.size() == 3) {
+    return {digits[0], digits[0], digits[1], digits[1], digits[2], digits[2]};
+  }
+  return "";
+}
 
 Color::Color(std::string color_as_string)
 {
@@ -199,13 +224,14 @@ Color::Color(std::string color_as_string)
     // HTML color in hexadecimal format
     color_as_string = html_colors[color_as_string];
   }
-  if (color_as_string[0] == '#') {
+  const std::string hex_digits = hex_digits_of_color(color_as_string);
+  if (!hex_digits.empty()) {
 
-    // Hex code for color
-    color_as_string.erase(0, 1);
-
+    // Hex code for color. Any other string that starts with '#' falls
+    // through to the warning about the wrong format below; before, std::stoi()
+    // aborted the program for strings such as "#zzzzzz".
     // From https://gist.github.com/bert/998020
-    int hex_int = stoi(color_as_string, nullptr, 16);
+    const int hex_int = std::stoi(hex_digits, nullptr, 16);
     r = ((hex_int >> 16) & 0xFF);  // Extract the RR byte
     g = ((hex_int >> 8) & 0xFF);  // Extract the GG byte
     b = ((hex_int) & 0xFF);  // Extract the BB byte
