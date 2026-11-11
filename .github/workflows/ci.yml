@@ -13,20 +13,23 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  # TODO: We might want to later fix the version of clang-format so that future checks
-  # don't mysteriously fail when a new version is released.
   style-check:
     name: Style check (clang-format)
     runs-on: ubuntu-latest
+    env:
+      # Pinned so that a new release of clang-format cannot make the check fail.
+      # The same version can be installed locally with
+      # pip install clang-format==<version>.
+      CLANG_FORMAT_VERSION: 21.1.8
 
     steps:
       - uses: actions/checkout@v4
 
       - name: Install clang-format
         run: |
-          sudo apt-get update
-          sudo apt-get install -y clang-format
-          echo "CLANG_FORMAT=clang-format" >> $GITHUB_ENV
+          python3 -m venv .venv
+          .venv/bin/pip install "clang-format==${CLANG_FORMAT_VERSION}"
+          echo "CLANG_FORMAT=$PWD/.venv/bin/clang-format" >> $GITHUB_ENV
 
       - name: Check formatting
         run: |
@@ -53,7 +56,7 @@ jobs:
           if [ ${#bad_files[@]} -ne 0 ]; then
             file_list=$(printf '%s\n' "${bad_files[@]}")
             file_list_escaped=${file_list//$'\n'/%0A}
-            echo "::error::clang-format issues detected in the following files:%0A${file_list_escaped}%0ARun 'clang-format -i' to fix."
+            echo "::error::clang-format issues detected in the following files:%0A${file_list_escaped}%0ARun 'clang-format -i' with clang-format ${CLANG_FORMAT_VERSION} to fix."
             exit 1
           fi
 
