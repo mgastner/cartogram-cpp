@@ -294,6 +294,15 @@ static void generate_csv_template(
       std::cerr << "Please enter your number here: ";
       std::cin >> chosen_number;
       if (std::cin.fail()) {
+
+        // Without this check, the loop would never end once the input has
+        // ended, for example when standard input is not a terminal
+        if (std::cin.eof()) {
+          std::cerr << "\nERROR: The input ended before a valid number was "
+                       "entered."
+                    << std::endl;
+          std::exit(EXIT_FAILURE);
+        }
         std::cerr << "Invalid input! Try again." << std::endl;
 
         // Clear std::cin buffer
