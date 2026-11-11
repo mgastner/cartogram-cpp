@@ -2,6 +2,7 @@
 #include "constants.hpp"
 #include "flow_overrelaxation.hpp"
 #include <boost/test/included/unit_test.hpp>
+#include <cmath>
 #include <vector>
 
 namespace tt = boost::test_tools;
@@ -20,6 +21,23 @@ std::vector<double> scaled(const double factor)
   return v;
 }
 
+// Log ratios ln(1 + e) of the areas to their targets before an integration
+const std::vector<double> log_ratios_before{-0.5, 0.2, 1.5, -0.05};
+
+// Errors whose log ratios are factor times log_ratios_before, plus a common
+// shift. The shift changes only the normalization of the targets, which the
+// centering of the log ratios removes.
+std::vector<double> errors_with_log_ratios(
+  const double factor,
+  const double shift = 0.0)
+{
+  std::vector<double> v;
+  for (const double x : log_ratios_before) {
+    v.push_back(std::expm1(factor * x + shift));
+  }
+  return v;
+}
+
 // Over-relaxation that cancels the share b, reduced by the safety factor
 double expected_omega(const double b)
 {
@@ -32,9 +50,11 @@ BOOST_AUTO_TEST_CASE(plain_integration_leaving_share_b)
 {
   // An integration to t = 1 that leaves 40% of every error
   BOOST_TEST(
-    next_flow_overrelaxation(errors_before, scaled(0.4), 0.0) ==
-      expected_omega(0.4),
-    tt::tolerance(1e-14));
+    next_flow_overrelaxation(
+      errors_with_log_ratios(1.0),
+      errors_with_log_ratios(0.4),
+      0.0) == expected_omega(0.4),
+    tt::tolerance(1e-12));
 }
 
 BOOST_AUTO_TEST_CASE(overrelaxed_integration_is_corrected)
@@ -42,9 +62,11 @@ BOOST_AUTO_TEST_CASE(overrelaxed_integration_is_corrected)
   // An integration to t = 1.25 with b = 0.4 leaves
   // 1 - 1.25 * (1 - 0.4) = 0.25 of every error
   BOOST_TEST(
-    next_flow_overrelaxation(errors_before, scaled(0.25), 0.25) ==
-      expected_omega(0.4),
-    tt::tolerance(1e-14));
+    next_flow_overrelaxation(
+      errors_with_log_ratios(1.0),
+      errors_with_log_ratios(0.25),
+      0.25) == expected_omega(0.4),
+    tt::tolerance(1e-12));
 }
 
 BOOST_AUTO_TEST_CASE(integration_stopped_early_is_corrected)
@@ -52,16 +74,21 @@ BOOST_AUTO_TEST_CASE(integration_stopped_early_is_corrected)
   // An integration that stopped at t = 0.8 with b = 0.4 leaves
   // 1 - 0.8 * (1 - 0.4) = 0.52 of every error
   BOOST_TEST(
-    next_flow_overrelaxation(errors_before, scaled(0.52), -0.2) ==
-      expected_omega(0.4),
-    tt::tolerance(1e-14));
+    next_flow_overrelaxation(
+      errors_with_log_ratios(1.0),
+      errors_with_log_ratios(0.52),
+      -0.2) == expected_omega(0.4),
+    tt::tolerance(1e-12));
 }
 
 BOOST_AUTO_TEST_CASE(overshoot_gives_no_overrelaxation)
 {
   // The errors changed sign: the next integration ends at t = 1
   BOOST_TEST(
-    next_flow_overrelaxation(errors_before, scaled(-0.3), 0.0) == 0.0);
+    next_flow_overrelaxation(
+      errors_with_log_ratios(1.0),
+      errors_with_log_ratios(-0.3),
+      0.0) == 0.0);
 }
 
 BOOST_AUTO_TEST_CASE(large_residual_share_is_capped)
@@ -69,8 +96,10 @@ BOOST_AUTO_TEST_CASE(large_residual_share_is_capped)
   // b = 0.95 is reduced to max_flow_residual_share, and the result to
   // max_flow_overrelaxation
   BOOST_TEST(
-    next_flow_overrelaxation(errors_before, scaled(0.95), 0.0) ==
-    max_flow_overrelaxation);
+    next_flow_overrelaxation(
+      errors_with_log_ratios(1.0),
+      errors_with_log_ratios(0.95),
+      0.0) == max_flow_overrelaxation);
 }
 
 BOOST_AUTO_TEST_CASE(zero_errors_give_no_overrelaxation)
@@ -79,16 +108,28 @@ BOOST_AUTO_TEST_CASE(zero_errors_give_no_overrelaxation)
   BOOST_TEST(next_flow_overrelaxation(zeros, scaled(0.4), 0.0) == 0.0);
 }
 
-BOOST_AUTO_TEST_CASE(slope_is_least_squares_fit_through_origin)
+BOOST_AUTO_TEST_CASE(slope_is_least_squares_fit_of_centered_log_ratios)
 {
-  // Errors after the integration that are not proportional: the slope is
-  // sum(e_before * e_after) / sum(e_before^2)
-  const std::vector<double> before{1.0, -1.0};
-  const std::vector<double> after{0.5, -0.1};
-  const double beta = (0.5 + 0.1) / 2.0;
+  // Log ratios 1 and -1 before the integration, and 0.6 and 0 after it.
+  // Centered, they are 1 and -1, and 0.3 and -0.3, so the slope is
+  // sum(d_before * d_after) / sum(d_before^2) = 0.3
+  const std::vector<double> before{std::expm1(1.0), std::expm1(-1.0)};
+  const std::vector<double> after{std::expm1(0.6), 0.0};
   BOOST_TEST(
-    next_flow_overrelaxation(before, after, 0.0) == expected_omega(beta),
-    tt::tolerance(1e-14));
+    next_flow_overrelaxation(before, after, 0.0) == expected_omega(0.3),
+    tt::tolerance(1e-12));
+}
+
+BOOST_AUTO_TEST_CASE(normalization_of_targets_does_not_matter)
+{
+  // Scaling all areas before or after the integration by a common factor
+  // leaves the estimate unchanged
+  BOOST_TEST(
+    next_flow_overrelaxation(
+      errors_with_log_ratios(1.0, 0.3),
+      errors_with_log_ratios(0.4, -0.2),
+      0.0) == expected_omega(0.4),
+    tt::tolerance(1e-12));
 }
 
 BOOST_AUTO_TEST_CASE(no_oscillation_without_earlier_integration)

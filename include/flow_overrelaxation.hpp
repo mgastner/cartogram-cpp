@@ -16,13 +16,20 @@
 //
 // After each integration, we estimate b from that integration alone, using
 // the errors of all regions before and after it, and choose the
-// over-relaxation omega of the next integration. The function returns
+// over-relaxation omega of the next integration. The estimate uses the
+// centered log ratios of the areas to their targets,
+//   d = ln(1 + e) - mean(ln(1 + e)),
+// with the mean taken over the regions. Their sum is 0 whatever the
+// normalization of the targets, and they treat a region that is twice as
+// large as its target like one that is half as large. The function returns
 //   omega = min(max_flow_overrelaxation,
 //               flow_overrelaxation_safety_factor * b / (1 - b)),
 // where
-//   beta = sum(e_before * e_after) / sum(e_before^2)
-// is the least-squares slope through the origin of the errors after the
-// integration on the errors before it (one point per region), and
+//   beta = sum(d_before * d_after) / sum(d_before^2)
+// is the least-squares slope of d after the integration on d before it (one
+// point per region). A map without area errors stays unchanged, so the fit
+// has no intercept; because d_before and d_after have mean 0, the
+// least-squares fit with an intercept gives the same slope. Finally,
 //   b = (beta + omega_used) / (1 + omega_used),
 // clamped to [0, max_flow_residual_share], removes the effect of the
 // over-relaxation omega_used = t_reached - 1 of the integration that has just
