@@ -364,13 +364,12 @@ TopologyRepairResult repair_topology(
   // A valid coverage (borders that match exactly, no overlaps) without gaps
   // narrower than the snapping distance needs no cleaning. Checking this is
   // several times faster than cleaning.
-  if (
-    std::none_of(
-      self_intersecting.begin(),
-      self_intersecting.end(),
-      [](const bool b) {
-        return b;
-      })) {
+  if (std::none_of(
+        self_intersecting.begin(),
+        self_intersecting.end(),
+        [](const bool b) {
+          return b;
+        })) {
     GEOSGeometry *invalid_edges = nullptr;
     const int valid = GEOSCoverageIsValid_r(
       ctx.get(),
