@@ -1,0 +1,10 @@
+# Checks of clang-tidy for the cartogram-cpp sources. Run it on a source file
+# with the compilation database of a build directory, for example
+#   clang-tidy -p build/Release src/main.cpp
+# The dependencies are included with -isystem, so clang-tidy reports only
+# warnings in our own files.
+Checks: >
+  -*,
+  readability-inconsistent-declaration-parameter-name,
+  readability-named-parameter
+HeaderFilterRegex: '.*'
