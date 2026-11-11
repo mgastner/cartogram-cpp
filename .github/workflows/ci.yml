@@ -23,7 +23,7 @@ jobs:
       CLANG_FORMAT_VERSION: 21.1.8
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - name: Install clang-format
         run: |
@@ -65,7 +65,7 @@ jobs:
     runs-on: ubuntu-26.04
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - name: Install tools
         run: |
@@ -141,7 +141,7 @@ jobs:
             name: macos-debug-appleclang
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - name: Setup Python & Conan
         run: |
@@ -202,7 +202,7 @@ jobs:
         run: tar -czf build-${{ matrix.name }}.tar.gz build
 
       - name: Upload artefact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: ${{ matrix.name }}
           path: build-${{ matrix.name }}.tar.gz
@@ -227,7 +227,7 @@ jobs:
             flag: thread
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - name: Setup Python & Conan
         run: |
@@ -272,7 +272,7 @@ jobs:
         run: tar -czf build-${{ matrix.san }}.tar.gz build
 
       - name: Upload artefact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: ${{ matrix.san }}
           path: build-${{ matrix.san }}.tar.gz
@@ -299,7 +299,7 @@ jobs:
     runs-on: ${{ matrix.os }}
 
     steps:
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v8
         with:
           name: ${{ matrix.target }}
 
@@ -332,9 +332,9 @@ jobs:
     runs-on: ${{ matrix.os }}
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v8
         with:
           name: ${{ matrix.target }}
 
@@ -365,12 +365,12 @@ jobs:
       contents: read
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           fetch-depth: 1
 
       # PR artefact from the build job
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v8
         with:
           name: ${{ matrix.name }}
 
@@ -436,7 +436,7 @@ jobs:
 
       # Upload report for the pr-comment.yml workflow
       - name: Upload performance report & PR number
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: perf-comment # If this name changes, update the pr-comment.yml workflow too
           path: |
@@ -456,9 +456,9 @@ jobs:
   #   runs-on: "${{ contains(matrix.target, 'mac') && 'macos-26' || 'ubuntu-26.04' }}"
 
   #   steps:
-  #     - uses: actions/checkout@v4
+  #     - uses: actions/checkout@v7
 
-  #     - uses: actions/download-artifact@v4
+  #     - uses: actions/download-artifact@v8
   #       with:
   #         name: ${{ matrix.target }}
 
