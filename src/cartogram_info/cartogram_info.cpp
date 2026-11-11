@@ -24,7 +24,7 @@ CartogramInfo::CartogramInfo(const Arguments args) : args_(args)
   timer.set_name(map_name_);
 }
 
-double CartogramInfo::cart_initial_total_target_area() const
+double CartogramInfo::initial_total_target_area() const
 {
   double target_area = 0.0;
 
@@ -55,7 +55,7 @@ double CartogramInfo::area() const
   // https://stackoverflow.com/questions/13087028/can-i-easily-iterate-over-
   // the-values-of-a-map-using-a-range-based-for-loop
   for (const InsetState &inset_state : inset_states_) {
-    area += inset_state.total_inset_area();
+    area += inset_state.area();
   }
   return area;
 }
@@ -91,9 +91,7 @@ void CartogramInfo::plot_input()
   CartogramInfo tmp_ci = *this;
 
   for (InsetState &inset_state : tmp_ci.ref_to_inset_states()) {
-    inset_state.normalize_inset_area(
-      tmp_ci.cart_initial_total_target_area(),
-      true);
+    inset_state.normalize_inset_area(tmp_ci.initial_total_target_area(), true);
   }
 
   // Shift insets so that they do not overlap
@@ -428,7 +426,7 @@ void CartogramInfo::write_shifted_insets()
     // project_to_equal_area should take care of it.
     // if (!args_.output_equal_area_map)
     inset_state.adjust_for_dual_hemisphere();
-    inset_state.normalize_inset_area(cart_initial_total_target_area(), true);
+    inset_state.normalize_inset_area(initial_total_target_area(), true);
   }
   // Shift insets so that they do not overlap
   reposition_insets();
@@ -445,8 +443,8 @@ void CartogramInfo::write_svg(const std::string &suffix)
 
   // TODO: Figure out how to add a grid
   // scale_factor = sqrt(scale_factor);
-  // double scale_factor = cart_initial_total_target_area() /
-  // insets_combined.total_inset_area();
+  // double scale_factor = initial_total_target_area() /
+  // insets_combined.area();
 
   // Figure out combined name
   std::string inset_names = "";

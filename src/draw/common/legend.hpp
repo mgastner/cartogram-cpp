@@ -39,7 +39,7 @@ static std::pair<unsigned long, unsigned long> get_km_legend_length(
   const unsigned long grid_cell_area = get_nearest_nice_number_for_legend(
     cell_area_km * compute_per_grid_cell(inset_state));
   const unsigned long total_area =
-    static_cast<unsigned long>(cell_area_km * inset_state.total_inset_area());
+    static_cast<unsigned long>(cell_area_km * inset_state.area());
 
   return std::pair<unsigned long, unsigned long>(grid_cell_area, total_area);
 }
@@ -48,7 +48,7 @@ static std::pair<unsigned long, unsigned long>
 get_visual_variable_legend_length(const InsetState &inset_state)
 {
   const double per_area =
-    inset_state.initial_target_area() / inset_state.total_inset_area();
+    inset_state.initial_target_area() / inset_state.area();
   const unsigned long grid_cell_area = get_nearest_nice_number_for_legend(
     per_area * compute_per_grid_cell(inset_state));
   const unsigned long total_area =

@@ -37,7 +37,7 @@ private:
 
 public:
   explicit CartogramInfo(Arguments);
-  [[nodiscard]] double cart_initial_total_target_area() const;
+  [[nodiscard]] double initial_total_target_area() const;
   void construct_inset_state_from_geodivs(const nlohmann::json &);
   bool converged() const;
   [[nodiscard]] double area() const;

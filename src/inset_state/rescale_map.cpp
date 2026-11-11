@@ -84,8 +84,7 @@ void InsetState::normalize_inset_area(
   const double inset_area_prop =
     equal_area ? 1.0 : initial_target_area() / total_cart_target_area;
   const double scale_factor =
-    equal_area ? 1.0
-               : sqrt(inset_area_prop / total_inset_area(normalize_original));
+    equal_area ? 1.0 : sqrt(inset_area_prop / area(normalize_original));
 
   // Rescale and translate all GeoDiv coordinates
   const Transformation translate(

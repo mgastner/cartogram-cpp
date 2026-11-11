@@ -914,9 +914,9 @@ static void compute_area(
       inset_state.target_area_at(gd.id()) / gd.area());
   }
   const double ocean_density = (lx * ly - inset_state.total_target_area()) /
-                               (lx * ly - inset_state.total_inset_area());
+                               (lx * ly - inset_state.area());
   const double ocean_area_error = std::abs(
-    (lx * ly - inset_state.total_inset_area()) /
+    (lx * ly - inset_state.area()) /
       (lx * ly - inset_state.total_target_area()) -
     1.0);
 
@@ -1071,9 +1071,9 @@ static void compute_area(
   }
 
   const double ocean_density = (lx * ly - inset_state.total_target_area()) /
-                               (lx * ly - inset_state.total_inset_area());
+                               (lx * ly - inset_state.area());
   const double ocean_area_error = std::abs(
-    (lx * ly - inset_state.total_inset_area()) /
+    (lx * ly - inset_state.area()) /
       (lx * ly - inset_state.total_target_area()) -
     1.0);
 

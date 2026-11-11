@@ -105,7 +105,7 @@ static double compute_per_grid_cell(const InsetState &inset_state)
   double per_grid_cell = 1;
 
   const std::vector<double> multipliers = {2, 5, 2};
-  const double total_area = inset_state.total_inset_area();
+  const double total_area = inset_state.area();
   size_t multiplier_idx = 0;
 
   while (per_grid_cell < 0.015 * total_area) {

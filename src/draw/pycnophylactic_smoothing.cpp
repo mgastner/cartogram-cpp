@@ -258,7 +258,7 @@ void write_grid_heatmap_image(
 
   // Get inset areas
   const double total_ta = inset_state.total_target_area();
-  const double total_ia = inset_state.total_inset_area();
+  const double total_ia = inset_state.area();
 
   // const Bbox bbox_bar = get_bbox_bar(15, 150);
 

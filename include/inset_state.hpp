@@ -244,7 +244,7 @@ public:
   void store_quadtree_cell_corners(const QuadtreeImp &qt);
   double target_area_at(const std::string &) const;
   bool target_area_is_missing(const std::string &) const;
-  double total_inset_area(bool = false) const;
+  double area(bool = false) const;
   double total_target_area() const;
 
   // Apply given function to all points

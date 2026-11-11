@@ -546,7 +546,7 @@ std::string InsetState::pos() const
 
 double InsetState::area_expansion_factor() const
 {
-  return total_inset_area() / initial_area_;
+  return area() / initial_area_;
 }
 
 void InsetState::print_time_report() const
@@ -582,7 +582,7 @@ FTReal2d &InsetState::ref_to_rho_init()
 
 void InsetState::remove_tiny_polygons(const double &minimum_polygon_size)
 {
-  const double threshold = total_inset_area() * minimum_polygon_size;
+  const double threshold = area() * minimum_polygon_size;
   std::vector<GeoDiv> geo_divs_cleaned;
 
   // Iterate over GeoDivs
@@ -703,7 +703,7 @@ void InsetState::set_inset_name(const std::string &inset_name)
 
 void InsetState::store_initial_area()
 {
-  initial_area_ = total_inset_area();
+  initial_area_ = area();
 }
 
 void InsetState::store_initial_target_area(const double override)
@@ -737,14 +737,14 @@ double InsetState::target_area_at(const std::string &id) const
   }
 }
 
-double InsetState::total_inset_area(bool original_area) const
+double InsetState::area(bool original_area) const
 {
   auto &geo_divs = original_area ? geo_divs_original_transformed_ : geo_divs_;
-  double total_inset_area = 0.0;
+  double total_area = 0.0;
   for (const auto &gd : geo_divs) {
-    total_inset_area += gd.area();
+    total_area += gd.area();
   }
-  return total_inset_area;
+  return total_area;
 }
 
 double InsetState::total_target_area() const
