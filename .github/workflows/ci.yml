@@ -147,7 +147,7 @@ jobs:
         run: |
           python3 -m venv .venv
           source .venv/bin/activate
-          pip install -U pip wheel conan==2.16.1 cmake==3.30.0
+          pip install -U -r requirements.txt
           conan remote update conancenter --url=https://center2.conan.io
           conan profile detect
 
@@ -233,7 +233,7 @@ jobs:
         run: |
           python3 -m venv .venv
           source .venv/bin/activate
-          pip install -U pip wheel conan==2.16.1 cmake==3.30.0
+          pip install -U -r requirements.txt
           conan remote update conancenter --url=https://center2.conan.io
           conan profile detect
 
@@ -397,7 +397,7 @@ jobs:
           pushd ../baseline
           python3 -m venv .venv
           source .venv/bin/activate
-          pip install --upgrade pip wheel conan==2.16.1 cmake==3.30.0
+          pip install --upgrade -r "$GITHUB_WORKSPACE/requirements.txt"
           conan remote update conancenter --url=https://center2.conan.io
           conan profile detect
           conan install . --output-folder build \
