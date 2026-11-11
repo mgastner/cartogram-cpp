@@ -29,6 +29,7 @@ cartogram
 !/tests/stress
 !/tests/fuzzer
 !/tests/lto_linker
+!/tests/cli
 
 # Ignore the Testing logs
 /Testing
