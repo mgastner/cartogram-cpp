@@ -298,12 +298,16 @@ void CartogramInfo::update_id_header_info(
 
 // The IDs in csv_data are trimmed, but the IDs from the GeoJSON keep any
 // leading or trailing whitespace, for example "San Andres y Providencia  "
-// (#310). Replace each CSV ID by the GeoJSON ID with the same trimmed form,
-// so that the IDs match.
+// (#310). Replace each CSV ID that is not a GeoJSON ID by the GeoJSON ID
+// with the same trimmed form, so that the IDs match. A CSV ID that is a
+// GeoJSON ID keeps its spelling, so that an exact match takes priority.
 static void use_geojson_spelling_of_ids(
   std::map<std::string, std::map<std::string, std::string>> &csv_data,
   const std::vector<std::string> &geojson_ids)
 {
+  const std::set<std::string> exact_ids(
+    geojson_ids.begin(),
+    geojson_ids.end());
   std::map<std::string, std::string> geojson_id_of_trimmed_id;
   for (const auto &geojson_id : geojson_ids) {
     geojson_id_of_trimmed_id.emplace(
@@ -313,9 +317,9 @@ static void use_geojson_spelling_of_ids(
   std::map<std::string, std::map<std::string, std::string>> renamed_csv_data;
   for (auto &[id, data] : csv_data) {
     const auto it = geojson_id_of_trimmed_id.find(id);
-    const std::string &new_id =
-      (it == geojson_id_of_trimmed_id.end()) ? id : it->second;
-    renamed_csv_data[new_id] = std::move(data);
+    const bool rename =
+      !exact_ids.contains(id) && it != geojson_id_of_trimmed_id.end();
+    renamed_csv_data[rename ? it->second : id] = std::move(data);
   }
   csv_data = std::move(renamed_csv_data);
 }
