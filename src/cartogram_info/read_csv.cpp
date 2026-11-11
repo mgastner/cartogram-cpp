@@ -10,6 +10,7 @@
 #include <locale>
 #include <map>
 #include <set>
+#include <stdexcept>
 #include <string>
 #include <unordered_set>
 #include <utility>
@@ -472,7 +473,17 @@ void CartogramInfo::relocate_geodivs_based_on_inset_pos(
       const std::string &id = gd.id();
       const auto &gd_info = csv_data.at(id);
 
-      double target_area = std::stod(gd_info.at("area"));
+      // std::stod() throws std::out_of_range if the value overflows or
+      // underflows a double, for example for a 400-digit integer
+      double target_area = 0.0;
+      try {
+        target_area = std::stod(gd_info.at("area"));
+      } catch (const std::out_of_range &) {
+        std::cerr << "ERROR: The area of " << quoted_id(id) << ", "
+                  << gd_info.at("area")
+                  << ", is too large or too small for a double." << std::endl;
+        std::exit(EXIT_FAILURE);
+      }
       new_inset_state.insert_target_area(id, target_area);
 
       // Add color and label info, if present
