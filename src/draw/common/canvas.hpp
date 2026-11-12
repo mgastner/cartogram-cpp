@@ -1,6 +1,7 @@
 #pragma once
 
 #include "colors.hpp"
+#include "constants.hpp"
 #include <boost/geometry.hpp>
 #include <boost/geometry/io/svg/svg_mapper.hpp>
 #include <fstream>
@@ -20,6 +21,9 @@ public:
   Canvas(std::string_view file, double width, double height)
       : out_(std::string(file)), mapper_(out_, width, height)
   {
+    // The constructor of mapper_ has written the opening <svg> tag
+    out_ << "<metadata>Created with cartogram-cpp v" << version << ". "
+         << citation << "</metadata>" << std::endl;
     mapper_.add(CanvasPoint{0, 0});
     mapper_.add(CanvasPoint{width, height});
   }

@@ -197,6 +197,7 @@ void CartogramInfo::json_to_geojson(
     "Created with cartogram-cpp v{}. Coordinates are in a custom projection, "
     "not EPSG:4326.",
     version);
+  new_json["properties"]["citation"] = citation;
 
   // Write that the map is projected
   new_json["properties"]["projected"] = true;

@@ -68,4 +68,15 @@ constexpr unsigned int plotted_cell_length = 8;
 // Version
 const std::string version = "25.10";
 
+// The papers that cartogram-cpp asks its users to cite, as in README.md. The
+// GeoJSON and SVG outputs contain this text.
+const std::string citation =
+  "If you publish this map, please cite: Miaji NZ, Singhania A, Goh ME, Le C, "
+  "Tharatipyakul A, Gastner MT (2026) Topology-preserving line densification "
+  "for creating contiguous cartograms. Cartography and Geographic Information "
+  "Science 53(5):547-562, https://doi.org/10.1080/15230406.2026.2625329. "
+  "Gastner MT, Seguy V, More P (2018) Fast flow-based algorithm for creating "
+  "density-equalizing map projections. Proc Natl Acad Sci USA "
+  "115(10):E2156-E2164, https://doi.org/10.1073/pnas.1712674115.";
+
 #endif  // CONST_HPP_
