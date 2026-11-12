@@ -353,10 +353,13 @@ jobs:
           ctest --test-dir build -L stress --output-on-failure
 
   # ──────────────────── Performance comparison ────────────────────
+  # Both binaries are built on the runner that benchmarks them, and with the
+  # same options. CMakeLists.txt compiles with -march=native, so a binary built
+  # on another runner may use instructions that the CPU of this runner lacks.
   perf-tests:
     if: github.event_name == 'pull_request'
     name: Performance comparison (main, ${{ matrix.name }})
-    needs: build
+    needs: [style-check, docs-check]
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
@@ -376,19 +379,8 @@ jobs:
         with:
           fetch-depth: 1
 
-      # PR artefact from the build job
-      - uses: actions/download-artifact@v8
-        with:
-          name: ${{ matrix.name }}
-
-      - name: Unpack PR artefact
-        run: |
-          mkdir -p build-pr
-          tar -xzf build-${{ matrix.name }}.tar.gz -C build-pr
-          chmod +x build-pr/build/cartogram
-
       # Only designed to work on Linux
-      - name: Setup Python & Conan
+      - name: Install compiler & hyperfine
         run: |
           sudo apt-get update
           sudo apt-get install -y \
@@ -397,38 +389,48 @@ jobs:
           echo "CC=${{ matrix.compiler }}-${{ matrix.version }}"   >> $GITHUB_ENV
           echo "CXX=${{ matrix.compiler }}++-${{ matrix.version }}" >> $GITHUB_ENV
 
-      - name: Build baseline (origin/main)
+      - name: Setup Python & Conan
         run: |
-          git fetch --depth 1 --no-tags origin main
-          git worktree add ../baseline origin/main
-          pushd ../baseline
           python3 -m venv .venv
           source .venv/bin/activate
-          pip install --upgrade -r "$GITHUB_WORKSPACE/requirements.txt"
+          pip install -U -r requirements.txt
           conan remote update conancenter --url=https://center2.conan.io
           conan profile detect
           # The CGAL recipe requires mpfr 4.2.1, whose configure script fails with
           # clang on Ubuntu 26.04 (x86_64). Version 4.2.2 fixes the script.
           printf '\n[replace_requires]\nmpfr/4.2.1: mpfr/4.2.2\n' >> "$(conan profile path default)"
-          conan install . --output-folder build \
-                          --build missing \
-                          -s build_type=${{ matrix.build_type }} \
-                          -s compiler.cppstd=20 \
-                          -o "*:shared=False"
-          cmake -S . -B build \
-                -DCMAKE_TOOLCHAIN_FILE=build/build/${{ matrix.build_type }}/generators/conan_toolchain.cmake \
-                -DCMAKE_BUILD_TYPE=${{ matrix.build_type }} \
-                -DBUILD_SHARED_LIBS=OFF
-          cmake --build build --target cartogram -j"$(nproc)"
-          popd
+
+      - name: Check out baseline (origin/main)
+        run: |
+          git fetch --depth 1 --no-tags origin main
+          git worktree add ../baseline origin/main
+
+      # The second build reuses the Conan packages of the first if the two
+      # source trees require the same versions.
+      - name: Build PR & baseline
+        run: |
+          source .venv/bin/activate
+          for src in "$GITHUB_WORKSPACE" "$GITHUB_WORKSPACE/../baseline"; do
+            pushd "$src"
+            conan install . --output-folder build \
+                            --build missing \
+                            -s build_type=${{ matrix.build_type }} \
+                            -s compiler.cppstd=20 \
+                            -o "*:shared=False"
+            cmake -S . -B build \
+                  -DCMAKE_TOOLCHAIN_FILE=build/build/${{ matrix.build_type }}/generators/conan_toolchain.cmake \
+                  -DCMAKE_BUILD_TYPE=${{ matrix.build_type }} \
+                  -DBUILD_SHARED_LIBS=OFF
+            cmake --build build --target cartogram -j"$(nproc)"
+            popd
+          done
 
       # Benchmarks
       - name: Benchmark sample_data maps
         run: |
-          python3 -m venv .venv
           source .venv/bin/activate
           bash .github/scripts/benchmark_maps.sh \
-            build-pr/build/cartogram \
+            build/cartogram \
             ../baseline/build/cartogram \
             results.json
 
