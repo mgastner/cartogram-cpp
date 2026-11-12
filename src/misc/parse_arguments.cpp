@@ -18,7 +18,7 @@ Arguments parse_arguments(const int argc, const char *argv[])
   // Positional argument accepting visual variables file (CSV) as input
   arguments.add_argument("visual_variable_file")
     .default_value(std::string("none"))
-    .help("File path: CSV file with ID, area, and (optionally) colour");
+    .help("File path: CSV file with ID, area, and (optionally) color");
 
   // Optional argument accepting long grid side length (unsigned int) as
   // input. Default value declared in "constants.hpp"

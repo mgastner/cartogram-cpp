@@ -63,7 +63,7 @@ void InsetState::write_density_image(const std::string filename)
   write_polygons(
     cvs,
     /*fill_polygons=*/false,
-    /*colours=*/false,
+    /*colors=*/false,
     *this,
     0.025);
 }
@@ -92,7 +92,7 @@ void InsetState::write_delaunay_triangles(
   write_polygons(
     cvs,
     /*fill_polygons=*/false,
-    /*colours       =*/false,
+    /*colors        =*/false,
     *this,
     /*line_w =*/0.0,
     Color{1.0, 0.0, 0.0});
@@ -126,7 +126,7 @@ void InsetState::write_quadtree(const std::string &filename)
   write_polygons(
     cvs,
     /*fill_polygons=*/false,
-    /*colours       =*/false,
+    /*colors        =*/false,
     *this);
 
   write_quadtree_rectangles(cvs, quadtree_bboxes_, Color{0.6, 0.6, 0.6});
@@ -147,7 +147,7 @@ void InsetState::write_intersections_image()
   write_polygons(
     cvs,
     /*fill_polygons=*/false,
-    /*colours=*/false,
+    /*colors=*/false,
     *this);
 
   double w = 0.0001 * std::min(lx_, ly_);
@@ -175,7 +175,7 @@ void InsetState::write_map(
   write_polygons(
     cvs,
     /*fill_polygons=*/true,
-    /*colours       =*/has_colors,
+    /*colors        =*/has_colors,
     *this);
 
   if (plot_grid) {

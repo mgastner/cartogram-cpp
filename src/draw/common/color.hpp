@@ -22,7 +22,7 @@ static Color interpolate_color(
   return interpolated_color;
 }
 
-// Diverging colour palette, mean accounted for
+// Diverging color palette, mean accounted for
 static Color heatmap_color(
   const double dens,
   const double dens_min,

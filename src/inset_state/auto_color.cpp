@@ -22,7 +22,7 @@ void InsetState::auto_color()
     palette.emplace_back("#66a61e");  // olive green
     palette.emplace_back("#e6ab02");  // dark yellow
     palette.emplace_back("#a6761d");  // brown
-    palette.emplace_back("#666666");  // dark grey
+    palette.emplace_back("#666666");  // dark gray
   } else {
     // Using default palette for now
     // TODO: Accept palette from user
@@ -76,7 +76,7 @@ void InsetState::auto_color()
     std::cerr
       << "WARNING: Unable to color all GeoDivs without adjacency collisions"
       << std::endl;
-    std::cerr << "Assigning #f2f2f2 (light grey) to uncolored GeoDivs"
+    std::cerr << "Assigning #f2f2f2 (light gray) to uncolored GeoDivs"
               << std::endl;
     for (GeoDiv &gd : geo_divs_) {
       if (!color_found(gd.id())) {

@@ -836,7 +836,7 @@ Bbox get_bbox_bar(
   return Bbox(xmin_bar, ymin_bar, xmax_bar, ymax_bar);
 }
 
-// Sequential colour palette, mean not accounted for
+// Sequential color palette, mean not accounted for
 Color grid_cell_color(
   const double area,
   const double max_area,

@@ -211,7 +211,7 @@ inline void write_grid(Canvas &cvs, const InsetState &inset_state)
 inline void write_polygons(
   Canvas &cvs,
   bool fill_polygons,
-  bool colours,
+  bool colors,
   const InsetState &inset_state,
   double line_w = 0.0,
   Color outline = Color{0, 0, 0})
@@ -223,7 +223,7 @@ inline void write_polygons(
 
   for (const auto &gd : inset_state.geo_divs()) {
     Color fill = outline;
-    if (colours) {
+    if (colors) {
       auto c = inset_state.color_at(gd.id());
       fill = Color(c.r / 255.0, c.g / 255.0, c.b / 255.0);
     } else if (fill_polygons) {
