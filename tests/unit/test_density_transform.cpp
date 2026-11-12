@@ -11,24 +11,55 @@
 namespace
 {
 
-constexpr unsigned int lx = 16;
-constexpr unsigned int ly = 8;
 constexpr double a = 0.5;
 constexpr double b = 0.25;
+constexpr double c = 0.125;
 
-// Density at the center of cell (i, j): a constant plus one cosine mode
-// along each axis
-double density(const unsigned int i, const unsigned int j)
+// Density at the center of cell (i, j) of an lx × ly grid: a constant, one
+// cosine mode along each axis, and one product of modes along both axes
+double density(
+  const unsigned int i,
+  const unsigned int j,
+  const unsigned int lx,
+  const unsigned int ly)
 {
-  return 1.0 + a * std::cos(pi * (i + 0.5) / lx) +
-         b * std::cos(3.0 * pi * (j + 0.5) / ly);
+  const double x = (i + 0.5) / lx;
+  const double y = (j + 0.5) / ly;
+  return 1.0 + a * std::cos(pi * x) + b * std::cos(3.0 * pi * y) +
+         c * std::cos(pi * x) * std::cos(2.0 * pi * y);
+}
+
+// Coefficient (i, j) of density() in the normalization that flatten_density()
+// expects. The inverse FFTW_REDFT01 transform weights each nonzero frequency
+// by 2 per axis, so the coefficient of a mode is its amplitude divided by 2
+// for each axis along which the mode varies.
+double expected_coefficient(const unsigned int i, const unsigned int j)
+{
+  if (i == 0 && j == 0) {
+    return 1.0;
+  }
+  if (i == 1 && j == 0) {
+    return a / 2.0;
+  }
+  if (i == 0 && j == 3) {
+    return b / 2.0;
+  }
+  if (i == 1 && j == 2) {
+    return c / 4.0;
+  }
+  return 0.0;
 }
 
 struct DensityTransform {
   Arguments args{};
   InsetState inset{"C", args};
+  unsigned int lx;
+  unsigned int ly;
 
-  DensityTransform()
+  explicit DensityTransform(
+    const unsigned int grid_lx = 16,
+    const unsigned int grid_ly = 8)
+      : lx(grid_lx), ly(grid_ly)
   {
     inset.set_grid_dimensions(lx, ly);
     inset.ref_to_rho_init().allocate(lx, ly);
@@ -36,7 +67,7 @@ struct DensityTransform {
     inset.make_fftw_plans_for_rho();
     for (unsigned int i = 0; i < lx; ++i) {
       for (unsigned int j = 0; j < ly; ++j) {
-        inset.ref_to_rho_init()(i, j) = density(i, j);
+        inset.ref_to_rho_init()(i, j) = density(i, j, lx, ly);
       }
     }
     inset.execute_fftw_fwd_plan();
@@ -50,25 +81,23 @@ struct DensityTransform {
   }
 };
 
+// blur_width() needs a grid whose long side has at least 256 cells
+struct LargeDensityTransform : DensityTransform {
+  LargeDensityTransform() : DensityTransform(256, 128) {}
+};
+
 }  // namespace
 
-// In the normalization that flatten_density() expects, the inverse
-// FFTW_REDFT01 transform weighs each nonzero frequency by 2. The coefficient
-// of cos(pi m (i + 0.5) / lx) is therefore half its amplitude.
 BOOST_FIXTURE_TEST_CASE(coefficients_of_known_density, DensityTransform)
 {
   const FTReal2d &rho_ft = inset.ref_to_rho_ft();
   for (unsigned int i = 0; i < lx; ++i) {
     for (unsigned int j = 0; j < ly; ++j) {
-      double expected = 0.0;
-      if (i == 0 && j == 0) {
-        expected = 1.0;
-      } else if (i == 1 && j == 0) {
-        expected = a / 2.0;
-      } else if (i == 0 && j == 3) {
-        expected = b / 2.0;
+      BOOST_TEST_CONTEXT("i = " << i << ", j = " << j)
+      {
+        BOOST_TEST(
+          std::abs(rho_ft(i, j) - expected_coefficient(i, j)) < 1e-14);
       }
-      BOOST_TEST(std::abs(rho_ft(i, j) - expected) < 1e-14);
     }
   }
 }
@@ -80,7 +109,37 @@ BOOST_FIXTURE_TEST_CASE(backward_transform_restores_density, DensityTransform)
   const FTReal2d &rho_init = inset.ref_to_rho_init();
   for (unsigned int i = 0; i < lx; ++i) {
     for (unsigned int j = 0; j < ly; ++j) {
-      BOOST_TEST(std::abs(rho_init(i, j) - density(i, j)) < 1e-14);
+      BOOST_TEST_CONTEXT("i = " << i << ", j = " << j)
+      {
+        BOOST_TEST(std::abs(rho_init(i, j) - density(i, j, lx, ly)) < 1e-14);
+      }
+    }
+  }
+}
+
+// The blur must apply only the Gaussian weights, not the normalization a
+// second time: the mean density, rho_ft_(0, 0), stays unchanged, and every
+// other coefficient shrinks by the weight of its frequency
+BOOST_FIXTURE_TEST_CASE(
+  blur_applies_only_the_gaussian_weights,
+  LargeDensityTransform)
+{
+  const double bw = inset.blur_width();
+  BOOST_TEST_REQUIRE(bw > 0.0);
+  inset.blur_density();
+  const FTReal2d &rho_ft = inset.ref_to_rho_ft();
+  const double prefactor = -0.5 * bw * bw * pi * pi;
+  for (unsigned int i = 0; i < lx; ++i) {
+    for (unsigned int j = 0; j < ly; ++j) {
+      const double weight = std::exp(
+        prefactor * (double(i) * i / (double(lx) * lx) +
+                     double(j) * j / (double(ly) * ly)));
+      BOOST_TEST_CONTEXT("i = " << i << ", j = " << j)
+      {
+        BOOST_TEST(
+          std::abs(rho_ft(i, j) - weight * expected_coefficient(i, j)) <
+          1e-14);
+      }
     }
   }
 }

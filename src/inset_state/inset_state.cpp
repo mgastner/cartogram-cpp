@@ -61,11 +61,10 @@ double InsetState::blur_width() const
   // target values. In case of failure during flatten_density, we increase
   // the blur width to avoid the flipped Delaunay triangles.
   // NOTE: blur_width is always positive, regardless of the number of
-  //       integrations. Since execute_fftw_fwd_plan() normalizes rho_ft_,
-  //       integrations with a blur width of 0 converge on most sample
-  //       maps. On some maps, however, every integration with a blur
-  //       width of 0 fails, so a schedule that reaches 0 would need a
-  //       positive blur width after a failure.
+  //       integrations. A schedule that reaches a blur width of 0 must
+  //       return to a positive blur width after a failed integration,
+  //       because on some sample maps every integration with a blur width
+  //       of 0 fails.
   const unsigned int blur_default_pow =
     static_cast<unsigned int>(
       1 + log2(std::max(lx(), ly()) / default_long_grid_length)) +
@@ -73,7 +72,8 @@ double InsetState::blur_width() const
   double blur_width =
     std::pow(2.0, blur_default_pow - (0.5 * n_finished_integrations_));
 
-  // NOTE: Read the note above
+  // This schedule stays disabled: it reaches a blur width of 0 without a
+  // positive fallback after a failure (see the note above)
   // if (inset_state.n_finished_integrations() < max_integrations) {
   //   blur_width =
   //     std::pow(2.0, 5 - int(inset_state.n_finished_integrations()));
@@ -152,9 +152,9 @@ void InsetState::execute_fftw_fwd_plan()
 
   // FFTW's REDFT10 and REDFT01 transforms are unnormalized: the backward
   // transform of the forward transform multiplies each value by 4 lx ly.
-  // Normalizing here, rather than in blur_density(), keeps rho_ft_
-  // normalized when blur_density() returns early because the blur width
-  // is 0.
+  // After this normalization, rho_ft_(0, 0) is the mean density, which
+  // flatten_density() uses, and the backward transform restores rho_init_
+  // exactly, whatever the blur width.
   const double norm = 1.0 / (4.0 * double(lx_) * double(ly_));
   for (unsigned int i = 0; i < lx_; ++i) {
     for (unsigned int j = 0; j < ly_; ++j) {
