@@ -12,7 +12,7 @@ line style identifies the number of Fourier modes along the longer side.
 If rsvg-convert is installed, a PNG and a PDF are written next to the SVG.
 Only the Python standard library is used.
 
-Usage: plot_convergence.py RUN_DIR [RUN_DIR ...] -o OUTPUT.svg
+Usage: plot_convergence.py RUN_DIR [RUN_DIR ...] -o OUTPUT.svg [--panel-width PIXELS]
 """
 
 import argparse
@@ -142,10 +142,17 @@ def polyline(ax, values, colour, dash):
 
 
 def main():
+    global PANEL_W, PANEL_H
     parser = argparse.ArgumentParser(description=__doc__.split("\n")[0])
     parser.add_argument("run_dirs", nargs="+", type=Path)
     parser.add_argument("-o", "--output", type=Path, required=True)
+    parser.add_argument(
+        "--panel-width", type=float, default=PANEL_W,
+        help="panel width in pixels; the height keeps its ratio to the width",
+    )
     args = parser.parse_args()
+    PANEL_H = PANEL_H * args.panel_width / PANEL_W
+    PANEL_W = args.panel_width
 
     runs = [load(d) for d in args.run_dirs]
     order = {name: k for k, (name, _) in enumerate(MAP_COLOURS)}
