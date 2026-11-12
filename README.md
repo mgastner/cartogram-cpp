@@ -10,11 +10,11 @@ This program implements 5FCarto, a topology-preserving contiguous cartogram gene
 
 Miaji NZ, Singhania A, Goh ME, Le C, Tharatipyakul A, Gastner MT. _Topology-preserving line densification for creating contiguous cartograms_. Cartography and Geographic Information Science 1–16 (2026). <https://doi.org/10.1080/15230406.2026.2625329>
 
-Data produced by code in this repository are subject to the MIT license and should cite the aforementioned paper by Miaji et al. (2026).
-
 The underlying flow-based cartogram algorithm is described in:
 
 Gastner MT, Seguy V, More P. _Fast flow-based algorithm for creating density-equalizing map projections_. Proc Natl Acad Sci USA 115(10):E2156–E2164 (2018). <https://doi.org/10.1073/pnas.1712674115>
+
+Citing these papers is not a condition of the license, but it is an obligation of good scientific practice. If you publish a cartogram made with cartogram-cpp or go-cart.io, cite both papers. Where a reference list is not possible, as in news graphics, slides, or social-media posts, add a credit line such as "Cartogram: go-cart.io (Miaji et al. 2026)". The GeoJSON and SVG files that the program writes name both papers.
 
 ## Usage
 
@@ -228,6 +228,10 @@ Contributions are highly encouraged! Please feel free to take a stab at any at a
 If you'd like to contribute to the project, please run our tests after you make any changes.
 
 Maintainers, please make sure all the CI build and test checks pass and the performance comparison CI check results are expected before approving the pull request.
+
+## License
+
+cartogram-cpp is licensed under the GNU Affero General Public License, version 3 only (SPDX identifier `AGPL-3.0-only`). The full text is in [LICENSE](./LICENSE). The license covers the program, not the maps that you create with it from your own data.
 
 ## Funding
 
