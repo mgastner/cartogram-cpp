@@ -88,8 +88,11 @@ jobs:
         run: |
           markdownlint-cli2 README.md
 
-  build:
-    name: "Build (${{ matrix.name }})"
+  # Each job tests the binaries on the runner that built them. CMakeLists.txt
+  # compiles with -march=native, so a binary may use instructions, such as
+  # AVX-512, that the CPU of another runner lacks.
+  build-and-test:
+    name: "Build and test (${{ matrix.name }})"
     runs-on: ${{ matrix.os }}
     needs: [style-check, docs-check]
     strategy:
@@ -168,8 +171,6 @@ jobs:
           # clang on Ubuntu 26.04 (x86_64). Version 4.2.2 fixes the script.
           printf '\n[replace_requires]\nmpfr/4.2.1: mpfr/4.2.2\n' >> "$(conan profile path default)"
 
-      # We only perform static builds so the output can be exported as an artifact
-      # for testing on a clean system without installing dependencies.
       - name: Download Dependencies
         run: |
           source .venv/bin/activate
@@ -182,6 +183,7 @@ jobs:
             -o "*:fPIC=False"
 
       - name: Configure & build
+        id: build
         run: |
           source .venv/bin/activate
 
@@ -202,17 +204,26 @@ jobs:
             -DCMAKE_EXE_LINKER_FLAGS="${EXE_FLAGS}"
           cmake --build build -j$(nproc || sysctl -n hw.ncpu)
 
-      - name: Package build folder
-        run: tar -czf build-${{ matrix.name }}.tar.gz build
+      - name: Unit tests
+        run: |
+          ctest --test-dir build -L unit --output-on-failure
 
-      - name: Upload artefact
-        uses: actions/upload-artifact@v7
-        with:
-          name: ${{ matrix.name }}
-          path: build-${{ matrix.name }}.tar.gz
+      # The stress tests also run if the unit tests fail, so that each run
+      # reports the results of both.
+      - name: Stress tests
+        if: ${{ !cancelled() && steps.build.outcome == 'success' }}
+        run: |
+          ctest --test-dir build -L stress --output-on-failure
 
-  build-sanitize:
-    name: "Build (${{ matrix.san }})"
+      # Disabled. The fuzzer tests ran on ubuntu-release-gcc,
+      # ubuntu-release-clang, and macos-release-appleclang.
+      # - name: Fuzzer tests
+      #   if: ${{ !cancelled() && steps.build.outcome == 'success' && matrix.build_type == 'Release' && matrix.os != 'ubuntu-26.04-arm' }}
+      #   run: |
+      #     ctest --test-dir build -L fuzzer --verbose
+
+  build-and-test-sanitize:
+    name: "Build and test (${{ matrix.san }})"
     runs-on: ubuntu-26.04
     needs: [style-check, docs-check]
 
@@ -264,6 +275,7 @@ jobs:
             -o "*:shared=False"
 
       - name: Configure & build
+        id: build
         run: |
           source .venv/bin/activate
           cmake -S . -B build \
@@ -275,80 +287,12 @@ jobs:
             -DCMAKE_EXE_LINKER_FLAGS="-fsanitize=${{ matrix.flag }}"
           cmake --build build -j$(nproc)
 
-      - name: Package build folder
-        run: tar -czf build-${{ matrix.san }}.tar.gz build
-
-      - name: Upload artefact
-        uses: actions/upload-artifact@v7
-        with:
-          name: ${{ matrix.san }}
-          path: build-${{ matrix.san }}.tar.gz
-
-  # ─────────────────────────── Unit Tests ───────────────────────────
-  unit-tests:
-    name: "Unit tests (${{ matrix.target }})"
-    needs: [build, build-sanitize]
-    strategy:
-      fail-fast: false
-      matrix:
-        include:
-          - { target: ubuntu-release-gcc,         os: ubuntu-26.04 }
-          - { target: ubuntu-release-clang,       os: ubuntu-26.04 }
-          - { target: ubuntu-debug-gcc,           os: ubuntu-26.04 }
-          - { target: ubuntu-debug-clang,         os: ubuntu-26.04 }
-          - { target: ubuntu-arm64-release-clang, os: ubuntu-26.04-arm }
-          - { target: ubuntu-arm64-debug-clang,   os: ubuntu-26.04-arm }
-          - { target: macos-release-appleclang,   os: macos-26 }
-          - { target: macos-debug-appleclang,     os: macos-26 }
-          - { target: asan,                       os: ubuntu-26.04 }
-          - { target: ubsan,                      os: ubuntu-26.04 }
-          - { target: tsan,                       os: ubuntu-26.04 }
-    runs-on: ${{ matrix.os }}
-
-    steps:
-      - uses: actions/download-artifact@v8
-        with:
-          name: ${{ matrix.target }}
-
-      - name: Unpack build folder
-        run: tar -xzf build-${{ matrix.target }}.tar.gz
-
       - name: Unit tests
         run: |
           ctest --test-dir build -L unit --output-on-failure
 
-  # ────────────────────────── Stress Tests ──────────────────────────
-  stress-tests:
-    name: "Stress tests (${{ matrix.target }})"
-    needs: [build, build-sanitize]
-    strategy:
-      fail-fast: false
-      matrix:
-        include:
-          - { target: ubuntu-release-gcc,         os: ubuntu-26.04 }
-          - { target: ubuntu-release-clang,       os: ubuntu-26.04 }
-          - { target: ubuntu-debug-gcc,           os: ubuntu-26.04 }
-          - { target: ubuntu-debug-clang,         os: ubuntu-26.04 }
-          - { target: ubuntu-arm64-release-clang, os: ubuntu-26.04-arm }
-          - { target: ubuntu-arm64-debug-clang,   os: ubuntu-26.04-arm }
-          - { target: macos-release-appleclang,   os: macos-26 }
-          - { target: macos-debug-appleclang,     os: macos-26 }
-          - { target: asan,                       os: ubuntu-26.04 }
-          - { target: ubsan,                      os: ubuntu-26.04 }
-          - { target: tsan,                       os: ubuntu-26.04 }
-    runs-on: ${{ matrix.os }}
-
-    steps:
-      - uses: actions/checkout@v7
-
-      - uses: actions/download-artifact@v8
-        with:
-          name: ${{ matrix.target }}
-
-      - name: Unpack build folder
-        run: tar -xzf build-${{ matrix.target }}.tar.gz
-
       - name: Stress tests
+        if: ${{ !cancelled() && steps.build.outcome == 'success' }}
         run: |
           ctest --test-dir build -L stress --output-on-failure
 
@@ -454,35 +398,3 @@ jobs:
           path: |
             comment.md
             pr_number.txt
-
-  # ─────────────────────────── Fuzzer Tests ─────────────────────────
-  # fuzzer-tests:
-  #   needs: [build]
-  #   strategy:
-  #     fail-fast: false
-  #     matrix:
-  #       target:
-  #         - ubuntu-release-gcc
-  #         - ubuntu-release-clang
-  #         - macos-release-appleclang
-  #   runs-on: "${{ contains(matrix.target, 'mac') && 'macos-26' || 'ubuntu-26.04' }}"
-
-  #   steps:
-  #     - uses: actions/checkout@v7
-
-  #     - uses: actions/download-artifact@v8
-  #       with:
-  #         name: ${{ matrix.target }}
-
-  #     - name: Install Python in venv
-  #       run: |
-  #         python3 -m venv .venv
-  #         source .venv/bin/activate
-  #         pip install -U pip
-
-  #     - name: Unpack build folder
-  #       run: tar -xzf build-${{ matrix.target }}.tar.gz
-
-  #     - name: Fuzzer tests
-  #       run: |
-  #         ctest --test-dir build -L fuzzer --verbose
