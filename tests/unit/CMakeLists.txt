@@ -29,3 +29,7 @@ foreach(src IN LISTS UNIT_SRCS)
   add_test(NAME ${test_name} COMMAND ${test_name})
   set_tests_properties(${test_name} PROPERTIES LABELS "unit" TIMEOUT 1)
 endforeach()
+
+# test_flatten_density runs three integrations on a 64 x 64 grid. In a
+# Debug build with ThreadSanitizer, it takes about 2 s on an Apple M2.
+set_tests_properties(test_flatten_density PROPERTIES TIMEOUT 20)
