@@ -15,12 +15,12 @@ double interpolate_bilinearly(
   if (x < 0 || x > lx || y < 0 || y > ly) {
     std::cerr << "ERROR: coordinate outside bounding box in " << __func__
               << "(). " << "x=" << x << ", y=" << y << std::endl;
-    exit(1);
+    std::exit(EXIT_FAILURE);
   }
   if (zero != 'x' && zero != 'y') {
     std::cerr << "ERROR: unknown argument zero in " << __func__ << "()."
               << std::endl;
-    exit(1);
+    std::exit(EXIT_FAILURE);
   }
 
   // x0 is the nearest grid point smaller than x.

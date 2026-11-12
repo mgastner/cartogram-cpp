@@ -10,7 +10,7 @@ std::vector<std::vector<intersection> > InsetState::intersec_with_parallel_to(
 {
   if (axis != 'x' && axis != 'y') {
     std::cerr << "ERROR: Invalid axis in " << __func__ << "()" << std::endl;
-    exit(984320);
+    std::exit(EXIT_FAILURE);
   }
   const unsigned int grid_length = (axis == 'x' ? ly_ : lx_);
   const unsigned int n_rays = grid_length * resolution;
@@ -105,7 +105,7 @@ std::vector<std::vector<intersection> > InsetState::intersec_with_parallel_to(
                         << " ";
             }
             std::cerr << std::endl << std::endl;
-            std::exit(932875);
+            std::exit(EXIT_FAILURE);
           }
           std::sort(intersections.begin(), intersections.end());
 

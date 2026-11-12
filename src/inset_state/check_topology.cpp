@@ -20,7 +20,7 @@ void InsetState::holes_inside_polygons() const
             std::cerr << " Hole: " << h;
             std::cerr << ". Polygon: " << ext_ring;
             std::cerr << ". GeoDiv: " << gd.id() << std::endl;
-            std::exit(20);
+            std::exit(EXIT_FAILURE);
           }
         }
       }
@@ -53,7 +53,7 @@ void InsetState::is_simple(const char *caller_func) const
           inset_name_ + "_" + std::to_string(n_finished_integrations_) +
             "_not_simple_after_" + caller_func,
           false);
-        exit(1);
+        std::exit(EXIT_FAILURE);
       }
 
       for (const auto &h : pwh.holes()) {
@@ -73,7 +73,7 @@ void InsetState::is_simple(const char *caller_func) const
             inset_name_ + "_" + std::to_string(n_finished_integrations_) +
               "_not_simple_after_" + caller_func,
             false);
-          exit(1);
+          std::exit(EXIT_FAILURE);
         }
       }
     }

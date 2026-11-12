@@ -65,7 +65,7 @@ static void check_validity_of_area_str(const std::string &area_as_str)
       << "ERROR: Invalid area string: " << area_process_str
       << ". Area string must only contain 0-9, '.', '-' and ',' or 'NA'."
       << std::endl;
-    std::exit(18);
+    std::exit(EXIT_FAILURE);
   }
 
   if (
@@ -73,12 +73,12 @@ static void check_validity_of_area_str(const std::string &area_as_str)
     !StringToDecimalConverter::is_str_correct_format(area_process_str)) {
     std::cerr << "ERROR: Invalid area string format: " << area_process_str
               << std::endl;
-    std::exit(19);
+    std::exit(EXIT_FAILURE);
   }
 
   if (area_process_str.front() == '-') {
     std::cerr << "ERROR: Negative area in CSV" << std::endl;
-    std::exit(101);
+    std::exit(EXIT_FAILURE);
   }
 }
 
@@ -105,7 +105,7 @@ static void check_validity_of_inset_pos(
               << ". Use C (center), L (left), R (right), T (top), or B "
                  "(bottom)."
               << std::endl;
-    std::exit(20);
+    std::exit(EXIT_FAILURE);
   }
 }
 
@@ -143,7 +143,7 @@ static ojson load_csv_rows(const std::string &path)
   std::ifstream is(path);
   if (!is) {
     std::cerr << "ERROR: Cannot open CSV file: " << path << std::endl;
-    std::exit(17);
+    std::exit(EXIT_FAILURE);
   }
   jcc::csv_options opts;
   opts.assume_header(true).ignore_empty_lines(true).trim(true).infer_types(
@@ -152,7 +152,7 @@ static ojson load_csv_rows(const std::string &path)
     return jcc::decode_csv<ojson>(is, opts);  // array of row-objects
   } catch (const std::exception &e) {
     std::cerr << "ERROR: Failed to parse CSV: " << e.what() << std::endl;
-    std::exit(17);
+    std::exit(EXIT_FAILURE);
   }
 }
 
@@ -253,14 +253,14 @@ std::string CartogramInfo::match_id_columns(
     std::cerr << "ERROR: No valid matching ID header between GeoJSON "
                  "properties and CSV columns could be found."
               << std::endl;
-    std::exit(16);
+    std::exit(EXIT_FAILURE);
   }
 
   int idx = hm.index_of_norm(csv_id_header_norm);
   if (idx < 0) {
     std::cerr << "ERROR: Internal error determining ID column index."
               << std::endl;
-    std::exit(16);
+    std::exit(EXIT_FAILURE);
   }
   id_col_ = idx;  // index into normalized header list
   return matching_id_header;
@@ -313,7 +313,7 @@ static void check_validity_of_csv_ids(
       initial_id_order.end()) {
       std::cerr << "ERROR: ID " << id << " in CSV is not in GeoJSON"
                 << std::endl;
-      std::exit(21);
+      std::exit(EXIT_FAILURE);
     }
   }
 
@@ -405,7 +405,7 @@ void CartogramInfo::read_csv()
       << "ERROR: CSV with >= 2 columns (IDs, target areas) required. Some "
          "rows in your CSV may not have values for all columns"
       << std::endl;
-    std::exit(17);
+    std::exit(EXIT_FAILURE);
   }
 
   const std::string new_id_header = match_id_columns(args_.id_col);
@@ -421,7 +421,7 @@ void CartogramInfo::read_csv()
       << "ERROR: CSV with >= 2 columns (IDs, target areas) required. Some "
          "rows in your CSV may not have values for all columns"
       << std::endl;
-    std::exit(17);
+    std::exit(EXIT_FAILURE);
   }
 
   const int inset_col = col_index(args_.inset_col);  // default: "Inset"
@@ -450,7 +450,7 @@ void CartogramInfo::read_csv()
         << "ERROR: CSV with >= 2 columns (IDs, target areas) required. Some "
            "rows in your CSV may not have values for all columns"
         << std::endl;
-      std::exit(17);
+      std::exit(EXIT_FAILURE);
     }
 
     std::string id = normalize_id_token(r.at(id_key).as_string());

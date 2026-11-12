@@ -166,7 +166,7 @@ Arguments parse_arguments(const int argc, const char *argv[])
   } catch (const std::runtime_error &err) {
     std::cerr << "ERROR: " << err.what() << ". ";
     std::cerr << arguments;
-    std::exit(1);
+    std::exit(EXIT_FAILURE);
   }
 
   // Ensure quadtree_leaf_count_factor is a power of 2
@@ -177,7 +177,7 @@ Arguments parse_arguments(const int argc, const char *argv[])
     std::cerr
       << "ERROR: --quadtree_leaf_count_factor must be an integer power of 2."
       << std::endl;
-    std::exit(15);
+    std::exit(EXIT_FAILURE);
   }
   args.quadtree_leaf_count_factor = qlcf;
 
@@ -260,7 +260,7 @@ Arguments parse_arguments(const int argc, const char *argv[])
     std::cerr << "ERROR: No Geometry file provided!" << std::endl;
     std::cerr << "Please provide a geometry file in standard GeoJSON format."
               << std::endl;
-    std::exit(16);
+    std::exit(EXIT_FAILURE);
   }
 
   // Check if a visual-variables file or -m flag is passed
@@ -275,7 +275,7 @@ Arguments parse_arguments(const int argc, const char *argv[])
     std::cerr << "ERROR: No CSV file provided!" << std::endl;
     std::cerr << "To create a CSV, please use the -M (--make_csv) flag."
               << std::endl;
-    std::exit(15);
+    std::exit(EXIT_FAILURE);
   } else {
     args.visual_file_name = "";
   }

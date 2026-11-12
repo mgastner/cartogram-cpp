@@ -69,7 +69,7 @@ void add_intersections(
 {
   if (axis != 'x' && axis != 'y') {
     std::cerr << "ERROR: Invalid axis in add_intersections()" << std::endl;
-    exit(984321);
+    std::exit(EXIT_FAILURE);
   }
   Point prev_point = pgn[pgn.size() - 1];
   for (auto p : pgn) {
