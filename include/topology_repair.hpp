@@ -26,8 +26,9 @@ struct TopologyRepairSettings {
   double max_relative_area_change;
 
   // Vertices closer than this distance (in input coordinates) are snapped
-  // together. A negative value lets GEOS choose: the diameter of the
-  // bounding box of all regions divided by 1e8.
+  // together. A negative value selects the default of GEOS: the diameter of
+  // the bounding box of all regions divided by 1e8. The coverage check uses
+  // the same distance as the largest width of a gap that it reports.
   double snapping_distance;
 };
 
