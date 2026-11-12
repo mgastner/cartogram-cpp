@@ -425,14 +425,19 @@ static void repair_input_topology(
   if (result.changed.empty()) {
     return;
   }
-  std::cerr << (result.within_tolerance ? "WARNING" : "ERROR")
-            << ": The input topology needs repair in " << result.changed.size()
-            << " geographic division(s):\n";
+  // Every line starts with the level, because the go-cart.io back end shows
+  // only the lines of standard error that start with "ERROR: "
+  const char *level = result.within_tolerance ? "WARNING" : "ERROR";
+  std::cerr << level << ": The input topology needs repair in "
+            << result.changed.size() << " geographic division(s):\n";
   for (const auto &r : result.changed) {
-    std::cerr << "  " << r.id << ": "
+    const bool too_large =
+      !(r.relative_area_change <= args.max_repair_area_change);
+    std::cerr << level << ": " << r.id << ": "
               << (r.had_self_intersection ? "self-intersecting ring repaired"
                                           : "border matched to neighbors")
-              << ", relative area change " << r.relative_area_change << "\n";
+              << ", relative area change " << r.relative_area_change
+              << (too_large ? " (more than permitted)" : "") << "\n";
   }
   if (!result.within_tolerance) {
     std::cerr << "ERROR: The repair would change an area by more than "

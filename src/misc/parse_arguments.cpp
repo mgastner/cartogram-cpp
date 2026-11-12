@@ -230,6 +230,11 @@ Arguments parse_arguments(const int argc, const char *argv[])
     arguments.get<bool>("--disable_topology_repair");
   args.max_repair_area_change =
     arguments.get<double>("--max_repair_area_change");
+  if (!(args.max_repair_area_change >= 0.0)) {
+    std::cerr << "ERROR: --max_repair_area_change must not be negative."
+              << std::endl;
+    std::exit(EXIT_FAILURE);
+  }
   args.repair_snapping_distance =
     arguments.get<double>("--repair_snapping_distance");
 

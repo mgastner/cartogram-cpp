@@ -130,8 +130,12 @@ BOOST_AUTO_TEST_CASE(bow_tie_is_rejected)
 {
   std::vector<GeoDiv> gds = {
     make_geodiv("A", {{0, 0}, {10, 10}, {10, 0}, {0, 10}})};
+  const std::vector<Point> before = vertices(gds[0]);
   const auto result = repair_topology(gds, default_settings);
   BOOST_TEST(!result.within_tolerance);
+
+  // A rejected repair leaves the input unchanged
+  BOOST_TEST((vertices(gds[0]) == before));
 }
 
 // B has a vertex 1e-12 off A's border; after the repair both regions have
