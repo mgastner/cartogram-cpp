@@ -418,7 +418,7 @@ void CartogramInfo::read_geojson()
     // Update map_name to be based on geometry file name instead
     set_map_name(geometry_file_name);
     generate_csv_template(j, map_name_);
-    std::exit(19);
+    std::exit(EXIT_SUCCESS);
   }
 
   // If already projected, skip projection
