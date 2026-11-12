@@ -14,7 +14,7 @@ The underlying flow-based cartogram algorithm is described in:
 
 Gastner MT, Seguy V, More P. _Fast flow-based algorithm for creating density-equalizing map projections_. Proc Natl Acad Sci USA 115(10):E2156–E2164 (2018). <https://doi.org/10.1073/pnas.1712674115>
 
-Citing these papers is not a condition of the license, but it is an obligation of good scientific practice. If you publish a cartogram made with cartogram-cpp or go-cart.io, cite both papers. Where a reference list is not possible, as in news graphics, slides, or social-media posts, add a credit line such as "Cartogram: go-cart.io (Miaji et al. 2026)". The GeoJSON and SVG files that the program writes name both papers.
+Citing these papers is not a condition of the license, but it is an obligation of good scientific practice. If you publish a cartogram made with cartogram-cpp or go-cart.io, cite both papers. Where a reference list is not possible, as in news graphics, slides, or social-media posts, add a credit line such as "Cartogram: go-cart.io (Gastner et al. 2018)". The GeoJSON and SVG files that the program writes name both papers.
 
 ## Usage
 
