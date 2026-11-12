@@ -37,6 +37,14 @@ public:
     return p;
   }
 
+  // Throws if a GEOS function returned its error value
+  void check_status(const bool ok, const char *what) const
+  {
+    if (!ok) {
+      throw std::runtime_error(std::string(what) + " failed: " + error_);
+    }
+  }
+
 private:
   static void store_message(const char *message, void *userdata)
   {
@@ -87,7 +95,39 @@ private:
   GEOSGeometry *g_;
 };
 
-GEOSGeometry *make_ring(const GeosContext &ctx, const Polygon &ring)
+// Releases the geometries for a GEOS constructor. Such a constructor takes
+// ownership of its arguments even if it fails, so the geometries stay in
+// owning wrappers until right before the call, and nothing leaks if an
+// earlier step throws.
+std::vector<GEOSGeometry *> release_all(std::vector<Geom> &geoms)
+{
+  std::vector<GEOSGeometry *> raw;
+  raw.reserve(geoms.size());
+  for (auto &g : geoms) {
+    raw.push_back(g.release());
+  }
+  return raw;
+}
+
+// Collection of the given type that takes ownership of the geometries
+Geom make_collection(
+  const GeosContext &ctx,
+  const int type,
+  std::vector<Geom> &geoms)
+{
+  std::vector<GEOSGeometry *> raw = release_all(geoms);
+  return {
+    ctx,
+    ctx.check(
+      GEOSGeom_createCollection_r(
+        ctx.get(),
+        type,
+        raw.data(),
+        static_cast<unsigned int>(raw.size())),
+      "GEOSGeom_createCollection")};
+}
+
+Geom make_ring(const GeosContext &ctx, const Polygon &ring)
 {
   std::vector<double> xy;
   xy.reserve(2 * (ring.size() + 1));
@@ -105,37 +145,34 @@ GEOSGeometry *make_ring(const GeosContext &ctx, const Polygon &ring)
       0,
       0),
     "GEOSCoordSeq_copyFromBuffer");
-  return ctx.check(
-    GEOSGeom_createLinearRing_r(ctx.get(), seq),
-    "GEOSGeom_createLinearRing");
+  return {
+    ctx,
+    ctx.check(
+      GEOSGeom_createLinearRing_r(ctx.get(), seq),
+      "GEOSGeom_createLinearRing")};
 }
 
 Geom to_geos(const GeosContext &ctx, const GeoDiv &gd)
 {
-  std::vector<GEOSGeometry *> polygons;
+  std::vector<Geom> polygons;
   for (const auto &pwh : gd.polygons_with_holes()) {
-    GEOSGeometry *shell = make_ring(ctx, pwh.outer_boundary());
-    std::vector<GEOSGeometry *> holes;
+    Geom shell = make_ring(ctx, pwh.outer_boundary());
+    std::vector<Geom> holes;
     for (const auto &h : pwh.holes()) {
       holes.push_back(make_ring(ctx, h));
     }
-    polygons.push_back(ctx.check(
-      GEOSGeom_createPolygon_r(
-        ctx.get(),
-        shell,
-        holes.data(),
-        static_cast<unsigned int>(holes.size())),
-      "GEOSGeom_createPolygon"));
+    std::vector<GEOSGeometry *> raw_holes = release_all(holes);
+    polygons.emplace_back(
+      ctx,
+      ctx.check(
+        GEOSGeom_createPolygon_r(
+          ctx.get(),
+          shell.release(),
+          raw_holes.data(),
+          static_cast<unsigned int>(raw_holes.size())),
+        "GEOSGeom_createPolygon"));
   }
-  return {
-    ctx,
-    ctx.check(
-      GEOSGeom_createCollection_r(
-        ctx.get(),
-        GEOS_MULTIPOLYGON,
-        polygons.data(),
-        static_cast<unsigned int>(polygons.size())),
-      "GEOSGeom_createCollection")};
+  return make_collection(ctx, GEOS_MULTIPOLYGON, polygons);
 }
 
 Polygon ring_from_geos(const GeosContext &ctx, const GEOSGeometry *ring)
@@ -143,14 +180,18 @@ Polygon ring_from_geos(const GeosContext &ctx, const GEOSGeometry *ring)
   const GEOSCoordSequence *seq =
     ctx.check(GEOSGeom_getCoordSeq_r(ctx.get(), ring), "GEOSGeom_getCoordSeq");
   unsigned int n = 0;
-  GEOSCoordSeq_getSize_r(ctx.get(), seq, &n);
+  ctx.check_status(
+    GEOSCoordSeq_getSize_r(ctx.get(), seq, &n) != 0,
+    "GEOSCoordSeq_getSize");
   Polygon out;
 
   // The last coordinate repeats the first one
   for (unsigned int i = 0; i + 1 < n; ++i) {
     double x = 0.0;
     double y = 0.0;
-    GEOSCoordSeq_getXY_r(ctx.get(), seq, i, &x, &y);
+    ctx.check_status(
+      GEOSCoordSeq_getXY_r(ctx.get(), seq, i, &x, &y) != 0,
+      "GEOSCoordSeq_getXY");
     out.push_back(Point(x, y));
   }
   return out;
@@ -169,6 +210,7 @@ void append_polygon(
   }
   std::vector<Polygon> holes;
   const int n_holes = GEOSGetNumInteriorRings_r(ctx.get(), poly);
+  ctx.check_status(n_holes >= 0, "GEOSGetNumInteriorRings");
   for (int i = 0; i < n_holes; ++i) {
     Polygon h = ring_from_geos(
       ctx,
@@ -192,8 +234,12 @@ GeoDiv from_geos(const GeosContext &ctx, const GEOSGeometry *g, std::string id)
     append_polygon(ctx, g, gd);
   } else if (type == GEOS_MULTIPOLYGON) {
     const int n = GEOSGetNumGeometries_r(ctx.get(), g);
+    ctx.check_status(n >= 0, "GEOSGetNumGeometries");
     for (int i = 0; i < n; ++i) {
-      append_polygon(ctx, GEOSGetGeometryN_r(ctx.get(), g, i), gd);
+      append_polygon(
+        ctx,
+        ctx.check(GEOSGetGeometryN_r(ctx.get(), g, i), "GEOSGetGeometryN"),
+        gd);
     }
   } else {
     throw std::runtime_error(
@@ -218,29 +264,28 @@ Geom make_valid(const GeosContext &ctx, const GEOSGeometry *g)
   const Geom result(ctx, ctx.check(valid, "GEOSMakeValidWithParams"));
 
   // Collect the polygons (MakeValid may add collapsed lines or points)
-  std::vector<GEOSGeometry *> polygons;
+  std::vector<Geom> polygons;
   auto collect = [&](const auto &self, const GEOSGeometry *part) -> void {
     const int type = GEOSGeomTypeId_r(ctx.get(), part);
+    ctx.check_status(type >= 0, "GEOSGeomTypeId");
     if (type == GEOS_POLYGON) {
-      polygons.push_back(
+      polygons.emplace_back(
+        ctx,
         ctx.check(GEOSGeom_clone_r(ctx.get(), part), "GEOSGeom_clone"));
     } else if (type == GEOS_MULTIPOLYGON || type == GEOS_GEOMETRYCOLLECTION) {
       const int n = GEOSGetNumGeometries_r(ctx.get(), part);
+      ctx.check_status(n >= 0, "GEOSGetNumGeometries");
       for (int i = 0; i < n; ++i) {
-        self(self, GEOSGetGeometryN_r(ctx.get(), part, i));
+        self(
+          self,
+          ctx.check(
+            GEOSGetGeometryN_r(ctx.get(), part, i),
+            "GEOSGetGeometryN"));
       }
     }
   };
   collect(collect, result.get());
-  return {
-    ctx,
-    ctx.check(
-      GEOSGeom_createCollection_r(
-        ctx.get(),
-        GEOS_MULTIPOLYGON,
-        polygons.data(),
-        static_cast<unsigned int>(polygons.size())),
-      "GEOSGeom_createCollection")};
+  return make_collection(ctx, GEOS_MULTIPOLYGON, polygons);
 }
 
 // Area enclosed by the exterior rings minus the area of the holes, from the
@@ -261,15 +306,17 @@ double shoelace_area(const GeoDiv &gd)
 // returns a Polygon where the input was a MultiPolygon with one part.
 Geom normalized_multipolygon(const GeosContext &ctx, const GEOSGeometry *g)
 {
-  GEOSGeometry *copy =
-    ctx.check(GEOSGeom_clone_r(ctx.get(), g), "GEOSGeom_clone");
-  if (GEOSGeomTypeId_r(ctx.get(), copy) == GEOS_POLYGON) {
-    copy = ctx.check(
-      GEOSGeom_createCollection_r(ctx.get(), GEOS_MULTIPOLYGON, &copy, 1),
-      "GEOSGeom_createCollection");
+  Geom result(
+    ctx,
+    ctx.check(GEOSGeom_clone_r(ctx.get(), g), "GEOSGeom_clone"));
+  if (GEOSGeomTypeId_r(ctx.get(), result.get()) == GEOS_POLYGON) {
+    std::vector<Geom> parts;
+    parts.push_back(std::move(result));
+    result = make_collection(ctx, GEOS_MULTIPOLYGON, parts);
   }
-  Geom result(ctx, copy);
-  GEOSNormalize_r(ctx.get(), result.get());
+  ctx.check_status(
+    GEOSNormalize_r(ctx.get(), result.get()) == 0,
+    "GEOSNormalize");
   return result;
 }
 
@@ -282,7 +329,9 @@ bool same_geometry(
 {
   const Geom na = normalized_multipolygon(ctx, a);
   const Geom nb = normalized_multipolygon(ctx, b);
-  return GEOSEqualsExact_r(ctx.get(), na.get(), nb.get(), 0.0) == 1;
+  const char equal = GEOSEqualsExact_r(ctx.get(), na.get(), nb.get(), 0.0);
+  ctx.check_status(equal != 2, "GEOSEqualsExact");
+  return equal == 1;
 }
 
 }  // namespace
@@ -324,21 +373,15 @@ TopologyRepairResult repair_topology(
 
   // Step 2: clean the coverage. The collection takes ownership of clones, so
   // that the inputs remain available for comparison.
-  std::vector<GEOSGeometry *> clones;
+  std::vector<Geom> clones;
   clones.reserve(n);
   for (const auto &g : input) {
-    clones.push_back(
+    clones.emplace_back(
+      ctx,
       ctx.check(GEOSGeom_clone_r(ctx.get(), g.get()), "GEOSGeom_clone"));
   }
-  const Geom collection(
-    ctx,
-    ctx.check(
-      GEOSGeom_createCollection_r(
-        ctx.get(),
-        GEOS_GEOMETRYCOLLECTION,
-        clones.data(),
-        static_cast<unsigned int>(n)),
-      "GEOSGeom_createCollection"));
+  const Geom collection =
+    make_collection(ctx, GEOS_GEOMETRYCOLLECTION, clones);
 
   // Snapping distance. The default equals the one GEOS would choose itself:
   // the diameter of the bounding box of all regions divided by 1e8.
@@ -407,15 +450,18 @@ TopologyRepairResult repair_topology(
   TopologyRepairResult result{{}, true};
   std::vector<std::pair<size_t, GeoDiv>> replacements;
   for (size_t i = 0; i < n; ++i) {
-    const GEOSGeometry *c =
-      GEOSGetGeometryN_r(ctx.get(), cleaned.get(), static_cast<int>(i));
+    const GEOSGeometry *c = ctx.check(
+      GEOSGetGeometryN_r(ctx.get(), cleaned.get(), static_cast<int>(i)),
+      "GEOSGetGeometryN");
     if (!self_intersecting[i] && same_geometry(ctx, c, input[i].get())) {
       continue;
     }
     const double before = shoelace_area(geo_divs[i]);
+    const char empty = GEOSisEmpty_r(ctx.get(), c);
+    ctx.check_status(empty != 2, "GEOSisEmpty");
     double after = 0.0;
-    if (GEOSisEmpty_r(ctx.get(), c) != 1) {
-      GEOSArea_r(ctx.get(), c, &after);
+    if (empty != 1) {
+      ctx.check_status(GEOSArea_r(ctx.get(), c, &after) != 0, "GEOSArea");
     }
     const double change =
       before > 0.0 ? std::abs(after - before) / before : 1.0;
@@ -423,7 +469,7 @@ TopologyRepairResult repair_topology(
     if (!(change <= settings.max_relative_area_change)) {
       result.within_tolerance = false;
     }
-    if (GEOSisEmpty_r(ctx.get(), c) == 1) {
+    if (empty == 1) {
       result.within_tolerance = false;
       continue;
     }
