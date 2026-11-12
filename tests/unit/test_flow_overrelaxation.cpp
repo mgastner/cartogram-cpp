@@ -91,6 +91,22 @@ BOOST_AUTO_TEST_CASE(overshoot_gives_no_overrelaxation)
       0.0) == 0.0);
 }
 
+BOOST_AUTO_TEST_CASE(growing_errors_give_no_overrelaxation)
+{
+  // The integration made every error larger: the next integration ends at
+  // t = 1, even after an over-relaxed integration
+  BOOST_TEST(
+    next_flow_overrelaxation(
+      errors_with_log_ratios(1.0),
+      errors_with_log_ratios(1.2),
+      0.0) == 0.0);
+  BOOST_TEST(
+    next_flow_overrelaxation(
+      errors_with_log_ratios(1.0),
+      errors_with_log_ratios(1.0),
+      0.5) == 0.0);
+}
+
 BOOST_AUTO_TEST_CASE(large_residual_share_is_capped)
 {
   // b = 0.95 is reduced to max_flow_residual_share, and the result to

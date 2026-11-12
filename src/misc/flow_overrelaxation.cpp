@@ -54,6 +54,13 @@ double next_flow_overrelaxation(
   }
   const double beta = sum_ba / sum_bb;
 
+  // If the integration did not reduce the errors, the share left would be 1
+  // or more, and over-relaxing the next integration would amplify the
+  // growth of the errors
+  if (!(beta < 1.0)) {
+    return 0.0;
+  }
+
   // Share that an integration ending at t = 1 would have left
   const double b =
     std::clamp((beta + omega_used) / t_reached, 0.0, max_flow_residual_share);
