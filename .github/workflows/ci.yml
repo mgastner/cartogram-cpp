@@ -7,6 +7,8 @@ on:
   pull_request:
     branches:
       - main
+  # Manual runs on any branch: gh workflow run CI --ref <branch>
+  workflow_dispatch:
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
