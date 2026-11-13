@@ -305,7 +305,7 @@ def main():
     panels = [
         ("e of T0, on T0", final),
         ("e of T = A ∘ T0, on T", final),
-        ("Change e(T) − e(T0), on the input map", initial),
+        ("e(T) − e(T0), on the input map", initial),
     ]
     height = max(width * lat[1] / lat[0] for _, lat in panels)
     total_w = len(panels) * width + (len(panels) + 1) * PANEL_GAP

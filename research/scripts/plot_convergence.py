@@ -141,6 +141,30 @@ def polyline(ax, values, colour, dash):
     )
 
 
+# Markers tell the maps apart where the colours do not, e.g., in grayscale
+MAP_MARKERS = {"USA": "circle", "China": "square", "World": "triangle"}
+MARKER_EVERY = 5
+
+
+def marker(x, y, shape, colour):
+    r = 3.2
+    if shape == "circle":
+        return (f'<circle cx="{x:.1f}" cy="{y:.1f}" r="{r:.1f}" fill="#ffffff" '
+                f'stroke="{colour}" stroke-width="1.4"/>')
+    if shape == "square":
+        return (f'<rect x="{x - r:.1f}" y="{y - r:.1f}" width="{2 * r:.1f}" '
+                f'height="{2 * r:.1f}" fill="{colour}"/>')
+    pts = f"{x:.1f},{y - 1.2 * r:.1f} {x - 1.1 * r:.1f},{y + 0.8 * r:.1f} {x + 1.1 * r:.1f},{y + 0.8 * r:.1f}"
+    return f'<polygon points="{pts}" fill="{colour}"/>'
+
+
+def markers(ax, values, colour, shape):
+    # Every MARKER_EVERY-th iteration, but not at iteration 0, where all
+    # curves start at the same point
+    return [marker(ax.x(i), ax.y(v), shape, colour)
+            for i, v in enumerate(values) if i > 0 and i % MARKER_EVERY == 0]
+
+
 def main():
     global PANEL_W, PANEL_H
     parser = argparse.ArgumentParser(description=__doc__.split("\n")[0])
@@ -185,6 +209,9 @@ def main():
         dash = DASHES.get(max(r["modes"]), "3,2,1,2")
         body.append(polyline(a, r["energy"], colour, dash))
         body.append(polyline(b, r["grad"], colour, dash))
+        shape = MAP_MARKERS.get(r["map"], "circle")
+        body += markers(a, r["energy"], colour, shape)
+        body += markers(b, r["grad"], colour, shape)
 
     # Legend: one entry per run, with a line sample in its colour and style
     x = MARGIN_L
@@ -197,6 +224,7 @@ def main():
             f'<line x1="{x:.1f}" y1="{y:.1f}" x2="{x + 26:.1f}" y2="{y:.1f}" '
             f'stroke="{colours[r["map"]]}" stroke-width="2"{dash_attr}/>'
         )
+        body.append(marker(x + 13, y, MAP_MARKERS.get(r["map"], "circle"), colours[r["map"]]))
         body.append(text(x + 32, y + 3.5, label, 10, "start", INK))
         x += 32 + 7 * len(label) + 18
         if x > width - 140:
