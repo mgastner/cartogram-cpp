@@ -169,6 +169,15 @@ def finest_ratio(entries, key_size, key_err):
     return entries[-2][key_err] / entries[-1][key_err], entries[-1][key_err]
 
 
+def replay_cell(c):
+    # Largest difference between a replay of the step log and the optimized
+    # nodes (positions and Jacobians); 0 means bit for bit
+    if not c["replay_converged"]:
+        return "failed"
+    m = c.get("replay_mismatch_optimization_cloud")
+    return "--" if m is None else ("0" if m == 0 else sci(m))
+
+
 def table_t2(runs, provenance_note):
     rows = []
     for r in runs:
@@ -191,7 +200,7 @@ def table_t2(runs, provenance_note):
             f"{MAP_NAMES[r['map']]} ({modes_label(r)}) & {sci(c['max_det_drift_evaluation_cloud'])}"
             f" & {n_nonpos} & {sci(boundary) if boundary else '0'}"
             f" & {sci(fd['richardson_max_rel_error'])}"
-            f" & {'yes' if c['replay_converged'] else 'no'}"
+            f" & {replay_cell(c)}"
             f" & {sig(ratio, 3) if ratio else '--'} ({finest if finest else '--'}) & {sci(area_err)} & {non_simple} \\\\"
         )
     return "\n".join(
@@ -200,7 +209,9 @@ def table_t2(runs, provenance_note):
             "\\centering",
             "\\caption{Verification of every run: largest drift of $\\det DT$ from $\\det DT_0$ on the evaluation cloud, "
             "number of nodes with $\\det DT \\le 0$, largest motion of the boundary, largest relative error of the "
-            "directional derivative of the energy (Richardson extrapolation), convergence of the replay, ratio of the "
+            "propagated Jacobian $DT$ against finite differences of tracer positions (Richardson extrapolation, "
+            "1001 nodes), largest difference between a replay of the step log and the optimized nodes "
+            "(0: bit for bit), ratio of the "
             "largest cell-area errors at the two finest mesh refinements, with the number of cells along the longer side "
             "of the finest one in parentheses (4 for second-order convergence), largest "
             "relative area error of a corrected region at the finest polygon resolution, and number of rings that are "
@@ -208,9 +219,9 @@ def table_t2(runs, provenance_note):
             "\\label{tab:verification}",
             "\\footnotesize",
             "\\setlength{\\tabcolsep}{3.5pt}",
-            "\\begin{tabular}{lrrrrlrrr}",
+            "\\begin{tabular}{lrrrrrrrr}",
             "\\toprule",
-            "Run & det drift & $\\det \\le 0$ & boundary & gradient & replay & mesh ratio & area error & non-simple \\\\",
+            "Run & det drift & $\\det \\le 0$ & boundary & $DT$ check & replay & mesh ratio & area error & non-simple \\\\",
             "\\midrule",
             *rows,
             "\\bottomrule",
@@ -264,10 +275,11 @@ def table_t3(runs, provenance_note, timing_sets=()):
             "\\begin{table*}",
             "\\centering",
             "\\caption{Cost and mode dependence: lattice of $T_0$, number of modes, accepted steps, wall times in seconds "
-            "(integration of $T_0$, optimization, replay on the evaluation cloud, whole run with its range in "
+            "(integration of $T_0$, optimization, application of the correction to the evaluation cloud and "
+            "the polygons together with the area and mesh checks, whole run with its range in "
             "parentheses), and the change of $E_{1/2}$ "
             f"over the rectangle and of $E_0$ on land. Times are medians of {'/'.join(map(str, sorted(n_samples)))} runs "
-            f"with {'/'.join(map(str, sorted(threads)))} threads. "
+            f"with {'/'.join(map(str, sorted(threads)))} threads; the other columns come from the runs named below. "
             f"{provenance_note}}}",
             "\\label{tab:cost}",
             "\\footnotesize",

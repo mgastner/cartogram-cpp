@@ -4,7 +4,8 @@
 Reads the <inset>_conformality_opt.json file of each RUN_DIR and writes an
 SVG with two panels that share the iteration axis:
 
-  1. E0 relative to its value for T0 (optimization cloud),
+  1. the optimizer's objective E_alpha relative to its value for T0
+     (optimization cloud; alpha from the runs' settings, which must agree),
   2. the gradient norm sqrt(R / R0) on a logarithmic axis.
 
 Colour identifies the map (fixed order: USA, China, World, then others);
@@ -62,6 +63,7 @@ def load(run_dir):
     grad = [math.sqrt(h["R"] / r0) for h in history]
     return {
         "map": map_name(files[0].stem),
+        "alpha": r["settings"]["alpha"],
         "modes": r["modes"],
         "energy": [e / energy[0] for e in energy],
         "grad": grad,
@@ -198,7 +200,14 @@ def main():
 
     body = []
     eticks = [round(elo + k * 0.1, 10) for k in range(int(round((1 - elo) / 0.1)) + 1)]
-    body += frame(a, "E0 relative to T0", "E0 / E0(T0)", eticks, lambda t: f"{t:.1f}")
+    # The history records the optimizer's objective E_alpha, not E0
+    alphas = {r["alpha"] for r in runs}
+    if len(alphas) != 1:
+        sys.exit(f"runs with different alpha: {sorted(alphas)}")
+    alpha = alphas.pop()
+    sub = {0.0: "0", 0.5: "1/2", 1.0: "1"}.get(alpha, f"{alpha:g}")
+    e_alpha = f"E<tspan dy='3' font-size='8'>{sub}</tspan><tspan dy='-3'></tspan>"
+    body += frame(a, f"{e_alpha} relative to T0", f"{e_alpha} / {e_alpha}(T0)", eticks, lambda t: f"{t:.1f}")
     gticks = [10.0 ** k for k in range(int(math.log10(glo)), 1)]
     body += frame(
         b, "Gradient norm", "√(R / R0)", gticks,
