@@ -224,6 +224,23 @@ jobs:
       #   run: |
       #     ctest --test-dir build -L fuzzer --verbose
 
+      # The static binaries of the Linux release builds can be downloaded from
+      # the run, for example to attach them to a release. They are compiled
+      # with -march=native, so they may need the instruction set of the CPU of
+      # the runner. The binary is packed with tar because upload-artifact does
+      # not keep the executable bit. The upload runs only if the tests passed.
+      - name: Pack binary
+        if: runner.os == 'Linux' && matrix.build_type == 'Release'
+        run: tar -czf cartogram-${{ matrix.name }}.tar.gz -C build cartogram
+
+      - name: Upload binary
+        if: runner.os == 'Linux' && matrix.build_type == 'Release'
+        uses: actions/upload-artifact@v7
+        with:
+          name: cartogram-${{ matrix.name }}
+          path: cartogram-${{ matrix.name }}.tar.gz
+          if-no-files-found: error
+
   build-and-test-sanitize:
     name: "Build and test (${{ matrix.san }})"
     runs-on: ubuntu-26.04
