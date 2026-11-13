@@ -54,6 +54,24 @@ static inline EdgeKind classify_edge(
   return EdgeKind::OTHER;
 }
 
+// Exact tests for the geometry of a single polygon edge. The tolerance of
+// almost_equal(), dbl_resolution, is meant for coordinates. Applied to the
+// squared length of an edge, to the components of its direction, or to the
+// denominators of the intersection formulas, it misjudged edges shorter
+// than about 1e-4 lattice units: all their densification points got the
+// parameter t = 0 and lost their order, and an edge shorter than
+// dbl_resolution in x or y counted as exactly vertical or horizontal, so
+// that it received both ends of a nearby triangle edge.
+static bool is_exactly_zero(const double v)
+{
+  return std::fpclassify(v) == FP_ZERO;
+}
+
+static bool are_exactly_equal(const double a, const double b)
+{
+  return !(a < b) && !(b < a);
+}
+
 static std::vector<Point> densification_points_with_edge_tree(
   const Point &pt1,
   const Point &pt2,
@@ -90,7 +108,7 @@ static std::vector<Point> densification_points_with_edge_tree(
   const double L2 = dax * dax + day * day;
 
   auto t_of = [&](const Point &p) -> double {
-    if (almost_equal(L2, 0.0))  // pt1 == pt2
+    if (is_exactly_zero(L2))  // pt1 == pt2
       return 0.0;
     return ((p.x() - ax) * dax + (p.y() - ay) * day) / L2;
   };
@@ -136,9 +154,9 @@ static std::vector<Point> densification_points_with_edge_tree(
     case EdgeKind::H: {
       const double y0 = ey0;  // == ey1
       const double dy = day;  // query dy
-      if (almost_equal(dy, 0.0)) {
+      if (is_exactly_zero(dy)) {
         // Query horizontal: either collinear or disjoint
-        if (almost_equal(ay, y0)) {
+        if (are_exactly_equal(ay, y0)) {
           // Collinear overlap: push both endpoints of edge (clipped to [0,1])
           const Point p0(ex0, y0), p1(ex1, y0);
           const double t0 = t_of(p0), t1 = t_of(p1);
@@ -164,9 +182,9 @@ static std::vector<Point> densification_points_with_edge_tree(
     case EdgeKind::V: {
       const double x0 = ex0;  // == ex1
       const double dx = dax;  // query dx
-      if (almost_equal(dx, 0.0)) {
+      if (is_exactly_zero(dx)) {
         // Query vertical: collinear or disjoint
-        if (almost_equal(ax, x0)) {
+        if (are_exactly_equal(ax, x0)) {
           const Point p0(x0, ey0), p1(x0, ey1);
           const double t0 = t_of(p0), t1 = t_of(p1);
           if (in_closed01(t0))
@@ -191,10 +209,10 @@ static std::vector<Point> densification_points_with_edge_tree(
       // Edge: y - ey0 = +(x - ex0)  =>  y - x = c
       const double c = ey0 - ex0;
       const double denom = (day - dax);  // (qy - qx)
-      if (almost_equal(denom, 0.0)) {
+      if (is_exactly_zero(denom)) {
         // Query also slope +1; collinear iff same c
         const double c_q = (ay - ax);
-        if (almost_equal(c_q, c)) {
+        if (are_exactly_equal(c_q, c)) {
           const Point p0(ex0, ey0), p1(ex1, ey1);
           const double t0 = t_of(p0), t1 = t_of(p1);
           if (in_closed01(t0))
@@ -218,9 +236,9 @@ static std::vector<Point> densification_points_with_edge_tree(
       // Edge: y - ey0 = -(x - ex0)  =>  y + x = c
       const double c = ey0 + ex0;
       const double denom = (day + dax);  // (qy + qx)
-      if (almost_equal(denom, 0.0)) {
+      if (is_exactly_zero(denom)) {
         const double c_q = (ay + ax);
-        if (almost_equal(c_q, c)) {
+        if (are_exactly_equal(c_q, c)) {
           const Point p0(ex0, ey0), p1(ex1, ey1);
           const double t0 = t_of(p0), t1 = t_of(p1);
           if (in_closed01(t0))
