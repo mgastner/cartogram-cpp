@@ -120,6 +120,10 @@ def main():
     parser.add_argument(
         "--width", type=float, default=520, help="panel width in pixels"
     )
+    parser.add_argument(
+        "--columns", type=int, default=2,
+        help="panels per row (4 draws all panels in one row)",
+    )
     args = parser.parse_args()
 
     data = json.loads(args.plot_json.read_text())
@@ -139,7 +143,7 @@ def main():
 
     width = args.width
     heights = [width * lat[1] / lat[0] for _, lat, _ in panels_spec]
-    columns = 2
+    columns = max(1, args.columns)
     rows = (len(panels_spec) + columns - 1) // columns
     row_heights = [
         max(heights[r * columns : (r + 1) * columns]) for r in range(rows)
