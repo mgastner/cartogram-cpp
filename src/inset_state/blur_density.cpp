@@ -18,13 +18,11 @@ void InsetState::blur_density()
   const double inv_lx2 = 1.0 / (double(lx_) * double(lx_));
   const double inv_ly2 = 1.0 / (double(ly_) * double(ly_));
 
-  const double norm = 1.0 / (4.0 * double(lx_) * double(ly_));
-
   std::vector<double> w_x(lx_), w_y(ly_);
 
   for (unsigned int i = 0; i < lx_; ++i) {
     const double i2 = double(i) * double(i);
-    w_x[i] = std::exp(prefactor * (i2 * inv_lx2)) * norm;
+    w_x[i] = std::exp(prefactor * (i2 * inv_lx2));
   }
 
   for (unsigned int j = 0; j < ly_; ++j) {

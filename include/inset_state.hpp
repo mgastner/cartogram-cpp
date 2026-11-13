@@ -152,7 +152,8 @@ public:
   void destroy_fftw_plans_for_flux();
   void destroy_fftw_plans_for_rho();
   void execute_fftw_bwd_plan() const;
-  void execute_fftw_fwd_plan() const;
+  // Not const, because it normalizes the coefficients in rho_ft_
+  void execute_fftw_fwd_plan();
   void execute_fftw_plans_for_flux();
 
   // Write CSV of time and max_area_error per integration
