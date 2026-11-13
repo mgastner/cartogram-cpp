@@ -7,26 +7,31 @@ on:
   pull_request:
     branches:
       - main
+  # Manual runs on any branch: gh workflow run CI --ref <branch>
+  workflow_dispatch:
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
-  # TODO: We might want to later fix the version of clang-format so that future checks
-  # don't mysteriously fail when a new version is released.
   style-check:
     name: Style check (clang-format)
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-26.04
+    env:
+      # Pinned so that a new release of clang-format cannot make the check fail.
+      # The same version can be installed locally with
+      # pip install clang-format==<version>.
+      CLANG_FORMAT_VERSION: 21.1.8
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - name: Install clang-format
         run: |
-          sudo apt-get update
-          sudo apt-get install -y clang-format
-          echo "CLANG_FORMAT=clang-format" >> $GITHUB_ENV
+          python3 -m venv .venv
+          .venv/bin/pip install "clang-format==${CLANG_FORMAT_VERSION}"
+          echo "CLANG_FORMAT=$PWD/.venv/bin/clang-format" >> $GITHUB_ENV
 
       - name: Check formatting
         run: |
@@ -53,16 +58,16 @@ jobs:
           if [ ${#bad_files[@]} -ne 0 ]; then
             file_list=$(printf '%s\n' "${bad_files[@]}")
             file_list_escaped=${file_list//$'\n'/%0A}
-            echo "::error::clang-format issues detected in the following files:%0A${file_list_escaped}%0ARun 'clang-format -i' to fix."
+            echo "::error::clang-format issues detected in the following files:%0A${file_list_escaped}%0ARun 'clang-format -i' with clang-format ${CLANG_FORMAT_VERSION} to fix."
             exit 1
           fi
 
   docs-check:
     name: Docs check
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-26.04
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - name: Install tools
         run: |
@@ -85,8 +90,11 @@ jobs:
         run: |
           markdownlint-cli2 README.md
 
-  build:
-    name: "Build (${{ matrix.name }})"
+  # Each job tests the binaries on the runner that built them. CMakeLists.txt
+  # compiles with -march=native, so a binary may use instructions, such as
+  # AVX-512, that the CPU of another runner lacks.
+  build-and-test:
+    name: "Build and test (${{ matrix.name }})"
     runs-on: ${{ matrix.os }}
     needs: [style-check, docs-check]
     strategy:
@@ -94,59 +102,51 @@ jobs:
       matrix:
         include:
           # Linux
-          - os: ubuntu-latest
+          - os: ubuntu-26.04
             compiler: gcc
-            version: 13
+            version: 15
             build_type: Release
             name: ubuntu-release-gcc
-          - os: ubuntu-latest
+          - os: ubuntu-26.04
             compiler: clang
-            version: 16
+            version: 22
             build_type: Release
             name: ubuntu-release-clang
-          - os: ubuntu-latest
+          - os: ubuntu-26.04
             compiler: gcc
-            version: 13
+            version: 15
             build_type: Debug
             name: ubuntu-debug-gcc
-          - os: ubuntu-latest
+          - os: ubuntu-26.04
             compiler: clang
-            version: 16
+            version: 22
             build_type: Debug
             name: ubuntu-debug-clang
           # Linux arm
-          - os: ubuntu-24.04-arm
+          - os: ubuntu-26.04-arm
             compiler: clang
-            version: 16
+            version: 22
             build_type: Release
             name: ubuntu-arm64-release-clang
-          - os: ubuntu-24.04-arm
+          - os: ubuntu-26.04-arm
             compiler: clang
-            version: 16
+            version: 22
             build_type: Debug
             name: ubuntu-arm64-debug-clang
           # macOS
-          - os: macos-14
+          - os: macos-26
             compiler: apple-clang
             version: ""
             build_type: Release
             name: macos-release-appleclang
-          - os: macos-14
+          - os: macos-26
             compiler: apple-clang
             version: ""
             build_type: Debug
             name: macos-debug-appleclang
 
     steps:
-      - uses: actions/checkout@v4
-
-      - name: Setup Python & Conan
-        run: |
-          python3 -m venv .venv
-          source .venv/bin/activate
-          pip install -U pip wheel conan==2.16.1 cmake==3.30.0
-          conan remote update conancenter --url=https://center2.conan.io
-          conan profile detect
+      - uses: actions/checkout@v7
 
       - name: Install compiler (Linux only)
         if: runner.os == 'Linux'
@@ -161,8 +161,18 @@ jobs:
             echo "CC=clang-${{ matrix.version }}"   >> $GITHUB_ENV
             echo "CXX=clang++-${{ matrix.version }}" >> $GITHUB_ENV
           fi
-      # We only perform static builds so the output can be exported as an artifact
-      # for testing on a clean system without installing dependencies.
+
+      - name: Setup Python & Conan
+        run: |
+          python3 -m venv .venv
+          source .venv/bin/activate
+          pip install -U -r requirements.txt
+          conan remote update conancenter --url=https://center2.conan.io
+          conan profile detect
+          # The CGAL recipe requires mpfr 4.2.1, whose configure script fails with
+          # clang on Ubuntu 26.04 (x86_64). Version 4.2.2 fixes the script.
+          printf '\n[replace_requires]\nmpfr/4.2.1: mpfr/4.2.2\n' >> "$(conan profile path default)"
+
       - name: Download Dependencies
         run: |
           source .venv/bin/activate
@@ -175,6 +185,7 @@ jobs:
             -o "*:fPIC=False"
 
       - name: Configure & build
+        id: build
         run: |
           source .venv/bin/activate
 
@@ -195,18 +206,44 @@ jobs:
             -DCMAKE_EXE_LINKER_FLAGS="${EXE_FLAGS}"
           cmake --build build -j$(nproc || sysctl -n hw.ncpu)
 
-      - name: Package build folder
-        run: tar -czf build-${{ matrix.name }}.tar.gz build
+      - name: Unit tests
+        run: |
+          ctest --test-dir build -L unit --output-on-failure
 
-      - name: Upload artefact
-        uses: actions/upload-artifact@v4
+      # The stress tests also run if the unit tests fail, so that each run
+      # reports the results of both.
+      - name: Stress tests
+        if: ${{ !cancelled() && steps.build.outcome == 'success' }}
+        run: |
+          ctest --test-dir build -L stress --output-on-failure
+
+      # Disabled. The fuzzer tests ran on ubuntu-release-gcc,
+      # ubuntu-release-clang, and macos-release-appleclang.
+      # - name: Fuzzer tests
+      #   if: ${{ !cancelled() && steps.build.outcome == 'success' && matrix.build_type == 'Release' && matrix.os != 'ubuntu-26.04-arm' }}
+      #   run: |
+      #     ctest --test-dir build -L fuzzer --verbose
+
+      # The static binaries of the Linux release builds can be downloaded from
+      # the run, for example to attach them to a release. They are compiled
+      # with -march=native, so they may need the instruction set of the CPU of
+      # the runner. The binary is packed with tar because upload-artifact does
+      # not keep the executable bit. The upload runs only if the tests passed.
+      - name: Pack binary
+        if: runner.os == 'Linux' && matrix.build_type == 'Release'
+        run: tar -czf cartogram-${{ matrix.name }}.tar.gz -C build cartogram
+
+      - name: Upload binary
+        if: runner.os == 'Linux' && matrix.build_type == 'Release'
+        uses: actions/upload-artifact@v7
         with:
-          name: ${{ matrix.name }}
-          path: build-${{ matrix.name }}.tar.gz
+          name: cartogram-${{ matrix.name }}
+          path: cartogram-${{ matrix.name }}.tar.gz
+          if-no-files-found: error
 
-  build-sanitize:
-    name: "Build (${{ matrix.san }})"
-    runs-on: ubuntu-latest
+  build-and-test-sanitize:
+    name: "Build and test (${{ matrix.san }})"
+    runs-on: ubuntu-26.04
     needs: [style-check, docs-check]
 
     strategy:
@@ -224,24 +261,27 @@ jobs:
             flag: thread
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
+
+      # We only run sanitizers on Linux with Clang, since GCC's support is less mature
+      # and sanitizer support on macOS is incomplete.
+      - name: Install clang-22
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y clang-22 lld-22
+          echo "CC=clang-22"    >> $GITHUB_ENV
+          echo "CXX=clang++-22" >> $GITHUB_ENV
 
       - name: Setup Python & Conan
         run: |
           python3 -m venv .venv
           source .venv/bin/activate
-          pip install -U pip wheel conan==2.16.1 cmake==3.30.0
+          pip install -U -r requirements.txt
           conan remote update conancenter --url=https://center2.conan.io
           conan profile detect
-
-      # We only run sanitizers on Linux with Clang, since GCC's support is less mature
-      # and sanitizer support on macOS is incomplete.
-      - name: Install clang-16
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y clang-16 lld-16
-          echo "CC=clang-16"    >> $GITHUB_ENV
-          echo "CXX=clang++-16" >> $GITHUB_ENV
+          # The CGAL recipe requires mpfr 4.2.1, whose configure script fails with
+          # clang on Ubuntu 26.04 (x86_64). Version 4.2.2 fixes the script.
+          printf '\n[replace_requires]\nmpfr/4.2.1: mpfr/4.2.2\n' >> "$(conan profile path default)"
 
       - name: Download dependencies
         run: |
@@ -254,6 +294,7 @@ jobs:
             -o "*:shared=False"
 
       - name: Configure & build
+        id: build
         run: |
           source .venv/bin/activate
           cmake -S . -B build \
@@ -265,96 +306,31 @@ jobs:
             -DCMAKE_EXE_LINKER_FLAGS="-fsanitize=${{ matrix.flag }}"
           cmake --build build -j$(nproc)
 
-      - name: Package build folder
-        run: tar -czf build-${{ matrix.san }}.tar.gz build
-
-      - name: Upload artefact
-        uses: actions/upload-artifact@v4
-        with:
-          name: ${{ matrix.san }}
-          path: build-${{ matrix.san }}.tar.gz
-
-  # ─────────────────────────── Unit Tests ───────────────────────────
-  unit-tests:
-    name: "Unit tests (${{ matrix.target }})"
-    needs: [build, build-sanitize]
-    strategy:
-      fail-fast: false
-      matrix:
-        include:
-          - { target: ubuntu-release-gcc,         os: ubuntu-latest }
-          - { target: ubuntu-release-clang,       os: ubuntu-latest }
-          - { target: ubuntu-debug-gcc,           os: ubuntu-latest }
-          - { target: ubuntu-debug-clang,         os: ubuntu-latest }
-          - { target: ubuntu-arm64-release-clang, os: ubuntu-24.04-arm }
-          - { target: ubuntu-arm64-debug-clang,   os: ubuntu-24.04-arm }
-          - { target: macos-release-appleclang,   os: macos-14 }
-          - { target: macos-debug-appleclang,     os: macos-14 }
-          - { target: asan,                       os: ubuntu-latest }
-          - { target: ubsan,                      os: ubuntu-latest }
-          - { target: tsan,                       os: ubuntu-latest }
-    runs-on: ${{ matrix.os }}
-
-    steps:
-      - uses: actions/download-artifact@v4
-        with:
-          name: ${{ matrix.target }}
-
-      - name: Unpack build folder
-        run: tar -xzf build-${{ matrix.target }}.tar.gz
-
       - name: Unit tests
         run: |
           ctest --test-dir build -L unit --output-on-failure
 
-  # ────────────────────────── Stress Tests ──────────────────────────
-  stress-tests:
-    name: "Stress tests (${{ matrix.target }})"
-    needs: [build, build-sanitize]
-    strategy:
-      fail-fast: false
-      matrix:
-        include:
-          - { target: ubuntu-release-gcc,         os: ubuntu-latest }
-          - { target: ubuntu-release-clang,       os: ubuntu-latest }
-          - { target: ubuntu-debug-gcc,           os: ubuntu-latest }
-          - { target: ubuntu-debug-clang,         os: ubuntu-latest }
-          - { target: ubuntu-arm64-release-clang, os: ubuntu-24.04-arm }
-          - { target: ubuntu-arm64-debug-clang,   os: ubuntu-24.04-arm }
-          - { target: macos-release-appleclang,   os: macos-14 }
-          - { target: macos-debug-appleclang,     os: macos-14 }
-          - { target: asan,                       os: ubuntu-latest }
-          - { target: ubsan,                      os: ubuntu-latest }
-          - { target: tsan,                       os: ubuntu-latest }
-    runs-on: ${{ matrix.os }}
-
-    steps:
-      - uses: actions/checkout@v4
-
-      - uses: actions/download-artifact@v4
-        with:
-          name: ${{ matrix.target }}
-
-      - name: Unpack build folder
-        run: tar -xzf build-${{ matrix.target }}.tar.gz
-
       - name: Stress tests
+        if: ${{ !cancelled() && steps.build.outcome == 'success' }}
         run: |
           ctest --test-dir build -L stress --output-on-failure
 
   # ──────────────────── Performance comparison ────────────────────
+  # Both binaries are built on the runner that benchmarks them, and with the
+  # same options. CMakeLists.txt compiles with -march=native, so a binary built
+  # on another runner may use instructions that the CPU of this runner lacks.
   perf-tests:
     if: github.event_name == 'pull_request'
     name: Performance comparison (main, ${{ matrix.name }})
-    needs: build
+    needs: [style-check, docs-check]
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
       matrix:
         include:
-          - os: ubuntu-latest
+          - os: ubuntu-26.04
             compiler: clang
-            version: 16
+            version: 22
             build_type: Release
             name: ubuntu-release-clang
 
@@ -362,23 +338,12 @@ jobs:
       contents: read
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           fetch-depth: 1
 
-      # PR artefact from the build job
-      - uses: actions/download-artifact@v4
-        with:
-          name: ${{ matrix.name }}
-
-      - name: Unpack PR artefact
-        run: |
-          mkdir -p build-pr
-          tar -xzf build-${{ matrix.name }}.tar.gz -C build-pr
-          chmod +x build-pr/build/cartogram
-
       # Only designed to work on Linux
-      - name: Setup Python & Conan
+      - name: Install compiler & hyperfine
         run: |
           sudo apt-get update
           sudo apt-get install -y \
@@ -387,35 +352,48 @@ jobs:
           echo "CC=${{ matrix.compiler }}-${{ matrix.version }}"   >> $GITHUB_ENV
           echo "CXX=${{ matrix.compiler }}++-${{ matrix.version }}" >> $GITHUB_ENV
 
-      - name: Build baseline (origin/main)
+      - name: Setup Python & Conan
+        run: |
+          python3 -m venv .venv
+          source .venv/bin/activate
+          pip install -U -r requirements.txt
+          conan remote update conancenter --url=https://center2.conan.io
+          conan profile detect
+          # The CGAL recipe requires mpfr 4.2.1, whose configure script fails with
+          # clang on Ubuntu 26.04 (x86_64). Version 4.2.2 fixes the script.
+          printf '\n[replace_requires]\nmpfr/4.2.1: mpfr/4.2.2\n' >> "$(conan profile path default)"
+
+      - name: Check out baseline (origin/main)
         run: |
           git fetch --depth 1 --no-tags origin main
           git worktree add ../baseline origin/main
-          pushd ../baseline
-          python3 -m venv .venv
+
+      # The second build reuses the Conan packages of the first if the two
+      # source trees require the same versions.
+      - name: Build PR & baseline
+        run: |
           source .venv/bin/activate
-          pip install --upgrade pip wheel conan==2.16.1 cmake==3.30.0
-          conan remote update conancenter --url=https://center2.conan.io
-          conan profile detect
-          conan install . --output-folder build \
-                          --build missing \
-                          -s build_type=${{ matrix.build_type }} \
-                          -s compiler.cppstd=20 \
-                          -o "*:shared=False"
-          cmake -S . -B build \
-                -DCMAKE_TOOLCHAIN_FILE=build/build/${{ matrix.build_type }}/generators/conan_toolchain.cmake \
-                -DCMAKE_BUILD_TYPE=${{ matrix.build_type }} \
-                -DBUILD_SHARED_LIBS=OFF
-          cmake --build build -j"$(nproc)"
-          popd
+          for src in "$GITHUB_WORKSPACE" "$GITHUB_WORKSPACE/../baseline"; do
+            pushd "$src"
+            conan install . --output-folder build \
+                            --build missing \
+                            -s build_type=${{ matrix.build_type }} \
+                            -s compiler.cppstd=20 \
+                            -o "*:shared=False"
+            cmake -S . -B build \
+                  -DCMAKE_TOOLCHAIN_FILE=build/build/${{ matrix.build_type }}/generators/conan_toolchain.cmake \
+                  -DCMAKE_BUILD_TYPE=${{ matrix.build_type }} \
+                  -DBUILD_SHARED_LIBS=OFF
+            cmake --build build --target cartogram -j"$(nproc)"
+            popd
+          done
 
       # Benchmarks
       - name: Benchmark sample_data maps
         run: |
-          python3 -m venv .venv
           source .venv/bin/activate
           bash .github/scripts/benchmark_maps.sh \
-            build-pr/build/cartogram \
+            build/cartogram \
             ../baseline/build/cartogram \
             results.json
 
@@ -433,41 +411,9 @@ jobs:
 
       # Upload report for the pr-comment.yml workflow
       - name: Upload performance report & PR number
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: perf-comment # If this name changes, update the pr-comment.yml workflow too
           path: |
             comment.md
             pr_number.txt
-
-  # ─────────────────────────── Fuzzer Tests ─────────────────────────
-  # fuzzer-tests:
-  #   needs: [build]
-  #   strategy:
-  #     fail-fast: false
-  #     matrix:
-  #       target:
-  #         - ubuntu-release-gcc
-  #         - ubuntu-release-clang
-  #         - macos-release-appleclang
-  #   runs-on: "${{ contains(matrix.target, 'mac') && 'macos-14' || 'ubuntu-latest' }}"
-
-  #   steps:
-  #     - uses: actions/checkout@v4
-
-  #     - uses: actions/download-artifact@v4
-  #       with:
-  #         name: ${{ matrix.target }}
-
-  #     - name: Install Python in venv
-  #       run: |
-  #         python3 -m venv .venv
-  #         source .venv/bin/activate
-  #         pip install -U pip
-
-  #     - name: Unpack build folder
-  #       run: tar -xzf build-${{ matrix.target }}.tar.gz
-
-  #     - name: Fuzzer tests
-  #       run: |
-  #         ctest --test-dir build -L fuzzer --verbose
