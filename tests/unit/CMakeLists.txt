@@ -34,3 +34,7 @@ endforeach()
 # build with ThreadSanitizer, it takes about 0.5 s on an Apple M2, and up to
 # 1 s on the first run.
 set_tests_properties(test_flatten_density PROPERTIES TIMEOUT 20)
+
+# test_flatten_density_periodic runs one integration on a 64 x 64 grid, like
+# test_flatten_density
+set_tests_properties(test_flatten_density_periodic PROPERTIES TIMEOUT 20)
