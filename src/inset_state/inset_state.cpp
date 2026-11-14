@@ -154,8 +154,12 @@ void InsetState::execute_fftw_fwd_plan()
   // transform of the forward transform multiplies each value by 4 lx ly.
   // After this normalization, rho_ft_(0, 0) is the mean density, which
   // flatten_density() uses, and the backward transform restores rho_init_
-  // exactly, whatever the blur width.
-  const double norm = 1.0 / (4.0 * double(lx_) * double(ly_));
+  // exactly, whatever the blur width. With periodic x, the x-axis uses
+  // FFTW's R2HC and HC2R transforms instead. Their round trip multiplies by
+  // lx instead of 2 lx, so the normalization factor becomes 1 / (2 lx ly).
+  const double norm = args_.periodic_x
+                        ? 1.0 / (2.0 * double(lx_) * double(ly_))
+                        : 1.0 / (4.0 * double(lx_) * double(ly_));
   for (unsigned int i = 0; i < lx_; ++i) {
     for (unsigned int j = 0; j < ly_; ++j) {
       rho_ft_(i, j) *= norm;
@@ -462,12 +466,18 @@ unsigned int InsetState::ly() const
 
 void InsetState::make_fftw_plans_for_rho()
 {
+  // With periodic x, the x-axis uses a real discrete Fourier transform in
+  // FFTW's halfcomplex format: for 0 < k < lx / 2, element k holds the real
+  // part and element lx - k the imaginary part of frequency k. Element 0
+  // holds frequency 0, and element lx / 2 holds the real Nyquist frequency.
+  const fftw_r2r_kind fwd_kind_x = args_.periodic_x ? FFTW_R2HC : FFTW_REDFT10;
+  const fftw_r2r_kind bwd_kind_x = args_.periodic_x ? FFTW_HC2R : FFTW_REDFT01;
   fwd_plan_for_rho_ = fftw_plan_r2r_2d(
     static_cast<int>(lx_),  // fftw_plan_...() uses signed integers.
     static_cast<int>(ly_),
     rho_init_.as_1d_array(),
     rho_ft_.as_1d_array(),
-    FFTW_REDFT10,
+    fwd_kind_x,
     FFTW_REDFT10,
     FFTW_ESTIMATE);
   bwd_plan_for_rho_ = fftw_plan_r2r_2d(
@@ -475,13 +485,18 @@ void InsetState::make_fftw_plans_for_rho()
     static_cast<int>(ly_),
     rho_ft_.as_1d_array(),
     rho_init_.as_1d_array(),
-    FFTW_REDFT01,
+    bwd_kind_x,
     FFTW_REDFT01,
     FFTW_ESTIMATE);
 }
 
 void InsetState::make_fftw_plans_for_flux()
 {
+  if (args_.periodic_x) {
+    grid_fluxx_init_.make_fftw_plan(FFTW_HC2R, FFTW_REDFT01);
+    grid_fluxy_init_.make_fftw_plan(FFTW_HC2R, FFTW_RODFT01);
+    return;
+  }
   grid_fluxx_init_.make_fftw_plan(FFTW_RODFT01, FFTW_REDFT01);
   grid_fluxy_init_.make_fftw_plan(FFTW_REDFT01, FFTW_RODFT01);
 }
@@ -505,6 +520,11 @@ struct max_area_error_info InsetState::max_area_error() const
     // ++count;
   }
   return {value, worst_gd};
+}
+
+bool InsetState::periodic_x() const
+{
+  return args_.periodic_x;
 }
 
 unsigned int InsetState::n_finished_integrations() const

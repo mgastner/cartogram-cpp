@@ -148,6 +148,11 @@ public:
   void create_contiguity_graph();
   bool create_delaunay_t();
   bool converged() const;
+
+  // Compute the flux from rho_ft_ and store it in grid_fluxx_init_ and
+  // grid_fluxy_init_
+  void compute_flux();
+  void compute_flux_periodic_x();
   void densify_geo_divs_using_delaunay_t();
   void destroy_fftw_plans_for_flux();
   void destroy_fftw_plans_for_rho();
@@ -215,6 +220,7 @@ public:
     bool equal_area = false,
     bool normalize_original = false);
   void normalize_target_area();
+  bool periodic_x() const;
   std::string pos() const;
 
   void preprocess();

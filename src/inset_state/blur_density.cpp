@@ -1,5 +1,6 @@
 #include "constants.hpp"
 #include "inset_state.hpp"
+#include <algorithm>
 #include <cmath>
 #include <vector>
 
@@ -20,9 +21,20 @@ void InsetState::blur_density()
 
   std::vector<double> w_x(lx_), w_y(ly_);
 
-  for (unsigned int i = 0; i < lx_; ++i) {
-    const double i2 = double(i) * double(i);
-    w_x[i] = std::exp(prefactor * (i2 * inv_lx2));
+  if (args_.periodic_x) {
+
+    // Element i of the halfcomplex array holds frequency k = min(i, lx - i)
+    // of exp(2 pi i k x / lx), whose wave number 2 pi k / lx is the wave
+    // number of cosine frequency 2 k
+    for (unsigned int i = 0; i < lx_; ++i) {
+      const double two_k = 2.0 * double(std::min(i, lx_ - i));
+      w_x[i] = std::exp(prefactor * (two_k * two_k * inv_lx2));
+    }
+  } else {
+    for (unsigned int i = 0; i < lx_; ++i) {
+      const double i2 = double(i) * double(i);
+      w_x[i] = std::exp(prefactor * (i2 * inv_lx2));
+    }
   }
 
   for (unsigned int j = 0; j < ly_; ++j) {

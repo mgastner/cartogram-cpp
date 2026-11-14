@@ -47,6 +47,12 @@ Arguments parse_arguments(const int argc, const char *argv[])
     .help("Boolean: is input a world map in longitude-latitude format?")
     .default_value(false)
     .implicit_value(true);
+  arguments.add_argument("--periodic_x")
+    .help(
+      "Boolean: treat the left and right sides of a world map as the "
+      "antimeridian, so that regions can flow across it (requires --world)")
+    .default_value(false)
+    .implicit_value(true);
   arguments.add_argument("-p", "--plot_polygons")
     .help("Boolean: Plot images of input and output cartogram")
     .default_value(false)
@@ -201,6 +207,12 @@ Arguments parse_arguments(const int argc, const char *argv[])
 
   // Set boolean values
   args.world = arguments.get<bool>("--world");
+  args.periodic_x = arguments.get<bool>("--periodic_x");
+  if (args.periodic_x && !args.world) {
+    std::cerr << "ERROR: The option --periodic_x requires --world."
+              << std::endl;
+    std::exit(EXIT_FAILURE);
+  }
   args.disable_simplification_densification =
     arguments.get<bool>("--disable_simplify_and_densify");
   args.remove_tiny_polygons = arguments.get<bool>("--remove_tiny_polygons");

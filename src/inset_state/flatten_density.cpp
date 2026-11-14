@@ -29,10 +29,21 @@ static bool all_map_points_are_in_domain(
   const std::vector<Point> &projection,
   const std::vector<Vector> &velocity,
   const unsigned int lx,
-  const unsigned int ly)
+  const unsigned int ly,
+  const bool periodic_x)
 {
   // Return false if and only if there exists a point that would be outside
-  // [0, lx] x [0, ly]
+  // [0, lx] x [0, ly]. With periodic x, every x is inside the domain, so only
+  // y is checked.
+  if (periodic_x) {
+    for (size_t i = 0; i < projection.size(); i++) {
+      const double y = projection[i].y() + 0.5 * delta_t * velocity[i].y();
+      if (y < 0.0 || y > ly) {
+        return false;
+      }
+    }
+    return true;
+  }
   for (size_t i = 0; i < projection.size(); i++) {
     const auto &pos = projection[i];
     const auto &velo = velocity[i];
@@ -65,6 +76,111 @@ static inline double calculate_velocity_for_point(
   double rho = rho_ft(0, 0) + (1.0 - t) * (rho_init(i, j) - rho_ft(0, 0));
   return (direction == 'x') ? (-grid_fluxx_init(i, j) / rho)
                             : (-grid_fluxy_init(i, j) / rho);
+}
+
+// Flux for a density that is periodic in x with period lx and has reflecting
+// boundaries at y = 0 and y = ly. The flux F satisfies div F = mean - rho, so
+// that the velocity v = -F / rho(t), with rho(t) = mean + (1 - t)(rho - mean),
+// satisfies the continuity equation. For the density mode
+//   A exp(2 pi i k (x - 1/2) / lx) cos(pi l y / ly)
+// with k_x = 2 pi k / lx, k_y = pi l / ly, and K^2 = k_x^2 + k_y^2, the
+// potential is psi = -A / K^2 times the mode, and F = -grad psi. The
+// x-component therefore multiplies the halfcomplex coefficients by
+// i k_x / K^2 and keeps the cosine series in y, whereas the y-component
+// multiplies them by -k_y / K^2 and turns the cosine series in y into a sine
+// series, which vanishes at y = 0 and y = ly.
+//
+// The Nyquist frequency k = lx / 2 has no derivative on the lattice: its
+// mode, (-1)^i, has a zero x-derivative at every cell center. Both flux
+// components ignore that frequency, so div F = mean - rho holds for the
+// density without its Nyquist frequency in x. The blur makes that frequency
+// negligible.
+void InsetState::compute_flux_periodic_x()
+{
+  const double dlx = lx_;
+  const double dly = ly_;
+  const unsigned int nyquist = lx_ / 2;
+  for (unsigned int i = 0; i < lx_; ++i) {
+
+    // Frequency k stored in halfcomplex element i
+    const unsigned int k = (i <= nyquist) ? i : lx_ - i;
+    const bool k_is_zero_or_nyquist = (k == 0) || (2 * k == lx_);
+    const double kx = 2.0 * pi * k / dlx;
+
+    // The x-component multiplies the coefficient c of frequency k by i s:
+    // Re(i s c) = -s Im(c), and Im(i s c) = s Re(c). Halfcomplex element
+    // lx - i holds the imaginary part if i < lx / 2, and the real part if
+    // i > lx / 2.
+    const double sign = (i < nyquist) ? -1.0 : 1.0;
+    for (unsigned int j = 0; j < ly_; ++j) {
+      if (k_is_zero_or_nyquist) {
+        grid_fluxx_init_(i, j) = 0.0;
+        continue;
+      }
+      const double ky = pi * j / dly;
+      const double s = kx / (kx * kx + ky * ky);
+      grid_fluxx_init_(i, j) = sign * s * rho_ft_(lx_ - i, j);
+    }
+
+    // The y-component: element j of the FFTW_RODFT01 input holds frequency
+    // j + 1 in y
+    for (unsigned int j = 0; j + 1 < ly_; ++j) {
+      if (2 * k == lx_) {
+        grid_fluxy_init_(i, j) = 0.0;
+        continue;
+      }
+      const double ky = pi * (j + 1) / dly;
+      grid_fluxy_init_(i, j) = -rho_ft_(i, j + 1) * ky / (kx * kx + ky * ky);
+    }
+    grid_fluxy_init_(i, ly_ - 1) = 0.0;
+  }
+  execute_fftw_plans_for_flux();
+}
+
+void InsetState::compute_flux()
+{
+  if (args_.periodic_x) {
+    compute_flux_periodic_x();
+    return;
+  }
+
+  // We must typecast lx_ and ly_ as double-precision numbers. Otherwise, the
+  // ratios in the denominator will evaluate as zero.
+  double dlx = lx_;
+  double dly = ly_;
+
+  // We temporarily insert the Fourier coefficients for the x-components and
+  // y-components of the flux vector into grid_fluxx_init and grid_fluxy_init
+  // The reason for +1 in di+1 stems from the RODFT10 formula at:
+  // https://www.fftw.org/fftw3_doc/1d-Real_002dodd-DFTs-_0028DSTs_0029.html
+#pragma omp parallel for default(none) shared(dlx, dly)
+  for (unsigned int i = 0; i < lx_ - 1; ++i) {
+    const double di = i;
+    for (unsigned int j = 0; j < ly_; ++j) {
+      const double denom =
+        pi * ((di + 1) / dlx + (j / (di + 1)) * (j / dly) * (dlx / dly));
+      grid_fluxx_init_(i, j) = -rho_ft_(i + 1, j) / denom;
+    }
+  }
+  for (unsigned int j = 0; j < ly_; ++j) {
+    grid_fluxx_init_(lx_ - 1, j) = 0.0;
+  }
+#pragma omp parallel for default(none) shared(dlx, dly)
+  for (unsigned int i = 0; i < lx_; ++i) {
+    const double di = i;
+    for (unsigned int j = 0; j < ly_ - 1; ++j) {
+      const double denom =
+        pi * ((di / (j + 1)) * (di / dlx) * (dly / dlx) + (j + 1) / dly);
+      grid_fluxy_init_(i, j) = -rho_ft_(i, j + 1) / denom;
+    }
+  }
+  for (unsigned int i = 0; i < lx_; ++i) {
+    grid_fluxy_init_(i, ly_ - 1) = 0.0;
+  }
+
+  // Compute the flux vector and store the result in grid_fluxx_init and
+  // grid_fluxy_init
+  execute_fftw_plans_for_flux();
 }
 
 bool InsetState::flatten_density_on_node_vertices()
@@ -104,43 +220,7 @@ bool InsetState::flatten_density_on_node_vertices()
   // proj_qd_.triangle_transformation[(i, j)].y) at time t
   std::vector<Vector> v_intp(num_quadtree_corners);
 
-  // We must typecast lx_ and ly_ as double-precision numbers. Otherwise, the
-  // ratios in the denominator will evaluate as zero.
-  double dlx = lx_;
-  double dly = ly_;
-
-  // We temporarily insert the Fourier coefficients for the x-components and
-  // y-components of the flux vector into grid_fluxx_init and grid_fluxy_init
-  // The reason for +1 in di+1 stems from the RODFT10 formula at:
-  // https://www.fftw.org/fftw3_doc/1d-Real_002dodd-DFTs-_0028DSTs_0029.html
-#pragma omp parallel for default(none) shared(dlx, dly)
-  for (unsigned int i = 0; i < lx_ - 1; ++i) {
-    const double di = i;
-    for (unsigned int j = 0; j < ly_; ++j) {
-      const double denom =
-        pi * ((di + 1) / dlx + (j / (di + 1)) * (j / dly) * (dlx / dly));
-      grid_fluxx_init_(i, j) = -rho_ft_(i + 1, j) / denom;
-    }
-  }
-  for (unsigned int j = 0; j < ly_; ++j) {
-    grid_fluxx_init_(lx_ - 1, j) = 0.0;
-  }
-#pragma omp parallel for default(none) shared(dlx, dly)
-  for (unsigned int i = 0; i < lx_; ++i) {
-    const double di = i;
-    for (unsigned int j = 0; j < ly_ - 1; ++j) {
-      const double denom =
-        pi * ((di / (j + 1)) * (di / dlx) * (dly / dlx) + (j + 1) / dly);
-      grid_fluxy_init_(i, j) = -rho_ft_(i, j + 1) / denom;
-    }
-  }
-  for (unsigned int i = 0; i < lx_; ++i) {
-    grid_fluxy_init_(i, ly_ - 1) = 0.0;
-  }
-
-  // Compute the flux vector and store the result in grid_fluxx_init and
-  // grid_fluxy_init
-  execute_fftw_plans_for_flux();
+  compute_flux();
 
   double t = 0.0;
   double delta_t = 0.30;  // Initial time step.
@@ -173,6 +253,24 @@ bool InsetState::flatten_density_on_node_vertices()
       // [0, lx_] x [0, ly_]. This fact guarantees that
       // interpolate_bilinearly() is given a point that cannot cause it to
       // fail.
+      if (args_.periodic_x) {
+        v_intp[i] = Vector(
+          interpolate_bilinearly_periodic_x(
+            pos.x(),
+            pos.y(),
+            cal_velocity_at_current_time,
+            'x',
+            lx_,
+            ly_),
+          interpolate_bilinearly_periodic_x(
+            pos.x(),
+            pos.y(),
+            cal_velocity_at_current_time,
+            'y',
+            lx_,
+            ly_));
+        continue;
+      }
       Vector v_intp_val(
         interpolate_bilinearly(
           pos.x(),
@@ -229,8 +327,13 @@ bool InsetState::flatten_density_on_node_vertices()
       // Make sure we do not pass a point outside [0, lx_] x [0, ly_] to
       // interpolate_bilinearly(). Otherwise, decrease the time step below and
       // try again.
-      accept =
-        all_map_points_are_in_domain(delta_t, projection, v_intp, lx_, ly_);
+      accept = all_map_points_are_in_domain(
+        delta_t,
+        projection,
+        v_intp,
+        lx_,
+        ly_,
+        args_.periodic_x);
 
       if (accept) {
 
@@ -243,21 +346,37 @@ bool InsetState::flatten_density_on_node_vertices()
           // (proj_qd_.triangle_transformation[(i, j)].x + 0.5 * delta_t *
           // v_intp[(i, j)].x, proj_qd_.triangle_transformation[(i, j)].y + 0.5
           // * delta_t * v_intp[(i, j)].y) at time t + 0.5 * delta_t
-          Vector v_intp_half_val(
-            interpolate_bilinearly(
-              pos.x() + 0.5 * delta_t * velo.x(),
-              pos.y() + 0.5 * delta_t * velo.y(),
-              cal_velocity_at_mid_time,
-              'x',
-              lx_,
-              ly_),
-            interpolate_bilinearly(
-              pos.x() + 0.5 * delta_t * velo.x(),
-              pos.y() + 0.5 * delta_t * velo.y(),
-              cal_velocity_at_mid_time,
-              'y',
-              lx_,
-              ly_));
+          const Vector v_intp_half_val =
+            args_.periodic_x ? Vector(
+                                 interpolate_bilinearly_periodic_x(
+                                   pos.x() + 0.5 * delta_t * velo.x(),
+                                   pos.y() + 0.5 * delta_t * velo.y(),
+                                   cal_velocity_at_mid_time,
+                                   'x',
+                                   lx_,
+                                   ly_),
+                                 interpolate_bilinearly_periodic_x(
+                                   pos.x() + 0.5 * delta_t * velo.x(),
+                                   pos.y() + 0.5 * delta_t * velo.y(),
+                                   cal_velocity_at_mid_time,
+                                   'y',
+                                   lx_,
+                                   ly_))
+                             : Vector(
+                                 interpolate_bilinearly(
+                                   pos.x() + 0.5 * delta_t * velo.x(),
+                                   pos.y() + 0.5 * delta_t * velo.y(),
+                                   cal_velocity_at_mid_time,
+                                   'x',
+                                   lx_,
+                                   ly_),
+                                 interpolate_bilinearly(
+                                   pos.x() + 0.5 * delta_t * velo.x(),
+                                   pos.y() + 0.5 * delta_t * velo.y(),
+                                   cal_velocity_at_mid_time,
+                                   'y',
+                                   lx_,
+                                   ly_));
 
           mid[i] = Point(
             pos.x() + v_intp_half_val.x() * delta_t,
@@ -269,9 +388,11 @@ bool InsetState::flatten_density_on_node_vertices()
           // of the positions wandered out of the domain. If one of these
           // problems occurred, decrease the time step.
           const double sq_dist = CGAL::squared_distance(mid[i], eul[i]);
+          const bool x_outside =
+            !args_.periodic_x && (mid[i].x() < 0.0 || mid[i].x() > lx_);
           if (
-            sq_dist > abs_tol || mid[i].x() < 0.0 || mid[i].x() > lx_ ||
-            mid[i].y() < 0.0 || mid[i].y() > ly_) {
+            sq_dist > abs_tol || x_outside || mid[i].y() < 0.0 ||
+            mid[i].y() > ly_) {
             accept = false;
           }
         }

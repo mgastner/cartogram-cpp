@@ -25,6 +25,12 @@ struct Arguments {
   // World maps need special projections
   bool world;
 
+  // If `periodic_x` is true, the flow treats the left and right sides of the
+  // lattice as the same line (the antimeridian of a world map): the density
+  // and the flux are periodic in x, while the top and bottom sides stay
+  // reflecting. Requires `world`.
+  bool periodic_x;
+
   // If `triangulation` is true, we apply a cartogram projection method based
   // on the triangulation of grid cells. It can eliminate intersections
   // that occur when the projected grid lines are strongly curved. Only

@@ -1,6 +1,8 @@
 #ifndef INTERPOL_HPP_
 #define INTERPOL_HPP_
 
+#include <algorithm>
+#include <cmath>
 #include <iostream>
 
 template <typename VelocityCalculator>
@@ -112,6 +114,72 @@ double interpolate_bilinearly(
   return (1.0 - delta_x) * (1.0 - delta_y) * fx0y0 +
          (1.0 - delta_x) * delta_y * fx0y1 +
          delta_x * (1.0 - delta_y) * fx1y0 + delta_x * delta_y * fx1y1;
+}
+
+// Bilinear interpolation of a velocity component that is periodic in x with
+// period lx and has reflecting boundaries at y = 0 and y = ly. The grid
+// values are at the cell centers (i + 0.5, j + 0.5). Every x is allowed: x is
+// reduced modulo lx, and between x = lx - 0.5 and x = lx + 0.5 the
+// interpolation uses the values in columns lx - 1 and 0. Near y = 0 and
+// y = ly, the y-component interpolates toward 0, and the x-component is
+// constant, as in interpolate_bilinearly().
+template <typename VelocityCalculator>
+double interpolate_bilinearly_periodic_x(
+  const double x,
+  const double y,
+  VelocityCalculator &&cal_velocity,
+  const char zero,
+  const unsigned int lx,
+  const unsigned int ly)
+{
+  if (!std::isfinite(x) || y < 0 || y > ly) {
+    std::cerr << "ERROR: coordinate outside bounding box in " << __func__
+              << "(). " << "x=" << x << ", y=" << y << std::endl;
+    exit(1);
+  }
+  if (zero != 'x' && zero != 'y') {
+    std::cerr << "ERROR: unknown argument zero in " << __func__ << "()."
+              << std::endl;
+    exit(1);
+  }
+  const double dlx = lx;
+
+  // Reduce x to [0, lx). Rounding can turn a tiny negative x into lx.
+  double x_red = x - dlx * std::floor(x / dlx);
+  if (x_red >= dlx) {
+    x_red -= dlx;
+  }
+
+  // x0 is the nearest cell center at or left of x_red, which is -0.5 (the
+  // center of column lx - 1 shifted by -lx) if x_red < 0.5
+  const double x0 = std::floor(x_red + 0.5) - 0.5;
+  const double delta_x = x_red - x0;
+  const unsigned int i0 = (x0 < 0.0) ? lx - 1 : static_cast<unsigned int>(x0);
+  const unsigned int i1 = (i0 + 1 == lx) ? 0 : i0 + 1;
+
+  // y0 and y1 are the nearest cell centers below and above y, or the
+  // boundary y = 0 or y = ly
+  const double y0 = std::max(0.0, std::floor(y + 0.5) - 0.5);
+  const double y1 =
+    std::min(static_cast<double>(ly), std::floor(y + 0.5) + 0.5);
+  const double delta_y = (y - y0) / (y1 - y0);
+
+  // Value in column i at height yy, which is a cell center or a boundary
+  auto value = [&](const unsigned int i, const double yy) {
+    if (yy < 0.5 || yy > ly - 0.5) {
+      if (zero == 'y') {
+        return 0.0;
+      }
+      return static_cast<double>(
+        cal_velocity(i, (yy < 0.5) ? 0u : ly - 1, zero));
+    }
+    return static_cast<double>(
+      cal_velocity(i, static_cast<unsigned int>(yy), zero));
+  };
+  return (1.0 - delta_x) * (1.0 - delta_y) * value(i0, y0) +
+         (1.0 - delta_x) * delta_y * value(i0, y1) +
+         delta_x * (1.0 - delta_y) * value(i1, y0) +
+         delta_x * delta_y * value(i1, y1);
 }
 
 #endif  // INTERPOL_HPP_
