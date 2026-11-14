@@ -86,7 +86,13 @@ if(CMAKE_BUILD_TYPE STREQUAL Release)
       find_program(LLD_PATH NAMES ld.lld lld HINTS "${cxx_compiler_dir}")
 
       if(NOT LLD_PATH)
-        message(WARNING "lld not found; disabling IPO. Install with: sudo apt install lld")
+        # An lld older than clang may fail to link clang's LTO bitcode, so
+        # name the package that matches the compiler (lld-22 for clang 22)
+        string(REGEX MATCH "^[0-9]+" clang_major "${CMAKE_CXX_COMPILER_VERSION}")
+        message(WARNING
+          "lld not found in ${cxx_compiler_dir} or on the PATH; disabling IPO. "
+          "Install the lld of the same version as clang, for example: "
+          "sudo apt install lld-${clang_major}")
         set(ipo_ok FALSE)
       endif()
     endif()
