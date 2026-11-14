@@ -3,7 +3,6 @@
 #include <CGAL/AABB_segment_primitive_2.h>
 #include <CGAL/AABB_traits_2.h>
 #include <CGAL/AABB_tree.h>
-#include <CGAL/intersections.h>
 #include <algorithm>
 #include <array>
 #include <cassert>
@@ -17,20 +16,16 @@ using AABB_Tree = CGAL::AABB_tree<AABB_Traits>;
 
 using SegCache = std::unordered_map<Segment, std::vector<Point>>;
 
-// Edge classification of AABB tree segments
-// AABB tree primitives give the idex of the segment that of the vector we
-// passed to create the tree, so we can classify edges based on their index in
-// that vector, and use fast-paths for common cases, avoiding expensive CGAL
-// intersection calls; This is particularly useful for our case because most of
-// our edges are axis-aligned or 45° diagonal, and we can handle them with
-// simple arithmetic.
-
+// Edge classification of AABB tree segments. AABB tree primitives give the
+// index of the segment in the vector that we passed to create the tree, so
+// we can classify edges by their index in that vector. A crossing with a
+// horizontal or vertical edge is placed exactly on its lattice line.
+//
 // H    (0): horizontal edge, y1 == y2
 // V    (1): vertical edge,   x1 == x2
-// DPOS (2): 45° diagonal with positive slope (|dx|==|dy| and dx*dy > 0)  ↗ / ↙
-// DNEG (3): 45° diagonal with negative slope (|dx|==|dy| and dx*dy < 0)  ↖ / ↘
-// OTHER(4): all other edges (non-axis-aligned, non-45°, or degenerate)
-enum class EdgeKind : uint8_t { H = 0, V = 1, DPOS = 2, DNEG = 3, OTHER = 4 };
+// OTHER(2): all other edges (diagonals of slope +1 or -1, and edges of
+//           other slopes where quadtree leaves of different sizes meet)
+enum class EdgeKind : uint8_t { H = 0, V = 1, OTHER = 2 };
 
 static inline EdgeKind classify_edge(
   const uint32_t x0,
@@ -42,34 +37,46 @@ static inline EdgeKind classify_edge(
     return EdgeKind::H;
   if (x0 == x1)
     return EdgeKind::V;
-
-  const int64_t dx = int64_t(x1) - int64_t(x0);
-  const int64_t dy = int64_t(y1) - int64_t(y0);
-
-  if (dy == dx)
-    return EdgeKind::DPOS;  // slope +1
-  if (dy == -dx)
-    return EdgeKind::DNEG;  // slope -1
-
   return EdgeKind::OTHER;
 }
 
-// Exact tests for the geometry of a single polygon edge. The tolerance of
-// almost_equal(), dbl_resolution, is meant for coordinates. Applied to the
-// squared length of an edge, to the components of its direction, or to the
-// denominators of the intersection formulas, it misjudged edges shorter
-// than about 1e-4 lattice units: all their densification points got the
-// parameter t = 0 and lost their order, and an edge shorter than
-// dbl_resolution in x or y counted as exactly vertical or horizontal, so
-// that it received both ends of a nearby triangle edge.
-static bool is_exactly_zero(const double v)
+// Error-free transformations: s + e == a + b (Knuth's TwoSum) and
+// p + e == a * b (TwoProduct with a fused multiply-add), both exactly. They
+// need round-to-nearest arithmetic without contraction or reassociation; the
+// project compiles with -ffp-contract=off and without -ffast-math.
+static void two_sum(const double a, const double b, double &s, double &e)
 {
-  return std::fpclassify(v) == FP_ZERO;
+  s = a + b;
+  const double b_virtual = s - a;
+  e = (a - (s - b_virtual)) + (b - b_virtual);
 }
 
-static bool are_exactly_equal(const double a, const double b)
+static void two_product(const double a, const double b, double &p, double &e)
 {
-  return !(a < b) && !(b < a);
+  p = a * b;
+  e = std::fma(a, b, -p);
+}
+
+// Signed offset nx * px + ny * py - c of the point (px, py) from the line
+// nx * x + ny * y = c. The sum is evaluated as if in twice the working
+// precision and then rounded (algorithm Dot2 of Ogita, Rump, and Oishi,
+// 2005), so the offset keeps its relative accuracy even when the point lies
+// within a rounding error of the line. Evaluated directly, the sum cancels:
+// for a point 2e-12 from the line x + y = 32, rounding px + py alone
+// changes the offset by about 0.1%.
+static double offset_from_line(
+  const double nx,
+  const double ny,
+  const double c,
+  const double px,
+  const double py)
+{
+  double p1, e1, p2, e2, s1, e3, s2, e4;
+  two_product(nx, px, p1, e1);
+  two_product(ny, py, p2, e2);
+  two_sum(p1, p2, s1, e3);
+  two_sum(s1, -c, s2, e4);
+  return s2 + (e1 + e2 + e3 + e4);
 }
 
 static std::vector<Point> densification_points_with_edge_tree(
@@ -100,29 +107,27 @@ static std::vector<Point> densification_points_with_edge_tree(
   }
 
   const Segment query(pt1, pt2);
-
-  // Param t along [pt1, pt2] for ordering hits
   const double ax = pt1.x(), ay = pt1.y();
   const double bx = pt2.x(), by = pt2.y();
   const double dax = bx - ax, day = by - ay;
-  const double L2 = dax * dax + day * day;
-
-  auto t_of = [&](const Point &p) -> double {
-    if (is_exactly_zero(L2))  // pt1 == pt2
-      return 0.0;
-    return ((p.x() - ax) * dax + (p.y() - ay) * day) / L2;
-  };
 
   // Collect primitives that intersect the query (not just bbox hits)
   std::vector<AABB_Tree::Primitive_id> prims;
   prims.reserve(8);
   tree.all_intersected_primitives(query, std::back_inserter(prims));
 
-  // Always include endpoints
+  // Always include endpoints. The parameter t along [pt1, pt2] orders the
+  // points.
   std::vector<std::pair<double, Point>> hits;
-  hits.reserve(prims.size() * 2 + 2);
+  hits.reserve(prims.size() + 2);
   hits.emplace_back(0.0, pt1);
   hits.emplace_back(1.0, pt2);
+
+  auto within_closed = [](double v, double a, double b) {
+    const double lo = std::min(a, b);
+    const double hi = std::max(a, b);
+    return less_than_equal(lo, v) && less_than_equal(v, hi);
+  };
 
   for (const auto &pid : prims) {
 
@@ -137,154 +142,43 @@ static std::vector<Point> densification_points_with_edge_tree(
     const double ex0 = E.source().x(), ey0 = E.source().y();
     const double ex1 = E.target().x(), ey1 = E.target().y();
 
-    auto in_closed01 = [&](double t) {
-      return less_than_equal(0.0, t) && less_than_equal(t, 1.0);
-    };
+    // The triangle edge lies on the line nx * x + ny * y = c. Its ends are
+    // corners of quadtree leaves, which have integer coordinates, so nx, ny,
+    // and c are integers and exact.
+    const double nx = ey0 - ey1;
+    const double ny = ex1 - ex0;
+    const double c = nx * ex0 + ny * ey0;
+    const double fa = offset_from_line(nx, ny, c, ax, ay);
+    const double fb = offset_from_line(nx, ny, c, bx, by);
 
-    auto within_closed = [&](double v, double a, double b) {
-      const double lo = std::min(a, b);
-      const double hi = std::max(a, b);
-      return less_than_equal(lo, v) && less_than_equal(v, hi);
-    };
+    // If the polygon edge lies within dbl_resolution of the line along its
+    // whole length, the position of the crossing along the edge is
+    // ill-conditioned, and rounding the coordinates of an inserted point
+    // could move the point across the other side of a thin part of the
+    // polygon. Such an edge gets no point from this triangle edge. The
+    // projected edge then differs from the exact image of the edge by at
+    // most dbl_resolution times the jump of the Jacobian across the line.
+    const double tolerance = dbl_resolution * std::sqrt(nx * nx + ny * ny);
+    if (std::fabs(fa) <= tolerance && std::fabs(fb) <= tolerance)
+      continue;
 
-    // Here we use the edge classification to handle the most common cases
-    // with simple arithmetic, avoiding expensive CGAL intersection calls
-    switch (kind) {
+    // The ends must lie strictly on opposite sides. An end on the line is
+    // already among the hits.
+    if (!((fa < 0.0 && fb > 0.0) || (fa > 0.0 && fb < 0.0)))
+      continue;
 
-    case EdgeKind::H: {
-      const double y0 = ey0;  // == ey1
-      const double dy = day;  // query dy
-      if (is_exactly_zero(dy)) {
-        // Query horizontal: either collinear or disjoint
-        if (are_exactly_equal(ay, y0)) {
-          // Collinear overlap: push both endpoints of edge (clipped to [0,1])
-          const Point p0(ex0, y0), p1(ex1, y0);
-          const double t0 = t_of(p0), t1 = t_of(p1);
-          if (in_closed01(t0))
-            hits.emplace_back(t0, p0);
-          if (in_closed01(t1))
-            hits.emplace_back(t1, p1);
-        }
-        // else disjoint: nothing to add
-      } else {
-        const double t = (y0 - ay) / dy;
-        if (!in_closed01(t)) {
-          // intersection with infinite line lies outside the segment
-        } else {
-          const double x = ax + t * dax;
-          if (within_closed(x, ex0, ex1))
-            hits.emplace_back(std::clamp(t, 0.0, 1.0), Point(x, y0));
-        }
-      }
-      break;
-    }
+    // Rounding keeps the ratio of two offsets of opposite signs within
+    // [0, 1]. A ratio rounded to 0 or 1 is an end of the edge.
+    const double t = fa / (fa - fb);
+    if (!(t > 0.0 && t < 1.0))
+      continue;
 
-    case EdgeKind::V: {
-      const double x0 = ex0;  // == ex1
-      const double dx = dax;  // query dx
-      if (is_exactly_zero(dx)) {
-        // Query vertical: collinear or disjoint
-        if (are_exactly_equal(ax, x0)) {
-          const Point p0(x0, ey0), p1(x0, ey1);
-          const double t0 = t_of(p0), t1 = t_of(p1);
-          if (in_closed01(t0))
-            hits.emplace_back(t0, p0);
-          if (in_closed01(t1))
-            hits.emplace_back(t1, p1);
-        }
-      } else {
-        const double t = (x0 - ax) / dx;
-        if (!in_closed01(t)) {
-          // outside segment
-        } else {
-          const double y = ay + t * day;
-          if (within_closed(y, ey0, ey1))
-            hits.emplace_back(std::clamp(t, 0.0, 1.0), Point(x0, y));
-        }
-      }
-      break;
-    }
-
-    case EdgeKind::DPOS: {
-      // Edge: y - ey0 = +(x - ex0)  =>  y - x = c
-      const double c = ey0 - ex0;
-      const double denom = (day - dax);  // (qy - qx)
-      if (is_exactly_zero(denom)) {
-        // Query also slope +1; collinear iff same c
-        const double c_q = (ay - ax);
-        if (are_exactly_equal(c_q, c)) {
-          const Point p0(ex0, ey0), p1(ex1, ey1);
-          const double t0 = t_of(p0), t1 = t_of(p1);
-          if (in_closed01(t0))
-            hits.emplace_back(t0, p0);
-          if (in_closed01(t1))
-            hits.emplace_back(t1, p1);
-        }
-      } else {
-        const double t = (c - (ay - ax)) / denom;
-        if (in_closed01(t)) {
-          const double x = ax + t * dax;
-          const double y = ay + t * day;
-          if (within_closed(x, ex0, ex1) && within_closed(y, ey0, ey1))
-            hits.emplace_back(std::clamp(t, 0.0, 1.0), Point(x, y));
-        }
-      }
-      break;
-    }
-
-    case EdgeKind::DNEG: {
-      // Edge: y - ey0 = -(x - ex0)  =>  y + x = c
-      const double c = ey0 + ex0;
-      const double denom = (day + dax);  // (qy + qx)
-      if (is_exactly_zero(denom)) {
-        const double c_q = (ay + ax);
-        if (are_exactly_equal(c_q, c)) {
-          const Point p0(ex0, ey0), p1(ex1, ey1);
-          const double t0 = t_of(p0), t1 = t_of(p1);
-          if (in_closed01(t0))
-            hits.emplace_back(t0, p0);
-          if (in_closed01(t1))
-            hits.emplace_back(t1, p1);
-        }
-      } else {
-        const double t = (c - (ay + ax)) / denom;
-        if (in_closed01(t)) {
-          const double x = ax + t * dax;
-          const double y = ay + t * day;
-          if (within_closed(x, ex0, ex1) && within_closed(y, ey0, ey1))
-            hits.emplace_back(std::clamp(t, 0.0, 1.0), Point(x, y));
-        }
-      }
-      break;
-    }
-
-    case EdgeKind::OTHER: {
-      CGAL::Object obj = CGAL::intersection(query, E);
-      Point ip;
-      if (CGAL::assign(ip, obj)) {
-        const double t = t_of(ip);
-        if (in_closed01(t))
-          hits.emplace_back(t, ip);
-      } else {
-        Segment seg;
-        if (CGAL::assign(seg, obj)) {
-          const Point p0 = seg.source();
-          const Point p1 = seg.target();
-          const double t0 = t_of(p0);
-          const double t1 = t_of(p1);
-          if (in_closed01(t0))
-            hits.emplace_back(t0, p0);
-          if (in_closed01(t1))
-            hits.emplace_back(t1, p1);
-        }
-      }
-      break;
-    }
-    default:
-      // Should not happen
-      assert(false);
-      break;
-    }
+    // A crossing with a horizontal or vertical edge lies exactly on its
+    // lattice line
+    const double x = (kind == EdgeKind::V) ? ex0 : ax + t * dax;
+    const double y = (kind == EdgeKind::H) ? ey0 : ay + t * day;
+    if (within_closed(x, ex0, ex1) && within_closed(y, ey0, ey1))
+      hits.emplace_back(t, Point(x, y));
   }
 
   // Sort by t; clamp and unique
@@ -341,9 +235,8 @@ void InsetState::densify_geo_divs_using_delaunay_t()
     std::unique(edges_raw.begin(), edges_raw.end()),
     edges_raw.end());
 
-  // Very important step: Pre-classify edges (H/V/diag/OTHER)
-  // This allows us to later handle intersection computation of the most common
-  // cases with simple arithmetic
+  // Pre-classify edges (H/V/OTHER), so that crossings with horizontal and
+  // vertical edges can be placed exactly on their lattice lines
   std::vector<EdgeKind> edge_kind;
   edge_kind.reserve(edges_raw.size());
   for (const auto &s : edges_raw)
