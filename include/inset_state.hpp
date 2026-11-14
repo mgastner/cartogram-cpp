@@ -236,6 +236,7 @@ public:
   FTReal2d &ref_to_fluxy_init();
   FTReal2d &ref_to_rho_ft();
   FTReal2d &ref_to_rho_init();
+  void remove_drift_of_seam(std::vector<Point> &projection) const;
   void remove_tiny_polygons(const double &minimum_polygon_size);
   void replace_target_area(const std::string &, double);
   void rescale_map();

@@ -1,6 +1,7 @@
 #include "constants.hpp"
 #include "inset_state.hpp"
 #include "interpolate_bilinearly.hpp"
+#include <algorithm>
 
 bool InsetState::flatten_density()
 {
@@ -426,7 +427,48 @@ bool InsetState::flatten_density_on_node_vertices()
     delta_t *= inc_after_acc;  // Try a larger step next time
   }
 
+  if (args_.periodic_x) {
+    remove_drift_of_seam(projection);
+  }
+
   // Return true if the integration was successful
   timer.stop("Flatten Density");
   return true;
+}
+
+// With periodic x, nothing pins the map to the sides of the lattice, and the
+// flow can move the whole map along x (on the world map by country, about
+// 5 % of the lattice width over all integrations). Areas do not change if the
+// whole map moves along x, so we translate the projected corners such that the
+// corners that started on the seam x = 0 have a mean x-displacement of 0,
+// weighted with the trapezoidal rule along y. Then the seam stays near the
+// antimeridian of the input map.
+void InsetState::remove_drift_of_seam(std::vector<Point> &projection) const
+{
+  std::vector<std::pair<double, double>> seam;  // (y, x-displacement)
+  for (size_t i = 0; i < unique_quadtree_corners_.size(); ++i) {
+    const QuadtreeCorner &c = unique_quadtree_corners_[i];
+    if (c.x() == 0) {
+      seam.emplace_back(c.y(), projection[i].x());
+    }
+  }
+  if (seam.size() < 2) {
+    return;
+  }
+  std::sort(seam.begin(), seam.end());
+  double weighted_sum = 0.0;
+  double total_weight = 0.0;
+  for (size_t k = 0; k < seam.size(); ++k) {
+    const double y_below = seam[(k == 0) ? 0 : k - 1].first;
+    const double y_above = seam[(k + 1 == seam.size()) ? k : k + 1].first;
+    const double weight = 0.5 * (y_above - y_below);
+    weighted_sum += weight * seam[k].second;
+    total_weight += weight;
+  }
+  const double drift = weighted_sum / total_weight;
+  std::cerr << "Translating map along x by " << -drift
+            << " to keep the seam at the antimeridian" << std::endl;
+  for (auto &p : projection) {
+    p = Point(p.x() - drift, p.y());
+  }
 }
