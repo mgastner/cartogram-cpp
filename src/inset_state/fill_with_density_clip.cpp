@@ -1013,6 +1013,60 @@ static void compute_area(
   }
 }
 
+// With periodic x, a polygon may extend past x = 0 or x = lx, and the
+// density at a cell collects the area of every copy of the polygon shifted
+// by a multiple of lx. Return GeoDivs whose polygons with holes are those
+// copies, clipped to the strip margin <= x <= lx - margin, so that the
+// rasterization below finds every vertex in a column of the lattice. The
+// margin keeps vertices off x = lx, which would index column lx; the area
+// that the margin removes is negligible.
+static std::vector<GeoDiv> geo_divs_wrapped_into_lattice(
+  const std::vector<GeoDiv> &geo_divs,
+  const unsigned int lx)
+{
+  const double dlx = lx;
+  const double margin = 1e-9 * dlx;
+  auto clip_to_strip = [&](const Polygon &ring, const double shift) {
+    Polygon shifted;
+    for (const auto &p : ring) {
+      shifted.push_back(Point(p.x() - shift, p.y()));
+    }
+    Polygon clipped = clip_polygon_by_vertical_line(shifted, margin, true);
+    return clip_polygon_by_vertical_line(clipped, dlx - margin, false);
+  };
+  std::vector<GeoDiv> wrapped;
+  wrapped.reserve(geo_divs.size());
+  for (const auto &gd : geo_divs) {
+    GeoDiv gd_wrapped(gd.id());
+    for (const auto &pwh : gd.polygons_with_holes()) {
+      const auto bb = pwh.bbox();
+      if (bb.xmin() >= margin && bb.xmax() <= dlx - margin) {
+        gd_wrapped.push_back(pwh);
+        continue;
+      }
+      const auto m_min = static_cast<int>(std::floor(bb.xmin() / dlx));
+      const auto m_max = static_cast<int>(std::floor(bb.xmax() / dlx));
+      for (int m = m_min; m <= m_max; ++m) {
+        const double shift = m * dlx;
+        const Polygon outer = clip_to_strip(pwh.outer_boundary(), shift);
+        if (outer.size() < 3 || !(std::abs(outer.area()) > 0.0)) {
+          continue;
+        }
+        Polygon_with_holes piece(outer);
+        for (const auto &hole : pwh.holes()) {
+          const Polygon h = clip_to_strip(hole, shift);
+          if (h.size() >= 3 && std::abs(h.area()) > 0.0) {
+            piece.add_hole(h);
+          }
+        }
+        gd_wrapped.push_back(piece);
+      }
+    }
+    wrapped.push_back(gd_wrapped);
+  }
+  return wrapped;
+}
+
 // Test function to compare the computed area with the actual area (brute
 // force)
 [[maybe_unused]] static void test_areas_densities(
@@ -1151,6 +1205,14 @@ void InsetState::fill_with_density_clip()
 
   timer.start("Fill with Density");
 
+  // With periodic x, rasterize the copies of the polygons that lie inside
+  // the lattice, and restore the polygons afterward
+  std::vector<GeoDiv> unwrapped_geo_divs;
+  if (args_.periodic_x) {
+    unwrapped_geo_divs = std::move(geo_divs_);
+    geo_divs_ = geo_divs_wrapped_into_lattice(unwrapped_geo_divs, lx_);
+  }
+
   // Step 1: Detect edges and store edge information
   boost::multi_array<std::vector<PolygonInfo>, 2> edge_cell_polyinfo(
     boost::extents[lx_][ly_]);
@@ -1182,6 +1244,10 @@ void InsetState::fill_with_density_clip()
     *this);
 
   // test_areas_densities(rho_init_, *this);
+
+  if (args_.periodic_x) {
+    geo_divs_ = std::move(unwrapped_geo_divs);
+  }
 
   // Step 6: Run FFTW to compute rho_ft_
   auto rho_begin = rho_init_.as_1d_array();

@@ -269,6 +269,9 @@ void InsetState::create_and_refine_quadtree()
   };
 
   Quadtree qt(std::max(lx_, ly_), target_leaf_count, get_rho_diff);
+  if (args_.periodic_x) {
+    qt.set_period_x(lx_);
+  }
   qt.build();
 
   const size_t n_leaves_bef_grading = qt.num_leaves();
@@ -327,6 +330,23 @@ void InsetState::store_quadtree_cell_corners(const QuadtreeImp &qt)
   unique_quadtree_corners_.emplace_back(0, ly_);
   unique_quadtree_corners_.emplace_back(lx_, 0);
   unique_quadtree_corners_.emplace_back(lx_, ly_);
+
+  // With periodic x, the lines x = 0 and x = lx are the same line. Give every
+  // corner on one of them a twin on the other, so that the triangulation has
+  // the same vertices on both sides of the seam and the projection is
+  // continuous across the seam. The grading across the seam ensures that each
+  // twin is a corner or an edge midpoint of the leaves on the other side.
+  if (args_.periodic_x) {
+    const size_t n_corners = unique_quadtree_corners_.size();
+    for (size_t i = 0; i < n_corners; ++i) {
+      const QuadtreeCorner c = unique_quadtree_corners_[i];
+      if (c.x() == 0) {
+        unique_quadtree_corners_.emplace_back(lx_, c.y());
+      } else if (c.x() == lx_) {
+        unique_quadtree_corners_.emplace_back(0, c.y());
+      }
+    }
+  }
 
   // NOTE: Avoiding sort + unique to remove the duplicates, because we want the
   // corners of a quadtree cell to be close to each other as they are likely

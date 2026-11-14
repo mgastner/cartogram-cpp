@@ -78,9 +78,48 @@ static Point interpolate_point_with_barycentric_coordinates(
     bary_x * v1_proj.y() + bary_y * v2_proj.y() + bary_z * v3_proj.y()};
 }
 
+// With periodic x, a point may lie outside 0 <= x < lx. Locate its copy
+// shifted by a multiple of lx into the lattice, project the copy, and shift
+// the result back. The projected corners of the triangles keep the positions
+// to which the flow moved them, which may also lie outside the lattice, so
+// that a polygon that crosses the seam stays connected.
+template <typename Triangulation>
+static Point project_point_periodic_x(
+  const Point &p,
+  const Triangulation &triang,
+  const ProjectionData &proj,
+  const unsigned int lx)
+{
+  const double dlx = lx;
+  double shift = dlx * std::floor(p.x() / dlx);
+  double x = p.x() - shift;
+  if (x >= dlx) {
+    x -= dlx;
+    shift += dlx;
+  }
+  const Point copy(x, p.y());
+  const Point projected = interpolate_point_with_barycentric_coordinates(
+    copy,
+    *triang.locate(copy),
+    proj);
+  return {projected.x() + shift, projected.y()};
+}
+
 void InsetState::project_with_delaunay_t(bool output_to_stdout)
 {
   timer.start("Project");
+  if (args_.periodic_x) {
+    auto lambda_periodic = [&](Point p1) {
+      return project_point_periodic_x(p1, triang_, proj_data_, lx_);
+    };
+    transform_points(lambda_periodic);
+    if (output_to_stdout) {
+      transform_points(lambda_periodic, true);
+    }
+    is_simple(__func__);
+    timer.stop("Project");
+    return;
+  }
   auto lambda_bary = [&](Point p1) {
     return interpolate_point_with_barycentric_coordinates(
       p1,
@@ -100,6 +139,9 @@ void InsetState::project_with_delaunay_t(bool output_to_stdout)
 void InsetState::project_point_set(std::unordered_set<Point> &unprojected)
 {
   auto lambda_bary = [&](Point p1) {
+    if (args_.periodic_x) {
+      return project_point_periodic_x(p1, triang_, proj_data_, lx_);
+    }
     return interpolate_point_with_barycentric_coordinates(
       p1,
       *triang_.locate(p1),

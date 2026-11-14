@@ -337,6 +337,25 @@ void InsetState::densify_geo_divs_using_delaunay_t()
     edge_vec.emplace_back(Point(e[0], e[1]), Point(e[2], e[3]));
   }
 
+  // With periodic x, polygon segments may lie outside 0 <= x <= lx. Add
+  // copies of the triangulation edges shifted by -lx and lx, so that
+  // segments with -lx <= x <= 2 lx are densified wherever they cross an edge
+  // or one of its copies.
+  if (args_.periodic_x) {
+    const size_t n_edges = edge_vec.size();
+    edge_vec.reserve(3 * n_edges);
+    edge_kind.reserve(3 * n_edges);
+    for (const double shift : {-double(lx_), double(lx_)}) {
+      for (size_t e = 0; e < n_edges; ++e) {
+        const Segment edge = edge_vec[e];
+        edge_vec.emplace_back(
+          Point(edge.source().x() + shift, edge.source().y()),
+          Point(edge.target().x() + shift, edge.target().y()));
+        edge_kind.push_back(edge_kind[e]);
+      }
+    }
+  }
+
   AABB_Tree tree(edge_vec.begin(), edge_vec.end());
   tree.build();
 

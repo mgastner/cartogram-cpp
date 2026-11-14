@@ -132,8 +132,12 @@ public:
         }
       };
 
-      check(x ? x - 1 : x, y);
-      check(x + sz, y);
+      // With periodic x, the leaves at x = 0 and the leaves that end at
+      // x = period_x_ are neighbors across the seam
+      const uint32_t left_x = x ? x - 1 : (period_x_ ? period_x_ - 1 : x);
+      const uint32_t right_x = (period_x_ && x + sz == period_x_) ? 0 : x + sz;
+      check(left_x, y);
+      check(right_x, y);
       check(x, y ? y - 1 : y);
       check(x, y + sz);
     }
@@ -151,6 +155,13 @@ public:
   [[nodiscard]] std::size_t num_leaves() const noexcept
   {
     return leaves_.size();
+  }
+
+  // Make grade() treat x as periodic with the given period, which must not
+  // exceed the root size. A period of 0 (the default) means no periodicity.
+  void set_period_x(const uint32_t period_x) noexcept
+  {
+    period_x_ = period_x;
   }
 
   [[nodiscard]] uint32_t root_size() const noexcept
@@ -256,6 +267,7 @@ private:
   }
 
   uint32_t root_size_;
+  uint32_t period_x_ = 0;
   std::size_t target_;
   MetricFn metric_;
 
