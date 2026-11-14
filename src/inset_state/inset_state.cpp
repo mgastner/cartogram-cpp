@@ -542,11 +542,6 @@ struct max_area_error_info InsetState::max_area_error() const
   return {value, worst_gd};
 }
 
-bool InsetState::periodic_x() const
-{
-  return args_.periodic_x;
-}
-
 unsigned int InsetState::n_finished_integrations() const
 {
   return n_finished_integrations_;

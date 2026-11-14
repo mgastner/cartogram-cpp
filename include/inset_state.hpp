@@ -220,7 +220,6 @@ public:
     bool equal_area = false,
     bool normalize_original = false);
   void normalize_target_area();
-  bool periodic_x() const;
   std::string pos() const;
 
   void preprocess();
