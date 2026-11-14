@@ -222,3 +222,26 @@ BOOST_AUTO_TEST_CASE(shallow_crossing_of_a_diagonal_is_accurate)
     "distance of the nearest point from (16.5, 15.5): " << nearest);
   BOOST_TEST(nearest < 1e-13);
 }
+
+// Needle from a fuzz test: two sides one unit in the last place apart, at
+// about 45 degrees, crossing the diagonals x + y = c at right angles. Where
+// a diagonal crosses the needle, the exact crossings of the two sides are
+// half a unit in the last place apart, and both round to the same point.
+// The ring then touched itself, and the program stopped with "Outer
+// boundary is not simple". Such points are now removed from the ring.
+BOOST_AUTO_TEST_CASE(needle_across_a_diagonal_gets_no_shared_point)
+{
+  const Polygon in = polygon_from({
+    {65.006382912452636, 63.634998335768685},
+    {65.981577423198914, 64.610218542009576},
+    {65.981577423198928, 64.610218542009576},
+    {65.006382912452651, 63.634998335768685},
+    {65.006388501866525, 63.210734267093578},
+    {64.582118843777522, 63.634992746354804},
+  });
+  BOOST_TEST_REQUIRE(is_simple_with_exact_predicates(in));
+  const Polygon out = project_with_uniform_density(in, 128);
+  BOOST_TEST(out.is_simple());
+  BOOST_TEST(is_simple_with_exact_predicates(out));
+  BOOST_TEST(largest_distance_from_boundary(out, in) < 1e-12);
+}

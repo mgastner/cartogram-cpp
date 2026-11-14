@@ -8,6 +8,7 @@
 #include <cassert>
 #include <cmath>
 #include <unordered_map>
+#include <unordered_set>
 
 using AABB_Prim =
   CGAL::AABB_segment_primitive_2<Scd, std::vector<Segment>::const_iterator>;
@@ -202,6 +203,72 @@ static std::vector<Point> densification_points_with_edge_tree(
   return out_unique;
 }
 
+// Where the two sides of a needle that is about one unit in the last place
+// wide cross a triangle edge, both sides can receive the same rounded
+// densification point, so that the ring touches itself and is no longer
+// simple. Such a point is removed from every ring that contains it, so that
+// shared boundaries, which receive the same points, stay identical. The
+// vertices of the polygons before densification are kept.
+static void drop_coincident_densification_points(
+  std::vector<GeoDiv> &geo_divs_dens,
+  const std::vector<GeoDiv> &geo_divs)
+{
+  std::unordered_set<Point> original;
+  for (const auto &gd : geo_divs) {
+    for (const auto &pwh : gd.polygons_with_holes()) {
+      const Polygon &outer = pwh.outer_boundary();
+      original.insert(outer.begin(), outer.end());
+      for (const auto &h : pwh.holes()) {
+        original.insert(h.begin(), h.end());
+      }
+    }
+  }
+
+  // Inserted points that occur more than once in a ring
+  std::unordered_set<Point> drop;
+  auto collect = [&](const Polygon &ring) {
+    std::unordered_set<Point> seen;
+    for (const Point &p : ring) {
+      if (!seen.insert(p).second && original.count(p) == 0) {
+        drop.insert(p);
+      }
+    }
+  };
+  for (const auto &gd : geo_divs_dens) {
+    for (const auto &pwh : gd.polygons_with_holes()) {
+      collect(pwh.outer_boundary());
+      for (const auto &h : pwh.holes()) {
+        collect(h);
+      }
+    }
+  }
+  if (drop.empty()) {
+    return;
+  }
+
+  auto filter = [&](Polygon &ring) {
+    Polygon kept;
+    kept.reserve(ring.size());
+    for (const Point &p : ring) {
+      if (drop.count(p) == 0) {
+        kept.push_back(p);
+      }
+    }
+    ring = std::move(kept);
+  };
+  for (auto &gd : geo_divs_dens) {
+    for (auto &pwh : gd.ref_to_polygons_with_holes()) {
+      filter(pwh.outer_boundary());
+      for (auto &h : pwh.holes()) {
+        filter(h);
+      }
+    }
+  }
+  std::cerr << "Removed " << drop.size()
+            << " densification point(s) that occurred twice in a ring"
+            << std::endl;
+}
+
 void InsetState::densify_geo_divs_using_delaunay_t()
 {
   timer.start("Densification");
@@ -329,6 +396,7 @@ void InsetState::densify_geo_divs_using_delaunay_t()
     geodivs_dens.emplace_back(std::move(gd_dens));
   }
 
+  drop_coincident_densification_points(geodivs_dens, geo_divs_);
   geo_divs_ = std::move(geodivs_dens);
 
   std::cerr << "Num points after densification: " << n_points() << std::endl;
