@@ -241,6 +241,11 @@ void InsetState::integrate(ProgressTracker &progress_tracker)
     if (!flow_overrelaxation_allowed(errors)) {
       flow_overrelaxation_ = 0.0;
     }
+    // Every integration ends at t = 1, as on main since PR #315 (merge
+    // commit ad0848a5). The over-relaxation above stays in the code but is
+    // switched off, so that the T0 of the ICC 2027 paper is the cartogram
+    // that main computes.
+    flow_overrelaxation_ = 0.0;
     signed_area_errors_before_previous_integration_ =
       std::move(signed_area_errors_before_integration_);
     signed_area_errors_before_integration_ = std::move(errors);

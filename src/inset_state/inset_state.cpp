@@ -667,7 +667,7 @@ void InsetState::adjust_grid()
     max_area_error_reduction_too_small(
       max_area_errors_[n_finished_integrations_ - 1],
       curr_max_area_error,
-      flow_t_reached_)) {
+      1.0)) {  // Every integration ends at t = 1 (see integrate())
 
     // Multiply grid size with factor
     std::cerr << "Adjusting grid size." << std::endl;
