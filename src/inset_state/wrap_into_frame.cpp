@@ -10,10 +10,10 @@
 // pieces on the two sides of a cut, and neighbors that share a border across
 // it, get the same cut points. The exact Boolean operations of CGAL require
 // valid polygons, so a polygon that is not valid is clipped ring by ring
-// instead. The unsimplified input geometry that --redirect_exports_to_stdout
-// writes along is not cut: go-cart.io morphs its vertices one to one into
-// the vertices of the input map, so its coordinates may extend past the
-// frame.
+// instead. The geometry "Original" that --redirect_exports_to_stdout writes
+// along (the vertices of the input map, moved by the cartogram transformation
+// but not simplified) is not cut: go-cart.io morphs the input map vertex by
+// vertex into it, so its coordinates may extend past the frame.
 
 using Epeck = CGAL::Exact_predicates_exact_constructions_kernel;
 using Exact_polygon = CGAL::Polygon_2<Epeck>;
