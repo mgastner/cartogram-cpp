@@ -695,6 +695,27 @@ inline bool is_path_contained_within_cell(
          is_point_on_rect_edge(last, bbox);
 }
 
+// Checks whether a segment of the clipped path passes through the interior of
+// the cell. The clipped path lies in the closed cell, which is convex. Hence,
+// each segment either lies on one side of the cell, and so does its midpoint,
+// or its midpoint is in the interior of the cell. The comparisons are strict
+// and need no tolerance: the clipping gives each intersection point the exact
+// coordinate of the side, and a vertex on a lattice line has it, too.
+inline bool path_enters_cell_interior(
+  const Polygon &clipped_path,
+  const Bbox &bbox)
+{
+  for (unsigned int i = 1; i < clipped_path.size(); ++i) {
+    const Point m = CGAL::midpoint(clipped_path[i - 1], clipped_path[i]);
+    if (
+      m.x() > bbox.xmin() && m.x() < bbox.xmax() && m.y() > bbox.ymin() &&
+      m.y() < bbox.ymax()) {
+      return true;
+    }
+  }
+  return false;
+}
+
 // If inside, for each connected component (cc), maps it to corresponding pwh
 // For an unmapped cell of a cc, if the neighboring cell is a edge cell,
 // then we find the pwh of that edge, and run point-in-polygon check
@@ -831,6 +852,7 @@ static double compute_path_union_area(
   const Bbox cell_bbox(cx, cy, cx + 1, cy + 1);
 
   Polygon unified_path;
+  bool enters_cell_interior = false;
 
   for (size_t i = 0; i < intervals.size(); ++i) {
     const auto &iv = intervals[i];
@@ -842,6 +864,8 @@ static double compute_path_union_area(
     if (i == 0 && !is_path_contained_within_cell(clipped_path, cell_bbox)) {
       return compute_polygon_rectangle_overlap_area(polygon, cell_bbox);
     }
+    enters_cell_interior = enters_cell_interior ||
+                           path_enters_cell_interior(clipped_path, cell_bbox);
 
     if (is_outer) {
       // Outer boundaries are oriented in counter-clockwise. We make sure
@@ -876,7 +900,25 @@ static double compute_path_union_area(
     }
   }
 
-  // Close the polygon using the unified path
+  // The supercover line assigns an edge on a vertical lattice line to the
+  // cells on its right and an edge on a horizontal lattice line to the cells
+  // above it. An edge through a lattice point is also assigned to a cell that
+  // the edge touches only at a corner. If no segment of the clipped paths
+  // enters the interior of the cell, the polygon covers either the whole cell
+  // or none of it. The closed polygon below then has an integer area in both
+  // cases, so that its fractional part is 0 even if the cell is inside the
+  // polygon. Instead, we test whether the center of the cell, which does not
+  // lie on the polygon, is inside the polygon.
+  if (!enters_cell_interior) {
+    return is_point_inside_polygon(polygon, Point(cx + 0.5, cy + 0.5)) ? 1.0
+                                                                       : 0.0;
+  }
+
+  // Close the polygon using the unified path. The connecting paths can wind
+  // around the cell more than once, which adds an integer to the area. If a
+  // simple polygon passes through the interior of the cell, the area of the
+  // overlap is strictly between 0 and 1, so that the fractional part of the
+  // area of the closed polygon is the area of the overlap.
   Polygon closed_poly = build_closed_polygon(unified_path, cell_coor);
   double area = std::abs(closed_poly.area());
   return area - std::floor(area);
