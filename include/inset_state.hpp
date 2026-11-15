@@ -65,8 +65,9 @@ private:
 
   // With --periodic_x, the vertices where the input cuts regions at the
   // antimeridian (on x = 0 or x = lx after rescaling). They follow every
-  // transformation of geo_divs_, and simplification keeps them, so that the
-  // two copies of each cut line keep the same vertices.
+  // transformation of geo_divs_, simplification keeps them, and the edges
+  // between them get no densification points, so that the two copies of each
+  // cut line keep the same vertices.
   std::unordered_set<Point> cut_vertices_;
 
   // Bounding boxes of Quadtree cells

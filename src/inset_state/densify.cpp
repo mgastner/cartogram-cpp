@@ -369,11 +369,14 @@ void InsetState::densify_geo_divs_using_delaunay_t()
 
   // With periodic x, each edge is densified in the base sheet: it is shifted
   // by -k * lx with k = floor(min x / lx), and its points are shifted back.
-  // The copies of a line in different sheets, such as the two copies of a
-  // cut line at the antimeridian, therefore get the same points, and the
-  // shifts are exact because the coordinates lie on the periodic grid. The
-  // points inserted between two cut vertices become cut vertices, so that
-  // simplification keeps the two copies of a cut line identical.
+  // The copies of a line in different sheets therefore get the same points,
+  // and the shifts are exact because the coordinates lie on the periodic
+  // grid. An edge between two cut vertices, which lies on a cut line at the
+  // antimeridian, gets no points: its two copies then consist of the same
+  // frozen vertices, whose images are exact copies, so that the copies stay
+  // identical. (Freezing inserted points as well piled them up where the
+  // flow compresses a cut line, such as the sides of Antarctica, and caused
+  // failed integrations.)
   const double dlx = lx_;
   auto densify_edge = [&](const Point &a, const Point &b) {
     if (!args_.periodic_x) {
@@ -385,6 +388,9 @@ void InsetState::densify_geo_divs_using_delaunay_t()
         edge_kind,
         &cache);
     }
+    if (cut_vertices_.count(a) > 0 && cut_vertices_.count(b) > 0) {
+      return std::vector<Point>{a, b};
+    }
     const double shift = dlx * std::floor(std::min(a.x(), b.x()) / dlx);
     std::vector<Point> pts = densification_points_with_edge_tree(
       Point(a.x() - shift, a.y()),
@@ -393,13 +399,8 @@ void InsetState::densify_geo_divs_using_delaunay_t()
       edge_vec,
       edge_kind,
       &cache);
-    const bool on_cut_line =
-      cut_vertices_.count(a) > 0 && cut_vertices_.count(b) > 0;
     for (std::size_t k = 1; k + 1 < pts.size(); ++k) {
       pts[k] = Point(on_periodic_grid(pts[k].x(), dlx) + shift, pts[k].y());
-      if (on_cut_line) {
-        cut_vertices_.insert(pts[k]);
-      }
     }
     pts.front() = a;
     if (pts.size() > 1) {
