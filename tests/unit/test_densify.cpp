@@ -11,19 +11,28 @@
 
 // Densification inserts a point wherever a polygon edge crosses an edge of
 // the triangulation that projects the polygons. Each test runs one
-// integration with a uniform density, so that the map is the identity up to
-// rounding, on a polygon with a thin part or a nearly degenerate crossing.
-// The quadtree leaves are unit squares, so the triangulation has an edge on
-// every lattice line and a diagonal in every lattice cell.
+// integration on a polygon with a thin part or a nearly degenerate crossing,
+// with a uniform density, so that the map is the identity up to rounding,
+// and the tests of needles also with nonuniform densities. The quadtree
+// leaves are unit squares, so the triangulation has an edge on every lattice
+// line and a diagonal in every lattice cell.
 
 namespace
 {
 
-// Polygon with holes after one integration with a uniform density on an
-// l x l lattice
-Polygon_with_holes project_with_uniform_density(
+// Amplitudes A of the nonuniform densities
+//   rho(i, j) = 1 + A cos(pi (i + 1/2) / l) cos(2 pi (j + 1/2) / l)
+// on an l x l lattice, from the fourth review of PR #318. Each cell of the
+// triangulation then has its own affine map, so that the projected image of
+// a polygon edge bends where the edge crosses a triangle edge.
+const std::vector<double> amplitudes = {1e-6, 1e-4, 1e-2, 0.1};
+
+// Polygon with holes after one integration on an l x l lattice, with the
+// density of amplitude A above, or with a uniform density if A is 0
+Polygon_with_holes project_with_density(
   const Polygon_with_holes &in,
-  const unsigned int l)
+  const unsigned int l,
+  const double amplitude = 0.0)
 {
   Arguments args{};
   args.disable_simplification_densification = false;
@@ -42,11 +51,18 @@ Polygon_with_holes project_with_uniform_density(
   rho_ft.allocate(l, l);
   for (unsigned int i = 0; i < l; ++i) {
     for (unsigned int j = 0; j < l; ++j) {
-      rho_init(i, j) = 1.0;
+      rho_init(i, j) = 1.0 + amplitude * std::cos(pi * (i + 0.5) / l) *
+                               std::cos(2.0 * pi * (j + 0.5) / l);
       rho_ft(i, j) = 0.0;
     }
   }
-  rho_ft(0, 0) = 1.0;
+  if (amplitude == 0.0) {
+    rho_ft(0, 0) = 1.0;
+  } else {
+    inset.make_fftw_plans_for_rho();
+    inset.execute_fftw_fwd_plan();
+    inset.destroy_fftw_plans_for_rho();
+  }
   inset.ref_to_fluxx_init().allocate(l, l);
   inset.ref_to_fluxy_init().allocate(l, l);
   inset.make_fftw_plans_for_flux();
@@ -63,9 +79,12 @@ Polygon_with_holes project_with_uniform_density(
 }
 
 // Outer boundary of a polygon without holes after the same integration
-Polygon project_with_uniform_density(const Polygon &in, const unsigned int l)
+Polygon project_with_density(
+  const Polygon &in,
+  const unsigned int l,
+  const double amplitude = 0.0)
 {
-  return project_with_uniform_density(Polygon_with_holes(in), l)
+  return project_with_density(Polygon_with_holes(in), l, amplitude)
     .outer_boundary();
 }
 
@@ -121,13 +140,14 @@ Polygon polygon_from(const std::vector<std::pair<double, double>> &xy)
 
 // A ring after the same integration, either as the outer boundary of a
 // polygon without holes or as a hole in the square [60, 68] x [60, 68]
-Polygon project_ring_with_uniform_density(
+Polygon project_ring_with_density(
   const Polygon &ring,
   const bool as_hole,
-  const unsigned int l)
+  const unsigned int l,
+  const double amplitude = 0.0)
 {
   if (!as_hole) {
-    return project_with_uniform_density(ring, l);
+    return project_with_density(ring, l, amplitude);
   }
   const Polygon outer = polygon_from({
     {60.0, 60.0},
@@ -140,9 +160,10 @@ Polygon project_ring_with_uniform_density(
     hole.reverse_orientation();
   }
   const std::vector<Polygon> holes = {hole};
-  const Polygon_with_holes out = project_with_uniform_density(
+  const Polygon_with_holes out = project_with_density(
     Polygon_with_holes(outer, holes.begin(), holes.end()),
-    l);
+    l,
+    amplitude);
   BOOST_TEST_REQUIRE(out.number_of_holes() == 1u);
   BOOST_TEST(out.outer_boundary().is_simple());
   return *out.holes_begin();
@@ -167,7 +188,7 @@ BOOST_AUTO_TEST_CASE(short_edge_along_lattice_line_gets_no_point)
     {16.0 - 4e-9, 10.5 + 1e-9},
     {4.0, 10.5 + 1e-9},
   });
-  const Polygon out = project_with_uniform_density(in, 32);
+  const Polygon out = project_with_density(in, 32);
   BOOST_TEST(out.is_simple());
   BOOST_TEST(is_simple_with_exact_predicates(out));
 
@@ -192,7 +213,9 @@ BOOST_AUTO_TEST_CASE(short_edge_along_lattice_line_gets_no_point)
 // point by about the width of the needle. The first commit of PR #318
 // computed the crossing parameter with a relative error of 1e-3 and
 // inserted the points, so that the needle crossed itself. Even the exact
-// crossings, rounded to doubles, make the first needle cross itself.
+// crossings, rounded to doubles, make the first needle cross itself. With the
+// nonuniform densities, the first needle got the same point on both sides,
+// and the projection put the second needle's tip across its other side.
 BOOST_AUTO_TEST_CASE(needles_along_a_diagonal_stay_simple)
 {
   const std::vector<std::pair<unsigned int, Polygon>> needles = {
@@ -226,10 +249,15 @@ BOOST_AUTO_TEST_CASE(needles_along_a_diagonal_stay_simple)
   };
   for (const auto &[l, in] : needles) {
     BOOST_TEST_REQUIRE(is_simple_with_exact_predicates(in));
-    const Polygon out = project_with_uniform_density(in, l);
+    const Polygon out = project_with_density(in, l);
     BOOST_TEST(out.is_simple());
     BOOST_TEST(is_simple_with_exact_predicates(out));
     BOOST_TEST(largest_distance_from_boundary(out, in) < 1e-12);
+    for (const double amplitude : amplitudes) {
+      const Polygon out_nonuniform = project_with_density(in, l, amplitude);
+      BOOST_TEST(out_nonuniform.is_simple());
+      BOOST_TEST(is_simple_with_exact_predicates(out_nonuniform));
+    }
   }
 }
 
@@ -247,7 +275,7 @@ BOOST_AUTO_TEST_CASE(shallow_crossing_of_a_diagonal_is_accurate)
     {33.0 - ax, 31.0 - ay},
     {16.75, 15.75},
   });
-  const Polygon out = project_with_uniform_density(in, 32);
+  const Polygon out = project_with_density(in, 32);
   BOOST_TEST(out.is_simple());
   BOOST_TEST(is_simple_with_exact_predicates(out));
 
@@ -265,7 +293,8 @@ BOOST_AUTO_TEST_CASE(shallow_crossing_of_a_diagonal_is_accurate)
 // a diagonal crosses the needle, the exact crossings of the two sides are
 // half a unit in the last place apart, and both round to the same point.
 // The ring then touched itself, and the program stopped with "Outer
-// boundary is not simple". Such points are now removed from the ring.
+// boundary is not simple". One of the two points is now moved by a unit in
+// the last place.
 BOOST_AUTO_TEST_CASE(needle_across_a_diagonal_gets_no_shared_point)
 {
   const Polygon in = polygon_from({
@@ -277,10 +306,15 @@ BOOST_AUTO_TEST_CASE(needle_across_a_diagonal_gets_no_shared_point)
     {64.582118843777522, 63.634992746354804},
   });
   BOOST_TEST_REQUIRE(is_simple_with_exact_predicates(in));
-  const Polygon out = project_with_uniform_density(in, 128);
+  const Polygon out = project_with_density(in, 128);
   BOOST_TEST(out.is_simple());
   BOOST_TEST(is_simple_with_exact_predicates(out));
   BOOST_TEST(largest_distance_from_boundary(out, in) < 1e-12);
+  for (const double amplitude : amplitudes) {
+    const Polygon out_nonuniform = project_with_density(in, 128, amplitude);
+    BOOST_TEST(out_nonuniform.is_simple());
+    BOOST_TEST(is_simple_with_exact_predicates(out_nonuniform));
+  }
 }
 
 // Holes from the second review of PR #318: needles like those above, whose
@@ -289,9 +323,10 @@ BOOST_AUTO_TEST_CASE(needle_across_a_diagonal_gets_no_shared_point)
 // point where they cross the diagonal. The exact crossings lie 1.3e-7 apart
 // along the needle. Rounding moves the crossing of one side 5e-15 off that
 // side, which puts it 4e-22 beyond the other side, so that the hole crossed
-// itself and the program stopped with "Hole is not simple". Every inserted
-// point at the end of a segment that meets another segment is now removed
-// from the ring.
+// itself and the program stopped with "Hole is not simple". The crossing is
+// now moved by a unit in the last place. Removing it instead, as an earlier
+// revision of PR #318 did, made the second hole cross itself in the
+// projection with the density of amplitude 1e-2.
 BOOST_AUTO_TEST_CASE(holes_with_needles_along_a_diagonal_stay_simple)
 {
   const std::vector<Polygon> holes = {
@@ -314,10 +349,16 @@ BOOST_AUTO_TEST_CASE(holes_with_needles_along_a_diagonal_stay_simple)
   };
   for (const Polygon &hole : holes) {
     BOOST_TEST_REQUIRE(is_simple_with_exact_predicates(hole));
-    const Polygon out = project_ring_with_uniform_density(hole, true, 128);
+    const Polygon out = project_ring_with_density(hole, true, 128);
     BOOST_TEST(out.is_simple());
     BOOST_TEST(is_simple_with_exact_predicates(out));
     BOOST_TEST(largest_distance_from_boundary(out, hole) < 1e-12);
+    for (const double amplitude : amplitudes) {
+      const Polygon out_nonuniform =
+        project_ring_with_density(hole, true, 128, amplitude);
+      BOOST_TEST(out_nonuniform.is_simple());
+      BOOST_TEST(is_simple_with_exact_predicates(out_nonuniform));
+    }
   }
 }
 
@@ -328,9 +369,16 @@ BOOST_AUTO_TEST_CASE(holes_with_needles_along_a_diagonal_stay_simple)
 // to that point, so that the ring touched itself. The repair told inserted
 // points from vertices by their coordinates, kept both occurrences, and the
 // program stopped with "Outer boundary is not simple" or "Hole is not
-// simple". Densification now records which points it inserted, and only the
-// inserted occurrence is removed.
-BOOST_AUTO_TEST_CASE(point_inserted_at_a_vertex_of_the_other_side_is_removed)
+// simple". Densification now records which points it inserted, and the
+// inserted occurrence is moved by a unit in the last place.
+//
+// In the fourth review, a revision that removed the inserted occurrence
+// failed with the nonuniform densities: without the point, the projection
+// mapped the side as a straight segment between the images of its ends,
+// whereas the image of the other side bends at (64.5, 64.5), so that the two
+// sides crossed. With the density of amplitude 1e-4, the projection also
+// rounded the image of the moved point onto the image of (64.5, 64.5).
+BOOST_AUTO_TEST_CASE(point_inserted_at_a_vertex_of_the_other_side_is_moved)
 {
   const Polygon in = polygon_from({
     {64.25, 64.25},
@@ -343,16 +391,30 @@ BOOST_AUTO_TEST_CASE(point_inserted_at_a_vertex_of_the_other_side_is_removed)
   });
   BOOST_TEST_REQUIRE(is_simple_with_exact_predicates(in));
   for (const bool as_hole : {false, true}) {
-    const Polygon out = project_ring_with_uniform_density(in, as_hole, 128);
+    const Polygon out = project_ring_with_density(in, as_hole, 128);
     BOOST_TEST(out.is_simple());
     BOOST_TEST(is_simple_with_exact_predicates(out));
     BOOST_TEST(largest_distance_from_boundary(out, in) < 1e-12);
+
+    // The vertex stays where it is, and the other side keeps a point next to
+    // it on the diagonal
     int at_vertex = 0;
+    int near_vertex = 0;
     for (const Point &p : out) {
-      if (std::hypot(p.x() - 64.5, p.y() - 64.5) < 1e-12) {
+      if (p == Point(64.5, 64.5)) {
         ++at_vertex;
+      }
+      if (std::hypot(p.x() - 64.5, p.y() - 64.5) < 1e-12) {
+        ++near_vertex;
       }
     }
     BOOST_TEST(at_vertex == 1);
+    BOOST_TEST(near_vertex == 2);
+    for (const double amplitude : amplitudes) {
+      const Polygon out_nonuniform =
+        project_ring_with_density(in, as_hole, 128, amplitude);
+      BOOST_TEST(out_nonuniform.is_simple());
+      BOOST_TEST(is_simple_with_exact_predicates(out_nonuniform));
+    }
   }
 }

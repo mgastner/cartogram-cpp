@@ -1,16 +1,14 @@
 #include "inset_state.hpp"
+#include "repair_rings.hpp"
 #include "round_point.hpp"
 #include <CGAL/AABB_segment_primitive_2.h>
 #include <CGAL/AABB_traits_2.h>
 #include <CGAL/AABB_tree.h>
-#include <CGAL/Exact_predicates_inexact_constructions_kernel.h>
 #include <algorithm>
 #include <array>
 #include <cassert>
 #include <cmath>
-#include <numeric>
 #include <unordered_map>
-#include <unordered_set>
 
 using AABB_Prim =
   CGAL::AABB_segment_primitive_2<Scd, std::vector<Segment>::const_iterator>;
@@ -219,228 +217,6 @@ static void append_densified_edge(
   inserted.insert(inserted.end(), seg_pts.size() - 2, true);
 }
 
-// Kernel with exact predicates for checking simplicity. Its points have the
-// same double coordinates as the project's points, so only the predicates
-// differ.
-using Epick = CGAL::Exact_predicates_inexact_constructions_kernel;
-
-static std::vector<Epick::Point_2> with_exact_predicates(const Polygon &ring)
-{
-  std::vector<Epick::Point_2> pts;
-  pts.reserve(ring.size());
-  for (const Point &p : ring)
-    pts.emplace_back(p.x(), p.y());
-  return pts;
-}
-
-static bool is_simple_with_exact_predicates(const Polygon &ring)
-{
-  const std::vector<Epick::Point_2> pts = with_exact_predicates(ring);
-  return CGAL::is_simple_2(pts.begin(), pts.end(), Epick());
-}
-
-// Whether the segments (a, s) and (s, b), which are neighbors in a ring,
-// overlap beyond their common end s
-static bool fold_back(
-  const Epick::Point_2 &a,
-  const Epick::Point_2 &s,
-  const Epick::Point_2 &b)
-{
-  return CGAL::collinear(a, s, b) &&
-         !CGAL::collinear_are_strictly_ordered_along_line(a, s, b);
-}
-
-// Collects the points ring[k] with inserted[k] that are ends of a segment of
-// the ring that meets another segment of the ring, other than its neighbors
-// at their common end. If the two segments only touch at an end that occurs
-// twice in the ring, only that end is collected. The test uses exact
-// predicates. The segments are swept in the order of their smallest
-// x-coordinates.
-static void densification_points_on_intersecting_segments(
-  const Polygon &ring,
-  const std::vector<bool> &inserted,
-  std::unordered_set<Point> &found)
-{
-  const std::size_t n = ring.size();
-  if (n < 3)
-    return;
-  const std::vector<Epick::Point_2> pts = with_exact_predicates(ring);
-  auto next = [n](std::size_t k) {
-    return (k + 1 == n) ? 0 : k + 1;
-  };
-  auto lo_x = [&](std::size_t k) {
-    return std::min(pts[k].x(), pts[next(k)].x());
-  };
-  auto hi_x = [&](std::size_t k) {
-    return std::max(pts[k].x(), pts[next(k)].x());
-  };
-  auto lo_y = [&](std::size_t k) {
-    return std::min(pts[k].y(), pts[next(k)].y());
-  };
-  auto hi_y = [&](std::size_t k) {
-    return std::max(pts[k].y(), pts[next(k)].y());
-  };
-  std::vector<std::size_t> order(n);
-  std::iota(order.begin(), order.end(), std::size_t{0});
-  std::sort(order.begin(), order.end(), [&](std::size_t a, std::size_t b) {
-    return lo_x(a) < lo_x(b);
-  });
-  for (std::size_t a = 0; a < n; ++a) {
-    const std::size_t i = order[a];
-    for (std::size_t b = a + 1; b < n && !(lo_x(order[b]) > hi_x(i)); ++b) {
-      const std::size_t j = order[b];
-      if (lo_y(j) > hi_y(i) || lo_y(i) > hi_y(j))
-        continue;
-      bool meet;
-      if (next(i) == j) {
-        meet = fold_back(pts[i], pts[j], pts[next(j)]);
-      } else if (next(j) == i) {
-        meet = fold_back(pts[j], pts[i], pts[next(i)]);
-      } else {
-        meet = CGAL::do_intersect(
-          Epick::Segment_2(pts[i], pts[next(i)]),
-          Epick::Segment_2(pts[j], pts[next(j)]));
-      }
-      if (!meet)
-        continue;
-
-      // Segments that are not neighbors in the ring and have exactly one
-      // end in common, without overlapping beyond it, touch only there
-      std::size_t n_common = 0, u = 0, v = 0;
-      if (next(i) != j && next(j) != i) {
-        for (const std::size_t ku : {i, next(i)}) {
-          for (const std::size_t kv : {j, next(j)}) {
-            if (pts[ku] == pts[kv]) {
-              ++n_common;
-              u = ku;
-              v = kv;
-            }
-          }
-        }
-      }
-      const bool touch_at_common_end =
-        n_common == 1 && !fold_back(
-                           pts[u == i ? next(i) : i],
-                           pts[u],
-                           pts[v == j ? next(j) : j]);
-      if (touch_at_common_end) {
-        for (const std::size_t k : {u, v}) {
-          if (inserted[k])
-            found.insert(ring[k]);
-        }
-        continue;
-      }
-      for (const std::size_t k : {i, next(i), j, next(j)}) {
-        if (inserted[k])
-          found.insert(ring[k]);
-      }
-    }
-  }
-}
-
-// Rounding the coordinates of an inserted point moves the point off its
-// polygon edge by up to half a unit in the last place. Where another part of
-// the ring is that close, for example the other side of a needle one unit in
-// the last place wide, the ring can cross itself, or both sides can receive
-// the same point, so that the ring touches itself. Every ring is therefore
-// checked with the simplicity test of the Polygon type, which is also the
-// test of InsetState::is_simple(). If a ring that passed the test before
-// densification fails it now, the inserted points at the ends of the
-// segments that meet, found with exact predicates, are removed from every
-// ring wherever densification inserted them (inserted[r][k] tells whether
-// it inserted point k of ring r), so that shared boundaries stay identical.
-// If no such segments are found, all inserted points of the ring are
-// removed. The rings that lost points are checked again, with the test of
-// the Polygon type and with exact predicates, until no ring changes. Each
-// ring keeps its vertices from before densification, so the worst case for
-// a ring is its state before densification. Returns whether every ring
-// passes the test of the Polygon type.
-static bool drop_densification_points_that_break_simplicity(
-  std::vector<GeoDiv> &geo_divs_dens,
-  const std::vector<GeoDiv> &geo_divs,
-  std::vector<std::vector<bool>> &inserted)
-{
-  // Each densified ring with the ring before densification
-  std::vector<std::pair<Polygon *, const Polygon *>> rings;
-  for (std::size_t g = 0; g < geo_divs.size(); ++g) {
-    auto &pwhs_dens = geo_divs_dens[g].ref_to_polygons_with_holes();
-    const auto &pwhs = geo_divs[g].polygons_with_holes();
-    for (std::size_t p = 0; p < pwhs.size(); ++p) {
-      rings.emplace_back(
-        &pwhs_dens[p].outer_boundary(),
-        &pwhs[p].outer_boundary());
-      auto h_dens = pwhs_dens[p].holes().begin();
-      for (const auto &h : pwhs[p].holes()) {
-        rings.emplace_back(&*h_dens, &h);
-        ++h_dens;
-      }
-    }
-  }
-  assert(rings.size() == inserted.size());
-
-  std::vector<bool> fails(rings.size(), false);
-  std::vector<bool> changed(rings.size(), false);
-  std::vector<std::size_t> to_check(rings.size());
-  std::iota(to_check.begin(), to_check.end(), std::size_t{0});
-  std::unordered_set<Point> removed;
-  while (!to_check.empty()) {
-    std::unordered_set<Point> drop;
-    for (const std::size_t r : to_check) {
-      const Polygon &ring = *rings[r].first;
-      const Polygon &before = *rings[r].second;
-      fails[r] = !ring.is_simple();
-      const bool repair =
-        (fails[r] && before.is_simple()) ||
-        (changed[r] && !is_simple_with_exact_predicates(ring) &&
-         is_simple_with_exact_predicates(before));
-      if (!repair)
-        continue;
-      std::unordered_set<Point> found;
-      densification_points_on_intersecting_segments(ring, inserted[r], found);
-      if (found.empty()) {
-        for (std::size_t k = 0; k < ring.size(); ++k) {
-          if (inserted[r][k])
-            found.insert(ring[k]);
-        }
-      }
-      drop.insert(found.begin(), found.end());
-    }
-
-    if (drop.empty())
-      break;
-
-    to_check.clear();
-    for (std::size_t r = 0; r < rings.size(); ++r) {
-      Polygon &ring = *rings[r].first;
-      std::vector<bool> &ins = inserted[r];
-      Polygon kept;
-      std::vector<bool> kept_ins;
-      for (std::size_t k = 0; k < ring.size(); ++k) {
-        if (ins[k] && drop.count(ring[k]) > 0) {
-          removed.insert(ring[k]);
-        } else {
-          kept.push_back(ring[k]);
-          kept_ins.push_back(ins[k]);
-        }
-      }
-      if (kept.size() != ring.size()) {
-        ring = std::move(kept);
-        ins = std::move(kept_ins);
-        changed[r] = true;
-        to_check.push_back(r);
-      }
-    }
-  }
-  if (!removed.empty()) {
-    std::cerr << "Removed " << removed.size()
-              << " densification point(s) that made a ring cross itself"
-              << std::endl;
-  }
-  return std::none_of(fails.begin(), fails.end(), [](bool f) {
-    return f;
-  });
-}
-
 void InsetState::densify_geo_divs_using_delaunay_t()
 {
   timer.start("Densification");
@@ -568,10 +344,8 @@ void InsetState::densify_geo_divs_using_delaunay_t()
     geodivs_dens.emplace_back(std::move(gd_dens));
   }
 
-  const bool all_simple = drop_densification_points_that_break_simplicity(
-    geodivs_dens,
-    geo_divs_,
-    inserted);
+  const bool all_simple =
+    repair_rings_after_densification(geodivs_dens, geo_divs_, inserted);
   geo_divs_ = std::move(geodivs_dens);
 
   std::cerr << "Num points after densification: " << n_points() << std::endl;
