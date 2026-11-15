@@ -225,6 +225,7 @@ public:
   bool project();
   void project_point_set(std::unordered_set<Point> &unprojected);
   void project_with_delaunay_t(bool);
+  bool remove_vertices_where_rings_cross();
   void push_back(const GeoDiv &);
   FTReal2d &ref_to_fluxx_init();
   FTReal2d &ref_to_fluxy_init();
