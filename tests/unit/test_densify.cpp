@@ -119,6 +119,35 @@ Polygon polygon_from(const std::vector<std::pair<double, double>> &xy)
   return p;
 }
 
+// A ring after the same integration, either as the outer boundary of a
+// polygon without holes or as a hole in the square [60, 68] x [60, 68]
+Polygon project_ring_with_uniform_density(
+  const Polygon &ring,
+  const bool as_hole,
+  const unsigned int l)
+{
+  if (!as_hole) {
+    return project_with_uniform_density(ring, l);
+  }
+  const Polygon outer = polygon_from({
+    {60.0, 60.0},
+    {68.0, 60.0},
+    {68.0, 68.0},
+    {60.0, 68.0},
+  });
+  Polygon hole = ring;
+  if (!hole.is_clockwise_oriented()) {
+    hole.reverse_orientation();
+  }
+  const std::vector<Polygon> holes = {hole};
+  const Polygon_with_holes out = project_with_uniform_density(
+    Polygon_with_holes(outer, holes.begin(), holes.end()),
+    l);
+  BOOST_TEST_REQUIRE(out.number_of_holes() == 1u);
+  BOOST_TEST(out.outer_boundary().is_simple());
+  return *out.holes_begin();
+}
+
 }  // namespace
 
 // Thin band between y = 10.25 and y = 10.5. The top side crosses the
@@ -283,24 +312,47 @@ BOOST_AUTO_TEST_CASE(holes_with_needles_along_a_diagonal_stay_simple)
       {63.750000009999994, 63.25000001},
     }),
   };
-  const Polygon outer = polygon_from({
-    {60.0, 60.0},
-    {68.0, 60.0},
-    {68.0, 68.0},
-    {60.0, 68.0},
-  });
-  for (Polygon hole : holes) {
+  for (const Polygon &hole : holes) {
     BOOST_TEST_REQUIRE(is_simple_with_exact_predicates(hole));
-    hole.reverse_orientation();
-    const std::vector<Polygon> in_holes = {hole};
-    const Polygon_with_holes out = project_with_uniform_density(
-      Polygon_with_holes(outer, in_holes.begin(), in_holes.end()),
-      128);
-    BOOST_TEST_REQUIRE(out.number_of_holes() == 1u);
-    const Polygon &out_hole = *out.holes_begin();
-    BOOST_TEST(out_hole.is_simple());
-    BOOST_TEST(is_simple_with_exact_predicates(out_hole));
-    BOOST_TEST(largest_distance_from_boundary(out_hole, hole) < 1e-12);
-    BOOST_TEST(out.outer_boundary().is_simple());
+    const Polygon out = project_ring_with_uniform_density(hole, true, 128);
+    BOOST_TEST(out.is_simple());
+    BOOST_TEST(is_simple_with_exact_predicates(out));
+    BOOST_TEST(largest_distance_from_boundary(out, hole) < 1e-12);
+  }
+}
+
+// Needle from the third review of PR #318: its two sides are parallel to the
+// diagonal x = y and a unit in the last place apart, and one side has a vertex
+// at (64.5, 64.5). The other side crosses the diagonal x + y = 129 half a unit
+// in the last place from (64.5, 64.5) in x and in y, and the crossing rounds
+// to that point, so that the ring touched itself. The repair told inserted
+// points from vertices by their coordinates, kept both occurrences, and the
+// program stopped with "Outer boundary is not simple" or "Hole is not
+// simple". Densification now records which points it inserted, and only the
+// inserted occurrence is removed.
+BOOST_AUTO_TEST_CASE(point_inserted_at_a_vertex_of_the_other_side_is_removed)
+{
+  const Polygon in = polygon_from({
+    {64.25, 64.25},
+    {64.5, 64.5},
+    {64.75, 64.75},
+    {64.75000000000001, 64.75},
+    {64.25000000000001, 64.25},
+    {64.55, 63.95},
+    {63.95, 63.95},
+  });
+  BOOST_TEST_REQUIRE(is_simple_with_exact_predicates(in));
+  for (const bool as_hole : {false, true}) {
+    const Polygon out = project_ring_with_uniform_density(in, as_hole, 128);
+    BOOST_TEST(out.is_simple());
+    BOOST_TEST(is_simple_with_exact_predicates(out));
+    BOOST_TEST(largest_distance_from_boundary(out, in) < 1e-12);
+    int at_vertex = 0;
+    for (const Point &p : out) {
+      if (std::hypot(p.x() - 64.5, p.y() - 64.5) < 1e-12) {
+        ++at_vertex;
+      }
+    }
+    BOOST_TEST(at_vertex == 1);
   }
 }

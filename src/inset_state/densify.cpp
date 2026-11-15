@@ -206,68 +206,17 @@ static std::vector<Point> densification_points_with_edge_tree(
 }
 
 // Appends the points of one densified polygon edge, without its last point,
-// to a ring. An inserted point (not an end of the edge) that the ring has
-// already received goes into repeated.
+// to a ring, and records for each point whether densification inserted it
 static void append_densified_edge(
   Polygon &ring,
-  const std::vector<Point> &seg_pts,
-  std::unordered_set<Point> &inserted,
-  std::unordered_set<Point> &repeated)
+  std::vector<bool> &inserted,
+  const std::vector<Point> &seg_pts)
 {
   if (seg_pts.size() < 2)
     return;
-  for (std::size_t k = 1; k + 1 < seg_pts.size(); ++k) {
-    if (!inserted.insert(seg_pts[k]).second)
-      repeated.insert(seg_pts[k]);
-  }
   ring.insert(ring.end(), seg_pts.begin(), seg_pts.end() - 1);
-}
-
-// Where the two sides of a needle that is about one unit in the last place
-// wide cross a triangle edge, both sides can receive the same rounded
-// densification point, so that the ring touches itself and is no longer
-// simple. Such a point is removed from every ring that contains it, so that
-// shared boundaries, which receive the same points, stay identical. The
-// vertices of the polygons before densification are kept.
-static void drop_repeated_densification_points(
-  std::unordered_set<Point> &repeated,
-  std::vector<GeoDiv> &geo_divs_dens,
-  const std::vector<GeoDiv> &geo_divs)
-{
-  if (repeated.empty())
-    return;
-  for (const auto &gd : geo_divs) {
-    for (const auto &pwh : gd.polygons_with_holes()) {
-      for (const Point &p : pwh.outer_boundary())
-        repeated.erase(p);
-      for (const auto &h : pwh.holes()) {
-        for (const Point &p : h)
-          repeated.erase(p);
-      }
-    }
-  }
-  if (repeated.empty())
-    return;
-
-  auto filter = [&](Polygon &ring) {
-    Polygon kept;
-    kept.reserve(ring.size());
-    for (const Point &p : ring) {
-      if (repeated.count(p) == 0)
-        kept.push_back(p);
-    }
-    ring = std::move(kept);
-  };
-  for (auto &gd : geo_divs_dens) {
-    for (auto &pwh : gd.ref_to_polygons_with_holes()) {
-      filter(pwh.outer_boundary());
-      for (auto &h : pwh.holes())
-        filter(h);
-    }
-  }
-  std::cerr << "Removed " << repeated.size()
-            << " densification point(s) that occurred twice in a ring"
-            << std::endl;
+  inserted.push_back(false);
+  inserted.insert(inserted.end(), seg_pts.size() - 2, true);
 }
 
 // Kernel with exact predicates for checking simplicity. Its points have the
@@ -303,8 +252,10 @@ static bool fold_back(
 
 // Collects the points ring[k] with inserted[k] that are ends of a segment of
 // the ring that meets another segment of the ring, other than its neighbors
-// at their common end. The test uses exact predicates. The segments are
-// swept in the order of their smallest x-coordinates.
+// at their common end. If the two segments only touch at an end that occurs
+// twice in the ring, only that end is collected. The test uses exact
+// predicates. The segments are swept in the order of their smallest
+// x-coordinates.
 static void densification_points_on_intersecting_segments(
   const Polygon &ring,
   const std::vector<bool> &inserted,
@@ -352,6 +303,33 @@ static void densification_points_on_intersecting_segments(
       }
       if (!meet)
         continue;
+
+      // Segments that are not neighbors in the ring and have exactly one
+      // end in common, without overlapping beyond it, touch only there
+      std::size_t n_common = 0, u = 0, v = 0;
+      if (next(i) != j && next(j) != i) {
+        for (const std::size_t ku : {i, next(i)}) {
+          for (const std::size_t kv : {j, next(j)}) {
+            if (pts[ku] == pts[kv]) {
+              ++n_common;
+              u = ku;
+              v = kv;
+            }
+          }
+        }
+      }
+      const bool touch_at_common_end =
+        n_common == 1 && !fold_back(
+                           pts[u == i ? next(i) : i],
+                           pts[u],
+                           pts[v == j ? next(j) : j]);
+      if (touch_at_common_end) {
+        for (const std::size_t k : {u, v}) {
+          if (inserted[k])
+            found.insert(ring[k]);
+        }
+        continue;
+      }
       for (const std::size_t k : {i, next(i), j, next(j)}) {
         if (inserted[k])
           found.insert(ring[k]);
@@ -363,21 +341,24 @@ static void densification_points_on_intersecting_segments(
 // Rounding the coordinates of an inserted point moves the point off its
 // polygon edge by up to half a unit in the last place. Where another part of
 // the ring is that close, for example the other side of a needle one unit in
-// the last place wide, the ring can cross itself. Every ring is therefore
+// the last place wide, the ring can cross itself, or both sides can receive
+// the same point, so that the ring touches itself. Every ring is therefore
 // checked with the simplicity test of the Polygon type, which is also the
 // test of InsetState::is_simple(). If a ring that passed the test before
 // densification fails it now, the inserted points at the ends of the
 // segments that meet, found with exact predicates, are removed from every
-// ring that received them by densification, so that shared boundaries stay
-// identical. If no such segments are found, all inserted points of the ring
-// are removed. The rings that lost points are checked again, with the test
-// of the Polygon type and with exact predicates, until no ring changes. Each
+// ring wherever densification inserted them (inserted[r][k] tells whether
+// it inserted point k of ring r), so that shared boundaries stay identical.
+// If no such segments are found, all inserted points of the ring are
+// removed. The rings that lost points are checked again, with the test of
+// the Polygon type and with exact predicates, until no ring changes. Each
 // ring keeps its vertices from before densification, so the worst case for
 // a ring is its state before densification. Returns whether every ring
 // passes the test of the Polygon type.
 static bool drop_densification_points_that_break_simplicity(
   std::vector<GeoDiv> &geo_divs_dens,
-  const std::vector<GeoDiv> &geo_divs)
+  const std::vector<GeoDiv> &geo_divs,
+  std::vector<std::vector<bool>> &inserted)
 {
   // Each densified ring with the ring before densification
   std::vector<std::pair<Polygon *, const Polygon *>> rings;
@@ -395,6 +376,7 @@ static bool drop_densification_points_that_break_simplicity(
       }
     }
   }
+  assert(rings.size() == inserted.size());
 
   std::vector<bool> fails(rings.size(), false);
   std::vector<bool> changed(rings.size(), false);
@@ -413,15 +395,11 @@ static bool drop_densification_points_that_break_simplicity(
          is_simple_with_exact_predicates(before));
       if (!repair)
         continue;
-      const std::unordered_set<Point> vertices(before.begin(), before.end());
-      std::vector<bool> inserted(ring.size());
-      for (std::size_t k = 0; k < ring.size(); ++k)
-        inserted[k] = (vertices.count(ring[k]) == 0);
       std::unordered_set<Point> found;
-      densification_points_on_intersecting_segments(ring, inserted, found);
+      densification_points_on_intersecting_segments(ring, inserted[r], found);
       if (found.empty()) {
         for (std::size_t k = 0; k < ring.size(); ++k) {
-          if (inserted[k])
+          if (inserted[r][k])
             found.insert(ring[k]);
         }
       }
@@ -431,27 +409,23 @@ static bool drop_densification_points_that_break_simplicity(
     if (drop.empty())
       break;
 
-    // Each ring keeps its own vertices from before densification, even if
-    // another ring received the same point by densification
     to_check.clear();
     for (std::size_t r = 0; r < rings.size(); ++r) {
       Polygon &ring = *rings[r].first;
-      if (std::none_of(ring.begin(), ring.end(), [&](const Point &p) {
-            return drop.count(p) > 0;
-          }))
-        continue;
-      const Polygon &before = *rings[r].second;
-      const std::unordered_set<Point> vertices(before.begin(), before.end());
+      std::vector<bool> &ins = inserted[r];
       Polygon kept;
-      kept.reserve(ring.size());
-      for (const Point &p : ring) {
-        if (drop.count(p) == 0 || vertices.count(p) > 0)
-          kept.push_back(p);
-        else
-          removed.insert(p);
+      std::vector<bool> kept_ins;
+      for (std::size_t k = 0; k < ring.size(); ++k) {
+        if (ins[k] && drop.count(ring[k]) > 0) {
+          removed.insert(ring[k]);
+        } else {
+          kept.push_back(ring[k]);
+          kept_ins.push_back(ins[k]);
+        }
       }
       if (kept.size() != ring.size()) {
         ring = std::move(kept);
+        ins = std::move(kept_ins);
         changed[r] = true;
         to_check.push_back(r);
       }
@@ -524,8 +498,9 @@ void InsetState::densify_geo_divs_using_delaunay_t()
   std::vector<GeoDiv> geodivs_dens;
   geodivs_dens.reserve(geo_divs_.size());
 
-  // Inserted points that some ring received twice
-  std::unordered_set<Point> repeated;
+  // For each ring, in the order of the rings in geodivs_dens, whether
+  // densification inserted each point
+  std::vector<std::vector<bool>> inserted;
 
   for (const auto &gd : geo_divs_) {
     GeoDiv gd_dens(gd.id());
@@ -533,7 +508,7 @@ void InsetState::densify_geo_divs_using_delaunay_t()
     for (const auto &pwh : gd.polygons_with_holes()) {
       const auto &outer = pwh.outer_boundary();
       Polygon outer_dens;
-      std::unordered_set<Point> inserted_in_outer;
+      std::vector<bool> inserted_in_outer;
       outer_dens.reserve(outer.size() * 5);
 
       const std::size_t outer_sz = outer.size();
@@ -550,19 +525,16 @@ void InsetState::densify_geo_divs_using_delaunay_t()
           edge_kind,
           &cache);
 
-        append_densified_edge(
-          outer_dens,
-          seg_pts,
-          inserted_in_outer,
-          repeated);
+        append_densified_edge(outer_dens, inserted_in_outer, seg_pts);
       }
+      inserted.push_back(std::move(inserted_in_outer));
 
       std::vector<Polygon> holes_v_dens;
       holes_v_dens.reserve(pwh.number_of_holes());
 
       for (auto const &h : pwh.holes()) {
         Polygon hole_dens;
-        std::unordered_set<Point> inserted_in_hole;
+        std::vector<bool> inserted_in_hole;
         hole_dens.reserve(h.size() * 2);
 
         const std::size_t h_sz = h.size();
@@ -579,13 +551,10 @@ void InsetState::densify_geo_divs_using_delaunay_t()
               edge_kind,
               &cache);
 
-          append_densified_edge(
-            hole_dens,
-            seg_pts,
-            inserted_in_hole,
-            repeated);
+          append_densified_edge(hole_dens, inserted_in_hole, seg_pts);
         }
 
+        inserted.push_back(std::move(inserted_in_hole));
         holes_v_dens.emplace_back(std::move(hole_dens));
       }
 
@@ -599,9 +568,10 @@ void InsetState::densify_geo_divs_using_delaunay_t()
     geodivs_dens.emplace_back(std::move(gd_dens));
   }
 
-  drop_repeated_densification_points(repeated, geodivs_dens, geo_divs_);
-  const bool all_simple =
-    drop_densification_points_that_break_simplicity(geodivs_dens, geo_divs_);
+  const bool all_simple = drop_densification_points_that_break_simplicity(
+    geodivs_dens,
+    geo_divs_,
+    inserted);
   geo_divs_ = std::move(geodivs_dens);
 
   std::cerr << "Num points after densification: " << n_points() << std::endl;
