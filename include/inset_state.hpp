@@ -157,6 +157,11 @@ public:
   // string. Must be called before the projection.
   [[nodiscard]] std::string geo_div_with_edge_across_antimeridian() const;
 
+  // With --periodic_x, moves each vertex at 180 degrees east onto the vertex
+  // at 180 degrees west whose latitude is nearest, if they differ by less than
+  // antimeridian_snap_tolerance. Must be called before the projection.
+  void snap_vertices_across_antimeridian();
+
   // Calculate difference between initial area and current area
   double area_expansion_factor() const;
   double area_error_at(const std::string &) const;
@@ -276,8 +281,8 @@ public:
   void store_initial_target_area(const double override = 0.0);
   void store_original_geo_divs();
 
-  // With --periodic_x, cuts the polygons at the lines x = k * lx and shifts
-  // each piece by -k * lx into the frame 0 <= x <= lx
+  // With --periodic_x, cuts the polygons of the cartogram at the lines
+  // x = k * lx and shifts each piece by -k * lx into the frame 0 <= x <= lx
   void wrap_into_frame();
   template <class QuadtreeImp>
   void store_quadtree_cell_corners(const QuadtreeImp &qt);

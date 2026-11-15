@@ -205,3 +205,33 @@ BOOST_AUTO_TEST_CASE(edge_across_the_antimeridian_is_found)
   cut.push_back(gd_cut);
   BOOST_TEST(cut.geo_div_with_edge_across_antimeridian().empty());
 }
+
+// In the sample world map by country, 6 of the 166 vertices on each side of
+// Russia's cut at the antimeridian differ in latitude by 1e-7 degrees, which
+// left slivers in the periodic output. A vertex at 180 degrees east within
+// 1e-6 degrees of a vertex at 180 degrees west is moved onto it; a vertex
+// 1e-5 degrees away is kept.
+BOOST_AUTO_TEST_CASE(vertices_across_the_antimeridian_are_snapped)
+{
+  Arguments args{};
+  args.world = true;
+  args.periodic_x = true;
+  InsetState inset("W", args);
+  GeoDiv gd("R");
+  gd.push_back(Polygon_with_holes(ring_from(
+    {{170.0, 10.0}, {180.0, 10.0000001}, {180.0, 20.00001}, {170.0, 20.0}})));
+  gd.push_back(Polygon_with_holes(ring_from(
+    {{-180.0, 10.0}, {-170.0, 10.0}, {-170.0, 20.0}, {-180.0, 20.0}})));
+  inset.push_back(gd);
+
+  inset.snap_vertices_across_antimeridian();
+
+  const Polygon &east =
+    inset.geo_divs()[0].polygons_with_holes()[0].outer_boundary();
+  auto same = [](const double a, const double b) {
+    return !(a < b) && !(a > b);
+  };
+  BOOST_TEST(same(east[1].y(), 10.0));
+  BOOST_TEST(same(east[2].y(), 20.00001));
+  BOOST_TEST(same(east[1].x(), 180.0));
+}

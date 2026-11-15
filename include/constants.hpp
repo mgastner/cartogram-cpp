@@ -12,6 +12,10 @@ constexpr unsigned int default_grid_factor = 2;
 constexpr double dbl_epsilon = std::numeric_limits<double>::epsilon();
 constexpr double dbl_inf = std::numeric_limits<double>::infinity();
 constexpr double dbl_resolution = 1e-8;
+
+// With --periodic_x, vertices on the two sides of the antimeridian whose
+// latitudes differ by less than this many degrees are taken as the same point
+constexpr double antimeridian_snap_tolerance = 1e-6;
 constexpr unsigned int max_integrations = 100;
 constexpr double default_max_permitted_area_error = 0.01;
 constexpr double max_permitted_area_drift = 0.05;

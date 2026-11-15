@@ -9,9 +9,11 @@
 // by -k * lx into the frame. The cuts use exact constructions, so that the
 // pieces on the two sides of a cut, and neighbors that share a border across
 // it, get the same cut points. The exact Boolean operations of CGAL require
-// valid polygons. A polygon that is not valid, which can happen to the
-// unsimplified input geometry that --redirect_exports_to_stdout projects
-// along, is clipped ring by ring instead.
+// valid polygons, so a polygon that is not valid is clipped ring by ring
+// instead. The unsimplified input geometry that --redirect_exports_to_stdout
+// writes along is not cut: go-cart.io morphs its vertices one to one into
+// the vertices of the input map, so its coordinates may extend past the
+// frame.
 
 using Epeck = CGAL::Exact_predicates_exact_constructions_kernel;
 using Exact_polygon = CGAL::Polygon_2<Epeck>;
@@ -154,23 +156,18 @@ void InsetState::wrap_into_frame()
     return;
   }
   const double dlx = lx_;
-  auto wrap = [&](std::vector<GeoDiv> &geo_divs, const char *which) {
-    unsigned int n_invalid = 0;
-    for (auto &gd : geo_divs) {
-      std::vector<Polygon_with_holes> pieces;
-      for (const auto &pwh : gd.polygons_with_holes()) {
-        if (!wrap_polygon_with_holes(pwh, dlx, pieces)) {
-          ++n_invalid;
-        }
+  unsigned int n_invalid = 0;
+  for (auto &gd : geo_divs_) {
+    std::vector<Polygon_with_holes> pieces;
+    for (const auto &pwh : gd.polygons_with_holes()) {
+      if (!wrap_polygon_with_holes(pwh, dlx, pieces)) {
+        ++n_invalid;
       }
-      gd.ref_to_polygons_with_holes() = std::move(pieces);
     }
-    if (n_invalid > 0) {
-      std::cerr << "WARNING: " << n_invalid << " polygon(s) of the " << which
-                << " geometry across the seam are not valid; they were "
-                << "clipped ring by ring." << std::endl;
-    }
-  };
-  wrap(geo_divs_, "cartogram");
-  wrap(geo_divs_original_transformed_, "original");
+    gd.ref_to_polygons_with_holes() = std::move(pieces);
+  }
+  if (n_invalid > 0) {
+    std::cerr << "WARNING: " << n_invalid << " polygon(s) across the seam "
+              << "are not valid; they were clipped ring by ring." << std::endl;
+  }
 }

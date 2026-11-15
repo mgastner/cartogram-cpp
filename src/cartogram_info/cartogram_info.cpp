@@ -167,6 +167,7 @@ void CartogramInfo::project_to_equal_area()
                       << " has an edge across it." << std::endl;
             std::exit(EXIT_FAILURE);
           }
+          inset_state.snap_vertices_across_antimeridian();
         }
         inset_state.apply_smyth_craster_projection();
       } else {
