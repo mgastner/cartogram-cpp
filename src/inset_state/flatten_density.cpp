@@ -191,6 +191,11 @@ bool InsetState::flatten_density_on_node_vertices()
       v_intp[i] = v_intp_val;
     }
 
+    // The density is equalized at t = 1. Shorten the step so that it ends
+    // there; for t > 1, the interpolated density would keep moving the points
+    // past the equalized map.
+    delta_t = std::min(delta_t, 1.0 - t);
+
     bool accept = false;
     while (!accept) {
 
@@ -288,8 +293,10 @@ bool InsetState::flatten_density_on_node_vertices()
                 << ", delta_t = " << delta_t << "\n";
     }
 
-    // When we get here, the integration step was accepted
-    t += delta_t;
+    // When we get here, the integration step was accepted. If it was the
+    // shortened last step, set t to 1 exactly so that rounding cannot leave a
+    // tiny remainder.
+    t = (delta_t < 1.0 - t) ? t + delta_t : 1.0;
     ++iter;
 
     // Update the triangle transformation map
