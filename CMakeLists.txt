@@ -62,8 +62,8 @@ target_compile_options(cartogram_lib PUBLIC
 )
 
 # Instruction set of Release builds. The default, native, compiles for the CPU
-# that builds the program, which may then fail with an illegal instruction on
-# another CPU. Binaries for other computers need a fixed target, for example
+# that builds the program, so the program may fail with an illegal instruction
+# on another CPU. Binaries for other computers need a fixed target, for example
 # x86-64-v3 (x86-64 with AVX2) or armv8-a.
 set(CARTOGRAM_MARCH native CACHE STRING
   "Value of -march in Release builds, for example native, x86-64-v3, or armv8-a")
