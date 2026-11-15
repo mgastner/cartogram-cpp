@@ -76,12 +76,12 @@ void InsetState::rescale_map()
   // the antimeridian lands exactly on x = 0 and x = lx. Its vertices become
   // the cut vertices.
   if (args_.periodic_x) {
+    const double dlx = lx;
     transform_points([&](const Point &p) {
       return Point(
-        (p.x() - new_xmin) / latt_const,
+        on_periodic_grid((p.x() - new_xmin) / latt_const, dlx),
         (p.y() - new_ymin) / latt_const);
     });
-    const double dlx = lx;
     cut_vertices_.clear();
     auto collect = [&](const Polygon &ring) {
       for (const Point &p : ring) {

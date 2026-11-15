@@ -14,11 +14,23 @@
 #include "time_tracker.hpp"
 #include "triangulation.hpp"
 #include <boost/multi_array.hpp>
+#include <cmath>
 #include <cstdint>
 
 // Smyth equal-surface (Craster rectangular) projection of a point whose
 // coordinates are the longitude and latitude in degrees
 Point point_after_smyth_craster_projection(const Point &);
+
+// With --periodic_x, the x-coordinates of the polygons lie on a grid with
+// spacing lx * 2^-51. For |x| < 4 lx, a shift by a multiple of lx maps the
+// grid onto itself without rounding, so that the copies of a line in
+// different sheets of the periodic map (such as the two copies of a cut line
+// at the antimeridian) stay exact copies.
+inline double on_periodic_grid(const double x, const double lx)
+{
+  const double spacing = std::ldexp(lx, -51);
+  return std::nearbyint(x / spacing) * spacing;
+}
 
 struct max_area_error_info {
   double value;

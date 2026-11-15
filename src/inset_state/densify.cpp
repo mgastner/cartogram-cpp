@@ -367,6 +367,47 @@ void InsetState::densify_geo_divs_using_delaunay_t()
   std::vector<GeoDiv> geodivs_dens;
   geodivs_dens.reserve(geo_divs_.size());
 
+  // With periodic x, each edge is densified in the base sheet: it is shifted
+  // by -k * lx with k = floor(min x / lx), and its points are shifted back.
+  // The copies of a line in different sheets, such as the two copies of a
+  // cut line at the antimeridian, therefore get the same points, and the
+  // shifts are exact because the coordinates lie on the periodic grid. The
+  // points inserted between two cut vertices become cut vertices, so that
+  // simplification keeps the two copies of a cut line identical.
+  const double dlx = lx_;
+  auto densify_edge = [&](const Point &a, const Point &b) {
+    if (!args_.periodic_x) {
+      return densification_points_with_edge_tree(
+        a,
+        b,
+        tree,
+        edge_vec,
+        edge_kind,
+        &cache);
+    }
+    const double shift = dlx * std::floor(std::min(a.x(), b.x()) / dlx);
+    std::vector<Point> pts = densification_points_with_edge_tree(
+      Point(a.x() - shift, a.y()),
+      Point(b.x() - shift, b.y()),
+      tree,
+      edge_vec,
+      edge_kind,
+      &cache);
+    const bool on_cut_line =
+      cut_vertices_.count(a) > 0 && cut_vertices_.count(b) > 0;
+    for (std::size_t k = 1; k + 1 < pts.size(); ++k) {
+      pts[k] = Point(on_periodic_grid(pts[k].x(), dlx) + shift, pts[k].y());
+      if (on_cut_line) {
+        cut_vertices_.insert(pts[k]);
+      }
+    }
+    pts.front() = a;
+    if (pts.size() > 1) {
+      pts.back() = b;
+    }
+    return pts;
+  };
+
   for (const auto &gd : geo_divs_) {
     GeoDiv gd_dens(gd.id());
 
@@ -381,13 +422,7 @@ void InsetState::densify_geo_divs_using_delaunay_t()
         const Point a = outer[i];
         const Point b = (i + 1 == outer_sz) ? outer[0] : outer[i + 1];
 
-        const std::vector<Point> seg_pts = densification_points_with_edge_tree(
-          a,
-          b,
-          tree,
-          edge_vec,
-          edge_kind,
-          &cache);
+        const std::vector<Point> seg_pts = densify_edge(a, b);
 
         if (seg_pts.size() > 1)
           outer_dens.insert(
@@ -408,14 +443,7 @@ void InsetState::densify_geo_divs_using_delaunay_t()
           const Point c = h[j];
           const Point d = (j + 1 == h_sz) ? h[0] : h[j + 1];
 
-          const std::vector<Point> seg_pts =
-            densification_points_with_edge_tree(
-              c,
-              d,
-              tree,
-              edge_vec,
-              edge_kind,
-              &cache);
+          const std::vector<Point> seg_pts = densify_edge(c, d);
 
           if (seg_pts.size() > 1)
             hole_dens.insert(

@@ -102,7 +102,7 @@ static Point project_point_periodic_x(
     copy,
     *triang.locate(copy),
     proj);
-  return {projected.x() + shift, projected.y()};
+  return {on_periodic_grid(projected.x(), dlx) + shift, projected.y()};
 }
 
 void InsetState::project_with_delaunay_t(bool output_to_stdout)
