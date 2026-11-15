@@ -90,9 +90,11 @@ jobs:
         run: |
           markdownlint-cli2 README.md
 
-  # Each job tests the binaries on the runner that built them. CMakeLists.txt
-  # compiles with -march=native, so a binary may use instructions, such as
-  # AVX-512, that the CPU of another runner lacks.
+  # Each job tests the binaries on the runner that built them. The Linux
+  # release builds compile for a fixed instruction set (matrix.march), so that
+  # their binaries run on other CPUs as well. The macOS release build compiles
+  # with -march=native, the default of CMakeLists.txt, so its binaries may use
+  # instructions that the CPU of another runner lacks.
   build-and-test:
     name: "Build and test (${{ matrix.name }})"
     runs-on: ${{ matrix.os }}
@@ -106,11 +108,13 @@ jobs:
             compiler: gcc
             version: 15
             build_type: Release
+            march: x86-64-v3
             name: ubuntu-release-gcc
           - os: ubuntu-26.04
             compiler: clang
             version: 22
             build_type: Release
+            march: x86-64-v3
             name: ubuntu-release-clang
           - os: ubuntu-26.04
             compiler: gcc
@@ -127,6 +131,7 @@ jobs:
             compiler: clang
             version: 22
             build_type: Release
+            march: armv8-a
             name: ubuntu-arm64-release-clang
           - os: ubuntu-26.04-arm
             compiler: clang
@@ -197,12 +202,19 @@ jobs:
               EXE_FLAGS=''
           fi
 
+          if [[ -n "${{ matrix.march }}" ]]; then
+              MARCH_FLAG='-DCARTOGRAM_MARCH=${{ matrix.march }}'
+          else
+              MARCH_FLAG=''
+          fi
+
           cmake -S . -B build \
             -DCMAKE_TOOLCHAIN_FILE=build/build/${{ matrix.build_type }}/generators/conan_toolchain.cmake \
             -DCMAKE_BUILD_TYPE=${{ matrix.build_type }} \
             -DBUILD_SHARED_LIBS=OFF \
             -DCMAKE_EXPORT_COMPILE_COMMANDS=ON \
             ${FIND_SUFFIX} \
+            ${MARCH_FLAG} \
             -DCMAKE_EXE_LINKER_FLAGS="${EXE_FLAGS}"
           cmake --build build -j$(nproc || sysctl -n hw.ncpu)
 
@@ -226,9 +238,10 @@ jobs:
 
       # The static binaries of the Linux release builds can be downloaded from
       # the run, for example to attach them to a release. They are compiled
-      # with -march=native, so they may need the instruction set of the CPU of
-      # the runner. The binary is packed with tar because upload-artifact does
-      # not keep the executable bit. The upload runs only if the tests passed.
+      # for x86-64-v3 (x86-64 with AVX2) or armv8-a (matrix.march), not for
+      # the CPU of the runner. The binary is packed with tar because
+      # upload-artifact does not keep the executable bit. The upload runs only
+      # if the tests passed.
       - name: Pack binary
         if: runner.os == 'Linux' && matrix.build_type == 'Release'
         run: tar -czf cartogram-${{ matrix.name }}.tar.gz -C build cartogram
@@ -317,8 +330,9 @@ jobs:
 
   # ──────────────────── Performance comparison ────────────────────
   # Both binaries are built on the runner that benchmarks them, and with the
-  # same options. CMakeLists.txt compiles with -march=native, so a binary built
-  # on another runner may use instructions that the CPU of this runner lacks.
+  # same options, including the default -march=native of CMakeLists.txt. A
+  # binary built with -march=native on another runner may use instructions that
+  # the CPU of this runner lacks.
   perf-tests:
     if: github.event_name == 'pull_request'
     name: Performance comparison (main, ${{ matrix.name }})
