@@ -19,9 +19,11 @@
 namespace
 {
 
-// Outer boundary of the polygon after one integration with a uniform
-// density on an l x l lattice
-Polygon project_with_uniform_density(const Polygon &in, const unsigned int l)
+// Polygon with holes after one integration with a uniform density on an
+// l x l lattice
+Polygon_with_holes project_with_uniform_density(
+  const Polygon_with_holes &in,
+  const unsigned int l)
 {
   Arguments args{};
   args.disable_simplification_densification = false;
@@ -31,7 +33,7 @@ Polygon project_with_uniform_density(const Polygon &in, const unsigned int l)
 
   InsetState inset("C", args);
   GeoDiv gd("polygon");
-  gd.push_back(Polygon_with_holes(in));
+  gd.push_back(in);
   inset.push_back(gd);
   inset.set_grid_dimensions(l, l);
   FTReal2d &rho_init = inset.ref_to_rho_init();
@@ -51,14 +53,20 @@ Polygon project_with_uniform_density(const Polygon &in, const unsigned int l)
 
   BOOST_TEST_REQUIRE(inset.flatten_density());
   BOOST_TEST_REQUIRE(inset.project());
-  const Polygon out =
-    inset.geo_divs()[0].polygons_with_holes()[0].outer_boundary();
+  const Polygon_with_holes out = inset.geo_divs()[0].polygons_with_holes()[0];
   inset.destroy_fftw_plans_for_flux();
   inset.ref_to_fluxx_init().free();
   inset.ref_to_fluxy_init().free();
   rho_init.free();
   rho_ft.free();
   return out;
+}
+
+// Outer boundary of a polygon without holes after the same integration
+Polygon project_with_uniform_density(const Polygon &in, const unsigned int l)
+{
+  return project_with_uniform_density(Polygon_with_holes(in), l)
+    .outer_boundary();
 }
 
 // Simplicity with exact predicates, because the predicates of the
@@ -244,4 +252,55 @@ BOOST_AUTO_TEST_CASE(needle_across_a_diagonal_gets_no_shared_point)
   BOOST_TEST(out.is_simple());
   BOOST_TEST(is_simple_with_exact_predicates(out));
   BOOST_TEST(largest_distance_from_boundary(out, in) < 1e-12);
+}
+
+// Holes from the second review of PR #318: needles like those above, whose
+// two long sides are parallel and 5e-15 apart. Their ends lie 1.4e-8 from the
+// diagonal x + y = 128, just farther than dbl_resolution, so both sides get a
+// point where they cross the diagonal. The exact crossings lie 1.3e-7 apart
+// along the needle. Rounding moves the crossing of one side 5e-15 off that
+// side, which puts it 4e-22 beyond the other side, so that the hole crossed
+// itself and the program stopped with "Hole is not simple". Every inserted
+// point at the end of a segment that meets another segment is now removed
+// from the ring.
+BOOST_AUTO_TEST_CASE(holes_with_needles_along_a_diagonal_stay_simple)
+{
+  const std::vector<Polygon> holes = {
+    polygon_from({
+      {64.25000001, 63.75000001},
+      {64.74999999, 63.24999999},
+      {64.74999999, 63.24999998999999},
+      {64.25000001, 63.750000009999994},
+      {63.750000009999994, 63.25000001},
+      {63.750000009999994, 64.25000001000001},
+    }),
+    polygon_from({
+      {64.25000001, 63.75000001},
+      {64.74999999, 63.24999999},
+      {64.74999999, 63.249999990000006},
+      {64.25000001, 63.75000001000001},
+      {63.750000009999994, 64.25000001000001},
+      {63.750000009999994, 63.25000001},
+    }),
+  };
+  const Polygon outer = polygon_from({
+    {60.0, 60.0},
+    {68.0, 60.0},
+    {68.0, 68.0},
+    {60.0, 68.0},
+  });
+  for (Polygon hole : holes) {
+    BOOST_TEST_REQUIRE(is_simple_with_exact_predicates(hole));
+    hole.reverse_orientation();
+    const std::vector<Polygon> in_holes = {hole};
+    const Polygon_with_holes out = project_with_uniform_density(
+      Polygon_with_holes(outer, in_holes.begin(), in_holes.end()),
+      128);
+    BOOST_TEST_REQUIRE(out.number_of_holes() == 1u);
+    const Polygon &out_hole = *out.holes_begin();
+    BOOST_TEST(out_hole.is_simple());
+    BOOST_TEST(is_simple_with_exact_predicates(out_hole));
+    BOOST_TEST(largest_distance_from_boundary(out_hole, hole) < 1e-12);
+    BOOST_TEST(out.outer_boundary().is_simple());
+  }
 }
