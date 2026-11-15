@@ -34,3 +34,8 @@ endforeach()
 # build with ThreadSanitizer, it takes about 0.5 s on an Apple M2, and up to
 # 1 s on the first run.
 set_tests_properties(test_flatten_density PROPERTIES TIMEOUT 20)
+
+# test_densify runs ten integrations, on grids of up to 128 x 128. In the
+# Debug builds with AddressSanitizer and ThreadSanitizer, it passed in CI but
+# took more than 1 s.
+set_tests_properties(test_densify PROPERTIES TIMEOUT 20)
