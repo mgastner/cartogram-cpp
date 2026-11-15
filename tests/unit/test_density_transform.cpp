@@ -81,7 +81,7 @@ struct DensityTransform {
   }
 };
 
-// blur_width() needs a grid whose long side has at least 256 cells
+// The long side of 256 cells gives the blur width of the default grid, 2 cells
 struct LargeDensityTransform : DensityTransform {
   LargeDensityTransform() : DensityTransform(256, 128) {}
 };

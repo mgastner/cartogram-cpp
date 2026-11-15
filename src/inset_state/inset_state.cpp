@@ -4,6 +4,7 @@
 #include "quadtree.hpp"
 #include "triangulation.hpp"
 #include <algorithm>
+#include <bit>
 
 InsetState::InsetState(std::string pos, Arguments args)
     : args_(args), pos_(pos)
@@ -65,10 +66,18 @@ double InsetState::blur_width() const
   //       return to a positive blur width after a failed integration,
   //       because on some sample maps every integration with a blur width
   //       of 0 fails.
+  // Before the first integration and without failures, the blur width is
+  // 2^grid_size_pow grid cells. The exponent is 1 if the long side of the grid
+  // has 256 cells and grows by 1 with every doubling of the long side, so
+  // that the blur width is 1/128 of the long side. If the long side has fewer
+  // than 256 cells, the exponent is 0, so the blur width is 1 cell (1/128 of
+  // a long side of 128 cells). The function std::bit_width(q) returns
+  // 1 + floor(log2(q)) for q >= 1 and 0 for q = 0, so the exponent cannot be
+  // negative.
+  const unsigned int grid_size_pow = static_cast<unsigned int>(
+    std::bit_width(std::max(lx(), ly()) / default_long_grid_length));
   const unsigned int blur_default_pow =
-    static_cast<unsigned int>(
-      1 + log2(std::max(lx(), ly()) / default_long_grid_length)) +
-    n_fails_during_flatten_density_;
+    grid_size_pow + n_fails_during_flatten_density_;
   double blur_width =
     std::pow(2.0, blur_default_pow - (0.5 * n_finished_integrations_));
 
