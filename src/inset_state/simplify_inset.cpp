@@ -55,6 +55,17 @@ void InsetState::simplify(const unsigned int target_points_per_inset)
     }
   }
 
+  // Keep the vertices on the cut lines at the antimeridian (only with
+  // --periodic_x). The simplification marks further vertices as unremovable
+  // but never makes a vertex removable again.
+  if (!cut_vertices_.empty()) {
+    for (auto v = ct.finite_vertices_begin(); v != ct.finite_vertices_end();
+         ++v) {
+      if (cut_vertices_.count(v->point()) > 0)
+        v->set_removable(false);
+    }
+  }
+
   // Simplify polygons
   CGAL::Polyline_simplification_2::simplify(ct, Cost(), Stop(ratio));
 

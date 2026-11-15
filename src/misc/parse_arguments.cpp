@@ -230,6 +230,13 @@ Arguments parse_arguments(const int argc, const char *argv[])
   args.plot_density = arguments.get<bool>("--plot_density");
   args.plot_grid = arguments.get<bool>("--add_grid");
   args.plot_intersections = arguments.get<bool>("--plot_intersections");
+  if (args.periodic_x && args.plot_intersections) {
+    // The image of intersections indexes the lattice by x, which a periodic
+    // map leaves
+    std::cerr << "ERROR: The option --periodic_x does not support "
+              << "--plot_intersections." << std::endl;
+    std::exit(EXIT_FAILURE);
+  }
   args.plot_polygons = arguments.get<bool>("--plot_polygons");
   args.plot_quadtree = arguments.get<bool>("--plot_quadtree");
   args.output_shifted_insets = arguments.get<bool>("--output_shifted_insets");

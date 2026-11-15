@@ -155,6 +155,19 @@ void CartogramInfo::project_to_equal_area()
       // input map is not a world map. Otherwise, use the Smyth-Craster
       // projection.
       if (args_.world) {
+
+        // A ring that crosses the antimeridian without being split at it
+        // would span the whole map after the projection
+        if (args_.periodic_x) {
+          const std::string id =
+            inset_state.geo_div_with_edge_across_antimeridian();
+          if (!id.empty()) {
+            std::cerr << "ERROR: With --periodic_x, rings must be split at "
+                      << "the antimeridian, but GeoDiv " << id
+                      << " has an edge across it." << std::endl;
+            std::exit(EXIT_FAILURE);
+          }
+        }
         inset_state.apply_smyth_craster_projection();
       } else {
         inset_state.apply_albers_projection();

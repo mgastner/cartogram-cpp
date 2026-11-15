@@ -16,6 +16,10 @@
 #include <boost/multi_array.hpp>
 #include <cstdint>
 
+// Smyth equal-surface (Craster rectangular) projection of a point whose
+// coordinates are the longitude and latitude in degrees
+Point point_after_smyth_craster_projection(const Point &);
+
 struct max_area_error_info {
   double value;
   std::string geo_div;
@@ -46,6 +50,12 @@ private:
   // New points
   std::unordered_set<Point> points_from_densification_;
   std::unordered_set<Point> points_before_densification_;
+
+  // With --periodic_x, the vertices where the input cuts regions at the
+  // antimeridian (on x = 0 or x = lx after rescaling). They follow every
+  // transformation of geo_divs_, and simplification keeps them, so that the
+  // two copies of each cut line keep the same vertices.
+  std::unordered_set<Point> cut_vertices_;
 
   // Bounding boxes of Quadtree cells
   std::vector<Bbox> quadtree_bboxes_;
@@ -128,6 +138,11 @@ public:
   void adjust_grid();
   void apply_albers_projection();
   void apply_smyth_craster_projection();
+
+  // With --periodic_x, the ID of the first GeoDiv with an edge that crosses
+  // the antimeridian (longitudes more than 180 degrees apart), or an empty
+  // string. Must be called before the projection.
+  [[nodiscard]] std::string geo_div_with_edge_across_antimeridian() const;
 
   // Calculate difference between initial area and current area
   double area_expansion_factor() const;
@@ -247,6 +262,10 @@ public:
   void store_initial_area();
   void store_initial_target_area(const double override = 0.0);
   void store_original_geo_divs();
+
+  // With --periodic_x, cuts the polygons at the lines x = k * lx and shifts
+  // each piece by -k * lx into the frame 0 <= x <= lx
+  void wrap_into_frame();
   template <class QuadtreeImp>
   void store_quadtree_cell_corners(const QuadtreeImp &qt);
   double target_area_at(const std::string &) const;
@@ -314,6 +333,16 @@ void InsetState::transform_points(
         }
       }
     }
+  }
+
+  // The cut vertices follow the vertices of geo_divs_
+  if (!project_original && !cut_vertices_.empty()) {
+    std::unordered_set<Point> transformed;
+    transformed.reserve(cut_vertices_.size());
+    for (const Point &p : cut_vertices_) {
+      transformed.insert(transform_point(p));
+    }
+    cut_vertices_ = std::move(transformed);
   }
 }
 

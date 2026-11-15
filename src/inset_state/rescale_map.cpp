@@ -15,6 +15,17 @@ void InsetState::rescale_map()
     // similarly for the other two bounding box coordinate
     std::cerr << "Rescaling world map..." << std::endl;
     bb = Bbox(-2.50663, -1.25331, 2.50663, 1.25331);
+
+    // With --periodic_x, the sides of the frame must be the antimeridian
+    // exactly, so that the vertices where the input cuts regions at 180
+    // degrees lie on the seam of the periodic flow
+    if (args_.periodic_x) {
+      bb = Bbox(
+        point_after_smyth_craster_projection(Point(-180.0, 0.0)).x(),
+        bb.ymin(),
+        point_after_smyth_craster_projection(Point(180.0, 0.0)).x(),
+        bb.ymax());
+    }
   } else {
     bb = bbox();
   }
@@ -59,6 +70,39 @@ void InsetState::rescale_map()
             << " grid with bounding box\n\t(" << new_xmin << ", " << new_ymin
             << ", " << new_xmax << ", " << new_ymax << ")" << std::endl;
   set_grid_dimensions(lx, ly);
+
+  // With --periodic_x, x is mapped by (x - new_xmin) / latt_const. Because lx
+  // is a power of two, latt_const = (new_xmax - new_xmin) / lx is exact, so
+  // the antimeridian lands exactly on x = 0 and x = lx. Its vertices become
+  // the cut vertices.
+  if (args_.periodic_x) {
+    transform_points([&](const Point &p) {
+      return Point(
+        (p.x() - new_xmin) / latt_const,
+        (p.y() - new_ymin) / latt_const);
+    });
+    const double dlx = lx;
+    cut_vertices_.clear();
+    auto collect = [&](const Polygon &ring) {
+      for (const Point &p : ring) {
+        const bool on_west_side = !(p.x() < 0.0) && !(p.x() > 0.0);
+        const bool on_east_side = !(p.x() < dlx) && !(p.x() > dlx);
+        if (on_west_side || on_east_side)
+          cut_vertices_.insert(p);
+      }
+    };
+    for (const auto &gd : geo_divs_) {
+      for (const auto &pwh : gd.polygons_with_holes()) {
+        collect(pwh.outer_boundary());
+        for (const auto &h : pwh.holes())
+          collect(h);
+      }
+    }
+    std::cerr << "New bounding box: " << bbox() << std::endl;
+    std::cerr << cut_vertices_.size() << " vertices on the antimeridian"
+              << std::endl;
+    return;
+  }
 
   // Rescale and translate all GeoDiv coordinates
   const Transformation translate(

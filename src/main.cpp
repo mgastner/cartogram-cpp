@@ -30,6 +30,13 @@ int main(const int argc, const char *argv[])
     cart_info.read_csv();
   }
 
+  // A periodic world map is a single inset
+  if (args.periodic_x && cart_info.n_insets() > 1) {
+    std::cerr << "ERROR: The option --periodic_x does not support insets."
+              << std::endl;
+    return EXIT_FAILURE;
+  }
+
   // Project to equal area, if necessary
   // Write Output and EXIT if --output_equal_area_map is set to true
   cart_info.project_to_equal_area();
@@ -72,6 +79,12 @@ int main(const int argc, const char *argv[])
 
     // Shift insets so that they do not overlap
     cart_info.reposition_insets(args.redirect_exports_to_stdout);
+  }
+
+  // With --periodic_x, cut the regions that flowed across the sides of the
+  // frame and shift the pieces into it
+  for (InsetState &inset_state : cart_info.ref_to_inset_states()) {
+    inset_state.wrap_into_frame();
   }
 
   // Output to GeoJSON
