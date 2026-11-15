@@ -61,15 +61,36 @@ target_compile_options(cartogram_lib PUBLIC
   -Wmissing-declarations -Werror=return-type -Wnon-virtual-dtor
 )
 
+# Instruction set of Release builds. The default, native, compiles for the CPU
+# that builds the program, which may then fail with an illegal instruction on
+# another CPU. Binaries for other computers need a fixed target, for example
+# x86-64-v3 (x86-64 with AVX2) or armv8-a.
+set(CARTOGRAM_MARCH native CACHE STRING
+  "Value of -march in Release builds, for example native, x86-64-v3, or armv8-a")
+
 if(CMAKE_BUILD_TYPE STREQUAL Release)
   include(CheckCXXCompilerFlag)
-  check_cxx_compiler_flag("-march=native" HAS_MARCH_NATIVE)
-  check_cxx_compiler_flag("-mtune=native" HAS_MTUNE_NATIVE)
 
-  if(HAS_MARCH_NATIVE)
-    target_compile_options(cartogram_lib PUBLIC -march=native)
-  elseif(HAS_MTUNE_NATIVE)
-    target_compile_options(cartogram_lib PUBLIC -mtune=native)
+  if(CARTOGRAM_MARCH STREQUAL "native")
+    check_cxx_compiler_flag("-march=native" HAS_MARCH_NATIVE)
+    check_cxx_compiler_flag("-mtune=native" HAS_MTUNE_NATIVE)
+
+    if(HAS_MARCH_NATIVE)
+      target_compile_options(cartogram_lib PUBLIC -march=native)
+    elseif(HAS_MTUNE_NATIVE)
+      target_compile_options(cartogram_lib PUBLIC -mtune=native)
+    endif()
+  else()
+    string(MAKE_C_IDENTIFIER "HAS_MARCH_${CARTOGRAM_MARCH}" has_march)
+    check_cxx_compiler_flag("-march=${CARTOGRAM_MARCH}" ${has_march})
+
+    if(NOT ${has_march})
+      message(FATAL_ERROR
+        "The compiler does not accept -march=${CARTOGRAM_MARCH}. "
+        "Set CARTOGRAM_MARCH to native or to a target that the compiler "
+        "supports.")
+    endif()
+    target_compile_options(cartogram_lib PUBLIC -march=${CARTOGRAM_MARCH})
   endif()
 
   include(CheckIPOSupported)
