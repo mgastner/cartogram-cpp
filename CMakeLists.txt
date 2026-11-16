@@ -76,23 +76,20 @@ if(CMAKE_BUILD_TYPE STREQUAL Release)
   check_ipo_supported(RESULT ipo_ok OUTPUT ipo_msg)
 
   if(CMAKE_CXX_COMPILER_ID STREQUAL "Clang" AND CMAKE_SYSTEM_NAME STREQUAL "Linux")
-    if(ipo_ok)
-      # With -fuse-ld=lld, clang runs the ld.lld in its own directory if
-      # there is one, and otherwise the one on the PATH. Search in the same
-      # order, so that LTO is not disabled when only a versioned package
-      # such as lld-22 is installed, and the version found is the one used.
-      file(REAL_PATH "${CMAKE_CXX_COMPILER}" cxx_compiler_real_path)
-      cmake_path(GET cxx_compiler_real_path PARENT_PATH cxx_compiler_dir)
-      find_program(LLD_PATH NAMES ld.lld lld HINTS "${cxx_compiler_dir}")
+    set(lto_compile_options
+      -flto=full -fwhole-program-vtables -fvirtual-function-elimination)
 
-      if(NOT LLD_PATH)
-        # An lld older than clang may fail to link clang's LTO bitcode, so
-        # name the package that matches the compiler (lld-22 for clang 22)
-        string(REGEX MATCH "^[0-9]+" clang_major "${CMAKE_CXX_COMPILER_VERSION}")
-        message(WARNING
-          "lld not found in ${cxx_compiler_dir} or on the PATH; disabling IPO. "
-          "Install the lld of the same version as clang, for example: "
-          "sudo apt install lld-${clang_major}")
+    if(ipo_ok)
+      # Find the ld.lld that clang would run, make clang run exactly that
+      # one, and check with a test link that it links clang's bitcode. The
+      # test program is compiled for the same CPU as the library.
+      include("${CMAKE_CURRENT_LIST_DIR}/cmake/LtoLinker.cmake")
+      get_target_property(cpu_options cartogram_lib COMPILE_OPTIONS)
+      list(FILTER cpu_options INCLUDE REGEX "^-m(arch|tune)=")
+      cartogram_find_lto_linker(lto_link_options lto_linker
+        ${cpu_options} ${lto_compile_options})
+
+      if(NOT lto_link_options)
         set(ipo_ok FALSE)
       endif()
     endif()
@@ -103,13 +100,9 @@ if(CMAKE_BUILD_TYPE STREQUAL Release)
     target_link_options(cartogram_lib PUBLIC -flto=full)
 
     if(CMAKE_CXX_COMPILER_ID STREQUAL "Clang" AND CMAKE_SYSTEM_NAME STREQUAL "Linux")
-      message(STATUS "Using LLD with full LTO + whole-program vtables: ${LLD_PATH}")
-      target_link_options(cartogram_lib PUBLIC -fuse-ld=lld)
-      target_compile_options(cartogram_lib
-        PUBLIC
-        -flto=full
-        -fwhole-program-vtables
-        -fvirtual-function-elimination)
+      message(STATUS "Using LLD with full LTO + whole-program vtables: ${lto_linker}")
+      target_link_options(cartogram_lib PUBLIC ${lto_link_options})
+      target_compile_options(cartogram_lib PUBLIC ${lto_compile_options})
     endif()
   else()
     message(STATUS "IPO/LTO not available: ${ipo_msg}")
