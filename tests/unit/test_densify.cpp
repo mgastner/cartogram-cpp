@@ -56,7 +56,7 @@ Polygon_with_holes project_with_density(
       rho_ft(i, j) = 0.0;
     }
   }
-  if (amplitude == 0.0) {
+  if (std::fpclassify(amplitude) == FP_ZERO) {
     rho_ft(0, 0) = 1.0;
   } else {
     inset.make_fftw_plans_for_rho();
