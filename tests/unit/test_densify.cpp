@@ -139,7 +139,8 @@ Polygon polygon_from(const std::vector<std::pair<double, double>> &xy)
 }
 
 // A ring after the same integration, either as the outer boundary of a
-// polygon without holes or as a hole in the square [60, 68] x [60, 68]
+// polygon without holes or as a hole in a square of side 8 around the center
+// of the lattice, such as [60, 68] x [60, 68] for l = 128
 Polygon project_ring_with_density(
   const Polygon &ring,
   const bool as_hole,
@@ -149,11 +150,13 @@ Polygon project_ring_with_density(
   if (!as_hole) {
     return project_with_density(ring, l, amplitude);
   }
+  const double lo = 0.5 * l - 4.0;
+  const double hi = 0.5 * l + 4.0;
   const Polygon outer = polygon_from({
-    {60.0, 60.0},
-    {68.0, 60.0},
-    {68.0, 68.0},
-    {60.0, 68.0},
+    {lo, lo},
+    {hi, lo},
+    {hi, hi},
+    {lo, hi},
   });
   Polygon hole = ring;
   if (!hole.is_clockwise_oriented()) {
@@ -416,5 +419,29 @@ BOOST_AUTO_TEST_CASE(point_inserted_at_a_vertex_of_the_other_side_is_moved)
       BOOST_TEST(out_nonuniform.is_simple());
       BOOST_TEST(is_simple_with_exact_predicates(out_nonuniform));
     }
+  }
+}
+
+// Needle from the fuzz test of the reply to the fourth review of PR #318
+// (seed 2, case 24161), on a 32 x 32 lattice with the density of amplitude
+// 0.1. As a hole, its projected image is simple with exact predicates, but
+// the simplicity test of the Polygon type, whose predicates round, rejected
+// it, and the program stopped with "Hole is not simple". The repair and
+// InsetState::is_simple() now decide with exact predicates (fifth review).
+BOOST_AUTO_TEST_CASE(hole_that_only_rounded_predicates_reject_is_accepted)
+{
+  const Polygon in = polygon_from({
+    {16.530534662738543, 16.046951477438142},
+    {16.741793058845442, 16.258206941154558},
+    {16.853536754727838, 16.369949085968894},
+    {16.853536754727838, 16.36994908596889},
+    {16.530534662738543, 16.04695147743814},
+    {16.530531718201015, 15.622687408736432},
+    {16.106270594036832, 16.04695442197567},
+  });
+  BOOST_TEST_REQUIRE(is_simple_with_exact_predicates(in));
+  for (const bool as_hole : {false, true}) {
+    const Polygon out = project_ring_with_density(in, as_hole, 32, 0.1);
+    BOOST_TEST(is_simple_with_exact_predicates(out));
   }
 }

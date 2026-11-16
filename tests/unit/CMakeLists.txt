@@ -35,7 +35,7 @@ endforeach()
 # 1 s on the first run.
 set_tests_properties(test_flatten_density PROPERTIES TIMEOUT 20)
 
-# test_densify runs 42 integrations, on grids of up to 128 x 128. In the Debug
+# test_densify runs 44 integrations, on grids of up to 128 x 128. In the Debug
 # builds with AddressSanitizer and ThreadSanitizer, ten of them took more than
 # 1 s in CI.
 set_tests_properties(test_densify PROPERTIES TIMEOUT 20)

@@ -26,7 +26,7 @@ static std::vector<Epick::Point_2> with_exact_predicates(const Polygon &ring)
   return pts;
 }
 
-static bool is_simple_with_exact_predicates(const Polygon &ring)
+bool is_simple_with_exact_predicates(const Polygon &ring)
 {
   const std::vector<Epick::Point_2> pts = with_exact_predicates(ring);
   return CGAL::is_simple_2(pts.begin(), pts.end(), Epick());
@@ -41,6 +41,29 @@ static bool fold_back(
 {
   return CGAL::collinear(a, s, b) &&
          !CGAL::collinear_are_strictly_ordered_along_line(a, s, b);
+}
+
+// Whether x lies strictly between s and t on the segment from s to t. The
+// test uses exact predicates.
+static bool strictly_inside(const Point &s, const Point &x, const Point &t)
+{
+  const Epick::Point_2 es(s.x(), s.y());
+  const Epick::Point_2 ex(x.x(), x.y());
+  const Epick::Point_2 et(t.x(), t.y());
+  return CGAL::collinear(es, ex, et) &&
+         CGAL::collinear_are_strictly_ordered_along_line(es, ex, et);
+}
+
+// Whether the segments from s to a and from s to b, which are segments of two
+// rings at a point s that both rings contain, overlap beyond s, as on a
+// shared boundary. The test uses exact predicates.
+static bool segments_overlap(const Point &a, const Point &s, const Point &b)
+{
+  return a != s && b != s &&
+         fold_back(
+           Epick::Point_2(a.x(), a.y()),
+           Epick::Point_2(s.x(), s.y()),
+           Epick::Point_2(b.x(), b.y()));
 }
 
 // The pairs of segments of a ring that meet, other than neighbors at their
@@ -231,14 +254,18 @@ static std::array<Point, 8> neighboring_points(const Point &p)
 // - The projection maps each point with the affine map of its triangle and
 //   rounds the image, which can put the image of a point across or onto the
 //   image of a nearby segment, although no triangle is inverted.
-// Every ring is checked with the simplicity test of the Polygon type, which is
-// also the test of InsetState::is_simple(). In a ring that fails it, the
-// movable points at the ends of the segments that meet are found with exact
-// predicates. Each such point is moved to the one of the eight doubles next to
-// it that leaves the fewest pairs of segments that meet, if that is fewer
-// than before the move. The point moves together with its copies in other
-// rings that share a neighbor with it, as on a shared boundary or where
-// boundaries meet, so that shared boundaries stay identical.
+// Every ring is checked for simplicity with exact predicates, as in
+// InsetState::is_simple(). In a ring that fails, the movable points at the
+// ends of the segments that meet are found. Each such point is moved to the
+// one of the eight doubles next to it that leaves the fewest pairs of
+// segments that meet, if that is fewer than before the move.
+//
+// A point moves together with its copies: the occurrences of the same point
+// in other rings with a segment that overlaps a segment at the point, as on a
+// shared boundary, also where one ring has vertices on that boundary that
+// the other lacks. A move must keep every such pair of segments overlapping,
+// so that shared boundaries stay shared; a neighbor that would separate them
+// is not a candidate. Either every copy moves, or none does.
 //
 // Moving a point by a unit in the last place keeps each densified edge within
 // about a unit in the last place of a triangle, so the projection still maps
@@ -248,17 +275,14 @@ static std::array<Point, 8> neighboring_points(const Point &p)
 // cross the other side of a thin part of a polygon. After densification, an
 // inserted point is therefore removed only if no move reduces the number of
 // pairs of segments that meet, neither of the point nor of any other point in
-// the same round; if the exact predicates find no segments that meet, all
-// inserted points of the ring are removed. Each ring keeps its
-// vertices from before densification, so the worst case for a ring is its
-// state before densification. After the projection, no point is removed, and
-// is_simple() reports a ring that the moves do not repair.
+// the same round. Each ring keeps its vertices from before densification, so
+// the worst case for a ring is its state before densification. After the
+// projection, no point is removed, and is_simple() reports a ring that the
+// moves do not repair.
 //
-// The rings that changed are checked again, with the test of the Polygon type
-// and with exact predicates, until no ring changes. After densification, the
-// exact predicates check a changed ring only if the ring before densification
-// passed them. Each move reduces the number of pairs of segments that meet,
-// and each point is removed at most once, so the repair ends.
+// The rings that changed are checked again until no ring changes. Each move
+// reduces the number of pairs of segments that meet, and each point is
+// removed at most once, so the repair ends.
 static bool repair_rings(
   std::vector<GeoDiv> &geo_divs,
   const std::vector<GeoDiv> *before,
@@ -300,46 +324,29 @@ static bool repair_rings(
   };
 
   std::vector<bool> fails(rings.size(), false);
-  std::vector<bool> changed(rings.size(), false);
-
-  // Whether a changed ring is checked with exact predicates
-  std::vector<bool> check_exactly(rings.size(), false);
   std::vector<std::size_t> to_check(rings.size());
   std::iota(to_check.begin(), to_check.end(), std::size_t{0});
   std::size_t n_moved = 0;
   std::unordered_set<Point> removed;
   while (!to_check.empty()) {
     std::vector<Occurrence> found;
-    std::vector<Occurrence> to_remove;
     for (const std::size_t r : to_check) {
       const Polygon &ring = *rings[r];
-      fails[r] = !ring.is_simple();
-      const bool repair =
-        (fails[r] && (!before || rings_before[r]->is_simple())) ||
-        (changed[r] && check_exactly[r] &&
-         !is_simple_with_exact_predicates(ring));
-      if (!repair)
+      fails[r] = !is_simple_with_exact_predicates(ring);
+      if (
+        !fails[r] ||
+        (before && !is_simple_with_exact_predicates(*rings_before[r])))
         continue;
-      const std::vector<std::size_t> ks =
-        segments_that_meet(ring, movable[r]).ends;
-      for (const std::size_t k : ks)
+      for (const std::size_t k : segments_that_meet(ring, movable[r]).ends)
         found.emplace_back(r, k);
-      if (ks.empty() && before) {
-        for (std::size_t k = 0; k < ring.size(); ++k) {
-          if (movable[r][k])
-            to_remove.emplace_back(r, k);
-        }
-      }
     }
-    if (found.empty() && to_remove.empty())
+    if (found.empty())
       break;
 
     // Where the points found occur in movable positions of any ring
     std::unordered_set<Point> points;
-    for (const auto &list : {found, to_remove}) {
-      for (const Occurrence &o : list)
-        points.insert(point_at(o));
-    }
+    for (const Occurrence &o : found)
+      points.insert(point_at(o));
     std::unordered_map<Point, std::vector<Occurrence>> at;
     for (std::size_t r = 0; r < rings.size(); ++r) {
       for (std::size_t k = 0; k < rings[r]->size(); ++k) {
@@ -349,26 +356,73 @@ static bool repair_rings(
     }
 
     // An occurrence and its copies: the occurrences of the same point in
-    // other rings that share a neighbor with it or with another copy. An
-    // occurrence that a move in this round has moved is no longer a copy.
+    // other rings with a segment that overlaps a segment at the occurrence or
+    // at another copy. An occurrence that a move in this round has moved is no
+    // longer a copy.
     auto with_copies = [&](const Occurrence &o) {
       const Point p = point_at(o);
       std::vector<Occurrence> group = {o};
       for (std::size_t g = 0; g < group.size(); ++g) {
-        const auto nb = neighbors_of(group[g]);
+        const Occurrence m = group[g];
         for (const Occurrence &q : at[p]) {
           if (
-            q.first == group[g].first || point_at(q) != p ||
+            q.first == m.first || point_at(q) != p ||
             std::find(group.begin(), group.end(), q) != group.end())
             continue;
-          const auto nq = neighbors_of(q);
-          if (
-            nq[0] == nb[0] || nq[0] == nb[1] || nq[1] == nb[0] ||
-            nq[1] == nb[1])
+          bool linked = false;
+          for (const Point &a : neighbors_of(m)) {
+            for (const Point &b : neighbors_of(q))
+              linked = linked || segments_overlap(a, p, b);
+          }
+          if (linked)
             group.push_back(q);
         }
       }
       return group;
+    };
+
+    // Where the boundaries of other rings run along the segments at the
+    // occurrences of a group: the vertices of other rings that lie strictly
+    // inside a segment at an occurrence, and the segments of other rings that
+    // have the point strictly inside. A ring that contains the point as a
+    // vertex and also has it strictly inside a segment touches itself there,
+    // which is what the repair removes, so such segments do not count. Each
+    // contact is a triple (s, x, t) with x strictly inside the segment from s
+    // to t, in which s, x, or t is the point. A move to c keeps shared
+    // boundaries shared, also where one ring has vertices on them that the
+    // other lacks, only if every triple still holds with c in place of the
+    // point.
+    auto contacts_of = [&](const std::vector<Occurrence> &group) {
+      const Point p = point_at(group.front());
+      std::vector<std::array<Point, 3>> contacts;
+      for (const Occurrence &m : group) {
+        const auto nb = neighbors_of(m);
+        for (std::size_t r = 0; r < rings.size(); ++r) {
+          if (r == m.first)
+            continue;
+          const Polygon &ring = *rings[r];
+          bool contains_p = false;
+          std::vector<std::array<Point, 3>> segments_through_p;
+          for (std::size_t k = 0; k < ring.size(); ++k) {
+            const Point &v = ring[k];
+            const Point &w = ring[(k + 1 == ring.size()) ? 0 : k + 1];
+            contains_p = contains_p || v == p;
+            for (const Point &a : nb) {
+              if (v != p && strictly_inside(a, v, p))
+                contacts.push_back({a, v, p});
+            }
+            if (strictly_inside(v, p, w))
+              segments_through_p.push_back({v, p, w});
+          }
+          if (!contains_p) {
+            contacts.insert(
+              contacts.end(),
+              segments_through_p.begin(),
+              segments_through_p.end());
+          }
+        }
+      }
+      return contacts;
     };
 
     // Number of pairs of segments that meet in the rings of a group, up to
@@ -387,19 +441,9 @@ static bool repair_rings(
       return total;
     };
 
-    // Expand the points to remove by their copies before any move, so that
-    // no copy of them moves
-    std::vector<Occurrence> done;
-    for (const Occurrence &o : to_remove) {
-      for (const Occurrence &q : with_copies(o))
-        done.push_back(q);
-    }
-    std::sort(done.begin(), done.end());
-    done.erase(std::unique(done.begin(), done.end()), done.end());
-    to_remove = done;
-
     // The groups that no move repairs. After densification, they are removed
     // if no group moves in this round; otherwise, the rings are checked again.
+    std::vector<Occurrence> done;
     std::vector<Occurrence> stuck;
     std::size_t n_moved_now = 0;
     std::vector<bool> changed_now(rings.size(), false);
@@ -415,13 +459,28 @@ static bool repair_rings(
         continue;
       const std::vector<Occurrence> group = with_copies(o);
       done.insert(done.end(), group.begin(), group.end());
+      const Point p = point_at(o);
+      const std::vector<std::array<Point, 3>> contacts = contacts_of(group);
 
       // Move the group to the neighbor that leaves the fewest pairs of
-      // segments that meet, if that is fewer than now
-      const Point p = point_at(o);
+      // segments that meet, if that is fewer than now, among the neighbors
+      // that keep shared boundaries shared. Either every occurrence in the
+      // group moves, or none does.
       std::size_t fewest = pairs_in(group);
       Point best = p;
       for (const Point &c : neighboring_points(p)) {
+        const bool keeps_contacts = std::all_of(
+          contacts.begin(),
+          contacts.end(),
+          [&p, &c](std::array<Point, 3> stx) {
+            for (Point &e : stx) {
+              if (e == p)
+                e = c;
+            }
+            return strictly_inside(stx[0], stx[1], stx[2]);
+          });
+        if (!keeps_contacts)
+          continue;
         for (const Occurrence &q : group)
           point_at(q) = c;
         const std::size_t n_pairs = pairs_in(group);
@@ -441,8 +500,9 @@ static bool repair_rings(
       }
     }
     n_moved += n_moved_now;
+    std::vector<Occurrence> to_remove;
     if (n_moved_now == 0 && before)
-      to_remove.insert(to_remove.end(), stuck.begin(), stuck.end());
+      to_remove = stuck;
 
     // Remove the points that could not be moved, with their copies
     std::vector<std::vector<std::size_t>> remove_at(rings.size());
@@ -470,14 +530,8 @@ static bool repair_rings(
 
     to_check.clear();
     for (std::size_t r = 0; r < rings.size(); ++r) {
-      if (!changed_now[r])
-        continue;
-      if (!changed[r]) {
-        check_exactly[r] =
-          !before || is_simple_with_exact_predicates(*rings_before[r]);
-        changed[r] = true;
-      }
-      to_check.push_back(r);
+      if (changed_now[r])
+        to_check.push_back(r);
     }
   }
   if (n_moved > 0) {
