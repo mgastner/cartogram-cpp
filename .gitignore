@@ -28,6 +28,7 @@ cartogram
 !/tests/unit
 !/tests/stress
 !/tests/fuzzer
+!/tests/lto_linker
 
 # Ignore the Testing logs
 /Testing
@@ -88,6 +89,8 @@ cartogram
 # Ignore CMakeFiles directory
 CMakeFiles
 cmake
+# CMake modules of the project
+!/cmake
 cmake-build-*/
 bin
 cmake_install.cmake

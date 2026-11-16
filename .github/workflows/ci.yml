@@ -157,7 +157,7 @@ jobs:
             echo "CC=gcc-${{ matrix.version }}"  >> $GITHUB_ENV
             echo "CXX=g++-${{ matrix.version }}" >> $GITHUB_ENV
           else
-            sudo apt-get install -y clang-${{ matrix.version }} lld
+            sudo apt-get install -y clang-${{ matrix.version }} lld-${{ matrix.version }}
             echo "CC=clang-${{ matrix.version }}"   >> $GITHUB_ENV
             echo "CXX=clang++-${{ matrix.version }}" >> $GITHUB_ENV
           fi
@@ -205,6 +205,17 @@ jobs:
             ${FIND_SUFFIX} \
             -DCMAKE_EXE_LINKER_FLAGS="${EXE_FLAGS}"
           cmake --build build -j$(nproc || sysctl -n hw.ncpu)
+
+      # Release builds with clang must link with the ld.lld that CMake selects
+      # for LTO, also when -B, COMPILER_PATH, or CMAKE_PROGRAM_PATH point to an
+      # older lld, which may fail to read clang's bitcode. The older lld is
+      # preinstalled on the runners, so the install downloads nothing.
+      - name: LTO linker check
+        if: runner.os == 'Linux' && matrix.compiler == 'clang' && matrix.build_type == 'Release'
+        run: |
+          older=$(( ${{ matrix.version }} - 1 ))
+          sudo apt-get install -y lld-${older}
+          tests/lto_linker/check_lto_linker.sh clang++-${{ matrix.version }} /usr/lib/llvm-${older}/bin
 
       - name: Unit tests
         run: |
