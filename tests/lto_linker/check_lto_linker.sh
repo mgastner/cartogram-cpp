@@ -8,8 +8,8 @@
 #   the directory of an older lld, the build must use LTO with the ld.lld
 #   next to the compiler.
 # - When the older ld.lld is forced with CARTOGRAM_LTO_LD_LLD, the build must
-#   succeed: with LTO and that ld.lld if the test link accepts it, and
-#   otherwise without LTO.
+#   succeed without LTO, because an lld older than clang may fail to read
+#   clang's bitcode.
 #
 # Usage: check_lto_linker.sh <clang++> <directory of an older ld.lld>
 # Example: check_lto_linker.sh clang++-22 /usr/lib/llvm-21/bin
@@ -32,7 +32,7 @@ adjacent="$(dirname "$(realpath "$cxx")")/ld.lld"
 work=$(mktemp -d)
 failures=0
 
-# check_case <name> <expected ld.lld, or "consistent"> [VAR=value ...] -- [cmake option ...]
+# check_case <name> <expected ld.lld, or "none"> [VAR=value ...] -- [cmake option ...]
 check_case() {
   local name=$1 expected=$2
   shift 2
@@ -59,8 +59,8 @@ check_case() {
 
   if [[ $status -ne 0 ]]; then
     verdict="FAILED (exit code $status)"
-  elif [[ $expected == "consistent" ]]; then
-    [[ $used == "$selected" ]] || verdict="FAILED (CMake selected '$selected', clang ran '$used')"
+  elif [[ $expected == "none" ]]; then
+    [[ -z $selected && -z $used ]] || verdict="FAILED (expected no LTO; CMake selected '$selected', clang ran '$used')"
   elif [[ $selected != "$expected" || $used != "$expected" ]]; then
     verdict="FAILED (expected $expected; CMake selected '$selected', clang ran '$used')"
   fi
@@ -77,7 +77,7 @@ check_case default "$adjacent" --
 check_case B_prefix "$adjacent" -- "-DCMAKE_CXX_FLAGS=-B$old_dir"
 check_case COMPILER_PATH "$adjacent" "COMPILER_PATH=$old_dir" --
 check_case CMAKE_PROGRAM_PATH "$adjacent" -- "-DCMAKE_PROGRAM_PATH=$old_dir"
-check_case forced_older_lld consistent -- "-DCARTOGRAM_LTO_LD_LLD=$old_dir/ld.lld"
+check_case forced_older_lld none -- "-DCARTOGRAM_LTO_LD_LLD=$old_dir/ld.lld"
 
 rm -rf "$work"
 if [[ $failures -ne 0 ]]; then
