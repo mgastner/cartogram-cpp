@@ -236,13 +236,15 @@ Arguments parse_arguments(const int argc, const char *argv[])
   // Check if user wants verbose output
   args.verbose = arguments.get<bool>("--verbose");
 
-  // Check whether n_points is specified but --simplify_and_densify not passed
+  // With -S, warn that the topology checks are off and that --n_points has
+  // no effect
   if (args.disable_simplification_densification) {
     std::cerr << "WARNING: Simplification and densification disabled! "
-              << "Polygons will not simplified (or densified). "
-              << "This may result and in polygon intersections. "
+              << "Polygons will not be simplified (or densified). "
+              << "This may result in polygon intersections. "
               << "Thus, we are turning off topology checks. "
-              << "To enable simplification, pass the -S flag." << std::endl;
+              << "To enable simplification, do not pass the -S "
+              << "(--disable_simplify_and_densify) flag." << std::endl;
     if (arguments.is_used("--n_points")) {
       std::cerr << "--n_points ignored." << std::endl;
     }
