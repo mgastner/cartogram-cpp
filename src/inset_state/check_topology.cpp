@@ -1,4 +1,5 @@
 #include "inset_state.hpp"
+#include "repair_rings.hpp"
 
 // Returns error if there are holes not inside their respective polygons
 void InsetState::holes_inside_polygons() const
@@ -36,7 +37,7 @@ void InsetState::is_simple(const char *caller_func) const
   // Only check topology if simplification and densification is enabled.
   for (const auto &gd : geo_divs_) {
     for (const auto &pwh : gd.polygons_with_holes()) {
-      if (!pwh.outer_boundary().is_simple()) {
+      if (!is_simple_with_exact_predicates(pwh.outer_boundary())) {
         intersections_found_ = true;
         if (args_.do_not_fail_on_intersections) {
           std::cerr << "WARNING: Outer boundary is not simple for GeoDiv "
@@ -57,7 +58,7 @@ void InsetState::is_simple(const char *caller_func) const
       }
 
       for (const auto &h : pwh.holes()) {
-        if (!h.is_simple()) {
+        if (!is_simple_with_exact_predicates(h)) {
           intersections_found_ = true;
           if (args_.do_not_fail_on_intersections) {
             std::cerr << "WARNING: Hole is not simple for GeoDiv " << gd.id();

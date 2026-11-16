@@ -1,5 +1,6 @@
 #include "inset_state.hpp"
 #include "interpolate_bilinearly.hpp"
+#include "repair_rings.hpp"
 #include "round_point.hpp"
 
 bool InsetState::project()
@@ -92,7 +93,16 @@ void InsetState::project_with_delaunay_t(bool output_to_stdout)
   if (output_to_stdout) {
     transform_points(lambda_bary, true);
   }
-  is_simple(__func__);
+
+  // Rounding the images can make a ring cross or touch itself where it is
+  // thinner than a unit in the last place. Every ring passes the test of
+  // is_simple() unless the repair returns false; is_simple() then reports
+  // the first ring that fails. Without densification, is_simple() checks
+  // nothing, and the rings are not repaired either.
+  if (
+    !args_.disable_simplification_densification &&
+    !repair_rings_after_projection(geo_divs_))
+    is_simple(__func__);
   timer.stop("Project");
 }
 
