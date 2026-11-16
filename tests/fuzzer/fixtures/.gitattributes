@@ -1,0 +1,2 @@
+# Keep the CSVs byte for byte, with the CRLF line endings that fuzzer.py writes.
+*.csv -text

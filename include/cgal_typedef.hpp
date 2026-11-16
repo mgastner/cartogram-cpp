@@ -9,6 +9,7 @@
 #include <CGAL/Min_ellipse_2_traits_2.h>
 #include <CGAL/Polygon_with_holes_2.h>
 #include <CGAL/Polyline_simplification_2/simplify.h>
+#include <CGAL/Simple_cartesian.h>
 
 typedef CGAL::Simple_cartesian<double> Scd;
 typedef CGAL::Polygon_2<Scd> Polygon;
