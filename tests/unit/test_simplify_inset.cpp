@@ -71,7 +71,7 @@ std::set<XY> on_line_x10(const Polygon &ring)
 {
   std::set<XY> points;
   for (const Point &v : ring) {
-    if (v.x() == 10.0) {
+    if (CGAL::compare(v.x(), 10.0) == CGAL::EQUAL) {
       points.emplace(v.x(), v.y());
     }
   }
@@ -152,7 +152,7 @@ BOOST_AUTO_TEST_CASE(nearly_collinear_border_keeps_only_input_vertices)
 
   for (std::size_t g = 0; g < 2; ++g) {
     for (const Point &v : ring_of(inset, g)) {
-      BOOST_TEST(
+      BOOST_CHECK_MESSAGE(
         input.contains({v.x(), v.y()}),
         "vertex (" << v.x() << ", " << v.y() << ") of ring " << g
                    << " is not an input vertex");
