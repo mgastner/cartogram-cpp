@@ -11,8 +11,10 @@
 // shared border lie exactly on the segments of the other copy, the
 // triangulation merges the two copies, so both are simplified identically,
 // even if the copies have different vertices. Copies that only nearly
-// coincide stay separate and are simplified independently; giving them the
-// same vertices needs a separate repair of the topology.
+// coincide stay separate and are simplified independently. The repair of the
+// input topology (topology_repair.hpp) gives them the same vertices where
+// they overlap or miss each other by less than the snapping distance, unless
+// --disable_topology_repair is passed.
 using SimplifyKernel = CGAL::Exact_predicates_inexact_constructions_kernel;
 using Vb = CGAL::Polyline_simplification_2::Vertex_base_2<SimplifyKernel>;
 using Fb = CGAL::Constrained_triangulation_face_base_2<SimplifyKernel>;

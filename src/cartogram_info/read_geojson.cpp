@@ -1,6 +1,8 @@
 #include "cartogram_info.hpp"
 #include "constants.hpp"
 #include "csv.hpp"
+#include "topology_repair.hpp"
+#include <stdexcept>
 
 inline std::string strip_quotes(const std::string &s)
 {
@@ -61,10 +63,13 @@ static void check_geojson_validity(const nlohmann::json &j)
   }
 }
 
+// If allow_non_simple is false, a ring that is not simple stops the program.
+// Otherwise it is kept, and repair_topology() rebuilds it later.
 static std::pair<GeoDiv, bool> json_to_geodiv(
   const std::string &id,
   const nlohmann::json &json_coords_raw,
-  const bool is_polygon)
+  const bool is_polygon,
+  const bool allow_non_simple)
 {
   GeoDiv gd(id);
   nlohmann::json json_coords;
@@ -95,7 +100,8 @@ static std::pair<GeoDiv, bool> json_to_geodiv(
         static_cast<double>(jphc_ext[last_ext_index][0]),
         static_cast<double>(jphc_ext[last_ext_index][1])));
     }
-    if (!ext_ring.is_simple()) {
+    const bool ext_ring_is_simple = ext_ring.is_simple();
+    if (!ext_ring_is_simple && !allow_non_simple) {
       std::cerr
         << "ERROR: (GeoJSON Parsing) exterior ring not a simple polygon"
         << std::endl;
@@ -111,7 +117,10 @@ static std::pair<GeoDiv, bool> json_to_geodiv(
     //       This strategy works for most geospatial boundary files in the
     //       wild, but it would still be sensible to allow cases where there
     //       are external rings with opposite winding directions.
-    erico = ext_ring.is_clockwise_oriented();
+    // The orientation of a ring that is not simple is taken from the sign
+    // of its shoelace area
+    erico = ext_ring_is_simple ? ext_ring.is_clockwise_oriented()
+                               : ext_ring.area() < 0.0;
     if (erico) {
       ext_ring.reverse_orientation();
     }
@@ -134,13 +143,16 @@ static std::pair<GeoDiv, bool> json_to_geodiv(
           static_cast<double>(jphc_int[last_int_index][0]),
           static_cast<double>(jphc_int[last_int_index][1])));
       }
-      if (!int_ring.is_simple()) {
+      const bool int_ring_is_simple = int_ring.is_simple();
+      if (!int_ring_is_simple && !allow_non_simple) {
         std::cerr
           << "ERROR: (GeoJSON Parsing) interior ring not a simple polygon"
           << std::endl;
         std::exit(14);
       }
-      if (int_ring.is_counterclockwise_oriented()) {
+      if (
+        int_ring_is_simple ? int_ring.is_counterclockwise_oriented()
+                           : int_ring.area() > 0.0) {
         int_ring.reverse_orientation();
       }
       int_ring_v.push_back(int_ring);
@@ -392,18 +404,69 @@ static std::vector<std::string> extract_initial_order_of_ids(
   return initial_id_order;
 }
 
+// Repairs self-intersecting rings and borders that neighbouring GeoDivs do
+// not share exactly (see topology_repair.hpp). Stops the program if the
+// repair would change a GeoDiv's area by more than the permitted fraction.
+static void repair_input_topology(
+  std::vector<GeoDiv> &geo_divs,
+  const Arguments &args)
+{
+  TopologyRepairResult result{{}, true};
+  try {
+    result = repair_topology(
+      geo_divs,
+      {args.max_repair_area_change, args.repair_snapping_distance});
+  } catch (const std::exception &e) {
+    std::cerr << "ERROR: Repair of the input topology failed: " << e.what()
+              << ". Use --disable_topology_repair to skip the repair."
+              << std::endl;
+    std::exit(EXIT_FAILURE);
+  }
+  if (result.changed.empty()) {
+    return;
+  }
+  std::cerr << (result.within_tolerance ? "WARNING" : "ERROR")
+            << ": The input topology needs repair in " << result.changed.size()
+            << " geographic division(s):\n";
+  for (const auto &r : result.changed) {
+    std::cerr << "  " << r.id << ": "
+              << (r.had_self_intersection ? "self-intersecting ring repaired"
+                                          : "border matched to neighbours")
+              << ", relative area change " << r.relative_area_change << "\n";
+  }
+  if (!result.within_tolerance) {
+    std::cerr << "ERROR: The repair would change an area by more than "
+              << args.max_repair_area_change
+              << " (relative). Fix the input, raise --max_repair_area_change,"
+              << " or pass --disable_topology_repair." << std::endl;
+    std::exit(EXIT_FAILURE);
+  }
+  std::cerr << "The repaired geometry is used from here on." << std::endl;
+}
+
 void CartogramInfo::construct_inset_state_from_geodivs(const nlohmann::json &j)
 {
-  InsetState inset_state("C", args_);
+  std::vector<GeoDiv> geo_divs;
   for (const auto &feature : j["features"]) {
     const auto geometry = feature["geometry"];
     const bool is_polygon = (geometry["type"] == "Polygon");
 
     std::string id = strip_quotes(feature["properties"][id_header_].dump());
-    auto [gd, erico] = json_to_geodiv(id, geometry["coordinates"], is_polygon);
-    inset_state.push_back(gd);
+    auto [gd, erico] = json_to_geodiv(
+      id,
+      geometry["coordinates"],
+      is_polygon,
+      !args_.disable_topology_repair);
+    geo_divs.push_back(std::move(gd));
     gd_to_inset_.emplace(id, "C");
     original_ext_ring_is_clockwise_ = erico;
+  }
+  if (!args_.disable_topology_repair) {
+    repair_input_topology(geo_divs, args_);
+  }
+  InsetState inset_state("C", args_);
+  for (const auto &gd : geo_divs) {
+    inset_state.push_back(gd);
   }
   inset_states_.emplace_back(std::move(inset_state));
 }

@@ -155,6 +155,25 @@ Arguments parse_arguments(const int argc, const char *argv[])
     .help("Double: Maximum permitted area error for cartogram transformation")
     .default_value(default_max_permitted_area_error)
     .scan<'g', double>();
+  arguments.add_argument("--disable_topology_repair")
+    .help(
+      "Boolean: Stop with an error on self-intersecting rings instead of "
+      "repairing them, and do not make shared borders match")
+    .default_value(false)
+    .implicit_value(true);
+  arguments.add_argument("--max_repair_area_change")
+    .help(
+      "Double: Largest relative change of a region's area that the repair of "
+      "the input topology may cause")
+    .default_value(default_max_repair_area_change)
+    .scan<'g', double>();
+  arguments.add_argument("--repair_snapping_distance")
+    .help(
+      "Double: Vertices closer than this distance (input coordinates) are "
+      "snapped together when shared borders are made to match [default: "
+      "diameter of the bounding box divided by 1e8]")
+    .default_value(-1.0)
+    .scan<'g', double>();
   arguments.add_argument("--quadtree_leaf_count_factor")
     .help("Unsigned int: Quadtree leaf count factor (should be a power of 2)")
     .default_value(default_quadtree_leaf_count_factor)
@@ -207,6 +226,12 @@ Arguments parse_arguments(const int argc, const char *argv[])
   args.min_polygon_area = arguments.get<double>("--minimum_polygon_area");
   args.max_permitted_area_error =
     arguments.get<double>("--max_permitted_area_error");
+  args.disable_topology_repair =
+    arguments.get<bool>("--disable_topology_repair");
+  args.max_repair_area_change =
+    arguments.get<double>("--max_repair_area_change");
+  args.repair_snapping_distance =
+    arguments.get<double>("--repair_snapping_distance");
 
   args.skip_projection = arguments.get<bool>("--skip_projection");
   args.make_csv = arguments.get<bool>("--make_csv");
