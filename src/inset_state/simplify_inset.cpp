@@ -7,8 +7,12 @@
 // exact predicates: with plain double arithmetic, nearly collinear vertices
 // on a shared border are misclassified, the copies of the border are merged
 // only in part, and spurious intersection points are constructed. The
-// coordinates themselves remain doubles. Borders that two GeoDivs share are
-// simplified identically only if both copies have the same vertices.
+// coordinates themselves remain doubles. Where the vertices of one copy of a
+// shared border lie exactly on the segments of the other copy, the
+// triangulation merges the two copies, so both are simplified identically,
+// even if the copies have different vertices. Copies that only nearly
+// coincide stay separate and are simplified independently; giving them the
+// same vertices needs a separate repair of the topology.
 using SimplifyKernel = CGAL::Exact_predicates_inexact_constructions_kernel;
 using Vb = CGAL::Polyline_simplification_2::Vertex_base_2<SimplifyKernel>;
 using Fb = CGAL::Constrained_triangulation_face_base_2<SimplifyKernel>;
