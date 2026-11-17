@@ -65,14 +65,18 @@ endforeach()
 
 # Without --world, the world map by country used to crash with a segmentation
 # fault in the simplification, while its triangulation used plain
-# floating-point predicates.
+# floating-point predicates. The test runs in its own folder, because its
+# output has the same name as that of the test with --world.
 set(world_dir "${MAP_ROOT}/world_by_country_since_2022")
+set(without_world_dir "${CMAKE_CURRENT_BINARY_DIR}/without_world_option")
+file(MAKE_DIRECTORY "${without_world_dir}")
 add_test(
   NAME stress_world_by_country_since_2022_without_world_option
   COMMAND
     "${CMAKE_BINARY_DIR}/cartogram"
     "${world_dir}/world_by_country_since_2022.geojson"
     "${world_dir}/world_population_by_country_2010.csv"
+  WORKING_DIRECTORY "${without_world_dir}"
 )
 set_tests_properties(stress_world_by_country_since_2022_without_world_option
   PROPERTIES
