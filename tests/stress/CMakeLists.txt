@@ -62,3 +62,20 @@ foreach(map_dir IN LISTS CHILDREN)
     )
   endforeach()
 endforeach()
+
+# Without --world, the world map by country used to crash with a segmentation
+# fault in the simplification, while its triangulation used plain
+# floating-point predicates.
+set(world_dir "${MAP_ROOT}/world_by_country_since_2022")
+add_test(
+  NAME stress_world_by_country_since_2022_without_world_option
+  COMMAND
+    "${CMAKE_BINARY_DIR}/cartogram"
+    "${world_dir}/world_by_country_since_2022.geojson"
+    "${world_dir}/world_population_by_country_2010.csv"
+)
+set_tests_properties(stress_world_by_country_since_2022_without_world_option
+  PROPERTIES
+  LABELS "stress"
+  TIMEOUT 600
+)
