@@ -9,6 +9,7 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 # ----------------------------- Third–party -----------------------------
 find_package(Boost REQUIRED CONFIG)
 find_package(cgal REQUIRED CONFIG)
+find_package(geos REQUIRED CONFIG)
 find_package(nlohmann_json REQUIRED CONFIG)
 find_package(argparse REQUIRED CONFIG)
 find_package(vincentlaucsb-csv-parser REQUIRED CONFIG)
@@ -32,6 +33,7 @@ target_include_directories(cartogram_lib
 target_link_libraries(cartogram_lib
   PUBLIC
   CGAL::CGAL
+  GEOS::geos_c
   boost::boost
   nlohmann_json::nlohmann_json
   argparse::argparse
