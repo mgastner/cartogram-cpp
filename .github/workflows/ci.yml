@@ -228,6 +228,16 @@ jobs:
         run: |
           ctest --test-dir build -L stress --output-on-failure
 
+      # Every polygon in the outputs of the stress tests must be valid, and no
+      # two polygons may overlap (#108). Only wheels are installed, so that a
+      # missing wheel fails the step instead of starting a build of GEOS.
+      - name: Check the outputs of the stress tests
+        if: ${{ !cancelled() && steps.build.outcome == 'success' }}
+        run: |
+          source .venv/bin/activate
+          pip install --only-binary=:all: "shapely==2.2.0"
+          python tests/stress/check_outputs.py build/tests/stress
+
       # Disabled. The fuzzer tests ran on ubuntu-release-gcc,
       # ubuntu-release-clang, and macos-release-appleclang.
       # - name: Fuzzer tests
