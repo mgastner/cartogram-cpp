@@ -51,15 +51,19 @@ from contourpy import contour_generator
 
 # Layout in millimeters (text width of the ICA template: 170 mm)
 WIDTH = 170.0
-HEIGHT = 53.0
-PANEL = 41.0  # side of panels (a), (b), and (c)
-SMALL = 25.0  # side of panel (d)
-X_A, X_B, X_C = 1.0, 54.0, 127.0
-X_D = X_B + PANEL + (X_C - X_B - PANEL - SMALL) / 2
-Y_TOP = 6.0  # top of panels (a), (b), and (c)
-Y_TOP_D = 6.0
-ARROW_Y_T0 = Y_TOP + PANEL / 2
-ARROW_Y_A = 40.0
+PANEL = 35.75  # side of all four panels, so they share one scale
+GAP_T0 = 9.0  # between (a) and (b), with the arrow T0
+GAP_BC = 3.0  # between (b) and (c)
+GAP_A = 13.0  # between (c) and (d), with the arrow A
+X_A = 1.0
+X_B = X_A + PANEL + GAP_T0
+X_FIELD = X_B + PANEL + GAP_BC  # panel (c), the velocity field
+X_T = X_FIELD + PANEL + GAP_A  # panel (d), the map T
+Y_TOP = 6.0  # top of the panels
+ARROW_Y = Y_TOP + PANEL / 2
+LABEL_GAP = 3.6  # from the bottom of the panels to the baseline of the labels
+LABEL_HALF_WIDTH = 12.0  # leaders start within this distance of the center
+HEIGHT = Y_TOP + PANEL + 6.0
 
 FONT = "Times New Roman"
 PT = 0.3528  # millimeters per point
@@ -276,7 +280,7 @@ def main():
 
     pa = Panel(X_A, Y_TOP, PANEL, lx, ly)
     pb = Panel(X_B, Y_TOP, PANEL, lx, ly)
-    pc = Panel(X_C, Y_TOP, PANEL, lx, ly)
+    pc = Panel(X_T, Y_TOP, PANEL, lx, ly)
 
     # Block of squares on the input map
     orig = d["polygons"]["original"]
@@ -376,11 +380,23 @@ def main():
                 )
         qx, qy = panel(*p)
         body.append(f'<circle cx="{fmt(qx)}" cy="{fmt(qy)}" r="0.3" fill="#000000"/>')
+        # Leader from the values below the panel to the highlighted ellipse,
+        # so the values read as those of this ellipse, not of the whole map
+        left = panel.x0 + PANEL / 2 - LABEL_HALF_WIDTH
+        right = panel.x0 + PANEL / 2 + LABEL_HALF_WIDTH
+        start = np.array([min(max(qx, left), right), Y_TOP + PANEL + LABEL_GAP - 2.4])
+        center = np.array([qx, qy])
+        direction = (start - center) / np.linalg.norm(start - center)
+        m_mm = panel.s * np.diag([1.0, -1.0]) @ (R_MARKED * jac)
+        end = center + direction / np.linalg.norm(np.linalg.solve(m_mm, direction))
+        body.append(
+            f'<path d="{path_d([start, end])}" stroke="#000000" stroke-width="0.2"/>'
+        )
     layers.append(layer("marked point", "\n".join(body)))
 
     if args.steps:
         # Panel (d): the first velocity field of A, from the steps JSON
-        pd = Panel(X_D, Y_TOP_D, SMALL, lx, ly)
+        pd = Panel(X_FIELD, Y_TOP, PANEL, lx, ly)
         with open(args.steps) as fh:
             steps = json.load(fh)
         body = first_field_panel(pd, steps, d["polygons"]["t0"], lx, ly)
@@ -388,7 +404,7 @@ def main():
     else:
         # Panel (d): streamlines of one sine mode, s = sin(pi u) sin(pi w)
         q = 1.0
-        pd = Panel(X_D, Y_TOP_D, SMALL, q, q)
+        pd = Panel(X_FIELD, Y_TOP, PANEL, q, q)
         body = [
             f'<path d="{path_d([pd(0, 0), pd(q, 0), pd(q, q), pd(0, q)], True)}" '
             f'fill="#ffffff" stroke="{FRAME}" stroke-width="0.2"/>'
@@ -471,34 +487,36 @@ def main():
         f"T: a = {a1:.3f}, b = {b1:.3f}, m = {m1:.3f}"
     )
     body = []
-    body.append(arrow(X_A + PANEL + 1.5, ARROW_Y_T0, X_B - 1.5))
-    body.append(text((X_A + PANEL + X_B) / 2, ARROW_Y_T0 - 1.3, [("T", "i"), ("0", "sub")], TITLE_SIZE, "middle"))
-    body.append(arrow(X_B + PANEL + 1.5, ARROW_Y_A, X_C - 1.5))
-    mid = (X_B + PANEL + X_C) / 2
-    body.append(text(mid, ARROW_Y_A - 1.3, [("A", "i")], TITLE_SIZE, "middle"))
+    body.append(arrow(X_A + PANEL + 1.0, ARROW_Y, X_B - 1.0))
+    body.append(text((X_A + PANEL + X_B) / 2, ARROW_Y - 1.3, [("T", "i"), ("0", "sub")], TITLE_SIZE, "middle"))
+    # The flows of the velocity fields carry the regions of T0, drawn in (c),
+    # to their positions in (d)
+    body.append(arrow(X_FIELD + PANEL + 1.0, ARROW_Y, X_T - 1.0))
+    mid = (X_FIELD + PANEL + X_T) / 2
+    body.append(text(mid, ARROW_Y - 1.3, [("A", "i")], TITLE_SIZE, "middle"))
     body.append(
-        text(mid, ARROW_Y_A + 3.6, [("det ", ""), ("DA", "i"), (" = 1", "")], LABEL_SIZE, "middle")
+        text(mid, ARROW_Y + 3.6, [("det ", ""), ("DA", "i"), (" = 1", "")], LABEL_SIZE, "middle")
     )
     ty = Y_TOP - 2.0
     body.append(text(X_A, ty, [("(a) Input map", "")], TITLE_SIZE))
     body.append(
-        text(X_B, ty, [("(b) Cartogram ", ""), ("T", "i"), ("0", "sub"), (", det ", ""),
+        text(X_B, ty, [("(b) Projection ", ""), ("T", "i"), ("0", "sub"), (", det ", ""),
                        ("DT", "i"), ("0", "sub"), (" = ", ""), ("g", "i"), ("0", "sub")],
              TITLE_SIZE)
     )
     body.append(
-        text(X_C, ty, [("(d) ", ""), ("T", "i"), (" = ", ""), ("A", "i"), (" ∘ ", "op"),
+        text(X_T, ty, [("(d) ", ""), ("T", "i"), (" = ", ""), ("A", "i"), (" ∘ ", "op"),
                        ("T", "i"), ("0", "sub"), (", det ", ""), ("DT", "i"), (" = ", ""),
                        ("g", "i"), ("0", "sub")],
              TITLE_SIZE)
     )
     if args.steps:
-        # v_1: the field of the first of the steps whose flows make up A
-        title_c = [("(c) Velocity field ", ""), ("v", "b"), ("1", "sub")]
+        # The field of the first of the steps whose flows make up A
+        title_c = [("(c) Velocity field ", ""), ("v", "b")]
     else:
         title_c = [("(c) One field ", ""), ("v", "b"), (" of ", ""), ("A", "i")]
-    body.append(text(X_D + SMALL / 2, Y_TOP_D - 2.0, title_c, TITLE_SIZE, "middle"))
-    by = Y_TOP + PANEL + 3.6
+    body.append(text(X_FIELD, ty, title_c, TITLE_SIZE))
+    by = Y_TOP + PANEL + LABEL_GAP
     # Legend of the density rho
     lx0 = X_A + 3.0
     body.append(text(lx0, by, [("Density ", ""), ("ρ", "i")], LABEL_SIZE))
@@ -517,7 +535,7 @@ def main():
              LABEL_SIZE, "middle")
     )
     body.append(
-        text(X_C + PANEL / 2, by,
+        text(X_T + PANEL / 2, by,
              [("ab", "i"), (" = ", ""), ("g", "i"), ("0", "sub"),
               (f" = {values['t'][3]:.2f},  ", ""), ("m", "i"), (f" = {m1:.2f}", "")],
              LABEL_SIZE, "middle")
