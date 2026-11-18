@@ -83,9 +83,15 @@ PT = 0.3528  # millimeters per point
 TITLE_SIZE = 8 * PT
 LABEL_SIZE = 7 * PT
 
-# Colors: one blue ramp for the density rho on a logarithmic scale (light =
-# sparse), a dark red for the ellipses, and neutral grays for lines
-RHO_COLORS = ("#f5f8fc", "#86aad9")  # sparse and dense end, mixed in OKLab
+# Colors: ColorBrewer Greys for the density rho (light = sparse; the four
+# light classes of the six-class scheme, so that the red ellipses and the
+# black outlines stay visible on the densest cells), a dark red for the
+# ellipses, and neutral grays for lines. Blue stays reserved for "less
+# distortion" in the map figures (ColorBrewer RdBu).
+RHO_STOPS = ("#f7f7f7", "#d9d9d9", "#bdbdbd", "#969696")
+# With --binned: one class per color, breaks between the densities 1, 3,
+# and 9 of the squares and below the mean 6.78 outside the regions
+RHO_BREAKS = (2.0, 5.0, 8.0)
 RHO_BINS = 64  # color steps of the shading
 RHO_LOG = False  # linear color scale (author's choice); True for a logarithmic one
 RHO_RANGE = (0.7, 12.0) if RHO_LOG else (0.0, 12.0)  # densities at the bar's ends
@@ -280,9 +286,12 @@ def _hex_from_oklab(lab):
 
 
 def density_color(t):
-    """Color of the density ramp at position t in [0, 1] (0 = sparse)."""
-    lo, hi = (_oklab(c) for c in RHO_COLORS)
-    return _hex_from_oklab(lo + (hi - lo) * min(max(float(t), 0.0), 1.0))
+    """Color of the continuous density ramp at position t in [0, 1] (0 =
+    sparse), mixed in OKLab between the stops."""
+    t = min(max(float(t), 0.0), 1.0) * (len(RHO_STOPS) - 1)
+    i = min(int(t), len(RHO_STOPS) - 2)
+    lo, hi = _oklab(RHO_STOPS[i]), _oklab(RHO_STOPS[i + 1])
+    return _hex_from_oklab(lo + (hi - lo) * (t - i))
 
 
 def density_position(rho):
@@ -373,6 +382,8 @@ def main():
         help="*_conformality_steps.json of the same run: draw the first "
         "velocity field of A in panel (c) instead of one sine mode",
     )
+    ap.add_argument("--binned", action="store_true",
+                    help="shade the density in the classes of RHO_BREAKS instead of continuously")
     args = ap.parse_args()
 
     d = json.load(open(args.plot_json))
@@ -419,7 +430,10 @@ def main():
     ys_c = (np.arange(ny) + 0.5) * cell
     centers = np.stack(np.meshgrid(xs_c, ys_c), axis=-1).reshape(-1, 2)
     land = inside_rings(centers, [poly["ring"] for poly in orig]).reshape(ny, nx)
-    bins = np.clip((density_position(rho) * RHO_BINS).astype(int), 0, RHO_BINS - 1)
+    if args.binned:
+        bins = np.searchsorted(RHO_BREAKS, rho, side="right")
+    else:
+        bins = np.clip((density_position(rho) * RHO_BINS).astype(int), 0, RHO_BINS - 1)
     corners_in = np.stack(
         np.meshgrid(np.arange(nx + 1) * cell, np.arange(ny + 1) * cell), axis=-1
     )
@@ -431,7 +445,7 @@ def main():
     body = []
     for corners, panel in ((corners_in, pa), (c0, pb), (c1, pc)):
         for k in np.unique(bins):
-            color = density_color((k + 0.5) / RHO_BINS)
+            color = RHO_STOPS[k] if args.binned else density_color((k + 0.5) / RHO_BINS)
             quads = []
             for j, i in zip(*np.nonzero(bins == k)):
                 quad = (corners[j, i], corners[j, i + 1], corners[j + 1, i + 1], corners[j + 1, i])
@@ -663,24 +677,36 @@ def main():
     lx0 = X_A + 1.0
     body.append(text(lx0, by, [("Density ", ""), ("ρ", "i")], LABEL_SIZE))
     bar_x0, bar_w, bar_top, bar_h = lx0 + 12.5, 21.0, by - 2.0, 1.8
-    stops = "".join(
-        f'<stop offset="{fmt(s)}" stop-color="{density_color(s)}"/>'
-        for s in np.linspace(0.0, 1.0, 17)
-    )
-    body.append(
-        f'<defs><linearGradient id="rho-ramp" x1="0" y1="0" x2="1" y2="0">{stops}'
-        "</linearGradient></defs>"
-        f'<rect x="{fmt(bar_x0)}" y="{fmt(bar_top)}" width="{fmt(bar_w)}" '
-        f'height="{fmt(bar_h)}" fill="url(#rho-ramp)" stroke="{OUTLINE}" '
-        'stroke-width="0.15"/>'
-    )
-    for tick in RHO_TICKS:
+    if args.binned:
+        edges = [RHO_RANGE[0], *RHO_BREAKS, RHO_RANGE[1]]
+        for k, (lo_e, hi_e) in enumerate(zip(edges[:-1], edges[1:])):
+            x0 = bar_x0 + bar_w * float(density_position(lo_e))
+            x1 = bar_x0 + bar_w * float(density_position(hi_e))
+            body.append(f'<rect x="{fmt(x0)}" y="{fmt(bar_top)}" width="{fmt(x1 - x0)}" '
+                        f'height="{fmt(bar_h)}" fill="{RHO_STOPS[k]}"/>')
+        body.append(f'<rect x="{fmt(bar_x0)}" y="{fmt(bar_top)}" width="{fmt(bar_w)}" '
+                    f'height="{fmt(bar_h)}" fill="none" stroke="{OUTLINE}" stroke-width="0.15"/>')
+        ticks = edges
+    else:
+        stops = "".join(
+            f'<stop offset="{fmt(s)}" stop-color="{density_color(s)}"/>'
+            for s in np.linspace(0.0, 1.0, 17)
+        )
+        body.append(
+            f'<defs><linearGradient id="rho-ramp" x1="0" y1="0" x2="1" y2="0">{stops}'
+            "</linearGradient></defs>"
+            f'<rect x="{fmt(bar_x0)}" y="{fmt(bar_top)}" width="{fmt(bar_w)}" '
+            f'height="{fmt(bar_h)}" fill="url(#rho-ramp)" stroke="{OUTLINE}" '
+            'stroke-width="0.15"/>'
+        )
+        ticks = RHO_TICKS
+    for tick in ticks:
         tx = bar_x0 + bar_w * float(density_position(tick))
         body.append(
             f'<path d="{path_d([(tx, bar_top + bar_h), (tx, bar_top + bar_h + 0.6)])}" '
             f'stroke="{OUTLINE}" stroke-width="0.15"/>'
         )
-        body.append(text(tx, bar_top + bar_h + 2.9, [(str(tick), "")], LABEL_SIZE, "middle"))
+        body.append(text(tx, bar_top + bar_h + 2.9, [(f"{tick:g}", "")], LABEL_SIZE, "middle"))
     body.append(
         text(X_B + PANEL / 2, by,
              [("ab", "i"), (" = ", ""), ("ρ", "i hat"), ("(", ""), ("x", "b"), (")", ""), (f" = {g0:.2f},  ", ""),
