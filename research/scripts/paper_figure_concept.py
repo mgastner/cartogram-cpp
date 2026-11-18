@@ -1,18 +1,20 @@
 #!/usr/bin/env python3
 """Draw the explanatory figure of the paper as an Inkscape SVG.
 
-Usage: paper_figure_concept.py PLOT_JSON CSV OUT_SVG
+Usage: paper_figure_concept.py PLOT_JSON CSV OUT_SVG [--steps STEPS_JSON]
 
 PLOT_JSON is the *_conformality_plot.json of a run of the research binary on
 the synthetic map in research/data/concept_figure (nine unit squares, with
-the population densities in CSV). The figure has four panels:
+the population densities in CSV). STEPS_JSON is the *_conformality_steps.json
+of the same run. The figure has four panels:
 
   (a) the input map, with small circles (Tissot's indicatrix) on a lattice
       and one marked point x;
   (b) the cartogram T0, with the ellipses into which T0 turns the circles;
-  (c) one velocity field of A, drawn on the arrow from (b) to (d):
-      streamlines of one sine mode of the stream function, and a small
-      square carried by the flow;
+  (c) a velocity field of A, drawn on the arrow from (b) to (d). With
+      --steps: streamlines of the first field of the run, over the regions
+      of T0. Without: streamlines of one sine mode, and a small square
+      carried by the flow;
   (d) the corrected map T = A o T0, with the ellipses of T.
 
 The ellipse of a circle of radius r at x has the semi-axes r a and r b, with
@@ -22,16 +24,21 @@ contains x. The Jacobian matrix comes from the corners of the cell
 are Inkscape layers, so the figure can be edited in Inkscape.
 
 The run for the paper (18 Nov 2026) used the research binary at eb3ca2ec,
-with the settings of the paper runs and 32 x 32 modes:
+with the settings of the paper runs, 32 x 32 modes, and ocean weight 0.1:
 
   cartogram nine_squares.geojson nine_squares_diag_1_3_9.csv -P 100000000 \\
     --conf_optimize --conf_alpha 0.5 --conf_lbfgs 8 --conf_integrator verlet \\
-    --conf_substep_factor 1 --conf_eval_quad 4 --conf_modes 32
+    --conf_substep_factor 1 --conf_eval_quad 4 --conf_modes 32 \\
+    --conf_ocean_weight 0.1
 
 The densities 1, 3, and 9 rise from the lower left to the upper right, so
 ln g0 is not far from harmonic and A can remove part of the distortion. With
 a dense square in the middle (a strict maximum of ln g0), E_1/2 on land fell
-by only 1.5 %; with the gradient, it falls by 20 % (0.301 to 0.241).
+by only 1.5 % (ocean weight 1) or 3 % (0.1). With the gradient and ocean
+weight 1, E_1/2 on land falls by 20 %, but the lattice ellipses hardly
+change (mean ln(a/b) at the 64 lattice points +1 %); with ocean weight 0.1,
+E_1/2 on land falls by 60 % (0.301 to 0.119) and the mean ln(a/b) at the
+lattice points by 35 %, while E_1/2 on the ocean rises from 0.123 to 0.413.
 """
 
 import argparse
@@ -177,11 +184,81 @@ def semi_axes(jac):
     return s[0], s[1], u  # columns of u: directions of the axes on the image
 
 
+def first_field_panel(pd, steps, regions_t0, lx, ly):
+    """Streamlines of the first velocity field of A, drawn over the regions of
+    the cartogram T0, on which the field acts.
+
+    The stream function is s = sum_mn c_mn sin(kx_m y1) sin(ky_n y2), with the
+    coefficients of the first accepted step of the run (steps JSON, index
+    (m - 1) * my + (n - 1)), kx_m = m pi / lx, ky_n = n pi / ly, and
+    v = (ds/dy2, -ds/dy1). No square is carried here: the first step moves
+    points by only a few lattice units (at most 10 of 256 in the paper run),
+    so its image would cover the square."""
+    mx, my = steps["modes"]
+    if [float(lx), float(ly)] != [float(v) for v in steps["lattice"]]:
+        raise SystemExit("ERROR: The steps JSON belongs to a different lattice.")
+    first = steps["steps"][0]
+    c = np.asarray(first["coeffs"], dtype=float).reshape(mx, my)
+    kx = np.arange(1, mx + 1) * np.pi / lx
+    ky = np.arange(1, my + 1) * np.pi / ly
+
+    def vel(pts):
+        pts = np.atleast_2d(pts)
+        sx = np.sin(np.outer(pts[:, 0], kx))
+        cx = np.cos(np.outer(pts[:, 0], kx)) * kx
+        sy = np.sin(np.outer(pts[:, 1], ky))
+        cy = np.cos(np.outer(pts[:, 1], ky)) * ky
+        return np.stack([((sx @ c) * cy).sum(1), -((cx @ c) * sy).sum(1)], axis=1)
+
+    body = [
+        f'<path d="{path_d([pd(0, 0), pd(lx, 0), pd(lx, ly), pd(0, ly)], True)}" '
+        f'fill="#ffffff" stroke="{FRAME}" stroke-width="0.2"/>'
+    ]
+    for poly in regions_t0:
+        pts = [pd(x, y) for x, y in poly["ring"]]
+        body.append(
+            f'<path d="{path_d(pts, True)}" fill="#ececec" stroke="#b5b5b5" '
+            'stroke-width="0.15" stroke-linejoin="round"/>'
+        )
+
+    g1 = np.linspace(0, lx, 257)
+    g2 = np.linspace(0, ly, 257)
+    S = np.sin(np.outer(g2, ky)) @ c.T @ np.sin(np.outer(kx, g1))
+    U, W = np.meshgrid(g1, g2)
+    gen = contour_generator(U, W, S)
+    fractions = (0.15, 0.4, 0.65, 0.9)
+    for extreme in (S.max(), S.min()):
+        for frac in fractions:
+            for line in gen.lines(frac * extreme):
+                body.append(
+                    f'<path d="{path_d([pd(x, y) for x, y in line[::2]], True)}" '
+                    'stroke="#555555" stroke-width="0.2" fill="none"/>'
+                )
+        # Two arrowheads on the longest streamline of the second level
+        line = max(gen.lines(fractions[1] * extreme), key=len)
+        for k in (len(line) // 4, 3 * len(line) // 4):
+            pnt = line[k]
+            v = vel(pnt)[0]
+            v = v / np.linalg.norm(v)
+            size = 0.035 * max(lx, ly)
+            tip, base = pnt + size * v, pnt - size * v
+            nrm = np.array([-v[1], v[0]]) * 0.85 * size
+            tri = [pd(*tip), pd(*(base + nrm)), pd(*(base - nrm))]
+            body.append(f'<path d="{path_d(tri, True)}" fill="#555555"/>')
+
+    return body
+
+
 def main():
     ap = argparse.ArgumentParser(description=__doc__.split("\n")[0])
     ap.add_argument("plot_json")
     ap.add_argument("csv")
     ap.add_argument("out_svg")
+    ap.add_argument(
+        "--steps",
+        help="*_conformality_steps.json of the same run: draw the first "
+        "velocity field of A in panel (c) instead of one sine mode",
+    )
     args = ap.parse_args()
 
     d = json.load(open(args.plot_json))
@@ -301,79 +378,87 @@ def main():
         body.append(f'<circle cx="{fmt(qx)}" cy="{fmt(qy)}" r="0.3" fill="#000000"/>')
     layers.append(layer("marked point", "\n".join(body)))
 
-    # Panel (d): streamlines of one sine mode, s = sin(pi u) sin(pi w)
-    q = 1.0
-    pd = Panel(X_D, Y_TOP_D, SMALL, q, q)
-    body = [
-        f'<path d="{path_d([pd(0, 0), pd(q, 0), pd(q, q), pd(0, q)], True)}" '
-        f'fill="#ffffff" stroke="{FRAME}" stroke-width="0.2"/>'
-    ]
-    n = 201
-    g = np.linspace(0, 1, n)
-    U, Wg = np.meshgrid(g, g)
-    S = np.sin(np.pi * U) * np.sin(np.pi * Wg)
-    gen = contour_generator(U, Wg, S)
-    for level in (0.12, 0.35, 0.6, 0.85):
-        for line in gen.lines(level):
-            body.append(
-                f'<path d="{path_d([pd(x, y) for x, y in line[::2]], True)}" '
-                'stroke="#555555" stroke-width="0.2" fill="none"/>'
+    if args.steps:
+        # Panel (d): the first velocity field of A, from the steps JSON
+        pd = Panel(X_D, Y_TOP_D, SMALL, lx, ly)
+        with open(args.steps) as fh:
+            steps = json.load(fh)
+        body = first_field_panel(pd, steps, d["polygons"]["t0"], lx, ly)
+        layers.append(layer("flow panel", "\n".join(body)))
+    else:
+        # Panel (d): streamlines of one sine mode, s = sin(pi u) sin(pi w)
+        q = 1.0
+        pd = Panel(X_D, Y_TOP_D, SMALL, q, q)
+        body = [
+            f'<path d="{path_d([pd(0, 0), pd(q, 0), pd(q, q), pd(0, q)], True)}" '
+            f'fill="#ffffff" stroke="{FRAME}" stroke-width="0.2"/>'
+        ]
+        n = 201
+        g = np.linspace(0, 1, n)
+        U, Wg = np.meshgrid(g, g)
+        S = np.sin(np.pi * U) * np.sin(np.pi * Wg)
+        gen = contour_generator(U, Wg, S)
+        for level in (0.12, 0.35, 0.6, 0.85):
+            for line in gen.lines(level):
+                body.append(
+                    f'<path d="{path_d([pd(x, y) for x, y in line[::2]], True)}" '
+                    'stroke="#555555" stroke-width="0.2" fill="none"/>'
+                )
+
+        def vel(pnt):
+            x, y = pnt
+            return np.array(
+                [np.pi * np.sin(np.pi * x) * np.cos(np.pi * y),
+                 -np.pi * np.cos(np.pi * x) * np.sin(np.pi * y)]
             )
 
-    def vel(pnt):
-        x, y = pnt
-        return np.array(
-            [np.pi * np.sin(np.pi * x) * np.cos(np.pi * y),
-             -np.pi * np.cos(np.pi * x) * np.sin(np.pi * y)]
+        # Arrowheads along the streamline of level 0.35
+        for pnt in ((0.5, 0.115), (0.885, 0.5), (0.5, 0.885), (0.115, 0.5)):
+            pnt = np.array(pnt)
+            v = vel(pnt)
+            v = v / np.linalg.norm(v)
+            tip = pnt + 0.035 * v
+            nrm = np.array([-v[1], v[0]])
+            base = pnt - 0.035 * v
+            tri = [pd(*tip), pd(*(base + 0.03 * nrm)), pd(*(base - 0.03 * nrm))]
+            body.append(f'<path d="{path_d(tri, True)}" fill="#555555"/>')
+
+        # A small square carried by the flow (RK4); the area stays the same
+        def flow(pnt, tau, steps=400):
+            h = tau / steps
+            p = np.array(pnt, dtype=float)
+            for _ in range(steps):
+                k1 = vel(p)
+                k2 = vel(p + h / 2 * k1)
+                k3 = vel(p + h / 2 * k2)
+                k4 = vel(p + h * k3)
+                p = p + h / 6 * (k1 + 2 * k2 + 2 * k3 + k4)
+            return p
+
+        side = 0.13
+        sx, sy = 0.24, 0.30
+        edge = np.linspace(0, 1, 25)[:-1]
+        square = (
+            [(sx + side * t, sy) for t in edge]
+            + [(sx + side, sy + side * t) for t in edge]
+            + [(sx + side * (1 - t), sy + side) for t in edge]
+            + [(sx, sy + side * (1 - t)) for t in edge]
         )
+        tau = 0.12
+        image = [flow(p, tau) for p in square]
 
-    # Arrowheads along the streamline of level 0.35
-    for pnt in ((0.5, 0.115), (0.885, 0.5), (0.5, 0.885), (0.115, 0.5)):
-        pnt = np.array(pnt)
-        v = vel(pnt)
-        v = v / np.linalg.norm(v)
-        tip = pnt + 0.035 * v
-        nrm = np.array([-v[1], v[0]])
-        base = pnt - 0.035 * v
-        tri = [pd(*tip), pd(*(base + 0.03 * nrm)), pd(*(base - 0.03 * nrm))]
-        body.append(f'<path d="{path_d(tri, True)}" fill="#555555"/>')
+        def area(pts):
+            pts = np.asarray(pts)
+            x, y = pts[:, 0], pts[:, 1]
+            return 0.5 * abs(np.dot(x, np.roll(y, -1)) - np.dot(y, np.roll(x, -1)))
 
-    # A small square carried by the flow (RK4); the area stays the same
-    def flow(pnt, tau, steps=400):
-        h = tau / steps
-        p = np.array(pnt, dtype=float)
-        for _ in range(steps):
-            k1 = vel(p)
-            k2 = vel(p + h / 2 * k1)
-            k3 = vel(p + h / 2 * k2)
-            k4 = vel(p + h * k3)
-            p = p + h / 6 * (k1 + 2 * k2 + 2 * k3 + k4)
-        return p
-
-    side = 0.13
-    sx, sy = 0.24, 0.30
-    edge = np.linspace(0, 1, 25)[:-1]
-    square = (
-        [(sx + side * t, sy) for t in edge]
-        + [(sx + side, sy + side * t) for t in edge]
-        + [(sx + side * (1 - t), sy + side) for t in edge]
-        + [(sx, sy + side * (1 - t)) for t in edge]
-    )
-    tau = 0.12
-    image = [flow(p, tau) for p in square]
-
-    def area(pts):
-        pts = np.asarray(pts)
-        x, y = pts[:, 0], pts[:, 1]
-        return 0.5 * abs(np.dot(x, np.roll(y, -1)) - np.dot(y, np.roll(x, -1)))
-
-    print(f"panel (d): square area {area(square):.6f}, image area {area(image):.6f}")
-    for pts, fill in ((square, "#ffffff"), (image, ELLIPSE)):
-        body.append(
-            f'<path d="{path_d([pd(*p) for p in pts], True)}" stroke="#000000" '
-            f'stroke-width="0.25" fill="{fill}" fill-opacity="0.35"/>'
-        )
-    layers.append(layer("flow panel", "\n".join(body)))
+        print(f"panel (d): square area {area(square):.6f}, image area {area(image):.6f}")
+        for pts, fill in ((square, "#ffffff"), (image, ELLIPSE)):
+            body.append(
+                f'<path d="{path_d([pd(*p) for p in pts], True)}" stroke="#000000" '
+                f'stroke-width="0.25" fill="{fill}" fill-opacity="0.35"/>'
+            )
+        layers.append(layer("flow panel", "\n".join(body)))
 
     # Arrows and labels
     a0, b0 = values["t0"][0], values["t0"][1]
@@ -408,7 +493,7 @@ def main():
              TITLE_SIZE)
     )
     body.append(
-        text(X_D + SMALL / 2, Y_TOP_D - 2.0, [("(c) One field ", ""), ("v", "b"), (" of ", ""), ("A", "i")],
+        text(X_D + SMALL / 2, Y_TOP_D - 2.0, [("(c) First field " if args.steps else "(c) One field ", ""), ("v", "b"), (" of ", ""), ("A", "i")],
              TITLE_SIZE, "middle")
     )
     by = Y_TOP + PANEL + 3.6
