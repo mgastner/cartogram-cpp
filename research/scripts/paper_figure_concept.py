@@ -5,17 +5,22 @@ Usage: paper_figure_concept.py PLOT_JSON CSV OUT_SVG [--steps STEPS_JSON]
 
 PLOT_JSON is the *_conformality_plot.json of a run of the research binary on
 the synthetic map in research/data/concept_figure (nine unit squares, with
-the population densities in CSV). STEPS_JSON is the *_conformality_steps.json
-of the same run. The figure has four panels:
+their populations in CSV). STEPS_JSON is the *_conformality_steps.json of
+the same run. The figure has four panels of equal size, so they share one
+scale:
 
-  (a) the input map, with small circles (Tissot's indicatrix) on a lattice
-      and one marked point x;
-  (b) the cartogram T0, with the ellipses into which T0 turns the circles;
-  (c) a velocity field of A, drawn on the arrow from (b) to (d). With
-      --steps: streamlines of the first field of the run, over the regions
-      of T0. Without: streamlines of one sine mode, and a small square
-      carried by the flow;
-  (d) the corrected map T = A o T0, with the ellipses of T.
+  (a) the input regions, with small circles (Tissot's indicatrix) on a
+      lattice and one marked point x;
+  (b) the projection T0, with the ellipses into which T0 turns the circles;
+  (c) the projection T = A o T0, with the ellipses of T; the arrow A runs
+      from (b) to (c);
+  (d) behind a thin rule, a velocity field of A, which explains how A is
+      built. With --steps: streamlines of the first field of the run, over
+      the regions of T0. Without: streamlines of one sine mode, and a small
+      square carried by the flow.
+
+Leader lines tie the values below (b) and (c) to the highlighted ellipse.
+Labels and thin lines on the map have a white casing.
 
 The ellipse of a circle of radius r at x has the semi-axes r a and r b, with
 a and b the singular values of the Jacobian matrix of the field cell that
@@ -51,14 +56,15 @@ from contourpy import contour_generator
 
 # Layout in millimeters (text width of the ICA template: 170 mm)
 WIDTH = 170.0
-PANEL = 35.75  # side of all four panels, so they share one scale
+PANEL = 35.5  # side of all four panels, so they share one scale
 GAP_T0 = 9.0  # between (a) and (b), with the arrow T0
-GAP_BC = 3.0  # between (b) and (c)
-GAP_A = 13.0  # between (c) and (d), with the arrow A
+GAP_A = 13.0  # between (b) and (c), with the arrow A
+GAP_FIELD = 4.0  # between (c) and (d), with a thin rule: (d) explains A
 X_A = 1.0
 X_B = X_A + PANEL + GAP_T0
-X_FIELD = X_B + PANEL + GAP_BC  # panel (c), the velocity field
-X_T = X_FIELD + PANEL + GAP_A  # panel (d), the map T
+X_T = X_B + PANEL + GAP_A  # panel (c), the map T
+X_FIELD = X_T + PANEL + GAP_FIELD  # panel (d), a velocity field of A
+HALO = 0.6  # width of the white casing of labels and thin lines
 Y_TOP = 6.0  # top of the panels
 ARROW_Y = Y_TOP + PANEL / 2
 LABEL_GAP = 3.6  # from the bottom of the panels to the baseline of the labels
@@ -108,12 +114,19 @@ def path_d(points, close=False):
     return " ".join(parts) + (" Z" if close else "")
 
 
-def text(x, y, spans, size, anchor="start", fill="#000000"):
+def text(x, y, spans, size, anchor="start", fill="#000000", halo=False):
     """spans: list of (string, style); style is a space-separated subset of
-    i (italic), b (bold), sub (subscript), and op (operator font)."""
+    i (italic), b (bold), sub (subscript), and op (operator font). With
+    halo, a white outline under the glyphs sets the text off the map."""
+    casing = (
+        f'stroke="#ffffff" stroke-width="{fmt(HALO)}" stroke-linejoin="round" '
+        'paint-order="stroke" '
+        if halo
+        else ""
+    )
     out = [
         f'<text x="{fmt(x)}" y="{fmt(y)}" font-family="{FONT}" '
-        f'font-size="{fmt(size)}" text-anchor="{anchor}" fill="{fill}" '
+        f'font-size="{fmt(size)}" text-anchor="{anchor}" fill="{fill}" {casing}'
         'xml:space="preserve">'
     ]
     for s, style in spans:
@@ -132,6 +145,16 @@ def text(x, y, spans, size, anchor="start", fill="#000000"):
         out.append(f"<tspan {' '.join(attrs)}>{s}</tspan>")
     out.append("</text>")
     return "".join(out)
+
+
+def cased_line(p0, p1, width=0.2):
+    """A black line on a white casing, legible on the grid and the ellipses."""
+    d = path_d([p0, p1])
+    return (
+        f'<path d="{d}" stroke="#ffffff" stroke-width="{fmt(width + HALO)}" '
+        'stroke-linecap="round" fill="none"/>'
+        f'<path d="{d}" stroke="#000000" stroke-width="{fmt(width)}" fill="none"/>'
+    )
 
 
 def arrow(x0, y, x1, stroke=0.3, head=1.6):
@@ -358,7 +381,7 @@ def main():
     ]
     px, py = pa(mx, my)
     body.append(f'<circle cx="{fmt(px)}" cy="{fmt(py)}" r="0.35" fill="#000000"/>')
-    body.append(text(px - 2.4, py + 3.0, [("x", "b")], LABEL_SIZE, "end"))
+    body.append(text(px - 2.4, py + 3.0, [("x", "b")], LABEL_SIZE, "end", halo=True))
     values = {}
     for tag, (c, J, panel) in (("t0", (c0, J0, pb)), ("t", (c1, J1, pc))):
         p, (j, i) = image_of(c, mx, my, cell)
@@ -369,14 +392,13 @@ def main():
         for s_len, direction, label in ((a, u[:, 0], "a"), (b, u[:, 1], "b")):
             end = p + R_MARKED * s_len * direction
             q0, q1 = panel(*p), panel(*end)
-            body.append(
-                f'<path d="{path_d([q0, q1])}" stroke="#000000" stroke-width="0.2"/>'
-            )
+            body.append(cased_line(q0, q1))
             if tag == "t0":
                 off = np.array(q1) - np.array(q0)
                 off = off / np.linalg.norm(off) * 1.4
                 body.append(
-                    text(q1[0] + off[0], q1[1] + off[1] + 0.9, [(label, "i")], LABEL_SIZE, "middle")
+                    text(q1[0] + off[0], q1[1] + off[1] + 0.9, [(label, "i")], LABEL_SIZE,
+                         "middle", halo=True)
                 )
         qx, qy = panel(*p)
         body.append(f'<circle cx="{fmt(qx)}" cy="{fmt(qy)}" r="0.3" fill="#000000"/>')
@@ -389,9 +411,7 @@ def main():
         direction = (start - center) / np.linalg.norm(start - center)
         m_mm = panel.s * np.diag([1.0, -1.0]) @ (R_MARKED * jac)
         end = center + direction / np.linalg.norm(np.linalg.solve(m_mm, direction))
-        body.append(
-            f'<path d="{path_d([start, end])}" stroke="#000000" stroke-width="0.2"/>'
-        )
+        body.append(cased_line(start, end, 0.25))
     layers.append(layer("marked point", "\n".join(body)))
 
     if args.steps:
@@ -489,38 +509,42 @@ def main():
     body = []
     body.append(arrow(X_A + PANEL + 1.0, ARROW_Y, X_B - 1.0))
     body.append(text((X_A + PANEL + X_B) / 2, ARROW_Y - 1.3, [("T", "i"), ("0", "sub")], TITLE_SIZE, "middle"))
-    # The flows of the velocity fields carry the regions of T0, drawn in (c),
-    # to their positions in (d)
-    body.append(arrow(X_FIELD + PANEL + 1.0, ARROW_Y, X_T - 1.0))
-    mid = (X_FIELD + PANEL + X_T) / 2
+    # A maps (b) to (c); panel (d) explains how A is built, so it stands
+    # apart, behind a thin rule
+    body.append(arrow(X_B + PANEL + 1.0, ARROW_Y, X_T - 1.0))
+    mid = (X_B + PANEL + X_T) / 2
     body.append(text(mid, ARROW_Y - 1.3, [("A", "i")], TITLE_SIZE, "middle"))
     body.append(
         text(mid, ARROW_Y + 3.6, [("det ", ""), ("DA", "i"), (" = 1", "")], LABEL_SIZE, "middle")
     )
+    rule_x = X_T + PANEL + GAP_FIELD / 2
+    body.append(
+        f'<path d="{path_d([(rule_x, 1.0), (rule_x, HEIGHT - 1.0)])}" '
+        f'stroke="{FRAME}" stroke-width="0.15" fill="none"/>'
+    )
     ty = Y_TOP - 2.0
-    body.append(text(X_A, ty, [("(a) Input map", "")], TITLE_SIZE))
+    body.append(text(X_A, ty, [("(a) Input regions", "")], TITLE_SIZE))
     body.append(
         text(X_B, ty, [("(b) Projection ", ""), ("T", "i"), ("0", "sub"), (", det ", ""),
                        ("DT", "i"), ("0", "sub"), (" = ", ""), ("g", "i"), ("0", "sub")],
              TITLE_SIZE)
     )
     body.append(
-        text(X_T, ty, [("(d) ", ""), ("T", "i"), (" = ", ""), ("A", "i"), (" ∘ ", "op"),
+        text(X_T, ty, [("(c) ", ""), ("T", "i"), (" = ", ""), ("A", "i"), (" ∘ ", "op"),
                        ("T", "i"), ("0", "sub"), (", det ", ""), ("DT", "i"), (" = ", ""),
                        ("g", "i"), ("0", "sub")],
              TITLE_SIZE)
     )
-    if args.steps:
-        # The field of the first of the steps whose flows make up A
-        title_c = [("(c) Velocity field ", ""), ("v", "b")]
-    else:
-        title_c = [("(c) One field ", ""), ("v", "b"), (" of ", ""), ("A", "i")]
-    body.append(text(X_FIELD, ty, title_c, TITLE_SIZE))
+    # With --steps, the field of the first of the steps whose flows make up A
+    body.append(
+        text(X_FIELD, ty, [("(d) Velocity field ", ""), ("v", "b"), (" of ", ""), ("A", "i")],
+             TITLE_SIZE)
+    )
     by = Y_TOP + PANEL + LABEL_GAP
-    # Legend of the density rho
+    # Legend of the input: the population of each unit square
     lx0 = X_A + 3.0
-    body.append(text(lx0, by, [("Density ", ""), ("ρ", "i")], LABEL_SIZE))
-    sx = lx0 + 13.0
+    body.append(text(lx0, by, [("Population", "")], LABEL_SIZE))
+    sx = lx0 + 14.0
     for dens in (1, 3, 9):
         body.append(
             f'<rect x="{fmt(sx)}" y="{fmt(by - 2.1)}" width="2.4" height="2.4" '
