@@ -19,8 +19,13 @@ scale:
       the regions of T0. Without: streamlines of one sine mode, and a small
       square carried by the flow.
 
-Leader lines tie the values below (b) and (c) to the highlighted ellipse.
-Labels and thin lines on the map have a white casing.
+The land is shaded by the density rho recovered from the Jacobian of T0,
+rho = rho_bar det DT0, on a logarithmic color bar with the densities of the
+input squares as ticks. Each field cell keeps its color in (b) and (c),
+because A keeps det DT0. Populations are extensive, so they get no color.
+Leader lines tie the values below (b) and (c) to the highlighted ellipse,
+whose semi-axes a and b are labeled in both panels. Labels and thin lines on
+the map have a white casing.
 
 The ellipse of a circle of radius r at x has the semi-axes r a and r b, with
 a and b the singular values of the Jacobian matrix of the field cell that
@@ -69,16 +74,19 @@ Y_TOP = 6.0  # top of the panels
 ARROW_Y = Y_TOP + PANEL / 2
 LABEL_GAP = 3.6  # from the bottom of the panels to the baseline of the labels
 LABEL_HALF_WIDTH = 12.0  # leaders start within this distance of the center
-HEIGHT = Y_TOP + PANEL + 6.0
+HEIGHT = Y_TOP + PANEL + 7.5  # room for the color bar and its tick labels
 
 FONT = "Times New Roman"
 PT = 0.3528  # millimeters per point
 TITLE_SIZE = 8 * PT
 LABEL_SIZE = 7 * PT
 
-# Colors: one blue ramp for the population density (light = sparse), a dark
-# red for the ellipses, and neutral grays for lines
-DENSITY_FILL = {1: "#eef3fa", 3: "#cddcef", 9: "#a9c3e4"}
+# Colors: one blue ramp for the density rho on a logarithmic scale (light =
+# sparse), a dark red for the ellipses, and neutral grays for lines
+RHO_RANGE = (0.7, 12.0)  # densities at the ends of the color bar
+RHO_TICKS = (1, 3, 9)  # the population densities of the input squares
+RHO_COLORS = ("#f5f8fc", "#86aad9")  # sparse and dense end, mixed in OKLab
+RHO_BINS = 64  # color steps of the shading
 ELLIPSE = "#b03a2e"
 GRID = "#9a9a9a"
 OUTLINE = "#333333"
@@ -206,6 +214,66 @@ def ellipse_svg(panel, center, jac, r, stroke, width, fill="none", opacity=1.0):
     )
 
 
+def ring_area(ring):
+    r = np.asarray(ring, dtype=float)
+    x, y = r[:, 0], r[:, 1]
+    return 0.5 * abs(np.dot(x, np.roll(y, -1)) - np.dot(y, np.roll(x, -1)))
+
+
+def inside_rings(points, rings):
+    """Even-odd test of the points (n x 2) against the rings."""
+    x, y = points[:, 0], points[:, 1]
+    result = np.zeros(len(points), dtype=bool)
+    for ring in rings:
+        r = np.asarray(ring, dtype=float)
+        x0, y0 = r[:, 0], r[:, 1]
+        x1, y1 = np.roll(x0, 1), np.roll(y0, 1)
+        for k in range(len(r)):
+            if y0[k] == y1[k]:
+                continue  # a horizontal edge never crosses the ray
+            crosses = (y0[k] > y) != (y1[k] > y)
+            x_cross = x0[k] + (y - y0[k]) * (x1[k] - x0[k]) / (y1[k] - y0[k])
+            result ^= crosses & (x < x_cross)
+    return result
+
+
+# OKLab (Ottosson 2020), so that the ramp changes evenly in lightness
+def _oklab(hex_color):
+    srgb = np.array([int(hex_color[k:k + 2], 16) / 255 for k in (1, 3, 5)])
+    rgb = np.where(srgb <= 0.04045, srgb / 12.92, ((srgb + 0.055) / 1.055) ** 2.4)
+    lms = np.array([[0.4122214708, 0.5363325363, 0.0514459929],
+                    [0.2119034982, 0.6806995451, 0.1073969566],
+                    [0.0883024619, 0.2817188376, 0.6299787005]]) @ rgb
+    return np.array([[0.2104542553, 0.7936177850, -0.0040720468],
+                     [1.9779984951, -2.4285922050, 0.4505937099],
+                     [0.0259040371, 0.7827717662, -0.8086757660]]) @ np.cbrt(lms)
+
+
+def _hex_from_oklab(lab):
+    lms = np.array([[1.0, 0.3963377774, 0.2158037573],
+                    [1.0, -0.1055613458, -0.0638541728],
+                    [1.0, -0.0894841775, -1.2914855480]]) @ lab
+    rgb = np.array([[4.0767416621, -3.3077115913, 0.2309699292],
+                    [-1.2684380046, 2.6097574011, -0.3413193965],
+                    [-0.0041960863, -0.7034186147, 1.7076147010]]) @ lms ** 3
+    rgb = np.clip(rgb, 0.0, 1.0)
+    srgb = np.where(rgb <= 0.0031308, 12.92 * rgb, 1.055 * rgb ** (1 / 2.4) - 0.055)
+    r, g, b = (int(round(255 * v)) for v in srgb)
+    return f"#{r:02x}{g:02x}{b:02x}"
+
+
+def density_color(t):
+    """Color of the density ramp at position t in [0, 1] (0 = sparse)."""
+    lo, hi = (_oklab(c) for c in RHO_COLORS)
+    return _hex_from_oklab(lo + (hi - lo) * min(max(float(t), 0.0), 1.0))
+
+
+def density_position(rho):
+    """Position of the density rho on the logarithmic color scale."""
+    lo, hi = RHO_RANGE
+    return (np.log(rho) - math.log(lo)) / (math.log(hi) - math.log(lo))
+
+
 def semi_axes(jac):
     u, s, vt = np.linalg.svd(jac)
     return s[0], s[1], u  # columns of u: directions of the axes on the image
@@ -319,14 +387,39 @@ def main():
 
     layers = []
 
-    # Regions, filled by population density
+    # Density rho recovered from the Jacobian of T0: rho = rho_bar g0, with
+    # rho_bar the mean density of the regions, which are unit squares. Each
+    # field cell on land keeps its color in (b) and (c), because A keeps g0.
+    areas = [ring_area(poly["ring"]) for poly in orig]
+    unit_area = float(np.mean(areas))
+    rho_bar = sum(density[names[poly["region"]]] for poly in orig) * unit_area / sum(areas)
+    rho = rho_bar * np.linalg.det(J0)
+    xs_c = (np.arange(nx) + 0.5) * cell
+    ys_c = (np.arange(ny) + 0.5) * cell
+    centers = np.stack(np.meshgrid(xs_c, ys_c), axis=-1).reshape(-1, 2)
+    land = inside_rings(centers, [poly["ring"] for poly in orig]).reshape(ny, nx)
+    bins = np.clip((density_position(rho) * RHO_BINS).astype(int), 0, RHO_BINS - 1)
+    corners_in = np.stack(
+        np.meshgrid(np.arange(nx + 1) * cell, np.arange(ny + 1) * cell), axis=-1
+    )
+    print(
+        f"density: rho_bar = {rho_bar:.3f}; on land {rho[land].min():.3f} "
+        f"to {rho[land].max():.3f}"
+    )
     body = []
-    for key, panel in (("original", pa), ("t0", pb), ("t", pc)):
-        for poly in d["polygons"][key]:
-            fill = DENSITY_FILL[density[names[poly["region"]]]]
-            pts = [panel(x, y) for x, y in poly["ring"]]
-            body.append(f'<path d="{path_d(pts, True)}" fill="{fill}" stroke="none"/>')
-    layers.append(layer("regions", "\n".join(body)))
+    for corners, panel in ((corners_in, pa), (c0, pb), (c1, pc)):
+        for k in np.unique(bins[land]):
+            color = density_color((k + 0.5) / RHO_BINS)
+            quads = []
+            for j, i in zip(*np.nonzero(land & (bins == k))):
+                quad = (corners[j, i], corners[j, i + 1], corners[j + 1, i + 1], corners[j + 1, i])
+                quads.append(path_d([panel(*q) for q in quad], True))
+            # A thin stroke in the same color hides the seams between cells
+            body.append(
+                f'<path d="{" ".join(quads)}" fill="{color}" stroke="{color}" '
+                'stroke-width="0.05" stroke-linejoin="round"/>'
+            )
+    layers.append(layer("density", "\n".join(body)))
 
     # Grid lines: every second line of the plot JSON (spacing 16)
     body = []
@@ -393,13 +486,14 @@ def main():
             end = p + R_MARKED * s_len * direction
             q0, q1 = panel(*p), panel(*end)
             body.append(cased_line(q0, q1))
-            if tag == "t0":
-                off = np.array(q1) - np.array(q0)
-                off = off / np.linalg.norm(off) * 1.4
-                body.append(
-                    text(q1[0] + off[0], q1[1] + off[1] + 0.9, [(label, "i")], LABEL_SIZE,
-                         "middle", halo=True)
-                )
+            # Labeled in (b) and (c): from (b) to (c), a shrinks, b grows,
+            # and ab stays the same
+            off = np.array(q1) - np.array(q0)
+            off = off / np.linalg.norm(off) * 1.4
+            body.append(
+                text(q1[0] + off[0], q1[1] + off[1] + 0.9, [(label, "i")], LABEL_SIZE,
+                     "middle", halo=True)
+            )
         qx, qy = panel(*p)
         body.append(f'<circle cx="{fmt(qx)}" cy="{fmt(qy)}" r="0.3" fill="#000000"/>')
         # Leader from the values below the panel to the highlighted ellipse,
@@ -541,17 +635,29 @@ def main():
              TITLE_SIZE)
     )
     by = Y_TOP + PANEL + LABEL_GAP
-    # Legend of the input: the population of each unit square
-    lx0 = X_A + 3.0
-    body.append(text(lx0, by, [("Population", "")], LABEL_SIZE))
-    sx = lx0 + 14.0
-    for dens in (1, 3, 9):
+    # Color bar of the density rho (logarithmic), with the densities of the
+    # input squares as ticks
+    lx0 = X_A + 1.0
+    body.append(text(lx0, by, [("Density ", ""), ("ρ", "i")], LABEL_SIZE))
+    bar_x0, bar_w, bar_top, bar_h = lx0 + 12.5, 21.0, by - 2.0, 1.8
+    stops = "".join(
+        f'<stop offset="{fmt(s)}" stop-color="{density_color(s)}"/>'
+        for s in np.linspace(0.0, 1.0, 17)
+    )
+    body.append(
+        f'<defs><linearGradient id="rho-ramp" x1="0" y1="0" x2="1" y2="0">{stops}'
+        "</linearGradient></defs>"
+        f'<rect x="{fmt(bar_x0)}" y="{fmt(bar_top)}" width="{fmt(bar_w)}" '
+        f'height="{fmt(bar_h)}" fill="url(#rho-ramp)" stroke="{OUTLINE}" '
+        'stroke-width="0.15"/>'
+    )
+    for tick in RHO_TICKS:
+        tx = bar_x0 + bar_w * float(density_position(tick))
         body.append(
-            f'<rect x="{fmt(sx)}" y="{fmt(by - 2.1)}" width="2.4" height="2.4" '
-            f'fill="{DENSITY_FILL[dens]}" stroke="{OUTLINE}" stroke-width="0.15"/>'
+            f'<path d="{path_d([(tx, bar_top + bar_h), (tx, bar_top + bar_h + 0.6)])}" '
+            f'stroke="{OUTLINE}" stroke-width="0.15"/>'
         )
-        body.append(text(sx + 3.0, by, [(str(dens), "")], LABEL_SIZE))
-        sx += 5.4
+        body.append(text(tx, bar_top + bar_h + 2.9, [(str(tick), "")], LABEL_SIZE, "middle"))
     body.append(
         text(X_B + PANEL / 2, by,
              [("ab", "i"), (" = ", ""), ("g", "i"), ("0", "sub"), (f" = {g0:.2f},  ", ""),
