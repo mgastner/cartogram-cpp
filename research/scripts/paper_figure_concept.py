@@ -19,10 +19,10 @@ scale:
       the regions of T0. Without: streamlines of one sine mode, and a small
       square carried by the flow.
 
-Land and ocean are shaded by the density rho recovered from the Jacobian
-of T0, rho = rho_bar rho-hat with rho-hat = det DT0, on a linear color
-bar (RHO_LOG = True draws a logarithmic one, with the densities of the
-input squares as ticks). The titles and values write rho-hat for
+Land and ocean are shaded by the normalized density rho-hat = det DT0,
+recovered from the Jacobian of T0, on a linear color bar (RHO_LOG = True
+draws a logarithmic one). The figure has no spatial scale, so the bar
+shows rho-hat, not the absolute density. The titles and values write rho-hat for
 det DT0. Each field cell keeps its color in (b) and (c),
 because A keeps det DT0. Populations are extensive, so they get no color.
 Leader lines tie the values below (b) and (c) to the highlighted ellipse,
@@ -83,19 +83,20 @@ PT = 0.3528  # millimeters per point
 TITLE_SIZE = 8 * PT
 LABEL_SIZE = 7 * PT
 
-# Colors: ColorBrewer Greys for the density rho (light = sparse; the six
+# Colors: ColorBrewer Greys for the normalized density rho-hat (light = sparse; the six
 # lightest classes of the nine-class scheme, so that the red ellipses and
 # the black outlines stay visible on the densest cells), a dark red for the
 # ellipses, and neutral grays for lines. Blue stays reserved for "less
 # distortion" in the map figures (ColorBrewer RdBu).
 RHO_STOPS = ("#ffffff", "#f0f0f0", "#d9d9d9", "#bdbdbd", "#969696", "#737373")
-# With --binned: one class per color, of width 2; the densities 1, 3, and 9
-# of the squares and the mean 6.78 outside the regions lie inside classes
-RHO_BREAKS = (2.0, 4.0, 6.0, 8.0, 10.0)
+# With --binned: classes of width 0.4, colored from the same ramp; the means
+# 0.15, 0.44, and 1.33 of rho-hat over the squares and the value of about 1
+# outside the regions lie inside classes
+RHO_BREAKS = (0.4, 0.8, 1.2, 1.6)
 RHO_BINS = 64  # color steps of the shading
 RHO_LOG = False  # linear color scale (author's choice); True for a logarithmic one
-RHO_RANGE = (0.7, 12.0) if RHO_LOG else (0.0, 12.0)  # densities at the bar's ends
-RHO_TICKS = (1, 3, 9) if RHO_LOG else (0, 2, 4, 6, 8, 10, 12)
+RHO_RANGE = (0.1, 2.0) if RHO_LOG else (0.0, 2.0)  # rho-hat at the bar's ends
+RHO_TICKS = (0.1, 0.2, 0.5, 1, 2) if RHO_LOG else (0, 0.5, 1, 1.5, 2)
 # A circumflex over a glyph (style "hat"): Inkscape sets the combining
 # U+0302 beside the glyph, so the spacing U+02C6 is moved back over it.
 # Advances in Times New Roman, in ems: italic rho 0.5, circumflex 0.333.
@@ -425,27 +426,29 @@ def main():
     areas = [ring_area(poly["ring"]) for poly in orig]
     unit_area = float(np.mean(areas))
     rho_bar = sum(density[names[poly["region"]]] for poly in orig) * unit_area / sum(areas)
-    rho = rho_bar * np.linalg.det(J0)
+    rho_hat = np.linalg.det(J0)
+    rho = rho_bar * rho_hat
     xs_c = (np.arange(nx) + 0.5) * cell
     ys_c = (np.arange(ny) + 0.5) * cell
     centers = np.stack(np.meshgrid(xs_c, ys_c), axis=-1).reshape(-1, 2)
     land = inside_rings(centers, [poly["ring"] for poly in orig]).reshape(ny, nx)
     if args.binned:
-        bins = np.searchsorted(RHO_BREAKS, rho, side="right")
+        bins = np.searchsorted(RHO_BREAKS, rho_hat, side="right")
     else:
-        bins = np.clip((density_position(rho) * RHO_BINS).astype(int), 0, RHO_BINS - 1)
+        bins = np.clip((density_position(rho_hat) * RHO_BINS).astype(int), 0, RHO_BINS - 1)
     corners_in = np.stack(
         np.meshgrid(np.arange(nx + 1) * cell, np.arange(ny + 1) * cell), axis=-1
     )
     print(
-        f"density: rho_bar = {rho_bar:.3f}; on land {rho[land].min():.3f} "
-        f"to {rho[land].max():.3f}; on the ocean {rho[~land].min():.3f} "
-        f"to {rho[~land].max():.3f}"
+        f"rho-hat: inside the regions {rho_hat[land].min():.3f} to {rho_hat[land].max():.3f}, "
+        f"outside {rho_hat[~land].min():.3f} to {rho_hat[~land].max():.3f} (rho_bar = {rho_bar:.3f})"
     )
     body = []
     for corners, panel in ((corners_in, pa), (c0, pb), (c1, pc)):
         for k in np.unique(bins):
-            color = RHO_STOPS[k] if args.binned else density_color((k + 0.5) / RHO_BINS)
+            n_classes = len(RHO_BREAKS) + 1
+            color = (density_color((k + 0.5) / n_classes) if args.binned
+                     else density_color((k + 0.5) / RHO_BINS))
             quads = []
             for j, i in zip(*np.nonzero(bins == k)):
                 quad = (corners[j, i], corners[j, i + 1], corners[j + 1, i + 1], corners[j + 1, i])
@@ -672,18 +675,18 @@ def main():
              TITLE_SIZE)
     )
     by = Y_TOP + PANEL + LABEL_GAP
-    # Color bar of the density rho (logarithmic), with the densities of the
-    # input squares as ticks
+    # Color bar of the normalized density rho-hat
     lx0 = X_A + 1.0
-    body.append(text(lx0, by, [("Density ", ""), ("ρ", "i")], LABEL_SIZE))
-    bar_x0, bar_w, bar_top, bar_h = lx0 + 12.5, 21.0, by - 2.0, 1.8
+    # Baseline raised so that the glyph sits at the middle of the bar
+    body.append(text(lx0, by - 0.45, [("ρ", "i hat")], LABEL_SIZE))
+    bar_x0, bar_w, bar_top, bar_h = lx0 + 4.0, 26.0, by - 2.0, 1.8
     if args.binned:
         edges = [RHO_RANGE[0], *RHO_BREAKS, RHO_RANGE[1]]
         for k, (lo_e, hi_e) in enumerate(zip(edges[:-1], edges[1:])):
             x0 = bar_x0 + bar_w * float(density_position(lo_e))
             x1 = bar_x0 + bar_w * float(density_position(hi_e))
             body.append(f'<rect x="{fmt(x0)}" y="{fmt(bar_top)}" width="{fmt(x1 - x0)}" '
-                        f'height="{fmt(bar_h)}" fill="{RHO_STOPS[k]}"/>')
+                        f'height="{fmt(bar_h)}" fill="{density_color((k + 0.5) / (len(edges) - 1))}"/>')
         body.append(f'<rect x="{fmt(bar_x0)}" y="{fmt(bar_top)}" width="{fmt(bar_w)}" '
                     f'height="{fmt(bar_h)}" fill="none" stroke="{OUTLINE}" stroke-width="0.15"/>')
         ticks = edges
