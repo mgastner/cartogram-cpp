@@ -19,9 +19,11 @@ scale:
       the regions of T0. Without: streamlines of one sine mode, and a small
       square carried by the flow.
 
-The land is shaded by the density rho recovered from the Jacobian of T0,
-rho = rho_bar det DT0, on a logarithmic color bar with the densities of the
-input squares as ticks. Each field cell keeps its color in (b) and (c),
+Land and ocean are shaded by the density rho recovered from the Jacobian
+of T0, rho = rho_bar rho-hat with rho-hat = det DT0, on a logarithmic color
+bar with the densities of the input squares as ticks (RHO_LOG = False draws
+a linear one for comparison). The titles and values write rho-hat for
+det DT0. Each field cell keeps its color in (b) and (c),
 because A keeps det DT0. Populations are extensive, so they get no color.
 Leader lines tie the values below (b) and (c) to the highlighted ellipse,
 whose semi-axes a and b are labeled in both panels. Labels and thin lines on
@@ -87,6 +89,12 @@ RHO_RANGE = (0.7, 12.0)  # densities at the ends of the color bar
 RHO_TICKS = (1, 3, 9)  # the population densities of the input squares
 RHO_COLORS = ("#f5f8fc", "#86aad9")  # sparse and dense end, mixed in OKLab
 RHO_BINS = 64  # color steps of the shading
+RHO_LOG = True  # logarithmic color scale; False for a linear one
+# A circumflex over a glyph (style "hat"): Inkscape sets the combining
+# U+0302 beside the glyph, so the spacing U+02C6 is moved back over it.
+# Advances in Times New Roman, in ems: italic rho 0.5, circumflex 0.333.
+HAT_BACK = 0.36  # how far the circumflex moves back, in ems
+HAT_ADVANCE = 0.333
 ELLIPSE = "#b03a2e"
 GRID = "#9a9a9a"
 OUTLINE = "#333333"
@@ -124,8 +132,9 @@ def path_d(points, close=False):
 
 def text(x, y, spans, size, anchor="start", fill="#000000", halo=False):
     """spans: list of (string, style); style is a space-separated subset of
-    i (italic), b (bold), sub (subscript), and op (operator font). With
-    halo, a white outline under the glyphs sets the text off the map."""
+    i (italic), b (bold), sub (subscript), op (operator font), and hat (a
+    circumflex over the span, for rho-hat). With halo, a white outline under
+    the glyphs sets the text off the map."""
     casing = (
         f'stroke="#ffffff" stroke-width="{fmt(HALO)}" stroke-linejoin="round" '
         'paint-order="stroke" '
@@ -137,9 +146,13 @@ def text(x, y, spans, size, anchor="start", fill="#000000", halo=False):
         f'font-size="{fmt(size)}" text-anchor="{anchor}" fill="{fill}" {casing}'
         'xml:space="preserve">'
     ]
+    pending_dx = 0.0
     for s, style in spans:
         tokens = style.split()
         attrs = []
+        if pending_dx:
+            attrs.append(f'dx="{fmt(pending_dx)}"')
+            pending_dx = 0.0
         if "op" in tokens:
             # The ring operator is missing from Times New Roman
             attrs.append('font-family="STIXGeneral"')
@@ -151,6 +164,10 @@ def text(x, y, spans, size, anchor="start", fill="#000000", halo=False):
         if "sub" in tokens:
             attrs.append('baseline-shift="sub" font-size="70%"')
         out.append(f"<tspan {' '.join(attrs)}>{s}</tspan>")
+        if "hat" in tokens:
+            back = HAT_BACK * size
+            out.append(f'<tspan dx="{fmt(-back)}" font-style="normal">\u02c6</tspan>')
+            pending_dx = back - HAT_ADVANCE * size
     out.append("</text>")
     return "".join(out)
 
@@ -269,8 +286,10 @@ def density_color(t):
 
 
 def density_position(rho):
-    """Position of the density rho on the logarithmic color scale."""
+    """Position of the density rho on the color scale."""
     lo, hi = RHO_RANGE
+    if not RHO_LOG:
+        return (np.asarray(rho, dtype=float) - lo) / (hi - lo)
     return (np.log(rho) - math.log(lo)) / (math.log(hi) - math.log(lo))
 
 
@@ -387,9 +406,11 @@ def main():
 
     layers = []
 
-    # Density rho recovered from the Jacobian of T0: rho = rho_bar g0, with
-    # rho_bar the mean density of the regions, which are unit squares. Each
-    # field cell on land keeps its color in (b) and (c), because A keeps g0.
+    # Density rho recovered from the Jacobian of T0: rho = rho_bar rho-hat,
+    # rho-hat = det DT0, with rho_bar the mean density of the regions, which
+    # are unit squares. The ocean is shaded too: the generator gives it the
+    # mean density, and T0 blurs it. Each field cell keeps its color in (b)
+    # and (c), because A keeps det DT0.
     areas = [ring_area(poly["ring"]) for poly in orig]
     unit_area = float(np.mean(areas))
     rho_bar = sum(density[names[poly["region"]]] for poly in orig) * unit_area / sum(areas)
@@ -404,14 +425,15 @@ def main():
     )
     print(
         f"density: rho_bar = {rho_bar:.3f}; on land {rho[land].min():.3f} "
-        f"to {rho[land].max():.3f}"
+        f"to {rho[land].max():.3f}; on the ocean {rho[~land].min():.3f} "
+        f"to {rho[~land].max():.3f}"
     )
     body = []
     for corners, panel in ((corners_in, pa), (c0, pb), (c1, pc)):
-        for k in np.unique(bins[land]):
+        for k in np.unique(bins):
             color = density_color((k + 0.5) / RHO_BINS)
             quads = []
-            for j, i in zip(*np.nonzero(land & (bins == k))):
+            for j, i in zip(*np.nonzero(bins == k)):
                 quad = (corners[j, i], corners[j, i + 1], corners[j + 1, i + 1], corners[j + 1, i])
                 quads.append(path_d([panel(*q) for q in quad], True))
             # A thin stroke in the same color hides the seams between cells
@@ -620,13 +642,13 @@ def main():
     body.append(text(X_A, ty, [("(a) Input regions", "")], TITLE_SIZE))
     body.append(
         text(X_B, ty, [("(b) Projection ", ""), ("T", "i"), ("0", "sub"), (", det ", ""),
-                       ("DT", "i"), ("0", "sub"), (" = ", ""), ("g", "i"), ("0", "sub")],
+                       ("DT", "i"), ("0", "sub"), (" = ", ""), ("ρ", "i hat")],
              TITLE_SIZE)
     )
     body.append(
         text(X_T, ty, [("(c) ", ""), ("T", "i"), (" = ", ""), ("A", "i"), (" ∘ ", "op"),
                        ("T", "i"), ("0", "sub"), (", det ", ""), ("DT", "i"), (" = ", ""),
-                       ("g", "i"), ("0", "sub")],
+                       ("ρ", "i hat")],
              TITLE_SIZE)
     )
     # With --steps, the field of the first of the steps whose flows make up A
@@ -660,13 +682,13 @@ def main():
         body.append(text(tx, bar_top + bar_h + 2.9, [(str(tick), "")], LABEL_SIZE, "middle"))
     body.append(
         text(X_B + PANEL / 2, by,
-             [("ab", "i"), (" = ", ""), ("g", "i"), ("0", "sub"), (f" = {g0:.2f},  ", ""),
+             [("ab", "i"), (" = ", ""), ("ρ", "i hat"), ("(", ""), ("x", "b"), (")", ""), (f" = {g0:.2f},  ", ""),
               ("m", "i"), (f" = {m0:.2f}", "")],
              LABEL_SIZE, "middle")
     )
     body.append(
         text(X_T + PANEL / 2, by,
-             [("ab", "i"), (" = ", ""), ("g", "i"), ("0", "sub"),
+             [("ab", "i"), (" = ", ""), ("ρ", "i hat"), ("(", ""), ("x", "b"), (")", ""),
               (f" = {values['t'][3]:.2f},  ", ""), ("m", "i"), (f" = {m1:.2f}", "")],
              LABEL_SIZE, "middle")
     )
