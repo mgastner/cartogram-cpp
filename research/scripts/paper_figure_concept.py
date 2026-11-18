@@ -492,15 +492,17 @@ def main():
                        ("g", "i"), ("0", "sub")],
              TITLE_SIZE)
     )
-    body.append(
-        text(X_D + SMALL / 2, Y_TOP_D - 2.0, [("(c) First field " if args.steps else "(c) One field ", ""), ("v", "b"), (" of ", ""), ("A", "i")],
-             TITLE_SIZE, "middle")
-    )
+    if args.steps:
+        # v_1: the field of the first of the steps whose flows make up A
+        title_c = [("(c) Velocity field ", ""), ("v", "b"), ("1", "sub")]
+    else:
+        title_c = [("(c) One field ", ""), ("v", "b"), (" of ", ""), ("A", "i")]
+    body.append(text(X_D + SMALL / 2, Y_TOP_D - 2.0, title_c, TITLE_SIZE, "middle"))
     by = Y_TOP + PANEL + 3.6
-    # Legend of the population density
+    # Legend of the density rho
     lx0 = X_A + 3.0
-    body.append(text(lx0, by, [("Population density", "")], LABEL_SIZE))
-    sx = lx0 + 24.0
+    body.append(text(lx0, by, [("Density ", ""), ("ρ", "i")], LABEL_SIZE))
+    sx = lx0 + 13.0
     for dens in (1, 3, 9):
         body.append(
             f'<rect x="{fmt(sx)}" y="{fmt(by - 2.1)}" width="2.4" height="2.4" '
