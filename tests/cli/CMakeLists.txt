@@ -21,11 +21,10 @@ set_tests_properties(cli_make_csv_stops_at_end_of_input
 
 # IDs with leading or trailing spaces in the GeoJSON must match the same IDs
 # in the CSV, with or without the spaces, and with or without quotes (#310).
-# The CSV reader removes the spaces even inside quotes, so each CSV ID
-# matches the only GeoJSON ID that is equal to it after trimming. No region
-# may fall back to "no data", which the program reports as "ID ... in
-# GeoJSON is not in CSV", and each region must get its target area from the
-# CSV.
+# A CSV ID with the spaces matches exactly; a CSV ID without them matches the
+# only GeoJSON ID that is equal to it after trimming. No region may fall back
+# to "no data", which the program reports as "ID ... in GeoJSON is not in
+# CSV", and each region must get its target area from the CSV.
 set(DATA_DIR "${CMAKE_CURRENT_SOURCE_DIR}/data")
 foreach(csv_ids IN ITEMS padded quoted trimmed)
   set(test_name cli_ids_with_spaces_match_${csv_ids}_csv_ids)
@@ -64,6 +63,85 @@ set_tests_properties(${test_name}
   PROPERTIES
   LABELS "stress"
   TIMEOUT 60
+)
+
+# Runs the program with --export_preprocessed on a GeoJSON file and a CSV
+# file in data/, with the target areas in the CSV column "Population". The
+# test passes if the program finishes and each further argument is a line of
+# the exported CSV file, which lists the target area of each region by its
+# GeoJSON ID.
+function(add_id_match_test test_name geojson csv)
+  get_filename_component(csv_stem "${csv}" NAME_WE)
+  set(work_dir "${CMAKE_CURRENT_BINARY_DIR}/${test_name}")
+  file(MAKE_DIRECTORY "${work_dir}")
+  add_test(
+    NAME ${test_name}
+    COMMAND sh -c "\"$0\" \"$1\" \"$2\" --area Population -P 100000000 --export_preprocessed > /dev/null 2>&1 || exit 1; exported=\"$3\"; shift 3; for line in \"$@\"; do grep -Fqx -- \"$line\" \"$exported\" || exit 1; done"
+      "${CMAKE_BINARY_DIR}/cartogram"
+      "${DATA_DIR}/${geojson}"
+      "${DATA_DIR}/${csv}"
+      "${csv_stem}_input_processed.csv"
+      ${ARGN}
+    WORKING_DIRECTORY "${work_dir}"
+  )
+  set_tests_properties(${test_name}
+    PROPERTIES
+    LABELS "stress"
+    TIMEOUT 60
+  )
+endfunction()
+
+# The GeoJSON has the IDs "Left ", "Left", and " Right". A quoted CSV ID
+# "Left " must match "Left " exactly, wherever the row is in the file, and
+# whether or not the file ends with a newline. The CSV ID Right matches
+# " Right" after trimming, and "Left", without a CSV row, gets no target area
+# from the CSV. Its target area of 6 is the mean of the two others.
+foreach(
+  csv IN ITEMS
+  first
+  last_without_final_newline
+  last_with_final_newline
+)
+  add_id_match_test(
+    cli_exact_padded_id_matches_in_${csv}_row
+    three_squares_padded_ids.geojson
+    three_squares_padded_id_${csv}.csv
+    "Left ,10.000000"
+    "Left,6.000000"
+    " Right,2.000000"
+  )
+endforeach()
+
+# The CSV IDs "Left " and Left are distinct, so the two rows match the
+# distinct GeoJSON IDs "Left " and "Left" exactly, although the two CSV IDs
+# are equal after trimming.
+add_id_match_test(
+  cli_distinct_ids_equal_after_trimming_match_exactly
+  three_squares_padded_ids.geojson
+  three_squares_padded_and_exact_ids.csv
+  "Left ,10.000000"
+  "Left,20.000000"
+  " Right,2.000000"
+)
+
+# The CSV reader keeps leading and trailing whitespace, so the program must
+# skip lines with only spaces and tabs itself, as it skips empty lines.
+add_id_match_test(
+  cli_lines_with_only_whitespace_are_skipped
+  three_squares_exact_and_padded_ids.geojson
+  three_squares_blank_lines.csv
+  "Left,1.000000"
+  "Right,2.000000"
+)
+
+# Values other than IDs lose their leading and trailing whitespace, even in
+# the quoted last field of a file without a final newline.
+add_id_match_test(
+  cli_padded_area_at_end_of_file_is_trimmed
+  three_squares_exact_and_padded_ids.geojson
+  three_squares_padded_area_at_end_of_file.csv
+  "Left,1.000000"
+  "Right,2.000000"
 )
 
 # Runs the program on a GeoJSON file and a CSV file in data/. The test passes

@@ -58,6 +58,16 @@ static inline std::string normalize_id_token(std::string s)
   return s;
 }
 
+// Removes leading and trailing whitespace from a CSV value other than an ID:
+// the characters for which std::isspace() is true in the "C" locale. The CSV
+// reader removed the same characters with trim(true).
+static inline std::string trimmed(std::string s)
+{
+  ltrim_ascii(s);
+  rtrim_ascii(s);
+  return s;
+}
+
 static void check_validity_of_area_str(const std::string &area_as_str)
 {
   std::string area_process_str = area_as_str.empty() ? "NA" : area_as_str;
@@ -138,6 +148,32 @@ struct HeaderMap {
   }
 };
 
+// The string in a row of the CSV under a header, or "" if the row has no
+// value under the header
+static std::string value_at(const ojson &row, const std::string &key)
+{
+  if (!row.contains(key))
+    return {};
+  const ojson &value = row.at(key);
+
+  // Values are strings because of infer_types(false)
+  return value.is_string() ? value.as_string() : std::string();
+}
+
+// True if the row comes from a line with only spaces and tabs. Without
+// trimming, the CSV reader turns such a line into a row with one value. With
+// trim(true), the reader skipped the line, as it skips empty lines.
+static bool is_blank_line(const ojson &row)
+{
+  if (!row.is_object() || row.size() != 1)
+    return false;
+  const ojson &value = row.object_range().begin()->value();
+  if (!value.is_string())
+    return false;
+  const std::string s = value.as_string();
+  return !s.empty() && s.find_first_not_of(" \t") == std::string::npos;
+}
+
 static ojson load_csv_rows(const std::string &path)
 {
   std::ifstream is(path);
@@ -145,15 +181,29 @@ static ojson load_csv_rows(const std::string &path)
     std::cerr << "ERROR: Cannot open CSV file: " << path << std::endl;
     std::exit(17);
   }
+
+  // The reader keeps leading and trailing whitespace, so that the IDs keep
+  // their spelling in the CSV until the exact matching with the GeoJSON IDs
+  // is complete. read_csv() trims the other values with trimmed(). With
+  // trim(true), jsoncons 1.3.0 trims the value in a quoted field, except in
+  // the last field of a file without a final newline, so the matching would
+  // depend on the final newline.
   jcc::csv_options opts;
-  opts.assume_header(true).ignore_empty_lines(true).trim(true).infer_types(
+  opts.assume_header(true).ignore_empty_lines(true).trim(false).infer_types(
     false);  // keep all fields as strings for stable behavior
+  ojson rows;
   try {
-    return jcc::decode_csv<ojson>(is, opts);  // array of row-objects
+    rows = jcc::decode_csv<ojson>(is, opts);  // array of row-objects
   } catch (const std::exception &e) {
     std::cerr << "ERROR: Failed to parse CSV: " << e.what() << std::endl;
     std::exit(17);
   }
+  ojson rows_without_blank_lines(jsoncons::json_array_arg);
+  for (auto &row : rows.array_range()) {
+    if (!is_blank_line(row))
+      rows_without_blank_lines.push_back(std::move(row));
+  }
+  return rows_without_blank_lines;
 }
 
 static HeaderMap headers_from(const ojson &rows)
@@ -180,6 +230,82 @@ static int extract_color_col_index(
   return idx;
 }
 
+// An ID in double quotes, with JSON escapes, so that messages show any
+// leading or trailing whitespace
+static std::string quoted_id(const std::string &id)
+{
+  return ojson(id).to_string();
+}
+
+// Result of matching the IDs in a CSV column with the IDs in the GeoJSON
+struct IdMatch {
+  std::vector<std::string> geojson_ids;  // GeoJSON ID of each CSV row
+  std::string error;  // empty if each CSV row has its own GeoJSON ID
+  int exit_code = EXIT_SUCCESS;
+};
+
+// Matches each CSV ID, spelled as in the CSV file, with a GeoJSON ID. A CSV
+// ID that is a GeoJSON ID matches that GeoJSON ID. Otherwise, the CSV ID
+// matches the GeoJSON ID that is equal to it after leading and trailing
+// whitespace is removed from both, for example "San Andres y Providencia  "
+// (#310), but only if exactly one GeoJSON ID qualifies. If several qualify,
+// or if two CSV rows match the same GeoJSON ID, the result is an error
+// instead of an arbitrary choice.
+static IdMatch match_csv_ids(
+  const std::vector<std::string> &csv_ids,
+  const std::vector<std::string> &geojson_ids)
+{
+  const std::set<std::string> exact_ids(
+    geojson_ids.begin(),
+    geojson_ids.end());
+
+  // The candidates are sorted, so the messages do not depend on the order
+  // of the features
+  std::map<std::string, std::vector<std::string>> geojson_ids_of_trimmed_id;
+  for (const auto &geojson_id : exact_ids) {
+    geojson_ids_of_trimmed_id[normalize_id_token(geojson_id)].push_back(
+      geojson_id);
+  }
+
+  IdMatch match;
+  std::set<std::string> matched_geojson_ids;
+  for (const auto &csv_id : csv_ids) {
+    std::string geojson_id = csv_id;
+    if (!exact_ids.contains(csv_id)) {
+      const auto it =
+        geojson_ids_of_trimmed_id.find(normalize_id_token(csv_id));
+      if (it == geojson_ids_of_trimmed_id.end()) {
+        match.error = "ID " + quoted_id(csv_id) + " in CSV is not in GeoJSON";
+        match.exit_code = 21;
+        return match;
+      }
+      const std::vector<std::string> &candidates = it->second;
+      if (candidates.size() > 1) {
+        match.error = "ID " + quoted_id(csv_id) + " in CSV matches " +
+                      std::to_string(candidates.size()) +
+                      " IDs in GeoJSON if leading and trailing whitespace is "
+                      "ignored: ";
+        for (size_t i = 0; i < candidates.size(); ++i)
+          match.error += (i > 0 ? ", " : "") + quoted_id(candidates[i]);
+        match.error +=
+          ". Make the IDs in GeoJSON differ by more than "
+          "leading and trailing whitespace.";
+        match.exit_code = EXIT_FAILURE;
+        return match;
+      }
+      geojson_id = candidates.front();
+    }
+    if (!matched_geojson_ids.insert(geojson_id).second) {
+      match.error = "More than one row in CSV matches ID " +
+                    quoted_id(geojson_id) + " in GeoJSON";
+      match.exit_code = EXIT_FAILURE;
+      return match;
+    }
+    match.geojson_ids.push_back(geojson_id);
+  }
+  return match;
+}
+
 // Find the matching ID columns in both the CSV and GeoJSON file
 // Returns the header name of the matching ID column in the GeoJSON file
 std::string CartogramInfo::match_id_columns(
@@ -200,34 +326,34 @@ std::string CartogramInfo::match_id_columns(
 
   std::string matching_id_header;
 
+  // A CSV column matches a GeoJSON property if the two have the same IDs
+  // after leading and trailing whitespace is removed. Unless
+  // allow_failed_id_match is true, each CSV ID, spelled as in the CSV file,
+  // must also match its own GeoJSON ID (see match_csv_ids()).
   auto try_match =
-    [&](const std::string &header_norm, bool allow_repeated_ids) -> bool {
+    [&](const std::string &header_norm, bool allow_failed_id_match) -> bool {
     int idx = hm.index_of_norm(header_norm);
     if (idx < 0)
       return false;
     const std::string &raw_key = hm.raw_at(static_cast<size_t>(idx));
 
+    std::vector<std::string> csv_ids;
     std::set<std::string> data_set;
-    size_t row_count = rows.size();
     for (const auto &r : rows.array_range()) {
-      std::string cell;
-      if (r.contains(raw_key)) {
-        const ojson &v = r.at(raw_key);
-        // Values are strings because infer_types(false)
-        cell = v.is_string() ? v.as_string() : std::string();
-      }
-      data_set.insert(normalize_id_token(cell));
+      csv_ids.push_back(value_at(r, raw_key));
+      data_set.insert(normalize_id_token(csv_ids.back()));
     }
 
-    if (!allow_repeated_ids && data_set.size() != row_count)
-      return false;
-
     for (auto &[key, value_set] : geojson_properties_info) {
-      if (data_set == value_set) {
-        matching_id_header = key;
-        csv_id_header_norm = header_norm;
-        return true;
-      }
+      if (data_set != value_set)
+        continue;
+      if (
+        !allow_failed_id_match &&
+        !match_csv_ids(csv_ids, unique_properties_map_.at(key)).error.empty())
+        continue;
+      matching_id_header = key;
+      csv_id_header_norm = header_norm;
+      return true;
     }
     return false;
   };
@@ -241,15 +367,15 @@ std::string CartogramInfo::match_id_columns(
     }
   }
 
-  // If no column matches, try again with columns in which an ID appears
-  // more than once, ignoring leading and trailing whitespace. The program
-  // then stops in assign_csv_rows_to_geojson_ids(), which names the region
-  // that several rows match, instead of below with a less specific message.
-  for (const bool allow_repeated_ids : {false, true}) {
+  // If no column matches, try again with columns whose IDs are ambiguous or
+  // match the same GeoJSON ID more than once. The program then stops in
+  // read_csv(), which names the IDs, instead of below with a less specific
+  // message.
+  for (const bool allow_failed_id_match : {false, true}) {
     if (!matching_id_header.empty())
       break;
     for (const auto &h : hm.norm) {
-      if (try_match(h, allow_repeated_ids)) {
+      if (try_match(h, allow_failed_id_match)) {
         std::cerr << "Matched ID column: " << h << std::endl;
         break;
       }
@@ -305,72 +431,7 @@ void CartogramInfo::update_id_header_info(
   id_header_ = matching_id_header;
 }
 
-using CsvRow = std::pair<std::string, std::map<std::string, std::string>>;
 using CsvData = std::map<std::string, std::map<std::string, std::string>>;
-
-// An ID in double quotes, with JSON escapes, so that messages show any
-// leading or trailing whitespace
-static std::string quoted(const std::string &id)
-{
-  return ojson(id).to_string();
-}
-
-// Returns the data of the CSV rows by GeoJSON ID. A CSV ID that is a GeoJSON
-// ID belongs to that GeoJSON ID. Otherwise, it belongs to the GeoJSON ID that
-// is equal to it after leading and trailing whitespace is removed from both,
-// for example "San Andres y Providencia  " (#310), but only if exactly one
-// GeoJSON ID qualifies. If several qualify, or if two CSV rows belong to the
-// same GeoJSON ID, the program stops instead of making an arbitrary choice.
-static CsvData assign_csv_rows_to_geojson_ids(
-  std::vector<CsvRow> &csv_rows,
-  const std::vector<std::string> &geojson_ids)
-{
-  const std::set<std::string> exact_ids(
-    geojson_ids.begin(),
-    geojson_ids.end());
-
-  // The candidates are sorted, so the messages do not depend on the order
-  // of the features
-  std::map<std::string, std::vector<std::string>> geojson_ids_of_trimmed_id;
-  for (const auto &geojson_id : exact_ids) {
-    geojson_ids_of_trimmed_id[normalize_id_token(geojson_id)].push_back(
-      geojson_id);
-  }
-
-  CsvData csv_data;
-  for (auto &[csv_id, data] : csv_rows) {
-    std::string geojson_id = csv_id;
-    if (!exact_ids.contains(csv_id)) {
-      const auto it =
-        geojson_ids_of_trimmed_id.find(normalize_id_token(csv_id));
-      if (it == geojson_ids_of_trimmed_id.end()) {
-        std::cerr << "ERROR: ID " << quoted(csv_id)
-                  << " in CSV is not in GeoJSON" << std::endl;
-        std::exit(21);
-      }
-      const std::vector<std::string> &candidates = it->second;
-      if (candidates.size() > 1) {
-        std::cerr << "ERROR: ID " << quoted(csv_id) << " in CSV matches "
-                  << candidates.size()
-                  << " IDs in GeoJSON if leading and trailing whitespace is "
-                     "ignored: ";
-        for (size_t i = 0; i < candidates.size(); ++i)
-          std::cerr << (i > 0 ? ", " : "") << quoted(candidates[i]);
-        std::cerr << ". Make the IDs in GeoJSON differ by more than leading "
-                     "and trailing whitespace."
-                  << std::endl;
-        std::exit(EXIT_FAILURE);
-      }
-      geojson_id = candidates.front();
-    }
-    if (!csv_data.emplace(geojson_id, std::move(data)).second) {
-      std::cerr << "ERROR: More than one row in CSV matches ID "
-                << quoted(geojson_id) << " in GeoJSON" << std::endl;
-      std::exit(EXIT_FAILURE);
-    }
-  }
-  return csv_data;
-}
 
 // Regions without a CSV row get no target area ("NA")
 static void add_geojson_ids_missing_from_csv(
@@ -379,8 +440,8 @@ static void add_geojson_ids_missing_from_csv(
 {
   for (const auto &id : geojson_ids) {
     if (!csv_data.contains(id)) {
-      std::cerr << "WARNING: ID " << quoted(id) << " in GeoJSON is not in CSV"
-                << std::endl;
+      std::cerr << "WARNING: ID " << quoted_id(id)
+                << " in GeoJSON is not in CSV" << std::endl;
       csv_data[id] =
         {{"area", "NA"}, {"color", ""}, {"label", ""}, {"inset_pos", "C"}};
     }
@@ -502,7 +563,8 @@ void CartogramInfo::read_csv()
                                   ? hm.raw_at(static_cast<size_t>(inset_col))
                                   : std::string();
 
-  std::vector<CsvRow> csv_rows;
+  std::vector<std::string> csv_ids;
+  std::vector<std::map<std::string, std::string>> csv_rows;
 
   for (const auto &r : rows.array_range()) {
     if (!r.contains(id_key) || !r.contains(area_key)) {
@@ -513,41 +575,44 @@ void CartogramInfo::read_csv()
       std::exit(17);
     }
 
-    // Keep the ID as the CSV reader returns it, so that an exact match with
-    // a GeoJSON ID takes priority. The reader removes leading and trailing
-    // whitespace from every value, even inside quotes (trim(true) in
-    // load_csv_rows()).
+    // Keep the ID as in the CSV file, so that an exact match with a GeoJSON
+    // ID takes priority. Trim the other values.
     std::string id = r.at(id_key).as_string();
-    std::string area_as_str = r.at(area_key).as_string();
+    std::string area_as_str = trimmed(r.at(area_key).as_string());
     check_validity_of_area_str(area_as_str);
 
     std::string color;
     if (!color_key.empty() && r.contains(color_key))
-      color = r.at(color_key).as_string();
+      color = trimmed(r.at(color_key).as_string());
 
     std::string label;
     if (!label_key.empty() && r.contains(label_key))
-      label = r.at(label_key).as_string();
+      label = trimmed(r.at(label_key).as_string());
 
     std::string inset_pos_as_str = "C";
     if (!inset_key.empty() && r.contains(inset_key))
-      inset_pos_as_str = r.at(inset_key).as_string();
+      inset_pos_as_str = trimmed(r.at(inset_key).as_string());
 
     const std::string inset_pos = process_inset_pos_str(inset_pos_as_str);
     check_validity_of_inset_pos(inset_pos, id);
 
-    csv_rows.emplace_back(
-      id,
-      std::map<std::string, std::string>{
-        {"area", area_as_str},
-        {"color", color},
-        {"label", label},
-        {"inset_pos", inset_pos}});
+    csv_ids.push_back(id);
+    csv_rows.push_back(
+      {{"area", area_as_str},
+       {"color", color},
+       {"label", label},
+       {"inset_pos", inset_pos}});
   }
 
   update_id_header_info(new_id_header);
-  CsvData csv_data =
-    assign_csv_rows_to_geojson_ids(csv_rows, initial_id_order_);
+  const IdMatch id_match = match_csv_ids(csv_ids, initial_id_order_);
+  if (!id_match.error.empty()) {
+    std::cerr << "ERROR: " << id_match.error << std::endl;
+    std::exit(id_match.exit_code);
+  }
+  CsvData csv_data;
+  for (size_t i = 0; i < csv_rows.size(); ++i)
+    csv_data.emplace(id_match.geojson_ids[i], std::move(csv_rows[i]));
   add_geojson_ids_missing_from_csv(csv_data, initial_id_order_);
   process_area_strs(csv_data);
   relocate_geodivs_based_on_inset_pos(csv_data);
