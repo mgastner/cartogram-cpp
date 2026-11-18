@@ -7,7 +7,7 @@ OUT_DIR is a directory written by paper_runs.py: one subdirectory per run,
 each with provenance.json, err.log, and the conformality JSON files. The
 script writes three tables (booktabs, as loaded by the paper):
 
-  T1  T0 against T at the finest mode count of each map, for land, ocean,
+  T1  T0 against T at the finest mode count of each map, inside and outside the regions,
       and the whole rectangle (evaluation cloud).
   T2  verification checks of every run.
   T3  cost and mode dependence of every run.
@@ -101,14 +101,14 @@ def table_t1(runs, provenance_note):
     rows = []
     for r in finest_runs(runs):
         b, a = r["opt"]["before"], r["opt"]["after"]
-        for subset, label in (("land", "land"), ("ocean", "ocean"), ("rectangle", "all")):
+        for subset, label in (("land", "inside"), ("ocean", "outside"), ("rectangle", "all")):
             suffix = "" if subset == "rectangle" else f"_{subset}"
             e0b = b["evaluation_cloud"]["E0" + suffix]
             e0a = a["evaluation_cloud"]["E0" + suffix]
             ehb = b["evaluation_cloud"]["E_half" + suffix]
             eha = a["evaluation_cloud"]["E_half" + suffix]
             db, da = b[f"distortion_{subset}"], a[f"distortion_{subset}"]
-            first = label == "land"
+            first = subset == "land"
             rows.append(
                 (f"{MAP_NAMES[r['map']]} ({modes_label(r)})" if first else "")
                 + f" & {label}"
@@ -125,7 +125,8 @@ def table_t1(runs, provenance_note):
             "\\begin{table*}",
             "\\centering",
             "\\caption{Distortion of the projection $T_0$ and of the corrected projection $T$ at the finest mode count of each map, "
-            "on the evaluation cloud. $E_0$ and $E_{1/2}$ are means of the excess MIPS energy; $e = \\ln(a/b)$, with mean, "
+            "on the evaluation cloud. Subsets: inside and outside the regions, and all of the rectangle. "
+            "$E_0$ and $E_{1/2}$ are means of the excess MIPS energy; $e = \\ln(a/b)$, with mean, "
             f"90th and 99th percentile. {provenance_note}}}",
             "\\label{tab:effect}",
             "\\footnotesize",
@@ -278,7 +279,7 @@ def table_t3(runs, provenance_note, timing_sets=()):
             "(integration of $T_0$, optimization, application of the correction to the evaluation cloud and "
             "the polygons together with the area and mesh checks, whole run with its range in "
             "parentheses), and the change of $E_{1/2}$ "
-            f"over the rectangle and of $E_0$ on land. Times are medians of {'/'.join(map(str, sorted(n_samples)))} runs "
+            f"over the rectangle and of $E_0$ inside the regions. Times are medians of {'/'.join(map(str, sorted(n_samples)))} runs "
             f"with {'/'.join(map(str, sorted(threads)))} threads; the other columns come from the runs named below. "
             f"{provenance_note}}}",
             "\\label{tab:cost}",
@@ -286,7 +287,7 @@ def table_t3(runs, provenance_note, timing_sets=()):
             "\\setlength{\\tabcolsep}{3.5pt}",
             "\\begin{tabular}{lllrrrrrrr}",
             "\\toprule",
-            "Map & Lattice & Modes & Steps & $T_0$ & optimize & replay & total & $E_{1/2}$ & $E_0$, land \\\\",
+            "Map & Lattice & Modes & Steps & $T_0$ & optimize & replay & total & $E_{1/2}$ & $E_0$, inside \\\\",
             "\\midrule",
             *rows,
             "\\bottomrule",
