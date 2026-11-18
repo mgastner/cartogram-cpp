@@ -83,19 +83,19 @@ PT = 0.3528  # millimeters per point
 TITLE_SIZE = 8 * PT
 LABEL_SIZE = 7 * PT
 
-# Colors: ColorBrewer Greys for the density rho (light = sparse; the four
-# light classes of the six-class scheme, so that the red ellipses and the
-# black outlines stay visible on the densest cells), a dark red for the
+# Colors: ColorBrewer Greys for the density rho (light = sparse; the six
+# lightest classes of the nine-class scheme, so that the red ellipses and
+# the black outlines stay visible on the densest cells), a dark red for the
 # ellipses, and neutral grays for lines. Blue stays reserved for "less
 # distortion" in the map figures (ColorBrewer RdBu).
-RHO_STOPS = ("#f7f7f7", "#d9d9d9", "#bdbdbd", "#969696")
-# With --binned: one class per color, breaks between the densities 1, 3,
-# and 9 of the squares and below the mean 6.78 outside the regions
-RHO_BREAKS = (2.0, 5.0, 8.0)
+RHO_STOPS = ("#ffffff", "#f0f0f0", "#d9d9d9", "#bdbdbd", "#969696", "#737373")
+# With --binned: one class per color, of width 2; the densities 1, 3, and 9
+# of the squares and the mean 6.78 outside the regions lie inside classes
+RHO_BREAKS = (2.0, 4.0, 6.0, 8.0, 10.0)
 RHO_BINS = 64  # color steps of the shading
 RHO_LOG = False  # linear color scale (author's choice); True for a logarithmic one
 RHO_RANGE = (0.7, 12.0) if RHO_LOG else (0.0, 12.0)  # densities at the bar's ends
-RHO_TICKS = (1, 3, 9) if RHO_LOG else (0, 3, 6, 9, 12)
+RHO_TICKS = (1, 3, 9) if RHO_LOG else (0, 2, 4, 6, 8, 10, 12)
 # A circumflex over a glyph (style "hat"): Inkscape sets the combining
 # U+0302 beside the glyph, so the spacing U+02C6 is moved back over it.
 # Advances in Times New Roman, in ems: italic rho 0.5, circumflex 0.333.
