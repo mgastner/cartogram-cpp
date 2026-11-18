@@ -95,17 +95,18 @@ endfunction()
 # "Left " must match "Left " exactly, wherever the row is in the file, and
 # whether or not the file ends with a newline. The CSV ID Right matches
 # " Right" after trimming, and "Left", without a CSV row, gets no target area
-# from the CSV. Its target area of 6 is the mean of the two others.
+# from the CSV. Because the three squares have equal areas, the target area
+# of "Left" is 6, the mean of the other two.
 foreach(
-  csv IN ITEMS
-  first
-  last_without_final_newline
-  last_with_final_newline
+  row IN ITEMS
+  first_row
+  last_row_without_final_newline
+  last_row_with_final_newline
 )
   add_id_match_test(
-    cli_exact_padded_id_matches_in_${csv}_row
+    cli_exact_padded_id_matches_in_${row}
     three_squares_padded_ids.geojson
-    three_squares_padded_id_${csv}.csv
+    three_squares_padded_id_in_${row}.csv
     "Left ,10.000000"
     "Left,6.000000"
     " Right,2.000000"
