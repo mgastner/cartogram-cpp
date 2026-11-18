@@ -124,7 +124,7 @@ def table_t1(runs, provenance_note):
         [
             "\\begin{table*}",
             "\\centering",
-            "\\caption{Distortion of the cartogram $T_0$ and of the corrected map $T$ at the finest mode count of each map, "
+            "\\caption{Distortion of the projection $T_0$ and of the corrected projection $T$ at the finest mode count of each map, "
             "on the evaluation cloud. $E_0$ and $E_{1/2}$ are means of the excess MIPS energy; $e = \\ln(a/b)$, with mean, "
             f"90th and 99th percentile. {provenance_note}}}",
             "\\label{tab:effect}",
