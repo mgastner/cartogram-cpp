@@ -20,9 +20,9 @@ scale:
       square carried by the flow.
 
 Land and ocean are shaded by the density rho recovered from the Jacobian
-of T0, rho = rho_bar rho-hat with rho-hat = det DT0, on a logarithmic color
-bar with the densities of the input squares as ticks (RHO_LOG = False draws
-a linear one for comparison). The titles and values write rho-hat for
+of T0, rho = rho_bar rho-hat with rho-hat = det DT0, on a linear color
+bar (RHO_LOG = True draws a logarithmic one, with the densities of the
+input squares as ticks). The titles and values write rho-hat for
 det DT0. Each field cell keeps its color in (b) and (c),
 because A keeps det DT0. Populations are extensive, so they get no color.
 Leader lines tie the values below (b) and (c) to the highlighted ellipse,
@@ -85,11 +85,11 @@ LABEL_SIZE = 7 * PT
 
 # Colors: one blue ramp for the density rho on a logarithmic scale (light =
 # sparse), a dark red for the ellipses, and neutral grays for lines
-RHO_RANGE = (0.7, 12.0)  # densities at the ends of the color bar
-RHO_TICKS = (1, 3, 9)  # the population densities of the input squares
 RHO_COLORS = ("#f5f8fc", "#86aad9")  # sparse and dense end, mixed in OKLab
 RHO_BINS = 64  # color steps of the shading
-RHO_LOG = True  # logarithmic color scale; False for a linear one
+RHO_LOG = False  # linear color scale (author's choice); True for a logarithmic one
+RHO_RANGE = (0.7, 12.0) if RHO_LOG else (0.0, 12.0)  # densities at the bar's ends
+RHO_TICKS = (1, 3, 9) if RHO_LOG else (0, 3, 6, 9, 12)
 # A circumflex over a glyph (style "hat"): Inkscape sets the combining
 # U+0302 beside the glyph, so the spacing U+02C6 is moved back over it.
 # Advances in Times New Roman, in ems: italic rho 0.5, circumflex 0.333.
@@ -496,7 +496,8 @@ def main():
     ]
     px, py = pa(mx, my)
     body.append(f'<circle cx="{fmt(px)}" cy="{fmt(py)}" r="0.35" fill="#000000"/>')
-    body.append(text(px - 2.4, py + 3.0, [("x", "b")], LABEL_SIZE, "end", halo=True))
+    # Inside the circle, next to the dot that marks x
+    body.append(text(px - 0.45, py + 0.55, [("x", "b")], LABEL_SIZE, "end", halo=True))
     values = {}
     for tag, (c, J, panel) in (("t0", (c0, J0, pb)), ("t", (c1, J1, pc))):
         p, (j, i) = image_of(c, mx, my, cell)
