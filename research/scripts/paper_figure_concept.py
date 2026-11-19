@@ -35,22 +35,24 @@ contains x. The Jacobian matrix comes from the corners of the cell
 (corners_t0 and corners_t). The lengths are in millimeters, and the layers
 are Inkscape layers, so the figure can be edited in Inkscape.
 
-The run for the paper (18 Nov 2026) used the research binary at eb3ca2ec,
-with the settings of the paper runs, 32 x 32 modes, and ocean weight 0.1:
+The run for the paper (19 Nov 2026; ocean weight 0.1 until then) used the
+research binary at eb3ca2ec, with the settings of the paper runs,
+32 x 32 modes, and ocean weight 0.2, the weight beta of the paper's runs:
 
   cartogram nine_squares.geojson nine_squares_diag_1_3_9.csv -P 100000000 \\
     --conf_optimize --conf_alpha 0.5 --conf_lbfgs 8 --conf_integrator verlet \\
     --conf_substep_factor 1 --conf_eval_quad 4 --conf_modes 32 \\
-    --conf_ocean_weight 0.1
+    --conf_ocean_weight 0.2
 
 The densities 1, 3, and 9 rise from the lower left to the upper right, so
 ln g0 is not far from harmonic and A can remove part of the distortion. With
 a dense square in the middle (a strict maximum of ln g0), E_1/2 on land fell
 by only 1.5 % (ocean weight 1) or 3 % (0.1). With the gradient and ocean
 weight 1, E_1/2 on land falls by 20 %, but the lattice ellipses hardly
-change (mean ln(a/b) at the 64 lattice points +1 %); with ocean weight 0.1,
-E_1/2 on land falls by 60 % (0.301 to 0.119) and the mean ln(a/b) at the
-lattice points by 35 %, while E_1/2 on the ocean rises from 0.123 to 0.413.
+change (mean ln(a/b) at the 64 lattice points +1 %); with ocean weight 0.2,
+E_1/2 on land falls by 53 % (0.301 to 0.141) and the mean ln(a/b) at the
+lattice points by 28 %, while E_1/2 on the ocean rises from 0.123 to 0.297
+(ocean weight 0.1: 60 %, 35 %, and 0.413).
 """
 
 import argparse
