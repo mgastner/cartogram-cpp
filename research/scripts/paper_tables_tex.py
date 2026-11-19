@@ -292,6 +292,14 @@ def table_t3(runs, provenance_note, timing_sets=()):
             f" & {total:.0f} ({lo:.0f}--{hi:.0f})"
             f" & {change(objective(ev_b, beta), objective(ev_a, beta))} & {change(ev_b['E0_land'], ev_a['E0_land'])} \\\\"
         )
+    thread_list = "/".join(map(str, sorted(threads)))
+    if n_samples == {1}:
+        times_note = f"Times of one run with {thread_list} threads (the runs named below)."
+    else:
+        times_note = (
+            f"Times are medians of {'/'.join(map(str, sorted(n_samples)))} runs with {thread_list} threads; "
+            "the other columns come from the runs named below."
+        )
     return "\n".join(
         [
             "\\begin{table*}",
@@ -300,8 +308,7 @@ def table_t3(runs, provenance_note, timing_sets=()):
             "(integration of $T_0$, optimization, application of the correction to the evaluation cloud and "
             "the polygons together with the area and mesh checks, whole run with its range in "
             "parentheses), and the change of the objective $E_{1/2}$ (with weight $\\beta$ outside the regions) "
-            f"and of $E_0$ inside the regions, on the evaluation cloud. Times are medians of {'/'.join(map(str, sorted(n_samples)))} runs "
-            f"with {'/'.join(map(str, sorted(threads)))} threads; the other columns come from the runs named below. "
+            f"and of $E_0$ inside the regions, on the evaluation cloud. {times_note} "
             f"{provenance_note}}}",
             "\\label{tab:cost}",
             "\\footnotesize",
