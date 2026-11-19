@@ -52,11 +52,12 @@ RDBU = ["#053061", "#2166ac", "#4393c3", "#92c5de", "#d1e5f0", "#f7f7f7",
         "#fddbc7", "#f4a582", "#d6604d", "#b2182b", "#67001f"]
 
 
-def breaks_for(abs_values):
+def breaks_for(abs_values, top=None):
     """Five positive class breaks for the change of m: consecutive values of
     the sequence ..., 0.1, 0.3, 1, 3, 10, ..., the largest of them the
-    largest such value below the 99th percentile of |change|."""
-    p99 = float(np.percentile(abs_values, 99))
+    largest such value below the 99th percentile of |change|, or below top
+    if given (to share one scale between figures)."""
+    p99 = float(top) if top else float(np.percentile(abs_values, 99))
     k = math.floor(math.log10(p99))
     seq = [m * 10.0**j for j in range(k - 4, k + 1) for m in (1, 3)]
     seq = [v for v in seq if v <= p99 * (1 + 1e-12)]
@@ -130,6 +131,8 @@ def main():
     ap.add_argument("plot_json")
     ap.add_argument("out_svg")
     ap.add_argument("--binned", action="store_true", help="color every cell by its class")
+    ap.add_argument("--top", type=float,
+                    help="largest class break of panel (d), to share one scale between figures")
     ap.add_argument("--grid-step", type=int, default=1,
                     help="draw every n-th line of the graticule (2 for dense maps such as the world)")
     args = ap.parse_args()
@@ -159,7 +162,7 @@ def main():
     (cx0, cy0), (cx1, cy1) = crop_in
     shown = [(q, v) for q, v in zip(quads, delta)
              if v is not None and cx0 <= q[:, 0].mean() <= cx1 and cy0 <= q[:, 1].mean() <= cy1]
-    breaks = breaks_for([abs(v) for _, v in shown])
+    breaks = breaks_for([abs(v) for _, v in shown], args.top)
     ramp = pdf_.Ramp(RDBU)
 
     def color(v):
