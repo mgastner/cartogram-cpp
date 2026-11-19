@@ -3,8 +3,9 @@
 
 Each run computes the cartogram T0 of one map with the flow-based method,
 without polygon simplification (-P 100000000), and then the correction A
-with the production settings: alpha = 1/2, ocean weight 1, L-BFGS memory 8,
-Stormer-Verlet with substep factor 1, and evaluation quadrature 4. The runs
+with the production settings: alpha = 1/2, L-BFGS memory 8, Stormer-Verlet
+with substep factor 1, and evaluation quadrature 4. The weight beta of the
+nodes outside the regions is set with --ocean-weight (default 1). The runs
 differ in the map and in the number of modes per side.
 
 So that every number can be traced to a commit, the script
@@ -18,8 +19,9 @@ So that every number can be traced to a commit, the script
   4. writes OUT_DIR/tables.md: the provenance of the runs, followed by the
      tables of summarize_conformality.py.
 A run whose directory already has a provenance.json with the same source
-commit and binary, and exit code 0, is not repeated (use --force to repeat
-it). Commits that change only scripts or notes therefore repeat no runs.
+commit, binary and command, and exit code 0, is not repeated (use --force to
+repeat it). Commits that change only scripts or notes therefore repeat no
+runs, but a run with another --ocean-weight does.
 
 With --mesh-check, conformality_check (built in BUILD_DIR) replays the
 correction A of the runs whose default check mesh is too coarse to show
@@ -38,8 +40,8 @@ On macOS, caffeinate keeps the machine awake while the script runs.
 Only the Python standard library is used.
 
 Usage: paper_runs.py BUILD_DIR OUT_DIR [--threads N] [--only NAME[,NAME...]]
-                     [--allow-dirty] [--force] [--mesh-check]
-                     [--figures PYTHON]
+                     [--ocean-weight BETA] [--allow-dirty] [--force]
+                     [--mesh-check] [--figures PYTHON]
 """
 
 import argparse
@@ -141,6 +143,8 @@ def main():
     p.add_argument("out_dir", type=Path)
     p.add_argument("--threads", type=int, default=os.cpu_count())
     p.add_argument("--only", help="comma-separated run names")
+    p.add_argument("--ocean-weight", type=float, default=1.0,
+                   help="weight beta of the nodes outside the regions")
     p.add_argument("--allow-dirty", action="store_true")
     p.add_argument("--force", action="store_true")
     p.add_argument("--mesh-check", action="store_true")
@@ -188,18 +192,20 @@ def main():
     env = dict(os.environ, OMP_NUM_THREADS=str(args.threads))
     for name, map_name, modes in runs:
         run_dir = args.out_dir / name
+        geo, csv = (str(SAMPLE_DATA / f) for f in MAPS[map_name])
+        cmd = [str(binary), geo, csv, *SETTINGS, "--conf_modes", str(modes),
+               "--conf_ocean_weight", f"{args.ocean_weight:g}"]
+        if map_name == "world":
+            cmd.append("--world")
         prov_file = run_dir / "provenance.json"
         if prov_file.exists() and not args.force:
             old = json.loads(prov_file.read_text())
             if (old.get("source_commit"), old["binary_sha256"],
-                    old["exit_code"]) == (source_commit, binary_sha, 0):
+                    old["command"], old["exit_code"]) == (
+                    source_commit, binary_sha, cmd, 0):
                 print(f"{name}: done before, skipped", flush=True)
                 continue
         run_dir.mkdir(exist_ok=True)
-        geo, csv = (str(SAMPLE_DATA / f) for f in MAPS[map_name])
-        cmd = [str(binary), geo, csv, *SETTINGS, "--conf_modes", str(modes)]
-        if map_name == "world":
-            cmd.append("--world")
         start = datetime.datetime.now().astimezone()
         t0 = time.perf_counter()
         with open(run_dir / "out.log", "w") as out, \

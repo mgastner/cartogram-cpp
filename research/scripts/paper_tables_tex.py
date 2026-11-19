@@ -316,12 +316,17 @@ def main():
 
     commits = {r["prov"]["commit"][:12] for r in runs}
     threads = {r["prov"]["omp_num_threads"] for r in runs}
+    for key in ("alpha", "ocean_weight"):
+        values = {r["opt"]["settings"][key] for r in runs}
+        if len(values) != 1:
+            sys.exit(f"the runs differ in {key}: {sorted(values)}")
     failed = [r["name"] for r in runs if r["prov"]["exit_code"] != 0]
     if failed:
         sys.exit(f"runs with a nonzero exit code: {', '.join(failed)}")
     note = (
         f"Commit {', '.join(sorted(commits))}; {', '.join(str(t) for t in sorted(threads))} threads; "
-        f"$\\alpha = {runs[0]['opt']['settings']['alpha']:g}$."
+        f"$\\alpha = {runs[0]['opt']['settings']['alpha']:g}$, "
+        f"$\\beta = {runs[0]['opt']['settings']['ocean_weight']:g}$."
     )
 
     timing_sets = []
