@@ -10,7 +10,8 @@ script writes three tables (booktabs, as loaded by the paper):
   T1  T0 against T at the finest mode count of each map, inside and outside the regions,
       and the whole rectangle (evaluation cloud).
   T2  verification checks of every run.
-  T3  cost and mode dependence of every run.
+  T3  cost and mode dependence of every run, with the change of the
+      optimizer's objective (E_1/2 with weight beta outside the regions).
 
 No number is typed by hand: every value comes from the JSON files, the time
 report in err.log, or provenance.json, and the table captions name OUT_DIR's
@@ -232,6 +233,19 @@ def table_t2(runs, provenance_note):
     )
 
 
+def objective(cloud, beta):
+    """The optimizer's objective E_1/2 with weight beta outside the regions,
+    from the subset means of one cloud. The weights rho-hat^(1/2) are the
+    same for T0 and T, because A keeps det DT0, so their ratio inside to
+    outside follows from the unweighted means: E = (n_in E_in + n_out
+    E_out) / (n_in + n_out)."""
+    e, e_in, e_out = cloud["E_half"], cloud["E_half_land"], cloud["E_half_ocean"]
+    if beta == 1.0:
+        return e
+    ratio = (e_out - e) / (e - e_in)  # n_in / n_out
+    return (ratio * e_in + beta * e_out) / (ratio + beta)
+
+
 def median(values):
     v = sorted(values)
     n = len(v)
@@ -260,6 +274,13 @@ def table_t3(runs, provenance_note, timing_sets=()):
         previous_map = r["map"]
         o = r["opt"]
         ev_b, ev_a = o["before"]["evaluation_cloud"], o["after"]["evaluation_cloud"]
+        beta = o["settings"]["ocean_weight"]
+        # Weights of the objective before and after must agree (A keeps det DT0)
+        if beta != 1.0:
+            ratio_b = (ev_b["E_half_ocean"] - ev_b["E_half"]) / (ev_b["E_half"] - ev_b["E_half_land"])
+            ratio_a = (ev_a["E_half_ocean"] - ev_a["E_half"]) / (ev_a["E_half"] - ev_a["E_half_land"])
+            if abs(ratio_a / ratio_b - 1.0) > 1e-6:
+                sys.exit(f"{r['name']}: weights inside/outside differ before and after A")
         lat = o["lattice"]
         t0, opt, replay, total, lo, hi, n = timings(r, timing_sets)
         n_samples.add(n)
@@ -269,7 +290,7 @@ def table_t3(runs, provenance_note, timing_sets=()):
             f"{MAP_NAMES[r['map']]} & ${lat[0]}\\times{lat[1]}$ & {modes_label(r)} & {o['n_accepted_steps']}"
             f" & {t0:.1f} & {opt:.0f} & {replay:.0f}"
             f" & {total:.0f} ({lo:.0f}--{hi:.0f})"
-            f" & {change(ev_b['E_half'], ev_a['E_half'])} & {change(ev_b['E0_land'], ev_a['E0_land'])} \\\\"
+            f" & {change(objective(ev_b, beta), objective(ev_a, beta))} & {change(ev_b['E0_land'], ev_a['E0_land'])} \\\\"
         )
     return "\n".join(
         [
@@ -278,8 +299,8 @@ def table_t3(runs, provenance_note, timing_sets=()):
             "\\caption{Cost and mode dependence: lattice of $T_0$, number of modes, accepted steps, wall times in seconds "
             "(integration of $T_0$, optimization, application of the correction to the evaluation cloud and "
             "the polygons together with the area and mesh checks, whole run with its range in "
-            "parentheses), and the change of $E_{1/2}$ "
-            f"over the rectangle and of $E_0$ inside the regions. Times are medians of {'/'.join(map(str, sorted(n_samples)))} runs "
+            "parentheses), and the change of the objective $E_{1/2}$ (with weight $\\beta$ outside the regions) "
+            f"and of $E_0$ inside the regions, on the evaluation cloud. Times are medians of {'/'.join(map(str, sorted(n_samples)))} runs "
             f"with {'/'.join(map(str, sorted(threads)))} threads; the other columns come from the runs named below. "
             f"{provenance_note}}}",
             "\\label{tab:cost}",
@@ -287,7 +308,7 @@ def table_t3(runs, provenance_note, timing_sets=()):
             "\\setlength{\\tabcolsep}{3.5pt}",
             "\\begin{tabular}{lllrrrrrrr}",
             "\\toprule",
-            "Map & Lattice & Modes & Steps & $T_0$ & optimize & replay & total & $E_{1/2}$ & $E_0$, inside \\\\",
+            "Map & Lattice & Modes & Steps & $T_0$ & optimize & replay & total & objective & $E_0$, inside \\\\",
             "\\midrule",
             *rows,
             "\\bottomrule",
