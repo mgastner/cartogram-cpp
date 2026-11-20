@@ -2,16 +2,22 @@
 """Write the tables of the ICC 2027 paper as LaTeX, from the outputs of paper_runs.py.
 
 Usage: paper_tables_tex.py OUT_DIR [--output FILE] [--timing DIR ...]
+                           [--effect-modes N]
 
 OUT_DIR is a directory written by paper_runs.py: one subdirectory per run,
 each with provenance.json, err.log, and the conformality JSON files. The
 script writes three tables (booktabs, as loaded by the paper):
 
-  T1  T0 against T at the finest mode count of each map, inside and outside the regions,
-      and the whole rectangle (evaluation cloud).
+  T1  T0 against T, inside and outside the regions, and the whole rectangle
+      (evaluation cloud), at N modes along the longer side of each map
+      (--effect-modes N) or else at the finest mode count of each map.
   T2  verification checks of every run.
   T3  cost and mode dependence of every run, with the change of the
-      optimizer's objective (E_1/2 with weight beta outside the regions).
+      optimizer's objective (E_1/2 with weight beta outside the regions)
+      and of E_1/2 inside the regions.
+
+E_1/2 is the measure reported throughout (author, 20 Nov 2026); E_0 and
+E_1 are left to the discussion of the weighting.
 
 No number is typed by hand: every value comes from the JSON files, the time
 report in err.log, or provenance.json, and the table captions name OUT_DIR's
@@ -98,14 +104,24 @@ def finest_runs(runs):
     return [best[k] for k in MAP_ORDER if k in best]
 
 
-def table_t1(runs, provenance_note):
+def effect_runs(runs, modes):
+    """The run of each map with `modes` modes along the longer side, or the
+    finest run of each map if `modes` is None."""
+    if modes is None:
+        return finest_runs(runs)
+    chosen = {r["map"]: r for r in runs if r["modes_long"] == modes}
+    missing = [k for k in MAP_ORDER if k in {r["map"] for r in runs} and k not in chosen]
+    if missing:
+        sys.exit(f"no run with {modes} modes for: {', '.join(missing)}")
+    return [chosen[k] for k in MAP_ORDER if k in chosen]
+
+
+def table_t1(runs, provenance_note, modes=None):
     rows = []
-    for r in finest_runs(runs):
+    for r in effect_runs(runs, modes):
         b, a = r["opt"]["before"], r["opt"]["after"]
         for subset, label in (("land", "inside"), ("ocean", "outside"), ("rectangle", "all")):
             suffix = "" if subset == "rectangle" else f"_{subset}"
-            e0b = b["evaluation_cloud"]["E0" + suffix]
-            e0a = a["evaluation_cloud"]["E0" + suffix]
             ehb = b["evaluation_cloud"]["E_half" + suffix]
             eha = a["evaluation_cloud"]["E_half" + suffix]
             db, da = b[f"distortion_{subset}"], a[f"distortion_{subset}"]
@@ -113,7 +129,6 @@ def table_t1(runs, provenance_note):
             rows.append(
                 (f"{MAP_NAMES[r['map']]} ({modes_label(r)})" if first else "")
                 + f" & {label}"
-                + f" & {arrow(e0b, e0a)} & {change(e0b, e0a)}"
                 + f" & {arrow(ehb, eha)} & {change(ehb, eha)}"
                 + f" & {arrow(db['e_mean'], da['e_mean'])}"
                 + f" & {arrow(db['e_p90'], da['e_p90'])}"
@@ -125,18 +140,21 @@ def table_t1(runs, provenance_note):
         [
             "\\begin{table*}",
             "\\centering",
-            "\\caption{Distortion of the projection $T_0$ and of the corrected projection $T$ at the finest mode count of each map, "
-            "on the evaluation cloud. Subsets: inside and outside the regions, and all of the rectangle. "
-            "$E_0$ and $E_{1/2}$ are means of the excess MIPS energy; $e = \\ln(a/b)$, with mean, "
+            "\\caption{Distortion of the projection $T_0$ and of the corrected projection $T$ "
+            + ("at the finest mode count of each map, " if modes is None
+               else f"at {modes} modes along the longer side of each map, ")
+            + "on the evaluation cloud. Subsets: inside and outside the regions, and all of the rectangle. "
+            "$E_{1/2}$ is the mean of the excess MIPS energy weighted by $\\hat{\\rho}^{1/2}$, "
+            "without the weight $\\beta$; $e = \\ln(a/b)$, with mean, "
             f"90th and 99th percentile. {provenance_note}}}",
             "\\label{tab:effect}",
             "\\footnotesize",
             "\\setlength{\\tabcolsep}{3.5pt}",
-            "\\begin{tabular}{llrrrrrrr}",
+            "\\begin{tabular}{llrrrrr}",
             "\\toprule",
-            "Map & Subset & \\multicolumn{2}{c}{$E_0$} & \\multicolumn{2}{c}{$E_{1/2}$} & mean $e$ & $e$, p90 & $e$, p99 \\\\",
-            "\\cmidrule(lr){3-4}\\cmidrule(lr){5-6}",
-            " & & $T_0 \\to T$ & change & $T_0 \\to T$ & change & $T_0 \\to T$ & $T_0 \\to T$ & $T_0 \\to T$ \\\\",
+            "Map & Subset & \\multicolumn{2}{c}{$E_{1/2}$} & mean $e$ & $e$, p90 & $e$, p99 \\\\",
+            "\\cmidrule(lr){3-4}",
+            " & & $T_0 \\to T$ & change & $T_0 \\to T$ & $T_0 \\to T$ & $T_0 \\to T$ \\\\",
             "\\midrule",
             *rows,
             "\\bottomrule",
@@ -290,7 +308,7 @@ def table_t3(runs, provenance_note, timing_sets=()):
             f"{MAP_NAMES[r['map']]} & ${lat[0]}\\times{lat[1]}$ & {modes_label(r)} & {o['n_accepted_steps']}"
             f" & {t0:.1f} & {opt:.0f} & {replay:.0f}"
             f" & {total:.0f} ({lo:.0f}--{hi:.0f})"
-            f" & {change(objective(ev_b, beta), objective(ev_a, beta))} & {change(ev_b['E0_land'], ev_a['E0_land'])} \\\\"
+            f" & {change(objective(ev_b, beta), objective(ev_a, beta))} & {change(ev_b['E_half_land'], ev_a['E_half_land'])} \\\\"
         )
     thread_list = "/".join(map(str, sorted(threads)))
     if n_samples == {1}:
@@ -308,14 +326,14 @@ def table_t3(runs, provenance_note, timing_sets=()):
             "(integration of $T_0$, optimization, application of the correction to the evaluation cloud and "
             "the polygons together with the area and mesh checks, whole run with its range in "
             "parentheses), and the change of the objective $E_{1/2}$ (with weight $\\beta$ outside the regions) "
-            f"and of $E_0$ inside the regions, on the evaluation cloud. {times_note} "
+            f"and of $E_{{1/2}}$ inside the regions, on the evaluation cloud. {times_note} "
             f"{provenance_note}}}",
             "\\label{tab:cost}",
             "\\footnotesize",
             "\\setlength{\\tabcolsep}{3.5pt}",
             "\\begin{tabular}{lllrrrrrrr}",
             "\\toprule",
-            "Map & Lattice & Modes & Steps & $T_0$ & optimize & replay & total & objective & $E_0$, inside \\\\",
+            "Map & Lattice & Modes & Steps & $T_0$ & optimize & replay & total & objective & $E_{1/2}$, inside \\\\",
             "\\midrule",
             *rows,
             "\\bottomrule",
@@ -333,6 +351,10 @@ def main():
         "--timing", nargs="*", default=[],
         help="more output directories of paper_runs.py whose wall times enter the medians of T3; "
         "their outputs must equal those of OUT_DIR",
+    )
+    parser.add_argument(
+        "--effect-modes", type=int,
+        help="modes along the longer side of the runs in T1 (default: the finest run of each map)",
     )
     args = parser.parse_args()
 
@@ -373,7 +395,7 @@ def main():
     text = "\n\n".join(
         [
             f"% Generated by research/scripts/paper_tables_tex.py from {os.path.abspath(args.out_dir)}",
-            table_t1(runs, note),
+            table_t1(runs, note, args.effect_modes),
             table_t2(runs, note),
             table_t3(runs, note, timing_sets),
         ]
